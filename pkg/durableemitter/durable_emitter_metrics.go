@@ -43,7 +43,6 @@ type durableEmitterMetrics struct {
 	storeOps           metric.Int64Counter
 	storeOpDuration    metric.Float64Histogram
 	queueDepth         metric.Int64Gauge
-	queueDepthMax      metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
 	queueNearTTL       metric.Int64Gauge
@@ -52,6 +51,19 @@ type durableEmitterMetrics struct {
 	procHeapSys        metric.Int64Gauge
 	procCPUUser        metric.Float64Gauge
 	procCPUSys         metric.Float64Gauge
+	// batchEnqueueBufferFull counts events that could not be handed to the
+	// batch emitter because its internal queue was full and must be picked up
+	// by the retransmit loop instead. Labels: phase={immediate,retransmit}.
+	batchEnqueueBufferFull metric.Int64Counter
+	// insertCoalescerFill reports the write-coalescer channel fill ratio
+	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
+	insertCoalescerFill metric.Float64Gauge
+	// markCoalescerFill reports the mark-coalescer channel fill ratio
+	// (len/cap). Only meaningful when MarkBatchSize > 0; otherwise 0.
+	markCoalescerFill metric.Float64Gauge
+	// fallbackInFlight reports the number of single-event fallback Publish
+	// goroutines currently in flight.
+	fallbackInFlight metric.Int64Gauge
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -188,13 +200,6 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.queueDepthMax, err = meter.Int64Gauge(
-		"durable_emitter.queue.depth_max",
-		metric.WithUnit("{row}"),
-		metric.WithDescription("High-water mark of pending queue depth since start"),
-	); err != nil {
-		return nil, err
-	}
 	if m.queuePayloadBytes, err = meter.Int64Gauge(
 		"durable_emitter.queue.payload_bytes",
 		metric.WithUnit("By"),
@@ -251,6 +256,34 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
+	if m.batchEnqueueBufferFull, err = meter.Int64Counter(
+		"durable_emitter.batch_enqueue.buffer_full",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={immediate,retransmit}."),
+	); err != nil {
+		return nil, err
+	}
+	if m.insertCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.insert_coalescer.queue_fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Write-coalescer channel fill ratio (len/cap); 0 when write coalescing is disabled"),
+	); err != nil {
+		return nil, err
+	}
+	if m.markCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.mark_coalescer.queue_fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Mark-coalescer channel fill ratio (len/cap); 0 when mark coalescing is disabled"),
+	); err != nil {
+		return nil, err
+	}
+	if m.fallbackInFlight, err = meter.Int64Gauge(
+		"durable_emitter.fallback.in_flight",
+		metric.WithUnit("{goroutine}"),
+		metric.WithDescription("Single-event fallback Publish goroutines currently in flight"),
+	); err != nil {
+		return nil, err
+	}
 	return m, nil
 }
 
@@ -266,15 +299,12 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 	m.storeOpDuration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("operation", op)))
 }
 
-// pollQueueGauges refreshes DB-derived queue statistics (payload bytes, oldest
-// pending age, near-TTL count). Queue depth itself is tracked atomically by
-// DurableEmitter.incPending/decPending and recorded there.
-func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs DurableQueueObserver, ttl, lead time.Duration, maxBytes int64) {
-	if m == nil || obs == nil {
-		return
-	}
-	st, err := obs.ObserveDurableQueue(ctx, ttl, lead)
-	if err != nil {
+// recordQueueStats records the DB-derived queue statistics (payload bytes,
+// oldest pending age, near-TTL count) from an already-observed snapshot. The
+// queue depth gauge itself is recorded separately by DurableEmitter from the
+// same snapshot's authoritative TotalRows count.
+func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st DurableQueueStats, maxBytes int64) {
+	if m == nil {
 		return
 	}
 	m.queuePayloadBytes.Record(ctx, st.PayloadBytes)

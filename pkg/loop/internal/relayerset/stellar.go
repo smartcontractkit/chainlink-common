@@ -33,6 +33,10 @@ func (sc *stellarClient) ReadContract(ctx context.Context, in *stelpb.ReadContra
 	return sc.client.ReadContract(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *stellarClient) SubmitTransaction(ctx context.Context, in *stelpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*stelpb.SubmitTransactionResponse, error) {
+	return sc.client.SubmitTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 // stellarServer implements stelpb.StellarServer by routing each RPC through the RelayerSet.
 type stellarServer struct {
 	stelpb.UnimplementedStellarServer
@@ -73,6 +77,26 @@ func (ss *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) 
 	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
 	if err != nil {
 		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (ss *stellarServer) SubmitTransaction(ctx context.Context, req *stelpb.SubmitTransactionRequest) (*stelpb.SubmitTransactionResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dReq, err := stelpb.ConvertSubmitTransactionRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction request: %w", err)
+	}
+	dResp, err := svc.SubmitTransaction(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertSubmitTransactionResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SubmitTransaction response: %w", err)
 	}
 	return pResp, nil
 }

@@ -53,7 +53,7 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		if len(donTimes.Timestamps) > request.SeqNum {
 			donTime := donTimes.Timestamps[request.SeqNum]
 			t.store.RemoveRequest(executionID) // Make space for next request before delivering
-			request.SendResponse(nil, Response{
+			request.SendResponse(Response{
 				WorkflowExecutionID: executionID,
 				SeqNum:              request.SeqNum,
 				Timestamp:           donTime,

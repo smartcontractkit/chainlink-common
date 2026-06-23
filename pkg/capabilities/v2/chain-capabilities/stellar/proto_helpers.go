@@ -77,10 +77,10 @@ func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellarservice
 		args[i] = sv
 	}
 	return stellarservicetypes.ReadContractRequest{
-		ContractID:     p.GetContractId(),
-		Function:       p.GetFunction(),
-		Args:           args,
-		LedgerSequence: p.GetLedgerSequence(),
+		ContractID:    p.GetContractId(),
+		Function:      p.GetFunction(),
+		Args:          args,
+		SourceAccount: p.GetSourceAccount(),
 	}, nil
 }
 
@@ -169,9 +169,6 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 			HiHi: sv.I256.HiHi, HiLo: sv.I256.HiLo, LoHi: sv.I256.LoHi, LoLo: sv.I256.LoLo,
 		}}}, nil
 	case stellarservicetypes.ScValTypeBytes:
-		if sv.Bytes == nil {
-			return nil, fmt.Errorf("scvBytes: nil")
-		}
 		return &scval.ScVal{Value: &scval.ScVal_BytesVal{BytesVal: sv.Bytes}}, nil
 	case stellarservicetypes.ScValTypeString:
 		if sv.String == nil {

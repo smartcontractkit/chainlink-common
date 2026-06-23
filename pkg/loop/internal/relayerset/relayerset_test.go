@@ -1642,6 +1642,32 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 				require.Equal(t, int64(9000000), resp.LedgerCloseTime)
 			},
 		},
+		{
+			name: "SubmitTransaction",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
+				sym := "transfer"
+				req := stellartypes.SubmitTransactionRequest{
+					IdempotencyKey: "idem-123",
+					FromAddress:    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+					ContractID:     "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+					Function:       "transfer",
+					Args:           []stellartypes.ScVal{{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}},
+					LedgerBoundsOffset: 2,
+				}
+				expected := &stellartypes.SubmitTransactionResponse{
+					TxStatus:         stellartypes.TxSuccess,
+					TxHash:           "stellar-tx-hash",
+					TxIdempotencyKey: "idem-123",
+				}
+				mockSvc.EXPECT().SubmitTransaction(mock.Anything, req).Return(expected, nil)
+
+				reply, err := svc.SubmitTransaction(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expected.TxHash, reply.TxHash)
+				require.Equal(t, expected.TxIdempotencyKey, reply.TxIdempotencyKey)
+				require.Equal(t, expected.TxStatus, reply.TxStatus)
+			},
+		},
 	}
 
 	for _, tc := range tests {

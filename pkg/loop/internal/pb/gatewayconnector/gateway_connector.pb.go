@@ -198,6 +198,50 @@ func (x *GatewayIDsReply) GetGatewayIds() []string {
 	return nil
 }
 
+type GatewayIDsForDonRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DonId         string                 `protobuf:"bytes,1,opt,name=don_id,json=donId,proto3" json:"don_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GatewayIDsForDonRequest) Reset() {
+	*x = GatewayIDsForDonRequest{}
+	mi := &file_gateway_connector_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GatewayIDsForDonRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GatewayIDsForDonRequest) ProtoMessage() {}
+
+func (x *GatewayIDsForDonRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gateway_connector_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GatewayIDsForDonRequest.ProtoReflect.Descriptor instead.
+func (*GatewayIDsForDonRequest) Descriptor() ([]byte, []int) {
+	return file_gateway_connector_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GatewayIDsForDonRequest) GetDonId() string {
+	if x != nil {
+		return x.DonId
+	}
+	return ""
+}
+
 type DonIDReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	DonId         string                 `protobuf:"bytes,1,opt,name=don_id,json=donId,proto3" json:"don_id,omitempty"`
@@ -207,7 +251,7 @@ type DonIDReply struct {
 
 func (x *DonIDReply) Reset() {
 	*x = DonIDReply{}
-	mi := &file_gateway_connector_proto_msgTypes[4]
+	mi := &file_gateway_connector_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -219,7 +263,7 @@ func (x *DonIDReply) String() string {
 func (*DonIDReply) ProtoMessage() {}
 
 func (x *DonIDReply) ProtoReflect() protoreflect.Message {
-	mi := &file_gateway_connector_proto_msgTypes[4]
+	mi := &file_gateway_connector_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +276,7 @@ func (x *DonIDReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DonIDReply.ProtoReflect.Descriptor instead.
 func (*DonIDReply) Descriptor() ([]byte, []int) {
-	return file_gateway_connector_proto_rawDescGZIP(), []int{4}
+	return file_gateway_connector_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DonIDReply) GetDonId() string {
@@ -252,7 +296,7 @@ type AddHandlerRequest struct {
 
 func (x *AddHandlerRequest) Reset() {
 	*x = AddHandlerRequest{}
-	mi := &file_gateway_connector_proto_msgTypes[5]
+	mi := &file_gateway_connector_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -264,7 +308,7 @@ func (x *AddHandlerRequest) String() string {
 func (*AddHandlerRequest) ProtoMessage() {}
 
 func (x *AddHandlerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gateway_connector_proto_msgTypes[5]
+	mi := &file_gateway_connector_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -277,7 +321,7 @@ func (x *AddHandlerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddHandlerRequest.ProtoReflect.Descriptor instead.
 func (*AddHandlerRequest) Descriptor() ([]byte, []int) {
-	return file_gateway_connector_proto_rawDescGZIP(), []int{5}
+	return file_gateway_connector_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *AddHandlerRequest) GetMethods() []string {
@@ -303,7 +347,7 @@ type RemoveHandlerRequest struct {
 
 func (x *RemoveHandlerRequest) Reset() {
 	*x = RemoveHandlerRequest{}
-	mi := &file_gateway_connector_proto_msgTypes[6]
+	mi := &file_gateway_connector_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -315,7 +359,7 @@ func (x *RemoveHandlerRequest) String() string {
 func (*RemoveHandlerRequest) ProtoMessage() {}
 
 func (x *RemoveHandlerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gateway_connector_proto_msgTypes[6]
+	mi := &file_gateway_connector_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -328,7 +372,7 @@ func (x *RemoveHandlerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveHandlerRequest.ProtoReflect.Descriptor instead.
 func (*RemoveHandlerRequest) Descriptor() ([]byte, []int) {
-	return file_gateway_connector_proto_rawDescGZIP(), []int{6}
+	return file_gateway_connector_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RemoveHandlerRequest) GetMethods() []string {
@@ -352,7 +396,9 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\tsignature\x18\x01 \x01(\fR\tsignature\"2\n" +
 	"\x0fGatewayIDsReply\x12\x1f\n" +
 	"\vgateway_ids\x18\x01 \x03(\tR\n" +
-	"gatewayIds\"#\n" +
+	"gatewayIds\"0\n" +
+	"\x17GatewayIDsForDonRequest\x12\x15\n" +
+	"\x06don_id\x18\x01 \x01(\tR\x05donId\"#\n" +
 	"\n" +
 	"DonIDReply\x12\x15\n" +
 	"\x06don_id\x18\x01 \x01(\tR\x05donId\"L\n" +
@@ -361,7 +407,7 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\n" +
 	"handler_id\x18\x02 \x01(\rR\thandlerId\"0\n" +
 	"\x14RemoveHandlerRequest\x12\x18\n" +
-	"\amethods\x18\x01 \x03(\tR\amethods2\xcd\x03\n" +
+	"\amethods\x18\x01 \x03(\tR\amethods2\x8e\x05\n" +
 	"\x10GatewayConnector\x12=\n" +
 	"\n" +
 	"AddHandler\x12\x17.loop.AddHandlerRequest\x1a\x16.google.protobuf.Empty\x12C\n" +
@@ -371,7 +417,10 @@ const file_gateway_connector_proto_rawDesc = "" +
 	"\n" +
 	"GatewayIDs\x12\x16.google.protobuf.Empty\x1a\x15.loop.GatewayIDsReply\x121\n" +
 	"\x05DonID\x12\x16.google.protobuf.Empty\x1a\x10.loop.DonIDReply\x12A\n" +
-	"\x0fAwaitConnection\x12\x16.loop.GatewayIDRequest\x1a\x16.google.protobuf.EmptyBQZOgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnectorb\x06proto3"
+	"\x0fAwaitConnection\x12\x16.loop.GatewayIDRequest\x1a\x16.google.protobuf.Empty\x12H\n" +
+	"\x10GatewayIDsForDon\x12\x1d.loop.GatewayIDsForDonRequest\x1a\x15.loop.GatewayIDsReply\x12;\n" +
+	"\x0fDonIDForGateway\x12\x16.loop.GatewayIDRequest\x1a\x10.loop.DonIDReply\x128\n" +
+	"\fPrimaryDonID\x12\x16.google.protobuf.Empty\x1a\x10.loop.DonIDReplyBQZOgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/gatewayconnectorb\x06proto3"
 
 var (
 	file_gateway_connector_proto_rawDescOnce sync.Once
@@ -385,38 +434,45 @@ func file_gateway_connector_proto_rawDescGZIP() []byte {
 	return file_gateway_connector_proto_rawDescData
 }
 
-var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_gateway_connector_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_gateway_connector_proto_goTypes = []any{
-	(*GatewayIDRequest)(nil),     // 0: loop.GatewayIDRequest
-	(*SignMessageRequest)(nil),   // 1: loop.SignMessageRequest
-	(*SignMessageReply)(nil),     // 2: loop.SignMessageReply
-	(*GatewayIDsReply)(nil),      // 3: loop.GatewayIDsReply
-	(*DonIDReply)(nil),           // 4: loop.DonIDReply
-	(*AddHandlerRequest)(nil),    // 5: loop.AddHandlerRequest
-	(*RemoveHandlerRequest)(nil), // 6: loop.RemoveHandlerRequest
-	(*SendMessageRequest)(nil),   // 7: loop.SendMessageRequest
-	(*emptypb.Empty)(nil),        // 8: google.protobuf.Empty
+	(*GatewayIDRequest)(nil),        // 0: loop.GatewayIDRequest
+	(*SignMessageRequest)(nil),      // 1: loop.SignMessageRequest
+	(*SignMessageReply)(nil),        // 2: loop.SignMessageReply
+	(*GatewayIDsReply)(nil),         // 3: loop.GatewayIDsReply
+	(*GatewayIDsForDonRequest)(nil), // 4: loop.GatewayIDsForDonRequest
+	(*DonIDReply)(nil),              // 5: loop.DonIDReply
+	(*AddHandlerRequest)(nil),       // 6: loop.AddHandlerRequest
+	(*RemoveHandlerRequest)(nil),    // 7: loop.RemoveHandlerRequest
+	(*SendMessageRequest)(nil),      // 8: loop.SendMessageRequest
+	(*emptypb.Empty)(nil),           // 9: google.protobuf.Empty
 }
 var file_gateway_connector_proto_depIdxs = []int32{
-	5, // 0: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
-	6, // 1: loop.GatewayConnector.RemoveHandler:input_type -> loop.RemoveHandlerRequest
-	7, // 2: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
-	1, // 3: loop.GatewayConnector.SignMessage:input_type -> loop.SignMessageRequest
-	8, // 4: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
-	8, // 5: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
-	0, // 6: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
-	8, // 7: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
-	8, // 8: loop.GatewayConnector.RemoveHandler:output_type -> google.protobuf.Empty
-	8, // 9: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
-	2, // 10: loop.GatewayConnector.SignMessage:output_type -> loop.SignMessageReply
-	3, // 11: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
-	4, // 12: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
-	8, // 13: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
-	7, // [7:14] is the sub-list for method output_type
-	0, // [0:7] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	6,  // 0: loop.GatewayConnector.AddHandler:input_type -> loop.AddHandlerRequest
+	7,  // 1: loop.GatewayConnector.RemoveHandler:input_type -> loop.RemoveHandlerRequest
+	8,  // 2: loop.GatewayConnector.SendToGateway:input_type -> loop.SendMessageRequest
+	1,  // 3: loop.GatewayConnector.SignMessage:input_type -> loop.SignMessageRequest
+	9,  // 4: loop.GatewayConnector.GatewayIDs:input_type -> google.protobuf.Empty
+	9,  // 5: loop.GatewayConnector.DonID:input_type -> google.protobuf.Empty
+	0,  // 6: loop.GatewayConnector.AwaitConnection:input_type -> loop.GatewayIDRequest
+	4,  // 7: loop.GatewayConnector.GatewayIDsForDon:input_type -> loop.GatewayIDsForDonRequest
+	0,  // 8: loop.GatewayConnector.DonIDForGateway:input_type -> loop.GatewayIDRequest
+	9,  // 9: loop.GatewayConnector.PrimaryDonID:input_type -> google.protobuf.Empty
+	9,  // 10: loop.GatewayConnector.AddHandler:output_type -> google.protobuf.Empty
+	9,  // 11: loop.GatewayConnector.RemoveHandler:output_type -> google.protobuf.Empty
+	9,  // 12: loop.GatewayConnector.SendToGateway:output_type -> google.protobuf.Empty
+	2,  // 13: loop.GatewayConnector.SignMessage:output_type -> loop.SignMessageReply
+	3,  // 14: loop.GatewayConnector.GatewayIDs:output_type -> loop.GatewayIDsReply
+	5,  // 15: loop.GatewayConnector.DonID:output_type -> loop.DonIDReply
+	9,  // 16: loop.GatewayConnector.AwaitConnection:output_type -> google.protobuf.Empty
+	3,  // 17: loop.GatewayConnector.GatewayIDsForDon:output_type -> loop.GatewayIDsReply
+	5,  // 18: loop.GatewayConnector.DonIDForGateway:output_type -> loop.DonIDReply
+	5,  // 19: loop.GatewayConnector.PrimaryDonID:output_type -> loop.DonIDReply
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_gateway_connector_proto_init() }
@@ -431,7 +487,7 @@ func file_gateway_connector_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_gateway_connector_proto_rawDesc), len(file_gateway_connector_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

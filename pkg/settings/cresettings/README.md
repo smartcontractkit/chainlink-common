@@ -42,6 +42,8 @@ flowchart
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
+        VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
+        VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -51,6 +53,7 @@ flowchart
         GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
         GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
         GatewayHTTPActionMtlsRequestRate[\GatewayHTTPActionMtlsRequestRate/]:::rate
+        GatewayHTTPActionMtlsConcurrencyLimit([GatewayHTTPActionMtlsConcurrencyLimit]):::resource
     end
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
@@ -133,6 +136,7 @@ flowchart
         end
 
         subgraph metrics
+            direction TB
             PerWorkflow.UserMetricEnabled[/PerWorkflow.UserMetricEnabled\]:::gate
             PerWorkflow.UserMetricPayloadLimit{{PerWorkflow.UserMetricPayloadLimit}}:::bound
             PerWorkflow.UserMetricNameLengthLimit{{PerWorkflow.UserMetricNameLengthLimit}}:::bound
@@ -147,8 +151,10 @@ flowchart
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
+        PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod[/PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
+        PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
@@ -174,15 +180,18 @@ flowchart
             PerWorkflow.ChainWrite.ReportSizeLimit{{ReportSizeLimit}}:::bound
 
             subgraph EVM
+                direction LR
                 PerWorkflow.ChainWrite.EVM.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.EVM.GasLimit{{GasLimit}}:::bound
 %%                PerWorkflow.ChainWrite.EVM.TransactionGasLimit - Deprecated
             end
             subgraph Solana
+                direction LR
                 PerWorkflow.ChainWrite.Solana.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.Solana.GasLimit{{GasLimit}}:::bound
             end
             subgraph Aptos
+                direction LR
                 PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.Aptos.GasLimit{{GasLimit}}:::bound
             end
@@ -209,6 +218,7 @@ flowchart
             PerWorkflow.HTTPAction.ConnectionTimeout{{ConnectionTimeout}}:::bound
             PerWorkflow.HTTPAction.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.HTTPAction.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
+            PerWorkflow.HTTPAction.GatewayProxyDonID{{GatewayProxyDonID}}
         end
         subgraph PerWorkflow.ConfidentialHTTP
             direction LR
@@ -220,6 +230,9 @@ flowchart
         end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
+        end
+        subgraph PerWorkflow.DONTime
+            PerWorkflow.DONTime.RequestTimeout{{RequestTimeout}}:::time
         end
         subgraph PerOrg.HTTPAction
             PerOrg.HTTPAction.MtlsRateLimit{{PerOrg.HTTPAction.MtlsRateLimit}}:::bound
@@ -233,6 +246,7 @@ flowchart
         VaultIdentifierNamespaceSizeLimit{{VaultIdentifierNamespaceSizeLimit}}:::bound
         VaultPluginBatchSizeLimit{{VaultPluginBatchSizeLimit}}:::bound
         VaultRequestBatchSizeLimit{{VaultRequestBatchSizeLimit}}:::bound
+        VaultPendingQueueWriteSizeLimit{{VaultPendingQueueWriteSizeLimit}}:::bound
         VaultMaxQuerySizeLimit{{VaultMaxQuerySizeLimit}}:::bound
         VaultMaxObservationSizeLimit{{VaultMaxObservationSizeLimit}}:::bound
         VaultMaxReportsPlusPrecursorSizeLimit{{VaultMaxReportsPlusPrecursorSizeLimit}}:::bound

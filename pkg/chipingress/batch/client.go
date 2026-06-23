@@ -547,6 +547,12 @@ func newBatchClientMetrics() (batchClientMetrics, error) {
 		"chip_ingress.batch.request_size_bytes",
 		otelmetric.WithDescription("PublishBatch request size measured in bytes"),
 		otelmetric.WithUnit("By"),
+		otelmetric.WithExplicitBucketBoundaries(
+			// Buckets from 1 KiB to 10 MiB (default maxGRPCRequestSize).
+			1*1024, 4*1024, 16*1024, 64*1024, 256*1024,
+			512*1024, 1*1024*1024, 2*1024*1024, 4*1024*1024,
+			8*1024*1024, 10*1024*1024,
+		),
 	)
 	if err != nil {
 		return batchClientMetrics{}, err

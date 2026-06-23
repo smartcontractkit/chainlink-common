@@ -3279,7 +3279,6 @@ type FilterLogTriggerRequest struct {
 	ContractIdlJson []byte                 `protobuf:"bytes,4,opt,name=contract_idl_json,json=contractIdlJson,proto3" json:"contract_idl_json,omitempty"`
 	Subkeys         []*SubkeyConfig        `protobuf:"bytes,5,rep,name=subkeys,proto3" json:"subkeys,omitempty"`
 	CpiFilterConfig *CPIFilterConfig       `protobuf:"bytes,6,opt,name=cpi_filter_config,json=cpiFilterConfig,proto3,oneof" json:"cpi_filter_config,omitempty"`
-	IncludeReverted bool                   `protobuf:"varint,7,opt,name=include_reverted,json=includeReverted,proto3" json:"include_reverted,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -3354,13 +3353,6 @@ func (x *FilterLogTriggerRequest) GetCpiFilterConfig() *CPIFilterConfig {
 		return x.CpiFilterConfig
 	}
 	return nil
-}
-
-func (x *FilterLogTriggerRequest) GetIncludeReverted() bool {
-	if x != nil {
-		return x.IncludeReverted
-	}
-	return false
 }
 
 type Log struct {
@@ -3913,7 +3905,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x0fCPIFilterConfig\x12!\n" +
 	"\fdest_address\x18\x01 \x01(\fR\vdestAddress\x12\x1f\n" +
 	"\vmethod_name\x18\x02 \x01(\fR\n" +
-	"methodName\"\x8d\x03\n" +
+	"methodName\"\xe2\x02\n" +
 	"\x17FilterLogTriggerRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\fR\aaddress\x12\x1d\n" +
@@ -3921,8 +3913,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"event_name\x18\x03 \x01(\tR\teventName\x12*\n" +
 	"\x11contract_idl_json\x18\x04 \x01(\fR\x0fcontractIdlJson\x12N\n" +
 	"\asubkeys\x18\x05 \x03(\v24.capabilities.blockchain.solana.v1alpha.SubkeyConfigR\asubkeys\x12h\n" +
-	"\x11cpi_filter_config\x18\x06 \x01(\v27.capabilities.blockchain.solana.v1alpha.CPIFilterConfigH\x00R\x0fcpiFilterConfig\x88\x01\x01\x12)\n" +
-	"\x10include_reverted\x18\a \x01(\bR\x0fincludeRevertedB\x14\n" +
+	"\x11cpi_filter_config\x18\x06 \x01(\v27.capabilities.blockchain.solana.v1alpha.CPIFilterConfigH\x00R\x0fcpiFilterConfig\x88\x01\x01B\x14\n" +
 	"\x12_cpi_filter_config\"\xd4\x02\n" +
 	"\x03Log\x12\x19\n" +
 	"\bchain_id\x18\x01 \x01(\tR\achainId\x12\x1b\n" +
@@ -3990,7 +3981,7 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x17COMPARISON_OPERATOR_LTE\x10\x05*\x82\x01\n" +
 	"\x1fReceiverContractExecutionStatus\x12.\n" +
 	"*RECEIVER_CONTRACT_EXECUTION_STATUS_SUCCESS\x10\x00\x12/\n" +
-	"+RECEIVER_CONTRACT_EXECUTION_STATUS_REVERTED\x10\x012\x9b\r\n" +
+	"+RECEIVER_CONTRACT_EXECUTION_STATUS_REVERTED\x10\x012\xb7\r\n" +
 	"\x06Client\x12\xa4\x01\n" +
 	"\x16GetAccountInfoWithOpts\x12E.capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsRequest\x1aC.capabilities.blockchain.solana.v1alpha.GetAccountInfoWithOptsReply\x12\x80\x01\n" +
 	"\n" +
@@ -4004,10 +3995,12 @@ const file_capabilities_blockchain_solana_v1alpha_client_proto_rawDesc = "" +
 	"\x0eGetTransaction\x12=.capabilities.blockchain.solana.v1alpha.GetTransactionRequest\x1a;.capabilities.blockchain.solana.v1alpha.GetTransactionReply\x12|\n" +
 	"\n" +
 	"LogTrigger\x12?.capabilities.blockchain.solana.v1alpha.FilterLogTriggerRequest\x1a+.capabilities.blockchain.solana.v1alpha.Log0\x01\x12\x83\x01\n" +
-	"\vWriteReport\x12:.capabilities.blockchain.solana.v1alpha.WriteReportRequest\x1a8.capabilities.blockchain.solana.v1alpha.WriteReportReply\x1aE\x82\xb5\x18A\b\x01\x12\fsolana@1.0.0\x1a/\n" +
-	"\rChainSelector\x12\x1e\x12\x1c\n" +
+	"\vWriteReport\x12:.capabilities.blockchain.solana.v1alpha.WriteReportRequest\x1a8.capabilities.blockchain.solana.v1alpha.WriteReportReply\x1aa\x82\xb5\x18]\b\x01\x12\fsolana@1.0.0\x1aK\n" +
+	"\rChainSelector\x12:\x128\n" +
 	"\x1a\n" +
-	"\rsolana-devnet\x10\xdf\uf327\xa9\xfc\xb1\xf6\xe3\x01b\x06proto3"
+	"\rsolana-devnet\x10\xdf\uf327\xa9\xfc\xb1\xf6\xe3\x01\n" +
+	"\x1a\n" +
+	"\x0esolana-mainnet\x10\xe7\x93ߌ\xb6\x9f\xae\xdd\x01b\x06proto3"
 
 var (
 	file_capabilities_blockchain_solana_v1alpha_client_proto_rawDescOnce sync.Once

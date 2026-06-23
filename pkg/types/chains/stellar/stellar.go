@@ -34,8 +34,8 @@ const (
 	ScErrorCodeUnexpectedSize ScErrorCode = 9
 )
 
-// Client wraps Stellar RPC calls via the type/chains/stellar domain types.
-// Both methods map 1:1 to the Stellar RPC API.
+// Client wraps native Stellar RPC calls via the type/chains/stellar domain types.
+// Methods map 1:1 to the Stellar RPC API.
 type Client interface {
 	// GetLedgerEntries fetches ledger entries by XDR key (used for sequence number lookups).
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
@@ -83,8 +83,10 @@ type ReadContractRequest struct {
 	// Args holds one ScVal per contract argument.
 	// An empty slice is valid for zero-argument functions.
 	Args []ScVal
-	// LedgerSequence is the ledger to simulate against; 0 means use the latest.
-	LedgerSequence uint32
+	// SourceAccount is the G… account to simulate the call as (the invoker).
+	// It is required for contracts whose result depends on the caller, e.g. that
+	// call require_auth or branch on the invoker. Leave empty for source-insensitive reads.
+	SourceAccount string
 }
 
 // ReadContractResponse is the domain representation of a Soroban simulation result.
@@ -95,6 +97,55 @@ type ReadContractResponse struct {
 	LedgerSequence uint32
 	// Error is non-empty when the call failed.
 	Error string
+}
+
+// SubmitTransactionRequest invokes a Soroban contract via the chain's TXM pipeline.
+// The TXM handles simulation, sequence management, signing, fee bumping, and on-chain confirmation;
+// callers only need to supply the logical contract invocation parameters.
+type SubmitTransactionRequest struct {
+	// IdempotencyKey optionally identifies the transaction for deduplication and status look-up.
+	IdempotencyKey string
+	// FromAddress is the source/signer account (G… StrKey).
+	// Leave empty to use the TXM's default keystore account.
+	FromAddress string
+	// ContractID is the Soroban contract address to invoke (C… StrKey).
+	ContractID string
+	// Function is the Soroban function name to call.
+	Function string
+	// Args holds the typed Soroban function arguments.
+	Args []ScVal
+	// LedgerBoundsOffset overrides the TXM's configured ledger bounds for this transaction.
+	// Zero means use the TXM default.
+	LedgerBoundsOffset uint32
+}
+
+// TransactionStatus is the outcome of a submitted transaction.
+type TransactionStatus int
+
+const (
+	// TxFatal indicates submission failed before reaching the network (RPC, signing, validation).
+	TxFatal TransactionStatus = iota
+	// TxFailed indicates the transaction was accepted but failed on-chain.
+	TxFailed
+	// TxSuccess indicates the transaction was accepted and succeeded on-chain.
+	TxSuccess
+)
+
+// SubmitTransactionResponse carries the result of SubmitTransaction.
+type SubmitTransactionResponse struct {
+	TxStatus         TransactionStatus
+	TxHash           string
+	TxIdempotencyKey string
+	// ResultXDR is the base64-encoded transaction result XDR when available.
+	ResultXDR string
+	// ResultMetaXDR is the base64-encoded result meta XDR when available.
+	ResultMetaXDR string
+	// Error is non-empty when the transaction was accepted but failed on-chain.
+	Error string
+	// TransactionFee is the total fee charged in stroops (FeeCharged), when available.
+	TransactionFee *uint64
+	// BlockTimestamp is the ledger close time in microseconds, when available.
+	BlockTimestamp *uint64
 }
 
 // GetLatestLedgerResponse holds the current ledger state.

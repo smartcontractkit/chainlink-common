@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782221639930,
+  "lastUpdate": 1782238036485,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52140,6 +52140,66 @@ window.BENCHMARK_DATA = {
             "value": 140826,
             "unit": "ns/op",
             "extra": "8607 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a695c96e19d9c6aa810259f533e8b6c378ba56a3",
+          "message": "Allow a prehook for restricting workflow execution behaviour (#2182)\n\n* Allow a prehook for restricting workflow execution behaviour\n\n* Apply Copilot PR feedback\n\n* Regenerate code\n\n* Fix ordering if there are multiple secrets.",
+          "timestamp": "2026-06-23T17:54:13Z",
+          "tree_id": "5040f61247d17fa39ae87519a20fad6bafaae539",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a695c96e19d9c6aa810259f533e8b6c378ba56a3"
+        },
+        "date": 1782238034115,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 823.5,
+            "unit": "ns/op",
+            "extra": "1447480 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 67808,
+            "unit": "ns/op",
+            "extra": "17410 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 420.7,
+            "unit": "ns/op",
+            "extra": "2748350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 69927,
+            "unit": "ns/op",
+            "extra": "16999 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25143,
+            "unit": "ns/op",
+            "extra": "48387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 111957,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

@@ -58,24 +58,25 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:     Bool(true),
 	VaultJWTAuthEnabled:               Bool(false),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
-	VaultOrgIdAsSecretOwnerEnabled:           Bool(false),
-	PropagateOrgIDInRequestMetadata:          Bool(false),
-	VaultBase64EncodingEnabled:               Bool(false),
-	VaultForceEmptyOCRRounds:                 Bool(false),
-	VaultOptimizationsEnabled:                Bool(false),
-	VaultOwnerAddressCanonicalizationEnabled: Bool(false),
-	VaultSignedResponseRequestIDEnabled:      Bool(false),
-	GatewayHTTPGlobalRate:                    Rate(rate.Limit(500), 500),
-	GatewayHTTPPerNodeRate:                   Rate(rate.Limit(100), 100),
-	GatewayConfidentialRelayGlobalRate:       Rate(rate.Limit(50), 10),
-	GatewayConfidentialRelayPerNodeRate:      Rate(rate.Limit(10), 10),
-	GatewayHTTPActionMtlsRequestRate:         Rate(rate.Every(30*time.Second), 0),
-	GatewayHTTPActionMtlsConcurrencyLimit:    Int(50),
-	TriggerRegistrationStatusUpdateTimeout:   Duration(0 * time.Second),
-	BaseTriggerRetryInterval:                 Duration(30 * time.Second),
-	BaseTriggerMaxRetries:                    Int(20),
-	BaseTriggerPruneAge:                      Duration(24 * time.Hour),
-	BaseTriggerMaxSendsPerTick:               Int(20),
+	VaultOrgIdAsSecretOwnerEnabled:            Bool(false),
+	PropagateOrgIDInRequestMetadata:           Bool(false),
+	VaultBase64EncodingEnabled:                Bool(false),
+	VaultForceEmptyOCRRounds:                  Bool(false),
+	VaultOptimizationsEnabled:                 Bool(false),
+	VaultGetSecretsShareLabelConsensusEnabled: Bool(false),
+	VaultOwnerAddressCanonicalizationEnabled:  Bool(false),
+	VaultSignedResponseRequestIDEnabled:       Bool(false),
+	GatewayHTTPGlobalRate:                     Rate(rate.Limit(500), 500),
+	GatewayHTTPPerNodeRate:                    Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:        Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:       Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:          Rate(rate.Every(30*time.Second), 0),
+	GatewayHTTPActionMtlsConcurrencyLimit:     Int(50),
+	TriggerRegistrationStatusUpdateTimeout:    Duration(0 * time.Second),
+	BaseTriggerRetryInterval:                  Duration(30 * time.Second),
+	BaseTriggerMaxRetries:                     Int(20),
+	BaseTriggerPruneAge:                       Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:                Int(20),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -270,25 +271,26 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                            Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit        Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit          Setting[config.Size]
-	GatewayVaultManagementEnabled            Setting[bool]
-	VaultJWTAuthEnabled                      Setting[bool]
-	VaultOrgIdAsSecretOwnerEnabled           Setting[bool] // Deprecated
-	PropagateOrgIDInRequestMetadata          Setting[bool]
-	VaultBase64EncodingEnabled               Setting[bool]
-	VaultForceEmptyOCRRounds                 Setting[bool]
-	VaultOptimizationsEnabled                Setting[bool]
-	VaultOwnerAddressCanonicalizationEnabled Setting[bool]
-	VaultSignedResponseRequestIDEnabled      Setting[bool]
-	GatewayHTTPGlobalRate                    Setting[config.Rate]
-	GatewayHTTPPerNodeRate                   Setting[config.Rate]
-	GatewayConfidentialRelayGlobalRate       Setting[config.Rate]
-	GatewayConfidentialRelayPerNodeRate      Setting[config.Rate]
-	GatewayHTTPActionMtlsRequestRate         Setting[config.Rate]
-	GatewayHTTPActionMtlsConcurrencyLimit    Setting[int] `unit:"{request}"`
-	TriggerRegistrationStatusUpdateTimeout   Setting[time.Duration]
+	WorkflowLimit                             Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit         Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit           Setting[config.Size]
+	GatewayVaultManagementEnabled             Setting[bool]
+	VaultJWTAuthEnabled                       Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled            Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata           Setting[bool]
+	VaultBase64EncodingEnabled                Setting[bool]
+	VaultForceEmptyOCRRounds                  Setting[bool]
+	VaultOptimizationsEnabled                 Setting[bool]
+	VaultGetSecretsShareLabelConsensusEnabled Setting[bool]
+	VaultOwnerAddressCanonicalizationEnabled  Setting[bool]
+	VaultSignedResponseRequestIDEnabled       Setting[bool]
+	GatewayHTTPGlobalRate                     Setting[config.Rate]
+	GatewayHTTPPerNodeRate                    Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate        Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate       Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate          Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit     Setting[int] `unit:"{request}"`
+	TriggerRegistrationStatusUpdateTimeout    Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
@@ -380,12 +382,12 @@ type Workflows struct {
 	Secrets          secrets
 	DONTime          donTime
 
-	FeatureMultiTriggerExecutionIDsActiveAt           Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod       Setting[Range[config.Timestamp]]
+	FeatureMultiTriggerExecutionIDsActiveAt                 Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod             Setting[Range[config.Timestamp]]
 	FeatureUseSingleDONTimeProviderPerExecutionActivePeriod Setting[Range[config.Timestamp]]
-	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]]
-	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]]
-	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
+	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
+	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

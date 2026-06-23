@@ -9,6 +9,7 @@
 	"VaultBase64EncodingEnabled": "false",
 	"VaultForceEmptyOCRRounds": "false",
 	"VaultOptimizationsEnabled": "false",
+	"VaultGetSecretsShareLabelConsensusEnabled": "false",
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
 	"VaultSignedResponseRequestIDEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",

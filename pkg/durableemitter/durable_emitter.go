@@ -2,6 +2,8 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -369,7 +371,13 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return err
 		}
 
-		event, err := chipingress.NewEvent(sourceDomain, entityType, body, parseAttrs(attrKVs...))
+		attrs := parseAttrs(attrKVs...)
+		if key, _ := attrs[chipingress.IdempotencyKeyAttr].(string); key == "" {
+			sum := sha256.Sum256(body)
+			attrs[chipingress.IdempotencyKeyAttr] = hex.EncodeToString(sum[:])
+		}
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)
 		if err != nil {
 			emitFail()
 			return err

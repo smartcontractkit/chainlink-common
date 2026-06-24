@@ -9,24 +9,85 @@ package loop.stellar;
 service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
-  rpc ReadContract(ReadContractRequest) returns (ReadContractResponse);
+  rpc SimulateTransaction(SimulateTransactionRequest) returns (SimulateTransactionResponse);
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 }
 
-// ReadContractRequest invokes a read-only (simulation) Soroban contract function.
-message ReadContractRequest {
-  string                                           contract_id     = 1; // Stellar contract address (C… StrKey)
-  string                                           function        = 2; // Soroban function name
-  repeated capabilities.blockchain.stellar.v1alpha.ScVal args      = 3; // Typed Soroban arguments
-  string                                           source_account  = 4; // Account (G… StrKey) to simulate the call as; empty uses a deterministic placeholder
+// SimulateTransactionRequest builds a synthetic single-operation Soroban
+// InvokeContract transaction and simulates it without submitting it.
+//
+// This is not a generic Stellar transaction-envelope simulator. It is a
+// contract-call simulator expressed as contract_id + function + args.
+message SimulateTransactionRequest {
+  string contract_id = 1; // Stellar contract address (C… StrKey)
+  string function = 2; // Soroban function name
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal args = 3; // Typed Soroban arguments
+
+  // Source account (G… StrKey) used as the synthetic transaction and operation source.
+  // Empty means the service uses its deterministic placeholder/default source.
+  //
+  // This is not necessarily the same address as a contract Address argument that
+  // may be checked via require_auth.
+  string source_account = 4;
+
+  // Optional Stellar RPC simulation auth mode.
+  //
+  // Valid values should map to the underlying RPC protocol values:
+  //   ""                    = service default, recommended to default to "record"
+  //   "record"              = record required auth entries
+  //   "enforce"             = enforce existing auth entries
+  //   "record_allow_nonroot" = record non-root auth entries where supported
+  string auth_mode = 5;
+
+  // Optional simulation resource configuration.
+  SimulateResourceConfig resource_config = 6;
 }
 
-// ReadContractResponse carries the return value of the simulated call.
-message ReadContractResponse {
-  string                                         result          = 1; // Return value (only valid when error is empty)
-  uint32                                         ledger_sequence = 2; // Ledger actually used for the simulation
-  string                                         error           = 3; // Non-empty on failure
+message SimulateResourceConfig {
+  uint64 instruction_leeway = 1;
+}
+
+// SimulateTransactionResponse carries the simulated outcome of the synthetic
+// Soroban contract invocation.
+message SimulateTransactionResponse {
+  // Ledger actually used for the simulation.
+  uint32 ledger_sequence = 1;
+
+  // True when the transport request succeeded and the simulation itself did not
+  // return a host/contract error.
+  bool success = 2;
+
+  // Non-empty when simulation failed at the host/contract layer.
+  string error = 3;
+
+  // Base64 XDR ScVal return value, if present.
+  //
+  // Empty is valid for void/unit-returning contract calls.
+  string return_value_xdr = 4;
+
+  // Base64 XDR SorobanAuthorizationEntry values returned by simulation,
+  // typically populated when auth_mode is "record".
+  repeated string required_auth_xdr = 5;
+
+  // Base64 XDR diagnostic/event values returned by simulation, when available.
+  repeated string events_xdr = 6;
+
+  // Base64 XDR SorobanTransactionData returned by simulation.
+  // Useful if a caller later wants to assemble a submit-ready transaction.
+  string transaction_data_xdr = 7;
+
+  // Minimum resource fee returned by simulation.
+  int64 min_resource_fee = 8;
+
+  // Restore preamble returned by simulation when archived ledger entries must be
+  // restored before this invocation can be submitted.
+  SimulateRestorePreamble restore_preamble = 9;
+}
+
+message SimulateRestorePreamble {
+  string transaction_data_xdr = 1;
+  int64 min_resource_fee = 2;
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.

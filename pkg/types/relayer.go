@@ -652,13 +652,13 @@ var _ StellarService = &UnimplementedStellarService{}
 // don't immediately break downstream packages on dependency bumps.
 type UnimplementedStellarService struct{}
 
-func (u *UnimplementedStellarService) GetEvents(ctx context.Context, req stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
-	return stellar.GetEventsResponse{}, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
-
+func (u *UnimplementedStellarService) SimulateTransaction(_ context.Context, _ stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
+	return stellar.SimulateTransactionResponse{}, status.Errorf(codes.Unimplemented, "method SimulateTransaction not implemented")
 }
 
-func (u *UnimplementedStellarService) ReadContract(_ context.Context, _ stellar.ReadContractRequest) (stellar.ReadContractResponse, error) {
-	return stellar.ReadContractResponse{}, status.Errorf(codes.Unimplemented, "method ReadContract not implemented")
+func (u *UnimplementedStellarService) GetEvents(_ context.Context, req stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
+	return stellar.GetEventsResponse{}, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
+
 }
 
 func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stellar.GetLedgerEntriesRequest) (stellar.GetLedgerEntriesResponse, error) {

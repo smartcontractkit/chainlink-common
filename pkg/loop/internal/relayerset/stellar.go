@@ -29,8 +29,8 @@ func (sc *stellarClient) GetLatestLedger(ctx context.Context, in *emptypb.Empty,
 	return sc.client.GetLatestLedger(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
-func (sc *stellarClient) ReadContract(ctx context.Context, in *stelpb.ReadContractRequest, opts ...grpc.CallOption) (*stelpb.ReadContractResponse, error) {
-	return sc.client.ReadContract(appendRelayID(ctx, sc.relayID), in, opts...)
+func (sc *stellarClient) SimulateTransaction(ctx context.Context, in *stelpb.SimulateTransactionRequest, opts ...grpc.CallOption) (*stelpb.SimulateTransactionResponse, error) {
+	return sc.client.SimulateTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
 func (sc *stellarClient) GetEvents(ctx context.Context, in *stelpb.GetEventsRequest, opts ...grpc.CallOption) (*stelpb.GetEventsResponse, error) {
@@ -105,25 +105,20 @@ func (ss *stellarServer) SubmitTransaction(ctx context.Context, req *stelpb.Subm
 	return pResp, nil
 }
 
-func (ss *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContractRequest) (*stelpb.ReadContractResponse, error) {
+func (ss *stellarServer) SimulateTransaction(ctx context.Context, req *stelpb.SimulateTransactionRequest) (*stelpb.SimulateTransactionResponse, error) {
 	svc, err := ss.parent.getStellarService(ctx)
 	if err != nil {
 		return nil, err
 	}
-	dReq, err := stelpb.ConvertReadContractRequestFromProto(req)
+	dReq, err := stelpb.ConvertSimulateTransactionRequestFromProto(req)
 	if err != nil {
-		return nil, fmt.Errorf("invalid ReadContract request: %w", err)
+		return nil, fmt.Errorf("invalid simulate transaction request: %w", err)
 	}
-	dResp, err := svc.ReadContract(ctx, dReq)
+	dResp, err := svc.SimulateTransaction(ctx, dReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-
-	return &stelpb.ReadContractResponse{
-		Result:         dResp.Result,
-		LedgerSequence: dResp.LedgerSequence,
-		Error:          dResp.Error,
-	}, nil
+	return stelpb.ConvertSimulateTransactionResponseToProto(dResp), nil
 }
 
 func (ss *stellarServer) GetEvents(ctx context.Context, req *stelpb.GetEventsRequest) (*stelpb.GetEventsResponse, error) {

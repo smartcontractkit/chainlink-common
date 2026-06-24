@@ -166,12 +166,16 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 	}, nil
 }
 
-func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadContractRequest, error) {
+// ConvertSimulateTransactionRequestToProto converts a domain SimulateTransactionRequest to proto.
+func ConvertSimulateTransactionRequestToProto(req stellar.SimulateTransactionRequest) (*SimulateTransactionRequest, error) {
 	if req.ContractID == "" {
 		return nil, errors.New("contractID is required")
 	}
 	if req.Function == "" {
 		return nil, errors.New("function is required")
+	}
+	if err := validateSimulateAuthMode(req.AuthMode); err != nil {
+		return nil, err
 	}
 
 	args, err := scValsToProto("args", req.Args)
@@ -179,36 +183,67 @@ func ConvertReadContractRequestToProto(req stellar.ReadContractRequest) (*ReadCo
 		return nil, err
 	}
 
-	return &ReadContractRequest{
-		ContractId:    req.ContractID,
-		Function:      req.Function,
-		Args:          args,
-		SourceAccount: req.SourceAccount,
+	return &SimulateTransactionRequest{
+		ContractId:     req.ContractID,
+		Function:       req.Function,
+		Args:           args,
+		SourceAccount:  req.SourceAccount,
+		AuthMode:       string(req.AuthMode),
+		ResourceConfig: simulateResourceConfigToProto(req.ResourceConfig),
 	}, nil
 }
 
-func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellar.ReadContractRequest, error) {
+// ConvertSimulateTransactionRequestFromProto converts proto SimulateTransactionRequest to domain.
+func ConvertSimulateTransactionRequestFromProto(p *SimulateTransactionRequest) (stellar.SimulateTransactionRequest, error) {
 	if p == nil {
-		return stellar.ReadContractRequest{}, errors.New("readContractRequest is nil")
+		return stellar.SimulateTransactionRequest{}, errors.New("simulate contract request is nil")
 	}
 	if p.GetContractId() == "" {
-		return stellar.ReadContractRequest{}, errors.New("contractID is required")
+		return stellar.SimulateTransactionRequest{}, errors.New("contractID is required")
 	}
 	if p.GetFunction() == "" {
-		return stellar.ReadContractRequest{}, errors.New("function is required")
+		return stellar.SimulateTransactionRequest{}, errors.New("function is required")
+	}
+
+	authMode := stellar.SimulateAuthMode(p.GetAuthMode())
+	if err := validateSimulateAuthMode(authMode); err != nil {
+		return stellar.SimulateTransactionRequest{}, err
 	}
 
 	args, err := scValsFromProto("args", p.GetArgs())
 	if err != nil {
-		return stellar.ReadContractRequest{}, err
+		return stellar.SimulateTransactionRequest{}, err
 	}
 
-	return stellar.ReadContractRequest{
-		ContractID:    p.GetContractId(),
-		Function:      p.GetFunction(),
-		SourceAccount: p.GetSourceAccount(),
-		Args:          args,
+	return stellar.SimulateTransactionRequest{
+		ContractID:     p.GetContractId(),
+		Function:       p.GetFunction(),
+		Args:           args,
+		SourceAccount:  p.GetSourceAccount(),
+		AuthMode:       authMode,
+		ResourceConfig: simulateResourceConfigFromProto(p.GetResourceConfig()),
 	}, nil
+}
+
+func ConvertSimulateTransactionResponseToProto(resp stellar.SimulateTransactionResponse) *SimulateTransactionResponse {
+	protoResp := &SimulateTransactionResponse{
+		LedgerSequence:     resp.LedgerSequence,
+		Success:            resp.Success,
+		Error:              resp.Error,
+		ReturnValueXdr:     resp.ReturnValueXDR,
+		RequiredAuthXdr:    resp.RequiredAuthXDR,
+		EventsXdr:          resp.EventsXDR,
+		TransactionDataXdr: resp.TransactionDataXDR,
+		MinResourceFee:     resp.MinResourceFee,
+	}
+
+	if resp.RestorePreamble != nil {
+		protoResp.RestorePreamble = &SimulateRestorePreamble{
+			TransactionDataXdr: resp.RestorePreamble.TransactionDataXDR,
+			MinResourceFee:     resp.RestorePreamble.MinResourceFee,
+		}
+	}
+	return protoResp
 }
 
 func ConvertSubmitTransactionRequestToProto(req stellar.SubmitTransactionRequest) (*SubmitTransactionRequest, error) {
@@ -714,5 +749,37 @@ func validateTopicWildcard(w string) error {
 		return nil
 	default:
 		return fmt.Errorf("wildcard must be '*' or '**', got %q", w)
+	}
+}
+
+func simulateResourceConfigToProto(c *stellar.SimulateResourceConfig) *SimulateResourceConfig {
+	if c == nil {
+		return nil
+	}
+
+	return &SimulateResourceConfig{
+		InstructionLeeway: c.InstructionLeeway,
+	}
+}
+
+func simulateResourceConfigFromProto(c *SimulateResourceConfig) *stellar.SimulateResourceConfig {
+	if c == nil {
+		return nil
+	}
+
+	return &stellar.SimulateResourceConfig{
+		InstructionLeeway: c.GetInstructionLeeway(),
+	}
+}
+
+func validateSimulateAuthMode(mode stellar.SimulateAuthMode) error {
+	switch mode {
+	case "",
+		stellar.SimulateAuthModeRecord,
+		stellar.SimulateAuthModeEnforce,
+		stellar.SimulateAuthModeRecordAllowNonroot:
+		return nil
+	default:
+		return fmt.Errorf("unsupported auth mode %q", mode)
 	}
 }

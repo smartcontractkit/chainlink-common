@@ -2,6 +2,7 @@ package relayer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -71,20 +72,39 @@ func (sc *StellarClient) GetEvents(ctx context.Context, req stellar.GetEventsReq
 	return resp, nil
 }
 
-func (sc *StellarClient) ReadContract(ctx context.Context, req stellar.ReadContractRequest) (stellar.ReadContractResponse, error) {
-	pReq, err := stelpb.ConvertReadContractRequestToProto(req)
+func (sc *StellarClient) SimulateTransaction(ctx context.Context, req stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
+	pReq, err := stelpb.ConvertSimulateTransactionRequestToProto(req)
 	if err != nil {
-		return stellar.ReadContractResponse{}, fmt.Errorf("invalid ReadContract request: %w", err)
+		return stellar.SimulateTransactionResponse{}, fmt.Errorf("invalid SimulateTransaction request: %w", err)
 	}
-	pResp, err := sc.grpcClient.ReadContract(ctx, pReq)
+	protoResp, err := sc.grpcClient.SimulateTransaction(ctx, pReq)
 	if err != nil {
-		return stellar.ReadContractResponse{}, net.WrapRPCErr(err)
+		return stellar.SimulateTransactionResponse{}, net.WrapRPCErr(err)
 	}
-	return stellar.ReadContractResponse{
-		Result:         pResp.Result,
-		LedgerSequence: pResp.LedgerSequence,
-		Error:          pResp.Error,
-	}, nil
+
+	if protoResp == nil {
+		return stellar.SimulateTransactionResponse{}, errors.New("simulate transaction reply is nil")
+	}
+
+	resp := stellar.SimulateTransactionResponse{
+		LedgerSequence:     protoResp.GetLedgerSequence(),
+		Success:            protoResp.GetSuccess(),
+		Error:              protoResp.GetError(),
+		ReturnValueXDR:     protoResp.GetReturnValueXdr(),
+		RequiredAuthXDR:    protoResp.GetRequiredAuthXdr(),
+		EventsXDR:          protoResp.GetEventsXdr(),
+		TransactionDataXDR: protoResp.GetTransactionDataXdr(),
+		MinResourceFee:     protoResp.GetMinResourceFee(),
+	}
+
+	if protoResp.GetRestorePreamble() != nil {
+		resp.RestorePreamble = &stellar.SimulateRestorePreamble{
+			TransactionDataXDR: protoResp.GetTransactionDataXdr(),
+			MinResourceFee:     protoResp.GetMinResourceFee(),
+		}
+	}
+
+	return resp, nil
 }
 
 func (sc *StellarClient) SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
@@ -146,20 +166,18 @@ func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (
 	return pResp, nil
 }
 
-func (s *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContractRequest) (*stelpb.ReadContractResponse, error) {
-	dReq, err := stelpb.ConvertReadContractRequestFromProto(req)
+func (s *stellarServer) SimulateTransaction(ctx context.Context, req *stelpb.SimulateTransactionRequest) (*stelpb.SimulateTransactionResponse, error) {
+	dReq, err := stelpb.ConvertSimulateTransactionRequestFromProto(req)
 	if err != nil {
-		return nil, fmt.Errorf("invalid ReadContract request: %w", err)
+		return nil, fmt.Errorf("invalid simulate transaction request: %w", err)
 	}
-	dResp, err := s.impl.ReadContract(ctx, dReq)
+
+	resp, err := s.impl.SimulateTransaction(ctx, dReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return &stelpb.ReadContractResponse{
-		Result:         dResp.Result,
-		LedgerSequence: dResp.LedgerSequence,
-		Error:          dResp.Error,
-	}, nil
+
+	return stelpb.ConvertSimulateTransactionResponseToProto(resp), nil
 }
 
 func (s *stellarServer) GetEvents(ctx context.Context, req *stelpb.GetEventsRequest) (*stelpb.GetEventsResponse, error) {

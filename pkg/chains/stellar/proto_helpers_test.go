@@ -139,41 +139,67 @@ func TestConvertGetLatestLedgerResponseFromProto_Nil(t *testing.T) {
 	require.EqualError(t, err, "get latest ledger response is nil")
 }
 
-func TestConvertReadContractRequest_RoundTrip(t *testing.T) {
+func TestConvertSimulateTransactionRequest_RoundTrip(t *testing.T) {
 	boolVal := true
 	u32 := uint32(77)
 	sym := "hello"
-	domain := stellartypes.ReadContractRequest{
+	domain := stellartypes.SimulateTransactionRequest{
 		ContractID: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
-		Function:   "transfer",
+		Function:   "report",
 		Args: []stellartypes.ScVal{
 			{Type: stellartypes.ScValTypeBool, Bool: &boolVal},
 			{Type: stellartypes.ScValTypeU32, U32: &u32},
 			{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
 		},
 		SourceAccount: "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H",
+		AuthMode:      stellartypes.SimulateAuthModeRecord,
+		ResourceConfig: &stellartypes.SimulateResourceConfig{
+			InstructionLeeway: 10_000,
+		},
 	}
 
-	proto, err := conv.ConvertReadContractRequestToProto(domain)
+	proto, err := conv.ConvertSimulateTransactionRequestToProto(domain)
 	require.NoError(t, err)
+	require.Equal(t, domain.ContractID, proto.GetContractId())
+	require.Equal(t, domain.Function, proto.GetFunction())
 	require.Len(t, proto.GetArgs(), 3)
+	require.Equal(t, string(stellartypes.SimulateAuthModeRecord), proto.GetAuthMode())
+	require.NotNil(t, proto.GetResourceConfig())
+	require.Equal(t, uint64(10_000), proto.GetResourceConfig().GetInstructionLeeway())
 
-	got, err := conv.ConvertReadContractRequestFromProto(proto)
+	got, err := conv.ConvertSimulateTransactionRequestFromProto(proto)
 	require.NoError(t, err)
 	require.Equal(t, domain, got)
 }
 
-func TestConvertReadContractRequest_RoundTrip_RichArgs(t *testing.T) {
-	// End-to-end coverage of the chains-level pipeline with a mix of ScVal shapes:
-	// address (account), nested vec-of-map, and contract-instance-with-storage.
+func TestConvertSimulateTransactionRequest_RoundTrip_NoArgsNoAuthModeNoResourceConfig(t *testing.T) {
+	domain := stellartypes.SimulateTransactionRequest{
+		ContractID: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+		Function:   "ping",
+	}
+
+	proto, err := conv.ConvertSimulateTransactionRequestToProto(domain)
+	require.NoError(t, err)
+	require.Empty(t, proto.GetArgs())
+	require.Empty(t, proto.GetAuthMode())
+	require.Nil(t, proto.GetResourceConfig())
+
+	got, err := conv.ConvertSimulateTransactionRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertSimulateTransactionRequest_RoundTrip_RichArgs(t *testing.T) {
 	accountBytes := make([]byte, 32)
 	for i := range accountBytes {
 		accountBytes[i] = 0x11
 	}
+
 	wasmHash := make([]byte, 32)
 	for i := range wasmHash {
 		wasmHash[i] = 0x22
 	}
+
 	addrArg := stellartypes.ScVal{
 		Type: stellartypes.ScValTypeAddress,
 		Address: &stellartypes.ScAddress{
@@ -181,6 +207,7 @@ func TestConvertReadContractRequest_RoundTrip_RichArgs(t *testing.T) {
 			AccountID: accountBytes,
 		},
 	}
+
 	mapKey := "amount"
 	mapVal := uint64(1_000_000)
 	innerMap := &stellartypes.ScVal{
@@ -192,10 +219,12 @@ func TestConvertReadContractRequest_RoundTrip_RichArgs(t *testing.T) {
 			},
 		}},
 	}
+
 	vecArg := stellartypes.ScVal{
 		Type: stellartypes.ScValTypeVec,
 		Vec:  &stellartypes.ScVec{Values: []*stellartypes.ScVal{innerMap}},
 	}
+
 	slot := "slot"
 	slotVal := uint32(7)
 	instanceArg := stellartypes.ScVal{
@@ -214,55 +243,112 @@ func TestConvertReadContractRequest_RoundTrip_RichArgs(t *testing.T) {
 		},
 	}
 
-	domain := stellartypes.ReadContractRequest{
+	domain := stellartypes.SimulateTransactionRequest{
 		ContractID: "C_RICH",
 		Function:   "do_work",
 		Args:       []stellartypes.ScVal{addrArg, vecArg, instanceArg},
+		AuthMode:   stellartypes.SimulateAuthModeRecordAllowNonroot,
 	}
 
-	proto, err := conv.ConvertReadContractRequestToProto(domain)
+	proto, err := conv.ConvertSimulateTransactionRequestToProto(domain)
 	require.NoError(t, err)
 	require.Len(t, proto.GetArgs(), 3)
+	require.Equal(t, string(stellartypes.SimulateAuthModeRecordAllowNonroot), proto.GetAuthMode())
 
-	got, err := conv.ConvertReadContractRequestFromProto(proto)
+	got, err := conv.ConvertSimulateTransactionRequestFromProto(proto)
 	require.NoError(t, err)
 	require.Equal(t, domain, got)
 }
 
-func TestConvertReadContractRequestFromProto_Nil(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(nil)
-	require.EqualError(t, err, "readContractRequest is nil")
+func TestConvertSimulateTransactionRequestFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestFromProto(nil)
+	require.EqualError(t, err, "simulate transaction request is nil")
 }
 
-func TestConvertReadContractRequestFromProto_MissingContractID(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(&conv.ReadContractRequest{Function: "fn"})
+func TestConvertSimulateTransactionRequestFromProto_MissingContractID(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestFromProto(&conv.SimulateTransactionRequest{Function: "fn"})
 	require.EqualError(t, err, "contractID is required")
 }
 
-func TestConvertReadContractRequestFromProto_MissingFunction(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestFromProto(&conv.ReadContractRequest{ContractId: "C123"})
+func TestConvertSimulateTransactionRequestFromProto_MissingFunction(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestFromProto(&conv.SimulateTransactionRequest{ContractId: "C123"})
 	require.EqualError(t, err, "function is required")
 }
 
-func TestConvertReadContractRequestToProto_MissingContractID(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestToProto(stellartypes.ReadContractRequest{Function: "fn"})
+func TestConvertSimulateTransactionRequestFromProto_UnsupportedAuthMode(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestFromProto(&conv.SimulateTransactionRequest{
+		ContractId: "C123",
+		Function:   "fn",
+		AuthMode:   "unsupported",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported auth mode")
+}
+
+func TestConvertSimulateTransactionRequestToProto_MissingContractID(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestToProto(stellartypes.SimulateTransactionRequest{Function: "fn"})
 	require.EqualError(t, err, "contractID is required")
 }
 
-func TestConvertReadContractRequestToProto_MissingFunction(t *testing.T) {
-	_, err := conv.ConvertReadContractRequestToProto(stellartypes.ReadContractRequest{ContractID: "C_X"})
+func TestConvertSimulateTransactionRequestToProto_MissingFunction(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestToProto(stellartypes.SimulateTransactionRequest{ContractID: "C_X"})
 	require.EqualError(t, err, "function is required")
 }
 
-func TestConvertReadContractRequestToProto_BadArg(t *testing.T) {
-	// A ScVal with a nil arm pointer triggers an error that must be wrapped as args[0].
-	_, err := conv.ConvertReadContractRequestToProto(stellartypes.ReadContractRequest{
+func TestConvertSimulateTransactionRequestToProto_UnsupportedAuthMode(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestToProto(stellartypes.SimulateTransactionRequest{
+		ContractID: "C_X",
+		Function:   "fn",
+		AuthMode:   "unsupported",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "unsupported auth mode")
+}
+
+func TestConvertSimulateTransactionRequestToProto_BadArg(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestToProto(stellartypes.SimulateTransactionRequest{
 		ContractID: "C_X",
 		Function:   "fn",
 		Args:       []stellartypes.ScVal{{Type: stellartypes.ScValTypeBool}}, // Bool is nil
 	})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "args[0]")
+}
+
+func TestConvertSimulateTransactionRequestFromProto_BadArg(t *testing.T) {
+	_, err := conv.ConvertSimulateTransactionRequestFromProto(&conv.SimulateTransactionRequest{
+		ContractId: "C_X",
+		Function:   "fn",
+		Args:       []*scval.ScVal{{}}, // missing oneof value
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "args[0]")
+}
+
+func TestConvertSubmitTransactionResponse_RoundTrip_WithOptionalFeeAndTimestamp(t *testing.T) {
+	fee := uint64(123456)
+	blockTimestamp := uint64(1_700_000_000_000_000)
+
+	domain := &stellartypes.SubmitTransactionResponse{
+		TxStatus:         stellartypes.TxSuccess,
+		TxHash:           "hash-with-fee",
+		TxIdempotencyKey: "idem-with-fee",
+		ResultXDR:        base64.StdEncoding.EncodeToString([]byte("result")),
+		ResultMetaXDR:    base64.StdEncoding.EncodeToString([]byte("meta")),
+		TransactionFee:   &fee,
+		BlockTimestamp:   &blockTimestamp,
+	}
+
+	proto, err := conv.ConvertSubmitTransactionResponseToProto(domain)
+	require.NoError(t, err)
+	require.NotNil(t, proto.TransactionFee)
+	require.Equal(t, fee, proto.GetTransactionFee())
+	require.NotNil(t, proto.BlockTimestamp)
+	require.Equal(t, blockTimestamp, proto.GetBlockTimestamp())
+
+	got, err := conv.ConvertSubmitTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
 }
 
 // ---- ConvertLedgerEntryResultToProto invalid XDR fields ---------------------

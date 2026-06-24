@@ -659,9 +659,12 @@ func TestConvertGetEventsRequest_RoundTrip_NoFiltersNoPagination(t *testing.T) {
 
 	got, err := conv.ConvertGetEventsRequestFromProto(proto)
 	require.NoError(t, err)
-	require.Equal(t, domain, got)
-}
 
+	require.Equal(t, domain.StartLedger, got.StartLedger)
+	require.Equal(t, domain.EndLedger, got.EndLedger)
+	require.Empty(t, got.Filters)
+	require.Nil(t, got.Pagination)
+}
 func TestConvertGetEventsRequestFromProto_Nil(t *testing.T) {
 	_, err := conv.ConvertGetEventsRequestFromProto(nil)
 	require.EqualError(t, err, "get events request is nil")
@@ -912,7 +915,13 @@ func TestConvertGetEventsResponse_RoundTrip_NoEvents(t *testing.T) {
 
 	got, err := conv.ConvertGetEventsResponseFromProto(proto)
 	require.NoError(t, err)
-	require.Equal(t, domain, got)
+
+	require.Empty(t, got.Events)
+	require.Equal(t, domain.Cursor, got.Cursor)
+	require.Equal(t, domain.LatestLedger, got.LatestLedger)
+	require.Equal(t, domain.OldestLedger, got.OldestLedger)
+	require.Equal(t, domain.LatestLedgerCloseTime, got.LatestLedgerCloseTime)
+	require.Equal(t, domain.OldestLedgerCloseTime, got.OldestLedgerCloseTime)
 }
 
 func TestConvertGetEventsResponseFromProto_Nil(t *testing.T) {

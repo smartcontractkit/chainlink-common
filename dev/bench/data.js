@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782238036485,
+  "lastUpdate": 1782301720141,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52200,6 +52200,66 @@ window.BENCHMARK_DATA = {
             "value": 111957,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tejaswi.nadahalli@smartcontract.com",
+            "name": "Tejaswi Nadahalli",
+            "username": "nadahalli"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "127757c72bf60271ef9f1e167cb445e3ec99bbe7",
+          "message": "pkg/settings/cresettings: add ConfidentialWorkflows.Enabled feature gate (#2165)\n\n* pkg/settings/cresettings: add ConfidentialWorkflows.Enabled feature gate\n\nAdds PerWorkflow.ConfidentialWorkflows.Enabled (Setting[bool], default\ntrue) so the confidential-workflows capability can be toggled in\nproduction via the scoped settings registry, overridable at\nworkflow/owner/org/global. Regenerated golden defaults and README.\n\n* pkg/settings/cresettings: default ConfidentialWorkflows.Enabled to false\n\nOff by default; enable per workflow/owner/org/global to roll out\nconfidential workflows in production. Addresses review feedback.",
+          "timestamp": "2026-06-24T11:36:40Z",
+          "tree_id": "3225da91b063362036c2f2869d37fb400ec5ed17",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/127757c72bf60271ef9f1e167cb445e3ec99bbe7"
+        },
+        "date": 1782301717924,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 273,
+            "unit": "ns/op",
+            "extra": "4398585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 59639,
+            "unit": "ns/op",
+            "extra": "20049 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 294.1,
+            "unit": "ns/op",
+            "extra": "4039441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58503,
+            "unit": "ns/op",
+            "extra": "20521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 23046,
+            "unit": "ns/op",
+            "extra": "53097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 99655,
+            "unit": "ns/op",
+            "extra": "12075 times\n4 procs"
           }
         ]
       }

@@ -83,7 +83,7 @@ func (sc *StellarClient) SimulateTransaction(ctx context.Context, req stellar.Si
 	}
 
 	if protoResp == nil {
-		return stellar.SimulateTransactionResponse{}, errors.New("simulate transaction reply is nil")
+		return stellar.SimulateTransactionResponse{}, errors.New("simulateTransaction reply is nil")
 	}
 
 	resp := stellar.SimulateTransactionResponse{
@@ -99,8 +99,8 @@ func (sc *StellarClient) SimulateTransaction(ctx context.Context, req stellar.Si
 
 	if protoResp.GetRestorePreamble() != nil {
 		resp.RestorePreamble = &stellar.SimulateRestorePreamble{
-			TransactionDataXDR: protoResp.GetTransactionDataXdr(),
-			MinResourceFee:     protoResp.GetMinResourceFee(),
+			TransactionDataXDR: protoResp.RestorePreamble.GetTransactionDataXdr(),
+			MinResourceFee:     protoResp.RestorePreamble.GetMinResourceFee(),
 		}
 	}
 
@@ -169,7 +169,7 @@ func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (
 func (s *stellarServer) SimulateTransaction(ctx context.Context, req *stelpb.SimulateTransactionRequest) (*stelpb.SimulateTransactionResponse, error) {
 	dReq, err := stelpb.ConvertSimulateTransactionRequestFromProto(req)
 	if err != nil {
-		return nil, fmt.Errorf("invalid simulate transaction request: %w", err)
+		return nil, fmt.Errorf("invalid SimulateTransaction request: %w", err)
 	}
 
 	resp, err := s.impl.SimulateTransaction(ctx, dReq)

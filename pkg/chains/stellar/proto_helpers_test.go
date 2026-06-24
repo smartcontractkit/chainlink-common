@@ -262,7 +262,7 @@ func TestConvertSimulateTransactionRequest_RoundTrip_RichArgs(t *testing.T) {
 
 func TestConvertSimulateTransactionRequestFromProto_Nil(t *testing.T) {
 	_, err := conv.ConvertSimulateTransactionRequestFromProto(nil)
-	require.EqualError(t, err, "simulate transaction request is nil")
+	require.EqualError(t, err, "simulateTransaction request is nil")
 }
 
 func TestConvertSimulateTransactionRequestFromProto_MissingContractID(t *testing.T) {

@@ -196,7 +196,7 @@ func ConvertSimulateTransactionRequestToProto(req stellar.SimulateTransactionReq
 // ConvertSimulateTransactionRequestFromProto converts proto SimulateTransactionRequest to domain.
 func ConvertSimulateTransactionRequestFromProto(p *SimulateTransactionRequest) (stellar.SimulateTransactionRequest, error) {
 	if p == nil {
-		return stellar.SimulateTransactionRequest{}, errors.New("simulate transaction request is nil")
+		return stellar.SimulateTransactionRequest{}, errors.New("simulateTransaction request is nil")
 	}
 	if p.GetContractId() == "" {
 		return stellar.SimulateTransactionRequest{}, errors.New("contractID is required")

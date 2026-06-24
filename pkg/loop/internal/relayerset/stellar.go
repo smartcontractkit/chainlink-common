@@ -112,7 +112,7 @@ func (ss *stellarServer) SimulateTransaction(ctx context.Context, req *stelpb.Si
 	}
 	dReq, err := stelpb.ConvertSimulateTransactionRequestFromProto(req)
 	if err != nil {
-		return nil, fmt.Errorf("invalid simulate transaction request: %w", err)
+		return nil, fmt.Errorf("invalid SimulateTransaction request: %w", err)
 	}
 	dResp, err := svc.SimulateTransaction(ctx, dReq)
 	if err != nil {

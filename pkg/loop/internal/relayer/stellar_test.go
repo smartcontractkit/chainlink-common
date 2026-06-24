@@ -472,6 +472,13 @@ func (s *staticStellarService) GetEvents(ctx context.Context, req stellartypes.G
 	return s.getEvents(ctx, req)
 }
 
+func (s *staticStellarService) SimulateTransaction(ctx context.Context, req stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {
+	if s.simulateTransaction == nil {
+		return s.UnimplementedStellarService.SimulateTransaction(ctx, req)
+	}
+	return s.simulateTransaction(ctx, req)
+}
+
 func (s *staticStellarService) SubmitTransaction(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error) {
 	if s.submitTransaction == nil {
 		return s.UnimplementedStellarService.SubmitTransaction(ctx, req)

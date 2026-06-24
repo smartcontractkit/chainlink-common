@@ -8,8 +8,9 @@ import (
 )
 
 // IdempotencyKeyAttr is the CloudEvent extension attribute name for the per-event
-// idempotency key. Callers may pass this as a key in the attrKVs variadics to
-// supply their own key; when absent, the durable emitter defaults to sha256(body).
+// idempotency key. Pass it in the attributes map of NewEvent to have the key set
+// as a CloudEvent extension; it is also forwarded into CloudEventBatch.Idempotency
+// by the batch client for the server to use for deduplication.
 const IdempotencyKeyAttr = "idempotencykey"
 
 type (

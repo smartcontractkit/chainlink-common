@@ -5,5 +5,6 @@ import (
 )
 
 // StartStopOnce can be embedded in a struct to help implement types.Service.
+//
 // Deprecated: use services.StateMachine
 type StartStopOnce = services.StateMachine

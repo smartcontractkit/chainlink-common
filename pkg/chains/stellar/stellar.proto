@@ -10,6 +10,7 @@ service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
   rpc ReadContract(ReadContractRequest) returns (ReadContractResponse);
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 }
 
@@ -33,6 +34,12 @@ message GetLedgerEntriesRequest {
   repeated bytes keys = 1;  // each key as binary XDR (LedgerKey)
 }
 
+// GetLedgerEntriesResponse contains the requested ledger entries.
+message GetLedgerEntriesResponse {
+  repeated LedgerEntryResult entries = 1;
+  uint32 latest_ledger = 2;
+}
+
 // LedgerEntryResult is a single ledger entry.
 message LedgerEntryResult {
   bytes  key_xdr = 1;   // LedgerKey binary XDR
@@ -44,10 +51,67 @@ message LedgerEntryResult {
   bytes  extension_xdr = 6;  // LedgerEntry extension binary XDR; empty if absent
 }
 
-// GetLedgerEntriesResponse contains the requested ledger entries.
-message GetLedgerEntriesResponse {
-  repeated LedgerEntryResult entries = 1;
-  uint32 latest_ledger = 2;
+message GetEventsRequest {
+  uint32 start_ledger = 1;
+  uint32 end_ledger = 2;
+  repeated EventFilter filters = 3;
+  PaginationOptions pagination = 4;
+}
+
+message EventInfo {
+  EventType event_type = 1;
+
+  uint32 ledger = 2;
+  string ledger_closed_at = 3;
+
+  string contract_id = 4;
+  string id = 5;
+
+  uint32 operation_index = 6;
+  uint32 transaction_index = 7;
+  string transaction_hash = 8;
+
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal topics = 9;
+  capabilities.blockchain.stellar.v1alpha.ScVal value = 10;
+}
+
+message GetEventsResponse {
+  repeated EventInfo events = 1;
+
+  string cursor = 2;
+
+  uint32 latest_ledger = 3;
+  uint32 oldest_ledger = 4;
+
+  int64 latest_ledger_close_time = 5;
+  int64 oldest_ledger_close_time = 6;
+}
+
+message PaginationOptions {
+  string cursor = 1;
+  uint32 limit = 2;
+}
+
+message EventFilter {
+  repeated EventType event_types = 1;
+  repeated string contract_ids = 2;
+  repeated TopicFilter topics = 3;
+}
+
+message TopicFilter {
+  repeated TopicSegment segments = 1;
+}
+
+message TopicSegment {
+  oneof value {
+    string wildcard = 1;
+    capabilities.blockchain.stellar.v1alpha.ScVal scval = 2;
+  }
+}
+
+enum EventType {
+  EVENT_TYPE_SYSTEM = 0;
+  EVENT_TYPE_CONTRACT = 1;
 }
 
 // SubmitTransactionRequest invokes a Soroban contract via the TXM pipeline.

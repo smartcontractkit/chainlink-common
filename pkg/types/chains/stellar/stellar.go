@@ -41,6 +41,8 @@ type Client interface {
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
+	// GetEvents fetches contract events matching the provided ledger range, filters, and pagination.
+	GetEvents(ctx context.Context, req GetEventsRequest) (GetEventsResponse, error)
 	// ReadContract simulates a read-only Soroban contract function call.
 	// Each element of req.Args is a domain ScVal value.
 	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
@@ -335,3 +337,66 @@ const (
 	ScValTypeLedgerKeyContractInstance
 	ScValTypeNonceKey
 )
+
+type EventType int32
+
+const (
+	EventTypeSystem EventType = iota
+	EventTypeContract
+)
+
+type TopicSegment struct {
+	Wildcard *string
+	Value    *ScVal
+}
+
+type TopicFilter struct {
+	Segments []TopicSegment
+}
+
+type EventFilter struct {
+	EventTypes  []EventType
+	ContractIDs []string
+	Topics      []TopicFilter
+}
+
+type PaginationOptions struct {
+	Cursor string
+	Limit  uint32
+}
+
+type GetEventsRequest struct {
+	StartLedger uint32
+	EndLedger   uint32
+
+	Filters    []EventFilter
+	Pagination *PaginationOptions
+}
+
+type EventInfo struct {
+	EventType EventType
+
+	Ledger         uint32
+	LedgerClosedAt string
+
+	ContractID string
+	ID         string
+
+	OperationIndex   uint32
+	TransactionIndex uint32
+	TransactionHash  string
+
+	Topics []ScVal
+	Value  ScVal
+}
+
+type GetEventsResponse struct {
+	Events []EventInfo
+
+	Cursor string
+
+	LatestLedger          uint32
+	OldestLedger          uint32
+	LatestLedgerCloseTime int64
+	OldestLedgerCloseTime int64
+}

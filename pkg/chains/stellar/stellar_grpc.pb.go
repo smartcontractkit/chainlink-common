@@ -23,6 +23,7 @@ const (
 	Stellar_GetLedgerEntries_FullMethodName  = "/loop.stellar.Stellar/GetLedgerEntries"
 	Stellar_GetLatestLedger_FullMethodName   = "/loop.stellar.Stellar/GetLatestLedger"
 	Stellar_ReadContract_FullMethodName      = "/loop.stellar.Stellar/ReadContract"
+	Stellar_GetEvents_FullMethodName         = "/loop.stellar.Stellar/GetEvents"
 	Stellar_SubmitTransaction_FullMethodName = "/loop.stellar.Stellar/SubmitTransaction"
 )
 
@@ -33,6 +34,7 @@ type StellarClient interface {
 	GetLedgerEntries(ctx context.Context, in *GetLedgerEntriesRequest, opts ...grpc.CallOption) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLedgerResponse, error)
 	ReadContract(ctx context.Context, in *ReadContractRequest, opts ...grpc.CallOption) (*ReadContractResponse, error)
+	GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error)
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
 }
 
@@ -74,6 +76,16 @@ func (c *stellarClient) ReadContract(ctx context.Context, in *ReadContractReques
 	return out, nil
 }
 
+func (c *stellarClient) GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetEventsResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetEvents_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *stellarClient) SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTransactionResponse)
@@ -91,6 +103,7 @@ type StellarServer interface {
 	GetLedgerEntries(context.Context, *GetLedgerEntriesRequest) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error)
 	ReadContract(context.Context, *ReadContractRequest) (*ReadContractResponse, error)
+	GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error)
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
 	mustEmbedUnimplementedStellarServer()
 }
@@ -110,6 +123,9 @@ func (UnimplementedStellarServer) GetLatestLedger(context.Context, *emptypb.Empt
 }
 func (UnimplementedStellarServer) ReadContract(context.Context, *ReadContractRequest) (*ReadContractResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReadContract not implemented")
+}
+func (UnimplementedStellarServer) GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
 }
 func (UnimplementedStellarServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
@@ -189,6 +205,24 @@ func _Stellar_ReadContract_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Stellar_GetEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEventsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetEvents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetEvents(ctx, req.(*GetEventsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Stellar_SubmitTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SubmitTransactionRequest)
 	if err := dec(in); err != nil {
@@ -225,6 +259,10 @@ var Stellar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReadContract",
 			Handler:    _Stellar_ReadContract_Handler,
+		},
+		{
+			MethodName: "GetEvents",
+			Handler:    _Stellar_GetEvents_Handler,
 		},
 		{
 			MethodName: "SubmitTransaction",

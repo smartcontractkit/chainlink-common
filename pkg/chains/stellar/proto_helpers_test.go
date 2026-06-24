@@ -7,8 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	conv "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
+	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
+	conv "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	stellartypes "github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
 )
 
@@ -313,11 +314,11 @@ func TestConvertSubmitTransactionRequest_RoundTrip(t *testing.T) {
 	u64 := uint64(42)
 	sym := "amount"
 	domain := stellartypes.SubmitTransactionRequest{
-		IdempotencyKey:     "idem-123",
-		FromAddress:        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
-		ContractID:         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
-		Function:           "transfer",
-		Args:               []stellartypes.ScVal{
+		IdempotencyKey: "idem-123",
+		FromAddress:    "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+		ContractID:     "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+		Function:       "transfer",
+		Args: []stellartypes.ScVal{
 			{Type: stellartypes.ScValTypeBool, Bool: &boolVal},
 			{Type: stellartypes.ScValTypeU64, U64: &u64},
 			{Type: stellartypes.ScValTypeSymbol, Symbol: &sym},
@@ -499,4 +500,440 @@ func TestConvertGetLatestLedgerResponseToProto_InvalidFields(t *testing.T) {
 			require.ErrorContains(t, err, tc.wantErr)
 		})
 	}
+}
+
+func TestConvertGetEventsRequest_RoundTrip(t *testing.T) {
+	symTransfer := "transfer"
+	account := "from"
+	wildcard := "*"
+	flexibleWildcard := "**"
+
+	domain := stellartypes.GetEventsRequest{
+		StartLedger: 100,
+		EndLedger:   200,
+		Filters: []stellartypes.EventFilter{
+			{
+				EventTypes:  []stellartypes.EventType{stellartypes.EventTypeContract},
+				ContractIDs: []string{"CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4"},
+				Topics: []stellartypes.TopicFilter{
+					{
+						Segments: []stellartypes.TopicSegment{
+							{
+								Value: &stellartypes.ScVal{
+									Type:   stellartypes.ScValTypeSymbol,
+									Symbol: &symTransfer,
+								},
+							},
+							{Wildcard: &wildcard},
+						},
+					},
+					{
+						Segments: []stellartypes.TopicSegment{
+							{
+								Value: &stellartypes.ScVal{
+									Type:   stellartypes.ScValTypeSymbol,
+									Symbol: &account,
+								},
+							},
+							{Wildcard: &flexibleWildcard},
+						},
+					},
+				},
+			},
+		},
+		Pagination: &stellartypes.PaginationOptions{
+			Cursor: "0000000010-0000000001",
+			Limit:  50,
+		},
+	}
+
+	proto, err := conv.ConvertGetEventsRequestToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, uint32(100), proto.GetStartLedger())
+	require.Equal(t, uint32(200), proto.GetEndLedger())
+	require.Len(t, proto.GetFilters(), 1)
+	require.Equal(t, "0000000010-0000000001", proto.GetPagination().GetCursor())
+	require.Equal(t, uint32(50), proto.GetPagination().GetLimit())
+
+	got, err := conv.ConvertGetEventsRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetEventsRequest_RoundTrip_NoFiltersNoPagination(t *testing.T) {
+	domain := stellartypes.GetEventsRequest{
+		StartLedger: 100,
+		EndLedger:   200,
+	}
+
+	proto, err := conv.ConvertGetEventsRequestToProto(domain)
+	require.NoError(t, err)
+	require.Empty(t, proto.GetFilters())
+	require.Nil(t, proto.GetPagination())
+
+	got, err := conv.ConvertGetEventsRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetEventsRequestFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestFromProto(nil)
+	require.EqualError(t, err, "get events request is nil")
+}
+
+func TestConvertGetEventsRequestToProto_EmptyTopicFilter(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestToProto(stellartypes.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []stellartypes.EventFilter{
+			{
+				Topics: []stellartypes.TopicFilter{
+					{},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "filters[0]")
+	require.Contains(t, err.Error(), "topics[0]")
+	require.Contains(t, err.Error(), "topic filter must have at least one segment")
+}
+
+func TestConvertGetEventsRequestFromProto_EmptyTopicFilter(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestFromProto(&conv.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []*conv.EventFilter{
+			{
+				Topics: []*conv.TopicFilter{
+					{},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "filters[0]")
+	require.Contains(t, err.Error(), "topics[0]")
+	require.Contains(t, err.Error(), "topic filter must have at least one segment")
+}
+
+func TestConvertGetEventsRequestToProto_EmptyTopicSegment(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestToProto(stellartypes.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []stellartypes.EventFilter{
+			{
+				Topics: []stellartypes.TopicFilter{
+					{
+						Segments: []stellartypes.TopicSegment{{}},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "filters[0]")
+	require.Contains(t, err.Error(), "topics[0]")
+	require.Contains(t, err.Error(), "segments[0]")
+	require.Contains(t, err.Error(), "topic segment must set either wildcard or value")
+}
+
+func TestConvertGetEventsRequestToProto_TopicSegmentBothWildcardAndValue(t *testing.T) {
+	wildcard := "*"
+	sym := "transfer"
+
+	_, err := conv.ConvertGetEventsRequestToProto(stellartypes.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []stellartypes.EventFilter{
+			{
+				Topics: []stellartypes.TopicFilter{
+					{
+						Segments: []stellartypes.TopicSegment{
+							{
+								Wildcard: &wildcard,
+								Value: &stellartypes.ScVal{
+									Type:   stellartypes.ScValTypeSymbol,
+									Symbol: &sym,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "segments[0]")
+	require.Contains(t, err.Error(), "topic segment cannot set both wildcard and value")
+}
+
+func TestConvertGetEventsRequestToProto_InvalidWildcard(t *testing.T) {
+	wildcard := "bad"
+
+	_, err := conv.ConvertGetEventsRequestToProto(stellartypes.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []stellartypes.EventFilter{
+			{
+				Topics: []stellartypes.TopicFilter{
+					{
+						Segments: []stellartypes.TopicSegment{
+							{Wildcard: &wildcard},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "segments[0]")
+	require.Contains(t, err.Error(), "wildcard must be '*' or '**'")
+}
+
+func TestConvertGetEventsRequestFromProto_InvalidWildcard(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestFromProto(&conv.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []*conv.EventFilter{
+			{
+				Topics: []*conv.TopicFilter{
+					{
+						Segments: []*conv.TopicSegment{
+							{
+								Value: &conv.TopicSegment_Wildcard{Wildcard: "bad"},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "segments[0]")
+	require.Contains(t, err.Error(), "wildcard must be '*' or '**'")
+}
+
+func TestConvertGetEventsRequestToProto_BadTopicScVal(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestToProto(stellartypes.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []stellartypes.EventFilter{
+			{
+				Topics: []stellartypes.TopicFilter{
+					{
+						Segments: []stellartypes.TopicSegment{
+							{
+								Value: &stellartypes.ScVal{
+									Type: stellartypes.ScValTypeBool, // Bool is nil
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "segments[0]")
+}
+
+func TestConvertGetEventsRequestFromProto_BadTopicScVal(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestFromProto(&conv.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []*conv.EventFilter{
+			{
+				Topics: []*conv.TopicFilter{
+					{
+						Segments: []*conv.TopicSegment{
+							{
+								Value: &conv.TopicSegment_Scval{Scval: &scval.ScVal{}},
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "segments[0]")
+}
+
+func TestConvertGetEventsRequestToProto_UnsupportedEventType(t *testing.T) {
+	_, err := conv.ConvertGetEventsRequestToProto(stellartypes.GetEventsRequest{
+		StartLedger: 1,
+		Filters: []stellartypes.EventFilter{
+			{
+				EventTypes: []stellartypes.EventType{stellartypes.EventType(99)},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "filters[0]")
+	require.Contains(t, err.Error(), "eventTypes[0]")
+	require.Contains(t, err.Error(), "unsupported event type")
+}
+
+func TestConvertGetEventsResponse_RoundTrip(t *testing.T) {
+	topicSym := "transfer"
+	valueU64 := uint64(12345)
+
+	domain := stellartypes.GetEventsResponse{
+		Events: []stellartypes.EventInfo{
+			{
+				EventType:        stellartypes.EventTypeContract,
+				Ledger:           123,
+				LedgerClosedAt:   "2025-01-01T00:00:00Z",
+				ContractID:       "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+				ID:               "0000000123-0000000001",
+				OperationIndex:   1,
+				TransactionIndex: 2,
+				TransactionHash:  "abc123",
+				Topics: []stellartypes.ScVal{
+					{
+						Type:   stellartypes.ScValTypeSymbol,
+						Symbol: &topicSym,
+					},
+				},
+				Value: stellartypes.ScVal{
+					Type: stellartypes.ScValTypeU64,
+					U64:  &valueU64,
+				},
+			},
+		},
+		Cursor:                "0000000123-0000000001",
+		LatestLedger:          200,
+		OldestLedger:          100,
+		LatestLedgerCloseTime: 1_700_000_100,
+		OldestLedgerCloseTime: 1_700_000_000,
+	}
+
+	proto, err := conv.ConvertGetEventsResponseToProto(domain)
+	require.NoError(t, err)
+	require.Len(t, proto.GetEvents(), 1)
+	require.NotNil(t, proto.GetEvents()[0].GetValue())
+
+	got, err := conv.ConvertGetEventsResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetEventsResponse_RoundTrip_NoEvents(t *testing.T) {
+	domain := stellartypes.GetEventsResponse{
+		Cursor:                "",
+		LatestLedger:          200,
+		OldestLedger:          100,
+		LatestLedgerCloseTime: 1_700_000_100,
+		OldestLedgerCloseTime: 1_700_000_000,
+	}
+
+	proto, err := conv.ConvertGetEventsResponseToProto(domain)
+	require.NoError(t, err)
+	require.Empty(t, proto.GetEvents())
+
+	got, err := conv.ConvertGetEventsResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetEventsResponseFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetEventsResponseFromProto(nil)
+	require.EqualError(t, err, "get events response is nil")
+}
+
+func TestConvertGetEventsResponseFromProto_NilEvent(t *testing.T) {
+	_, err := conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
+		Events: []*conv.EventInfo{nil},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "event info is nil")
+}
+
+func TestConvertGetEventsResponseFromProto_MissingValue(t *testing.T) {
+	_, err := conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
+		Events: []*conv.EventInfo{
+			{
+				EventType: conv.EventType_EVENT_TYPE_CONTRACT,
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "value is required")
+}
+
+func TestConvertGetEventsResponseToProto_BadValue(t *testing.T) {
+	_, err := conv.ConvertGetEventsResponseToProto(stellartypes.GetEventsResponse{
+		Events: []stellartypes.EventInfo{
+			{
+				EventType: stellartypes.EventTypeContract,
+				Value: stellartypes.ScVal{
+					Type: stellartypes.ScValTypeBool, // Bool is nil
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "value")
+}
+
+func TestConvertGetEventsResponseToProto_BadTopic(t *testing.T) {
+	u64 := uint64(1)
+
+	_, err := conv.ConvertGetEventsResponseToProto(stellartypes.GetEventsResponse{
+		Events: []stellartypes.EventInfo{
+			{
+				EventType: stellartypes.EventTypeContract,
+				Topics: []stellartypes.ScVal{
+					{Type: stellartypes.ScValTypeBool}, // Bool is nil
+				},
+				Value: stellartypes.ScVal{
+					Type: stellartypes.ScValTypeU64,
+					U64:  &u64,
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "topics[0]")
+}
+
+func TestConvertGetEventsResponseFromProto_BadTopic(t *testing.T) {
+	u64 := uint64(1)
+	value, err := stellarcap.ScValToProto(stellartypes.ScVal{
+		Type: stellartypes.ScValTypeU64,
+		U64:  &u64,
+	})
+	require.NoError(t, err)
+
+	_, err = conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
+		Events: []*conv.EventInfo{
+			{
+				EventType: conv.EventType_EVENT_TYPE_CONTRACT,
+				Topics: []*scval.ScVal{
+					{},
+				},
+				Value: value,
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "topics[0]")
+}
+
+func TestConvertGetEventsResponseToProto_UnsupportedEventType(t *testing.T) {
+	u64 := uint64(1)
+
+	_, err := conv.ConvertGetEventsResponseToProto(stellartypes.GetEventsResponse{
+		Events: []stellartypes.EventInfo{
+			{
+				EventType: stellartypes.EventType(99),
+				Value: stellartypes.ScVal{
+					Type: stellartypes.ScValTypeU64,
+					U64:  &u64,
+				},
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "eventType")
+	require.Contains(t, err.Error(), "unsupported event type")
 }

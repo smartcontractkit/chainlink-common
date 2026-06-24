@@ -23,6 +23,52 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type EventType int32
+
+const (
+	EventType_EVENT_TYPE_SYSTEM   EventType = 0
+	EventType_EVENT_TYPE_CONTRACT EventType = 1
+)
+
+// Enum value maps for EventType.
+var (
+	EventType_name = map[int32]string{
+		0: "EVENT_TYPE_SYSTEM",
+		1: "EVENT_TYPE_CONTRACT",
+	}
+	EventType_value = map[string]int32{
+		"EVENT_TYPE_SYSTEM":   0,
+		"EVENT_TYPE_CONTRACT": 1,
+	}
+)
+
+func (x EventType) Enum() *EventType {
+	p := new(EventType)
+	*p = x
+	return p
+}
+
+func (x EventType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EventType) Descriptor() protoreflect.EnumDescriptor {
+	return file_stellar_proto_enumTypes[0].Descriptor()
+}
+
+func (EventType) Type() protoreflect.EnumType {
+	return &file_stellar_proto_enumTypes[0]
+}
+
+func (x EventType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EventType.Descriptor instead.
+func (EventType) EnumDescriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{0}
+}
+
 type TxStatus int32
 
 const (
@@ -56,11 +102,11 @@ func (x TxStatus) String() string {
 }
 
 func (TxStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_stellar_proto_enumTypes[0].Descriptor()
+	return file_stellar_proto_enumTypes[1].Descriptor()
 }
 
 func (TxStatus) Type() protoreflect.EnumType {
-	return &file_stellar_proto_enumTypes[0]
+	return &file_stellar_proto_enumTypes[1]
 }
 
 func (x TxStatus) Number() protoreflect.EnumNumber {
@@ -69,7 +115,7 @@ func (x TxStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TxStatus.Descriptor instead.
 func (TxStatus) EnumDescriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{0}
+	return file_stellar_proto_rawDescGZIP(), []int{1}
 }
 
 // ReadContractRequest invokes a read-only (simulation) Soroban contract function.
@@ -247,6 +293,59 @@ func (x *GetLedgerEntriesRequest) GetKeys() [][]byte {
 	return nil
 }
 
+// GetLedgerEntriesResponse contains the requested ledger entries.
+type GetLedgerEntriesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entries       []*LedgerEntryResult   `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+	LatestLedger  uint32                 `protobuf:"varint,2,opt,name=latest_ledger,json=latestLedger,proto3" json:"latest_ledger,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLedgerEntriesResponse) Reset() {
+	*x = GetLedgerEntriesResponse{}
+	mi := &file_stellar_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLedgerEntriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLedgerEntriesResponse) ProtoMessage() {}
+
+func (x *GetLedgerEntriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLedgerEntriesResponse.ProtoReflect.Descriptor instead.
+func (*GetLedgerEntriesResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetLedgerEntriesResponse) GetEntries() []*LedgerEntryResult {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *GetLedgerEntriesResponse) GetLatestLedger() uint32 {
+	if x != nil {
+		return x.LatestLedger
+	}
+	return 0
+}
+
 // LedgerEntryResult is a single ledger entry.
 type LedgerEntryResult struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -263,7 +362,7 @@ type LedgerEntryResult struct {
 
 func (x *LedgerEntryResult) Reset() {
 	*x = LedgerEntryResult{}
-	mi := &file_stellar_proto_msgTypes[3]
+	mi := &file_stellar_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -275,7 +374,7 @@ func (x *LedgerEntryResult) String() string {
 func (*LedgerEntryResult) ProtoMessage() {}
 
 func (x *LedgerEntryResult) ProtoReflect() protoreflect.Message {
-	mi := &file_stellar_proto_msgTypes[3]
+	mi := &file_stellar_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -288,7 +387,7 @@ func (x *LedgerEntryResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LedgerEntryResult.ProtoReflect.Descriptor instead.
 func (*LedgerEntryResult) Descriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{3}
+	return file_stellar_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *LedgerEntryResult) GetKeyXdr() []byte {
@@ -333,30 +432,31 @@ func (x *LedgerEntryResult) GetExtensionXdr() []byte {
 	return nil
 }
 
-// GetLedgerEntriesResponse contains the requested ledger entries.
-type GetLedgerEntriesResponse struct {
+type GetEventsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Entries       []*LedgerEntryResult   `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
-	LatestLedger  uint32                 `protobuf:"varint,2,opt,name=latest_ledger,json=latestLedger,proto3" json:"latest_ledger,omitempty"`
+	StartLedger   uint32                 `protobuf:"varint,1,opt,name=start_ledger,json=startLedger,proto3" json:"start_ledger,omitempty"`
+	EndLedger     uint32                 `protobuf:"varint,2,opt,name=end_ledger,json=endLedger,proto3" json:"end_ledger,omitempty"`
+	Filters       []*EventFilter         `protobuf:"bytes,3,rep,name=filters,proto3" json:"filters,omitempty"`
+	Pagination    *PaginationOptions     `protobuf:"bytes,4,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetLedgerEntriesResponse) Reset() {
-	*x = GetLedgerEntriesResponse{}
-	mi := &file_stellar_proto_msgTypes[4]
+func (x *GetEventsRequest) Reset() {
+	*x = GetEventsRequest{}
+	mi := &file_stellar_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetLedgerEntriesResponse) String() string {
+func (x *GetEventsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetLedgerEntriesResponse) ProtoMessage() {}
+func (*GetEventsRequest) ProtoMessage() {}
 
-func (x *GetLedgerEntriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_stellar_proto_msgTypes[4]
+func (x *GetEventsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -367,24 +467,476 @@ func (x *GetLedgerEntriesResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetLedgerEntriesResponse.ProtoReflect.Descriptor instead.
-func (*GetLedgerEntriesResponse) Descriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{4}
+// Deprecated: Use GetEventsRequest.ProtoReflect.Descriptor instead.
+func (*GetEventsRequest) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *GetLedgerEntriesResponse) GetEntries() []*LedgerEntryResult {
+func (x *GetEventsRequest) GetStartLedger() uint32 {
 	if x != nil {
-		return x.Entries
+		return x.StartLedger
+	}
+	return 0
+}
+
+func (x *GetEventsRequest) GetEndLedger() uint32 {
+	if x != nil {
+		return x.EndLedger
+	}
+	return 0
+}
+
+func (x *GetEventsRequest) GetFilters() []*EventFilter {
+	if x != nil {
+		return x.Filters
 	}
 	return nil
 }
 
-func (x *GetLedgerEntriesResponse) GetLatestLedger() uint32 {
+func (x *GetEventsRequest) GetPagination() *PaginationOptions {
+	if x != nil {
+		return x.Pagination
+	}
+	return nil
+}
+
+type EventInfo struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	EventType        EventType              `protobuf:"varint,1,opt,name=event_type,json=eventType,proto3,enum=loop.stellar.EventType" json:"event_type,omitempty"`
+	Ledger           uint32                 `protobuf:"varint,2,opt,name=ledger,proto3" json:"ledger,omitempty"`
+	LedgerClosedAt   string                 `protobuf:"bytes,3,opt,name=ledger_closed_at,json=ledgerClosedAt,proto3" json:"ledger_closed_at,omitempty"`
+	ContractId       string                 `protobuf:"bytes,4,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"`
+	Id               string                 `protobuf:"bytes,5,opt,name=id,proto3" json:"id,omitempty"`
+	OperationIndex   uint32                 `protobuf:"varint,6,opt,name=operation_index,json=operationIndex,proto3" json:"operation_index,omitempty"`
+	TransactionIndex uint32                 `protobuf:"varint,7,opt,name=transaction_index,json=transactionIndex,proto3" json:"transaction_index,omitempty"`
+	TransactionHash  string                 `protobuf:"bytes,8,opt,name=transaction_hash,json=transactionHash,proto3" json:"transaction_hash,omitempty"`
+	Topics           []*scval.ScVal         `protobuf:"bytes,9,rep,name=topics,proto3" json:"topics,omitempty"`
+	Value            *scval.ScVal           `protobuf:"bytes,10,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *EventInfo) Reset() {
+	*x = EventInfo{}
+	mi := &file_stellar_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventInfo) ProtoMessage() {}
+
+func (x *EventInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EventInfo.ProtoReflect.Descriptor instead.
+func (*EventInfo) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *EventInfo) GetEventType() EventType {
+	if x != nil {
+		return x.EventType
+	}
+	return EventType_EVENT_TYPE_SYSTEM
+}
+
+func (x *EventInfo) GetLedger() uint32 {
+	if x != nil {
+		return x.Ledger
+	}
+	return 0
+}
+
+func (x *EventInfo) GetLedgerClosedAt() string {
+	if x != nil {
+		return x.LedgerClosedAt
+	}
+	return ""
+}
+
+func (x *EventInfo) GetContractId() string {
+	if x != nil {
+		return x.ContractId
+	}
+	return ""
+}
+
+func (x *EventInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *EventInfo) GetOperationIndex() uint32 {
+	if x != nil {
+		return x.OperationIndex
+	}
+	return 0
+}
+
+func (x *EventInfo) GetTransactionIndex() uint32 {
+	if x != nil {
+		return x.TransactionIndex
+	}
+	return 0
+}
+
+func (x *EventInfo) GetTransactionHash() string {
+	if x != nil {
+		return x.TransactionHash
+	}
+	return ""
+}
+
+func (x *EventInfo) GetTopics() []*scval.ScVal {
+	if x != nil {
+		return x.Topics
+	}
+	return nil
+}
+
+func (x *EventInfo) GetValue() *scval.ScVal {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+type GetEventsResponse struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Events                []*EventInfo           `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
+	Cursor                string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	LatestLedger          uint32                 `protobuf:"varint,3,opt,name=latest_ledger,json=latestLedger,proto3" json:"latest_ledger,omitempty"`
+	OldestLedger          uint32                 `protobuf:"varint,4,opt,name=oldest_ledger,json=oldestLedger,proto3" json:"oldest_ledger,omitempty"`
+	LatestLedgerCloseTime int64                  `protobuf:"varint,5,opt,name=latest_ledger_close_time,json=latestLedgerCloseTime,proto3" json:"latest_ledger_close_time,omitempty"`
+	OldestLedgerCloseTime int64                  `protobuf:"varint,6,opt,name=oldest_ledger_close_time,json=oldestLedgerCloseTime,proto3" json:"oldest_ledger_close_time,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *GetEventsResponse) Reset() {
+	*x = GetEventsResponse{}
+	mi := &file_stellar_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetEventsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetEventsResponse) ProtoMessage() {}
+
+func (x *GetEventsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetEventsResponse.ProtoReflect.Descriptor instead.
+func (*GetEventsResponse) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetEventsResponse) GetEvents() []*EventInfo {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+func (x *GetEventsResponse) GetCursor() string {
+	if x != nil {
+		return x.Cursor
+	}
+	return ""
+}
+
+func (x *GetEventsResponse) GetLatestLedger() uint32 {
 	if x != nil {
 		return x.LatestLedger
 	}
 	return 0
 }
+
+func (x *GetEventsResponse) GetOldestLedger() uint32 {
+	if x != nil {
+		return x.OldestLedger
+	}
+	return 0
+}
+
+func (x *GetEventsResponse) GetLatestLedgerCloseTime() int64 {
+	if x != nil {
+		return x.LatestLedgerCloseTime
+	}
+	return 0
+}
+
+func (x *GetEventsResponse) GetOldestLedgerCloseTime() int64 {
+	if x != nil {
+		return x.OldestLedgerCloseTime
+	}
+	return 0
+}
+
+type PaginationOptions struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cursor        string                 `protobuf:"bytes,1,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	Limit         uint32                 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PaginationOptions) Reset() {
+	*x = PaginationOptions{}
+	mi := &file_stellar_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaginationOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaginationOptions) ProtoMessage() {}
+
+func (x *PaginationOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaginationOptions.ProtoReflect.Descriptor instead.
+func (*PaginationOptions) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *PaginationOptions) GetCursor() string {
+	if x != nil {
+		return x.Cursor
+	}
+	return ""
+}
+
+func (x *PaginationOptions) GetLimit() uint32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type EventFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EventTypes    []EventType            `protobuf:"varint,1,rep,packed,name=event_types,json=eventTypes,proto3,enum=loop.stellar.EventType" json:"event_types,omitempty"`
+	ContractIds   []string               `protobuf:"bytes,2,rep,name=contract_ids,json=contractIds,proto3" json:"contract_ids,omitempty"`
+	Topics        []*TopicFilter         `protobuf:"bytes,3,rep,name=topics,proto3" json:"topics,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EventFilter) Reset() {
+	*x = EventFilter{}
+	mi := &file_stellar_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EventFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EventFilter) ProtoMessage() {}
+
+func (x *EventFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EventFilter.ProtoReflect.Descriptor instead.
+func (*EventFilter) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *EventFilter) GetEventTypes() []EventType {
+	if x != nil {
+		return x.EventTypes
+	}
+	return nil
+}
+
+func (x *EventFilter) GetContractIds() []string {
+	if x != nil {
+		return x.ContractIds
+	}
+	return nil
+}
+
+func (x *EventFilter) GetTopics() []*TopicFilter {
+	if x != nil {
+		return x.Topics
+	}
+	return nil
+}
+
+type TopicFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Segments      []*TopicSegment        `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TopicFilter) Reset() {
+	*x = TopicFilter{}
+	mi := &file_stellar_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TopicFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TopicFilter) ProtoMessage() {}
+
+func (x *TopicFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TopicFilter.ProtoReflect.Descriptor instead.
+func (*TopicFilter) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *TopicFilter) GetSegments() []*TopicSegment {
+	if x != nil {
+		return x.Segments
+	}
+	return nil
+}
+
+type TopicSegment struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Value:
+	//
+	//	*TopicSegment_Wildcard
+	//	*TopicSegment_Scval
+	Value         isTopicSegment_Value `protobuf_oneof:"value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TopicSegment) Reset() {
+	*x = TopicSegment{}
+	mi := &file_stellar_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TopicSegment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TopicSegment) ProtoMessage() {}
+
+func (x *TopicSegment) ProtoReflect() protoreflect.Message {
+	mi := &file_stellar_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TopicSegment.ProtoReflect.Descriptor instead.
+func (*TopicSegment) Descriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *TopicSegment) GetValue() isTopicSegment_Value {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+func (x *TopicSegment) GetWildcard() string {
+	if x != nil {
+		if x, ok := x.Value.(*TopicSegment_Wildcard); ok {
+			return x.Wildcard
+		}
+	}
+	return ""
+}
+
+func (x *TopicSegment) GetScval() *scval.ScVal {
+	if x != nil {
+		if x, ok := x.Value.(*TopicSegment_Scval); ok {
+			return x.Scval
+		}
+	}
+	return nil
+}
+
+type isTopicSegment_Value interface {
+	isTopicSegment_Value()
+}
+
+type TopicSegment_Wildcard struct {
+	Wildcard string `protobuf:"bytes,1,opt,name=wildcard,proto3,oneof"`
+}
+
+type TopicSegment_Scval struct {
+	Scval *scval.ScVal `protobuf:"bytes,2,opt,name=scval,proto3,oneof"`
+}
+
+func (*TopicSegment_Wildcard) isTopicSegment_Value() {}
+
+func (*TopicSegment_Scval) isTopicSegment_Value() {}
 
 // SubmitTransactionRequest invokes a Soroban contract via the TXM pipeline.
 // The TXM handles simulation, sequence management, fee bumping, signing, and confirmation.
@@ -402,7 +954,7 @@ type SubmitTransactionRequest struct {
 
 func (x *SubmitTransactionRequest) Reset() {
 	*x = SubmitTransactionRequest{}
-	mi := &file_stellar_proto_msgTypes[5]
+	mi := &file_stellar_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +966,7 @@ func (x *SubmitTransactionRequest) String() string {
 func (*SubmitTransactionRequest) ProtoMessage() {}
 
 func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_stellar_proto_msgTypes[5]
+	mi := &file_stellar_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +979,7 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{5}
+	return file_stellar_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SubmitTransactionRequest) GetIdempotencyKey() string {
@@ -489,7 +1041,7 @@ type SubmitTransactionResponse struct {
 
 func (x *SubmitTransactionResponse) Reset() {
 	*x = SubmitTransactionResponse{}
-	mi := &file_stellar_proto_msgTypes[6]
+	mi := &file_stellar_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -501,7 +1053,7 @@ func (x *SubmitTransactionResponse) String() string {
 func (*SubmitTransactionResponse) ProtoMessage() {}
 
 func (x *SubmitTransactionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_stellar_proto_msgTypes[6]
+	mi := &file_stellar_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -514,7 +1066,7 @@ func (x *SubmitTransactionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionResponse.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionResponse) Descriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{6}
+	return file_stellar_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SubmitTransactionResponse) GetTxStatus() TxStatus {
@@ -588,7 +1140,7 @@ type GetLatestLedgerResponse struct {
 
 func (x *GetLatestLedgerResponse) Reset() {
 	*x = GetLatestLedgerResponse{}
-	mi := &file_stellar_proto_msgTypes[7]
+	mi := &file_stellar_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -600,7 +1152,7 @@ func (x *GetLatestLedgerResponse) String() string {
 func (*GetLatestLedgerResponse) ProtoMessage() {}
 
 func (x *GetLatestLedgerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_stellar_proto_msgTypes[7]
+	mi := &file_stellar_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -613,7 +1165,7 @@ func (x *GetLatestLedgerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestLedgerResponse.ProtoReflect.Descriptor instead.
 func (*GetLatestLedgerResponse) Descriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{7}
+	return file_stellar_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetLatestLedgerResponse) GetHash() []byte {
@@ -674,17 +1226,60 @@ const file_stellar_proto_rawDesc = "" +
 	"\x0fledger_sequence\x18\x02 \x01(\rR\x0eledgerSequence\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\"-\n" +
 	"\x17GetLedgerEntriesRequest\x12\x12\n" +
-	"\x04keys\x18\x01 \x03(\fR\x04keys\"\x8b\x02\n" +
+	"\x04keys\x18\x01 \x03(\fR\x04keys\"z\n" +
+	"\x18GetLedgerEntriesResponse\x129\n" +
+	"\aentries\x18\x01 \x03(\v2\x1f.loop.stellar.LedgerEntryResultR\aentries\x12#\n" +
+	"\rlatest_ledger\x18\x02 \x01(\rR\flatestLedger\"\x8b\x02\n" +
 	"\x11LedgerEntryResult\x12\x17\n" +
 	"\akey_xdr\x18\x01 \x01(\fR\x06keyXdr\x12\x19\n" +
 	"\bdata_xdr\x18\x02 \x01(\fR\adataXdr\x120\n" +
 	"\x14last_modified_ledger\x18\x03 \x01(\rR\x12lastModifiedLedger\x128\n" +
 	"\x19has_live_until_ledger_seq\x18\x04 \x01(\bR\x15hasLiveUntilLedgerSeq\x121\n" +
 	"\x15live_until_ledger_seq\x18\x05 \x01(\rR\x12liveUntilLedgerSeq\x12#\n" +
-	"\rextension_xdr\x18\x06 \x01(\fR\fextensionXdr\"z\n" +
-	"\x18GetLedgerEntriesResponse\x129\n" +
-	"\aentries\x18\x01 \x03(\v2\x1f.loop.stellar.LedgerEntryResultR\aentries\x12#\n" +
-	"\rlatest_ledger\x18\x02 \x01(\rR\flatestLedger\"\x99\x02\n" +
+	"\rextension_xdr\x18\x06 \x01(\fR\fextensionXdr\"\xca\x01\n" +
+	"\x10GetEventsRequest\x12!\n" +
+	"\fstart_ledger\x18\x01 \x01(\rR\vstartLedger\x12\x1d\n" +
+	"\n" +
+	"end_ledger\x18\x02 \x01(\rR\tendLedger\x123\n" +
+	"\afilters\x18\x03 \x03(\v2\x19.loop.stellar.EventFilterR\afilters\x12?\n" +
+	"\n" +
+	"pagination\x18\x04 \x01(\v2\x1f.loop.stellar.PaginationOptionsR\n" +
+	"pagination\"\xc5\x03\n" +
+	"\tEventInfo\x126\n" +
+	"\n" +
+	"event_type\x18\x01 \x01(\x0e2\x17.loop.stellar.EventTypeR\teventType\x12\x16\n" +
+	"\x06ledger\x18\x02 \x01(\rR\x06ledger\x12(\n" +
+	"\x10ledger_closed_at\x18\x03 \x01(\tR\x0eledgerClosedAt\x12\x1f\n" +
+	"\vcontract_id\x18\x04 \x01(\tR\n" +
+	"contractId\x12\x0e\n" +
+	"\x02id\x18\x05 \x01(\tR\x02id\x12'\n" +
+	"\x0foperation_index\x18\x06 \x01(\rR\x0eoperationIndex\x12+\n" +
+	"\x11transaction_index\x18\a \x01(\rR\x10transactionIndex\x12)\n" +
+	"\x10transaction_hash\x18\b \x01(\tR\x0ftransactionHash\x12F\n" +
+	"\x06topics\x18\t \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x06topics\x12D\n" +
+	"\x05value\x18\n" +
+	" \x01(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x05value\"\x98\x02\n" +
+	"\x11GetEventsResponse\x12/\n" +
+	"\x06events\x18\x01 \x03(\v2\x17.loop.stellar.EventInfoR\x06events\x12\x16\n" +
+	"\x06cursor\x18\x02 \x01(\tR\x06cursor\x12#\n" +
+	"\rlatest_ledger\x18\x03 \x01(\rR\flatestLedger\x12#\n" +
+	"\roldest_ledger\x18\x04 \x01(\rR\foldestLedger\x127\n" +
+	"\x18latest_ledger_close_time\x18\x05 \x01(\x03R\x15latestLedgerCloseTime\x127\n" +
+	"\x18oldest_ledger_close_time\x18\x06 \x01(\x03R\x15oldestLedgerCloseTime\"A\n" +
+	"\x11PaginationOptions\x12\x16\n" +
+	"\x06cursor\x18\x01 \x01(\tR\x06cursor\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\rR\x05limit\"\x9d\x01\n" +
+	"\vEventFilter\x128\n" +
+	"\vevent_types\x18\x01 \x03(\x0e2\x17.loop.stellar.EventTypeR\n" +
+	"eventTypes\x12!\n" +
+	"\fcontract_ids\x18\x02 \x03(\tR\vcontractIds\x121\n" +
+	"\x06topics\x18\x03 \x03(\v2\x19.loop.stellar.TopicFilterR\x06topics\"E\n" +
+	"\vTopicFilter\x126\n" +
+	"\bsegments\x18\x01 \x03(\v2\x1a.loop.stellar.TopicSegmentR\bsegments\"}\n" +
+	"\fTopicSegment\x12\x1c\n" +
+	"\bwildcard\x18\x01 \x01(\tH\x00R\bwildcard\x12F\n" +
+	"\x05scval\x18\x02 \x01(\v2..capabilities.blockchain.stellar.v1alpha.ScValH\x00R\x05scvalB\a\n" +
+	"\x05value\"\x99\x02\n" +
 	"\x18SubmitTransactionRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12!\n" +
 	"\ffrom_address\x18\x02 \x01(\tR\vfromAddress\x12\x1f\n" +
@@ -711,15 +1306,19 @@ const file_stellar_proto_rawDesc = "" +
 	"\bsequence\x18\x03 \x01(\rR\bsequence\x12*\n" +
 	"\x11ledger_close_time\x18\x04 \x01(\x03R\x0fledgerCloseTime\x12*\n" +
 	"\x11ledger_header_xdr\x18\x05 \x01(\fR\x0fledgerHeaderXdr\x12.\n" +
-	"\x13ledger_metadata_xdr\x18\x06 \x01(\fR\x11ledgerMetadataXdr*L\n" +
+	"\x13ledger_metadata_xdr\x18\x06 \x01(\fR\x11ledgerMetadataXdr*;\n" +
+	"\tEventType\x12\x15\n" +
+	"\x11EVENT_TYPE_SYSTEM\x10\x00\x12\x17\n" +
+	"\x13EVENT_TYPE_CONTRACT\x10\x01*L\n" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x14\n" +
 	"\x10TX_STATUS_FAILED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\xfb\x02\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x022\xc9\x03\n" +
 	"\aStellar\x12a\n" +
 	"\x10GetLedgerEntries\x12%.loop.stellar.GetLedgerEntriesRequest\x1a&.loop.stellar.GetLedgerEntriesResponse\x12P\n" +
 	"\x0fGetLatestLedger\x12\x16.google.protobuf.Empty\x1a%.loop.stellar.GetLatestLedgerResponse\x12U\n" +
-	"\fReadContract\x12!.loop.stellar.ReadContractRequest\x1a\".loop.stellar.ReadContractResponse\x12d\n" +
+	"\fReadContract\x12!.loop.stellar.ReadContractRequest\x1a\".loop.stellar.ReadContractResponse\x12L\n" +
+	"\tGetEvents\x12\x1e.loop.stellar.GetEventsRequest\x1a\x1f.loop.stellar.GetEventsResponse\x12d\n" +
 	"\x11SubmitTransaction\x12&.loop.stellar.SubmitTransactionRequest\x1a'.loop.stellar.SubmitTransactionResponseBAZ?github.com/smartcontractkit/chainlink-common/pkg/chains/stellarb\x06proto3"
 
 var (
@@ -734,39 +1333,59 @@ func file_stellar_proto_rawDescGZIP() []byte {
 	return file_stellar_proto_rawDescData
 }
 
-var file_stellar_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_stellar_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_stellar_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_stellar_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_stellar_proto_goTypes = []any{
-	(TxStatus)(0),                     // 0: loop.stellar.TxStatus
-	(*ReadContractRequest)(nil),       // 1: loop.stellar.ReadContractRequest
-	(*ReadContractResponse)(nil),      // 2: loop.stellar.ReadContractResponse
-	(*GetLedgerEntriesRequest)(nil),   // 3: loop.stellar.GetLedgerEntriesRequest
-	(*LedgerEntryResult)(nil),         // 4: loop.stellar.LedgerEntryResult
+	(EventType)(0),                    // 0: loop.stellar.EventType
+	(TxStatus)(0),                     // 1: loop.stellar.TxStatus
+	(*ReadContractRequest)(nil),       // 2: loop.stellar.ReadContractRequest
+	(*ReadContractResponse)(nil),      // 3: loop.stellar.ReadContractResponse
+	(*GetLedgerEntriesRequest)(nil),   // 4: loop.stellar.GetLedgerEntriesRequest
 	(*GetLedgerEntriesResponse)(nil),  // 5: loop.stellar.GetLedgerEntriesResponse
-	(*SubmitTransactionRequest)(nil),  // 6: loop.stellar.SubmitTransactionRequest
-	(*SubmitTransactionResponse)(nil), // 7: loop.stellar.SubmitTransactionResponse
-	(*GetLatestLedgerResponse)(nil),   // 8: loop.stellar.GetLatestLedgerResponse
-	(*scval.ScVal)(nil),               // 9: capabilities.blockchain.stellar.v1alpha.ScVal
-	(*emptypb.Empty)(nil),             // 10: google.protobuf.Empty
+	(*LedgerEntryResult)(nil),         // 6: loop.stellar.LedgerEntryResult
+	(*GetEventsRequest)(nil),          // 7: loop.stellar.GetEventsRequest
+	(*EventInfo)(nil),                 // 8: loop.stellar.EventInfo
+	(*GetEventsResponse)(nil),         // 9: loop.stellar.GetEventsResponse
+	(*PaginationOptions)(nil),         // 10: loop.stellar.PaginationOptions
+	(*EventFilter)(nil),               // 11: loop.stellar.EventFilter
+	(*TopicFilter)(nil),               // 12: loop.stellar.TopicFilter
+	(*TopicSegment)(nil),              // 13: loop.stellar.TopicSegment
+	(*SubmitTransactionRequest)(nil),  // 14: loop.stellar.SubmitTransactionRequest
+	(*SubmitTransactionResponse)(nil), // 15: loop.stellar.SubmitTransactionResponse
+	(*GetLatestLedgerResponse)(nil),   // 16: loop.stellar.GetLatestLedgerResponse
+	(*scval.ScVal)(nil),               // 17: capabilities.blockchain.stellar.v1alpha.ScVal
+	(*emptypb.Empty)(nil),             // 18: google.protobuf.Empty
 }
 var file_stellar_proto_depIdxs = []int32{
-	9,  // 0: loop.stellar.ReadContractRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	4,  // 1: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
-	9,  // 2: loop.stellar.SubmitTransactionRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	0,  // 3: loop.stellar.SubmitTransactionResponse.tx_status:type_name -> loop.stellar.TxStatus
-	3,  // 4: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
-	10, // 5: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
-	1,  // 6: loop.stellar.Stellar.ReadContract:input_type -> loop.stellar.ReadContractRequest
-	6,  // 7: loop.stellar.Stellar.SubmitTransaction:input_type -> loop.stellar.SubmitTransactionRequest
-	5,  // 8: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
-	8,  // 9: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
-	2,  // 10: loop.stellar.Stellar.ReadContract:output_type -> loop.stellar.ReadContractResponse
-	7,  // 11: loop.stellar.Stellar.SubmitTransaction:output_type -> loop.stellar.SubmitTransactionResponse
-	8,  // [8:12] is the sub-list for method output_type
-	4,  // [4:8] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	17, // 0: loop.stellar.ReadContractRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	6,  // 1: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
+	11, // 2: loop.stellar.GetEventsRequest.filters:type_name -> loop.stellar.EventFilter
+	10, // 3: loop.stellar.GetEventsRequest.pagination:type_name -> loop.stellar.PaginationOptions
+	0,  // 4: loop.stellar.EventInfo.event_type:type_name -> loop.stellar.EventType
+	17, // 5: loop.stellar.EventInfo.topics:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	17, // 6: loop.stellar.EventInfo.value:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	8,  // 7: loop.stellar.GetEventsResponse.events:type_name -> loop.stellar.EventInfo
+	0,  // 8: loop.stellar.EventFilter.event_types:type_name -> loop.stellar.EventType
+	12, // 9: loop.stellar.EventFilter.topics:type_name -> loop.stellar.TopicFilter
+	13, // 10: loop.stellar.TopicFilter.segments:type_name -> loop.stellar.TopicSegment
+	17, // 11: loop.stellar.TopicSegment.scval:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	17, // 12: loop.stellar.SubmitTransactionRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	1,  // 13: loop.stellar.SubmitTransactionResponse.tx_status:type_name -> loop.stellar.TxStatus
+	4,  // 14: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
+	18, // 15: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
+	2,  // 16: loop.stellar.Stellar.ReadContract:input_type -> loop.stellar.ReadContractRequest
+	7,  // 17: loop.stellar.Stellar.GetEvents:input_type -> loop.stellar.GetEventsRequest
+	14, // 18: loop.stellar.Stellar.SubmitTransaction:input_type -> loop.stellar.SubmitTransactionRequest
+	5,  // 19: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
+	16, // 20: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
+	3,  // 21: loop.stellar.Stellar.ReadContract:output_type -> loop.stellar.ReadContractResponse
+	9,  // 22: loop.stellar.Stellar.GetEvents:output_type -> loop.stellar.GetEventsResponse
+	15, // 23: loop.stellar.Stellar.SubmitTransaction:output_type -> loop.stellar.SubmitTransactionResponse
+	19, // [19:24] is the sub-list for method output_type
+	14, // [14:19] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_stellar_proto_init() }
@@ -774,14 +1393,18 @@ func file_stellar_proto_init() {
 	if File_stellar_proto != nil {
 		return
 	}
-	file_stellar_proto_msgTypes[6].OneofWrappers = []any{}
+	file_stellar_proto_msgTypes[11].OneofWrappers = []any{
+		(*TopicSegment_Wildcard)(nil),
+		(*TopicSegment_Scval)(nil),
+	}
+	file_stellar_proto_msgTypes[13].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stellar_proto_rawDesc), len(file_stellar_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   8,
+			NumEnums:      2,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

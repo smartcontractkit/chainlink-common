@@ -22,6 +22,63 @@ func (_m *StellarService) EXPECT() *StellarService_Expecter {
 	return &StellarService_Expecter{mock: &_m.Mock}
 }
 
+// GetEvents provides a mock function with given fields: ctx, req
+func (_m *StellarService) GetEvents(ctx context.Context, req stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEvents")
+	}
+
+	var r0 stellar.GetEventsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.GetEventsRequest) (stellar.GetEventsResponse, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.GetEventsRequest) stellar.GetEventsResponse); ok {
+		r0 = rf(ctx, req)
+	} else {
+		r0 = ret.Get(0).(stellar.GetEventsResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, stellar.GetEventsRequest) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_GetEvents_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEvents'
+type StellarService_GetEvents_Call struct {
+	*mock.Call
+}
+
+// GetEvents is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req stellar.GetEventsRequest
+func (_e *StellarService_Expecter) GetEvents(ctx interface{}, req interface{}) *StellarService_GetEvents_Call {
+	return &StellarService_GetEvents_Call{Call: _e.mock.On("GetEvents", ctx, req)}
+}
+
+func (_c *StellarService_GetEvents_Call) Run(run func(ctx context.Context, req stellar.GetEventsRequest)) *StellarService_GetEvents_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(stellar.GetEventsRequest))
+	})
+	return _c
+}
+
+func (_c *StellarService_GetEvents_Call) Return(_a0 stellar.GetEventsResponse, _a1 error) *StellarService_GetEvents_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_GetEvents_Call) RunAndReturn(run func(context.Context, stellar.GetEventsRequest) (stellar.GetEventsResponse, error)) *StellarService_GetEvents_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestLedger provides a mock function with given fields: ctx
 func (_m *StellarService) GetLatestLedger(ctx context.Context) (stellar.GetLatestLedgerResponse, error) {
 	ret := _m.Called(ctx)

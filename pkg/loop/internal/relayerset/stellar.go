@@ -33,6 +33,10 @@ func (sc *stellarClient) ReadContract(ctx context.Context, in *stelpb.ReadContra
 	return sc.client.ReadContract(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *stellarClient) GetEvents(ctx context.Context, in *stelpb.GetEventsRequest, opts ...grpc.CallOption) (*stelpb.GetEventsResponse, error) {
+	return sc.client.GetEvents(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 func (sc *stellarClient) SubmitTransaction(ctx context.Context, in *stelpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*stelpb.SubmitTransactionResponse, error) {
 	return sc.client.SubmitTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
 }
@@ -120,6 +124,30 @@ func (ss *stellarServer) ReadContract(ctx context.Context, req *stelpb.ReadContr
 		LedgerSequence: dResp.LedgerSequence,
 		Error:          dResp.Error,
 	}, nil
+}
+
+func (ss *stellarServer) GetEvents(ctx context.Context, req *stelpb.GetEventsRequest) (*stelpb.GetEventsResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dReq, err := stelpb.ConvertGetEventsRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetEvents request: %w", err)
+	}
+
+	dResp, err := svc.GetEvents(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	pResp, err := stelpb.ConvertGetEventsResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetEvents response: %w", err)
+	}
+
+	return pResp, nil
 }
 
 // getStellarService extracts the RelayID from context metadata and returns the StellarService

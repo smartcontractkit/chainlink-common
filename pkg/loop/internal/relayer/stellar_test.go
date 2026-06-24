@@ -173,6 +173,115 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, resultB64, resp.Result)
 	})
 
+	t.Run("GetEvents_roundtrip", func(t *testing.T) {
+		topicSym := "transfer"
+		filterSym := "transfer"
+		wildcard := "*"
+		eventValue := uint64(12345)
+
+		svc.getEvents = func(_ context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error) {
+			require.Equal(t, uint32(100), req.StartLedger)
+			require.Equal(t, uint32(200), req.EndLedger)
+			require.NotNil(t, req.Pagination)
+			require.Equal(t, "cursor-in", req.Pagination.Cursor)
+			require.Equal(t, uint32(25), req.Pagination.Limit)
+
+			require.Len(t, req.Filters, 1)
+			require.Equal(t, []stellartypes.EventType{stellartypes.EventTypeContract}, req.Filters[0].EventTypes)
+			require.Equal(t, []string{"CABC123"}, req.Filters[0].ContractIDs)
+			require.Len(t, req.Filters[0].Topics, 1)
+			require.Len(t, req.Filters[0].Topics[0].Segments, 2)
+
+			require.NotNil(t, req.Filters[0].Topics[0].Segments[0].Value)
+			require.Equal(t, stellartypes.ScValTypeSymbol, req.Filters[0].Topics[0].Segments[0].Value.Type)
+			require.NotNil(t, req.Filters[0].Topics[0].Segments[0].Value.Symbol)
+			require.Equal(t, "transfer", *req.Filters[0].Topics[0].Segments[0].Value.Symbol)
+
+			require.NotNil(t, req.Filters[0].Topics[0].Segments[1].Wildcard)
+			require.Equal(t, "*", *req.Filters[0].Topics[0].Segments[1].Wildcard)
+
+			return stellartypes.GetEventsResponse{
+				Events: []stellartypes.EventInfo{
+					{
+						EventType:        stellartypes.EventTypeContract,
+						Ledger:           150,
+						LedgerClosedAt:   "2025-01-01T00:00:00Z",
+						ContractID:       "CABC123",
+						ID:               "0000000150-0000000001",
+						OperationIndex:   1,
+						TransactionIndex: 2,
+						TransactionHash:  "txhash123",
+						Topics: []stellartypes.ScVal{
+							{
+								Type:   stellartypes.ScValTypeSymbol,
+								Symbol: &topicSym,
+							},
+						},
+						Value: stellartypes.ScVal{
+							Type: stellartypes.ScValTypeU64,
+							U64:  &eventValue,
+						},
+					},
+				},
+				Cursor:                "cursor-out",
+				LatestLedger:          200,
+				OldestLedger:          100,
+				LatestLedgerCloseTime: 1_700_000_100,
+				OldestLedgerCloseTime: 1_700_000_000,
+			}, nil
+		}
+
+		resp, err := client.GetEvents(ctx, stellartypes.GetEventsRequest{
+			StartLedger: 100,
+			EndLedger:   200,
+			Filters: []stellartypes.EventFilter{
+				{
+					EventTypes:  []stellartypes.EventType{stellartypes.EventTypeContract},
+					ContractIDs: []string{"CABC123"},
+					Topics: []stellartypes.TopicFilter{
+						{
+							Segments: []stellartypes.TopicSegment{
+								{
+									Value: &stellartypes.ScVal{
+										Type:   stellartypes.ScValTypeSymbol,
+										Symbol: &filterSym,
+									},
+								},
+								{Wildcard: &wildcard},
+							},
+						},
+					},
+				},
+			},
+			Pagination: &stellartypes.PaginationOptions{
+				Cursor: "cursor-in",
+				Limit:  25,
+			},
+		})
+		require.NoError(t, err)
+		require.Equal(t, "cursor-out", resp.Cursor)
+		require.Equal(t, uint32(200), resp.LatestLedger)
+		require.Equal(t, uint32(100), resp.OldestLedger)
+		require.Len(t, resp.Events, 1)
+
+		event := resp.Events[0]
+		require.Equal(t, stellartypes.EventTypeContract, event.EventType)
+		require.Equal(t, uint32(150), event.Ledger)
+		require.Equal(t, "2025-01-01T00:00:00Z", event.LedgerClosedAt)
+		require.Equal(t, "CABC123", event.ContractID)
+		require.Equal(t, "0000000150-0000000001", event.ID)
+		require.Equal(t, uint32(1), event.OperationIndex)
+		require.Equal(t, uint32(2), event.TransactionIndex)
+		require.Equal(t, "txhash123", event.TransactionHash)
+		require.Len(t, event.Topics, 1)
+		require.Equal(t, stellartypes.ScValTypeSymbol, event.Topics[0].Type)
+		require.NotNil(t, event.Topics[0].Symbol)
+		require.Equal(t, "transfer", *event.Topics[0].Symbol)
+		require.Equal(t, stellartypes.ScValTypeU64, event.Value.Type)
+		require.NotNil(t, event.Value.U64)
+		require.Equal(t, uint64(12345), *event.Value.U64)
+	})
+
 	t.Run("SubmitTransaction_roundtrip", func(t *testing.T) {
 		sym := "transfer"
 		argVal := stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
@@ -271,6 +380,7 @@ type staticStellarService struct {
 	getLedgerEntries  func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
 	getLatestLedger   func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
 	readContract      func(ctx context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error)
+	getEvents         func(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error)
 	submitTransaction func(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error)
 }
 
@@ -293,6 +403,13 @@ func (s *staticStellarService) ReadContract(ctx context.Context, req stellartype
 		return s.UnimplementedStellarService.ReadContract(ctx, req)
 	}
 	return s.readContract(ctx, req)
+}
+
+func (s *staticStellarService) GetEvents(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error) {
+	if s.getEvents == nil {
+		return s.UnimplementedStellarService.GetEvents(ctx, req)
+	}
+	return s.getEvents(ctx, req)
 }
 
 func (s *staticStellarService) SubmitTransaction(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error) {

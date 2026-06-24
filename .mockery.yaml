@@ -45,6 +45,9 @@ packages:
       ExecutionHelper:
         config:
             mockname: "Mock{{.InterfaceName}}"
+      ExecutionHelperWithRawSecrets:
+        config:
+          mockname: "Mock{{.InterfaceName}}"
   github.com/smartcontractkit/chainlink-common/pkg/custmsg:
     interfaces:
       MessageEmitter:

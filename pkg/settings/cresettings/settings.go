@@ -243,6 +243,9 @@ var Default = Schema{
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
+		ConfidentialWorkflows: confidentialWorkflows{
+			Enabled: Bool(false),
+		},
 		Secrets: secrets{
 			CallLimit: Int(5),
 		},
@@ -372,13 +375,14 @@ type Workflows struct {
 	HTTPTrigger httpTrigger
 	LogTrigger  logTrigger
 
-	ChainWrite       chainWrite
-	ChainRead        chainRead
-	Consensus        consensus
-	HTTPAction       httpAction
-	ConfidentialHTTP confidentialHTTP
-	Secrets          secrets
-	DONTime          donTime
+	ChainWrite            chainWrite
+	ChainRead             chainRead
+	Consensus             consensus
+	HTTPAction            httpAction
+	ConfidentialHTTP      confidentialHTTP
+	ConfidentialWorkflows confidentialWorkflows
+	Secrets               secrets
+	DONTime               donTime
 
 	FeatureMultiTriggerExecutionIDsActiveAt           Setting[config.Timestamp] // Deprecated
 	FeatureMultiTriggerExecutionIDsActivePeriod       Setting[Range[config.Timestamp]]
@@ -442,6 +446,13 @@ type confidentialHTTP struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+
+type confidentialWorkflows struct {
+	// Enabled gates the confidential-workflows capability. When false, confidential
+	// workflow executions are rejected. Scoped per workflow/owner/org/global so it
+	// can be toggled in production without a redeploy.
+	Enabled Setting[bool]
 }
 type secrets struct {
 	CallLimit Setting[int] `unit:"{call}"`

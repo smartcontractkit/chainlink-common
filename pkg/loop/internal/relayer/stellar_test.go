@@ -212,8 +212,15 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 
 		resp, err := client.SimulateTransaction(ctx, req)
 		require.NoError(t, err)
-		require.Equal(t, expectedResp, resp)
+
+		require.Equal(t, expectedResp.LedgerSequence, resp.LedgerSequence)
+		require.Equal(t, expectedResp.Success, resp.Success)
+		require.Equal(t, expectedResp.Error, resp.Error)
 		require.Empty(t, resp.ReturnValueXDR)
+		require.Empty(t, resp.RequiredAuthXDR)
+		require.Empty(t, resp.EventsXDR)
+		require.Equal(t, expectedResp.TransactionDataXDR, resp.TransactionDataXDR)
+		require.Equal(t, expectedResp.MinResourceFee, resp.MinResourceFee)
 		require.Nil(t, resp.RestorePreamble)
 	})
 

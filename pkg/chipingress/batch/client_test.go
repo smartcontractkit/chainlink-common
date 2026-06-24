@@ -2186,7 +2186,7 @@ func TestNewBatchRequest_IdempotencyPositional(t *testing.T) {
 
 	msgs := []*messageWithCallback{
 		{event: makeEvent("key-0")},
-		{event: makeEvent("")},      // no key → empty string forwarded
+		{event: makeEvent("")}, // no key → empty string forwarded
 		{event: makeEvent("key-2")},
 	}
 
@@ -2194,7 +2194,7 @@ func TestNewBatchRequest_IdempotencyPositional(t *testing.T) {
 
 	require.Len(t, batch.Idempotency, 3, "idempotency slice must be positionally aligned with events")
 	assert.Equal(t, "key-0", batch.Idempotency[0].Key)
-	assert.Equal(t, "", batch.Idempotency[1].Key)
+	assert.Empty(t, batch.Idempotency[1].Key)
 	assert.Equal(t, "key-2", batch.Idempotency[2].Key)
 	require.Len(t, batch.Events, 3, "events must be unchanged")
 }

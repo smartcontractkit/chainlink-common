@@ -196,7 +196,7 @@ func ConvertSimulateTransactionRequestToProto(req stellar.SimulateTransactionReq
 // ConvertSimulateTransactionRequestFromProto converts proto SimulateTransactionRequest to domain.
 func ConvertSimulateTransactionRequestFromProto(p *SimulateTransactionRequest) (stellar.SimulateTransactionRequest, error) {
 	if p == nil {
-		return stellar.SimulateTransactionRequest{}, errors.New("simulate contract request is nil")
+		return stellar.SimulateTransactionRequest{}, errors.New("simulate transaction request is nil")
 	}
 	if p.GetContractId() == "" {
 		return stellar.SimulateTransactionRequest{}, errors.New("contractID is required")
@@ -315,14 +315,21 @@ func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionRes
 			return nil, fmt.Errorf("invalid result meta xdr %q: %w", reply.ResultMetaXDR, err)
 		}
 	}
-	return &SubmitTransactionResponse{
+	resp := &SubmitTransactionResponse{
 		TxStatus:         TxStatus(reply.TxStatus),
 		TxHash:           reply.TxHash,
 		TxIdempotencyKey: reply.TxIdempotencyKey,
 		ResultXdr:        resultXDR,
 		ResultMetaXdr:    resultMetaXDR,
 		Error:            reply.Error,
-	}, nil
+	}
+	if reply.TransactionFee != nil {
+		resp.TransactionFee = reply.TransactionFee
+	}
+	if reply.BlockTimestamp != nil {
+		resp.BlockTimestamp = reply.BlockTimestamp
+	}
+	return resp, nil
 }
 
 // ConvertSubmitTransactionResponseFromProto converts proto SubmitTransactionResponse to domain.
@@ -330,14 +337,23 @@ func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*s
 	if p == nil {
 		return nil, errors.New("submit transaction reply is nil")
 	}
-	return &stellar.SubmitTransactionResponse{
+	resp := &stellar.SubmitTransactionResponse{
 		TxStatus:         stellar.TransactionStatus(p.GetTxStatus()),
 		TxHash:           p.GetTxHash(),
 		TxIdempotencyKey: p.GetTxIdempotencyKey(),
 		ResultXDR:        base64.StdEncoding.EncodeToString(p.GetResultXdr()),
 		ResultMetaXDR:    base64.StdEncoding.EncodeToString(p.GetResultMetaXdr()),
 		Error:            p.GetError(),
-	}, nil
+	}
+	if p.TransactionFee != nil {
+		fee := p.GetTransactionFee()
+		resp.TransactionFee = &fee
+	}
+	if p.BlockTimestamp != nil {
+		ts := p.GetBlockTimestamp()
+		resp.BlockTimestamp = &ts
+	}
+	return resp, nil
 }
 
 func ConvertGetEventsRequestToProto(req stellar.GetEventsRequest) (*GetEventsRequest, error) {

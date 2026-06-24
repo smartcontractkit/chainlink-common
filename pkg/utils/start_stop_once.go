@@ -7,4 +7,6 @@ import (
 // StartStopOnce can be embedded in a struct to help implement types.Service.
 //
 // Deprecated: use services.StateMachine
+//
+//go:fix inline
 type StartStopOnce = services.StateMachine

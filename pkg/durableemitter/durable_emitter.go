@@ -436,7 +436,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				h.OnEmitInsert(insElapsed, res.err)
 			}
 			if d.metrics != nil {
-				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				d.metrics.recordEmitDuration(ctx, insElapsed, res.err)
 				if res.err != nil {
 					d.metrics.emitFail.Add(ctx, 1)
 				} else {
@@ -455,7 +455,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				h.OnEmitInsert(insElapsed, err)
 			}
 			if d.metrics != nil {
-				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				d.metrics.recordEmitDuration(ctx, insElapsed, err)
 				if err != nil {
 					d.metrics.emitFail.Add(ctx, 1)
 				} else {

@@ -131,7 +131,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={immediate,retransmit,best_effort}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit,best_effort}, error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -139,28 +139,28 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishBatchOK, err = meter.Int64Counter(
 		"durable_emitter.publish.retransmit.batch.success",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchErr, err = meter.Int64Counter(
 		"durable_emitter.publish.retransmit.batch.failure",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchEvOK, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.events.success",
+		"durable_emitter.publish.batch.events.success",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Retransmit Publish RPC successes (one RPC per queued event)"),
+		metric.WithDescription("Batch Publish RPC successes (one count per event in a completed batch); labels: phase={batch,retransmit}"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchEvErr, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.events.failure",
+		"durable_emitter.publish.batch.events.failure",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Retransmit Publish RPC failures (event stays queued)"),
+		metric.WithDescription("Batch Publish RPC failures (event stays queued); labels: phase={batch,retransmit}"),
 	); err != nil {
 		return nil, err
 	}
@@ -338,4 +338,16 @@ func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.
 			attribute.Bool("error", err != nil),
 		),
 	)
+}
+
+func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, phase string, err error) {
+	if m == nil {
+		return
+	}
+	attrs := metric.WithAttributes(attribute.String("phase", phase))
+	if err != nil {
+		m.publishBatchEvErr.Add(ctx, 1, attrs)
+	} else {
+		m.publishBatchEvOK.Add(ctx, 1, attrs)
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 )
 
@@ -100,17 +101,23 @@ func (d *Document) VerifyPCR(index uint, expected []byte) error {
 		return fmt.Errorf("PCR%d is all zero (debug-mode enclave), refusing", index)
 	}
 	if !bytes.Equal(actual, expected) {
-		return fmt.Errorf("PCR%d mismatch", index)
+		return fmt.Errorf("PCR%d mismatch: expected %x, got %x", index, expected, actual)
 	}
 	return nil
 }
 
 // VerifyExpectedPCRs checks each index/value in expected against the document
 // via VerifyPCR. It is a convenience for callers asserting several per-instance
-// PCRs at once and returns the first failure.
+// PCRs at once and returns the first failure. Indices are checked in ascending
+// order so the reported failure is deterministic.
 func (d *Document) VerifyExpectedPCRs(expected map[uint][]byte) error {
-	for index, value := range expected {
-		if err := d.VerifyPCR(index, value); err != nil {
+	indices := make([]uint, 0, len(expected))
+	for index := range expected {
+		indices = append(indices, index)
+	}
+	sort.Slice(indices, func(i, j int) bool { return indices[i] < indices[j] })
+	for _, index := range indices {
+		if err := d.VerifyPCR(index, expected[index]); err != nil {
 			return err
 		}
 	}

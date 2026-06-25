@@ -63,6 +63,7 @@
 		"ConfidentialCompute": {
 			"Rate": "1000rps:1000"
 		}
+		"SuspendOnAwaitEnabled": "false"
 	},
 	"PerWorkflow": {
 		"TriggerRegistrationsTimeout": "10s",

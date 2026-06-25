@@ -155,6 +155,8 @@ var Default = Schema{
 		WorkflowLimit:                     Int(1000),
 		WorkflowExecutionConcurrencyLimit: Int(5),
 
+		SuspendOnAwaitEnabled: Bool(false),
+
 		// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 		// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 		// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
@@ -358,7 +360,8 @@ type Owners struct {
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 
 	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
-	ConfidentialCompute ownerConfidentialCompute
+	ConfidentialCompute   ownerConfidentialCompute
+	SuspendOnAwaitEnabled Setting[bool]
 }
 
 type Workflows struct {

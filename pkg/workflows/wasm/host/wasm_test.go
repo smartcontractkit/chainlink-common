@@ -672,7 +672,9 @@ func Test_Compute_Fetch(t *testing.T) {
 		cancel()
 		_, err = m.Run(ctx, req)
 		require.Error(t, err)
-		assert.ErrorContains(t, err, fmt.Sprintf("error executing runner: error executing custom compute: %s", assert.AnError))
+		// The context is cancelled before Run, so the cancellation is reported as
+		// a deadline-exceeded error rather than surfacing the guest's runner error.
+		require.ErrorIs(t, err, context.DeadlineExceeded)
 	})
 
 	t.Run("NOK: exceeded maximum fetch calls", func(t *testing.T) {

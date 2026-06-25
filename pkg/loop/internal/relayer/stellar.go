@@ -72,6 +72,31 @@ func (sc *StellarClient) GetEvents(ctx context.Context, req stellar.GetEventsReq
 	return resp, nil
 }
 
+func (sc *StellarClient) GetTransaction(ctx context.Context, req stellar.GetTransactionRequest) (stellar.GetTransactionResponse, error) {
+	pReq := stelpb.ConvertGetTransactionRequestToProto(req)
+	pResp, err := sc.grpcClient.GetTransaction(ctx, pReq)
+	if err != nil {
+		return stellar.GetTransactionResponse{}, net.WrapRPCErr(err)
+	}
+	resp, err := stelpb.ConvertGetTransactionResponseFromProto(pResp)
+	if err != nil {
+		return stellar.GetTransactionResponse{}, fmt.Errorf("invalid GetTransaction response: %w", err)
+	}
+	return resp, nil
+}
+
+func (sc *StellarClient) GetSigningAccount(ctx context.Context) (stellar.GetSigningAccountResponse, error) {
+	pResp, err := sc.grpcClient.GetSigningAccount(ctx, &emptypb.Empty{})
+	if err != nil {
+		return stellar.GetSigningAccountResponse{}, net.WrapRPCErr(err)
+	}
+	resp, err := stelpb.ConvertGetSigningAccountResponseFromProto(pResp)
+	if err != nil {
+		return stellar.GetSigningAccountResponse{}, fmt.Errorf("invalid GetSigningAccount response: %w", err)
+	}
+	return resp, nil
+}
+
 func (sc *StellarClient) SimulateTransaction(ctx context.Context, req stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
 	pReq, err := stelpb.ConvertSimulateTransactionRequestToProto(req)
 	if err != nil {
@@ -197,6 +222,26 @@ func (s *stellarServer) GetEvents(ctx context.Context, req *stelpb.GetEventsRequ
 	}
 
 	return pResp, nil
+}
+
+func (s *stellarServer) GetTransaction(ctx context.Context, req *stelpb.GetTransactionRequest) (*stelpb.GetTransactionResponse, error) {
+	dReq, err := stelpb.ConvertGetTransactionRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetTransaction request: %w", err)
+	}
+	dResp, err := s.impl.GetTransaction(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return stelpb.ConvertGetTransactionResponseToProto(dResp), nil
+}
+
+func (s *stellarServer) GetSigningAccount(ctx context.Context, _ *emptypb.Empty) (*stelpb.GetSigningAccountResponse, error) {
+	dResp, err := s.impl.GetSigningAccount(ctx)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return stelpb.ConvertGetSigningAccountResponseToProto(dResp), nil
 }
 
 func (s *stellarServer) SubmitTransaction(ctx context.Context, req *stelpb.SubmitTransactionRequest) (*stelpb.SubmitTransactionResponse, error) {

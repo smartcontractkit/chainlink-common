@@ -11,6 +11,8 @@ service Stellar {
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
   rpc SimulateTransaction(SimulateTransactionRequest) returns (SimulateTransactionResponse);
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
+  rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
+  rpc GetSigningAccount(google.protobuf.Empty) returns (GetSigningAccountResponse);
   rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 }
 
@@ -146,6 +148,23 @@ message GetEventsResponse {
 
   int64 latest_ledger_close_time = 5;
   int64 oldest_ledger_close_time = 6;
+}
+
+// GetTransactionRequest fetches a transaction by hash.
+message GetTransactionRequest {
+  string tx_hash = 1;
+}
+
+// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+message GetTransactionResponse {
+  uint64 fee_stroops = 1;
+  uint32 ledger_sequence = 2;
+  int64 ledger_close_time = 3;
+}
+
+// GetSigningAccountResponse is the relayer default TXM signing account.
+message GetSigningAccountResponse {
+  string account_address = 1;
 }
 
 message PaginationOptions {

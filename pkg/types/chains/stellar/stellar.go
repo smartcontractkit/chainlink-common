@@ -42,9 +42,16 @@ type Client interface {
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
 	// GetEvents fetches contract events matching the provided ledger range, filters, and pagination.
 	GetEvents(ctx context.Context, req GetEventsRequest) (GetEventsResponse, error)
+	// GetTransaction fetches an on-chain transaction by hash.
+	GetTransaction(ctx context.Context, req GetTransactionRequest) (GetTransactionResponse, error)
 	// SimulateTransaction builds a synthetic single-operation Soroban InvokeContract
 	// transaction and simulates it without submitting it.
 	SimulateTransaction(ctx context.Context, req SimulateTransactionRequest) (SimulateTransactionResponse, error)
+}
+
+// GetSigningAccountResponse is the relayer's default TXM signing account (G... StrKey).
+type GetSigningAccountResponse struct {
+	AccountAddress string
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
@@ -466,4 +473,16 @@ type GetEventsResponse struct {
 	OldestLedger          uint32
 	LatestLedgerCloseTime int64
 	OldestLedgerCloseTime int64
+}
+
+// GetTransactionRequest fetches a transaction by hash.
+type GetTransactionRequest struct {
+	TxHash string
+}
+
+// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+type GetTransactionResponse struct {
+	FeeStroops      uint64
+	LedgerSequence  uint32
+	LedgerCloseTime int64 // unix seconds
 }

@@ -2,6 +2,8 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"net"
 	"sort"
@@ -1141,6 +1143,76 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 
 	assert.Equal(t, "test-domain", received.Source)
 	assert.Equal(t, "test-entity", received.Type)
+}
+
+func TestDurableEmitter_IdempotencyKeyDefaultsToBodyHash(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("hold"))
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute // no retransmit during test
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	body := []byte("deterministic-body")
+	require.NoError(t, em.Emit(ctx, body, testEmitAttrs()...))
+	require.Eventually(t, func() bool { return be.callCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	// Event stays in store (publish failed). Unmarshal stored proto and check attribute.
+	store.mu.Lock()
+	var stored []byte
+	for _, e := range store.events {
+		stored = append([]byte(nil), e.Payload...)
+		break
+	}
+	store.mu.Unlock()
+	require.NotNil(t, stored, "event should still be in store")
+
+	var eventPb cepb.CloudEvent
+	require.NoError(t, proto.Unmarshal(stored, &eventPb))
+
+	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
+	require.True(t, ok, "idempotencykey attribute must be set")
+	expectedSum := sha256.Sum256(body)
+	expectedKey := hex.EncodeToString(expectedSum[:])
+	require.Equal(t, expectedKey, attr.GetCeString())
+}
+
+func TestDurableEmitter_IdempotencyKeyCallerSupplied(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("hold"))
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	callerKey := "my-idempotency-key-abc123"
+	body := []byte("some-body")
+	attrs := append(testEmitAttrs(), chipingress.IdempotencyKeyAttr, callerKey)
+	require.NoError(t, em.Emit(ctx, body, attrs...))
+
+	require.Eventually(t, func() bool { return be.callCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	store.mu.Lock()
+	var stored []byte
+	for _, e := range store.events {
+		stored = append([]byte(nil), e.Payload...)
+		break
+	}
+	store.mu.Unlock()
+	require.NotNil(t, stored)
+
+	var eventPb cepb.CloudEvent
+	require.NoError(t, proto.Unmarshal(stored, &eventPb))
+
+	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
+	require.True(t, ok, "idempotencykey attribute must be present")
+	require.Equal(t, callerKey, attr.GetCeString(), "caller-supplied key must be preserved")
 }
 
 // MemDurableEventStore is an in-memory DurableEventStore for unit tests.

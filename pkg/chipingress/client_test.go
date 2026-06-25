@@ -137,6 +137,36 @@ func TestNewEvent(t *testing.T) {
 	assert.Equal(t, testProto.Message, resultProto.Message)
 }
 
+func TestNewEvent_IdempotencyKey(t *testing.T) {
+	payload := []byte("body")
+
+	t.Run("non-empty key is set as extension", func(t *testing.T) {
+		attrs := map[string]any{IdempotencyKeyAttr: "my-key-123"}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		ext := event.Extensions()
+		require.NotNil(t, ext)
+		assert.Equal(t, "my-key-123", ext[IdempotencyKeyAttr])
+	})
+
+	t.Run("empty key is not set as extension", func(t *testing.T) {
+		attrs := map[string]any{IdempotencyKeyAttr: ""}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		ext := event.Extensions()
+		_, present := ext[IdempotencyKeyAttr]
+		assert.False(t, present, "empty idempotency key must not appear as an extension")
+	})
+
+	t.Run("absent key leaves extension unset", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, nil)
+		require.NoError(t, err)
+		ext := event.Extensions()
+		_, present := ext[IdempotencyKeyAttr]
+		assert.False(t, present, "absent idempotency key must not appear as an extension")
+	})
+}
+
 func TestEventToProto(t *testing.T) {
 	// Create a test protobuf message
 	testProto := pb.PingResponse{Message: "test message"}

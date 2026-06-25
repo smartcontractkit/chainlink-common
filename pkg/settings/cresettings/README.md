@@ -42,6 +42,7 @@ flowchart
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
+        VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
     end
@@ -223,6 +224,9 @@ flowchart
             PerWorkflow.ConfidentialHTTP.ConnectionTimeout{{ConnectionTimeout}}:::bound
             PerWorkflow.ConfidentialHTTP.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.ConfidentialHTTP.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
+        end
+        subgraph PerWorkflow.ConfidentialWorkflows
+            PerWorkflow.ConfidentialWorkflows.Enabled[/Enabled\]:::gate
         end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound

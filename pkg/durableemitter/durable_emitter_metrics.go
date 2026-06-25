@@ -101,7 +101,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.emitDuration, err = meter.Float64Histogram(
 		"durable_emitter.emit.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds)"),
+		metric.WithDescription("Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds); labels: error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -317,6 +317,15 @@ func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st Durable
 	if maxBytes > 0 {
 		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
 	}
+}
+
+func (m *durableEmitterMetrics) recordEmitDuration(ctx context.Context, elapsed time.Duration, err error) {
+	if m == nil {
+		return
+	}
+	m.emitDuration.Record(ctx, elapsed.Seconds(),
+		metric.WithAttributes(attribute.Bool("error", err != nil)),
+	)
 }
 
 func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase string, err error) {

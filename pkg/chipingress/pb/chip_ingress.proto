@@ -72,20 +72,10 @@ message PublishError {
     string reason = 2;
 }
 
-// Idempotency carries a per-event idempotency key. Wrapped in a message so it
-// can gain fields (scheme, namespace, ttl, ...) without a wire break.
-message Idempotency {
-    string key = 1;
-}
-
 // CloudEventBatch is used to send many ChipIngress
 message CloudEventBatch {
     repeated io.cloudevents.v1.CloudEvent events = 1;
     PublishOptions options = 2;
-    // idempotency[i] corresponds to events[i] (positional, like
-    // PublishResponse.results). Optional/additive: may be empty or shorter than
-    // events; servers that don't understand field 3 ignore it.
-    repeated Idempotency idempotency = 3;
 }
 
 message PublishResponse {

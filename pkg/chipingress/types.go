@@ -7,10 +7,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
-// IdempotencyKeyAttr is the CloudEvent extension attribute name for the per-event
-// idempotency key. Pass it in the attributes map of NewEvent to have the key set
-// as a CloudEvent extension; it is also forwarded into CloudEventBatch.Idempotency
-// by the batch client for the server to use for deduplication.
+// IdempotencyKeyAttr is the CloudEvent extension attribute name for a per-event
+// idempotency key. Set it via the attributes map of NewEvent; ChIP Ingress forwards
+// any extension as the Kafka header ce_<name>, so this becomes ce_idempotencykey on
+// each produced message for downstream consumers to dedupe on.
 const IdempotencyKeyAttr = "idempotencykey"
 
 type (
@@ -25,7 +25,6 @@ type (
 	// Message types
 	CloudEventBatch      = pb.CloudEventBatch
 	EmptyRequest         = pb.EmptyRequest
-	Idempotency          = pb.Idempotency
 	PublishErrorCode     = pb.PublishErrorCode
 	PingResponse         = pb.PingResponse
 	PublishOptions       = pb.PublishOptions

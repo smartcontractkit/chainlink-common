@@ -9,6 +9,7 @@
 	"VaultBase64EncodingEnabled": "false",
 	"VaultForceEmptyOCRRounds": "false",
 	"VaultOptimizationsEnabled": "false",
+	"VaultGetSecretsShareAggregationIncludesPublicKeys": "false",
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
 	"VaultSignedResponseRequestIDEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
@@ -154,6 +155,9 @@
 			"ConnectionTimeout": "10s",
 			"RequestSizeLimit": "10kb",
 			"ResponseSizeLimit": "100kb"
+		},
+		"ConfidentialWorkflows": {
+			"Enabled": "false"
 		},
 		"Secrets": {
 			"CallLimit": "5"

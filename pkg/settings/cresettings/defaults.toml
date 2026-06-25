@@ -8,6 +8,7 @@ PropagateOrgIDInRequestMetadata = 'false'
 VaultBase64EncodingEnabled = 'false'
 VaultForceEmptyOCRRounds = 'false'
 VaultOptimizationsEnabled = 'false'
+VaultGetSecretsShareAggregationIncludesPublicKeys = 'false'
 VaultOwnerAddressCanonicalizationEnabled = 'false'
 VaultSignedResponseRequestIDEnabled = 'false'
 GatewayHTTPGlobalRate = '500rps:500'
@@ -163,6 +164,9 @@ CallLimit = '5'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
+
+[PerWorkflow.ConfidentialWorkflows]
+Enabled = 'false'
 
 [PerWorkflow.Secrets]
 CallLimit = '5'

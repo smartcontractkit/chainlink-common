@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782315090911,
+  "lastUpdate": 1782405647505,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52380,6 +52380,66 @@ window.BENCHMARK_DATA = {
             "value": 133432,
             "unit": "ns/op",
             "extra": "9495 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cfal@users.noreply.github.com",
+            "name": "cfal",
+            "username": "cfal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bdf9e82b2f75a4ac4c2a63d46e672e0645ed325d",
+          "message": "capabilities/v2/actions/confidentialrelay: Add applicationRequestID to ComputeRequest and hashing (#2185)\n\nIntroduce the `ApplicationRequestID` field to the `ComputeRequest`\nstruct. For non-legacy versions, this field is included in the\ncomputed hash to bind the application-specific request identity. For\nlegacy versions, the field is excluded from the hash, maintaining\ncompatibility with existing behavior.",
+          "timestamp": "2026-06-25T16:28:47Z",
+          "tree_id": "2c01edbf614bca328247f77782c85fa0a5a21a9a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bdf9e82b2f75a4ac4c2a63d46e672e0645ed325d"
+        },
+        "date": 1782405645138,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 276.3,
+            "unit": "ns/op",
+            "extra": "4347105 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 60741,
+            "unit": "ns/op",
+            "extra": "19647 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 298.9,
+            "unit": "ns/op",
+            "extra": "3959877 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58770,
+            "unit": "ns/op",
+            "extra": "20846 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22626,
+            "unit": "ns/op",
+            "extra": "53054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 100888,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

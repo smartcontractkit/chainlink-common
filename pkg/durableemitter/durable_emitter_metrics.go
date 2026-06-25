@@ -38,7 +38,10 @@ type durableEmitterMetrics struct {
 	publishBatchErr    metric.Int64Counter
 	publishBatchEvOK   metric.Int64Counter
 	publishBatchEvErr  metric.Int64Counter
-	deliverComplete    metric.Int64Counter
+	// nonRetryableDropped counts events removed from persistence after a
+	// permanent (non-retryable) publish failure such as a missing schema.
+	nonRetryableDropped metric.Int64Counter
+	deliverComplete     metric.Int64Counter
 	expiredPurged      metric.Int64Counter
 	storeOps           metric.Int64Counter
 	storeOpDuration    metric.Float64Histogram
@@ -161,6 +164,13 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 		"durable_emitter.publish.retransmit.events.failure",
 		metric.WithUnit("{event}"),
 		metric.WithDescription("Retransmit Publish RPC failures (event stays queued)"),
+	); err != nil {
+		return nil, err
+	}
+	if m.nonRetryableDropped, err = meter.Int64Counter(
+		"durable_emitter.non_retryable_dropped",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events removed from store after a non-retryable publish failure (e.g. missing schema); not retransmitted"),
 	); err != nil {
 		return nil, err
 	}

@@ -612,6 +612,100 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
 }
 
+// readCounterSum collects metrics from the reader and returns the summed value
+// of the named Int64 counter, plus whether the counter was found.
+func readCounterSum(t *testing.T, reader *sdkmetric.ManualReader, name string) (int64, bool) {
+	t.Helper()
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			sum, ok := m.Data.(metricdata.Sum[int64])
+			if !ok {
+				return 0, false
+			}
+			var total int64
+			for _, dp := range sum.DataPoints {
+				total += dp.Value
+			}
+			return total, true
+		}
+	}
+	return 0, false
+}
+
+// TestDurableEmitter_NonRetryableSchemaMissingDrops verifies that when chip
+// ingress rejects an event with PUBLISH_ERROR_CODE_SCHEMA_MISSING, the event is
+// removed from persistence and never retransmitted, even with the retransmit
+// loop enabled and ticking aggressively.
+func TestDurableEmitter_NonRetryableSchemaMissingDrops(t *testing.T) {
+	meter, reader := newTestMeter(t)
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("PUBLISH_ERROR_CODE_SCHEMA_MISSING: schema cre-workflows.v2.WorkflowExecutionProfile:-1 not found"))
+
+	cfg := DefaultConfig()
+	// Aggressive retransmit cadence so that, if the event were left in the DB,
+	// it would be re-queued many times during the wait below.
+	cfg.RetransmitInterval = 20 * time.Millisecond
+	cfg.RetransmitAfter = 5 * time.Millisecond
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: time.Hour}
+
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), meter)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.NoError(t, em.Emit(ctx, []byte("schema-missing"), testEmitAttrs()...))
+
+	// The delivery callback should delete the row from persistence.
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 2*time.Second, 10*time.Millisecond, "non-retryable event must be removed from persistence")
+
+	// Give the retransmit loop several ticks to (incorrectly) re-queue if the
+	// drop logic were missing.
+	time.Sleep(200 * time.Millisecond)
+
+	assert.Equal(t, int64(1), be.callCount.Load(),
+		"non-retryable event must be queued exactly once and never retransmitted")
+	assert.Equal(t, int64(0), em.PendingDepth(), "pending depth must return to zero after drop")
+	assert.Equal(t, 0, store.Len(), "store must remain empty (no retransmit re-inserts)")
+
+	dropped, found := readCounterSum(t, reader, "durable_emitter.non_retryable_dropped")
+	require.True(t, found, "expected durable_emitter.non_retryable_dropped in exported metrics")
+	assert.Equal(t, int64(1), dropped, "exactly one event should be counted as non-retryable dropped")
+}
+
+// TestDurableEmitter_RetryableErrorIsRetransmitted is the contrast case: an
+// error that is NOT classified as non-retryable leaves the event in the DB and
+// the retransmit loop keeps re-queuing it.
+func TestDurableEmitter_RetryableErrorIsRetransmitted(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("rpc error: code = Unavailable desc = connection error"))
+
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 20 * time.Millisecond
+	cfg.RetransmitAfter = 5 * time.Millisecond
+
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.NoError(t, em.Emit(ctx, []byte("transient"), testEmitAttrs()...))
+
+	// Retryable errors keep the row and trigger repeated retransmit attempts.
+	require.Eventually(t, func() bool {
+		return be.callCount.Load() >= 3 && store.Len() == 1
+	}, 2*time.Second, 10*time.Millisecond, "retryable event must remain persisted and be retransmitted")
+}
+
 // mockChipServer implements ChipIngressServer with controllable behaviour.
 type mockChipServer struct {
 	pb.UnimplementedChipIngressServer

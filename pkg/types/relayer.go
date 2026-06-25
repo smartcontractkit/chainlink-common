@@ -274,6 +274,9 @@ type AptosService interface {
 type StellarService interface {
 	stellar.Client
 
+	// GetSigningAccount returns the default TXM signing account from the relayer keystore.
+	GetSigningAccount(ctx context.Context) (stellar.GetSigningAccountResponse, error)
+
 	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.
 	SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)
 }
@@ -659,6 +662,14 @@ func (u *UnimplementedStellarService) SimulateTransaction(_ context.Context, _ s
 func (u *UnimplementedStellarService) GetEvents(_ context.Context, _ stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
 	return stellar.GetEventsResponse{}, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
 
+}
+
+func (u *UnimplementedStellarService) GetTransaction(_ context.Context, _ stellar.GetTransactionRequest) (stellar.GetTransactionResponse, error) {
+	return stellar.GetTransactionResponse{}, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetSigningAccount(_ context.Context) (stellar.GetSigningAccountResponse, error) {
+	return stellar.GetSigningAccountResponse{}, status.Errorf(codes.Unimplemented, "method GetSigningAccount not implemented")
 }
 
 func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stellar.GetLedgerEntriesRequest) (stellar.GetLedgerEntriesResponse, error) {

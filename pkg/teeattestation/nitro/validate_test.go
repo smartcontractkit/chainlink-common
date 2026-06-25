@@ -118,3 +118,69 @@ func TestValidateAndParse_FailsOnWrongUserData(t *testing.T) {
 	require.Nil(t, parsed)
 	require.Contains(t, err.Error(), "expected user data")
 }
+
+func TestDocument_VerifyPCR(t *testing.T) {
+	pcr4 := make([]byte, 48)
+	for i := range pcr4 {
+		pcr4[i] = byte(i + 1)
+	}
+	doc := &Document{PCRs: map[uint][]byte{4: pcr4}}
+
+	t.Run("match", func(t *testing.T) {
+		require.NoError(t, doc.VerifyPCR(4, pcr4))
+	})
+
+	t.Run("mismatch", func(t *testing.T) {
+		other := make([]byte, 48)
+		copy(other, pcr4)
+		other[0] ^= 0xff
+		err := doc.VerifyPCR(4, other)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "PCR4 mismatch")
+	})
+
+	t.Run("absent index", func(t *testing.T) {
+		err := doc.VerifyPCR(3, pcr4)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "no PCR3")
+	})
+
+	t.Run("length mismatch", func(t *testing.T) {
+		err := doc.VerifyPCR(4, pcr4[:32])
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "length mismatch")
+	})
+
+	t.Run("empty expected", func(t *testing.T) {
+		err := doc.VerifyPCR(4, nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "empty")
+	})
+
+	t.Run("all-zero PCR is rejected (debug mode)", func(t *testing.T) {
+		zero := make([]byte, 48)
+		debugDoc := &Document{PCRs: map[uint][]byte{4: zero}}
+		err := debugDoc.VerifyPCR(4, zero)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "all zero")
+	})
+}
+
+func TestDocument_VerifyExpectedPCRs(t *testing.T) {
+	pcr4 := make([]byte, 48)
+	pcr8 := make([]byte, 48)
+	for i := range pcr4 {
+		pcr4[i] = byte(i + 1)
+		pcr8[i] = byte(i + 100)
+	}
+	doc := &Document{PCRs: map[uint][]byte{4: pcr4, 8: pcr8}}
+
+	require.NoError(t, doc.VerifyExpectedPCRs(map[uint][]byte{4: pcr4, 8: pcr8}))
+
+	wrong := make([]byte, 48)
+	copy(wrong, pcr8)
+	wrong[0] ^= 0xff
+	err := doc.VerifyExpectedPCRs(map[uint][]byte{4: pcr4, 8: wrong})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "PCR8 mismatch")
+}

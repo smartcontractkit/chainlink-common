@@ -76,6 +76,56 @@ type Document struct {
 	ModuleID string
 }
 
+// VerifyPCR checks that the PCR at index equals expected. Use it for
+// per-instance PCRs such as PCR4 (the SHA384 of the parent instance ID), which
+// differ per enclave and therefore cannot be part of the shared trusted
+// measurements checked by ValidateAndParse.
+//
+// It returns an error if expected is empty, the PCR is absent or
+// length-mismatched, the PCR is all zero (debug-mode enclaves emit all-zero
+// PCRs, which must never be accepted as a real measurement), or the values
+// differ.
+func (d *Document) VerifyPCR(index uint, expected []byte) error {
+	if len(expected) == 0 {
+		return fmt.Errorf("expected PCR%d value is empty", index)
+	}
+	actual, ok := d.PCRs[index]
+	if !ok {
+		return fmt.Errorf("attestation has no PCR%d", index)
+	}
+	if len(actual) != len(expected) {
+		return fmt.Errorf("PCR%d length mismatch: expected %d bytes, got %d", index, len(expected), len(actual))
+	}
+	if allZero(actual) {
+		return fmt.Errorf("PCR%d is all zero (debug-mode enclave), refusing", index)
+	}
+	if !bytes.Equal(actual, expected) {
+		return fmt.Errorf("PCR%d mismatch", index)
+	}
+	return nil
+}
+
+// VerifyExpectedPCRs checks each index/value in expected against the document
+// via VerifyPCR. It is a convenience for callers asserting several per-instance
+// PCRs at once and returns the first failure.
+func (d *Document) VerifyExpectedPCRs(expected map[uint][]byte) error {
+	for index, value := range expected {
+		if err := d.VerifyPCR(index, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func allZero(b []byte) bool {
+	for _, x := range b {
+		if x != 0 {
+			return false
+		}
+	}
+	return len(b) != 0
+}
+
 // ValidateAttestation verifies an AWS Nitro attestation document against
 // expected user data and trusted PCR measurements. Always validates against
 // the AWS Nitro Enclaves root certificate.

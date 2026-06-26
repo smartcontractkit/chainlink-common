@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782481259124,
+  "lastUpdate": 1782487852175,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52560,6 +52560,66 @@ window.BENCHMARK_DATA = {
             "value": 130996,
             "unit": "ns/op",
             "extra": "8745 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tar-2008.ferraz@hotmail.com",
+            "name": "Tarcísio Zotelli Ferraz",
+            "username": "tarcisiozf"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "052e55e62e6232c01607b8642bd826e9581aa0f0",
+          "message": "ChipIngress: Introduce per-event idempotency keys (#2199)\n\n* V2\n\n* improve comment\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\nCo-authored-by: Patrick <patrick.huie@smartcontract.com>",
+          "timestamp": "2026-06-26T15:19:09Z",
+          "tree_id": "b83d4c3a664e6b3482f90bbf8bdb9a79dd12c06a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/052e55e62e6232c01607b8642bd826e9581aa0f0"
+        },
+        "date": 1782487849959,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.5,
+            "unit": "ns/op",
+            "extra": "3298915 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 95412,
+            "unit": "ns/op",
+            "extra": "12645 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.7,
+            "unit": "ns/op",
+            "extra": "2927234 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95056,
+            "unit": "ns/op",
+            "extra": "12680 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27105,
+            "unit": "ns/op",
+            "extra": "44308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144735,
+            "unit": "ns/op",
+            "extra": "8181 times\n4 procs"
           }
         ]
       }

@@ -374,14 +374,22 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 
 		attrs := parseAttrs(attrKVs...)
 		if key, _ := attrs[chipingress.IdempotencyKeyAttr].(string); key == "" {
-			h := sha256.New()
-			for _, s := range []string{sourceDomain, entityType} {
-				h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
-				h.Write([]byte(s))
-			}
-			h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
-			h.Write(body)
-			attrs[chipingress.IdempotencyKeyAttr] = hex.EncodeToString(h.Sum(nil))
+				h := sha256.New()
+				var lenBuf [4]byte
+				writeString := func(s string) {
+					binary.BigEndian.PutUint32(lenBuf[:], uint32(len(s)))
+					_, _ = h.Write(lenBuf[:])
+					_, _ = io.WriteString(h, s)
+				}
+				writeBytes := func(b []byte) {
+					binary.BigEndian.PutUint32(lenBuf[:], uint32(len(b)))
+					_, _ = h.Write(lenBuf[:])
+					_, _ = h.Write(b)
+				}
+				writeString(sourceDomain)
+				writeString(entityType)
+				writeBytes(body)
+				attrs[chipingress.IdempotencyKeyAttr] = hex.EncodeToString(h.Sum(nil))
 		}
 
 		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)

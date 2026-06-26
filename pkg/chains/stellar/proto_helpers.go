@@ -586,6 +586,9 @@ func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (stellar.Ge
 	if p == nil {
 		return stellar.GetTransactionRequest{}, errors.New("get transaction request is nil")
 	}
+	if p.GetTxHash() == "" {
+		return stellar.GetTransactionRequest{}, errors.New("tx hash is required")
+	}
 	return stellar.GetTransactionRequest{TxHash: p.GetTxHash()}, nil
 }
 

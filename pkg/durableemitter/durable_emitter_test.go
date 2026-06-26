@@ -3,6 +3,7 @@ package durableemitter
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"net"
@@ -1175,8 +1176,17 @@ func TestDurableEmitter_IdempotencyKeyDefaultsToBodyHash(t *testing.T) {
 
 	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
 	require.True(t, ok, "idempotencykey attribute must be set")
-	expectedSum := sha256.Sum256(body)
-	expectedKey := hex.EncodeToString(expectedSum[:])
+
+	// The idempotency key is computed as a SHA256 hash of:
+	// source domain (with 4-byte big-endian length) + entity type (with 4-byte big-endian length) + body (with 4-byte big-endian length)
+	h := sha256.New()
+	for _, s := range []string{"test-source", "test-type"} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	expectedKey := hex.EncodeToString(h.Sum(nil))
 	require.Equal(t, expectedKey, attr.GetCeString())
 }
 

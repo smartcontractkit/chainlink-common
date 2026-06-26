@@ -1146,7 +1146,7 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 	assert.Equal(t, "test-entity", received.Type)
 }
 
-func TestDurableEmitter_IdempotencyKeyDefaultsToBodyHash(t *testing.T) {
+func TestDurableEmitter_IdempotencyKeyDefaultsToEventHash(t *testing.T) {
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()
 	be.setPublishErr(errors.New("hold"))

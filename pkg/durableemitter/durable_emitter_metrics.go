@@ -72,7 +72,7 @@ type durableEmitterMetrics struct {
 	procCPUSys         metric.Float64Gauge
 	// batchEnqueueBufferFull counts events that could not be handed to the
 	// batch emitter because its internal queue was full and must be picked up
-	// by the retransmit loop instead. Labels: phase={immediate,retransmit}.
+	// by the retransmit loop instead. Labels: phase={batch,retransmit}.
 	batchEnqueueBufferFull metric.Int64Counter
 	// insertCoalescerFill reports the write-coalescer channel fill ratio
 	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
@@ -150,7 +150,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit,best_effort}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit}, error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -278,7 +278,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.batchEnqueueBufferFull, err = meter.Int64Counter(
 		"durable_emitter.batch_enqueue.buffer_full",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={immediate,retransmit}."),
+		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={batch,retransmit}."),
 	); err != nil {
 		return nil, err
 	}

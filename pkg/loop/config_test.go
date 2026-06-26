@@ -85,6 +85,8 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryLogStreamingEnabled:       "false",
 				envTelemetryPrometheusBridgeEnabled:   "true",
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
+				envMeterRecordsEnabled:                "true",
+				envMeterSnapshotsEnabled:              "false",
 
 				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection:  "true",
@@ -199,6 +201,8 @@ var envCfgFull = EnvConfig{
 	TelemetryLogStreamingEnabled:       false,
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
+	MeterRecordsEnabled:                true,
+	MeterSnapshotsEnabled:              false,
 
 	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection:    true,
@@ -264,6 +268,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
+	assert.Equal(t, "true", got[envMeterRecordsEnabled])
+	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
 
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])

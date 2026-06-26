@@ -24,6 +24,7 @@ package resourcemanager
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
@@ -87,10 +88,13 @@ type Emitter interface {
 
 // ResourceManagerConfig configures a ResourceManager.
 type ResourceManagerConfig struct {
-	// Enabled is the metering rollout gate. When false (the default), the
-	// ResourceManager is a no-op: EmitMeterRecord neither marshals nor emits
-	// nor records utilization, and the snapshot loop does not start.
-	Enabled bool
+	// MeterRecordsEnabled is the meter-record rollout gate. When false (the
+	// default), EmitMeterRecord is a no-op.
+	MeterRecordsEnabled bool
+
+	// MeterSnapshotsEnabled gates snapshot emission. Snapshots are only emitted
+	// when this is true AND MeterRecordsEnabled is true.
+	MeterSnapshotsEnabled bool
 
 	// Emitter delivers encoded records, typically beholder.GetEmitter(). A nil
 	// Emitter makes EmitMeterRecord a no-op even when Enabled is true and keeps
@@ -123,11 +127,12 @@ type ResourceManager struct {
 	services.Service
 	srvcEng *services.Engine
 
-	lggr             logger.SugaredLogger
-	enabled          bool
-	emitter          Emitter
-	snapshotInterval time.Duration
-	clock            clockwork.Clock
+	lggr                  logger.SugaredLogger
+	meterRecordsEnabled   bool
+	meterSnapshotsEnabled bool
+	emitter               Emitter
+	snapshotInterval      time.Duration
+	clock                 clockwork.Clock
 
 	mu            sync.RWMutex
 	registrations map[*registration]struct{}
@@ -165,17 +170,23 @@ func NewResourceManager(lggr logger.Logger, cfg ResourceManagerConfig) *Resource
 		clock = clockwork.NewRealClock()
 	}
 
+	meterSnapshotsEnabled := cfg.MeterRecordsEnabled && cfg.MeterSnapshotsEnabled && cfg.SnapshotInterval > 0
+	if cfg.MeterSnapshotsEnabled && !cfg.MeterRecordsEnabled {
+		sugared.Warn("MeterSnapshotsEnabled ignored because MeterRecordsEnabled is false")
+	}
+
 	rm := &ResourceManager{
-		enabled:             cfg.Enabled,
-		emitter:             cfg.Emitter,
-		snapshotInterval:    cfg.SnapshotInterval,
-		clock:               clock,
-		registrations:       make(map[*registration]struct{}),
-		emitSuccess:         newCounter(emitSuccessCounterName),
-		emitFailure:         newCounter(emitFailureCounterName),
-		snapshotEmitSuccess: newCounter(snapshotEmitSuccessCounterName),
-		snapshotEmitFailure: newCounter(snapshotEmitFailureCounterName),
-		utilization:         gauge,
+		meterRecordsEnabled:   cfg.MeterRecordsEnabled,
+		meterSnapshotsEnabled: meterSnapshotsEnabled,
+		emitter:               cfg.Emitter,
+		snapshotInterval:      cfg.SnapshotInterval,
+		clock:                 clock,
+		registrations:         make(map[*registration]struct{}),
+		emitSuccess:           newCounter(emitSuccessCounterName),
+		emitFailure:           newCounter(emitFailureCounterName),
+		snapshotEmitSuccess:   newCounter(snapshotEmitSuccessCounterName),
+		snapshotEmitFailure:   newCounter(snapshotEmitFailureCounterName),
+		utilization:           gauge,
 	}
 	rm.Service, rm.srvcEng = services.Config{
 		Name:  "ResourceManager",
@@ -191,9 +202,10 @@ func NewResourceManager(lggr logger.Logger, cfg ResourceManagerConfig) *Resource
 // otherwise the service starts cleanly with snapshots disabled and
 // EmitMeterRecord remains available.
 func (rm *ResourceManager) start(_ context.Context) error {
-	if !rm.enabled || rm.emitter == nil || rm.snapshotInterval <= 0 {
+	if !rm.meterSnapshotsEnabled || rm.emitter == nil {
 		rm.lggr.Infow("snapshot loop disabled",
-			"enabled", rm.enabled,
+			"meterRecordsEnabled", rm.meterRecordsEnabled,
+			"meterSnapshotsEnabled", rm.meterSnapshotsEnabled,
 			"hasEmitter", rm.emitter != nil,
 			"snapshotInterval", rm.snapshotInterval,
 		)
@@ -259,34 +271,35 @@ func (rm *ResourceManager) emitSnapshots(ctx context.Context) {
 // nothing: billing zeroes a resource out by its absence from later snapshots.
 // Fail-open: per-resource errors are logged and counted, never returned.
 func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable) {
-	if !rm.enabled || rm.emitter == nil {
+	if !rm.meterSnapshotsEnabled || rm.emitter == nil {
 		return
 	}
 
 	now := rm.clock.Now()
-	bucket := now.Truncate(rm.snapshotInterval).Unix()
 	ts := timestamppb.New(now)
 	interval := durationpb.New(rm.snapshotInterval)
 
 	for _, e := range m.GetUtilization(ctx) {
-		rm.recordUtilization(ctx, e.Identity, e.Value)
+		if len(e.Utilizations) == 0 {
+			continue
+		}
+		for _, u := range e.Utilizations {
+			rm.recordUtilization(ctx, e.Identity, u, meteringpb.MeterAction_METER_ACTION_UPDATE)
+		}
 
 		snapshot := &meteringpb.MeterSnapshot{
-			Timestamp: ts,
-			Identity:  e.Identity.toProto(),
-			Utilization: &meteringpb.Utilization{
-				Value:          e.Value,
-				IdempotencyKey: SnapshotIdempotencyKey(e.Identity, bucket),
-			},
-			Interval: interval,
+			Timestamp:   ts,
+			Identity:    e.Identity.toProto(),
+			Utilization: e.Utilizations,
+			Interval:    interval,
 		}
 
 		body, err := proto.Marshal(snapshot)
 		if err != nil {
 			rm.lggr.Errorw("failed to marshal snapshot",
 				"service", e.Identity.Service,
-				"resource", e.Identity.Resource,
-				"resourceID", e.Identity.ResourceID,
+				"resourcePool", e.Identity.ResourcePool,
+				"resourcePoolID", e.Identity.ResourcePoolID,
 				"err", err,
 			)
 			rm.countSnapshot(ctx, rm.snapshotEmitFailure, e.Identity, attribute.String("reason", "marshal"))
@@ -300,8 +313,8 @@ func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable) {
 		); err != nil {
 			rm.lggr.Errorw("failed to emit snapshot",
 				"service", e.Identity.Service,
-				"resource", e.Identity.Resource,
-				"resourceID", e.Identity.ResourceID,
+				"resourcePool", e.Identity.ResourcePool,
+				"resourcePoolID", e.Identity.ResourcePoolID,
 				"err", err,
 			)
 			rm.countSnapshot(ctx, rm.snapshotEmitFailure, e.Identity, attribute.String("reason", "emit"))
@@ -319,41 +332,36 @@ func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable) {
 // disabled or has no emitter it does nothing, and marshal or emit failures are
 // recorded only via error-level logs and the failure counter. Callers must
 // never gate resource allocation or deallocation on emission.
-func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity ResourceIdentity, action meteringpb.MeterAction, utilization *meteringpb.Utilization) {
-	if !rm.enabled {
+func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity ResourceIdentity, action meteringpb.MeterAction, utilizations []*meteringpb.Utilization) {
+	if !rm.meterRecordsEnabled {
 		rm.lggr.Debugw("metering disabled; meter record not emitted",
 			"service", identity.Service,
-			"resource", identity.Resource,
+			"resourcePool", identity.ResourcePool,
 			"action", action.String(),
 		)
 		return
 	}
 
-	// Reflect the lifecycle edge in the utilization gauge: a RELEASE drops the
-	// resource to zero, every other action records its current level. Recorded
-	// before the emitter check so the gauge tracks state even if export is off.
-	gaugeValue := utilization.GetValue()
-	if action == meteringpb.MeterAction_METER_ACTION_RELEASE {
-		gaugeValue = 0
+	for _, u := range utilizations {
+		rm.recordUtilization(ctx, identity, u, action)
 	}
-	rm.recordUtilization(ctx, identity, gaugeValue)
 
 	if rm.emitter == nil {
 		return
 	}
 
 	record := &meteringpb.MeterRecord{
-		Timestamp:   timestamppb.New(rm.clock.Now()),
-		Identity:    identity.toProto(),
-		Action:      action,
-		Utilization: utilization,
+		Timestamp:    timestamppb.New(rm.clock.Now()),
+		Identity:     identity.toProto(),
+		Action:       action,
+		Utilizations: utilizations,
 	}
 
 	body, err := proto.Marshal(record)
 	if err != nil {
 		rm.lggr.Errorw("failed to marshal meter record",
 			"service", identity.Service,
-			"resource", identity.Resource,
+			"resourcePool", identity.ResourcePool,
 			"action", action.String(),
 			"err", err,
 		)
@@ -368,7 +376,7 @@ func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity Resourc
 	); err != nil {
 		rm.lggr.Errorw("failed to emit meter record",
 			"service", identity.Service,
-			"resource", identity.Resource,
+			"resourcePool", identity.ResourcePool,
 			"action", action.String(),
 			"err", err,
 		)
@@ -380,12 +388,31 @@ func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity Resourc
 }
 
 // recordUtilization records value to the per-resource utilization gauge,
-// labeled with every ResourceIdentity dimension. This is intentionally high
-// cardinality (it includes node_id and resource_id) so utilization can be
-// sliced by any dimension downstream.
-func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, value int64) {
+// labeled with every ResourceIdentity dimension plus utilization identity.
+func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, u *meteringpb.Utilization, action meteringpb.MeterAction) {
 	if rm.utilization == nil {
 		return
+	}
+	if u == nil {
+		return
+	}
+
+	var value int64
+	if action == meteringpb.MeterAction_METER_ACTION_RELEASE {
+		value = 0
+	} else {
+		parsed, err := strconv.ParseInt(u.GetValue(), 10, 64)
+		if err != nil {
+			rm.lggr.Debugw("skipping utilization gauge record for non-int64 value",
+				"value", u.GetValue(),
+				"resourceType", u.GetResourceType(),
+				"resourceID", u.GetResourceId(),
+				"orgID", u.GetOrgId(),
+				"err", err,
+			)
+			return
+		}
+		value = parsed
 	}
 	rm.utilization.Record(ctx, value, metric.WithAttributes(
 		attribute.String("product", id.Product),
@@ -394,9 +421,11 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 		attribute.String("don_id", id.DONID),
 		attribute.String("node_id", id.NodeID),
 		attribute.String("service", id.Service),
-		attribute.String("resource", id.Resource),
-		attribute.String("resource_type", id.ResourceType),
-		attribute.String("resource_id", id.ResourceID),
+		attribute.String("resource_pool", id.ResourcePool),
+		attribute.String("resource_pool_id", id.ResourcePoolID),
+		attribute.String("resource_type", u.GetResourceType()),
+		attribute.String("resource_id", u.GetResourceId()),
+		attribute.String("org_id", u.GetOrgId()),
 	))
 }
 
@@ -410,7 +439,7 @@ func (rm *ResourceManager) countRecord(ctx context.Context, c metric.Int64Counte
 	}
 	attrs := append([]attribute.KeyValue{
 		attribute.String("service", identity.Service),
-		attribute.String("resource", identity.Resource),
+		attribute.String("resource_pool", identity.ResourcePool),
 		attribute.String("action", action.String()),
 	}, extra...)
 	c.Add(ctx, 1, metric.WithAttributes(attrs...))
@@ -424,7 +453,7 @@ func (rm *ResourceManager) countSnapshot(ctx context.Context, c metric.Int64Coun
 	}
 	attrs := append([]attribute.KeyValue{
 		attribute.String("service", identity.Service),
-		attribute.String("resource", identity.Resource),
+		attribute.String("resource_pool", identity.ResourcePool),
 	}, extra...)
 	c.Add(ctx, 1, metric.WithAttributes(attrs...))
 }

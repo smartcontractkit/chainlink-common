@@ -26,6 +26,25 @@ type DurableEmitterMetricsConfig struct {
 	MaxQueuePayloadBytes int64
 }
 
+// publishPhase identifies which delivery path recorded a batch publish metric.
+type publishPhase int
+
+const (
+	publishPhaseBatch publishPhase = iota
+	publishPhaseRetransmit
+)
+
+func (p publishPhase) String() string {
+	switch p {
+	case publishPhaseBatch:
+		return "batch"
+	case publishPhaseRetransmit:
+		return "retransmit"
+	default:
+		return "unknown"
+	}
+}
+
 type durableEmitterMetrics struct {
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
@@ -328,23 +347,23 @@ func (m *durableEmitterMetrics) recordEmitDuration(ctx context.Context, elapsed 
 	)
 }
 
-func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase string, err error) {
+func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase publishPhase, err error) {
 	if m == nil {
 		return
 	}
 	m.publishDuration.Record(ctx, elapsed.Seconds(),
 		metric.WithAttributes(
-			attribute.String("phase", phase),
+			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
 		),
 	)
 }
 
-func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, phase string, err error) {
+func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, phase publishPhase, err error) {
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(attribute.String("phase", phase))
+	attrs := metric.WithAttributes(attribute.String("phase", phase.String()))
 	if err != nil {
 		m.publishBatchEvErr.Add(ctx, 1, attrs)
 	} else {

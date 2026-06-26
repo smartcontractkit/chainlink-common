@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782405647505,
+  "lastUpdate": 1782469812504,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52440,6 +52440,66 @@ window.BENCHMARK_DATA = {
             "value": 100888,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0f2435ddea6a1549ffdbb2879efda8fcc8b4b1d3",
+          "message": "Add GetEvents to stellar chain service and renama/extend ReadContract to be closer to native sdk (#2190)\n\n* Add GetEvents to stellar chain service\n\n* Add GetEvents to stellar chain service relayer\n\n* Convert ReadContract to SimulateTransaction on the stellar service\n\n* rm unused code\n\n* rm old tests\n\n* cleanup submit transaction proto helpers\n\n* cleanup tests and lint\n\n* remove redundant tests\n\n* add SimulateTransaction to staticStellarService\n\n* fix tests\n\n* fix tests",
+          "timestamp": "2026-06-26T10:18:24Z",
+          "tree_id": "e04398be854c5f996ccb2aa61e90ab5ffe04307f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0f2435ddea6a1549ffdbb2879efda8fcc8b4b1d3"
+        },
+        "date": 1782469810536,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 371.4,
+            "unit": "ns/op",
+            "extra": "3246376 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90196,
+            "unit": "ns/op",
+            "extra": "13471 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411.2,
+            "unit": "ns/op",
+            "extra": "2848514 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 88650,
+            "unit": "ns/op",
+            "extra": "13496 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26672,
+            "unit": "ns/op",
+            "extra": "45026 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 138628,
+            "unit": "ns/op",
+            "extra": "8577 times\n4 procs"
           }
         ]
       }

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
+	"google.golang.org/protobuf/proto"
 )
 
 // Meterable is implemented by producers that manage durable billable
@@ -15,8 +16,9 @@ import (
 type Meterable interface {
 	// ResourceIdentity returns the producer's base identity: the six coarse
 	// dimensions (product, environment, zone, don_id, node_id, service) plus
-	// the service-level resource / resource_type. The per-resource resource_id
-	// is left empty here and populated per active resource by GetUtilization.
+	// the service-level resource_pool / resource_pool_id. Per-resource billing
+	// fields (resource_type/resource_id/org_id/event_id/value) are carried by
+	// Utilizations on MeterRecord and MeterSnapshot.
 	ResourceIdentity() ResourceIdentity
 
 	// GetUtilization returns the current level of the producer's currently
@@ -34,17 +36,15 @@ type Meterable interface {
 }
 
 // SnapshotEntry is the current level of one active resource at a snapshot tick.
-// Identity is the full per-resource identity (the producer's base dimensions
-// with resource / resource_type / resource_id populated for this specific
-// resource), and Value is its current level. The resource is identified
-// entirely by Identity; there is no separate label metadata.
+// Identity is the base resource identity, and Utilizations carries one or more
+// billed dimensions for that resource (resource_type/resource_id/org_id/event_id/value).
 type SnapshotEntry struct {
-	Identity ResourceIdentity
-	Value    int64
+	Identity     ResourceIdentity
+	Utilizations []*meteringpb.Utilization
 }
 
 // ResourceIdentity is the structured, first-class identity of a durable
-// resource. Its nine fields map 1:1 to metering.v1.ResourceIdentity so every
+// resource. Its fields map 1:1 to metering.v1.ResourceIdentity so every
 // emitted record carries each dimension as a discrete column rather than a
 // parsed dotted string or out-of-band telemetry attribute.
 type ResourceIdentity struct {
@@ -76,44 +76,29 @@ type ResourceIdentity struct {
 	// encode deployment environment or zone.
 	Service string
 
-	// Resource is the resource pool the record applies to, e.g.
-	// "trigger_registrations", "log_filters".
-	Resource string
+	// ResourcePool is the service-level resource pool the record applies to,
+	// e.g. "trigger_registrations", "log_filters", "workflow_storage".
+	ResourcePool string
 
-	// ResourceType is the billing unit used to convert the utilization value
-	// to universal credits, e.g. "operations", "log_filter_addresses".
-	ResourceType string
-
-	// ResourceID is the physical/logical resource identity, workflow-
-	// independent where a shared physical resource exists. For EVM log filters
-	// it is the content hash of (chain_selector + canonicalized addresses +
-	// event sigs + positional topics), so identical filters from different
-	// workflows share one ResourceID. For cron/http/syncer (no shared physical
-	// resource) it is the workflow-scoped trigger_id / workflow_id, from which
-	// the workflow (and, downstream, the owner) is recoverable. ResourceIdentity
-	// is the sole identity of a metered resource; there is no label metadata.
-	ResourceID string
-}
-
-// WithResourceID returns a copy of r with ResourceID set to id, leaving the
-// receiver unchanged. Producers build a base identity once and derive a
-// per-resource identity with this helper.
-func (r ResourceIdentity) WithResourceID(id string) ResourceIdentity {
-	r.ResourceID = id
-	return r
+	// ResourcePoolID optionally scopes identity further within the resource pool.
+	ResourcePoolID string
 }
 
 // toProto converts r to its wire form. Field order mirrors the proto.
 func (r ResourceIdentity) toProto() *meteringpb.ResourceIdentity {
-	return &meteringpb.ResourceIdentity{
-		Product:      r.Product,
-		Environment:  r.Environment,
-		Zone:         r.Zone,
-		DonId:        r.DONID,
-		NodeId:       r.NodeID,
-		Service:      r.Service,
-		Resource:     r.Resource,
-		ResourceType: r.ResourceType,
-		ResourceId:   r.ResourceID,
+	pb := &meteringpb.ResourceIdentity{
+		Product:        r.Product,
+		Environment:    r.Environment,
+		Zone:           r.Zone,
+		Service:        r.Service,
+		ResourcePool:   r.ResourcePool,
+		ResourcePoolId: r.ResourcePoolID,
 	}
+	if r.DONID != "" {
+		pb.DonId = proto.String(r.DONID)
+	}
+	if r.NodeID != "" {
+		pb.NodeId = proto.String(r.NodeID)
+	}
+	return pb
 }

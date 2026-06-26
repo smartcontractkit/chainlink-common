@@ -85,6 +85,8 @@ const (
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
+	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
+	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
 
 	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -171,6 +173,8 @@ type EnvConfig struct {
 	TelemetryPrometheusBridgeEnabled   bool
 	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
+	MeterRecordsEnabled                bool
+	MeterSnapshotsEnabled              bool
 
 	TracingEnabled         bool
 	TracingCollectorTarget string
@@ -264,6 +268,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
+	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
+	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -517,6 +523,15 @@ func (e *EnvConfig) parse() error {
 
 	e.CRESettings = os.Getenv(envCRESettings)
 	e.CRESettingsDefault = os.Getenv(envCRESettingsDefault)
+
+	e.MeterRecordsEnabled, err = getBool(envMeterRecordsEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterRecordsEnabled, err)
+	}
+	e.MeterSnapshotsEnabled, err = getBool(envMeterSnapshotsEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterSnapshotsEnabled, err)
+	}
 
 	return nil
 }

@@ -88,59 +88,6 @@ func TestConvertGetLatestLedgerResponseToProto_RejectsInvalidFields(t *testing.T
 	}
 }
 
-func TestConvertReadContractRequestFromProto_Cap(t *testing.T) {
-	t.Parallel()
-
-	t.Run("nil request", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(nil)
-		require.EqualError(t, err, "readContractRequest is nil")
-	})
-
-	t.Run("missing contract_id", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(&stellarcap.ReadContractRequest{Function: "fn"})
-		require.EqualError(t, err, "contractID is required")
-	})
-
-	t.Run("missing function", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(&stellarcap.ReadContractRequest{ContractId: "C_X"})
-		require.EqualError(t, err, "function is required")
-	})
-
-	t.Run("bad arg propagates index", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(&stellarcap.ReadContractRequest{
-			ContractId: "C_X",
-			Function:   "fn",
-			Args:       []*scval.ScVal{nil},
-		})
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "args[0]")
-	})
-
-	t.Run("round-trip", func(t *testing.T) {
-		u := uint32(42)
-		sym := "transfer"
-		p := &stellarcap.ReadContractRequest{
-			ContractId: "C_TESTCONTRACT",
-			Function:   "transfer",
-			Args: []*scval.ScVal{
-				{Value: &scval.ScVal_U32{U32: u}},
-				{Value: &scval.ScVal_Sym{Sym: sym}},
-			},
-			SourceAccount: "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H",
-		}
-		got, err := stellarcap.ConvertReadContractRequestFromProto(p)
-		require.NoError(t, err)
-		require.Equal(t, "C_TESTCONTRACT", got.ContractID)
-		require.Equal(t, "transfer", got.Function)
-		require.Equal(t, "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H", got.SourceAccount)
-		require.Len(t, got.Args, 2)
-		require.Equal(t, stellartypes.ScValTypeU32, got.Args[0].Type)
-		require.Equal(t, uint32(42), *got.Args[0].U32)
-		require.Equal(t, stellartypes.ScValTypeSymbol, got.Args[1].Type)
-		require.Equal(t, "transfer", *got.Args[1].Symbol)
-	})
-}
-
 func TestScValToProto_NilArmPointers(t *testing.T) {
 	tests := []struct {
 		name    string

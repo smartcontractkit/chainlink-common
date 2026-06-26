@@ -612,6 +612,83 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
 }
 
+func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase string) int64 {
+	t.Helper()
+	var total int64
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			sum, ok := m.Data.(metricdata.Sum[int64])
+			require.True(t, ok, "expected Sum[int64] for %s", name)
+			for _, dp := range sum.DataPoints {
+				var gotPhase string
+				for _, kv := range dp.Attributes.ToSlice() {
+					if kv.Key == "phase" {
+						gotPhase = kv.Value.AsString()
+					}
+				}
+				if gotPhase == phase {
+					total += dp.Value
+				}
+			}
+		}
+	}
+	return total
+}
+
+func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
+	meter, reader := newTestMeter(t)
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("connection refused"))
+
+	cfg := DefaultConfig()
+	cfg.InsertBatchSize = 0
+	cfg.MarkBatchSize = 0
+	cfg.RetransmitInterval = 100 * time.Millisecond
+	cfg.RetransmitAfter = 50 * time.Millisecond
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
+
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), meter)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.NoError(t, em.Emit(ctx, []byte("phase-test"), testEmitAttrs()...))
+
+	require.Eventually(t, func() bool {
+		var rm metricdata.ResourceMetrics
+		if err := reader.Collect(ctx, &rm); err != nil {
+			return false
+		}
+		return counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "batch") >= 1
+	}, 2*time.Second, 10*time.Millisecond, "initial batch attempt should record failure with phase=batch")
+
+	be.setPublishErr(nil)
+
+	require.Eventually(t, func() bool {
+		var rm metricdata.ResourceMetrics
+		if err := reader.Collect(ctx, &rm); err != nil {
+			return false
+		}
+		return counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit") >= 1
+	}, 5*time.Second, 50*time.Millisecond, "retransmit should record success with phase=retransmit")
+
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 5*time.Second, 50*time.Millisecond, "retransmit should deliver")
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(ctx, &rm))
+	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "batch"), int64(1))
+	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "retransmit"))
+	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
+	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
+}
+
 // mockChipServer implements ChipIngressServer with controllable behaviour.
 type mockChipServer struct {
 	pb.UnimplementedChipIngressServer

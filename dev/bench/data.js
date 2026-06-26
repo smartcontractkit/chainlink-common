@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782469812504,
+  "lastUpdate": 1782481259124,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52500,6 +52500,66 @@ window.BENCHMARK_DATA = {
             "value": 138628,
             "unit": "ns/op",
             "extra": "8577 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tar-2008.ferraz@hotmail.com",
+            "name": "Tarcísio Zotelli Ferraz",
+            "username": "tarcisiozf"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8034eb9edfbba84c724004840ae7454c36186c61",
+          "message": "[Durable Emitter] Fix phase label (#2201)\n\n* fix phase label\n\n* move to enum\n\n* clean up labels",
+          "timestamp": "2026-06-26T13:29:22Z",
+          "tree_id": "38c4acd83c94936319b4d2e0fbc534f6fa4e07b7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8034eb9edfbba84c724004840ae7454c36186c61"
+        },
+        "date": 1782481257159,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372.9,
+            "unit": "ns/op",
+            "extra": "3159314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 79772,
+            "unit": "ns/op",
+            "extra": "14990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 387.7,
+            "unit": "ns/op",
+            "extra": "3084980 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78888,
+            "unit": "ns/op",
+            "extra": "14944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29176,
+            "unit": "ns/op",
+            "extra": "41101 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 130996,
+            "unit": "ns/op",
+            "extra": "8745 times\n4 procs"
           }
         ]
       }

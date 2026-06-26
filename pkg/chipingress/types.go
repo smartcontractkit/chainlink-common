@@ -7,6 +7,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
+// IdempotencyKeyAttr is the CloudEvent extension attribute name for a per-event idempotency key.
+// Set it via the attributes map of NewEvent.
+// When the event is emitted over Kafka using the CloudEvents Kafka binding, extensions become
+// Kafka headers named "ce_<name>" (e.g., ce_idempotencykey), enabling downstream deduplication.
+const IdempotencyKeyAttr = "idempotencykey"
+
 type (
 	// Cloudevents types
 	CloudEvent   = ce.Event

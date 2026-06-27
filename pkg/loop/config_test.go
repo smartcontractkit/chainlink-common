@@ -87,6 +87,10 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
 				envMeterRecordsEnabled:                "true",
 				envMeterSnapshotsEnabled:              "false",
+				envMeteringProduct:                    "cre-mainline",
+				envMeteringEnvironment:                "production",
+				envMeteringZone:                       "wf-zone-a",
+				envMeteringNodeID:                     "csa-pubkey-1",
 
 				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection:  "true",
@@ -203,6 +207,10 @@ var envCfgFull = EnvConfig{
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
 	MeterSnapshotsEnabled:              false,
+	MeteringProduct:                    "cre-mainline",
+	MeteringEnvironment:                "production",
+	MeteringZone:                       "wf-zone-a",
+	MeteringNodeID:                     "csa-pubkey-1",
 
 	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection:    true,
@@ -270,6 +278,10 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])
 	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
+	assert.Equal(t, "cre-mainline", got[envMeteringProduct])
+	assert.Equal(t, "production", got[envMeteringEnvironment])
+	assert.Equal(t, "wf-zone-a", got[envMeteringZone])
+	assert.Equal(t, "csa-pubkey-1", got[envMeteringNodeID])
 
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])

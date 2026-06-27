@@ -247,6 +247,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		}
 	}
 
+	// guarantees the CSA key is present on durable meter records
+	if len(cfg.AuthPublicKeyHex) > 0 {
+		emitter = csaKeyEmitter{Emitter: emitter, csaKeyHex: cfg.AuthPublicKeyHex}
+	}
+
 	onClose := func() (err error) {
 		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
@@ -287,6 +292,23 @@ func (c *Client) close() (err error) {
 type noCloseEmitter struct{ Emitter }
 
 func (n noCloseEmitter) Close() error { return nil }
+
+// csaKeyEmitter wraps an Emitter to include the node's CSA public key as the
+// node_csa_key message attribute on every emitted event.
+//
+// The csa_public_key is already attached as an OTel resource attribute, but
+// resource attributes only ride the OTLP message path.
+type csaKeyEmitter struct {
+	Emitter
+	csaKeyHex string
+}
+
+func (e csaKeyEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	merged := make([]any, 0, len(attrKVs)+2)
+	merged = append(merged, attrKVs...)
+	merged = append(merged, "node_csa_key", e.csaKeyHex)
+	return e.Emitter.Emit(ctx, body, merged...)
+}
 
 // Returns a new Client with the same configuration but with a different package name
 // Deprecated: Use ForName

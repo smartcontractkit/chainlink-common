@@ -45,7 +45,7 @@ import (
 // the CHiP schema registration and the consumer topic name; all must match
 // exactly.
 const (
-	beholderDomain             = "platform"
+	beholderDomain             = "cll-meter"
 	beholderEntity             = "metering.v1.MeterRecord"
 	beholderDataSchema         = "metering.v1.meter_record"
 	beholderSnapshotEntity     = "metering.v1.MeterSnapshot"

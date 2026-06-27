@@ -87,6 +87,10 @@ const (
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
 	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
+	envMeteringProduct                    = "CL_METERING_PRODUCT"
+	envMeteringEnvironment                = "CL_METERING_ENVIRONMENT"
+	envMeteringZone                       = "CL_METERING_ZONE"
+	envMeteringNodeID                     = "CL_METERING_NODE_ID"
 
 	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -175,6 +179,22 @@ type EnvConfig struct {
 	TelemetryLogCompressor             string
 	MeterRecordsEnabled                bool
 	MeterSnapshotsEnabled              bool
+
+	// MeteringProduct / MeteringEnvironment / MeteringZone / MeteringNodeID are
+	// the static deployment+node identity dimensions used as coarse
+	// metering/billing rollup dimensions. They are resolved once from node
+	// config by the host and delivered to every LOOP plugin over the env, the
+	// same channel as the metering toggles above (rather than the
+	// standard-capabilities boundary). Any may be empty if the host did not
+	// provide it.
+	//
+	// MeteringNodeID is the node's logical name (e.g. "clp-cre-wf-zone-a-1"),
+	// not the CSA public key; the CSA key rides emitted events separately as the
+	// node_csa_key attribute.
+	MeteringProduct     string
+	MeteringEnvironment string
+	MeteringZone        string
+	MeteringNodeID      string
 
 	TracingEnabled         bool
 	TracingCollectorTarget string
@@ -270,6 +290,10 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
 	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
+	add(envMeteringProduct, e.MeteringProduct)
+	add(envMeteringEnvironment, e.MeteringEnvironment)
+	add(envMeteringZone, e.MeteringZone)
+	add(envMeteringNodeID, e.MeteringNodeID)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -532,6 +556,11 @@ func (e *EnvConfig) parse() error {
 	if err != nil {
 		return fmt.Errorf("failed to parse %s: %w", envMeterSnapshotsEnabled, err)
 	}
+
+	e.MeteringProduct = os.Getenv(envMeteringProduct)
+	e.MeteringEnvironment = os.Getenv(envMeteringEnvironment)
+	e.MeteringZone = os.Getenv(envMeteringZone)
+	e.MeteringNodeID = os.Getenv(envMeteringNodeID)
 
 	return nil
 }

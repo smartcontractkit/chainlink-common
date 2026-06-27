@@ -133,6 +133,10 @@ func Setup(
 		emitterCfg = *cfg.EmitterConfig
 	}
 
+	if emitterCfg.NodeCSAKey == "" {
+		emitterCfg.NodeCSAKey = cfg.Auth.AuthPublicKeyHex
+	}
+
 	emitter, err := NewDurableEmitter(store, batchClient, fallbackClient, cfg.RetransmitEnabled, emitterCfg, lggr, cfg.Meter)
 	if err != nil {
 		batchClient.Stop()

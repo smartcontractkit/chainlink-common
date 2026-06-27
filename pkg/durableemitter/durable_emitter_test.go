@@ -1413,3 +1413,78 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, 
 	st.OldestPendingAge = now.Sub(oldest)
 	return st, nil
 }
+
+// capturingBatchEmitter records every CloudEvent handed to QueueMessage so tests
+// can assert on the emitted event's attributes/extensions.
+type capturingBatchEmitter struct {
+	mu     sync.Mutex
+	events []*chipingress.CloudEventPb
+}
+
+func (b *capturingBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb func(error)) error {
+	b.mu.Lock()
+	b.events = append(b.events, event)
+	b.mu.Unlock()
+	if cb != nil {
+		cb(nil)
+	}
+	return nil
+}
+
+func (b *capturingBatchEmitter) Start(_ context.Context) {}
+func (b *capturingBatchEmitter) Stop()                   {}
+
+func (b *capturingBatchEmitter) last() *chipingress.CloudEventPb {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if len(b.events) == 0 {
+		return nil
+	}
+	return b.events[len(b.events)-1]
+}
+
+func TestDurableEmitter_StampsNodeCSAKey(t *testing.T) {
+	be := &capturingBatchEmitter{}
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.InsertBatchSize = 0 // inline insert for a deterministic single event
+	cfg.MarkBatchSize = 0
+	cfg.NodeCSAKey = "deadbeef"
+
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	t.Cleanup(func() { _ = em.Close() })
+
+	require.NoError(t, em.Emit(t.Context(), []byte("body"), testEmitAttrs()...))
+
+	require.Eventually(t, func() bool { return be.last() != nil }, 2*time.Second, 10*time.Millisecond)
+
+	ev := be.last()
+	require.NotNil(t, ev)
+	attr := ev.GetAttributes()[nodeCSAKeyExtension]
+	require.NotNil(t, attr, "nodecsakey extension should be present on durable events")
+	assert.Equal(t, "deadbeef", attr.GetCeString())
+}
+
+func TestDurableEmitter_OmitsNodeCSAKeyWhenUnset(t *testing.T) {
+	be := &capturingBatchEmitter{}
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.InsertBatchSize = 0
+	cfg.MarkBatchSize = 0
+	// NodeCSAKey intentionally left empty.
+
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	t.Cleanup(func() { _ = em.Close() })
+
+	require.NoError(t, em.Emit(t.Context(), []byte("body"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return be.last() != nil }, 2*time.Second, 10*time.Millisecond)
+
+	ev := be.last()
+	require.NotNil(t, ev)
+	_, ok := ev.GetAttributes()[nodeCSAKeyExtension]
+	assert.False(t, ok, "nodecsakey extension must be absent when NodeCSAKey is unset")
+}

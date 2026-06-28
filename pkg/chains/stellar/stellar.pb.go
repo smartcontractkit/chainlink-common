@@ -1001,6 +1001,8 @@ func (x *GetTransactionResponse) GetLedgerCloseTime() int64 {
 }
 
 // GetSigningAccountResponse is the relayer default TXM signing account.
+// Exposed so callers can encode contract arguments (e.g. forwarder report's
+// transmitter parameter) that require require_auth, without hard-coding config.
 type GetSigningAccountResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	AccountAddress string                 `protobuf:"bytes,1,opt,name=account_address,json=accountAddress,proto3" json:"account_address,omitempty"`
@@ -1287,7 +1289,7 @@ func (*TopicSegment_Scval) isTopicSegment_Value() {}
 // The TXM handles simulation, sequence management, fee bumping, signing, and confirmation.
 type SubmitTransactionRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	IdempotencyKey     string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`                // Optional idempotency / deduplication key
+	IdempotencyKey     string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`                // Optional TXM deduplication key; empty = TXM assigns one
 	FromAddress        string                 `protobuf:"bytes,2,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`                         // Source/signer account (G… StrKey); empty = TXM default
 	ContractId         string                 `protobuf:"bytes,3,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"`                            // Soroban contract address (C… StrKey)
 	Function           string                 `protobuf:"bytes,4,opt,name=function,proto3" json:"function,omitempty"`                                                  // Soroban function name
@@ -1374,12 +1376,12 @@ type SubmitTransactionResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	TxStatus         TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.stellar.TxStatus" json:"tx_status,omitempty"`
 	TxHash           string                 `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
-	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"`
-	ResultXdr        []byte                 `protobuf:"bytes,4,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`                       // TransactionResult binary XDR; empty if unavailable
-	ResultMetaXdr    []byte                 `protobuf:"bytes,5,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"`         // TransactionMeta binary XDR; empty if unavailable
-	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`                                                // Non-empty when the transaction was accepted but failed on-chain
-	TransactionFee   *uint64                `protobuf:"varint,7,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // Total fee charged in stroops (FeeCharged); unset when unavailable
-	BlockTimestamp   *uint64                `protobuf:"varint,8,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // Block timestamp in microseconds; unset when unavailable
+	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"` // Assigned key (caller-supplied or TXM-generated)
+	ResultXdr        []byte                 `protobuf:"bytes,4,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`                        // TransactionResult binary XDR; empty if unavailable
+	ResultMetaXdr    []byte                 `protobuf:"bytes,5,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"`          // TransactionMeta binary XDR; empty if unavailable
+	Error            string                 `protobuf:"bytes,6,opt,name=error,proto3" json:"error,omitempty"`                                                 // Non-empty when the transaction was accepted but failed on-chain
+	TransactionFee   *uint64                `protobuf:"varint,7,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"`  // Total fee charged in stroops (FeeCharged); unset when unavailable
+	BlockTimestamp   *uint64                `protobuf:"varint,8,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"`  // Block timestamp in microseconds; unset when unavailable
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }

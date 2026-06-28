@@ -163,6 +163,8 @@ message GetTransactionResponse {
 }
 
 // GetSigningAccountResponse is the relayer default TXM signing account.
+// Exposed so callers can encode contract arguments (e.g. forwarder report's
+// transmitter parameter) that require require_auth, without hard-coding config.
 message GetSigningAccountResponse {
   string account_address = 1;
 }
@@ -197,7 +199,7 @@ enum EventType {
 // SubmitTransactionRequest invokes a Soroban contract via the TXM pipeline.
 // The TXM handles simulation, sequence management, fee bumping, signing, and confirmation.
 message SubmitTransactionRequest {
-  string idempotency_key     = 1;  // Optional idempotency / deduplication key
+  string idempotency_key     = 1;  // Optional TXM deduplication key; empty = TXM assigns one
   string from_address        = 2;  // Source/signer account (G… StrKey); empty = TXM default
   string contract_id         = 3;  // Soroban contract address (C… StrKey)
   string function            = 4;  // Soroban function name
@@ -215,7 +217,7 @@ enum TxStatus {
 message SubmitTransactionResponse {
   TxStatus tx_status = 1;
   string   tx_hash = 2;
-  string   tx_idempotency_key = 3;
+  string   tx_idempotency_key = 3;  // Assigned key (caller-supplied or TXM-generated)
   bytes    result_xdr = 4;       // TransactionResult binary XDR; empty if unavailable
   bytes    result_meta_xdr = 5;  // TransactionMeta binary XDR; empty if unavailable
   string   error = 6;            // Non-empty when the transaction was accepted but failed on-chain

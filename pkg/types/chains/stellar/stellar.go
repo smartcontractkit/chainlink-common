@@ -50,6 +50,12 @@ type Client interface {
 }
 
 // GetSigningAccountResponse is the relayer's default TXM signing account (G... StrKey).
+//
+// Some Soroban contracts (e.g. CRE forwarder report()) take the transmitter as an
+// explicit Address argument checked via require_auth(). That contract argument is
+// separate from the transaction source account (FromAddress) used for signing.
+// Callers that must encode such arguments should query this address from the relayer
+// keystore rather than hard-coding capability config.
 type GetSigningAccountResponse struct {
 	AccountAddress string
 }
@@ -179,7 +185,9 @@ type SimulateTransactionResponse struct {
 // The TXM handles simulation, sequence management, signing, fee bumping, and on-chain confirmation;
 // callers only need to supply the logical contract invocation parameters.
 type SubmitTransactionRequest struct {
-	// IdempotencyKey optionally identifies the transaction for deduplication and status look-up.
+	// IdempotencyKey optionally identifies the transaction for TXM deduplication.
+	// Leave empty to let the relayer TXM assign one; the assigned key is returned
+	// as TxIdempotencyKey in SubmitTransactionResponse.
 	IdempotencyKey string
 	// FromAddress is the source/signer account (G… StrKey).
 	// Leave empty to use the TXM's default keystore account.

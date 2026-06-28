@@ -275,6 +275,9 @@ type StellarService interface {
 	stellar.Client
 
 	// GetSigningAccount returns the default TXM signing account from the relayer keystore.
+	// Used when contract call arguments must include the signing address explicitly
+	// (e.g. Soroban require_auth on an Address parameter); distinct from FromAddress
+	// on SubmitTransactionRequest, which controls transaction-level signing only.
 	GetSigningAccount(ctx context.Context) (stellar.GetSigningAccountResponse, error)
 
 	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.

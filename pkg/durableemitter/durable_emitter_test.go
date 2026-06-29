@@ -2,6 +2,9 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"net"
 	"sort"
@@ -1141,6 +1144,126 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 
 	assert.Equal(t, "test-domain", received.Source)
 	assert.Equal(t, "test-entity", received.Type)
+}
+
+func TestDurableEmitter_IdempotencyKeyDefaultsToEventHash(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("hold"))
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute // no retransmit during test
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	body := []byte("deterministic-body")
+	require.NoError(t, em.Emit(ctx, body, testEmitAttrs()...))
+	require.Eventually(t, func() bool { return be.callCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	// Event stays in store (publish failed). Unmarshal stored proto and check attribute.
+	store.mu.Lock()
+	var stored []byte
+	for _, e := range store.events {
+		stored = append([]byte(nil), e.Payload...)
+		break
+	}
+	store.mu.Unlock()
+	require.NotNil(t, stored, "event should still be in store")
+
+	var eventPb cepb.CloudEvent
+	require.NoError(t, proto.Unmarshal(stored, &eventPb))
+
+	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
+	require.True(t, ok, "idempotencykey attribute must be set")
+
+	// The idempotency key is computed as a SHA256 hash of:
+	// source domain (with 4-byte big-endian length) + entity type (with 4-byte big-endian length) + body (with 4-byte big-endian length)
+	h := sha256.New()
+	for _, s := range []string{"test-source", "test-type"} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	expectedKey := hex.EncodeToString(h.Sum(nil))
+	require.Equal(t, expectedKey, attr.GetCeString())
+}
+
+func TestDurableEmitter_IdempotencyKeyCallerSupplied(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("hold"))
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	callerKey := "my-idempotency-key-abc123"
+	body := []byte("some-body")
+	attrs := append(testEmitAttrs(), chipingress.IdempotencyKeyAttr, callerKey)
+	require.NoError(t, em.Emit(ctx, body, attrs...))
+
+	require.Eventually(t, func() bool { return be.callCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	store.mu.Lock()
+	var stored []byte
+	for _, e := range store.events {
+		stored = append([]byte(nil), e.Payload...)
+		break
+	}
+	store.mu.Unlock()
+	require.NotNil(t, stored)
+
+	var eventPb cepb.CloudEvent
+	require.NoError(t, proto.Unmarshal(stored, &eventPb))
+
+	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
+	require.True(t, ok, "idempotencykey attribute must be present")
+	require.Equal(t, callerKey, attr.GetCeString(), "caller-supplied key must be preserved")
+}
+
+func BenchmarkDefaultIdempotencyKey(b *testing.B) {
+	const sourceDomain = "test-source"
+	const entityType = "test-type"
+
+	for name, size := range map[string]int{"64B": 64, "1KB": 1024, "4KB": 4096} {
+		body := make([]byte, size)
+		for i := range body {
+			body[i] = byte(i)
+		}
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.SetBytes(int64(size))
+			for i := 0; i < b.N; i++ {
+				defaultIdempotencyKey(sourceDomain, entityType, body)
+			}
+		})
+	}
+}
+
+func BenchmarkEnsureIdempotencyKey(b *testing.B) {
+	const sourceDomain = "test-source"
+	const entityType = "test-type"
+	body := []byte("deterministic-body")
+
+	b.Run("DefaultHash", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			attrs := make(map[string]any)
+			ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+		}
+	})
+
+	b.Run("CallerSupplied", func(b *testing.B) {
+		attrs := map[string]any{chipingress.IdempotencyKeyAttr: "my-idempotency-key-abc123"}
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+		}
+	})
 }
 
 // MemDurableEventStore is an in-memory DurableEventStore for unit tests.

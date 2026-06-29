@@ -2,6 +2,9 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -369,7 +372,10 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return err
 		}
 
-		event, err := chipingress.NewEvent(sourceDomain, entityType, body, parseAttrs(attrKVs...))
+		attrs := parseAttrs(attrKVs...)
+		ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)
 		if err != nil {
 			emitFail()
 			return err
@@ -948,6 +954,26 @@ func (d *DurableEmitter) metricsLoop() {
 			d.metrics.pollProcessGauges(ctx)
 		}
 	}
+}
+
+// ensureIdempotencyKey sets attrs[IdempotencyKeyAttr] to a deterministic hash
+// of source, type, and body when the caller did not supply a non-empty key.
+func ensureIdempotencyKey(attrs map[string]any, sourceDomain, entityType string, body []byte) {
+	if val, ok := attrs[chipingress.IdempotencyKeyAttr].(string); ok && val != "" {
+		return
+	}
+	attrs[chipingress.IdempotencyKeyAttr] = defaultIdempotencyKey(sourceDomain, entityType, body)
+}
+
+func defaultIdempotencyKey(sourceDomain, entityType string, body []byte) string {
+	h := sha256.New()
+	for _, s := range []string{sourceDomain, entityType} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // parseAttrs converts a variadic slice of (key, value) pairs (with optional

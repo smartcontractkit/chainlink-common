@@ -11,7 +11,6 @@
 	"VaultOptimizationsEnabled": "false",
 	"VaultGetSecretsShareAggregationIncludesPublicKeys": "false",
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
-	"VaultSignedResponseRequestIDEnabled": "false",
 	"VaultJSONOmitUnpopulatedEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",

@@ -65,7 +65,6 @@ var Default = Schema{
 	VaultOptimizationsEnabled:                         Bool(false),
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
-	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
@@ -287,7 +286,6 @@ type Schema struct {
 	VaultOptimizationsEnabled                         Setting[bool]
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
-	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]

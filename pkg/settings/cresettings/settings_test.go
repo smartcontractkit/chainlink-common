@@ -137,7 +137,6 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.False(t, cfg.VaultOptimizationsEnabled.DefaultValue)
 	assert.False(t, cfg.VaultGetSecretsShareAggregationIncludesPublicKeys.DefaultValue)
 	assert.False(t, cfg.VaultOwnerAddressCanonicalizationEnabled.DefaultValue)
-	assert.False(t, cfg.VaultSignedResponseRequestIDEnabled.DefaultValue)
 	assert.False(t, cfg.VaultJSONOmitUnpopulatedEnabled.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)

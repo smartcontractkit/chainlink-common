@@ -67,7 +67,6 @@ message CreateSecretResponse {
 
 message CreateSecretsResponse {
   repeated CreateSecretResponse responses = 1;
-  string request_id = 2;
 }
 
 message UpdateSecretsRequest {
@@ -85,7 +84,6 @@ message UpdateSecretResponse {
 
 message UpdateSecretsResponse {
   repeated UpdateSecretResponse responses = 1;
-  string request_id = 2;
 }
 
 message DeleteSecretsRequest {
@@ -103,7 +101,6 @@ message DeleteSecretResponse {
 
 message DeleteSecretsResponse {
   repeated DeleteSecretResponse responses = 1;
-  string request_id = 2;
 }
 
 message ListSecretIdentifiersRequest {
@@ -118,7 +115,6 @@ message ListSecretIdentifiersResponse {
   repeated SecretIdentifier identifiers = 1;
   bool success = 2;
   string error = 3;
-  string request_id = 4;
 }
 
 enum RequestType {

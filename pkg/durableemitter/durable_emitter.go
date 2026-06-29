@@ -373,24 +373,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		}
 
 		attrs := parseAttrs(attrKVs...)
-		if key, _ := attrs[chipingress.IdempotencyKeyAttr].(string); key == "" {
-				h := sha256.New()
-				var lenBuf [4]byte
-				writeString := func(s string) {
-					binary.BigEndian.PutUint32(lenBuf[:], uint32(len(s)))
-					_, _ = h.Write(lenBuf[:])
-					_, _ = io.WriteString(h, s)
-				}
-				writeBytes := func(b []byte) {
-					binary.BigEndian.PutUint32(lenBuf[:], uint32(len(b)))
-					_, _ = h.Write(lenBuf[:])
-					_, _ = h.Write(b)
-				}
-				writeString(sourceDomain)
-				writeString(entityType)
-				writeBytes(body)
-				attrs[chipingress.IdempotencyKeyAttr] = hex.EncodeToString(h.Sum(nil))
-		}
+		ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
 
 		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)
 		if err != nil {
@@ -971,6 +954,26 @@ func (d *DurableEmitter) metricsLoop() {
 			d.metrics.pollProcessGauges(ctx)
 		}
 	}
+}
+
+// ensureIdempotencyKey sets attrs[IdempotencyKeyAttr] to a deterministic hash
+// of source, type, and body when the caller did not supply a non-empty key.
+func ensureIdempotencyKey(attrs map[string]any, sourceDomain, entityType string, body []byte) {
+	if val, ok := attrs[chipingress.IdempotencyKeyAttr].(string); ok && val != "" {
+		return
+	}
+	attrs[chipingress.IdempotencyKeyAttr] = defaultIdempotencyKey(sourceDomain, entityType, body)
+}
+
+func defaultIdempotencyKey(sourceDomain, entityType string, body []byte) string {
+	h := sha256.New()
+	for _, s := range []string{sourceDomain, entityType} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // parseAttrs converts a variadic slice of (key, value) pairs (with optional

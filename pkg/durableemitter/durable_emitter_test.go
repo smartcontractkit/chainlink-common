@@ -1225,6 +1225,47 @@ func TestDurableEmitter_IdempotencyKeyCallerSupplied(t *testing.T) {
 	require.Equal(t, callerKey, attr.GetCeString(), "caller-supplied key must be preserved")
 }
 
+func BenchmarkDefaultIdempotencyKey(b *testing.B) {
+	const sourceDomain = "test-source"
+	const entityType = "test-type"
+
+	for name, size := range map[string]int{"64B": 64, "1KB": 1024, "4KB": 4096} {
+		body := make([]byte, size)
+		for i := range body {
+			body[i] = byte(i)
+		}
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.SetBytes(int64(size))
+			for i := 0; i < b.N; i++ {
+				defaultIdempotencyKey(sourceDomain, entityType, body)
+			}
+		})
+	}
+}
+
+func BenchmarkEnsureIdempotencyKey(b *testing.B) {
+	const sourceDomain = "test-source"
+	const entityType = "test-type"
+	body := []byte("deterministic-body")
+
+	b.Run("DefaultHash", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			attrs := make(map[string]any)
+			ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+		}
+	})
+
+	b.Run("CallerSupplied", func(b *testing.B) {
+		attrs := map[string]any{chipingress.IdempotencyKeyAttr: "my-idempotency-key-abc123"}
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+		}
+	})
+}
+
 // MemDurableEventStore is an in-memory DurableEventStore for unit tests.
 type MemDurableEventStore struct {
 	mu     sync.Mutex

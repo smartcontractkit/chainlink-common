@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782761323100,
+  "lastUpdate": 1782767740063,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52740,6 +52740,66 @@ window.BENCHMARK_DATA = {
             "value": 115736,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tar-2008.ferraz@hotmail.com",
+            "name": "Tarcísio Zotelli Ferraz",
+            "username": "tarcisiozf"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6bcb242d7a240121a32652057e92e3d5f88c0343",
+          "message": "DurableEmitter: Default idempotency key (#2200)\n\n* V2\n\n* Apply suggestion from @pkcll\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>\n\n* fix tests\n\n* bump chip mod\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* refactor idempotency key generation logic\n\n* add bench\n\n---------\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-06-29T21:02:34Z",
+          "tree_id": "2596fded010eb06b65971e4c12d57394e17a59d3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6bcb242d7a240121a32652057e92e3d5f88c0343"
+        },
+        "date": 1782767737857,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 839.5,
+            "unit": "ns/op",
+            "extra": "1445907 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 120505,
+            "unit": "ns/op",
+            "extra": "9735 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 460,
+            "unit": "ns/op",
+            "extra": "2273181 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 99479,
+            "unit": "ns/op",
+            "extra": "12182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26876,
+            "unit": "ns/op",
+            "extra": "43689 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 152074,
+            "unit": "ns/op",
+            "extra": "9738 times\n4 procs"
           }
         ]
       }

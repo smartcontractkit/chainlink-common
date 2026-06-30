@@ -22,4 +22,16 @@ type StandardCapabilitiesDependencies struct {
 	OrgResolver        orgresolver.OrgResolver
 	CRESettings        SettingsBroadcaster
 	TriggerEventStore  capabilities.EventStore
+	// CapabilityDonID is the on-chain DON ID of the capability DON this plugin
+	// process was spawned for, resolved authoritatively by the host before
+	// Initialise is called. Plugins should use this as the source of truth for
+	// their own DON identity (e.g. when emitting events that need to carry the
+	// *sending* DON ID, distinct from the consumer workflow's DON ID).
+	//
+	// Zero means the host did not provide one — either a legacy core node that
+	// pre-dates this field, or a boot path that has not yet been updated to
+	// populate it. Plugins SHOULD fall back to resolving via the capability
+	// registry in that case, but the fallback path cannot disambiguate when
+	// the local node belongs to multiple DONs running the same capability.
+	CapabilityDonID uint32
 }

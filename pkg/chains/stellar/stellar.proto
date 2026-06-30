@@ -9,28 +9,96 @@ package loop.stellar;
 service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
-  rpc ReadContract(ReadContractRequest) returns (ReadContractResponse);
+  rpc SimulateTransaction(SimulateTransactionRequest) returns (SimulateTransactionResponse);
+  rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionResponse);
 }
 
-// ReadContractRequest invokes a read-only (simulation) Soroban contract function.
-message ReadContractRequest {
-  string                                           contract_id     = 1; // Stellar contract address (C… StrKey)
-  string                                           function        = 2; // Soroban function name
-  repeated capabilities.blockchain.stellar.v1alpha.ScVal args     = 3; // Typed Soroban arguments
-  // Optional: ledger to simulate against; 0 means use the latest.
-  uint32                                           ledger_sequence = 4;
+// SimulateTransactionRequest builds a synthetic single-operation Soroban
+// InvokeContract transaction and simulates it without submitting it.
+//
+// This is not a generic Stellar transaction-envelope simulator. It is a
+// contract-call simulator expressed as contract_id + function + args.
+message SimulateTransactionRequest {
+  string contract_id = 1; // Stellar contract address (C… StrKey)
+  string function = 2; // Soroban function name
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal args = 3; // Typed Soroban arguments
+
+  // Source account (G… StrKey) used as the synthetic transaction and operation source.
+  // Empty means the service uses its deterministic placeholder/default source.
+  //
+  // This is not necessarily the same address as a contract Address argument that
+  // may be checked via require_auth.
+  string source_account = 4;
+
+  // Optional Stellar RPC simulation auth mode.
+  //
+  // Valid values should map to the underlying RPC protocol values:
+  //   ""                    = service default, recommended to default to "record"
+  //   "record"              = record required auth entries
+  //   "enforce"             = enforce existing auth entries
+  //   "record_allow_nonroot" = record non-root auth entries where supported
+  string auth_mode = 5;
+
+  // Optional simulation resource configuration.
+  SimulateResourceConfig resource_config = 6;
 }
 
-// ReadContractResponse carries the return value of the simulated call.
-message ReadContractResponse {
-  string                                         result          = 1; // Return value (only valid when error is empty)
-  uint32                                         ledger_sequence = 2; // Ledger actually used for the simulation
-  string                                         error           = 3; // Non-empty on failure
+message SimulateResourceConfig {
+  uint64 instruction_leeway = 1;
+}
+
+// SimulateTransactionResponse carries the simulated outcome of the synthetic
+// Soroban contract invocation.
+message SimulateTransactionResponse {
+  // Ledger actually used for the simulation.
+  uint32 ledger_sequence = 1;
+
+  // True when the transport request succeeded and the simulation itself did not
+  // return a host/contract error.
+  bool success = 2;
+
+  // Non-empty when simulation failed at the host/contract layer.
+  string error = 3;
+
+  // Base64 XDR ScVal return value, if present.
+  //
+  // Empty is valid for void/unit-returning contract calls.
+  string return_value_xdr = 4;
+
+  // Base64 XDR SorobanAuthorizationEntry values returned by simulation,
+  // typically populated when auth_mode is "record".
+  repeated string required_auth_xdr = 5;
+
+  // Base64 XDR diagnostic/event values returned by simulation, when available.
+  repeated string events_xdr = 6;
+
+  // Base64 XDR SorobanTransactionData returned by simulation.
+  // Useful if a caller later wants to assemble a submit-ready transaction.
+  string transaction_data_xdr = 7;
+
+  // Minimum resource fee returned by simulation.
+  int64 min_resource_fee = 8;
+
+  // Restore preamble returned by simulation when archived ledger entries must be
+  // restored before this invocation can be submitted.
+  SimulateRestorePreamble restore_preamble = 9;
+}
+
+message SimulateRestorePreamble {
+  string transaction_data_xdr = 1;
+  int64 min_resource_fee = 2;
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
 message GetLedgerEntriesRequest {
   repeated bytes keys = 1;  // each key as binary XDR (LedgerKey)
+}
+
+// GetLedgerEntriesResponse contains the requested ledger entries.
+message GetLedgerEntriesResponse {
+  repeated LedgerEntryResult entries = 1;
+  uint32 latest_ledger = 2;
 }
 
 // LedgerEntryResult is a single ledger entry.
@@ -44,10 +112,96 @@ message LedgerEntryResult {
   bytes  extension_xdr = 6;  // LedgerEntry extension binary XDR; empty if absent
 }
 
-// GetLedgerEntriesResponse contains the requested ledger entries.
-message GetLedgerEntriesResponse {
-  repeated LedgerEntryResult entries = 1;
-  uint32 latest_ledger = 2;
+message GetEventsRequest {
+  uint32 start_ledger = 1;
+  uint32 end_ledger = 2;
+  repeated EventFilter filters = 3;
+  PaginationOptions pagination = 4;
+}
+
+message EventInfo {
+  EventType event_type = 1;
+
+  uint32 ledger = 2;
+  string ledger_closed_at = 3;
+
+  string contract_id = 4;
+  string id = 5;
+
+  uint32 operation_index = 6;
+  uint32 transaction_index = 7;
+  string transaction_hash = 8;
+
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal topics = 9;
+  capabilities.blockchain.stellar.v1alpha.ScVal value = 10;
+}
+
+message GetEventsResponse {
+  repeated EventInfo events = 1;
+
+  string cursor = 2;
+
+  uint32 latest_ledger = 3;
+  uint32 oldest_ledger = 4;
+
+  int64 latest_ledger_close_time = 5;
+  int64 oldest_ledger_close_time = 6;
+}
+
+message PaginationOptions {
+  string cursor = 1;
+  uint32 limit = 2;
+}
+
+message EventFilter {
+  repeated EventType event_types = 1;
+  repeated string contract_ids = 2;
+  repeated TopicFilter topics = 3;
+}
+
+message TopicFilter {
+  repeated TopicSegment segments = 1;
+}
+
+message TopicSegment {
+  oneof value {
+    string wildcard = 1;
+    capabilities.blockchain.stellar.v1alpha.ScVal scval = 2;
+  }
+}
+
+enum EventType {
+  EVENT_TYPE_SYSTEM = 0;
+  EVENT_TYPE_CONTRACT = 1;
+}
+
+// SubmitTransactionRequest invokes a Soroban contract via the TXM pipeline.
+// The TXM handles simulation, sequence management, fee bumping, signing, and confirmation.
+message SubmitTransactionRequest {
+  string idempotency_key     = 1;  // Optional idempotency / deduplication key
+  string from_address        = 2;  // Source/signer account (G… StrKey); empty = TXM default
+  string contract_id         = 3;  // Soroban contract address (C… StrKey)
+  string function            = 4;  // Soroban function name
+  repeated capabilities.blockchain.stellar.v1alpha.ScVal args = 5;  // Typed Soroban arguments
+  uint32 ledger_bounds_offset = 6; // Per-tx ledger-bounds override; 0 = use TXM default
+}
+
+enum TxStatus {
+  TX_STATUS_FATAL = 0;   // Submission failed before on-chain inclusion
+  TX_STATUS_FAILED = 1;  // Included on-chain but execution failed
+  TX_STATUS_SUCCESS = 2; // Included on-chain and succeeded
+}
+
+// SubmitTransactionResponse carries the outcome of a transaction submission.
+message SubmitTransactionResponse {
+  TxStatus tx_status = 1;
+  string   tx_hash = 2;
+  string   tx_idempotency_key = 3;
+  bytes    result_xdr = 4;       // TransactionResult binary XDR; empty if unavailable
+  bytes    result_meta_xdr = 5;  // TransactionMeta binary XDR; empty if unavailable
+  string   error = 6;            // Non-empty when the transaction was accepted but failed on-chain
+  optional uint64 transaction_fee = 7; // Total fee charged in stroops (FeeCharged); unset when unavailable
+  optional uint64 block_timestamp = 8; // Block timestamp in microseconds; unset when unavailable
 }
 
 // GetLatestLedgerResponse holds current ledger state.

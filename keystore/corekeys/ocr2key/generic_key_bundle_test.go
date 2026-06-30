@@ -152,3 +152,22 @@ func TestGenericKeyBundle_Migrate_UnmarshalMarshal(t *testing.T) {
 		assert.Equal(t, bundle.ID(), newBundle.ID())
 	})
 }
+
+func TestRawEVMOnChainPublicKey(t *testing.T) {
+	t.Run("EVM bundle returns uncompressed pubkey", func(t *testing.T) {
+		kb, err := newKeyBundleRand(corekeys.EVM, newEVMKeyring)
+		require.NoError(t, err)
+
+		raw, ok := RawEVMOnChainPublicKey(kb)
+		require.True(t, ok)
+		assert.Len(t, raw, 130) // 65 bytes hex-encoded
+	})
+
+	t.Run("non-EVM bundle returns false", func(t *testing.T) {
+		kb, err := newKeyBundleRand(corekeys.Solana, newSolanaKeyring)
+		require.NoError(t, err)
+
+		_, ok := RawEVMOnChainPublicKey(kb)
+		assert.False(t, ok)
+	})
+}

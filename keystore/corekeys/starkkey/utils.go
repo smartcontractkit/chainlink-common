@@ -1,7 +1,6 @@
 package starkkey
 
 import (
-	"crypto/rand"
 	"errors"
 	"io"
 	"math/big"
@@ -11,27 +10,23 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
-// reimplements parts of
-// https://github.com/NethermindEth/starknet.go/blob/0bdaab716ce24a521304744a8fbd8e01800c241d/curve/curve.go#L702
-// generate the PK as a pseudo-random number in the interval [1, CurveOrder - 1]
-// using io.Reader, and Key struct
-func GenerateKey(material io.Reader) (k Key, err error) {
-	max := new(big.Int).Sub(curve.Curve.N, big.NewInt(1))
-
-	priv, err := rand.Int(material, max)
+// GenerateKey creates a Starknet key pair using starknet.go's GetRandomKeys.
+//
+// The io.Reader parameter is kept for API compatibility with other keystore key types;
+// starknet.go v0.17 key generation uses crypto/rand internally.
+func GenerateKey(_ io.Reader) (k Key, err error) {
+	priv, x, y, err := curve.GetRandomKeys()
 	if err != nil {
 		return k, err
 	}
+
 	k.signFn = func(hash *big.Int) (x, y *big.Int, err error) {
-		return curve.Curve.Sign(hash, priv)
+		return curve.Sign(hash, priv)
 	}
 
-	k.pub.X, k.pub.Y, err = curve.Curve.PrivateToPoint(priv)
-	if err != nil {
-		return k, err
-	}
-
-	if !curve.Curve.IsOnCurve(k.pub.X, k.pub.Y) {
+	k.pub.X = x
+	k.pub.Y = y
+	if k.pub.X == nil || k.pub.Y == nil {
 		return k, errors.New("key gen is not on stark curve")
 	}
 	k.raw = internal.NewRaw(padBytes(priv.Bytes()))

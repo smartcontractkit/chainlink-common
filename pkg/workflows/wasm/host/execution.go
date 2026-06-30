@@ -3,13 +3,16 @@ package host
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v28"
 	"google.golang.org/protobuf/proto"
 
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
@@ -57,9 +60,15 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 		resp, err := e.executor.CallCapability(ctx, req)
 
 		if err != nil {
+			errString := err.Error()
+
+			var caperror caperrors.Error
+			if errors.As(err, &caperror) {
+				errString = caperror.SerializeToString()
+			}
 			resp = &sdkpb.CapabilityResponse{
 				Response: &sdkpb.CapabilityResponse_Error{
-					Error: err.Error(),
+					Error: errString,
 				},
 			}
 		}
@@ -328,7 +337,7 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It sleeps based on the largest timeout
 func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
-	if nsubscriptions == 0 {
+	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 		return ErrnoInval
 	}
 

@@ -45,8 +45,9 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 
 	s.lggr.Info("WorkflowCompiledBinary Size", "size", len(b64EncodedBinaryData))
 
-	// Compare the keccak256 hash of the binary data with the keccak256 hash of the
-	// base64 encoded binary from CRE-CLI
+	// Compare the keccak256 hash of the binary data against a value produced by
+	// the pinned Go toolchain (see GetBuildCmd in utils.go). Because Compile sets
+	// GOTOOLCHAIN from the nearest go.mod, this hash is stable across machines.
 	expKeccak256Hash, err := hex.DecodeString("a057a58ff8212122016515b2922b7c3893525f7f5afe95c8442e0cd629d68420")
 	s.NoError(err, "failed to decode expected keccak256 hash")
 	keccak256FromSha3Lib := sha3.NewLegacyKeccak256()
@@ -58,8 +59,7 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 	s.NoError(err, "failed to prepare artifacts")
 
 	base64EncodedBinaryData := artifacts.GetBinaryData()
-	// Compare if the compiled WASM binary is the same as the CRE-CLI output
-	s.Len(base64EncodedBinaryData, 636684, "binary data size should be same as CRE-CLI output")
+	s.Len(base64EncodedBinaryData, 636684, "binary data size should match the pinned toolchain output")
 	s.Equal("m1upG3s6AJQvOA8AAK295+EaARsHAADf/YcBgFURwPQAANDq5wFQVVVVVVVVVVVV3ZMQEI7ZtgMAAKqq",
 		string(base64EncodedBinaryData[0:80]))
 	s.Equal("gUEoFNoVRfyHGTsZmdg7wCJbGVibOhmYmsDAytgg92FTTmiddpI/x8SYzdANBkPGhtLoj/Hn7jvK26YE",

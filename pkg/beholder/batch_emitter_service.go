@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -157,8 +158,22 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			// for metric recording — OTel Add is non-blocking and tolerates
 			// cancelled contexts.
 			if sendErr != nil {
-				e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
-				e.eng.Errorw("failed to emit to chip ingress", "error", sendErr, "domain", domain, "entity", entity)
+				var pubErr *batch.PublishError
+				if errors.As(sendErr, &pubErr) {
+					// Per-event partial delivery failure: server accepted the batch but
+					// rejected this individual event (e.g. schema validation, encode error).
+					e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, "partial_delivery"))
+					e.eng.Errorw("failed to emit to chip ingress (partial delivery)",
+						"error_code", pubErr.Code.String(),
+						"reason", pubErr.Reason,
+						"domain", domain,
+						"entity", entity,
+					)
+				} else {
+					// Whole-batch RPC failure (network error, timeout, auth, etc.).
+					e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, "rpc_error"))
+					e.eng.Errorw("failed to emit to chip ingress", "error", sendErr, "domain", domain, "entity", entity)
+				}
 			} else {
 				e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
 			}
@@ -189,6 +204,18 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)
+}
+
+// dropMetricAttrsFor returns a measurement option for the eventsDropped counter that
+// includes domain, entity, and a failure_type label distinguishing partial per-event
+// failures ("partial_delivery") from whole-batch RPC failures ("rpc_error").
+// Not cached — drop paths are not on the hot path.
+func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity, failureType string) otelmetric.MeasurementOption {
+	return otelmetric.WithAttributeSet(attribute.NewSet(
+		attribute.String("domain", domain),
+		attribute.String("entity", entity),
+		attribute.String("failure_type", failureType),
+	))
 }
 
 func newBatchEmitterMetrics(meter otelmetric.Meter) (batchEmitterMetrics, error) {

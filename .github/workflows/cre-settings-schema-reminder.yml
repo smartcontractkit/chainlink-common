@@ -1,0 +1,45 @@
+name: CRE settings schema reminder
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for // Deprecated in settings.go diff
+        id: deprecated
+        run: |
+          git fetch origin "${{ github.base_ref }}"
+          if git diff "origin/${{ github.base_ref }}...HEAD" -- pkg/settings/cresettings/settings.go \
+            | grep -E '^\+.*// Deprecated' -q; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: PR reminder
+        if: steps.deprecated.outputs.found == 'true'
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4.0.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          edit-mode: replace
+          body-includes: "<!-- cre-settings-schema-reminder -->"
+          body: |
+            <!-- cre-settings-schema-reminder -->
+            ### CRE settings field deprecated
+
+            This PR adds `// Deprecated` in [`pkg/settings/cresettings/settings.go`](https://github.com/smartcontractkit/chainlink-common/blob/main/pkg/settings/cresettings/settings.go).
+
+			If the deprecated field is being replaced by a new one, then a smooth deployment migration requires:
+
+			1. Before deploying the code, any overridden values on the old field must be duplicated to the new field.
+			2. Old field overrides must remain in-place and kept in-sync until all nodes are migrated.

@@ -54,36 +54,6 @@ func ConvertGetLatestLedgerResponseToProto(r stellarservicetypes.GetLatestLedger
 	}, nil
 }
 
-// ConvertReadContractRequestFromProto converts a proto ReadContractRequest to the
-// domain type.
-func ConvertReadContractRequestFromProto(p *ReadContractRequest) (stellarservicetypes.ReadContractRequest, error) {
-	if p == nil {
-		return stellarservicetypes.ReadContractRequest{}, fmt.Errorf("readContractRequest is nil")
-	}
-	if p.GetContractId() == "" {
-		return stellarservicetypes.ReadContractRequest{}, fmt.Errorf("contractID is required")
-	}
-	if p.GetFunction() == "" {
-		return stellarservicetypes.ReadContractRequest{}, fmt.Errorf("function is required")
-	}
-
-	pArgs := p.GetArgs()
-	args := make([]stellarservicetypes.ScVal, len(pArgs))
-	for i, psv := range pArgs {
-		sv, err := ProtoToScVal(psv)
-		if err != nil {
-			return stellarservicetypes.ReadContractRequest{}, fmt.Errorf("args[%d]: %w", i, err)
-		}
-		args[i] = sv
-	}
-	return stellarservicetypes.ReadContractRequest{
-		ContractID:     p.GetContractId(),
-		Function:       p.GetFunction(),
-		Args:           args,
-		LedgerSequence: p.GetLedgerSequence(),
-	}, nil
-}
-
 // ScValToProto converts a domain ScVal to its proto representation.
 // Returns an error if nesting depth exceeds 64 levels.
 func ScValToProto(sv stellarservicetypes.ScVal) (*scval.ScVal, error) {
@@ -169,9 +139,6 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 			HiHi: sv.I256.HiHi, HiLo: sv.I256.HiLo, LoHi: sv.I256.LoHi, LoLo: sv.I256.LoLo,
 		}}}, nil
 	case stellarservicetypes.ScValTypeBytes:
-		if sv.Bytes == nil {
-			return nil, fmt.Errorf("scvBytes: nil")
-		}
 		return &scval.ScVal{Value: &scval.ScVal_BytesVal{BytesVal: sv.Bytes}}, nil
 	case stellarservicetypes.ScValTypeString:
 		if sv.String == nil {

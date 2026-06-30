@@ -1639,6 +1639,105 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 				require.Equal(t, int64(9000000), resp.LedgerCloseTime)
 			},
 		},
+		{
+			name: "GetEvents",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
+				filterSym := "transfer"
+				wildcard := "*"
+				topicSym := "transfer"
+				eventValue := uint64(12345)
+
+				req := stellartypes.GetEventsRequest{
+					StartLedger: 100,
+					EndLedger:   200,
+					Filters: []stellartypes.EventFilter{
+						{
+							EventTypes:  []stellartypes.EventType{stellartypes.EventTypeContract},
+							ContractIDs: []string{"CABC123"},
+							Topics: []stellartypes.TopicFilter{
+								{
+									Segments: []stellartypes.TopicSegment{
+										{
+											Value: &stellartypes.ScVal{
+												Type:   stellartypes.ScValTypeSymbol,
+												Symbol: &filterSym,
+											},
+										},
+										{Wildcard: &wildcard},
+									},
+								},
+							},
+						},
+					},
+					Pagination: &stellartypes.PaginationOptions{
+						Cursor: "cursor-in",
+						Limit:  25,
+					},
+				}
+
+				expected := stellartypes.GetEventsResponse{
+					Events: []stellartypes.EventInfo{
+						{
+							EventType:        stellartypes.EventTypeContract,
+							Ledger:           150,
+							LedgerClosedAt:   "2025-01-01T00:00:00Z",
+							ContractID:       "CABC123",
+							ID:               "0000000150-0000000001",
+							OperationIndex:   1,
+							TransactionIndex: 2,
+							TransactionHash:  "txhash123",
+							Topics: []stellartypes.ScVal{
+								{
+									Type:   stellartypes.ScValTypeSymbol,
+									Symbol: &topicSym,
+								},
+							},
+							Value: stellartypes.ScVal{
+								Type: stellartypes.ScValTypeU64,
+								U64:  &eventValue,
+							},
+						},
+					},
+					Cursor:                "cursor-out",
+					LatestLedger:          200,
+					OldestLedger:          100,
+					LatestLedgerCloseTime: 1_700_000_100,
+					OldestLedgerCloseTime: 1_700_000_000,
+				}
+
+				mockSvc.EXPECT().GetEvents(mock.Anything, req).Return(expected, nil)
+
+				resp, err := svc.GetEvents(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expected, resp)
+			},
+		},
+		{
+			name: "SubmitTransaction",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
+				sym := "transfer"
+				req := stellartypes.SubmitTransactionRequest{
+					IdempotencyKey:     "idem-123",
+					FromAddress:        "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+					ContractID:         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+					Function:           "transfer",
+					Args:               []stellartypes.ScVal{{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}},
+					LedgerBoundsOffset: 2,
+				}
+				expected := &stellartypes.SubmitTransactionResponse{
+					TxStatus:         stellartypes.TxSuccess,
+					TxHash:           "stellar-tx-hash",
+					TxIdempotencyKey: "idem-123",
+				}
+				mockSvc.EXPECT().SubmitTransaction(mock.Anything, req).Return(expected, nil)
+
+				reply, err := svc.SubmitTransaction(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expected.TxHash, reply.TxHash)
+				require.Equal(t, expected.TxIdempotencyKey, reply.TxIdempotencyKey)
+				require.Equal(t, expected.TxStatus, reply.TxStatus)
+			},
+		},
 	}
 
 	for _, tc := range tests {

@@ -135,6 +135,29 @@ const (
 	InsufficientObservations ErrorCode = 102
 )
 
+// AllErrorCodes lists every defined capability error code in ascending order.
+var AllErrorCodes = []ErrorCode{
+	Canceled,
+	Unknown,
+	InvalidArgument,
+	DeadlineExceeded,
+	NotFound,
+	AlreadyExists,
+	PermissionDenied,
+	ResourceExhausted,
+	FailedPrecondition,
+	Aborted,
+	OutOfRange,
+	Unimplemented,
+	Internal,
+	Unavailable,
+	DataLoss,
+	Unauthenticated,
+	ConsensusFailed,
+	LimitExceeded,
+	InsufficientObservations,
+}
+
 // String returns the string representation of the ErrorCode.
 func (e ErrorCode) String() string {
 	if s, ok := errorCodeToString[e]; ok {

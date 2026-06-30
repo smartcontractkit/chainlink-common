@@ -110,6 +110,10 @@ func Bool(defaultValue bool) Setting[bool] {
 	return NewSetting(defaultValue, strconv.ParseBool)
 }
 
+func String(defaultValue string) Setting[string] {
+	return NewSetting(defaultValue, func(s string) (string, error) { return s, nil })
+}
+
 func Duration(defaultValue time.Duration) Setting[time.Duration] {
 	s := NewSetting(defaultValue, time.ParseDuration)
 	s.Unit = "s"

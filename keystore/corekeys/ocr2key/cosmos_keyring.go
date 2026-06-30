@@ -1,6 +1,7 @@
 package ocr2key
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"encoding/binary"
 	"errors"
@@ -90,7 +91,10 @@ func (ckr *cosmosKeyring) VerifyBlob(pubkey ocrtypes.OnchainPublicKey, b, sig []
 	if len(pubkey) != ed25519.PublicKeySize {
 		return false
 	}
-	return ed25519consensus.Verify(ed25519.PublicKey(pubkey), b, sig[32:])
+	if !bytes.Equal(pubkey, sig[:ed25519.PublicKeySize]) {
+		return false
+	}
+	return ed25519consensus.Verify(ed25519.PublicKey(pubkey), b, sig[ed25519.PublicKeySize:])
 }
 
 func (ckr *cosmosKeyring) MaxSignatureLength() int {

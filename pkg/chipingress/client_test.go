@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -134,6 +135,36 @@ func TestNewEvent(t *testing.T) {
 	err = proto.Unmarshal(event.Data(), &resultProto)
 	require.NoError(t, err)
 	assert.Equal(t, testProto.Message, resultProto.Message)
+}
+
+func TestNewEvent_IdempotencyKey(t *testing.T) {
+	payload := []byte("body")
+
+	t.Run("non-empty key is set as extension", func(t *testing.T) {
+		attrs := map[string]any{IdempotencyKeyAttr: "my-key-123"}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		ext := event.Extensions()
+		require.NotNil(t, ext)
+		assert.Equal(t, "my-key-123", ext[IdempotencyKeyAttr])
+	})
+
+	t.Run("empty key is not set as extension", func(t *testing.T) {
+		attrs := map[string]any{IdempotencyKeyAttr: ""}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		ext := event.Extensions()
+		_, present := ext[IdempotencyKeyAttr]
+		assert.False(t, present, "empty idempotency key must not appear as an extension")
+	})
+
+	t.Run("absent key leaves extension unset", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, nil)
+		require.NoError(t, err)
+		ext := event.Extensions()
+		_, present := ext[IdempotencyKeyAttr]
+		assert.False(t, present, "absent idempotency key must not appear as an extension")
+	})
 }
 
 func TestEventToProto(t *testing.T) {
@@ -728,5 +759,111 @@ func TestClient_RegisterSchemas(t *testing.T) {
 		result, err := client.RegisterSchemas(ctx, schemas...)
 		assert.Nil(t, result)
 		assert.EqualError(t, err, "failed to register schema: registration failed")
+	})
+}
+
+func TestTransactionEnabledProtoTypes(t *testing.T) {
+	t.Run("PublishResult roundtrip with Error", func(t *testing.T) {
+		original := &pb.PublishResult{
+			EventId: "evt-123",
+			Error: &pb.PublishError{
+				ErrorCode: pb.PublishErrorCode_PUBLISH_ERROR_CODE_SCHEMA_MISSING,
+				Reason:    "subject test-domain-test.Entity not found",
+			},
+		}
+		data, err := proto.Marshal(original)
+		require.NoError(t, err)
+
+		decoded := &pb.PublishResult{}
+		err = proto.Unmarshal(data, decoded)
+		require.NoError(t, err)
+
+		assert.Equal(t, "evt-123", decoded.EventId)
+		require.NotNil(t, decoded.Error)
+		assert.Equal(t, pb.PublishErrorCode_PUBLISH_ERROR_CODE_SCHEMA_MISSING, decoded.Error.ErrorCode)
+		assert.Equal(t, "subject test-domain-test.Entity not found", decoded.Error.Reason)
+	})
+
+	t.Run("PublishResult success has nil Error", func(t *testing.T) {
+		original := &pb.PublishResult{EventId: "evt-ok"}
+		data, err := proto.Marshal(original)
+		require.NoError(t, err)
+
+		decoded := &pb.PublishResult{}
+		err = proto.Unmarshal(data, decoded)
+		require.NoError(t, err)
+
+		assert.Equal(t, "evt-ok", decoded.EventId)
+		assert.Nil(t, decoded.Error)
+	})
+
+	t.Run("CloudEventBatch with PublishOptions roundtrip", func(t *testing.T) {
+		txn := true
+		batch := &pb.CloudEventBatch{
+			Events:  []*cepb.CloudEvent{{Id: "e1", Source: "src", SpecVersion: "1.0", Type: "t"}},
+			Options: &pb.PublishOptions{TransactionEnabled: &txn},
+		}
+		data, err := proto.Marshal(batch)
+		require.NoError(t, err)
+
+		decoded := &pb.CloudEventBatch{}
+		err = proto.Unmarshal(data, decoded)
+		require.NoError(t, err)
+
+		require.NotNil(t, decoded.Options)
+		assert.True(t, decoded.Options.GetTransactionEnabled())
+		assert.Len(t, decoded.Events, 1)
+		assert.Equal(t, "e1", decoded.Events[0].Id)
+	})
+
+	t.Run("GetTransactionEnabled edge cases", func(t *testing.T) {
+		// nil PublishOptions
+		var nilOpts *pb.PublishOptions
+		assert.False(t, nilOpts.GetTransactionEnabled())
+
+		// TransactionEnabled unset (nil pointer)
+		emptyOpts := &pb.PublishOptions{}
+		assert.False(t, emptyOpts.GetTransactionEnabled())
+
+		// Explicitly true
+		trueVal := true
+		assert.True(t, (&pb.PublishOptions{TransactionEnabled: &trueVal}).GetTransactionEnabled())
+
+		// Explicitly false
+		falseVal := false
+		assert.False(t, (&pb.PublishOptions{TransactionEnabled: &falseVal}).GetTransactionEnabled())
+	})
+
+	t.Run("EventsToBatchWithOpts with WithTransactionEnabled(false) emits PublishOptions{TransactionEnabled: false}", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", []byte("data"), nil)
+		require.NoError(t, err)
+
+		batch, err := EventsToBatchWithOpts([]CloudEvent{event}, WithTransactionEnabled(false))
+		require.NoError(t, err)
+		require.NotNil(t, batch.Options, "client always emits PublishOptions to make intent explicit on the wire")
+		require.NotNil(t, batch.Options.TransactionEnabled)
+		assert.False(t, batch.Options.GetTransactionEnabled())
+	})
+
+	t.Run("EventsToBatchWithOpts with WithTransactionEnabled(true) emits PublishOptions{TransactionEnabled: true}", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", []byte("data"), nil)
+		require.NoError(t, err)
+
+		batch, err := EventsToBatchWithOpts([]CloudEvent{event}, WithTransactionEnabled(true))
+		require.NoError(t, err)
+		require.NotNil(t, batch.Options)
+		require.NotNil(t, batch.Options.TransactionEnabled)
+		assert.True(t, batch.Options.GetTransactionEnabled())
+	})
+
+	t.Run("EventsToBatch without options defaults to PublishOptions{TransactionEnabled: false}", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", []byte("data"), nil)
+		require.NoError(t, err)
+
+		batch, err := EventsToBatch([]CloudEvent{event})
+		require.NoError(t, err)
+		require.NotNil(t, batch.Options, "client always emits PublishOptions to make intent explicit on the wire")
+		require.NotNil(t, batch.Options.TransactionEnabled)
+		assert.False(t, batch.Options.GetTransactionEnabled())
 	})
 }

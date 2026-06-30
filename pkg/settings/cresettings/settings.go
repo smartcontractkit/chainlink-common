@@ -58,31 +58,39 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:     Bool(true),
 	VaultJWTAuthEnabled:               Bool(false),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
-	VaultOrgIdAsSecretOwnerEnabled:         Bool(false),
-	PropagateOrgIDInRequestMetadata:        Bool(false),
-	VaultBase64EncodingEnabled:             Bool(false),
-	VaultForceEmptyOCRRounds:               Bool(false),
-	VaultOptimizationsEnabled:              Bool(false),
-	GatewayHTTPGlobalRate:                  Rate(rate.Limit(500), 500),
-	GatewayHTTPPerNodeRate:                 Rate(rate.Limit(100), 100),
-	GatewayConfidentialRelayGlobalRate:     Rate(rate.Limit(50), 10),
-	GatewayConfidentialRelayPerNodeRate:    Rate(rate.Limit(10), 10),
-	TriggerRegistrationStatusUpdateTimeout: Duration(0 * time.Second),
-	BaseTriggerRetryInterval:               Duration(30 * time.Second),
-	BaseTriggerMaxRetries:                  Int(20),
-	BaseTriggerPruneAge:                    Duration(24 * time.Hour),
-	BaseTriggerMaxSendsPerTick:             Int(20),
+	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
+	PropagateOrgIDInRequestMetadata:                   Bool(false),
+	VaultBase64EncodingEnabled:                        Bool(false),
+	VaultForceEmptyOCRRounds:                          Bool(false),
+	VaultOptimizationsEnabled:                         Bool(false),
+	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
+	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
+	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
+	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
+	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
+	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
+	BaseTriggerRetryInterval:                          Duration(30 * time.Second),
+	BaseTriggerMaxRetries:                             Int(20),
+	BaseTriggerPruneAge:                               Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:                        Int(20),
 
-	// DANGER(cedric): Be extremely careful changing these vault limits as they act as a default value
+	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 	// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 	// must ensure that we are overriding the default in the onchain configuration for the contract.
+
+	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit:          Size(2 * config.KByte),
 	VaultIdentifierKeySizeLimit:       Size(64 * config.Byte),
 	VaultIdentifierOwnerSizeLimit:     Size(64 * config.Byte),
 	VaultIdentifierNamespaceSizeLimit: Size(64 * config.Byte),
 	VaultPluginBatchSizeLimit:         Int(10),
 	VaultRequestBatchSizeLimit:        Int(10),
+	VaultPendingQueueWriteSizeLimit:   Int(1000),
 	VaultShareSizeLimit:               Size(600 * config.Byte),
 
 	VaultMaxQuerySizeLimit:       Size(102400 * config.Byte),
@@ -125,20 +133,40 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
+	// Confidential Compute (San Marino framework) node-level settings. Defaults
+	// mirror the previous hardcoded executor defaults so behavior is unchanged
+	// until explicitly overridden.
+	ConfidentialCompute: confidentialCompute{
+		GlobalRate:          Rate(rate.Limit(1000), 1000),
+		MaxRetries:          Int(3),
+		RetryBackoff:        Duration(2 * time.Second),
+		SecretsCacheEnabled: Bool(false),
+	},
+
 	PerOrg: Orgs{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
+		HTTPAction: perOrgHTTPAction{
+			MtlsRateLimit: Rate(rate.Every(30*time.Second), 3),
+		},
 	},
 	PerOwner: Owners{
 		WorkflowLimit:                     Int(1000),
 		WorkflowExecutionConcurrencyLimit: Int(5),
 
-		// DANGER(cedric): Be extremely careful changing this vault limit as it acts as a default value
-		// used by the Vault OCR plugin -- changing this value could cause issues with the plugin during an image
+		// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
+		// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
 		// upgrade as nodes apply the old and new values inconsistently. A safe upgrade path
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
-		VaultSecretsLimit: Int(100),
+		VaultCiphertextSizeLimit: Size(2 * config.KByte),
+		VaultSecretsLimit:        Int(100),
+
+		// Confidential Compute per-workflow-owner request rate. Mirrors the
+		// previous hardcoded WorkflowOwner RPS/burst executor defaults.
+		ConfidentialCompute: ownerConfidentialCompute{
+			Rate: Rate(rate.Limit(1000), 1000),
+		},
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
@@ -224,6 +252,7 @@ var Default = Schema{
 			ConnectionTimeout: Duration(10 * time.Second),
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
+			GatewayProxyDonID: String(""),
 		},
 		ConfidentialHTTP: confidentialHTTP{
 			CallLimit:         Int(5),
@@ -231,12 +260,21 @@ var Default = Schema{
 			RequestSizeLimit:  Size(10 * config.KByte),
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
+		ConfidentialWorkflows: confidentialWorkflows{
+			Enabled: Bool(false),
+		},
 		Secrets: secrets{
 			CallLimit: Int(5),
+		},
+		DONTime: donTime{
+			RequestTimeout: Duration(30 * time.Second),
 		},
 
 		FeatureMultiTriggerExecutionIDsActiveAt: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureUseSingleDONTimeProviderPerExecutionActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
@@ -245,31 +283,40 @@ var Default = Schema{
 		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
 type Schema struct {
-	WorkflowLimit                          Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit      Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit        Setting[config.Size]
-	GatewayVaultManagementEnabled          Setting[bool]
-	VaultJWTAuthEnabled                    Setting[bool]
-	VaultOrgIdAsSecretOwnerEnabled         Setting[bool] // Deprecated
-	PropagateOrgIDInRequestMetadata        Setting[bool]
-	VaultBase64EncodingEnabled             Setting[bool]
-	VaultForceEmptyOCRRounds               Setting[bool]
-	VaultOptimizationsEnabled              Setting[bool]
-	GatewayHTTPGlobalRate                  Setting[config.Rate]
-	GatewayHTTPPerNodeRate                 Setting[config.Rate]
-	GatewayConfidentialRelayGlobalRate     Setting[config.Rate]
-	GatewayConfidentialRelayPerNodeRate    Setting[config.Rate]
-	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
+	WorkflowLimit                                     Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit                 Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
+	GatewayVaultManagementEnabled                     Setting[bool]
+	VaultJWTAuthEnabled                               Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata                   Setting[bool]
+	VaultBase64EncodingEnabled                        Setting[bool]
+	VaultForceEmptyOCRRounds                          Setting[bool]
+	VaultOptimizationsEnabled                         Setting[bool]
+	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
+	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
+	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	GatewayHTTPGlobalRate                             Setting[config.Rate]
+	GatewayHTTPPerNodeRate                            Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate               Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
+	TriggerRegistrationStatusUpdateTimeout            Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
 
+	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
 	VaultIdentifierKeySizeLimit       Setting[config.Size]
@@ -277,6 +324,7 @@ type Schema struct {
 	VaultIdentifierNamespaceSizeLimit Setting[config.Size]
 	VaultPluginBatchSizeLimit         Setting[int] `unit:"{request}"`
 	VaultRequestBatchSizeLimit        Setting[int] `unit:"{request}"`
+	VaultPendingQueueWriteSizeLimit   Setting[int] `unit:"{request}"`
 
 	VaultMaxQuerySizeLimit                                   Setting[config.Size]
 	VaultMaxObservationSizeLimit                             Setting[config.Size]
@@ -289,6 +337,9 @@ type Schema struct {
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
+	// Confidential Compute (San Marino framework) node-level settings.
+	ConfidentialCompute confidentialCompute
+
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
@@ -297,12 +348,17 @@ type Orgs struct {
 	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
+	HTTPAction                        perOrgHTTPAction
 }
 
 type Owners struct {
 	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
+
+	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
+	ConfidentialCompute ownerConfidentialCompute
 }
 
 type Workflows struct {
@@ -343,17 +399,21 @@ type Workflows struct {
 	HTTPTrigger httpTrigger
 	LogTrigger  logTrigger
 
-	ChainWrite       chainWrite
-	ChainRead        chainRead
-	Consensus        consensus
-	HTTPAction       httpAction
-	ConfidentialHTTP confidentialHTTP
-	Secrets          secrets
+	ChainWrite            chainWrite
+	ChainRead             chainRead
+	Consensus             consensus
+	HTTPAction            httpAction
+	ConfidentialHTTP      confidentialHTTP
+	ConfidentialWorkflows confidentialWorkflows
+	Secrets               secrets
+	DONTime               donTime
 
-	FeatureMultiTriggerExecutionIDsActiveAt        Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod    Setting[Range[config.Timestamp]]
-	FeatureChainCapabilityHashBasedOCRActivePeriod Setting[Range[config.Timestamp]]
-	FeatureEVMWriteReportL1FeeActivePeriod         Setting[Range[config.Timestamp]]
+	FeatureMultiTriggerExecutionIDsActiveAt                 Setting[config.Timestamp] // Deprecated
+	FeatureMultiTriggerExecutionIDsActivePeriod             Setting[Range[config.Timestamp]]
+	FeatureUseSingleDONTimeProviderPerExecutionActivePeriod Setting[Range[config.Timestamp]]
+	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
+	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {
@@ -400,6 +460,10 @@ type httpAction struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+	GatewayProxyDonID Setting[string]
+}
+type perOrgHTTPAction struct {
+	MtlsRateLimit Setting[config.Rate]
 }
 type confidentialHTTP struct {
 	CallLimit         Setting[int] `unit:"{call}"`
@@ -407,10 +471,36 @@ type confidentialHTTP struct {
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
 }
+
+// confidentialCompute holds node-level Confidential Compute (San Marino
+// framework) settings. These are global scope (no scope tag), like the other
+// top-level settings.
+type confidentialCompute struct {
+	GlobalRate          Setting[config.Rate]
+	MaxRetries          Setting[int] `unit:"{attempt}"`
+	RetryBackoff        Setting[time.Duration]
+	SecretsCacheEnabled Setting[bool]
+}
+
+// ownerConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
+type ownerConfidentialCompute struct {
+	Rate Setting[config.Rate]
+}
+
+type confidentialWorkflows struct {
+	// Enabled gates the confidential-workflows capability. When false, confidential
+	// workflow executions are rejected. Scoped per workflow/owner/org/global so it
+	// can be toggled in production without a redeploy.
+	Enabled Setting[bool]
+}
 type secrets struct {
 	CallLimit Setting[int] `unit:"{call}"`
 }
 type consensus struct {
 	ObservationSizeLimit Setting[config.Size]
 	CallLimit            Setting[int] `unit:"{call}"`
+}
+
+type donTime struct {
+	RequestTimeout Setting[time.Duration]
 }

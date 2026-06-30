@@ -58,6 +58,14 @@ func SendError(err error) {
 func SendSubscription(subscriptions *sdk.TriggerSubscriptionRequest) {
 	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_TriggerSubscriptions{TriggerSubscriptions: subscriptions}}
 	sendResponse(BufferToPointerLen(Must(proto.Marshal(execResult))))
+	os.Exit(0)
+}
+
+func SendRestrictions(restrictions *sdk.Restrictions) {
+	execResult := &sdk.ExecutionResult{Result: &sdk.ExecutionResult_Restrictions{Restrictions: restrictions}}
+	bytes := Must(proto.Marshal(execResult))
+	sendResponse(BufferToPointerLen(bytes))
+	os.Exit(0)
 }
 
 func Now() time.Time {

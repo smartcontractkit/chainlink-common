@@ -117,6 +117,15 @@ func (kb *keyBundle[K]) OnChainPublicKey() string {
 	return hex.EncodeToString(kb.keyring.PublicKey())
 }
 
+// RawEVMOnChainPublicKey returns the raw EVM onchain signing public key when kb supports it.
+func RawEVMOnChainPublicKey(kb KeyBundle) (string, bool) {
+	evmKb, ok := kb.(*keyBundle[*evmKeyring])
+	if !ok {
+		return "", false
+	}
+	return evmKb.keyring.RawOnChainPublicKey(), true
+}
+
 func (kb *keyBundle[K]) Marshal() ([]byte, error) {
 	offchainKeyringBytes, err := kb.marshal()
 	if err != nil {

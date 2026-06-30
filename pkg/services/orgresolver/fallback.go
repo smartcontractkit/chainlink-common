@@ -2,21 +2,49 @@ package orgresolver
 
 import (
 	"context"
+	"errors"
+	"slices"
 	"sync"
 	"time"
 
+	"github.com/jpillora/backoff"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	log "github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/retry"
 )
 
-const unavailableRetryDelay = 500 * time.Millisecond
+const (
+	maxGetRetries       = 3
+	initialRetryBackoff = 100 * time.Millisecond
+	maxRetryBackoff     = 1 * time.Second
+)
+
+var getRetryBackoff = backoff.Backoff{
+	Min:    initialRetryBackoff,
+	Max:    maxRetryBackoff,
+	Factor: 2,
+}
+
+func getRetryStrategy() *retry.Strategy[getResult] {
+	return &retry.Strategy[getResult]{
+		MaxRetries: maxGetRetries,
+		Backoff:    getRetryBackoff.Copy(),
+	}
+}
+
+// getResult carries the outcome of a single Get attempt. When err is non-nil the
+// attempt is terminal; the retry loop must receive a nil error to stop.
+type getResult struct {
+	orgID string
+	err   error
+}
 
 // OrgResolverFallback wraps an OrgResolver and maintains an in-memory cache of
 // owner->orgID mappings. On successful resolution the cache is updated. When
-// the inner resolver returns NotFound or Unavailable, the cache is consulted
-// as a fallback (with one retry for Unavailable before falling back).
+// the inner resolver returns NotFound or a retriable gRPC error, the cache is
+// consulted as a fallback (after bounded retries for retriable errors).
 //
 // This addresses a race condition where a workflow owner can be unlinked from
 // an org just before a WorkflowDeleted event is processed, causing the
@@ -35,37 +63,42 @@ func NewOrgResolverWithFallback(inner OrgResolver, logger log.Logger) *OrgResolv
 }
 
 func (c *OrgResolverFallback) Get(ctx context.Context, owner string) (string, error) {
-	orgID, err := c.inner.Get(ctx, owner)
-	if err == nil {
-		c.cache.Store(owner, orgID)
-		return orgID, nil
-	}
-
-	code := grpcStatusCode(err)
-
-	if code == codes.Unavailable {
-		c.logger.Warnw("Org resolver unavailable, retrying once", "owner", owner, "err", err)
-
-		select {
-		case <-ctx.Done():
-			return c.fallbackToCache(owner, err)
-		case <-time.After(unavailableRetryDelay):
-		}
-
-		orgID, retryErr := c.inner.Get(ctx, owner)
-		if retryErr == nil {
+	result, err := getRetryStrategy().Do(ctx, c.logger, func(ctx context.Context) (getResult, error) {
+		orgID, err := c.inner.Get(ctx, owner)
+		if err == nil {
 			c.cache.Store(owner, orgID)
-			return orgID, nil
+			return getResult{orgID: orgID}, nil
 		}
-		c.logger.Warnw("Org resolver retry failed", "owner", owner, "err", retryErr)
-		return c.fallbackToCache(owner, err)
+
+		code := grpcStatusCode(err)
+		if code == codes.NotFound {
+			orgID, err := c.fallbackToCache(owner, err)
+			if err != nil {
+				return getResult{err: err}, nil
+			}
+			return getResult{orgID: orgID}, nil
+		}
+		if !isRetriableGRPCCode(code) {
+			return getResult{err: err}, nil
+		}
+		return getResult{}, err
+	})
+	if err == nil {
+		if result.err != nil {
+			return "", result.err
+		}
+		return result.orgID, nil
 	}
 
-	if code == codes.NotFound {
-		return c.fallbackToCache(owner, err)
+	if ctx.Err() != nil {
+		return c.fallbackToCache(owner, context.Cause(ctx))
 	}
+	return c.fallbackToCache(owner, errors.Unwrap(err))
+}
 
-	return "", err
+func isRetriableGRPCCode(code codes.Code) bool {
+	return slices.Contains([]codes.Code{codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted, codes.Aborted, codes.Unknown},
+		code)
 }
 
 func (c *OrgResolverFallback) fallbackToCache(owner string, originalErr error) (string, error) {

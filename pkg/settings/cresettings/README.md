@@ -261,6 +261,14 @@ flowchart
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 
+    subgraph ConfidentialCompute[Confidential Compute executor]
+        ConfidentialCompute.GlobalRate[\ConfidentialCompute.GlobalRate/]:::rate
+        PerOwner.ConfidentialCompute.Rate[\PerOwner.ConfidentialCompute.Rate/]:::rate
+        ConfidentialCompute.MaxRetries{{ConfidentialCompute.MaxRetries}}:::bound
+        ConfidentialCompute.RetryBackoff>ConfidentialCompute.RetryBackoff]:::time
+        ConfidentialCompute.SecretsCacheEnabled[/ConfidentialCompute.SecretsCacheEnabled\]:::gate
+    end
+
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault

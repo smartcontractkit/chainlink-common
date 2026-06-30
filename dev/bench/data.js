@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782822410148,
+  "lastUpdate": 1782826141064,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -52860,6 +52860,66 @@ window.BENCHMARK_DATA = {
             "value": 142705,
             "unit": "ns/op",
             "extra": "8434 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ba00d28283c5dfe54ca131694246680f05b5cf3f",
+          "message": "New limits (#2208)",
+          "timestamp": "2026-06-30T13:17:11Z",
+          "tree_id": "1433498c13e149f7624379896f65c9d91cecd990",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ba00d28283c5dfe54ca131694246680f05b5cf3f"
+        },
+        "date": 1782826138860,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.9,
+            "unit": "ns/op",
+            "extra": "3370292 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94614,
+            "unit": "ns/op",
+            "extra": "12657 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.5,
+            "unit": "ns/op",
+            "extra": "2957912 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95112,
+            "unit": "ns/op",
+            "extra": "12670 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26639,
+            "unit": "ns/op",
+            "extra": "44800 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144497,
+            "unit": "ns/op",
+            "extra": "7820 times\n4 procs"
           }
         ]
       }

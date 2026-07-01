@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782897827251,
+  "lastUpdate": 1782921138130,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -53100,6 +53100,66 @@ window.BENCHMARK_DATA = {
             "value": 146144,
             "unit": "ns/op",
             "extra": "8086 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "152236536+Krish-vemula@users.noreply.github.com",
+            "name": "Krish-vemula",
+            "username": "Krish-vemula"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "ece3be3354e849e28b9010ef3eb56cf5cd42e184",
+          "message": "Add GetTransaction and GetSigningAccount to Stellar relayer API (#2202)\n\n* Add GetTransaction and GetSigningAccount to Stellar relayer API\n\n* Regenerate stellar.pb.go with protoc-gen-go v1.36.11\n\n* Add unit tests for Stellar GetTransaction and GetSigningAccount relayer methods\n\nCover request validation, RPC error handling, not-found paths, and keystore-backed signing account resolution.\n\n* Add relayerset and UnimplementedStellarService tests for GetTransaction and GetSigningAccount\n\nCover the relayerset gRPC routing layer and restore stellar unimplemented stub tests so SonarQube new-code coverage includes the APIs added in this branch.\n\n* Document GetSigningAccount and optional SubmitTransaction idempotency key\n\n* fix make generate files",
+          "timestamp": "2026-07-01T15:40:27Z",
+          "tree_id": "5177c396b8f3a2e8507e03670d8c4f4d44512d0a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ece3be3354e849e28b9010ef3eb56cf5cd42e184"
+        },
+        "date": 1782921136283,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 278.8,
+            "unit": "ns/op",
+            "extra": "4239897 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 60707,
+            "unit": "ns/op",
+            "extra": "19700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 297.1,
+            "unit": "ns/op",
+            "extra": "4099995 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 60116,
+            "unit": "ns/op",
+            "extra": "19846 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22692,
+            "unit": "ns/op",
+            "extra": "53053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 98656,
+            "unit": "ns/op",
+            "extra": "12163 times\n4 procs"
           }
         ]
       }

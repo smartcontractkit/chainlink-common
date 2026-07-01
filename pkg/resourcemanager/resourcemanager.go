@@ -416,10 +416,11 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 	}
 	rm.utilization.Record(ctx, value, metric.WithAttributes(
 		attribute.String("product", id.Product),
+		attribute.String("tenant", id.Tenant),
 		attribute.String("environment", id.Environment),
 		attribute.String("zone", id.Zone),
-		attribute.String("don_id", id.DONID),
-		attribute.String("node_id", id.NodeID),
+		attribute.String("don_id", id.DonID()),
+		attribute.String("node_id", id.NodeID()),
 		attribute.String("service", id.Service),
 		attribute.String("resource_pool", id.ResourcePool),
 		attribute.String("resource_pool_id", id.ResourcePoolID),

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
-	"google.golang.org/protobuf/proto"
 )
 
 // Meterable is implemented by producers that manage durable billable
@@ -14,8 +13,8 @@ import (
 // active resources, in addition to emitting lifecycle edges inline via
 // EmitMeterRecord.
 type Meterable interface {
-	// ResourceIdentity returns the producer's base identity: the six coarse
-	// dimensions (product, environment, zone, don_id, node_id, service) plus
+	// ResourceIdentity returns the producer's base identity: the coarse
+	// dimensions (product, tenant, environment, zone, don_identifier, service) plus
 	// the service-level resource_pool / resource_pool_id. Per-resource billing
 	// fields (resource_type/resource_id/org_id/event_id/value) are carried by
 	// Utilizations on MeterRecord and MeterSnapshot.
@@ -50,8 +49,10 @@ type SnapshotEntry struct {
 // can populate the coarse metering rollup dimensions. Any field may be empty if
 // the host did not provide it.
 type DeploymentIdentity struct {
-	// Product is the deployment product, e.g. "cre-mainline".
+	// Product is the deployment product, e.g. "cre".
 	Product string
+	// Tenant is the deployment tenant, e.g. "mainline" or "enterprise".
+	Tenant string
 	// Environment is the deployment environment, e.g. "production", "staging".
 	Environment string
 	// Zone is the deployment zone, e.g. "wf-zone-a".
@@ -63,36 +64,39 @@ type DeploymentIdentity struct {
 	NodeID string
 }
 
+// DonIdentifier captures DON-specific identity dimensions as one unit.
+type DonIdentifier struct {
+	// DonID is the DON identifier the emitting service belongs to.
+	DonID string
+	// NodeID is the node identifier (the node's CSA public key).
+	NodeID string
+}
+
 // ResourceIdentity is the structured, first-class identity of a durable
 // resource. Its fields map 1:1 to metering.v1.ResourceIdentity so every
 // emitted record carries each dimension as a discrete column rather than a
 // parsed dotted string or out-of-band telemetry attribute.
 type ResourceIdentity struct {
-	// Product is the deployment product, e.g. "cre-mainline". A coarse
-	// billing-rollup dimension.
+	// Product is the deployment product, e.g. "cre".
 	Product string
 
+	// Tenant is the deployment tenant, e.g. "mainline" or "enterprise".
+	Tenant string
+
 	// Environment is the deployment environment, e.g. "production",
-	// "staging". A coarse billing-rollup dimension.
+	// "staging".
 	Environment string
 
-	// Zone is the deployment zone, e.g. "wf-zone-a". A coarse billing-rollup
-	// dimension.
+	// Zone is the deployment zone, e.g. "wf-zone-a".
 	Zone string
 
-	// DONID is the DON identifier the emitting service belongs to. A coarse
-	// billing-rollup dimension; used with NodeID to count distinct nodes for
-	// quorum.
-	DONID string
-
-	// NodeID is the node identifier (the node's CSA public key). A coarse
-	// billing-rollup dimension; lets billing dedup a node's retries and count
-	// distinct nodes.
-	NodeID string
+	// DonIdentifier groups DON-specific identity dimensions so consumers can
+	// branch on one struct instead of handling don/node permutations.
+	DonIdentifier *DonIdentifier
 
 	// Service is the stable service constant identifying the emitting service,
 	// e.g. "cron-trigger", "http-trigger", "evm-log-trigger",
-	// "workflow-syncer-v2". A coarse billing-rollup dimension. It must not
+	// "workflow-syncer-v2". It must not
 	// encode deployment environment or zone.
 	Service string
 
@@ -108,17 +112,34 @@ type ResourceIdentity struct {
 func (r ResourceIdentity) toProto() *meteringpb.ResourceIdentity {
 	pb := &meteringpb.ResourceIdentity{
 		Product:        r.Product,
+		Tenant:         r.Tenant,
 		Environment:    r.Environment,
 		Zone:           r.Zone,
 		Service:        r.Service,
 		ResourcePool:   r.ResourcePool,
 		ResourcePoolId: r.ResourcePoolID,
 	}
-	if r.DONID != "" {
-		pb.DonId = proto.String(r.DONID)
-	}
-	if r.NodeID != "" {
-		pb.NodeId = proto.String(r.NodeID)
+	if r.DonIdentifier != nil {
+		pb.DonIdentifier = &meteringpb.DonIdentifier{
+			DonId:  r.DonIdentifier.DonID,
+			NodeId: r.DonIdentifier.NodeID,
+		}
 	}
 	return pb
+}
+
+// DonID returns the DON identifier when present.
+func (r ResourceIdentity) DonID() string {
+	if r.DonIdentifier == nil {
+		return ""
+	}
+	return r.DonIdentifier.DonID
+}
+
+// NodeID returns the node identifier when present.
+func (r ResourceIdentity) NodeID() string {
+	if r.DonIdentifier == nil {
+		return ""
+	}
+	return r.DonIdentifier.NodeID
 }

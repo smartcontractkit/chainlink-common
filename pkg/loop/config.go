@@ -88,6 +88,7 @@ const (
 	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
 	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
 	envMeteringProduct                    = "CL_METERING_PRODUCT"
+	envMeteringTenant                     = "CL_METERING_TENANT"
 	envMeteringEnvironment                = "CL_METERING_ENVIRONMENT"
 	envMeteringZone                       = "CL_METERING_ZONE"
 	envMeteringNodeID                     = "CL_METERING_NODE_ID"
@@ -180,7 +181,8 @@ type EnvConfig struct {
 	MeterRecordsEnabled                bool
 	MeterSnapshotsEnabled              bool
 
-	// MeteringProduct / MeteringEnvironment / MeteringZone / MeteringNodeID are
+	// MeteringProduct / MeteringTenant / MeteringEnvironment / MeteringZone /
+	// MeteringNodeID are
 	// the static deployment+node identity dimensions used as coarse
 	// metering/billing rollup dimensions. They are resolved once from node
 	// config by the host and delivered to every LOOP plugin over the env, the
@@ -192,6 +194,7 @@ type EnvConfig struct {
 	// not the CSA public key; the CSA key rides emitted events separately as the
 	// node_csa_key attribute.
 	MeteringProduct     string
+	MeteringTenant      string
 	MeteringEnvironment string
 	MeteringZone        string
 	MeteringNodeID      string
@@ -291,6 +294,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
 	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
 	add(envMeteringProduct, e.MeteringProduct)
+	add(envMeteringTenant, e.MeteringTenant)
 	add(envMeteringEnvironment, e.MeteringEnvironment)
 	add(envMeteringZone, e.MeteringZone)
 	add(envMeteringNodeID, e.MeteringNodeID)
@@ -558,6 +562,7 @@ func (e *EnvConfig) parse() error {
 	}
 
 	e.MeteringProduct = os.Getenv(envMeteringProduct)
+	e.MeteringTenant = os.Getenv(envMeteringTenant)
 	e.MeteringEnvironment = os.Getenv(envMeteringEnvironment)
 	e.MeteringZone = os.Getenv(envMeteringZone)
 	e.MeteringNodeID = os.Getenv(envMeteringNodeID)

@@ -534,6 +534,7 @@ func TestNewClient_Chip(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 		assert.IsType(t, &chipingress.NoopClient{}, client.Chip)
+		require.NotNil(t, client.Emitter)
 		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
 		assert.False(t, ok)
 	})

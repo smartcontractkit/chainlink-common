@@ -2,6 +2,9 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -369,7 +372,10 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return err
 		}
 
-		event, err := chipingress.NewEvent(sourceDomain, entityType, body, parseAttrs(attrKVs...))
+		attrs := parseAttrs(attrKVs...)
+		ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)
 		if err != nil {
 			emitFail()
 			return err
@@ -464,11 +470,11 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		// captured in the closure so the fallback path can retry without a
 		// DB round-trip.
 		t0Publish := time.Now()
-		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish)); qErr != nil {
+		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch)); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
-					metric.WithAttributes(attribute.String("phase", "immediate")))
+					metric.WithAttributes(attribute.String("phase", publishPhaseBatch.String())))
 			}
 		}
 		return nil
@@ -479,7 +485,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 // On success, it marks the event delivered. On failure, it attempts a
 // single-event fallback via fallbackClient (when configured) in a goroutine
 // before leaving the event in the DB for the retransmit loop.
-func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time) func(error) {
+func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase) func(error) {
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
 
@@ -491,13 +497,11 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		defer cbCancel()
 
 		if d.metrics != nil {
-			d.metrics.recordPublish(cbCtx, publishElapsed, "batch", sendErr)
+			d.metrics.recordPublish(cbCtx, publishElapsed, phase, sendErr)
+			d.metrics.recordPublishBatchEvent(cbCtx, phase, sendErr)
 		}
 
 		if sendErr != nil {
-			if d.metrics != nil {
-				d.metrics.publishBatchEvErr.Add(cbCtx, 1)
-			}
 			// Batch path failed. If a fallback client is configured, retry the
 			// single event directly; otherwise leave in DB for retransmit.
 			d.tryFallback(id, eventPb)
@@ -505,10 +509,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		}
 
 		d.eng.Debugw("DurableEmitter: delivered event", "eventID", eventPb.Id)
-
-		if d.metrics != nil {
-			d.metrics.publishBatchEvOK.Add(cbCtx, 1)
-		}
 
 		// When mark coalescing is enabled the id is handed to the batch-mark
 		// workers (one UPDATE for many ids); otherwise mark it inline.
@@ -820,11 +820,11 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		}
 
 		id := pe.ID
-		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now())); err != nil {
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit)); err != nil {
 			skipped++
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
-					metric.WithAttributes(attribute.String("phase", "retransmit")))
+					metric.WithAttributes(attribute.String("phase", publishPhaseRetransmit.String())))
 			}
 		} else {
 			enqueued++
@@ -954,6 +954,26 @@ func (d *DurableEmitter) metricsLoop() {
 			d.metrics.pollProcessGauges(ctx)
 		}
 	}
+}
+
+// ensureIdempotencyKey sets attrs[IdempotencyKeyAttr] to a deterministic hash
+// of source, type, and body when the caller did not supply a non-empty key.
+func ensureIdempotencyKey(attrs map[string]any, sourceDomain, entityType string, body []byte) {
+	if val, ok := attrs[chipingress.IdempotencyKeyAttr].(string); ok && val != "" {
+		return
+	}
+	attrs[chipingress.IdempotencyKeyAttr] = defaultIdempotencyKey(sourceDomain, entityType, body)
+}
+
+func defaultIdempotencyKey(sourceDomain, entityType string, body []byte) string {
+	h := sha256.New()
+	for _, s := range []string{sourceDomain, entityType} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // parseAttrs converts a variadic slice of (key, value) pairs (with optional

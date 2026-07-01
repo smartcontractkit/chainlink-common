@@ -117,8 +117,13 @@ func (sk *OCR2Key) Verify(publicKey types.OnchainPublicKey, reportCtx types.Repo
 	if len(signature) < sOffset+componentLen {
 		return false
 	}
+	author := new(big.Int).SetBytes(signature[:rOffset])
 	r := new(big.Int).SetBytes(signature[rOffset : rOffset+componentLen])
 	s := new(big.Int).SetBytes(signature[sOffset : sOffset+componentLen])
+
+	if pubX.Cmp(author) != 0 {
+		return false
+	}
 
 	// Only allow canonical signatures to avoid signature malleability. Verify s <= N/2
 	if s.Cmp(new(big.Int).Rsh(curveOrder, 1)) == 1 {

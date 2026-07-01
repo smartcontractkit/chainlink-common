@@ -299,6 +299,9 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	if val, ok := attributes["subject"].(string); ok {
 		event.SetSubject(val)
 	}
+	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
+		event.SetExtension(IdempotencyKeyAttr, val)
+	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)
 	if err != nil {

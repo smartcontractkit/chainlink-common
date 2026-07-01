@@ -10,7 +10,7 @@ VaultForceEmptyOCRRounds = 'false'
 VaultOptimizationsEnabled = 'false'
 VaultGetSecretsShareAggregationIncludesPublicKeys = 'false'
 VaultOwnerAddressCanonicalizationEnabled = 'false'
-VaultSignedResponseRequestIDEnabled = 'false'
+VaultJSONOmitUnpopulatedEnabled = 'false'
 GatewayHTTPGlobalRate = '500rps:500'
 GatewayHTTPPerNodeRate = '100rps:100'
 GatewayConfidentialRelayGlobalRate = '50rps:10'
@@ -41,6 +41,12 @@ VaultMaxBlobPayloadSizeLimit = '25.6kb'
 VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit = '31.45728mb'
 VaultMaxPerOracleUnexpiredBlobCount = '1000'
 
+[ConfidentialCompute]
+GlobalRate = '1000rps:1000'
+MaxRetries = '3'
+RetryBackoff = '2s'
+SecretsCacheEnabled = 'false'
+
 [PerOrg]
 BaseTriggerRetransmitEnabled = 'false'
 WorkflowExecutionConcurrencyLimit = '100'
@@ -54,6 +60,9 @@ WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'
 VaultCiphertextSizeLimit = '2kb'
 VaultSecretsLimit = '100'
+
+[PerOwner.ConfidentialCompute]
+Rate = '1000rps:1000'
 
 [PerWorkflow]
 TriggerRegistrationsTimeout = '10s'

@@ -22,10 +22,10 @@ import (
 
 var testIdentity = ResourceIdentity{
 	Product:        "cre-mainline",
+	Tenant:         "mainline",
 	Environment:    "production",
 	Zone:           "wf-zone-a",
-	DONID:          "don-1",
-	NodeID:         "node-1",
+	DonIdentifier:  &DonIdentifier{DonID: "don-1", NodeID: "node-1"},
 	Service:        "cron-trigger",
 	ResourcePool:   "trigger_registrations",
 	ResourcePoolID: "",
@@ -149,12 +149,16 @@ func TestEmitMeterRecord_Success(t *testing.T) {
 	call := emitter.calls[0]
 	attrs := attrMap(t, call.attrKVs)
 	assert.Equal(t, "metering.v1.meter_record", attrs[beholder.AttrKeyDataSchema])
-	assert.Equal(t, "platform", attrs[beholder.AttrKeyDomain])
+	assert.Equal(t, "cll-meter", attrs[beholder.AttrKeyDomain])
 	assert.Equal(t, "metering.v1.MeterRecord", attrs[beholder.AttrKeyEntity])
 
 	var record meteringpb.MeterRecord
 	require.NoError(t, proto.Unmarshal(call.body, &record))
 	require.NotNil(t, record.GetIdentity())
+	assert.Equal(t, testIdentity.Product, record.GetIdentity().GetProduct())
+	assert.Equal(t, testIdentity.Tenant, record.GetIdentity().GetTenant())
+	assert.Equal(t, testIdentity.DonID(), record.GetIdentity().GetDonIdentifier().GetDonId())
+	assert.Equal(t, testIdentity.NodeID(), record.GetIdentity().GetDonIdentifier().GetNodeId())
 	assert.Equal(t, testIdentity.ResourcePool, record.GetIdentity().GetResourcePool())
 	assert.Equal(t, meteringpb.MeterAction_METER_ACTION_RESERVE, record.GetAction())
 	require.Len(t, record.GetUtilizations(), 1)

@@ -45,7 +45,9 @@
 		"GlobalRate": "1000rps:1000",
 		"MaxRetries": "3",
 		"RetryBackoff": "2s",
-		"SecretsCacheEnabled": "false"
+		"SecretsCacheEnabled": "false",
+		"EnclaveRequestTimeout": "30s",
+		"PublicKeyRequestTimeout": "5s"
 	},
 	"PerOrg": {
 		"BaseTriggerRetransmitEnabled": "false",

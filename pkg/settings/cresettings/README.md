@@ -267,6 +267,8 @@ flowchart
         ConfidentialCompute.MaxRetries{{ConfidentialCompute.MaxRetries}}:::bound
         ConfidentialCompute.RetryBackoff>ConfidentialCompute.RetryBackoff]:::time
         ConfidentialCompute.SecretsCacheEnabled[/ConfidentialCompute.SecretsCacheEnabled\]:::gate
+        ConfidentialCompute.EnclaveRequestTimeout>ConfidentialCompute.EnclaveRequestTimeout]:::time
+        ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
     end
 
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution

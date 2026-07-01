@@ -14,4 +14,9 @@ message ReportingPluginConfig {
   uint32 maxReportCount = 5;
 
   uint32 maxBatchSize = 6;
+
+  // minResponsesToAggregate is the minimum number of nodes that must report
+  // identical observations for a value to be accepted as the read result.
+  // 0 defaults to F+1. Must satisfy F+1 <= minResponsesToAggregate <= N when non-zero.
+  uint32 minResponsesToAggregate = 7;
 }

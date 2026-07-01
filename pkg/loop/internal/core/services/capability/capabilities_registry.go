@@ -235,6 +235,7 @@ func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *
 	remoteExecutableConfig.RequestTimeout = prtc.RequestTimeout.AsDuration()
 	remoteExecutableConfig.ServerMaxParallelRequests = prtc.ServerMaxParallelRequests
 	remoteExecutableConfig.RequestHasherType = capabilities.RequestHasherType(prtc.RequestHasherType)
+	remoteExecutableConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
 	return remoteExecutableConfig
 }
 
@@ -451,6 +452,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				RequestTimeout:                durationpb.New(cc.RemoteExecutableConfig.RequestTimeout),
 				ServerMaxParallelRequests:     cc.RemoteExecutableConfig.ServerMaxParallelRequests,
 				RequestHasherType:             capabilitiespb.RequestHasherType(cc.RemoteExecutableConfig.RequestHasherType),
+				MinResponsesToAggregate:       cc.RemoteExecutableConfig.MinResponsesToAggregate,
 			},
 		}
 	}
@@ -485,6 +487,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 						RequestTimeout:                durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
 						ServerMaxParallelRequests:     mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
 						RequestHasherType:             capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
+						MinResponsesToAggregate:       mConfig.RemoteExecutableConfig.MinResponsesToAggregate,
 					},
 				}
 			}

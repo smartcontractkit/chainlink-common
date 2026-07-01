@@ -458,6 +458,116 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 	})
 }
 
+func TestChipIngressBatchEmitterService_PartialDeliveryError(t *testing.T) {
+	t.Run("logs error_code and reason on per-event PublishError", func(t *testing.T) {
+		lggr, observed := logger.TestObserved(t, zap.InfoLevel)
+
+		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
+
+		partialResp := &chipingress.PublishResponse{
+			Results: []*chipingress.PublishResult{
+				{
+					Error: &chipingress.PublishError{
+						ErrorCode: chipingress.PublishErrorCode(1), // VALIDATION_FAILED
+						Reason:    "schema not found",
+					},
+				},
+			},
+		}
+		done := make(chan struct{})
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(partialResp, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressSendInterval = time.Second
+
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, lggr)
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for publish")
+		}
+		require.NoError(t, emitter.Close())
+
+		logs := observed.FilterMessage("failed to emit to chip ingress (partial delivery)")
+		require.GreaterOrEqual(t, logs.Len(), 1, "expected partial delivery error log")
+		entry := logs.All()[0]
+		assert.Equal(t, zap.ErrorLevel, entry.Level)
+		fieldMap := logFieldMap(entry)
+		assert.Equal(t, "platform", fieldMap["domain"])
+		assert.Equal(t, "TestEvent", fieldMap["entity"])
+		assert.Contains(t, fieldMap, "error_code")
+		assert.Equal(t, "schema not found", fieldMap["reason"])
+	})
+
+	t.Run("records events_dropped with partial_delivery failure_type", func(t *testing.T) {
+		reader, restore := useEmitterTestMeterProvider(t)
+		defer restore()
+
+		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
+
+		partialResp := &chipingress.PublishResponse{
+			Results: []*chipingress.PublishResult{
+				{
+					Error: &chipingress.PublishError{
+						ErrorCode: chipingress.PublishErrorCode(1),
+						Reason:    "encode error",
+					},
+				},
+			},
+		}
+		done := make(chan struct{})
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(partialResp, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressSendInterval = time.Second
+
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "PartialEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for publish")
+		}
+		require.NoError(t, emitter.Close())
+
+		rm := collectEmitterMetrics(t, reader)
+		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
+		sum, ok := metric.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		dp := mustEmitterInt64SumPoint(t, sum, "failure_type", "partial_delivery", "entity", "PartialEvent")
+		assert.GreaterOrEqual(t, dp.Value, int64(1))
+	})
+}
+
 func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 	t.Run("records events_sent on successful publish", func(t *testing.T) {
 		reader, restore := useEmitterTestMeterProvider(t)

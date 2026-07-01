@@ -296,14 +296,16 @@ func TestNewClient(t *testing.T) {
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
 
-	t.Run("errors when ChipIngress is enabled but no endpoint is set", func(t *testing.T) {
+	t.Run("does not enable chip ingress when enabled but endpoint is missing", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:  "grpc-endpoint",
 			ChipIngressEmitterEnabled: true,
 		})
-		require.Error(t, err)
-		assert.Nil(t, client)
-		assert.Equal(t, "invalid address format: missing port in address", err.Error())
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.IsType(t, &chipingress.NoopClient{}, client.Chip)
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.False(t, ok)
 	})
 }
 
@@ -414,15 +416,17 @@ func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
 		assert.Nil(t, client)
 	})
 
-	t.Run("errors when ChipIngress enabled with empty endpoint", func(t *testing.T) {
+	t.Run("does not enable ChipIngress when enabled with empty endpoint", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "grpc-endpoint",
 			ChipIngressEmitterEnabled:      true,
 			ChipIngressEmitterGRPCEndpoint: "",
 		})
-		require.Error(t, err)
-		assert.Nil(t, client)
-		assert.Contains(t, err.Error(), "invalid address format: missing port in address")
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.IsType(t, &chipingress.NoopClient{}, client.Chip)
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.False(t, ok)
 	})
 
 	t.Run("errors when ChipIngress enabled with whitespace-only endpoint", func(t *testing.T) {
@@ -503,7 +507,7 @@ func TestNewClient_Chip(t *testing.T) {
 		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
 	})
 
-	t.Run("chip interface can be enabled when chip ingress dual emitter is not enabled ", func(t *testing.T) {
+	t.Run("chip interface remains noop when endpoint is set but dual emitter is disabled", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:       "grpc-endpoint",
 			ChipIngressEmitterEnabled:      false,
@@ -512,19 +516,24 @@ func TestNewClient_Chip(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)
-		assert.NotNil(t, client.Chip)
+		assert.IsType(t, &chipingress.NoopClient{}, client.Chip)
 
-		// Verify emitter is not dual source when dual emitter is disabled
+		// Verify emitter is not dual source when dual emitter is disabled.
 		assert.NotNil(t, client.Emitter)
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.False(t, ok)
 	})
 
-	t.Run("chip interface is nil when chip ingress config is missing", func(t *testing.T) {
+	t.Run("chip interface remains noop when chip ingress endpoint is missing", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint:  "grpc-endpoint",
 			ChipIngressEmitterEnabled: true,
 		})
-		require.Error(t, err)
-		assert.Nil(t, client)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.IsType(t, &chipingress.NoopClient{}, client.Chip)
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.False(t, ok)
 	})
 }
 

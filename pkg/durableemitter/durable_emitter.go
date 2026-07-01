@@ -22,12 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// nodeCSAKeyExtension is the CloudEvent extension name carrying the node's CSA
-// public key on durable events. CloudEvents extension names must be lowercase
-// alphanumeric, so this is the durable-path equivalent of beholder's
-// node_csa_key attribute.
-const nodeCSAKeyExtension = "nodecsakey"
-
 // BatchEmitter is the transport interface DurableEmitter delegates to for
 // batched delivery of CloudEvents to Chip Ingress.
 //
@@ -54,10 +48,6 @@ type BatchEmitter interface {
 
 // Config configures the DurableEmitter behaviour.
 type Config struct {
-	// NodeCSAKey is the node's CSA public key (hex). When non-empty it is
-	// stamped as the node_csa_key attribute on every emitted event, providing a
-	// durable node identity for downstream billing/lookup
-	NodeCSAKey string
 	// RetransmitInterval controls how often the retransmit loop ticks.
 	RetransmitInterval time.Duration
 	// RetransmitAfter is the minimum age of an event before the retransmit
@@ -392,11 +382,6 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		}
 
 		event.SetExtension("emitter", "DurableEmitter")
-		// Include the node's CSA public key so every durable event carries a
-		// durable node identity for downstream billing/lookup
-		if d.cfg.NodeCSAKey != "" {
-			event.SetExtension(nodeCSAKeyExtension, d.cfg.NodeCSAKey)
-		}
 
 		eventPb, err := chipingress.EventToProto(event)
 		if err != nil {

@@ -137,10 +137,12 @@ var Default = Schema{
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
 	ConfidentialCompute: confidentialCompute{
-		GlobalRate:          Rate(rate.Limit(1000), 1000),
-		MaxRetries:          Int(3),
-		RetryBackoff:        Duration(2 * time.Second),
-		SecretsCacheEnabled: Bool(false),
+		GlobalRate:              Rate(rate.Limit(1000), 1000),
+		MaxRetries:              Int(3),
+		RetryBackoff:            Duration(2 * time.Second),
+		SecretsCacheEnabled:     Bool(false),
+		EnclaveRequestTimeout:   Duration(30 * time.Second),
+		PublicKeyRequestTimeout: Duration(5 * time.Second),
 	},
 
 	PerOrg: Orgs{
@@ -476,10 +478,12 @@ type confidentialHTTP struct {
 // framework) settings. These are global scope (no scope tag), like the other
 // top-level settings.
 type confidentialCompute struct {
-	GlobalRate          Setting[config.Rate]
-	MaxRetries          Setting[int] `unit:"{attempt}"`
-	RetryBackoff        Setting[time.Duration]
-	SecretsCacheEnabled Setting[bool]
+	GlobalRate              Setting[config.Rate]
+	MaxRetries              Setting[int] `unit:"{attempt}"`
+	RetryBackoff            Setting[time.Duration]
+	SecretsCacheEnabled     Setting[bool]
+	EnclaveRequestTimeout   Setting[time.Duration]
+	PublicKeyRequestTimeout Setting[time.Duration]
 }
 
 // ownerConfidentialCompute holds the per-workflow-owner Confidential Compute settings.

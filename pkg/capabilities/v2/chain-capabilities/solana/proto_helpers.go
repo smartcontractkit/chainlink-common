@@ -911,6 +911,103 @@ func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest)
 	return &typesolana.GetSignatureStatusesRequest{Sigs: sigs}, nil
 }
 
+func convertRPCFilterFromProto(f *RPCFilter) (typesolana.RPCFilter, error) {
+	if f == nil {
+		return typesolana.RPCFilter{}, fmt.Errorf("nil filter")
+	}
+	var memcmp *typesolana.RPCFilterMemcmp
+	if f.Memcmp != nil {
+		memcmp = &typesolana.RPCFilterMemcmp{
+			Offset: f.Memcmp.Offset,
+			Bytes:  f.Memcmp.Bytes,
+		}
+	}
+	return typesolana.RPCFilter{
+		Memcmp:   memcmp,
+		DataSize: f.DataSize,
+	}, nil
+}
+
+func convertRPCFiltersFromProto(filters []*RPCFilter) ([]typesolana.RPCFilter, error) {
+	if len(filters) == 0 {
+		return nil, nil
+	}
+	out := make([]typesolana.RPCFilter, 0, len(filters))
+	for i, f := range filters {
+		filter, err := convertRPCFilterFromProto(f)
+		if err != nil {
+			return nil, fmt.Errorf("filters[%d]: %w", i, err)
+		}
+		out = append(out, filter)
+	}
+	return out, nil
+}
+
+func convertGetProgramAccountsOptsFromProto(p *GetProgramAccountsOpts) (*typesolana.GetProgramAccountsOpts, error) {
+	if p == nil {
+		return nil, nil
+	}
+	enc, err := convertEncodingTypeFromProto(p.Encoding)
+	if err != nil {
+		return nil, fmt.Errorf("encoding: %w", err)
+	}
+	commit, err := convertCommitmentTypeFromProto(p.Commitment)
+	if err != nil {
+		return nil, fmt.Errorf("commitment: %w", err)
+	}
+	filters, err := convertRPCFiltersFromProto(p.Filters)
+	if err != nil {
+		return nil, fmt.Errorf("filters: %w", err)
+	}
+	return &typesolana.GetProgramAccountsOpts{
+		Encoding:   enc,
+		Commitment: commit,
+		DataSlice:  convertDataSliceFromProto(p.DataSlice),
+		Filters:    filters,
+	}, nil
+}
+
+// ConvertGetProgramAccountsRequestFromProto converts GetProgramAccountsRequest to domain type.
+func ConvertGetProgramAccountsRequestFromProto(p *GetProgramAccountsRequest) (*typesolana.GetProgramAccountsRequest, error) {
+	if p == nil {
+		return nil, nil
+	}
+	program, err := chainsolana.ConvertPublicKeyFromProto(p.Program)
+	if err != nil {
+		return nil, fmt.Errorf("program: %w", err)
+	}
+	opts, err := convertGetProgramAccountsOptsFromProto(p.Opts)
+	if err != nil {
+		return nil, fmt.Errorf("opts: %w", err)
+	}
+	return &typesolana.GetProgramAccountsRequest{
+		Program: program,
+		Opts:    opts,
+	}, nil
+}
+
+// ConvertGetProgramAccountsReplyToProto converts GetProgramAccountsReply to proto.
+func ConvertGetProgramAccountsReplyToProto(r *typesolana.GetProgramAccountsReply) (*GetProgramAccountsReply, error) {
+	if r == nil {
+		return nil, nil
+	}
+	accounts := make([]*KeyedAccount, 0, len(r.Value))
+	for i, ka := range r.Value {
+		if ka == nil {
+			continue
+		}
+		acc, err := convertAccountToProto(ka.Account)
+		if err != nil {
+			return nil, fmt.Errorf("value[%d].account: %w", i, err)
+		}
+		accounts = append(accounts, &KeyedAccount{
+			Pubkey:  ka.Pubkey[:],
+			Account: acc,
+		})
+	}
+	return &GetProgramAccountsReply{Value: accounts}, nil
+}
+
 func ptrUint64(v uint64) *uint64 {
 	if v == 0 {
 		return nil

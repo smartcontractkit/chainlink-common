@@ -132,6 +132,8 @@ type module struct {
 
 	cfg *ModuleConfig
 
+	metrics *moduleMetrics
+
 	wg     sync.WaitGroup
 	stopCh chan struct{}
 
@@ -394,11 +396,17 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 
 	modCfg.SdkLabeler(v2ImportName)
 
+	metrics, err := newModuleMetrics()
+	if err != nil {
+		return nil, fmt.Errorf("error creating module metrics: %w", err)
+	}
+
 	m := &module{
 		engine:       engine,
 		module:       mod,
 		wconfig:      cfg,
 		cfg:          modCfg,
+		metrics:      metrics,
 		stopCh:       make(chan struct{}),
 		v2ImportName: v2ImportName,
 	}
@@ -626,6 +634,27 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	defer cancel()
 	overallStart := time.Now()
 
+	m.metrics.IncActiveExecutions(ctx, req.SuspendOnAwait)
+	defer m.metrics.DecActiveExecutions(ctx, req.SuspendOnAwait)
+
+	// Accumulated across (re)starts and emitted once the execution completes,
+	// regardless of outcome. wasmDuration is the wall-clock time spent executing
+	// guest code (which is also the CPU-time signal), waitDuration the time spent
+	// suspended waiting for capability responses, and suspensions the number of
+	// times the execution suspended.
+	var (
+		wasmDuration time.Duration
+		waitDuration time.Duration
+		suspensions  int64
+	)
+	defer func() {
+		m.metrics.RecordExecutionPhase(ctx, req.SuspendOnAwait, phaseWasm, wasmDuration)
+		m.metrics.RecordExecutionPhase(ctx, req.SuspendOnAwait, phaseWaiting, waitDuration)
+		m.metrics.RecordExecutionPhase(ctx, req.SuspendOnAwait, phaseTotal, time.Since(overallStart))
+		m.metrics.RecordSuspensions(ctx, req.SuspendOnAwait, suspensions)
+		m.metrics.RecordMemory(ctx, req.SuspendOnAwait, exec.peakMemoryBytes)
+	}()
+
 	for {
 		// Each (re)start is bounded by the time left in the overall timeout, so a
 		// resumed run - and the wait for its capability responses - cannot extend
@@ -636,6 +665,7 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 		}
 
 		executionDuration, err := m.callWasm(remaining, req, linkNoDAG, exec)
+		wasmDuration += executionDuration
 
 		switch {
 		case containsCode(err, wasm.CodeSuccess):
@@ -645,17 +675,30 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 			return exec.response, nil
 		case isSuspendTrap(err):
 			m.cfg.Logger.Debugw("received suspension, awaiting responses", "executionID", executionId)
+			suspensions++
+			// The execution is suspended for as long as we wait for its pending
+			// capability responses; track it as such for the duration of the wait.
+			m.metrics.IncSuspendedExecutions(ctx, req.SuspendOnAwait)
+			waitStart := time.Now()
 			// Wait for the pending capability responses, then resume on the next
 			// loop iteration with a fresh store.
-			for _, id := range exec.awaiting {
-				ar, ok := exec.capabilityResponses[id]
-				if !ok {
-					return nil, fmt.Errorf("missing capability response for awaited callback %d", id)
-				}
+			werr := func() error {
+				for _, id := range exec.awaiting {
+					ar, ok := exec.capabilityResponses[id]
+					if !ok {
+						return fmt.Errorf("missing capability response for awaited callback %d", id)
+					}
 
-				if _, werr := ar.wait(ctxWithTimeout); werr != nil {
-					return nil, werr
+					if _, werr := ar.wait(ctxWithTimeout); werr != nil {
+						return werr
+					}
 				}
+				return nil
+			}()
+			waitDuration += time.Since(waitStart)
+			m.metrics.DecSuspendedExecutions(ctx, req.SuspendOnAwait)
+			if werr != nil {
+				return nil, werr
 			}
 
 			continue
@@ -813,6 +856,17 @@ func callWasm[I, O proto.Message](
 	startTime := time.Now()
 	_, err = start.Call(store)
 	executionDuration := time.Since(startTime)
+
+	// Capture the linear memory the guest grew to before the store is closed, so
+	// Execute can emit it as the peak memory metric.
+	if mem := instance.GetExport(store, "memory"); mem != nil {
+		if memory := mem.Memory(); memory != nil {
+			if used := int64(memory.DataSize(store)); used > exec.peakMemoryBytes {
+				exec.peakMemoryBytes = used
+			}
+		}
+	}
+
 	return executionDuration, err
 }
 

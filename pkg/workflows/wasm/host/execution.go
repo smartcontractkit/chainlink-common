@@ -40,6 +40,9 @@ type execution[T any] struct {
 	donLogCount          uint32
 	nodeLogCount         uint32
 	awaiting             []int32
+	// peakMemoryBytes is the largest linear memory observed across (re)starts.
+	// It is populated by callWasm and read by Execute to emit the memory metric.
+	peakMemoryBytes int64
 	// suspendOnAwait gates the suspend/resume behaviour. When false, the
 	// execution behaves as it did before suspension was introduced:
 	// awaitCapabilities blocks until each response is available and callCapAsync

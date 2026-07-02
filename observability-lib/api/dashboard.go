@@ -50,7 +50,8 @@ func (c *Client) GetDashboardByNameFolderUID(name string, folderUID string) (Get
 
 type PostDashboardRequest struct {
 	Dashboard interface{} `json:"dashboard"`
-	FolderID  int         `json:"folderId"`
+	FolderID  int         `json:"folderId,omitempty"`
+	FolderUID string      `json:"folderUid,omitempty"`
 	Overwrite bool        `json:"overwrite"`
 }
 

@@ -65,7 +65,7 @@ var Default = Schema{
 	VaultOptimizationsEnabled:                         Bool(false),
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
-	VaultSignedResponseRequestIDEnabled:               Bool(false),
+	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -133,6 +133,18 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
+	// Confidential Compute (San Marino framework) node-level settings. Defaults
+	// mirror the previous hardcoded executor defaults so behavior is unchanged
+	// until explicitly overridden.
+	ConfidentialCompute: confidentialCompute{
+		GlobalRate:              Rate(rate.Limit(1000), 1000),
+		MaxRetries:              Int(3),
+		RetryBackoff:            Duration(2 * time.Second),
+		SecretsCacheEnabled:     Bool(false),
+		EnclaveRequestTimeout:   Duration(30 * time.Second),
+		PublicKeyRequestTimeout: Duration(5 * time.Second),
+	},
+
 	PerOrg: Orgs{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
@@ -151,6 +163,12 @@ var Default = Schema{
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
 		VaultCiphertextSizeLimit: Size(2 * config.KByte),
 		VaultSecretsLimit:        Int(100),
+
+		// Confidential Compute per-workflow-owner request rate. Mirrors the
+		// previous hardcoded WorkflowOwner RPS/burst executor defaults.
+		ConfidentialCompute: ownerConfidentialCompute{
+			Rate: Rate(rate.Limit(1000), 1000),
+		},
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
@@ -286,7 +304,7 @@ type Schema struct {
 	VaultOptimizationsEnabled                         Setting[bool]
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
-	VaultSignedResponseRequestIDEnabled               Setting[bool]
+	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
@@ -321,6 +339,9 @@ type Schema struct {
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
+	// Confidential Compute (San Marino framework) node-level settings.
+	ConfidentialCompute confidentialCompute
+
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
@@ -337,6 +358,9 @@ type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
+
+	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
+	ConfidentialCompute ownerConfidentialCompute
 }
 
 type Workflows struct {
@@ -448,6 +472,23 @@ type confidentialHTTP struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+
+// confidentialCompute holds node-level Confidential Compute (San Marino
+// framework) settings. These are global scope (no scope tag), like the other
+// top-level settings.
+type confidentialCompute struct {
+	GlobalRate              Setting[config.Rate]
+	MaxRetries              Setting[int] `unit:"{attempt}"`
+	RetryBackoff            Setting[time.Duration]
+	SecretsCacheEnabled     Setting[bool]
+	EnclaveRequestTimeout   Setting[time.Duration]
+	PublicKeyRequestTimeout Setting[time.Duration]
+}
+
+// ownerConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
+type ownerConfidentialCompute struct {
+	Rate Setting[config.Rate]
 }
 
 type confidentialWorkflows struct {

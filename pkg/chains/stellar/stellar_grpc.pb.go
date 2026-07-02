@@ -24,6 +24,8 @@ const (
 	Stellar_GetLatestLedger_FullMethodName     = "/loop.stellar.Stellar/GetLatestLedger"
 	Stellar_SimulateTransaction_FullMethodName = "/loop.stellar.Stellar/SimulateTransaction"
 	Stellar_GetEvents_FullMethodName           = "/loop.stellar.Stellar/GetEvents"
+	Stellar_GetTransaction_FullMethodName      = "/loop.stellar.Stellar/GetTransaction"
+	Stellar_GetSigningAccount_FullMethodName   = "/loop.stellar.Stellar/GetSigningAccount"
 	Stellar_SubmitTransaction_FullMethodName   = "/loop.stellar.Stellar/SubmitTransaction"
 )
 
@@ -35,6 +37,8 @@ type StellarClient interface {
 	GetLatestLedger(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLedgerResponse, error)
 	SimulateTransaction(ctx context.Context, in *SimulateTransactionRequest, opts ...grpc.CallOption) (*SimulateTransactionResponse, error)
 	GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error)
+	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error)
+	GetSigningAccount(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSigningAccountResponse, error)
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
 }
 
@@ -86,6 +90,26 @@ func (c *stellarClient) GetEvents(ctx context.Context, in *GetEventsRequest, opt
 	return out, nil
 }
 
+func (c *stellarClient) GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransactionResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetTransaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stellarClient) GetSigningAccount(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSigningAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSigningAccountResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetSigningAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *stellarClient) SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTransactionResponse)
@@ -104,6 +128,8 @@ type StellarServer interface {
 	GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error)
 	SimulateTransaction(context.Context, *SimulateTransactionRequest) (*SimulateTransactionResponse, error)
 	GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error)
+	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error)
+	GetSigningAccount(context.Context, *emptypb.Empty) (*GetSigningAccountResponse, error)
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
 	mustEmbedUnimplementedStellarServer()
 }
@@ -126,6 +152,12 @@ func (UnimplementedStellarServer) SimulateTransaction(context.Context, *Simulate
 }
 func (UnimplementedStellarServer) GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
+}
+func (UnimplementedStellarServer) GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
+func (UnimplementedStellarServer) GetSigningAccount(context.Context, *emptypb.Empty) (*GetSigningAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSigningAccount not implemented")
 }
 func (UnimplementedStellarServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
@@ -223,6 +255,42 @@ func _Stellar_GetEvents_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Stellar_GetTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetTransaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetTransaction(ctx, req.(*GetTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stellar_GetSigningAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetSigningAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetSigningAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetSigningAccount(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Stellar_SubmitTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SubmitTransactionRequest)
 	if err := dec(in); err != nil {
@@ -263,6 +331,14 @@ var Stellar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEvents",
 			Handler:    _Stellar_GetEvents_Handler,
+		},
+		{
+			MethodName: "GetTransaction",
+			Handler:    _Stellar_GetTransaction_Handler,
+		},
+		{
+			MethodName: "GetSigningAccount",
+			Handler:    _Stellar_GetSigningAccount_Handler,
 		},
 		{
 			MethodName: "SubmitTransaction",

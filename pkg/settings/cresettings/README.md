@@ -44,7 +44,7 @@ flowchart
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
-        VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
+        VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -259,6 +259,16 @@ flowchart
         VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
         PerOwner.VaultCiphertextSizeLimit{{PerOwner.VaultCiphertextSizeLimit}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
+    end
+
+    subgraph ConfidentialCompute[Confidential Compute executor]
+        ConfidentialCompute.GlobalRate[\ConfidentialCompute.GlobalRate/]:::rate
+        PerOwner.ConfidentialCompute.Rate[\PerOwner.ConfidentialCompute.Rate/]:::rate
+        ConfidentialCompute.MaxRetries{{ConfidentialCompute.MaxRetries}}:::bound
+        ConfidentialCompute.RetryBackoff>ConfidentialCompute.RetryBackoff]:::time
+        ConfidentialCompute.SecretsCacheEnabled[/ConfidentialCompute.SecretsCacheEnabled\]:::gate
+        ConfidentialCompute.EnclaveRequestTimeout>ConfidentialCompute.EnclaveRequestTimeout]:::time
+        ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
     end
 
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution

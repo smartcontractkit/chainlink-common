@@ -1738,6 +1738,35 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 				require.Equal(t, expected.TxStatus, reply.TxStatus)
 			},
 		},
+		{
+			name: "GetTransaction",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
+				req := stellartypes.GetTransactionRequest{TxHash: "abc123hash"}
+				expected := stellartypes.GetTransactionResponse{
+					FeeStroops:      42,
+					LedgerSequence:  100,
+					LedgerCloseTime: 1_700_000_000,
+				}
+				mockSvc.EXPECT().GetTransaction(mock.Anything, req).Return(expected, nil)
+
+				resp, err := svc.GetTransaction(ctx, req)
+				require.NoError(t, err)
+				require.Equal(t, expected, resp)
+			},
+		},
+		{
+			name: "GetSigningAccount",
+			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
+				expected := stellartypes.GetSigningAccountResponse{
+					AccountAddress: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+				}
+				mockSvc.EXPECT().GetSigningAccount(mock.Anything).Return(expected, nil)
+
+				resp, err := svc.GetSigningAccount(ctx)
+				require.NoError(t, err)
+				require.Equal(t, expected, resp)
+			},
+		},
 	}
 
 	for _, tc := range tests {

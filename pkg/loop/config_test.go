@@ -85,6 +85,13 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryLogStreamingEnabled:       "false",
 				envTelemetryPrometheusBridgeEnabled:   "true",
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
+				envMeterRecordsEnabled:                "true",
+				envMeterSnapshotsEnabled:              "false",
+				envMeterProduct:                       "cre-mainline",
+				envMeterTenant:                        "mainline",
+				envMeterEnvironment:                   "production",
+				envMeterZone:                          "wf-zone-a",
+				envMeterNodeID:                        "csa-pubkey-1",
 
 				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection:  "true",
@@ -199,6 +206,13 @@ var envCfgFull = EnvConfig{
 	TelemetryLogStreamingEnabled:       false,
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
+	MeterRecordsEnabled:                true,
+	MeterSnapshotsEnabled:              false,
+	MeterProduct:                       "cre-mainline",
+	MeterTenant:                        "mainline",
+	MeterEnvironment:                   "production",
+	MeterZone:                          "wf-zone-a",
+	MeterNodeID:                        "csa-pubkey-1",
 
 	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection:    true,
@@ -264,6 +278,13 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
+	assert.Equal(t, "true", got[envMeterRecordsEnabled])
+	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
+	assert.Equal(t, "cre-mainline", got[envMeterProduct])
+	assert.Equal(t, "mainline", got[envMeterTenant])
+	assert.Equal(t, "production", got[envMeterEnvironment])
+	assert.Equal(t, "wf-zone-a", got[envMeterZone])
+	assert.Equal(t, "csa-pubkey-1", got[envMeterNodeID])
 
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])

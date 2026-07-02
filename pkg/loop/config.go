@@ -85,6 +85,13 @@ const (
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
+	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
+	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
+	envMeterProduct                       = "CL_METER_PRODUCT"
+	envMeterTenant                        = "CL_METER_TENANT"
+	envMeterEnvironment                   = "CL_METER_ENVIRONMENT"
+	envMeterZone                          = "CL_METER_ZONE"
+	envMeterNodeID                        = "CL_METER_NODE_ID"
 
 	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -171,6 +178,25 @@ type EnvConfig struct {
 	TelemetryPrometheusBridgeEnabled   bool
 	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
+	MeterRecordsEnabled                bool
+	MeterSnapshotsEnabled              bool
+
+	// MeterProduct / MeterTenant / MeterEnvironment / MeterZone / MeterNodeID are
+	// the static deployment+node identity dimensions used as coarse
+	// metering/billing rollup dimensions. They are resolved once from node
+	// config by the host and delivered to every LOOP plugin over the env, the
+	// same channel as the meter-record toggles above (rather than the
+	// standard-capabilities boundary). Any may be empty if the host did not
+	// provide it.
+	//
+	// MeterNodeID is the node's logical name (e.g. "clp-cre-wf-zone-a-1"),
+	// not the CSA public key; the CSA key rides emitted events separately as the
+	// node_csa_key attribute.
+	MeterProduct     string
+	MeterTenant      string
+	MeterEnvironment string
+	MeterZone        string
+	MeterNodeID      string
 
 	TracingEnabled         bool
 	TracingCollectorTarget string
@@ -264,6 +290,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
+	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
+	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
+	add(envMeterProduct, e.MeterProduct)
+	add(envMeterTenant, e.MeterTenant)
+	add(envMeterEnvironment, e.MeterEnvironment)
+	add(envMeterZone, e.MeterZone)
+	add(envMeterNodeID, e.MeterNodeID)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -517,6 +550,21 @@ func (e *EnvConfig) parse() error {
 
 	e.CRESettings = os.Getenv(envCRESettings)
 	e.CRESettingsDefault = os.Getenv(envCRESettingsDefault)
+
+	e.MeterRecordsEnabled, err = getBool(envMeterRecordsEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterRecordsEnabled, err)
+	}
+	e.MeterSnapshotsEnabled, err = getBool(envMeterSnapshotsEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterSnapshotsEnabled, err)
+	}
+
+	e.MeterProduct = os.Getenv(envMeterProduct)
+	e.MeterTenant = os.Getenv(envMeterTenant)
+	e.MeterEnvironment = os.Getenv(envMeterEnvironment)
+	e.MeterZone = os.Getenv(envMeterZone)
+	e.MeterNodeID = os.Getenv(envMeterNodeID)
 
 	return nil
 }

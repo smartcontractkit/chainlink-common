@@ -324,7 +324,13 @@ func WithResourceAttributeExtensions(attrs map[string]string) EventOpt {
 }
 
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
-func NewEvent(domain, entity string, payload []byte, attributes map[string]any, opts ...EventOpt) (CloudEvent, error) {
+func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
+	return NewEventWithOpts(domain, entity, payload, attributes)
+}
+
+// NewEventWithOpts creates a new CloudEvent like NewEvent, additionally applying opts (e.g.
+// WithResourceAttributeExtensions) to the event before its data is set.
+func NewEventWithOpts(domain, entity string, payload []byte, attributes map[string]any, opts ...EventOpt) (CloudEvent, error) {
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)

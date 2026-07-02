@@ -138,7 +138,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 
 		attributes := newAttributes(attrKVs...)
 
-		event, err := chipingress.NewEvent(domain, entity, body, attributes, chipingress.WithResourceAttributeExtensions(e.resourceAttrs))
+		event, err := chipingress.NewEventWithOpts(domain, entity, body, attributes, chipingress.WithResourceAttributeExtensions(e.resourceAttrs))
 		if err != nil {
 			return fmt.Errorf("failed to create CloudEvent: %w", err)
 		}

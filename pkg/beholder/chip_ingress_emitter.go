@@ -70,7 +70,7 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...), chipingress.WithResourceAttributeExtensions(c.resourceAttrs))
+	event, err := chipingress.NewEventWithOpts(sourceDomain, entityType, body, newAttributes(attrKVs...), chipingress.WithResourceAttributeExtensions(c.resourceAttrs))
 	if err != nil {
 		return err
 	}

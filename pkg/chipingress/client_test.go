@@ -189,12 +189,12 @@ func TestSanitizeExtensionName(t *testing.T) {
 	}
 }
 
-func TestNewEvent_WithResourceAttributeExtensions(t *testing.T) {
+func TestNewEventWithOpts_WithResourceAttributeExtensions(t *testing.T) {
 	payload := []byte("body")
 
 	t.Run("sanitized keys/values land on the event", func(t *testing.T) {
 		attrs := map[string]string{"chain_id": "1", "k8s.pod.name": "pod-abc"}
-		event, err := NewEvent("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		event, err := NewEventWithOpts("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
 		require.NoError(t, err)
 		ext := event.Extensions()
 		assert.Equal(t, "1", ext["chainid"])
@@ -203,14 +203,14 @@ func TestNewEvent_WithResourceAttributeExtensions(t *testing.T) {
 
 	t.Run("empty sanitized name is dropped", func(t *testing.T) {
 		attrs := map[string]string{"---": "value"}
-		event, err := NewEvent("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		event, err := NewEventWithOpts("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
 		require.NoError(t, err)
 		assert.Len(t, event.Extensions(), 1) // only the always-set recordedtime extension
 	})
 
 	t.Run("reserved name is skipped", func(t *testing.T) {
 		attrs := map[string]string{IdempotencyKeyAttr: "should-not-override", "subject": "should-not-override"}
-		event, err := NewEvent("domain", "entity", payload, map[string]any{IdempotencyKeyAttr: "real-key"}, WithResourceAttributeExtensions(attrs))
+		event, err := NewEventWithOpts("domain", "entity", payload, map[string]any{IdempotencyKeyAttr: "real-key"}, WithResourceAttributeExtensions(attrs))
 		require.NoError(t, err)
 		ext := event.Extensions()
 		assert.Equal(t, "real-key", ext[IdempotencyKeyAttr])
@@ -219,17 +219,36 @@ func TestNewEvent_WithResourceAttributeExtensions(t *testing.T) {
 
 	t.Run("duplicate sanitized names resolve deterministically to sorted-first key", func(t *testing.T) {
 		attrs := map[string]string{"service.name": "from-dotted", "service_name": "from-snake"}
-		event, err := NewEvent("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		event, err := NewEventWithOpts("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
 		require.NoError(t, err)
 		// sorted order: "service.name" < "service_name" ('.' < '_' in ASCII), so the dotted key wins.
 		assert.Equal(t, "from-dotted", event.Extensions()["servicename"])
 	})
 
-	t.Run("omitting the opt is a no-op", func(t *testing.T) {
-		event, err := NewEvent("domain", "entity", payload, nil)
+	t.Run("omitting all opts is a no-op", func(t *testing.T) {
+		event, err := NewEventWithOpts("domain", "entity", payload, nil)
 		require.NoError(t, err)
 		assert.Len(t, event.Extensions(), 1) // only the always-set recordedtime extension
 	})
+}
+
+// TestNewEvent_UnchangedSignature is a backward-compatibility guard: NewEvent's exported
+// signature must stay exactly as it was before EventOpt/NewEventWithOpts were introduced, and
+// must remain equivalent to calling NewEventWithOpts with no opts.
+func TestNewEvent_UnchangedSignature(t *testing.T) {
+	payload := []byte("body")
+	attributes := map[string]any{"subject": "example-subject"}
+
+	viaNewEvent, err := NewEvent("domain", "entity", payload, attributes)
+	require.NoError(t, err)
+
+	viaNewEventWithOpts, err := NewEventWithOpts("domain", "entity", payload, attributes)
+	require.NoError(t, err)
+
+	assert.Equal(t, viaNewEventWithOpts.Subject(), viaNewEvent.Subject())
+	assert.Equal(t, viaNewEventWithOpts.Extensions()["recordedtime"].(ce.Timestamp).Time.Truncate(time.Second),
+		viaNewEvent.Extensions()["recordedtime"].(ce.Timestamp).Time.Truncate(time.Second))
+	assert.Equal(t, viaNewEventWithOpts.Data(), viaNewEvent.Data())
 }
 
 func TestEventToProto(t *testing.T) {

@@ -304,8 +304,13 @@ type RemoteExecutableConfig struct {
 	RequestTimeout                *durationpb.Duration `protobuf:"bytes,6,opt,name=request_timeout,json=requestTimeout,proto3" json:"request_timeout,omitempty"`
 	ServerMaxParallelRequests     uint32               `protobuf:"varint,7,opt,name=server_max_parallel_requests,json=serverMaxParallelRequests,proto3" json:"server_max_parallel_requests,omitempty"`
 	RequestHasherType             RequestHasherType    `protobuf:"varint,8,opt,name=request_hasher_type,json=requestHasherType,proto3,enum=loop.RequestHasherType" json:"request_hasher_type,omitempty"`
-	unknownFields                 protoimpl.UnknownFields
-	sizeCache                     protoimpl.SizeCache
+	// minResponsesToAggregate is the minimum number of chain-capability DON nodes that must
+	// return identical responses before the workflow DON accepts the read result.
+	// 0 defaults to F+1 of the remote DON
+	// Must satisfy F+1 <= minResponsesToAggregate <= N when non-zero.
+	MinResponsesToAggregate uint32 `protobuf:"varint,9,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RemoteExecutableConfig) Reset() {
@@ -378,6 +383,13 @@ func (x *RemoteExecutableConfig) GetRequestHasherType() RequestHasherType {
 		return x.RequestHasherType
 	}
 	return RequestHasherType_Simple
+}
+
+func (x *RemoteExecutableConfig) GetMinResponsesToAggregate() uint32 {
+	if x != nil {
+		return x.MinResponsesToAggregate
+	}
+	return 0
 }
 
 type AggregatorConfig struct {
@@ -797,7 +809,7 @@ const file_registry_proto_rawDesc = "" +
 	"\fmaxBatchSize\x18\x05 \x01(\rR\fmaxBatchSize\x12O\n" +
 	"\x15batchCollectionPeriod\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x15batchCollectionPeriod\"Z\n" +
 	"\x12RemoteTargetConfig\x12D\n" +
-	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\"\xc5\x03\n" +
+	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\"\xff\x03\n" +
 	"\x16RemoteExecutableConfig\x12D\n" +
 	"\x1drequestHashExcludedAttributes\x18\x01 \x03(\tR\x1drequestHashExcludedAttributes\x12O\n" +
 	"\x15transmission_schedule\x18\x04 \x01(\x0e2\x1a.loop.TransmissionScheduleR\x14transmissionSchedule\x12:\n" +
@@ -805,7 +817,8 @@ const file_registry_proto_rawDesc = "" +
 	"deltaStage\x12B\n" +
 	"\x0frequest_timeout\x18\x06 \x01(\v2\x19.google.protobuf.DurationR\x0erequestTimeout\x12?\n" +
 	"\x1cserver_max_parallel_requests\x18\a \x01(\rR\x19serverMaxParallelRequests\x12G\n" +
-	"\x13request_hasher_type\x18\b \x01(\x0e2\x17.loop.RequestHasherTypeR\x11requestHasherTypeJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\"Q\n" +
+	"\x13request_hasher_type\x18\b \x01(\x0e2\x17.loop.RequestHasherTypeR\x11requestHasherType\x128\n" +
+	"\x17minResponsesToAggregate\x18\t \x01(\rR\x17minResponsesToAggregateJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04\"Q\n" +
 	"\x10AggregatorConfig\x12=\n" +
 	"\x0faggregator_type\x18\x01 \x01(\x0e2\x14.loop.AggregatorTypeR\x0eaggregatorType\"\x99\x02\n" +
 	"\x16CapabilityMethodConfig\x12O\n" +

@@ -386,6 +386,229 @@ func TestGetSignatureStatusesConverters(t *testing.T) {
 	require.Equal(t, conv.ConfirmationStatusType_CONFIRMATION_STATUS_TYPE_CONFIRMED, rep2.Results[0].ConfirmationStatus)
 }
 
+func TestExternalRequestProtoRoundTrip(t *testing.T) {
+	t.Run("GetAccountInfoRequest", func(t *testing.T) {
+		pk := typesolana.PublicKey{}
+		copy(pk[:], mkBytes(typesolana.PublicKeyLength, 0xAB))
+		d := typesolana.GetAccountInfoRequest{
+			Account: pk,
+			Opts: &typesolana.GetAccountInfoOpts{
+				Encoding:   typesolana.EncodingBase64,
+				Commitment: typesolana.CommitmentFinalized,
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertGetAccountInfoRequestToProto(d)
+		got, err := conv.ConvertGetAccountInfoRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+
+	t.Run("GetMultipleAccountsRequest", func(t *testing.T) {
+		d := &typesolana.GetMultipleAccountsRequest{
+			Accounts: []typesolana.PublicKey{
+				{1},
+				func() (pk typesolana.PublicKey) { copy(pk[:], mkBytes(typesolana.PublicKeyLength, 0xCD)); return pk }(),
+			},
+			Opts: &typesolana.GetMultipleAccountsOpts{
+				Encoding:   typesolana.EncodingJSONParsed,
+				Commitment: typesolana.CommitmentProcessed,
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertGetMultipleAccountsRequestToProto(d)
+		got := conv.ConvertGetMultipleAccountsRequestFromProto(pb)
+		require.Equal(t, d.Accounts[0], got.Accounts[0])
+		require.Equal(t, d.Accounts[1], got.Accounts[1])
+		require.Equal(t, d.IsExternal, got.IsExternal)
+		require.Equal(t, d.Opts, got.Opts)
+	})
+
+	t.Run("GetProgramAccountsRequest", func(t *testing.T) {
+		program := typesolana.PublicKey{}
+		copy(program[:], mkBytes(typesolana.PublicKeyLength, 0x42))
+		d := typesolana.GetProgramAccountsRequest{
+			Program: program,
+			Opts: &typesolana.GetProgramAccountsOpts{
+				Encoding:   typesolana.EncodingBase64,
+				Commitment: typesolana.CommitmentFinalized,
+				Filters: []typesolana.RPCFilter{
+					{DataSize: 165},
+					{
+						Memcmp: &typesolana.RPCFilterMemcmp{
+							Offset: 0,
+							Bytes:  []byte{1, 2, 3},
+						},
+					},
+				},
+			},
+			IsExternal: true,
+		}
+		pb, err := conv.ConvertGetProgramAccountsRequestToProto(d)
+		require.NoError(t, err)
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+
+	t.Run("GetProgramAccountsRequest nil opts roundtrip", func(t *testing.T) {
+		program := typesolana.PublicKey{}
+		copy(program[:], mkBytes(typesolana.PublicKeyLength, 0x42))
+		d := typesolana.GetProgramAccountsRequest{Program: program}
+		pb, err := conv.ConvertGetProgramAccountsRequestToProto(d)
+		require.NoError(t, err)
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d.Program, got.Program)
+		require.Nil(t, got.Opts)
+	})
+
+	t.Run("GetTransactionRequest", func(t *testing.T) {
+		var sig typesolana.Signature
+		copy(sig[:], mkBytes(typesolana.SignatureLength, 0xEF))
+		d := typesolana.GetTransactionRequest{Signature: sig, IsExternal: true}
+		pb := conv.ConvertGetTransactionRequestToProto(d)
+		got, err := conv.ConvertGetTransactionRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+
+	t.Run("SimulateTXRequest", func(t *testing.T) {
+		var recv typesolana.PublicKey
+		copy(recv[:], mkBytes(typesolana.PublicKeyLength, 0x11))
+		d := typesolana.SimulateTXRequest{
+			Receiver:           recv,
+			EncodedTransaction: "txdata",
+			Opts: &typesolana.SimulateTXOpts{
+				SigVerify:  true,
+				Commitment: typesolana.CommitmentConfirmed,
+			},
+			IsExternal: true,
+		}
+		pb := conv.ConvertSimulateTXRequestToProto(d)
+		got, err := conv.ConvertSimulateTXRequestFromProto(pb)
+		require.NoError(t, err)
+		require.Equal(t, d, got)
+	})
+}
+
+func TestGetProgramAccountsProtoConvertersNil(t *testing.T) {
+	t.Run("ConvertGetProgramAccountsRequestFromProto nil request", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(nil)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "nil GetProgramAccountsRequest")
+		require.Equal(t, typesolana.GetProgramAccountsRequest{}, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsRequestFromProto nil program", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsRequestFromProto(&conv.GetProgramAccountsRequest{})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "address can't be nil")
+		require.Equal(t, typesolana.GetProgramAccountsRequest{}, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsOptsFromProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertGetProgramAccountsOptsFromProto(nil))
+	})
+
+	t.Run("ConvertGetProgramAccountsOptsToProto nil", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsOptsToProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsReplyFromProto nil", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsReplyFromProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("ConvertGetProgramAccountsReplyToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertGetProgramAccountsReplyToProto(nil))
+	})
+
+	t.Run("ConvertGetProgramAccountsReplyFromProto nil keyed account entry", func(t *testing.T) {
+		got, err := conv.ConvertGetProgramAccountsReplyFromProto(&conv.GetProgramAccountsReply{
+			Value: []*conv.KeyedAccount{nil},
+		})
+		require.NoError(t, err)
+		require.Len(t, got.Value, 1)
+		require.Nil(t, got.Value[0])
+	})
+
+	t.Run("ConvertKeyedAccountFromProto nil", func(t *testing.T) {
+		got, err := conv.ConvertKeyedAccountFromProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("ConvertKeyedAccountFromProto nil pubkey", func(t *testing.T) {
+		got, err := conv.ConvertKeyedAccountFromProto(&conv.KeyedAccount{Account: &conv.Account{}})
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "address can't be nil")
+	})
+
+	t.Run("ConvertKeyedAccountToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertKeyedAccountToProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterMemcmpFromProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFilterMemcmpFromProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterMemcmpToProto nil", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFilterMemcmpToProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterFromProto nil", func(t *testing.T) {
+		require.Equal(t, typesolana.RPCFilter{}, conv.ConvertRPCFilterFromProto(nil))
+	})
+
+	t.Run("ConvertRPCFilterToProto empty", func(t *testing.T) {
+		got, err := conv.ConvertRPCFilterToProto(typesolana.RPCFilter{})
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "empty RPC filter")
+	})
+
+	t.Run("ConvertRPCFiltersFromProto nil and empty", func(t *testing.T) {
+		require.Nil(t, conv.ConvertRPCFiltersFromProto(nil))
+		require.Nil(t, conv.ConvertRPCFiltersFromProto([]*conv.RPCFilter{}))
+	})
+
+	t.Run("ConvertRPCFiltersToProto nil and empty", func(t *testing.T) {
+		got, err := conv.ConvertRPCFiltersToProto(nil)
+		require.NoError(t, err)
+		require.Nil(t, got)
+		got, err = conv.ConvertRPCFiltersToProto([]typesolana.RPCFilter{})
+		require.NoError(t, err)
+		require.Nil(t, got)
+	})
+
+	t.Run("ConvertRPCFiltersFromProto skips nil filter entries", func(t *testing.T) {
+		got := conv.ConvertRPCFiltersFromProto([]*conv.RPCFilter{nil, {DataSize: 8}})
+		require.Len(t, got, 2)
+		require.Equal(t, typesolana.RPCFilter{}, got[0])
+		require.Equal(t, uint64(8), got[1].DataSize)
+	})
+
+	t.Run("ConvertRPCFiltersToProto rejects empty filter", func(t *testing.T) {
+		got, err := conv.ConvertRPCFiltersToProto([]typesolana.RPCFilter{{}, {DataSize: 42}})
+		require.Error(t, err)
+		require.Nil(t, got)
+		require.Contains(t, err.Error(), "filter[0]")
+		require.Contains(t, err.Error(), "empty RPC filter")
+	})
+
+	t.Run("ConvertRPCFiltersToProto valid filters", func(t *testing.T) {
+		got, err := conv.ConvertRPCFiltersToProto([]typesolana.RPCFilter{{DataSize: 42}})
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+		require.Equal(t, uint64(42), got[0].DataSize)
+	})
+}
+
 func TestErrorJoinBehavior_PublicKeys(t *testing.T) {
 	in := [][]byte{
 		mkBytes(typesolana.PublicKeyLength-1, 0x01),

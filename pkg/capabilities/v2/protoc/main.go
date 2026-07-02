@@ -33,12 +33,14 @@ func main() {
 			return err
 		}
 
+		withMonitoring := os.Getenv("CL_PROTOC_WITH_MONITORING") == "true"
+
 		for _, file := range plugin.Files {
 			if !file.Generate {
 				continue
 			}
 
-			if err = pkg.GenerateServer(plugin, file, serverLanguage, toolName, localPrefix); err != nil {
+			if err = pkg.GenerateServer(plugin, file, serverLanguage, toolName, localPrefix, withMonitoring); err != nil {
 				log.Printf("failed to generate for %s: %v", file.Desc.Path(), err)
 				os.Exit(1)
 			}

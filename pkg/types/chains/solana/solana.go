@@ -110,6 +110,13 @@ type Client interface {
 	// In: ctx, {Receiver, EncodedTransaction, Opts(SigVerify, Commitment, ReplaceRecentBlockhash, Accounts)}.
 	// Out: {Err, Logs, Accounts, UnitsConsumed}, error.
 	SimulateTX(ctx context.Context, req SimulateTXRequest) (*SimulateTXReply, error)
+
+	// GetProgramAccounts: all accounts owned by program.
+	// In: ctx, {Program, Opts(Encoding, Commitment, DataSlice, Filters), IsExternal}.
+	// Out: {Value([]*KeyedAccount)}, error.
+	GetProgramAccounts(ctx context.Context, req GetProgramAccountsRequest) (*GetProgramAccountsReply, error)
+
+	mustEmbedUnimplementedClient()
 }
 
 // represents solana-go DataSlice
@@ -350,6 +357,8 @@ type SimulateTXOpts struct {
 type GetAccountInfoRequest struct {
 	Account PublicKey
 	Opts    *GetAccountInfoOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 type GetAccountInfoReply struct {
@@ -360,6 +369,8 @@ type GetAccountInfoReply struct {
 type GetMultipleAccountsRequest struct {
 	Accounts []PublicKey
 	Opts     *GetMultipleAccountsOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 type GetMultipleAccountsReply struct {
@@ -375,6 +386,7 @@ type GetBalanceRequest struct {
 type GetBalanceReply struct {
 	// Balance in lamports
 	Value uint64
+	Slot  uint64
 }
 
 type GetBlockRequest struct {
@@ -477,6 +489,8 @@ type TransactionResultEnvelope struct {
 // arguments for solana-rpc GetTransaction call
 type GetTransactionRequest struct {
 	Signature Signature
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 // result of solana-rpc GetTransaction call
@@ -500,7 +514,8 @@ type GetFeeForMessageRequest struct {
 
 type GetFeeForMessageReply struct {
 	// The amount in lamports the network will charge for a particular message
-	Fee uint64
+	Fee  uint64
+	Slot uint64
 }
 
 type GetLatestBlockhashRequest struct {
@@ -518,6 +533,8 @@ type SimulateTXRequest struct {
 	// Encoded
 	EncodedTransaction string
 	Opts               *SimulateTXOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
 }
 
 type SimulateTXReply struct {
@@ -557,4 +574,60 @@ type GetSignatureStatusesResult struct {
 
 type GetSignatureStatusesReply struct {
 	Results []GetSignatureStatusesResult
+}
+
+// represents solana-go rpc.RPCFilterMemcmp
+type RPCFilterMemcmp struct {
+	Offset uint64
+	Bytes  []byte
+}
+
+// represents solana-go rpc.RPCFilter
+type RPCFilter struct {
+	Memcmp   *RPCFilterMemcmp
+	DataSize uint64
+}
+
+// represents solana-go rpc.GetProgramAccountsOpts
+type GetProgramAccountsOpts struct {
+	// Encoding for Account data.
+	// Either "base58" (slow), "base64", "base64+zstd", or "jsonParsed".
+	//
+	// This parameter is optional.
+	Encoding EncodingType
+
+	// Commitment requirement.
+	//
+	// This parameter is optional. Default value is Finalized
+	Commitment CommitmentType
+
+	// dataSlice parameters for limiting returned account data:
+	// Limits the returned account data using the provided offset and length fields;
+	// only available for "base58", "base64" or "base64+zstd" encodings.
+	//
+	// This parameter is optional.
+	DataSlice *DataSlice
+
+	// Filter on accounts, implicit AND between filters.
+	// Account must meet all filter criteria to be included in results.
+	//
+	// This parameter is optional.
+	Filters []RPCFilter
+}
+
+// represents solana-go rpc.KeyedAccount
+type KeyedAccount struct {
+	Pubkey  PublicKey
+	Account *Account
+}
+
+type GetProgramAccountsRequest struct {
+	Program PublicKey
+	Opts    *GetProgramAccountsOpts
+	// If true, limits like response size limit may be applied.
+	IsExternal bool
+}
+
+type GetProgramAccountsReply struct {
+	Value []*KeyedAccount
 }

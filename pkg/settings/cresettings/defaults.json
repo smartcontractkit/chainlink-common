@@ -143,7 +143,11 @@
 		"ChainRead": {
 			"CallLimit": "15",
 			"LogQueryBlockLimit": "100",
-			"PayloadSizeLimit": "5kb"
+			"PayloadSizeLimit": "5kb",
+			"Solana": {
+				"BatchItemLimit": "100",
+				"PayloadSizeLimit": "5kb"
+			}
 		},
 		"Consensus": {
 			"ObservationSizeLimit": "100kb",

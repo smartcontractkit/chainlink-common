@@ -3,6 +3,7 @@ package chipingress
 import (
 	"context"
 	"fmt"
+	"net"
 	"testing"
 	"time"
 
@@ -730,6 +731,49 @@ type mockHeaderProvider struct {
 
 func (m *mockHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
 	return m.headers, nil
+}
+
+// capturingServer is a minimal ChipIngressServer that records the incoming gRPC metadata
+// of the last request it handles.
+type capturingServer struct {
+	pb.UnimplementedChipIngressServer
+	lastMD metadata.MD
+}
+
+func (s *capturingServer) Ping(ctx context.Context, _ *pb.EmptyRequest) (*pb.PingResponse, error) {
+	s.lastMD, _ = metadata.FromIncomingContext(ctx)
+	return &pb.PingResponse{}, nil
+}
+
+// TestClient_ChainedHeaderProviders is a regression test for the fix that switched from
+// grpc.WithUnaryInterceptor (last-one-wins) to grpc.WithChainUnaryInterceptor: when both
+// WithHeaderProvider and WithNOPLookup are configured, both providers' headers must reach
+// the server, not just the one registered last.
+func TestClient_ChainedHeaderProviders(t *testing.T) {
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer lis.Close()
+
+	srv := gp.NewServer()
+	capture := &capturingServer{}
+	pb.RegisterChipIngressServer(srv, capture)
+	go func() { _ = srv.Serve(lis) }()
+	defer srv.Stop()
+
+	client, err := NewClient(lis.Addr().String(),
+		WithInsecureConnection(),
+		WithHeaderProvider(&mockHeaderProvider{headers: map[string]string{"x-resource-attr": "chain-1"}}),
+		WithNOPLookup(),
+	)
+	require.NoError(t, err)
+	defer client.Close() //nolint:errcheck
+
+	_, err = client.Ping(t.Context(), &EmptyRequest{})
+	require.NoError(t, err)
+
+	require.NotNil(t, capture.lastMD)
+	assert.Equal(t, []string{"chain-1"}, capture.lastMD.Get("x-resource-attr"))
+	assert.Equal(t, []string{"true"}, capture.lastMD.Get("x-include-nop-info"))
 }
 
 func TestWithTLS(t *testing.T) {

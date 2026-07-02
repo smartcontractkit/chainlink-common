@@ -114,14 +114,22 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))
 	}
-	// Add headers as a unary interceptor, use for non-auth headers
+	// Add headers as unary interceptors, use for non-auth headers.
+	// WithChainUnaryInterceptor is used (rather than WithUnaryInterceptor) so that
+	// headerProvider and nopInfoHeaderProvider compose instead of the second call
+	// silently overriding the first (grpc.WithUnaryInterceptor is last-one-wins).
+	var unaryInterceptors []grpc.UnaryClientInterceptor
 	if cfg.headerProvider != nil {
-		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
+		unaryInterceptors = append(unaryInterceptors, newHeaderInterceptor(cfg.headerProvider))
 		// NOTE: not supporting streaming interceptors
 	}
 
 	if cfg.nopInfoHeaderProvider != nil {
-		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.nopInfoHeaderProvider)))
+		unaryInterceptors = append(unaryInterceptors, newHeaderInterceptor(cfg.nopInfoHeaderProvider))
+	}
+
+	if len(unaryInterceptors) > 0 {
+		grpcOpts = append(grpcOpts, grpc.WithChainUnaryInterceptor(unaryInterceptors...))
 	}
 
 	conn, err := grpc.NewClient(address, grpcOpts...)

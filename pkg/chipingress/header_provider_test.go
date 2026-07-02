@@ -358,7 +358,7 @@ func (pingServer) Ping(context.Context, *pb.EmptyRequest) (*pb.PingResponse, err
 // value (dots, non-printable characters) reproduces that failure; running it through
 // SanitizeMetadataHeaders first must not.
 func TestSanitizeMetadataHeaders_AvoidsRPCFailure(t *testing.T) {
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	defer lis.Close()
 

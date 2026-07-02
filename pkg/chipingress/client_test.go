@@ -750,7 +750,7 @@ func (s *capturingServer) Ping(ctx context.Context, _ *pb.EmptyRequest) (*pb.Pin
 // WithHeaderProvider and WithNOPLookup are configured, both providers' headers must reach
 // the server, not just the one registered last.
 func TestClient_ChainedHeaderProviders(t *testing.T) {
-	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	defer lis.Close()
 

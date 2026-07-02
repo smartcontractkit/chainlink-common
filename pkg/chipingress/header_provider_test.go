@@ -326,6 +326,11 @@ func TestSanitizeMetadataHeaders(t *testing.T) {
 		assert.Empty(t, got)
 	})
 
+	t.Run("gRPC-reserved header 'te' is dropped", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"te": "trailers"})
+		assert.Empty(t, got)
+	})
+
 	t.Run("non-printable values are sanitized", func(t *testing.T) {
 		got := chipingress.SanitizeMetadataHeaders(map[string]string{"chain_id": "1\n2"})
 		assert.Equal(t, "1?2", got["chainid"])

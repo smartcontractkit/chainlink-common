@@ -141,9 +141,15 @@ func SanitizeMetadataValue(val string) string {
 // corresponding CE extension (differing only by the CloudEvents Kafka binding's "ce_" prefix
 // once on the wire). Values are sanitized via SanitizeMetadataValue, since grpc-go fails the
 // whole RPC on a non-printable value. Entries that sanitize to an empty key, or that collide
-// with a reserved extension name (see reservedExtensionNames), are skipped. Keys are applied
-// in sorted order so duplicate sanitized keys resolve deterministically (first in sorted order
-// wins), matching WithResourceAttributeExtensions' collision handling.
+// with a reserved extension name (see reservedExtensionNames) or a gRPC-reserved header name
+// (see reservedMetadataKeys), are skipped. Keys are applied in sorted order so duplicate
+// sanitized keys resolve deterministically (first in sorted order wins), matching
+// WithResourceAttributeExtensions' collision handling.
+//
+// Note: unlike the CloudEvents Kafka binding, gRPC metadata keys are NOT prefixed with "ce_" —
+// that prefix is a CloudEvents-binding concept, not a metadata one, and reusing it here would
+// collide with the CE binding's own "ce_<name>" Kafka header if the server ever forwards gRPC
+// metadata verbatim onto Kafka.
 func SanitizeMetadataHeaders(in map[string]string) map[string]string {
 	keys := make([]string, 0, len(in))
 	for k := range in {
@@ -158,6 +164,9 @@ func SanitizeMetadataHeaders(in map[string]string) map[string]string {
 			continue
 		}
 		if _, reserved := reservedExtensionNames[name]; reserved {
+			continue
+		}
+		if _, reserved := reservedMetadataKeys[name]; reserved {
 			continue
 		}
 		if _, exists := out[name]; exists {

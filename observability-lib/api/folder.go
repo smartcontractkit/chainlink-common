@@ -59,6 +59,7 @@ func (c *Client) GetFolderByTitle(title string) (*Folder, error) {
 		return nil, err
 	}
 	for _, folder := range folders {
+		println(fmt.Sprintf("folder title: %s %s", folder.Title, folder.UID))
 		if folder.Title == title {
 			return &folder, nil
 		}

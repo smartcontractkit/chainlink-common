@@ -259,6 +259,7 @@ flowchart
         VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
         PerOwner.VaultCiphertextSizeLimit{{PerOwner.VaultCiphertextSizeLimit}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
+        PerOwner.SuspendOnAwaitEnabled[/PerOwner.SuspendOnAwaitEnabled\]:::gate
     end
 
     subgraph ConfidentialCompute[Confidential Compute executor]

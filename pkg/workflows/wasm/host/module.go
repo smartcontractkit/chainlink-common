@@ -1223,13 +1223,13 @@ func createCallCapFn(
 func createAwaitCapsFn(
 	logger logger.Logger,
 	exec *execution[*sdkpb.ExecutionResult],
-) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
-	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) (int64, *wasmtime.Trap) {
+	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) (int64, *wasmtime.Trap) {
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		req := &sdkpb.AwaitCapabilitiesRequest{}
@@ -1237,31 +1237,31 @@ func createAwaitCapsFn(
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		resp, err := exec.awaitCapabilities(exec.ctx, req)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		respBytes, err := proto.Marshal(resp)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
 			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
-		return size
+		return size, wasmtime.NewTrap("Nope don't run")
 	}
 }
 

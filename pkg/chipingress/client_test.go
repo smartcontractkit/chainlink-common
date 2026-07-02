@@ -167,6 +167,70 @@ func TestNewEvent_IdempotencyKey(t *testing.T) {
 	})
 }
 
+func TestSanitizeExtensionName(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "snake_case", in: "chain_id", want: "chainid"},
+		{name: "dotted", in: "k8s.pod.name", want: "k8spodname"},
+		{name: "already valid", in: "chainid", want: "chainid"},
+		{name: "upper case is lowered", in: "ChainID", want: "chainid"},
+		{name: "empty", in: "", want: ""},
+		{name: "all invalid characters", in: "---...", want: ""},
+		{name: "mixed valid and invalid", in: "Service-Name.1", want: "servicename1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, SanitizeExtensionName(tt.in))
+		})
+	}
+}
+
+func TestNewEvent_WithResourceAttributeExtensions(t *testing.T) {
+	payload := []byte("body")
+
+	t.Run("sanitized keys/values land on the event", func(t *testing.T) {
+		attrs := map[string]string{"chain_id": "1", "k8s.pod.name": "pod-abc"}
+		event, err := NewEvent("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		ext := event.Extensions()
+		assert.Equal(t, "1", ext["chainid"])
+		assert.Equal(t, "pod-abc", ext["k8spodname"])
+	})
+
+	t.Run("empty sanitized name is dropped", func(t *testing.T) {
+		attrs := map[string]string{"---": "value"}
+		event, err := NewEvent("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		assert.Len(t, event.Extensions(), 1) // only the always-set recordedtime extension
+	})
+
+	t.Run("reserved name is skipped", func(t *testing.T) {
+		attrs := map[string]string{IdempotencyKeyAttr: "should-not-override", "subject": "should-not-override"}
+		event, err := NewEvent("domain", "entity", payload, map[string]any{IdempotencyKeyAttr: "real-key"}, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		ext := event.Extensions()
+		assert.Equal(t, "real-key", ext[IdempotencyKeyAttr])
+		assert.Empty(t, event.Subject())
+	})
+
+	t.Run("duplicate sanitized names resolve deterministically to sorted-first key", func(t *testing.T) {
+		attrs := map[string]string{"service.name": "from-dotted", "service_name": "from-snake"}
+		event, err := NewEvent("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		// sorted order: "service.name" < "service_name" ('.' < '_' in ASCII), so the dotted key wins.
+		assert.Equal(t, "from-dotted", event.Extensions()["servicename"])
+	})
+
+	t.Run("omitting the opt is a no-op", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, nil)
+		require.NoError(t, err)
+		assert.Len(t, event.Extensions(), 1) // only the always-set recordedtime extension
+	})
+}
+
 func TestEventToProto(t *testing.T) {
 	// Create a test protobuf message
 	testProto := pb.PingResponse{Message: "test message"}

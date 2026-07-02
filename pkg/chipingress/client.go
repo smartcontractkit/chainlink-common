@@ -5,6 +5,8 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -267,8 +269,54 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	}
 }
 
+// EventOpt configures a CloudEvent after its well-known attributes have been set by NewEvent.
+type EventOpt func(*ce.Event)
+
+// SanitizeExtensionName lower-cases name and strips every rune outside [a-z0-9], the character
+// set the CloudEvents spec requires for extension attribute names.
+func SanitizeExtensionName(name string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(name) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// WithResourceAttributeExtensions returns an EventOpt that sets a CloudEvent extension for each
+// entry in attrs, sanitizing keys via SanitizeExtensionName so they satisfy the CloudEvents
+// extension-name character set. Entries that sanitize to an empty string, or that collide with a
+// reserved extension name (see reservedExtensionNames), are skipped. Keys are applied in sorted
+// order so that if two distinct keys sanitize to the same name, the result is deterministic.
+func WithResourceAttributeExtensions(attrs map[string]string) EventOpt {
+	return func(event *ce.Event) {
+		keys := make([]string, 0, len(attrs))
+		for k := range attrs {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		set := make(map[string]struct{}, len(attrs))
+		for _, k := range keys {
+			name := SanitizeExtensionName(k)
+			if name == "" {
+				continue
+			}
+			if _, reserved := reservedExtensionNames[name]; reserved {
+				continue
+			}
+			if _, already := set[name]; already {
+				continue
+			}
+			set[name] = struct{}{}
+			event.SetExtension(name, attrs[k])
+		}
+	}
+}
+
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
-func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
+func NewEvent(domain, entity string, payload []byte, attributes map[string]any, opts ...EventOpt) (CloudEvent, error) {
 
 	event := ce.NewEvent()
 	event.SetSource(domain)
@@ -301,6 +349,10 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	}
 	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
 		event.SetExtension(IdempotencyKeyAttr, val)
+	}
+
+	for _, opt := range opts {
+		opt(&event)
 	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)

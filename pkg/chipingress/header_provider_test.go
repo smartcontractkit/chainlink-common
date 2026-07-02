@@ -260,3 +260,20 @@ func TestNewHeaderProvider(t *testing.T) {
 		assert.Nil(t, provider)
 	})
 }
+
+func TestNewStaticHeaderProvider(t *testing.T) {
+	headers := map[string]string{"chain_id": "1", "environment": "prod"}
+	provider := chipingress.NewStaticHeaderProvider(headers)
+	require.NotNil(t, provider)
+
+	got, err := provider.Headers(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, headers, got)
+
+	type tsr interface {
+		RequireTransportSecurity() bool
+	}
+	tlsReq, ok := provider.(tsr)
+	require.True(t, ok)
+	assert.False(t, tlsReq.RequireTransportSecurity())
+}

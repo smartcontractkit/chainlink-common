@@ -108,6 +108,13 @@ func newStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderP
 	return &staticHeaderProvider{headers: headers, requireTLS: requireTLS}
 }
 
+// NewStaticHeaderProvider returns a HeaderProvider that always returns the given headers,
+// for use with WithHeaderProvider to attach fixed, non-auth gRPC metadata (e.g. resource
+// attributes) to every request.
+func NewStaticHeaderProvider(headers map[string]string) HeaderProvider {
+	return newStaticHeaderProvider(headers, false)
+}
+
 // newRotatingHeaderProvider returns a HeaderProvider that refreshes its
 // headers every ttl using signer. initialHeaders, if non-empty, are served
 // until the first rotation occurs.

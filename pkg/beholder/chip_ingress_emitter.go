@@ -15,11 +15,12 @@ import (
 // ChipIngressEmitter wraps a synchronous chipingress.Client.Publish call
 // in a fire-and-forget goroutine so callers are never blocked.
 type ChipIngressEmitter struct {
-	client chipingress.Client
-	lggr   logger.Logger
-	stopCh services.StopChan
-	wg     services.WaitGroup
-	closed atomic.Bool
+	client        chipingress.Client
+	lggr          logger.Logger
+	resourceAttrs map[string]string
+	stopCh        services.StopChan
+	wg            services.WaitGroup
+	closed        atomic.Bool
 }
 
 func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
@@ -29,6 +30,9 @@ func NewChipIngressEmitter(client chipingress.Client) (Emitter, error) {
 // ChipIngressEmitterConfig holds configuration for creating a ChipIngressEmitter.
 type ChipIngressEmitterConfig struct {
 	Lggr logger.Logger
+	// ResourceAttributes are stamped as CloudEvent extensions (via chipingress.WithResourceAttributeExtensions)
+	// on every emitted event.
+	ResourceAttributes map[string]string
 }
 
 // New creates a ChipIngressEmitter from the config.
@@ -42,9 +46,10 @@ func (c ChipIngressEmitterConfig) New(client chipingress.Client) (Emitter, error
 	}
 
 	return &ChipIngressEmitter{
-		client: client,
-		lggr:    lggr,
-		stopCh: make(services.StopChan),
+		client:        client,
+		lggr:          lggr,
+		resourceAttrs: c.ResourceAttributes,
+		stopCh:        make(services.StopChan),
 	}, nil
 }
 
@@ -65,7 +70,7 @@ func (c *ChipIngressEmitter) Emit(ctx context.Context, body []byte, attrKVs ...a
 		return err
 	}
 
-	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...))
+	event, err := chipingress.NewEvent(sourceDomain, entityType, body, newAttributes(attrKVs...), chipingress.WithResourceAttributeExtensions(c.resourceAttrs))
 	if err != nil {
 		return err
 	}

@@ -13,6 +13,18 @@ import (
 // Kafka headers named "ce_<name>" (e.g., ce_idempotencykey), enabling downstream deduplication.
 const IdempotencyKeyAttr = "idempotencykey"
 
+// reservedExtensionNames holds every CloudEvent extension name that NewEvent sets internally.
+// WithResourceAttributeExtensions consults this set so that a resource attribute can never
+// silently overwrite event-lifecycle metadata.
+var reservedExtensionNames = map[string]struct{}{
+	IdempotencyKeyAttr: {},
+	"recordedtime":     {},
+	"time":             {},
+	"datacontenttype":  {},
+	"dataschema":       {},
+	"subject":          {},
+}
+
 type (
 	// Cloudevents types
 	CloudEvent   = ce.Event

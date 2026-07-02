@@ -26,4 +26,4 @@
 /pkg/workflows/ @smartcontractkit/keystone
 /pkg/storage/ @smartcontractkit/dev-services
 /pkg/teeattestation/ @smartcontractkit/privacy @smartcontractkit/foundations
-/pkg/nodeauth/ @smartcontractkit/cre-business
+/pkg/nodeauth/ @smartcontractkit/cre-business @smartcontractkit/foundations

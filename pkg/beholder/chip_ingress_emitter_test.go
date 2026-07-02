@@ -87,9 +87,8 @@ func TestChipIngressEmit(t *testing.T) {
 		clientMock.On("Close").Return(nil)
 
 		emitter, err := beholder.ChipIngressEmitterConfig{
-			Lggr:               logger.Test(t),
-			ResourceAttributes: map[string]string{"chain_id": "1"},
-		}.New(clientMock)
+			Lggr: logger.Test(t),
+		}.NewWithResourceAttributes(clientMock, map[string]string{"chain_id": "1"})
 		require.NoError(t, err)
 
 		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
@@ -101,6 +100,31 @@ func TestChipIngressEmit(t *testing.T) {
 		require.NotNil(t, published)
 		require.NotNil(t, published.Attributes["chainid"])
 		assert.Equal(t, "1", published.Attributes["chainid"].GetCeString())
+	})
+
+	t.Run("New(client) with no resource attributes stamps no extra extensions (backward-compat)", func(t *testing.T) {
+		clientMock := mocks.NewClient(t)
+
+		var published *chipingress.CloudEventPb
+		clientMock.
+			On("Publish", mock.Anything, mock.Anything).
+			Run(func(args mock.Arguments) {
+				published = args.Get(1).(*chipingress.CloudEventPb)
+			}).
+			Return(nil, nil)
+		clientMock.On("Close").Return(nil)
+
+		emitter, err := beholder.ChipIngressEmitterConfig{Lggr: logger.Test(t)}.New(clientMock)
+		require.NoError(t, err)
+
+		err = emitter.Emit(t.Context(), body, beholder.AttrKeyDomain, domain, beholder.AttrKeyEntity, entity)
+		require.NoError(t, err)
+
+		require.NoError(t, emitter.Close())
+		clientMock.AssertExpectations(t)
+
+		require.NotNil(t, published)
+		assert.Nil(t, published.Attributes["chainid"])
 	})
 
 	t.Run("logs error when Publish fails", func(t *testing.T) {

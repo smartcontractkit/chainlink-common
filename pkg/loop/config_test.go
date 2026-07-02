@@ -86,11 +86,19 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryPrometheusBridgeEnabled:   "true",
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
 
-				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
-				envChipIngressInsecureConnection:  "true",
-				envChipIngressBatchEmitterEnabled: "false",
+			envChipIngressEndpoint:            "chip-ingress.example.com:50051",
+			envChipIngressInsecureConnection:  "true",
+			envChipIngressBatchEmitterEnabled: "false",
 
-				envCRESettings:        `{"global":{}}`,
+			envChipIngressBufferSize:         "1000",
+			envChipIngressMaxBatchSize:       "500",
+			envChipIngressMaxConcurrentSends: "10",
+			envChipIngressSendInterval:       "100ms",
+			envChipIngressSendTimeout:        "3s",
+			envChipIngressDrainTimeout:       "10s",
+			envChipIngressMaxGRPCRequestSize: "10485760",
+
+			envCRESettings:        `{"global":{}}`,
 				envCRESettingsDefault: `{"foo":"bar"}`,
 			},
 			expectError:  false,
@@ -205,6 +213,14 @@ var envCfgFull = EnvConfig{
 	ChipIngressBatchEmitterEnabled:   false,
 	ChipIngressDurableEmitterEnabled: false,
 
+	ChipIngressBufferSize:         1000,
+	ChipIngressMaxBatchSize:       500,
+	ChipIngressMaxConcurrentSends: 10,
+	ChipIngressSendInterval:       100 * time.Millisecond,
+	ChipIngressSendTimeout:        3 * time.Second,
+	ChipIngressDrainTimeout:       10 * time.Second,
+	ChipIngressMaxGRPCRequestSize: 10485760,
+
 	CRESettings:        `{"global":{}}`,
 	CRESettingsDefault: `{"foo":"bar"}`,
 }
@@ -269,6 +285,13 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
 	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
 	assert.Equal(t, "false", got[envChipIngressBatchEmitterEnabled])
+	assert.Equal(t, "1000", got[envChipIngressBufferSize])
+	assert.Equal(t, "500", got[envChipIngressMaxBatchSize])
+	assert.Equal(t, "10", got[envChipIngressMaxConcurrentSends])
+	assert.Equal(t, "100ms", got[envChipIngressSendInterval])
+	assert.Equal(t, "3s", got[envChipIngressSendTimeout])
+	assert.Equal(t, "10s", got[envChipIngressDrainTimeout])
+	assert.Equal(t, "10485760", got[envChipIngressMaxGRPCRequestSize])
 
 	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
 	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])

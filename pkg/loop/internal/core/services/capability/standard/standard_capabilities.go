@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
@@ -225,6 +226,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 		OrgResolverId:       orgResolverID,
 		CreSettingsId:       creSettingsID,
 		TriggerEventStoreId: triggerEventStoreID,
+		CapabilityDonId:     dependencies.CapabilityDonID,
 	})
 
 	if err != nil {
@@ -323,6 +325,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 
 	// Sets the auth header signing mechanism
 	beholder.GetClient().SetSigner(keyStore)
+	durableemitter.SetGlobalSigner(keyStore)
 
 	capabilitiesRegistryConn, err := s.Dial(request.CapRegistryId)
 	if err != nil {
@@ -385,9 +388,9 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		creSettingsConn, err := s.Dial(request.CreSettingsId)
 		if err != nil {
 			s.CloseAll(resources...)
-			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.OrgResolverId, Err: err}
+			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.CreSettingsId, Err: err}
 		}
-		resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "CRESettings"})
+		resources = append(resources, net.Resource{Closer: creSettingsConn, Name: "CRESettings"})
 		creSettings = settings.NewClient(s.Logger, creSettingsConn)
 	}
 
@@ -416,6 +419,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		OrgResolver:        orgResolver,
 		CRESettings:        creSettings,
 		TriggerEventStore:  triggerEventStoreClient,
+		CapabilityDonID:    request.CapabilityDonId,
 	}
 
 	if err = s.impl.Initialise(ctx, dependencies); err != nil {

@@ -23,6 +23,10 @@ message GatewayIDsReply {
   repeated string gateway_ids = 1;
 }
 
+message GatewayIDsForDonRequest {
+  string don_id = 1;
+}
+
 message DonIDReply {
   string don_id = 1;
 }
@@ -44,4 +48,7 @@ service GatewayConnector {
   rpc GatewayIDs(google.protobuf.Empty) returns (GatewayIDsReply);
   rpc DonID(google.protobuf.Empty) returns (DonIDReply);
   rpc AwaitConnection(GatewayIDRequest) returns (google.protobuf.Empty);
+  rpc GatewayIDsForDon(GatewayIDsForDonRequest) returns (GatewayIDsReply);
+  rpc DonIDForGateway(GatewayIDRequest) returns (DonIDReply);
+  rpc PrimaryDonID(google.protobuf.Empty) returns (DonIDReply);
 }

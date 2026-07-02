@@ -69,6 +69,8 @@ func New(chainType corekeys.ChainType) (KeyBundle, error) {
 		return newKeyBundleRand(corekeys.TON, newTONKeyring)
 	case corekeys.Sui:
 		return newKeyBundleRand(corekeys.Sui, newEd25519Keyring)
+	case corekeys.Stellar:
+		return newKeyBundleRand(corekeys.Stellar, newEd25519Keyring)
 	}
 	return nil, corekeys.NewErrInvalidChainType(chainType)
 }
@@ -92,6 +94,8 @@ func MustNewInsecure(reader io.Reader, chainType corekeys.ChainType) KeyBundle {
 		return mustNewKeyBundleInsecure(corekeys.TON, newTONKeyring, reader)
 	case corekeys.Sui:
 		return mustNewKeyBundleInsecure(corekeys.Sui, newEd25519Keyring, reader)
+	case corekeys.Stellar:
+		return mustNewKeyBundleInsecure(corekeys.Stellar, newEd25519Keyring, reader)
 	}
 	panic(corekeys.NewErrInvalidChainType(chainType))
 }
@@ -133,6 +137,8 @@ func KeyFor(raw internal.Raw) (kb KeyBundle) {
 	case corekeys.TON:
 		kb = newKeyBundle(new(tonKeyring))
 	case corekeys.Sui:
+		kb = newKeyBundle(new(ed25519Keyring))
+	case corekeys.Stellar:
 		kb = newKeyBundle(new(ed25519Keyring))
 	default:
 		return nil

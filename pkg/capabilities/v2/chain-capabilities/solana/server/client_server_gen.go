@@ -30,6 +30,8 @@ type ClientCapability interface {
 
 	GetMultipleAccountsWithOpts(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetMultipleAccountsWithOptsRequest) (*capabilities.ResponseAndMetadata[*solana.GetMultipleAccountsWithOptsReply], caperrors.Error)
 
+	GetProgramAccounts(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetProgramAccountsRequest) (*capabilities.ResponseAndMetadata[*solana.GetProgramAccountsReply], caperrors.Error)
+
 	GetSignatureStatuses(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSignatureStatusesRequest) (*capabilities.ResponseAndMetadata[*solana.GetSignatureStatusesReply], caperrors.Error)
 
 	GetSlotHeight(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetSlotHeightRequest) (*capabilities.ResponseAndMetadata[*solana.GetSlotHeightReply], caperrors.Error)
@@ -235,6 +237,20 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetMultipleAccountsWithOpts(..) (if output is nil error must be present)")
+			}
+			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
+		}
+		return capabilities.Execute(ctx, request, input, config, wrapped)
+	case "GetProgramAccounts":
+		input := &solana.GetProgramAccountsRequest{}
+		config := &emptypb.Empty{}
+		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *solana.GetProgramAccountsRequest, _ *emptypb.Empty) (*solana.GetProgramAccountsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			output, err := c.ClientCapability.GetProgramAccounts(ctx, metadata, input)
+			if err != nil {
+				return nil, capabilities.ResponseMetadata{}, nil, err
+			}
+			if output == nil {
+				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetProgramAccounts(..) (if output is nil error must be present)")
 			}
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}

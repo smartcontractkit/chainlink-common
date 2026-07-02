@@ -217,7 +217,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		opts = append(opts, chipingress.WithTracerProvider(tracerProvider))
 
 		if len(resourceAttrs) > 0 {
-			opts = append(opts, chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(resourceAttrs)))
+			opts = append(opts, chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(chipingress.SanitizeMetadataHeaders(resourceAttrs))))
 		}
 
 		chipIngressClient, err = chipingress.NewClient(cfg.ChipIngressEmitterGRPCEndpoint, opts...)

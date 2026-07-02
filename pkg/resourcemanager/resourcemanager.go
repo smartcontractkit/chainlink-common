@@ -41,15 +41,15 @@ import (
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
 )
 
-// Beholder routing attributes. Each entity value is the contract shared with
+// Beholder/ChIP routing attributes. Each entity value is the contract shared with
 // the CHiP schema registration and the consumer topic name; all must match
 // exactly.
 const (
-	beholderDomain             = "cll-meter"
-	beholderEntity             = "metering.v1.MeterRecord"
-	beholderDataSchema         = "metering.v1.meter_record"
-	beholderSnapshotEntity     = "metering.v1.MeterSnapshot"
-	beholderSnapshotDataSchema = "metering.v1.meter_snapshot"
+	domain             = "cll-meter"
+	entity             = "metering.v1.MeterRecord"
+	dataSchema         = "metering.v1.meter_record"
+	snapshotEntity     = "metering.v1.MeterSnapshot"
+	snapshotDataSchema = "metering.v1.meter_snapshot"
 )
 
 // Counter names are a dashboard contract; do not rename.
@@ -307,9 +307,9 @@ func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable) {
 		}
 
 		if err := rm.emitter.Emit(ctx, body,
-			beholder.AttrKeyDataSchema, beholderSnapshotDataSchema,
-			beholder.AttrKeyDomain, beholderDomain,
-			beholder.AttrKeyEntity, beholderSnapshotEntity,
+			beholder.AttrKeyDataSchema, snapshotDataSchema,
+			beholder.AttrKeyDomain, domain,
+			beholder.AttrKeyEntity, snapshotEntity,
 		); err != nil {
 			rm.lggr.Errorw("failed to emit snapshot",
 				"service", e.Identity.Service,
@@ -370,9 +370,9 @@ func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity Resourc
 	}
 
 	if err := rm.emitter.Emit(ctx, body,
-		beholder.AttrKeyDataSchema, beholderDataSchema,
-		beholder.AttrKeyDomain, beholderDomain,
-		beholder.AttrKeyEntity, beholderEntity,
+		beholder.AttrKeyDataSchema, dataSchema,
+		beholder.AttrKeyDomain, domain,
+		beholder.AttrKeyEntity, entity,
 	); err != nil {
 		rm.lggr.Errorw("failed to emit meter record",
 			"service", identity.Service,

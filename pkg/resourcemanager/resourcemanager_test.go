@@ -118,7 +118,7 @@ func TestEmitMeterRecord_Gating(t *testing.T) {
 				cfg.Emitter = tt.emitter
 			}
 			rm := NewResourceManager(logger.Test(t), cfg)
-			u := NewUtilization(1, UtilizationFields{
+			u := NewUtilizationInt(1, UtilizationFields{
 				ResourceType: "operations",
 				ResourceID:   "trigger-1",
 				EventID:      "event-1",
@@ -137,7 +137,7 @@ func TestEmitMeterRecord_Success(t *testing.T) {
 		Emitter:             emitter,
 	})
 
-	u := NewUtilization(1, UtilizationFields{
+	u := NewUtilizationInt(1, UtilizationFields{
 		ResourceType: "operations",
 		ResourceID:   "trigger-1",
 		EventID:      "event-1",
@@ -176,7 +176,7 @@ func TestEmitMeterRecord_EmitFailureIsSwallowed(t *testing.T) {
 		Emitter:             emitter,
 	})
 
-	u := NewUtilization(1, UtilizationFields{
+	u := NewUtilizationInt(1, UtilizationFields{
 		ResourceType: "operations",
 		ResourceID:   "trigger-1",
 		EventID:      "event-2",
@@ -219,7 +219,7 @@ func TestEmitSnapshot_OnePerResource(t *testing.T) {
 		{
 			Identity: testIdentity,
 			Utilizations: []*meteringpb.Utilization{
-				NewUtilization(3, UtilizationFields{
+				NewUtilizationInt(3, UtilizationFields{
 					ResourceType: "operations",
 					ResourceID:   "trigger-1",
 					OrgID:        "org-1",
@@ -229,7 +229,7 @@ func TestEmitSnapshot_OnePerResource(t *testing.T) {
 		{
 			Identity: testIdentity,
 			Utilizations: []*meteringpb.Utilization{
-				NewUtilization(5, UtilizationFields{
+				NewUtilizationInt(5, UtilizationFields{
 					ResourceType: "operations",
 					ResourceID:   "trigger-2",
 					OrgID:        "org-2",
@@ -274,7 +274,7 @@ func TestSnapshotsCannotRunWithoutRecords(t *testing.T) {
 	m.set([]SnapshotEntry{{
 		Identity: testIdentity,
 		Utilizations: []*meteringpb.Utilization{
-			NewUtilization(1, UtilizationFields{
+			NewUtilizationInt(1, UtilizationFields{
 				ResourceType: "operations",
 				ResourceID:   "trigger-1",
 			}),
@@ -293,7 +293,7 @@ func TestNewUtilizationVariants(t *testing.T) {
 		OrgID:        "org-1",
 	}
 
-	uInt := NewUtilization(42, fields)
+	uInt := NewUtilizationInt(42, fields)
 	assert.Equal(t, "42", uInt.GetValue())
 	assert.Equal(t, "operations", uInt.GetResourceType())
 	assert.Equal(t, "rid-1", uInt.GetResourceId())
@@ -313,7 +313,7 @@ func TestEmitMeterRecord_BeholderObserver(t *testing.T) {
 		MeterRecordsEnabled: true,
 		Emitter:             beholder.GetEmitter(),
 	})
-	u := NewUtilization(1, UtilizationFields{
+	u := NewUtilizationInt(1, UtilizationFields{
 		ResourceType: "operations",
 		ResourceID:   "trigger-1",
 		EventID:      "event-1",

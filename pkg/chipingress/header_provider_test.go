@@ -4,13 +4,18 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"net"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 )
 
 // fakeSigner is a minimal chipingress.Signer used by tests that need to
@@ -258,5 +263,134 @@ func TestNewHeaderProvider(t *testing.T) {
 		provider, err := chipingress.NewHeaderProvider(cfg)
 		require.NoError(t, err)
 		assert.Nil(t, provider)
+	})
+}
+
+func TestNewStaticHeaderProvider(t *testing.T) {
+	headers := map[string]string{"chain_id": "1", "environment": "prod"}
+	provider := chipingress.NewStaticHeaderProvider(headers)
+	require.NotNil(t, provider)
+
+	got, err := provider.Headers(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, headers, got)
+
+	type tsr interface {
+		RequireTransportSecurity() bool
+	}
+	tlsReq, ok := provider.(tsr)
+	require.True(t, ok)
+	assert.False(t, tlsReq.RequireTransportSecurity())
+}
+
+func TestSanitizeMetadataValue(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "printable ASCII is unchanged", in: "chain-1_prod.v2", want: "chain-1_prod.v2"},
+		{name: "empty", in: "", want: ""},
+		{name: "control character replaced", in: "value\nwith\tcontrol", want: "value?with?control"},
+		{name: "non-ASCII UTF-8 replaced byte-wise", in: "café", want: "caf??"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, chipingress.SanitizeMetadataValue(tt.in))
+		})
+	}
+}
+
+func TestSanitizeMetadataHeaders(t *testing.T) {
+	t.Run("standard OTel-style keys are sanitized to the same stem as CE extensions", func(t *testing.T) {
+		in := map[string]string{
+			"service.name":  "beholder",
+			"chain_id":      "1",
+			"node-operator": "acme",
+		}
+		got := chipingress.SanitizeMetadataHeaders(in)
+		assert.Equal(t, map[string]string{
+			"servicename":  "beholder",
+			"chainid":      "1",
+			"nodeoperator": "acme",
+		}, got)
+	})
+
+	t.Run("empty-after-sanitize keys are dropped", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"---": "value"})
+		assert.Empty(t, got)
+	})
+
+	t.Run("reserved names are dropped", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{chipingress.IdempotencyKeyAttr: "should-not-appear", "subject": "should-not-appear"})
+		assert.Empty(t, got)
+	})
+
+	t.Run("gRPC-reserved header 'te' is dropped", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"te": "trailers"})
+		assert.Empty(t, got)
+	})
+
+	t.Run("non-printable values are sanitized", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"chain_id": "1\n2"})
+		assert.Equal(t, "1?2", got["chainid"])
+	})
+
+	t.Run("duplicate sanitized keys resolve deterministically to sorted-first key", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"service.name": "from-dotted", "service_name": "from-snake"})
+		// sorted order: "service.name" < "service_name" ('.' < '_' in ASCII), so the dotted key wins.
+		assert.Equal(t, "from-dotted", got["servicename"])
+	})
+}
+
+// pingServer is a minimal ChipIngressServer that always answers Ping successfully.
+type pingServer struct {
+	pb.UnimplementedChipIngressServer
+}
+
+func (pingServer) Ping(context.Context, *pb.EmptyRequest) (*pb.PingResponse, error) {
+	return &pb.PingResponse{}, nil
+}
+
+// TestSanitizeMetadataHeaders_AvoidsRPCFailure is a regression/guard test for the core reason
+// SanitizeMetadataHeaders exists: grpc-go hard-fails an entire RPC (codes.Internal) when an
+// outgoing metadata pair fails its charset validation. An unsanitized resource-attribute key or
+// value (dots, non-printable characters) reproduces that failure; running it through
+// SanitizeMetadataHeaders first must not.
+func TestSanitizeMetadataHeaders_AvoidsRPCFailure(t *testing.T) {
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer lis.Close()
+
+	srv := grpc.NewServer()
+	pb.RegisterChipIngressServer(srv, pingServer{})
+	go func() { _ = srv.Serve(lis) }()
+	defer srv.Stop()
+
+	dirty := map[string]string{"k8s.pod.name": "pod-\x01abc"}
+
+	t.Run("unsanitized headers fail the RPC", func(t *testing.T) {
+		client, err := chipingress.NewClient(lis.Addr().String(),
+			chipingress.WithInsecureConnection(),
+			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(dirty)),
+		)
+		require.NoError(t, err)
+		defer client.Close() //nolint:errcheck
+
+		_, err = client.Ping(t.Context(), &chipingress.EmptyRequest{})
+		require.Error(t, err)
+		assert.Equal(t, codes.Internal, status.Code(err))
+	})
+
+	t.Run("sanitized headers succeed", func(t *testing.T) {
+		client, err := chipingress.NewClient(lis.Addr().String(),
+			chipingress.WithInsecureConnection(),
+			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(chipingress.SanitizeMetadataHeaders(dirty))),
+		)
+		require.NoError(t, err)
+		defer client.Close() //nolint:errcheck
+
+		_, err = client.Ping(t.Context(), &chipingress.EmptyRequest{})
+		require.NoError(t, err)
 	})
 }

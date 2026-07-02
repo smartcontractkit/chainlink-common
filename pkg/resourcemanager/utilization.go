@@ -15,15 +15,9 @@ type UtilizationFields struct {
 	OrgID        string
 }
 
-// NewUtilization builds a Utilization with int64 quantity encoded as a decimal
-// string value.
-func NewUtilization(value int64, fields UtilizationFields) *meteringpb.Utilization {
-	return NewUtilizationString(strconv.FormatInt(value, 10), fields)
-}
-
-// NewUtilizationString builds a Utilization from a pre-formatted numeric string
+// NewUtilization builds a Utilization from a pre-formatted numeric string
 // value.
-func NewUtilizationString(value string, fields UtilizationFields) *meteringpb.Utilization {
+func NewUtilization(value string, fields UtilizationFields) *meteringpb.Utilization {
 	return &meteringpb.Utilization{
 		Value:        value,
 		ResourceType: fields.ResourceType,
@@ -33,15 +27,21 @@ func NewUtilizationString(value string, fields UtilizationFields) *meteringpb.Ut
 	}
 }
 
+// NewUtilizationInt builds a Utilization with int64 quantity encoded as a
+// decimal string value.
+func NewUtilizationInt(value int64, fields UtilizationFields) *meteringpb.Utilization {
+	return NewUtilization(strconv.FormatInt(value, 10), fields)
+}
+
 // NewUtilizationBig builds a Utilization from an arbitrary-precision integer.
 func NewUtilizationBig(value *big.Int, fields UtilizationFields) *meteringpb.Utilization {
 	if value == nil {
-		return NewUtilizationString("0", fields)
+		return NewUtilization("0", fields)
 	}
-	return NewUtilizationString(value.String(), fields)
+	return NewUtilization(value.String(), fields)
 }
 
 // NewUtilizationFloat builds a Utilization from a floating-point value.
 func NewUtilizationFloat(value float64, fields UtilizationFields) *meteringpb.Utilization {
-	return NewUtilizationString(strconv.FormatFloat(value, 'g', -1, 64), fields)
+	return NewUtilization(strconv.FormatFloat(value, 'f', -1, 64), fields)
 }

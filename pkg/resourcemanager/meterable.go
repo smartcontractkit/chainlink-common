@@ -68,7 +68,11 @@ type DeploymentIdentity struct {
 type DonIdentifier struct {
 	// DonID is the DON identifier the emitting service belongs to.
 	DonID string
-	// NodeID is the node identifier (the node's CSA public key).
+	// NodeID is the node's logical name within the scope of the DON, e.g.
+	// "clp-cre-wf-zone-a-1". It is a human-readable identifier, NOT the CSA
+	// public key. The prefix can be redundant with other fully-qualified
+	// dimensions, but helps readability. The CSA key is emitted separately via
+	// the node_csa_key attribute.
 	NodeID string
 }
 

@@ -13,6 +13,7 @@
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
 	"VaultJSONOmitUnpopulatedEnabled": "false",
 	"VaultCiphertextlessObservationsEnabled": "false",
+	"VaultGetSecretsRelaxedConsensusEnabled": "false",
 	"VaultSignedResponseRequestIDEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",

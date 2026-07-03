@@ -66,6 +66,10 @@ type SetupConfig struct {
 	MaxConcurrentSends int           // default: 4
 	MaxPublishTimeout  time.Duration // default: 5s
 	ShutdownTimeout    time.Duration // default: 30s
+	// MessageBufferSize is the capacity of the batch client's producer→batcher
+	// channel. QueueMessage drops events (non-blocking send) when this is full,
+	// which happens when emit throughput outpaces the batcher.
+	MessageBufferSize int // default: 10000
 
 	// EmitterConfig overrides DefaultConfig when non-nil.
 	EmitterConfig *Config
@@ -107,6 +111,7 @@ func Setup(
 		chipingressbatch.WithBatchSize(defaultInt(cfg.BatchSize, 50)),
 		chipingressbatch.WithBatchInterval(defaultDuration(cfg.BatchInterval, 50*time.Millisecond)),
 		chipingressbatch.WithMaxConcurrentSends(defaultInt(cfg.MaxConcurrentSends, 4)),
+		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
 	)

@@ -42,9 +42,22 @@ type Client interface {
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
 	// GetEvents fetches contract events matching the provided ledger range, filters, and pagination.
 	GetEvents(ctx context.Context, req GetEventsRequest) (GetEventsResponse, error)
+	// GetTransaction fetches an on-chain transaction by hash.
+	GetTransaction(ctx context.Context, req GetTransactionRequest) (GetTransactionResponse, error)
 	// SimulateTransaction builds a synthetic single-operation Soroban InvokeContract
 	// transaction and simulates it without submitting it.
 	SimulateTransaction(ctx context.Context, req SimulateTransactionRequest) (SimulateTransactionResponse, error)
+}
+
+// GetSigningAccountResponse is the relayer's default TXM signing account (G... StrKey).
+//
+// Some Soroban contracts (e.g. CRE forwarder report()) take the transmitter as an
+// explicit Address argument checked via require_auth(). That contract argument is
+// separate from the transaction source account (FromAddress) used for signing.
+// Callers that must encode such arguments should query this address from the relayer
+// keystore rather than hard-coding capability config.
+type GetSigningAccountResponse struct {
+	AccountAddress string
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
@@ -172,7 +185,9 @@ type SimulateTransactionResponse struct {
 // The TXM handles simulation, sequence management, signing, fee bumping, and on-chain confirmation;
 // callers only need to supply the logical contract invocation parameters.
 type SubmitTransactionRequest struct {
-	// IdempotencyKey optionally identifies the transaction for deduplication and status look-up.
+	// IdempotencyKey optionally identifies the transaction for TXM deduplication.
+	// Leave empty to let the relayer TXM assign one; the assigned key is returned
+	// as TxIdempotencyKey in SubmitTransactionResponse.
 	IdempotencyKey string
 	// FromAddress is the source/signer account (G… StrKey).
 	// Leave empty to use the TXM's default keystore account.
@@ -466,4 +481,16 @@ type GetEventsResponse struct {
 	OldestLedger          uint32
 	LatestLedgerCloseTime int64
 	OldestLedgerCloseTime int64
+}
+
+// GetTransactionRequest fetches a transaction by hash.
+type GetTransactionRequest struct {
+	TxHash string
+}
+
+// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+type GetTransactionResponse struct {
+	FeeStroops      uint64
+	LedgerSequence  uint32
+	LedgerCloseTime int64 // unix seconds
 }

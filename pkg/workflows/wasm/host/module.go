@@ -12,6 +12,8 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -127,8 +129,15 @@ type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
 	engine  *wasmtime.Engine
-	module  *wasmtime.Module
 	wconfig *wasmtime.Config
+
+	// The compiled module is not kept resident for the lifetime of the module
+	// instance. Instead it is compiled once, serialized to a file in moduleDir,
+	// and the in-memory *wasmtime.Module is closed. Each guest invocation
+	// (callWasm) deserializes its own *wasmtime.Module from modulePath and closes
+	// it when the invocation returns, so nothing is held while suspended.
+	moduleDir  string
+	modulePath string
 
 	cfg *ModuleConfig
 
@@ -152,7 +161,7 @@ type callWasmFunc func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWas
 
 var _ ModuleV1 = (*module)(nil)
 
-type linkFn[T any] func(m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
+type linkFn[T any] func(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[T]) (*wasmtime.Instance, error)
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
@@ -396,14 +405,35 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 
 	modCfg.SdkLabeler(v2ImportName)
 
+	// Serialize the compiled module to a file and close the in-memory module: it
+	// is not kept resident for the lifetime of the instance. Each guest
+	// invocation deserializes its own copy from this file (see callWasm).
+	serialized, err := mod.Serialize()
+	mod.Close()
+	if err != nil {
+		return nil, fmt.Errorf("error serializing wasmtime module: %w", err)
+	}
+
+	moduleDir, err := os.MkdirTemp("", "wasm-module-")
+	if err != nil {
+		return nil, fmt.Errorf("error creating module temp dir: %w", err)
+	}
+	modulePath := filepath.Join(moduleDir, "module.bin")
+	if err := os.WriteFile(modulePath, serialized, 0o600); err != nil {
+		_ = os.RemoveAll(moduleDir)
+		return nil, fmt.Errorf("error writing serialized module: %w", err)
+	}
+
 	metrics, err := newModuleMetrics()
 	if err != nil {
+		_ = os.RemoveAll(moduleDir)
 		return nil, fmt.Errorf("error creating module metrics: %w", err)
 	}
 
 	m := &module{
 		engine:       engine,
-		module:       mod,
+		moduleDir:    moduleDir,
+		modulePath:   modulePath,
 		wconfig:      cfg,
 		cfg:          modCfg,
 		metrics:      metrics,
@@ -416,7 +446,7 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	return m, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -509,10 +539,10 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
-	return linker.Instantiate(store, m.module)
+	return linker.Instantiate(store, mod)
 }
 
-func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
+func linkLegacyDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
 	linker, err := newDagWasiLinker(m.cfg, m.engine)
 	if err != nil {
 		return nil, err
@@ -556,7 +586,7 @@ func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
-	return linker.Instantiate(store, m.module)
+	return linker.Instantiate(store, mod)
 }
 
 func (m *module) Start() {
@@ -578,8 +608,8 @@ func (m *module) Close() {
 	m.wg.Wait()
 
 	m.engine.Close()
-	m.module.Close()
 	m.wconfig.Close()
+	_ = os.RemoveAll(m.moduleDir)
 }
 
 func (m *module) IsLegacyDAG() bool {
@@ -843,7 +873,17 @@ func callWasm[I, O proto.Message](
 	deadline := timeout / m.cfg.TickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
-	instance, err := linkWasm(m, store, exec)
+	// Deserialize the compiled module from disk for this invocation only, and
+	// close it before returning. This keeps no module resident between runs, so a
+	// suspended execution (which returns from callWasm via the suspend trap)
+	// holds nothing while it waits; the next resume deserializes again.
+	mod, err := wasmtime.NewModuleDeserializeFile(m.engine, m.modulePath)
+	if err != nil {
+		return 0, fmt.Errorf("error deserializing wasm module: %w", err)
+	}
+	defer mod.Close()
+
+	instance, err := linkWasm(m, store, mod, exec)
 	if err != nil {
 		return 0, fmt.Errorf("error linking wasm: %w", err)
 	}

@@ -35,7 +35,7 @@ func (c *Client) GetFolderByUID(uid string) (*Folder, error) {
 	resp, err := c.resty.R().
 		SetHeader("Accept", "application/json").
 		SetResult(&folder).
-		Get(fmt.Sprintf("/api/folders/%s", uid))
+		Get("/api/folders/" + uid)
 
 	if err != nil {
 		return nil, fmt.Errorf("error making API request: %w", err)

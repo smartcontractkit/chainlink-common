@@ -44,9 +44,7 @@ func TestGetDashboardPanelsByUID(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(expectedResponse); err != nil {
-			t.Errorf("encode response: %v", err)
-		}
+		assert.NoError(t, json.NewEncoder(w).Encode(expectedResponse))
 	}))
 	defer ts.Close()
 

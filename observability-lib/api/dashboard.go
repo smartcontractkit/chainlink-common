@@ -131,7 +131,7 @@ func (c *Client) GetDashboardPanelsByUID(uid string) ([]DashboardPanel, *resty.R
 	resp, err := c.resty.R().
 		SetHeader("Accept", "application/json").
 		SetResult(&grafanaResp).
-		Get(fmt.Sprintf("/api/dashboards/uid/%s", uid))
+		Get("/api/dashboards/uid/" + uid))
 
 	if err != nil {
 		return nil, resp, fmt.Errorf("error making API request: %w", err)

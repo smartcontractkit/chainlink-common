@@ -143,6 +143,23 @@ var Default = Schema{
 		SecretsCacheEnabled:     Bool(false),
 		EnclaveRequestTimeout:   Duration(30 * time.Second),
 		PublicKeyRequestTimeout: Duration(5 * time.Second),
+		InsecureSkipTLSVerify:   Bool(false),
+		EnclaveRefreshInterval:  Duration(10 * time.Second),
+		PublicKeyCache: ccPublicKeyCache{
+			Enabled:                 Bool(true),
+			TTL:                     Duration(5 * time.Minute),
+			MaxTTL:                  Duration(30 * time.Minute),
+			CleanupInterval:         Duration(10 * time.Minute),
+			TTLBufferPercent:        Float64(0.1),
+			ProactiveRefreshEnabled: Bool(true),
+			RefreshIntervalPercent:  Float64(0),
+			MinRefreshInterval:      Duration(10 * time.Second),
+			RefreshTimeout:          Duration(5 * time.Second),
+		},
+		Session: ccSession{
+			PersistenceEnabled: Bool(true),
+			HeaderName:         String("Sticky-Session-A"),
+		},
 	},
 
 	PerOrg: Orgs{
@@ -484,6 +501,30 @@ type confidentialCompute struct {
 	SecretsCacheEnabled     Setting[bool]
 	EnclaveRequestTimeout   Setting[time.Duration]
 	PublicKeyRequestTimeout Setting[time.Duration]
+
+	InsecureSkipTLSVerify  Setting[bool]
+	EnclaveRefreshInterval Setting[time.Duration]
+	PublicKeyCache         ccPublicKeyCache
+	Session                ccSession
+}
+
+// ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.
+type ccPublicKeyCache struct {
+	Enabled                 Setting[bool]
+	TTL                     Setting[time.Duration]
+	MaxTTL                  Setting[time.Duration]
+	CleanupInterval         Setting[time.Duration]
+	TTLBufferPercent        Setting[float64]
+	ProactiveRefreshEnabled Setting[bool]
+	RefreshIntervalPercent  Setting[float64]
+	MinRefreshInterval      Setting[time.Duration]
+	RefreshTimeout          Setting[time.Duration]
+}
+
+// ccSession holds executor-side sticky-session settings for enclave routing.
+type ccSession struct {
+	PersistenceEnabled Setting[bool]
+	HeaderName         Setting[string]
 }
 
 // ownerConfidentialCompute holds the per-workflow-owner Confidential Compute settings.

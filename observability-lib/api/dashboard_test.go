@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,12 +39,14 @@ func TestGetDashboardPanelsByUID(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, fmt.Sprintf("/api/dashboards/uid/%s", dashboardUID), r.URL.Path)
+		assert.Equal(t, "/api/dashboards/uid/"+dashboardUID, r.URL.Path)
 		assert.Equal(t, "application/json", r.Header.Get("Accept"))
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		require.NoError(t, json.NewEncoder(w).Encode(expectedResponse))
+		if err := json.NewEncoder(w).Encode(expectedResponse); err != nil {
+			t.Errorf("encode response: %v", err)
+		}
 	}))
 	defer ts.Close()
 

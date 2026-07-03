@@ -57,6 +57,7 @@ var Default = Schema{
 	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:     Bool(true),
 	VaultJWTAuthEnabled:               Bool(false),
+	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
 	PropagateOrgIDInRequestMetadata:                   Bool(false),
@@ -314,6 +315,7 @@ type Schema struct {
 	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
 	GatewayVaultManagementEnabled                     Setting[bool]
 	VaultJWTAuthEnabled                               Setting[bool]
+	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]

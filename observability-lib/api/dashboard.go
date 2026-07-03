@@ -36,6 +36,9 @@ func (c *Client) GetDashboardByNameFolderUID(name string, folderUID string) (Get
 
 	if len(grafanaResp) > 0 {
 		for _, dashboard := range grafanaResp {
+			if dashboard.Title == nil || dashboard.FolderUID == nil || dashboard.UID == nil {
+				continue
+			}
 			if strings.EqualFold(*dashboard.Title, name) && strings.EqualFold(*dashboard.FolderUID, folderUID) {
 				return dashboard, resp, nil
 			}
@@ -47,7 +50,8 @@ func (c *Client) GetDashboardByNameFolderUID(name string, folderUID string) (Get
 
 type PostDashboardRequest struct {
 	Dashboard interface{} `json:"dashboard"`
-	FolderID  int         `json:"folderId"`
+	FolderID  int         `json:"folderId,omitempty"`
+	FolderUID string      `json:"folderUid,omitempty"`
 	Overwrite bool        `json:"overwrite"`
 }
 

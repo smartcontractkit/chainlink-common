@@ -77,9 +77,9 @@ type durableEmitterMetrics struct {
 	// insertCoalescerFill reports the write-coalescer channel fill ratio
 	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
 	insertCoalescerFill metric.Float64Gauge
-	// markCoalescerFill reports the mark-coalescer channel fill ratio
-	// (len/cap). Only meaningful when MarkBatchSize > 0; otherwise 0.
-	markCoalescerFill metric.Float64Gauge
+	// deleteCoalescerFill reports the delete-coalescer channel fill ratio
+	// (len/cap). Only meaningful when DeleteBatchSize > 0; otherwise 0.
+	deleteCoalescerFill metric.Float64Gauge
 	// fallbackInFlight reports the number of single-event fallback Publish
 	// goroutines currently in flight.
 	fallbackInFlight metric.Int64Gauge
@@ -289,10 +289,10 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.markCoalescerFill, err = meter.Float64Gauge(
-		"durable_emitter.mark_coalescer.queue_fill_ratio",
+	if m.deleteCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.delete_coalescer.queue_fill_ratio",
 		metric.WithUnit("1"),
-		metric.WithDescription("Mark-coalescer channel fill ratio (len/cap); 0 when mark coalescing is disabled"),
+		metric.WithDescription("Delete-coalescer channel fill ratio (len/cap); 0 when delete coalescing is disabled"),
 	); err != nil {
 		return nil, err
 	}

@@ -123,22 +123,22 @@ func (s *stallBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([
 	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
 }
 
-// markRecordingStore wraps MemDurableEventStore and records the size of every
-// MarkDeliveredBatch call so tests can assert how marks were coalesced.
-type markRecordingStore struct {
+// deleteRecordingStore wraps MemDurableEventStore and records the size of every
+// BatchDelete call so tests can assert how delivery-deletes were coalesced.
+type deleteRecordingStore struct {
 	*MemDurableEventStore
 	mu        sync.Mutex
 	callSizes []int
 }
 
-func (s *markRecordingStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+func (s *deleteRecordingStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
 	s.mu.Lock()
 	s.callSizes = append(s.callSizes, len(ids))
 	s.mu.Unlock()
-	return s.MemDurableEventStore.MarkDeliveredBatch(ctx, ids)
+	return s.MemDurableEventStore.BatchDelete(ctx, ids)
 }
 
-func (s *markRecordingStore) sizes() []int {
+func (s *deleteRecordingStore) sizes() []int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([]int(nil), s.callSizes...)
@@ -195,15 +195,15 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 }
 
 func TestDurableEmitter_MarkCoalescingBatchesIds(t *testing.T) {
-	store := &markRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
+	store := &deleteRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
 	be := newTestBatchEmitter()
 
 	cfg := DefaultConfig()
 	cfg.DisablePruning = true
 	cfg.InsertBatchSize = 0 // disable insert coalescing so deliveries arrive in a burst
-	cfg.MarkBatchSize = 100
-	cfg.MarkBatchWorkers = 1
-	cfg.MarkBatchFlushInterval = 200 * time.Millisecond
+	cfg.DeleteBatchSize = 100
+	cfg.DeleteBatchWorkers = 1
+	cfg.DeleteBatchFlushInterval = 200 * time.Millisecond
 
 	em := newTestDurableEmitter(t, store, be, &cfg)
 	servicetest.Run(t, em)
@@ -238,10 +238,10 @@ func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
 
 	cfg := DefaultConfig()
 	cfg.DisablePruning = true
-	cfg.MarkBatchSize = 100
-	cfg.MarkBatchWorkers = 1
+	cfg.DeleteBatchSize = 100
+	cfg.DeleteBatchWorkers = 1
 	// Long linger so marks stay buffered until Close drains them.
-	cfg.MarkBatchFlushInterval = time.Hour
+	cfg.DeleteBatchFlushInterval = time.Hour
 
 	em := newTestDurableEmitter(t, store, be, &cfg)
 	require.NoError(t, em.Start(t.Context()))
@@ -266,15 +266,15 @@ func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
 }
 
 func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {
-	store := &markRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
+	store := &deleteRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
 	be := newTestBatchEmitter()
 
 	cfg := DefaultConfig()
 	cfg.DisablePruning = true
-	cfg.MarkBatchSize = 0 // disable coalescing
+	cfg.DeleteBatchSize = 0 // disable coalescing
 
 	em := newTestDurableEmitter(t, store, be, &cfg)
-	require.Nil(t, em.markCh, "mark coalescer channel must be nil when disabled")
+	require.Nil(t, em.deleteCh, "delete coalescer channel must be nil when disabled")
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
@@ -300,7 +300,7 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -321,7 +321,7 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
 		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchMarkDelivered: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -650,7 +650,7 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 
 	cfg := DefaultConfig()
 	cfg.InsertBatchSize = 0
-	cfg.MarkBatchSize = 0
+	cfg.DeleteBatchSize = 0
 	cfg.RetransmitInterval = 100 * time.Millisecond
 	cfg.RetransmitAfter = 50 * time.Millisecond
 	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
@@ -1321,11 +1321,7 @@ func (m *MemDurableEventStore) Delete(_ context.Context, id int64) error {
 	return nil
 }
 
-func (m *MemDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
-	return m.Delete(ctx, id)
-}
-
-func (m *MemDurableEventStore) MarkDeliveredBatch(_ context.Context, ids []int64) (int64, error) {
+func (m *MemDurableEventStore) BatchDelete(_ context.Context, ids []int64) (int64, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var n int64
@@ -1336,10 +1332,6 @@ func (m *MemDurableEventStore) MarkDeliveredBatch(_ context.Context, ids []int64
 		}
 	}
 	return n, nil
-}
-
-func (m *MemDurableEventStore) PurgeDelivered(_ context.Context, _ int) (int64, error) {
-	return 0, nil
 }
 
 func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {

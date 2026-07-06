@@ -69,48 +69,22 @@ func (s *PgDurableEventStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *PgDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
-	const q = `UPDATE ` + chipDurableEventsTable + ` SET delivered_at = now() WHERE id = $1 AND delivered_at IS NULL`
-	if _, err := s.ds.ExecContext(ctx, q, id); err != nil {
-		return fmt.Errorf("failed to mark chip durable event delivered id=%d: %w", id, err)
-	}
-	return nil
-}
-
-func (s *PgDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+// BatchDelete deletes the delivered rows in one statement (delete-on-delivery).
+// A soft-delete flag (delivered_at) + background purge would cost an extra write
+// plus index churn per event — delivered_at is indexed, so that UPDATE was
+// non-HOT. Deleting outright removes that amplification; a delivered row simply
+// no longer exists, satisfying the contract that it must not reappear in
+// ListPending. Idempotent: ids already gone affect 0 rows. Returns rows removed.
+func (s *PgDurableEventStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
-	const q = `UPDATE ` + chipDurableEventsTable + ` SET delivered_at = now() WHERE id = ANY($1) AND delivered_at IS NULL`
+	const q = `DELETE FROM ` + chipDurableEventsTable + ` WHERE id = ANY($1)`
 	res, err := s.ds.ExecContext(ctx, q, pq.Array(ids))
 	if err != nil {
-		return 0, fmt.Errorf("failed to batch mark chip durable events delivered: %w", err)
+		return 0, fmt.Errorf("failed to batch delete delivered chip durable events: %w", err)
 	}
 	n, _ := res.RowsAffected()
-	return n, nil
-}
-
-func (s *PgDurableEventStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
-	if batchLimit <= 0 {
-		return 0, nil
-	}
-	const q = `
-WITH picked AS (
-    SELECT id FROM ` + chipDurableEventsTable + `
-    WHERE delivered_at IS NOT NULL
-    ORDER BY delivered_at ASC
-    LIMIT $1
-)
-DELETE FROM ` + chipDurableEventsTable + ` AS t
-USING picked WHERE t.id = picked.id`
-	res, err := s.ds.ExecContext(ctx, q, batchLimit)
-	if err != nil {
-		return 0, fmt.Errorf("failed to purge delivered chip durable events: %w", err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("purge delivered rows affected: %w", err)
-	}
 	return n, nil
 }
 
@@ -149,8 +123,7 @@ func (s *PgDurableEventStore) DeleteExpired(ctx context.Context, ttl time.Durati
 	const q = `
 WITH deleted AS (
     DELETE FROM ` + chipDurableEventsTable + `
-    WHERE delivered_at IS NULL
-      AND created_at <= now() - $1::interval
+    WHERE created_at <= now() - $1::interval
     RETURNING id
 )
 SELECT count(*) FROM deleted`

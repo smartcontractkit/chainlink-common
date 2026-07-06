@@ -21,14 +21,15 @@ import (
 )
 
 var testIdentity = ResourceIdentity{
-	Product:        "cre-mainline",
-	Tenant:         "mainline",
-	Environment:    "production",
-	Zone:           "wf-zone-a",
-	DonIdentifier:  &DonIdentifier{DonID: "don-1", NodeID: "node-1"},
-	Service:        "cron-trigger",
-	ResourcePool:   "trigger_registrations",
-	ResourcePoolID: "",
+	Product:         "cre-mainline",
+	Tenant:          "mainline",
+	NumericTenantID: "42",
+	Environment:     "production",
+	Zone:            "wf-zone-a",
+	Don:             &DonIdentity{DonID: "don-1", NodeID: "node-1"},
+	Service:         "cron-trigger",
+	ResourcePool:    "trigger_registrations",
+	ResourcePoolID:  "",
 }
 
 type emitCall struct {
@@ -157,8 +158,9 @@ func TestEmitMeterRecord_Success(t *testing.T) {
 	require.NotNil(t, record.GetIdentity())
 	assert.Equal(t, testIdentity.Product, record.GetIdentity().GetProduct())
 	assert.Equal(t, testIdentity.Tenant, record.GetIdentity().GetTenant())
-	assert.Equal(t, testIdentity.DonID(), record.GetIdentity().GetDonIdentifier().GetDonId())
-	assert.Equal(t, testIdentity.NodeID(), record.GetIdentity().GetDonIdentifier().GetNodeId())
+	assert.Equal(t, testIdentity.NumericTenantID, record.GetIdentity().GetNumericTenantId())
+	assert.Equal(t, testIdentity.DonID(), record.GetIdentity().GetDon().GetDonId())
+	assert.Equal(t, testIdentity.NodeID(), record.GetIdentity().GetDon().GetNodeId())
 	assert.Equal(t, testIdentity.ResourcePool, record.GetIdentity().GetResourcePool())
 	assert.Equal(t, meteringpb.MeterAction_METER_ACTION_RESERVE, record.GetAction())
 	require.Len(t, record.GetUtilizations(), 1)

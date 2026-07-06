@@ -89,6 +89,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envMeterSnapshotsEnabled:              "false",
 				envMeterProduct:                       "cre-mainline",
 				envMeterTenant:                        "mainline",
+				envMeterNumericTenantID:               "42",
 				envMeterEnvironment:                   "production",
 				envMeterZone:                          "wf-zone-a",
 				envMeterNodeID:                        "csa-pubkey-1",
@@ -210,6 +211,7 @@ var envCfgFull = EnvConfig{
 	MeterSnapshotsEnabled:              false,
 	MeterProduct:                       "cre-mainline",
 	MeterTenant:                        "mainline",
+	MeterNumericTenantID:               "42",
 	MeterEnvironment:                   "production",
 	MeterZone:                          "wf-zone-a",
 	MeterNodeID:                        "csa-pubkey-1",
@@ -282,6 +284,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
 	assert.Equal(t, "cre-mainline", got[envMeterProduct])
 	assert.Equal(t, "mainline", got[envMeterTenant])
+	assert.Equal(t, "42", got[envMeterNumericTenantID])
 	assert.Equal(t, "production", got[envMeterEnvironment])
 	assert.Equal(t, "wf-zone-a", got[envMeterZone])
 	assert.Equal(t, "csa-pubkey-1", got[envMeterNodeID])

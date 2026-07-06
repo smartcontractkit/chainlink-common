@@ -417,6 +417,7 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 	rm.utilization.Record(ctx, value, metric.WithAttributes(
 		attribute.String("product", id.Product),
 		attribute.String("tenant", id.Tenant),
+		attribute.String("numeric_tenant_id", id.NumericTenantID),
 		attribute.String("environment", id.Environment),
 		attribute.String("zone", id.Zone),
 		attribute.String("don_id", id.DonID()),

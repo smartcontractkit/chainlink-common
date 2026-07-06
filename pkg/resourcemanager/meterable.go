@@ -14,7 +14,7 @@ import (
 // EmitMeterRecord.
 type Meterable interface {
 	// ResourceIdentity returns the producer's base identity: the coarse
-	// dimensions (product, tenant, environment, zone, don_identifier, service) plus
+	// dimensions (product, tenant, numeric_tenant_id, environment, zone, don, service) plus
 	// the service-level resource_pool / resource_pool_id. Per-resource billing
 	// fields (resource_type/resource_id/org_id/event_id/value) are carried by
 	// Utilizations on MeterRecord and MeterSnapshot.
@@ -51,8 +51,11 @@ type SnapshotEntry struct {
 type DeploymentIdentity struct {
 	// Product is the deployment product, e.g. "cre".
 	Product string
-	// Tenant is the deployment tenant, e.g. "mainline" or "enterprise".
+	// Tenant is the human-readable deployment tenant name, e.g. "mainline" or
+	// "enterprise".
 	Tenant string
+	// NumericTenantID is the numbered tenant identifier as a string.
+	NumericTenantID string
 	// Environment is the deployment environment, e.g. "production", "staging".
 	Environment string
 	// Zone is the deployment zone, e.g. "wf-zone-a".
@@ -64,12 +67,12 @@ type DeploymentIdentity struct {
 	NodeID string
 }
 
-// DonIdentifier captures DON-specific identity dimensions as one unit.
-type DonIdentifier struct {
-	// DonID is the DON identifier the emitting service belongs to.
+// DonIdentity captures DON-specific identity dimensions as one unit.
+type DonIdentity struct {
+	// DonID is the DON ID the emitting service belongs to.
 	DonID string
 	// NodeID is the node's logical name within the scope of the DON, e.g.
-	// "clp-cre-wf-zone-a-1". It is a human-readable identifier, NOT the CSA
+	// "clp-cre-wf-zone-a-1". It is a human-readable ID, NOT the CSA
 	// public key. The prefix can be redundant with other fully-qualified
 	// dimensions, but helps readability. The CSA key is emitted separately via
 	// the node_csa_key attribute.
@@ -84,8 +87,12 @@ type ResourceIdentity struct {
 	// Product is the deployment product, e.g. "cre".
 	Product string
 
-	// Tenant is the deployment tenant, e.g. "mainline" or "enterprise".
+	// Tenant is the human-readable deployment tenant name, e.g. "mainline" or
+	// "enterprise".
 	Tenant string
+
+	// NumericTenantID is the numbered tenant identifier as a string.
+	NumericTenantID string
 
 	// Environment is the deployment environment, e.g. "production",
 	// "staging".
@@ -94,9 +101,9 @@ type ResourceIdentity struct {
 	// Zone is the deployment zone, e.g. "wf-zone-a".
 	Zone string
 
-	// DonIdentifier groups DON-specific identity dimensions so consumers can
+	// Don groups DON-specific identity dimensions so consumers can
 	// branch on one struct instead of handling don/node permutations.
-	DonIdentifier *DonIdentifier
+	Don *DonIdentity
 
 	// Service is the stable service constant identifying the emitting service,
 	// e.g. "cron-trigger", "http-trigger", "evm-log-trigger",
@@ -115,35 +122,36 @@ type ResourceIdentity struct {
 // toProto converts r to its wire form. Field order mirrors the proto.
 func (r ResourceIdentity) toProto() *meteringpb.ResourceIdentity {
 	pb := &meteringpb.ResourceIdentity{
-		Product:        r.Product,
-		Tenant:         r.Tenant,
-		Environment:    r.Environment,
-		Zone:           r.Zone,
-		Service:        r.Service,
-		ResourcePool:   r.ResourcePool,
-		ResourcePoolId: r.ResourcePoolID,
+		Product:         r.Product,
+		Tenant:          r.Tenant,
+		NumericTenantId: r.NumericTenantID,
+		Environment:     r.Environment,
+		Zone:            r.Zone,
+		Service:         r.Service,
+		ResourcePool:    r.ResourcePool,
+		ResourcePoolId:  r.ResourcePoolID,
 	}
-	if r.DonIdentifier != nil {
-		pb.DonIdentifier = &meteringpb.DonIdentifier{
-			DonId:  r.DonIdentifier.DonID,
-			NodeId: r.DonIdentifier.NodeID,
+	if r.Don != nil {
+		pb.Don = &meteringpb.DonIdentity{
+			DonId:  r.Don.DonID,
+			NodeId: r.Don.NodeID,
 		}
 	}
 	return pb
 }
 
-// DonID returns the DON identifier when present.
+// DonID returns the DON ID when present.
 func (r ResourceIdentity) DonID() string {
-	if r.DonIdentifier == nil {
+	if r.Don == nil {
 		return ""
 	}
-	return r.DonIdentifier.DonID
+	return r.Don.DonID
 }
 
-// NodeID returns the node identifier when present.
+// NodeID returns the node ID when present.
 func (r ResourceIdentity) NodeID() string {
-	if r.DonIdentifier == nil {
+	if r.Don == nil {
 		return ""
 	}
-	return r.DonIdentifier.NodeID
+	return r.Don.NodeID
 }

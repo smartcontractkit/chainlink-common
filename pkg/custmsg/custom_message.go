@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 )
 
 type MessageEmitter interface {
@@ -118,6 +119,8 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	if err != nil {
 		return fmt.Errorf("sending custom message failed on emit: %w", err)
 	}
+
+	_ = durableemitter.GlobalEmit(ctx, payloadBytes, "source", "platform", "type", "BaseMessage")
 
 	return nil
 }

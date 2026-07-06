@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783098863610,
+  "lastUpdate": 1783357559447,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -53460,6 +53460,66 @@ window.BENCHMARK_DATA = {
             "value": 141484,
             "unit": "ns/op",
             "extra": "8266 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7fb6f76d132dec9ac23d82ca01fe712d0b64b7ba",
+          "message": "Add CentralizedWorkflowOwnerVerificationEnabled CRE gate setting. (#2221)\n\nIntroduce a global gate limiter so workflow syncer nodes can opt into\ncentralized workflow owner/org verification during rollout.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>",
+          "timestamp": "2026-07-06T16:48:53Z",
+          "tree_id": "cc5c2cbb7bfd962ca3a82948c1da619a9b8d2e12",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7fb6f76d132dec9ac23d82ca01fe712d0b64b7ba"
+        },
+        "date": 1783357556728,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3377556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78268,
+            "unit": "ns/op",
+            "extra": "15052 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 395.5,
+            "unit": "ns/op",
+            "extra": "2915346 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 80731,
+            "unit": "ns/op",
+            "extra": "14876 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29130,
+            "unit": "ns/op",
+            "extra": "41250 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131730,
+            "unit": "ns/op",
+            "extra": "8755 times\n4 procs"
           }
         ]
       }

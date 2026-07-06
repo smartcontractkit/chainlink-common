@@ -120,7 +120,10 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 		return fmt.Errorf("sending custom message failed on emit: %w", err)
 	}
 
-	_ = durableemitter.GlobalEmit(ctx, payloadBytes, "source", "platform", "type", "BaseMessage")
+	err = durableemitter.GlobalEmit(ctx, payloadBytes, "source", "platform", "type", "BaseMessage")
+	if err != nil {
+		return fmt.Errorf("DurableEmitter: sending custom message failed on emit: %w", err)
+	}
 
 	return nil
 }

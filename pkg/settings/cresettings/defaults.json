@@ -45,7 +45,26 @@
 		"GlobalRate": "1000rps:1000",
 		"MaxRetries": "3",
 		"RetryBackoff": "2s",
-		"SecretsCacheEnabled": "false"
+		"SecretsCacheEnabled": "false",
+		"EnclaveRequestTimeout": "30s",
+		"PublicKeyRequestTimeout": "5s",
+		"InsecureSkipTLSVerify": "false",
+		"EnclaveRefreshInterval": "10s",
+		"PublicKeyCache": {
+			"Enabled": "true",
+			"TTL": "5m0s",
+			"MaxTTL": "30m0s",
+			"CleanupInterval": "10m0s",
+			"TTLBufferPercent": "0.1",
+			"ProactiveRefreshEnabled": "true",
+			"RefreshIntervalPercent": "0",
+			"MinRefreshInterval": "10s",
+			"RefreshTimeout": "5s"
+		},
+		"Session": {
+			"PersistenceEnabled": "true",
+			"HeaderName": "Sticky-Session-A"
+		}
 	},
 	"PerOrg": {
 		"BaseTriggerRetransmitEnabled": "false",

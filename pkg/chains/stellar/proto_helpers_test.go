@@ -1032,3 +1032,60 @@ func TestConvertGetEventsResponseToProto_UnsupportedEventType(t *testing.T) {
 	require.Contains(t, err.Error(), "eventType")
 	require.Contains(t, err.Error(), "unsupported event type")
 }
+
+func TestConvertGetTransactionRequest_RoundTrip(t *testing.T) {
+	domain := stellartypes.GetTransactionRequest{TxHash: "abc123hash"}
+	proto := conv.ConvertGetTransactionRequestToProto(domain)
+	require.Equal(t, "abc123hash", proto.GetTxHash())
+
+	got, err := conv.ConvertGetTransactionRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetTransactionRequestFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetTransactionRequestFromProto(nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "nil")
+}
+
+func TestConvertGetTransactionRequestFromProto_EmptyTxHash(t *testing.T) {
+	_, err := conv.ConvertGetTransactionRequestFromProto(&conv.GetTransactionRequest{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "tx hash is required")
+}
+
+func TestConvertGetTransactionResponse_RoundTrip(t *testing.T) {
+	domain := stellartypes.GetTransactionResponse{
+		FeeStroops:      42,
+		LedgerSequence:  100,
+		LedgerCloseTime: 1_700_000_000,
+	}
+	proto := conv.ConvertGetTransactionResponseToProto(domain)
+
+	got, err := conv.ConvertGetTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetTransactionResponseFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseFromProto(nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "nil")
+}
+
+func TestConvertGetSigningAccountResponse_RoundTrip(t *testing.T) {
+	domain := stellartypes.GetSigningAccountResponse{AccountAddress: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7"}
+	proto := conv.ConvertGetSigningAccountResponseToProto(domain)
+	require.Equal(t, domain.AccountAddress, proto.GetAccountAddress())
+
+	got, err := conv.ConvertGetSigningAccountResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetSigningAccountResponseFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetSigningAccountResponseFromProto(nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "nil")
+}

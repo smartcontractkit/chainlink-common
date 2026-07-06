@@ -69,12 +69,6 @@ func (s *PgDurableEventStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-// BatchDelete deletes the delivered rows in one statement (delete-on-delivery).
-// A soft-delete flag (delivered_at) + background purge would cost an extra write
-// plus index churn per event — delivered_at is indexed, so that UPDATE was
-// non-HOT. Deleting outright removes that amplification; a delivered row simply
-// no longer exists, satisfying the contract that it must not reappear in
-// ListPending. Idempotent: ids already gone affect 0 rows. Returns rows removed.
 func (s *PgDurableEventStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil

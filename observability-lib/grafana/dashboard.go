@@ -3,6 +3,7 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
@@ -39,9 +40,27 @@ type DeployOptions struct {
 	GrafanaURL             string
 	GrafanaToken           string
 	FolderName             string
+	FolderUID              string // when set, deploy to this folder instead of resolving FolderName by title
 	EnableAlerts           bool
 	RuleGroupFromDashboard bool // if true, set the alert rule group to the dashboard title on all alerts
 	NotificationTemplates  string
+}
+
+func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folder, error) {
+	if options.FolderUID != "" {
+		folder, err := client.GetFolderByUID(options.FolderUID)
+		if err != nil {
+			return nil, err
+		}
+		if folder == nil {
+			return nil, fmt.Errorf("folder with UID %q not found", options.FolderUID)
+		}
+		return folder, nil
+	}
+	if options.FolderName != "" {
+		return client.FindOrCreateFolder(options.FolderName)
+	}
+	return nil, nil
 }
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
@@ -95,13 +114,9 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	)
 
 	// Create or update folder
-	var folder *api.Folder
-	var errFolder error
-	if options.FolderName != "" {
-		folder, errFolder = grafanaClient.FindOrCreateFolder(options.FolderName)
-		if errFolder != nil {
-			return errFolder
-		}
+	folder, errFolder := resolveDeployFolder(grafanaClient, options)
+	if errFolder != nil {
+		return errFolder
 	}
 
 	// Create or update dashboard
@@ -123,11 +138,13 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
 				Dashboard: o.Dashboard,
 				Overwrite: true,
-				//nolint:gosec // disable G115
-				FolderID: int(folder.ID),
+				FolderUID: folder.UID,
 			})
 			if errPostDashboard != nil {
 				return errPostDashboard
+			}
+			if newDashboard.URL != nil && o.Dashboard.Title != nil {
+				fmt.Fprintf(os.Stderr, "deployed dashboard %q to folder uid=%s: %s\n", *o.Dashboard.Title, folder.UID, *newDashboard.URL)
 			}
 		}
 	}

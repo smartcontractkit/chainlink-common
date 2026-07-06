@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783357559447,
+  "lastUpdate": 1783370697427,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -53520,6 +53520,66 @@ window.BENCHMARK_DATA = {
             "value": 131730,
             "unit": "ns/op",
             "extra": "8755 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patrick.huie@smartcontract.com",
+            "name": "Patrick",
+            "username": "patrickhuie19"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "712bad3efbc63cacd063689241c8dae0aca8fcb6",
+          "message": "Resource Managers: durable metering for the CRE and other products (#2158)\n\n* WIP: resource manager\n\n* bumping protos\n\n* adapting resource managers after proto change\n\n* fixing attributes drilled over standard cap boundary to loop boundary\n\n* moving csa key wrapper out of beholder package into durable emitter pkg\n\n* removing labels, and adapting to proto don struct changes\n\n* removing unecessary csa key extension\n\n* make generate\n\n* simplifying naming; one formatting fix to avoid scientific notation\n\n* changes from proto: simplified naming + numericTenantID\n\n* missing go.sum",
+          "timestamp": "2026-07-06T20:31:29Z",
+          "tree_id": "a60168fd41b139c912ec4714252777f03f310e92",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/712bad3efbc63cacd063689241c8dae0aca8fcb6"
+        },
+        "date": 1783370694775,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 748.4,
+            "unit": "ns/op",
+            "extra": "1437433 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 86688,
+            "unit": "ns/op",
+            "extra": "13710 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.5,
+            "unit": "ns/op",
+            "extra": "2984132 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 84959,
+            "unit": "ns/op",
+            "extra": "14125 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26596,
+            "unit": "ns/op",
+            "extra": "45111 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132744,
+            "unit": "ns/op",
+            "extra": "8984 times\n4 procs"
           }
         ]
       }

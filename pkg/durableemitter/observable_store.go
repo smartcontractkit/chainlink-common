@@ -56,11 +56,7 @@ type DurableEventStore interface {
 	// Delete physically removes a row (corrupt payloads, policy drops, tests).
 	Delete(ctx context.Context, id int64) error
 	// BatchDelete records successful delivery of multiple events to Chip by
-	// deleting them in a single operation (delete-on-delivery): a delivered row is
-	// simply removed, which satisfies the requirement that it no longer appear in
-	// ListPending. Deleting outright avoids the extra write and index churn of a
-	// delivered_at soft-delete + background purge. Idempotent: ids already gone
-	// affect 0 rows. Returns the number of rows actually removed.
+	// deleting them in a single operation (delete-on-delivery)
 	BatchDelete(ctx context.Context, ids []int64) (int64, error)
 	// ListPending returns events created before the given cutoff, ordered by
 	// creation time ascending, up to limit rows. Under delete-on-delivery every

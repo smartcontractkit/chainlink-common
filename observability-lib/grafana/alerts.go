@@ -1,6 +1,7 @@
 package grafana
 
 import (
+	"fmt"
 	"maps"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
@@ -14,10 +15,11 @@ type RuleQueryType string
 const (
 	RuleQueryTypeInstant RuleQueryType = "instant"
 
-	// DefaultRuleQueryInterval is the default Prometheus query interval for alert rule models.
-	DefaultRuleQueryInterval = "30s"
-	defaultRuleQueryIntervalMs = 30 * 1000
+	defaultRuleQueryIntervalSeconds = 30
 )
+
+// DefaultRuleQueryInterval is the default Prometheus query interval for alert rule models.
+var DefaultRuleQueryInterval = fmt.Sprintf("%ds", defaultRuleQueryIntervalSeconds)
 
 type RuleQuery struct {
 	Expr         string
@@ -138,7 +140,7 @@ func newReduceSettingsOptions(options expr.ExprTypeReduceSettings) cog.Builder[e
 func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 	if options.IntervalMs == nil {
 		// Recommended value for intervalMs is 30s
-		options.IntervalMs = Pointer[float64](defaultRuleQueryIntervalMs)
+		options.IntervalMs = Pointer[float64](float64(defaultRuleQueryIntervalSeconds * 1000))
 	}
 
 	if options.MaxDataPoints == nil {

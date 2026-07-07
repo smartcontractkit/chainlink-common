@@ -41,6 +41,7 @@ const v2ImportPrefix = "version_v2"
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute
+	defaultPrehookTimeout            = 10 * time.Second
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
@@ -65,6 +66,7 @@ type DeterminismConfig struct {
 type ModuleConfig struct {
 	TickInterval     time.Duration
 	Timeout          *time.Duration
+	PrehookTimeout   *time.Duration
 	MaxMemoryMBs     uint64
 	MinMemoryMBs     uint64
 	MemoryLimiter    limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
@@ -197,6 +199,10 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.Timeout == nil {
 		modCfg.Timeout = &defaultTimeout
+	}
+
+	if modCfg.PrehookTimeout == nil {
+		modCfg.PrehookTimeout = &defaultPrehookTimeout
 	}
 
 	if modCfg.MinMemoryMBs == 0 {
@@ -575,7 +581,12 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 		r.MaxResponseSize = maxSize
 	}
 
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor)
+	timeout := *m.cfg.Timeout
+	switch req.Request.(type) {
+	case *sdkpb.ExecuteRequest_PreHook:
+		timeout = *m.cfg.PrehookTimeout
+	}
+	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
 }
 
 // Run is deprecated, use execute instead
@@ -601,7 +612,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		}
 	}
 
-	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil)
+	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil, *m.cfg.Timeout)
 }
 
 func runWasm[I, O proto.Message](
@@ -610,17 +621,19 @@ func runWasm[I, O proto.Message](
 	request I,
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
-	helper ExecutionHelper) (O, error) {
+	helper ExecutionHelper,
+	maxTimeout time.Duration) (O, error) {
 	var o O
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
 	ctxDeadline, hasDeadline := ctx.Deadline()
 	var ctxWithTimeout context.Context
 	var cancel func()
-	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
+
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(maxTimeout)) {
 		ctxWithTimeout, cancel = context.WithCancel(ctx)
 	} else {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, maxTimeout)
 	}
 
 	defer cancel()
@@ -669,7 +682,7 @@ func runWasm[I, O proto.Message](
 		1,  // memories
 	)
 
-	deadline := *m.cfg.Timeout / m.cfg.TickInterval
+	deadline := maxTimeout / m.cfg.TickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()
@@ -731,7 +744,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}
@@ -1119,12 +1132,14 @@ func read(memory []byte, ptr int32, size int32) ([]byte, error) {
 		return nil, fmt.Errorf("invalid memory access: ptr: %d, size: %d", ptr, size)
 	}
 
-	if ptr+size > int32(len(memory)) {
+	endLoc := ptr + size
+	// users control both ptr and size, a malicious user can overflow them.
+	if int(endLoc) > len(memory) || endLoc < 0 {
 		return nil, errors.New("out of bounds memory access")
 	}
 
 	cd := make([]byte, size)
-	copy(cd, memory[ptr:ptr+size])
+	copy(cd, memory[ptr:endLoc])
 	return cd, nil
 }
 

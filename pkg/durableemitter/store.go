@@ -149,7 +149,8 @@ func (s *PgDurableEventStore) DeleteExpired(ctx context.Context, ttl time.Durati
 	const q = `
 WITH deleted AS (
     DELETE FROM ` + chipDurableEventsTable + `
-    WHERE created_at <= now() - $1::interval
+    WHERE delivered_at IS NULL
+      AND created_at <= now() - $1::interval
     RETURNING id
 )
 SELECT count(*) FROM deleted`
@@ -163,19 +164,23 @@ SELECT count(*) FROM deleted`
 
 type chipDurableQueueAgg struct {
 	Cnt        int64      `db:"cnt"`
+	Total      int64      `db:"total"`
 	PayloadSum int64      `db:"payload_sum"`
 	MinCreated *time.Time `db:"min_created"`
 }
 
 // ObserveDurableQueue implements DurableQueueObserver for queue depth / age gauges.
+// cnt/payload_sum/min_created describe only the undelivered backlog, while total
+// is the authoritative physical row count (incl. delivered-but-not-purged rows)
+// used as the queue-depth gauge.
 func (s *PgDurableEventStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
 	const qAgg = `
 SELECT
-	count(*)::bigint AS cnt,
-	coalesce(sum(octet_length(payload)), 0)::bigint AS payload_sum,
-	min(created_at) AS min_created
-FROM ` + chipDurableEventsTable + `
-WHERE delivered_at IS NULL`
+	count(*) FILTER (WHERE delivered_at IS NULL)::bigint AS cnt,
+	count(*)::bigint AS total,
+	coalesce(sum(octet_length(payload)) FILTER (WHERE delivered_at IS NULL), 0)::bigint AS payload_sum,
+	min(created_at) FILTER (WHERE delivered_at IS NULL) AS min_created
+FROM ` + chipDurableEventsTable
 
 	var row chipDurableQueueAgg
 	if err := s.ds.GetContext(ctx, &row, qAgg); err != nil {
@@ -183,6 +188,7 @@ WHERE delivered_at IS NULL`
 	}
 	var st DurableQueueStats
 	st.Depth = row.Cnt
+	st.TotalRows = row.Total
 	st.PayloadBytes = row.PayloadSum
 	if row.MinCreated != nil {
 		st.OldestPendingAge = time.Since(*row.MinCreated)

@@ -18,6 +18,20 @@ type int64Gauge interface {
 	Record(ctx context.Context, value int64, options ...metric.RecordOption)
 }
 
+type float64Gauge interface {
+	Set(float64)
+}
+
+// Option configures a [DiskMonitor].
+type Option func(*DiskMonitor)
+
+// WithPrometheusGauge mirrors OTel gauge samples to a Prometheus gauge (e.g. node /metrics).
+func WithPrometheusGauge(g float64Gauge) Option {
+	return func(dm *DiskMonitor) {
+		dm.promGauge = g
+	}
+}
+
 // totalRegularFileSizeBytes sums on-disk file sizes for every non-directory under dirPath (recursive), using filepath.WalkDir.
 func totalRegularFileSizeBytes(dirPath string) (int64, error) {
 	var totalSize int64
@@ -44,10 +58,11 @@ type DiskMonitor struct {
 	lggr         logger.Logger
 	sizeOfDir    func() (int64, error)
 	gauge        int64Gauge
+	promGauge    float64Gauge
 }
 
 // NewDiskMonitor returns a [DiskMonitor] for dirPath using gaugeName at tickInterval.
-func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickInterval time.Duration) (*DiskMonitor, error) {
+func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickInterval time.Duration, opts ...Option) (*DiskMonitor, error) {
 	g, err := beholder.GetMeter().Int64Gauge(gaugeName)
 	if err != nil {
 		return nil, fmt.Errorf("int64 gauge %q: %w", gaugeName, err)
@@ -70,6 +85,10 @@ func NewDiskMonitor(lggr logger.Logger, dirPath string, gaugeName string, tickIn
 		"gaugeName", gaugeName,
 	))
 	dm.lggr = dm.eng.SugaredLogger
+
+	for _, opt := range opts {
+		opt(dm)
+	}
 	return dm, nil
 }
 
@@ -88,4 +107,7 @@ func (dm *DiskMonitor) emitDirSizeMetric(ctx context.Context) {
 
 	dm.lggr.Debugw("Emitting directory size metric", "sizeBytes", totalSize)
 	dm.gauge.Record(ctx, totalSize)
+	if dm.promGauge != nil {
+		dm.promGauge.Set(float64(totalSize))
+	}
 }

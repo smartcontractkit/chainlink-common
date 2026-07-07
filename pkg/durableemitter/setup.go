@@ -17,6 +17,11 @@ import (
 // globalEmitter holds the process-wide DurableEmitter instance, set by Setup.
 var globalEmitter atomic.Pointer[DurableEmitter]
 
+var (
+	ErrNotInitialized = errors.New("durable emitter not initialized")
+	ErrEmitFailed     = errors.New("durable emitter emit failed")
+)
+
 // SetGlobalEmitter sets the global DurableEmitter.
 func SetGlobalEmitter(d *DurableEmitter) {
 	globalEmitter.Store(d)
@@ -28,13 +33,15 @@ func GetGlobalEmitter() *DurableEmitter {
 }
 
 // GlobalEmit emits an event via the global DurableEmitter.
-// Returns a non-nil error when the global emitter has not been initialized.
 func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	d := globalEmitter.Load()
 	if d == nil {
-		return errors.New("global DurableEmitter not initialized; call durableemitter.Setup first")
+		return ErrNotInitialized
 	}
-	return d.Emit(ctx, body, attrKVs...)
+	if err := d.Emit(ctx, body, attrKVs...); err != nil {
+		return fmt.Errorf("%w: %w", ErrEmitFailed, err)
+	}
+	return nil
 }
 
 // SetupConfig holds all configuration required to create and start a
@@ -59,6 +66,10 @@ type SetupConfig struct {
 	MaxConcurrentSends int           // default: 4
 	MaxPublishTimeout  time.Duration // default: 5s
 	ShutdownTimeout    time.Duration // default: 30s
+	// MessageBufferSize is the capacity of the batch client's producer→batcher
+	// channel. QueueMessage drops events (non-blocking send) when this is full,
+	// which happens when emit throughput outpaces the batcher.
+	MessageBufferSize int // default: 10000
 
 	// EmitterConfig overrides DefaultConfig when non-nil.
 	EmitterConfig *Config
@@ -100,6 +111,7 @@ func Setup(
 		chipingressbatch.WithBatchSize(defaultInt(cfg.BatchSize, 50)),
 		chipingressbatch.WithBatchInterval(defaultDuration(cfg.BatchInterval, 50*time.Millisecond)),
 		chipingressbatch.WithMaxConcurrentSends(defaultInt(cfg.MaxConcurrentSends, 4)),
+		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
 	)

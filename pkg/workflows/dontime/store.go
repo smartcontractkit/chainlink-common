@@ -7,7 +7,12 @@ import (
 	"time"
 )
 
-var DefaultRequestTimeout = 20 * time.Minute
+// This timeout is used to remove the request from the pending queue inside the Store object.
+// Having a short timeout here comes with a risk of affecting all future sequence numbers
+// for the same executionID, if the plugin is not able to process the request fast enough.
+// For that reason, we keep this timeout relatively long but allow the Engine to time out
+// much faster when waiting on the response channel.
+var DefaultRequestTimeout = 10 * time.Minute
 
 type Store struct {
 	requests       map[string]*Request // Maps workflow execution ID to request
@@ -75,19 +80,43 @@ func (s *Store) RequestDonTime(executionID string, seqNum int) <-chan Response {
 		return ch
 	}
 
+	expiresAt := time.Now().Add(s.requestTimeout)
 	s.requests[executionID] = &Request{
-		ExpiresAt:           time.Now().Add(s.requestTimeout),
+		ExpiresAt:           expiresAt,
 		CallbackCh:          ch,
 		WorkflowExecutionID: executionID,
 		SeqNum:              seqNum,
+		expiryTimer: time.AfterFunc(time.Until(expiresAt), func() {
+			s.expireRequest(executionID)
+		}),
 	}
 	return ch
 }
 
+func (s *Store) expireRequest(executionID string) {
+	s.mu.Lock()
+	req := s.removeRequestLocked(executionID)
+	s.mu.Unlock()
+	if req == nil {
+		return
+	}
+	req.SendTimeout()
+}
+
+func (s *Store) removeRequestLocked(executionID string) *Request {
+	req, ok := s.requests[executionID]
+	if !ok {
+		return nil
+	}
+	delete(s.requests, executionID)
+	req.stopExpiry()
+	return req
+}
+
 func (s *Store) RemoveRequest(executionID string) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.requests, executionID)
+	s.removeRequestLocked(executionID)
+	s.mu.Unlock()
 }
 
 func (s *Store) GetDonTimeForSeqNum(executionID string, seqNum int) *int64 {
@@ -128,7 +157,7 @@ func (s *Store) replaceDonTimes(donTimes map[string][]int64) {
 	for executionID := range s.donTimes {
 		if _, ok := donTimes[executionID]; !ok {
 			delete(s.donTimes, executionID)
-			delete(s.requests, executionID)
+			s.removeRequestLocked(executionID)
 		}
 	}
 }
@@ -149,5 +178,5 @@ func (s *Store) deleteExecutionID(executionID string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.donTimes, executionID)
-	delete(s.requests, executionID)
+	s.removeRequestLocked(executionID)
 }

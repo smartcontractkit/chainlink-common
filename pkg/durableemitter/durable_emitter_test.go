@@ -2,6 +2,9 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"net"
 	"sort"
@@ -120,6 +123,27 @@ func (s *stallBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([
 	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
 }
 
+// markRecordingStore wraps MemDurableEventStore and records the size of every
+// MarkDeliveredBatch call so tests can assert how marks were coalesced.
+type markRecordingStore struct {
+	*MemDurableEventStore
+	mu        sync.Mutex
+	callSizes []int
+}
+
+func (s *markRecordingStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+	s.mu.Lock()
+	s.callSizes = append(s.callSizes, len(ids))
+	s.mu.Unlock()
+	return s.MemDurableEventStore.MarkDeliveredBatch(ctx, ids)
+}
+
+func (s *markRecordingStore) sizes() []int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return append([]int(nil), s.callSizes...)
+}
+
 func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 	stall := new(sync.Mutex)
 	stall.Lock()
@@ -168,6 +192,105 @@ func TestDurableEmitter_CloseCoalescedInsertShutdown(t *testing.T) {
 	err := em.Emit(ctx, []byte("after-close"), testEmitAttrs()...)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not started")
+}
+
+func TestDurableEmitter_MarkCoalescingBatchesIds(t *testing.T) {
+	store := &markRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
+	be := newTestBatchEmitter()
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.InsertBatchSize = 0 // disable insert coalescing so deliveries arrive in a burst
+	cfg.MarkBatchSize = 100
+	cfg.MarkBatchWorkers = 1
+	cfg.MarkBatchFlushInterval = 200 * time.Millisecond
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	const n = 25
+	for i := 0; i < n; i++ {
+		require.NoError(t, em.Emit(ctx, []byte("coalesce-me"), testEmitAttrs()...))
+	}
+
+	// Every delivered event must end up marked (MemStore deletes on mark).
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 3*time.Second, 10*time.Millisecond, "all delivered events should be marked")
+
+	sizes := store.sizes()
+	total, maxBatch := 0, 0
+	for _, s := range sizes {
+		total += s
+		if s > maxBatch {
+			maxBatch = s
+		}
+	}
+	assert.Equal(t, n, total, "every delivered id must be marked exactly once")
+	assert.Less(t, len(sizes), n, "marks must be coalesced into fewer UPDATEs than events")
+	assert.Greater(t, maxBatch, 1, "at least one UPDATE must mark multiple ids")
+}
+
+func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.MarkBatchSize = 100
+	cfg.MarkBatchWorkers = 1
+	// Long linger so marks stay buffered until Close drains them.
+	cfg.MarkBatchFlushInterval = time.Hour
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+
+	const n = 5
+	for i := 0; i < n; i++ {
+		require.NoError(t, em.Emit(t.Context(), []byte("buffer-me"), testEmitAttrs()...))
+	}
+
+	require.Eventually(t, func() bool {
+		return be.callCount.Load() == int64(n)
+	}, 2*time.Second, 10*time.Millisecond, "all events should be handed to the batch emitter")
+
+	// Marks are buffered in the coalescer (1h linger), so nothing is flushed yet
+	// regardless of worker scheduling — rows are only removed on a flush.
+	time.Sleep(50 * time.Millisecond)
+	assert.Equal(t, n, store.Len(), "marks should still be buffered before Close")
+
+	require.NoError(t, em.Close())
+
+	assert.Equal(t, 0, store.Len(), "Close must flush buffered marks before returning")
+}
+
+func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {
+	store := &markRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
+	be := newTestBatchEmitter()
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.MarkBatchSize = 0 // disable coalescing
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.Nil(t, em.markCh, "mark coalescer channel must be nil when disabled")
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	const n = 3
+	for i := 0; i < n; i++ {
+		require.NoError(t, em.Emit(ctx, []byte("inline"), testEmitAttrs()...))
+	}
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 2*time.Second, 10*time.Millisecond)
+
+	sizes := store.sizes()
+	assert.Len(t, sizes, n, "one inline UPDATE per delivered event when coalescing is disabled")
+	for _, s := range sizes {
+		assert.Equal(t, 1, s, "inline marks must be single-id UPDATEs")
+	}
 }
 
 func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
@@ -490,6 +613,83 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
+}
+
+func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase string) int64 {
+	t.Helper()
+	var total int64
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			sum, ok := m.Data.(metricdata.Sum[int64])
+			require.True(t, ok, "expected Sum[int64] for %s", name)
+			for _, dp := range sum.DataPoints {
+				var gotPhase string
+				for _, kv := range dp.Attributes.ToSlice() {
+					if kv.Key == "phase" {
+						gotPhase = kv.Value.AsString()
+					}
+				}
+				if gotPhase == phase {
+					total += dp.Value
+				}
+			}
+		}
+	}
+	return total
+}
+
+func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
+	meter, reader := newTestMeter(t)
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("connection refused"))
+
+	cfg := DefaultConfig()
+	cfg.InsertBatchSize = 0
+	cfg.MarkBatchSize = 0
+	cfg.RetransmitInterval = 100 * time.Millisecond
+	cfg.RetransmitAfter = 50 * time.Millisecond
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
+
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), meter)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.NoError(t, em.Emit(ctx, []byte("phase-test"), testEmitAttrs()...))
+
+	require.Eventually(t, func() bool {
+		var rm metricdata.ResourceMetrics
+		if err := reader.Collect(ctx, &rm); err != nil {
+			return false
+		}
+		return counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "batch") >= 1
+	}, 2*time.Second, 10*time.Millisecond, "initial batch attempt should record failure with phase=batch")
+
+	be.setPublishErr(nil)
+
+	require.Eventually(t, func() bool {
+		var rm metricdata.ResourceMetrics
+		if err := reader.Collect(ctx, &rm); err != nil {
+			return false
+		}
+		return counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit") >= 1
+	}, 5*time.Second, 50*time.Millisecond, "retransmit should record success with phase=retransmit")
+
+	require.Eventually(t, func() bool {
+		return store.Len() == 0
+	}, 5*time.Second, 50*time.Millisecond, "retransmit should deliver")
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(ctx, &rm))
+	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "batch"), int64(1))
+	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "retransmit"))
+	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
+	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.
@@ -946,6 +1146,126 @@ func TestIntegration_GRPCConnection(t *testing.T) {
 	assert.Equal(t, "test-entity", received.Type)
 }
 
+func TestDurableEmitter_IdempotencyKeyDefaultsToEventHash(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("hold"))
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute // no retransmit during test
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	body := []byte("deterministic-body")
+	require.NoError(t, em.Emit(ctx, body, testEmitAttrs()...))
+	require.Eventually(t, func() bool { return be.callCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	// Event stays in store (publish failed). Unmarshal stored proto and check attribute.
+	store.mu.Lock()
+	var stored []byte
+	for _, e := range store.events {
+		stored = append([]byte(nil), e.Payload...)
+		break
+	}
+	store.mu.Unlock()
+	require.NotNil(t, stored, "event should still be in store")
+
+	var eventPb cepb.CloudEvent
+	require.NoError(t, proto.Unmarshal(stored, &eventPb))
+
+	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
+	require.True(t, ok, "idempotencykey attribute must be set")
+
+	// The idempotency key is computed as a SHA256 hash of:
+	// source domain (with 4-byte big-endian length) + entity type (with 4-byte big-endian length) + body (with 4-byte big-endian length)
+	h := sha256.New()
+	for _, s := range []string{"test-source", "test-type"} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	expectedKey := hex.EncodeToString(h.Sum(nil))
+	require.Equal(t, expectedKey, attr.GetCeString())
+}
+
+func TestDurableEmitter_IdempotencyKeyCallerSupplied(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("hold"))
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = 10 * time.Minute
+	em, err := NewDurableEmitter(store, be, nil, true, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	callerKey := "my-idempotency-key-abc123"
+	body := []byte("some-body")
+	attrs := append(testEmitAttrs(), chipingress.IdempotencyKeyAttr, callerKey)
+	require.NoError(t, em.Emit(ctx, body, attrs...))
+
+	require.Eventually(t, func() bool { return be.callCount.Load() == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	store.mu.Lock()
+	var stored []byte
+	for _, e := range store.events {
+		stored = append([]byte(nil), e.Payload...)
+		break
+	}
+	store.mu.Unlock()
+	require.NotNil(t, stored)
+
+	var eventPb cepb.CloudEvent
+	require.NoError(t, proto.Unmarshal(stored, &eventPb))
+
+	attr, ok := eventPb.Attributes[chipingress.IdempotencyKeyAttr]
+	require.True(t, ok, "idempotencykey attribute must be present")
+	require.Equal(t, callerKey, attr.GetCeString(), "caller-supplied key must be preserved")
+}
+
+func BenchmarkDefaultIdempotencyKey(b *testing.B) {
+	const sourceDomain = "test-source"
+	const entityType = "test-type"
+
+	for name, size := range map[string]int{"64B": 64, "1KB": 1024, "4KB": 4096} {
+		body := make([]byte, size)
+		for i := range body {
+			body[i] = byte(i)
+		}
+		b.Run(name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.SetBytes(int64(size))
+			for i := 0; i < b.N; i++ {
+				defaultIdempotencyKey(sourceDomain, entityType, body)
+			}
+		})
+	}
+}
+
+func BenchmarkEnsureIdempotencyKey(b *testing.B) {
+	const sourceDomain = "test-source"
+	const entityType = "test-type"
+	body := []byte("deterministic-body")
+
+	b.Run("DefaultHash", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			attrs := make(map[string]any)
+			ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+		}
+	})
+
+	b.Run("CallerSupplied", func(b *testing.B) {
+		attrs := map[string]any{chipingress.IdempotencyKeyAttr: "my-idempotency-key-abc123"}
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+		}
+	})
+}
+
 // MemDurableEventStore is an in-memory DurableEventStore for unit tests.
 type MemDurableEventStore struct {
 	mu     sync.Mutex
@@ -1069,6 +1389,7 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, 
 	defer m.mu.Unlock()
 	now := time.Now()
 	var st DurableQueueStats
+	st.TotalRows = int64(len(m.events))
 	if len(m.events) == 0 {
 		return st, nil
 	}

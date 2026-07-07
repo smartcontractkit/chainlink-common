@@ -88,59 +88,6 @@ func TestConvertGetLatestLedgerResponseToProto_RejectsInvalidFields(t *testing.T
 	}
 }
 
-func TestConvertReadContractRequestFromProto_Cap(t *testing.T) {
-	t.Parallel()
-
-	t.Run("nil request", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(nil)
-		require.EqualError(t, err, "readContractRequest is nil")
-	})
-
-	t.Run("missing contract_id", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(&stellarcap.ReadContractRequest{Function: "fn"})
-		require.EqualError(t, err, "contractID is required")
-	})
-
-	t.Run("missing function", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(&stellarcap.ReadContractRequest{ContractId: "C_X"})
-		require.EqualError(t, err, "function is required")
-	})
-
-	t.Run("bad arg propagates index", func(t *testing.T) {
-		_, err := stellarcap.ConvertReadContractRequestFromProto(&stellarcap.ReadContractRequest{
-			ContractId: "C_X",
-			Function:   "fn",
-			Args:       []*scval.ScVal{nil},
-		})
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "args[0]")
-	})
-
-	t.Run("round-trip", func(t *testing.T) {
-		u := uint32(42)
-		sym := "transfer"
-		p := &stellarcap.ReadContractRequest{
-			ContractId: "C_TESTCONTRACT",
-			Function:   "transfer",
-			Args: []*scval.ScVal{
-				{Value: &scval.ScVal_U32{U32: u}},
-				{Value: &scval.ScVal_Sym{Sym: sym}},
-			},
-			LedgerSequence: 7,
-		}
-		got, err := stellarcap.ConvertReadContractRequestFromProto(p)
-		require.NoError(t, err)
-		require.Equal(t, "C_TESTCONTRACT", got.ContractID)
-		require.Equal(t, "transfer", got.Function)
-		require.Equal(t, uint32(7), got.LedgerSequence)
-		require.Len(t, got.Args, 2)
-		require.Equal(t, stellartypes.ScValTypeU32, got.Args[0].Type)
-		require.Equal(t, uint32(42), *got.Args[0].U32)
-		require.Equal(t, stellartypes.ScValTypeSymbol, got.Args[1].Type)
-		require.Equal(t, "transfer", *got.Args[1].Symbol)
-	})
-}
-
 func TestScValToProto_NilArmPointers(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -160,7 +107,9 @@ func TestScValToProto_NilArmPointers(t *testing.T) {
 		{"i128 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI128}, "scvI128: nil"},
 		{"u256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeU256}, "scvU256: nil"},
 		{"i256 nil", stellartypes.ScVal{Type: stellartypes.ScValTypeI256}, "scvI256: nil"},
-		{"bytes nil", stellartypes.ScVal{Type: stellartypes.ScValTypeBytes}, "scvBytes: nil"},
+		// Bytes intentionally omitted: nil and empty are indistinguishable for
+		// []byte and empty ScBytes is valid, so nil must NOT error. Covered by
+		// TestScVal_Bytes_EmptyAndNil instead.
 		{"string nil", stellartypes.ScVal{Type: stellartypes.ScValTypeString}, "scvString: nil"},
 		{"symbol nil", stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol}, "scvSymbol: nil"},
 		{"vec nil", stellartypes.ScVal{Type: stellartypes.ScValTypeVec}, "scvVec: nil"},
@@ -363,6 +312,24 @@ func TestScVal_I256(t *testing.T) {
 func TestScVal_Bytes(t *testing.T) {
 	sv := stellartypes.ScVal{Type: stellartypes.ScValTypeBytes, Bytes: []byte{0x01, 0x02, 0x03}}
 	require.Equal(t, sv, scValRoundTrip(t, sv))
+}
+
+// TestScVal_Bytes_EmptyAndNil guards the decode→encode idempotency of an empty
+// ScBytes. ProtoToScVal yields a nil Bytes for an empty byte string, so
+// ScValToProto must accept nil rather than erroring — otherwise a valid empty
+// bytes argument breaks the R2→R3→R4 conversion pipeline.
+func TestScVal_Bytes_EmptyAndNil(t *testing.T) {
+	for _, b := range [][]byte{nil, {}} {
+		sv := stellartypes.ScVal{Type: stellartypes.ScValTypeBytes, Bytes: b}
+		proto, err := stellarcap.ScValToProto(sv)
+		require.NoError(t, err)
+		got, err := stellarcap.ProtoToScVal(proto)
+		require.NoError(t, err)
+		require.Equal(t, stellartypes.ScValTypeBytes, got.Type)
+		// Re-encode the decoded value — this is what the chains layer does.
+		_, err = stellarcap.ScValToProto(got)
+		require.NoError(t, err)
+	}
 }
 
 func TestScVal_String(t *testing.T) {

@@ -3,16 +3,21 @@ WorkflowExecutionConcurrencyLimit = '1000'
 GatewayIncomingPayloadSizeLimit = '1mb'
 GatewayVaultManagementEnabled = 'true'
 VaultJWTAuthEnabled = 'false'
+CentralizedWorkflowOwnerVerificationEnabled = 'false'
 VaultOrgIdAsSecretOwnerEnabled = 'false'
 PropagateOrgIDInRequestMetadata = 'false'
 VaultBase64EncodingEnabled = 'false'
 VaultForceEmptyOCRRounds = 'false'
 VaultOptimizationsEnabled = 'false'
+VaultGetSecretsShareAggregationIncludesPublicKeys = 'false'
+VaultOwnerAddressCanonicalizationEnabled = 'false'
+VaultJSONOmitUnpopulatedEnabled = 'false'
 GatewayHTTPGlobalRate = '500rps:500'
 GatewayHTTPPerNodeRate = '100rps:100'
 GatewayConfidentialRelayGlobalRate = '50rps:10'
 GatewayConfidentialRelayPerNodeRate = '10rps:10'
 GatewayHTTPActionMtlsRequestRate = 'every30s:0'
+GatewayHTTPActionMtlsConcurrencyLimit = '50'
 TriggerRegistrationStatusUpdateTimeout = '0s'
 BaseTriggerRetryInterval = '30s'
 BaseTriggerMaxRetries = '20'
@@ -25,6 +30,7 @@ VaultIdentifierOwnerSizeLimit = '64b'
 VaultIdentifierNamespaceSizeLimit = '64b'
 VaultPluginBatchSizeLimit = '10'
 VaultRequestBatchSizeLimit = '10'
+VaultPendingQueueWriteSizeLimit = '1000'
 VaultMaxQuerySizeLimit = '102.4kb'
 VaultMaxObservationSizeLimit = '512kb'
 VaultMaxReportsPlusPrecursorSizeLimit = '2mb'
@@ -35,6 +41,31 @@ VaultMaxKeyValueModifiedKeys = '300'
 VaultMaxBlobPayloadSizeLimit = '25.6kb'
 VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit = '31.45728mb'
 VaultMaxPerOracleUnexpiredBlobCount = '1000'
+
+[ConfidentialCompute]
+GlobalRate = '1000rps:1000'
+MaxRetries = '3'
+RetryBackoff = '2s'
+SecretsCacheEnabled = 'false'
+EnclaveRequestTimeout = '30s'
+PublicKeyRequestTimeout = '5s'
+InsecureSkipTLSVerify = 'false'
+EnclaveRefreshInterval = '10s'
+
+[ConfidentialCompute.PublicKeyCache]
+Enabled = 'true'
+TTL = '5m0s'
+MaxTTL = '30m0s'
+CleanupInterval = '10m0s'
+TTLBufferPercent = '0.1'
+ProactiveRefreshEnabled = 'true'
+RefreshIntervalPercent = '0'
+MinRefreshInterval = '10s'
+RefreshTimeout = '5s'
+
+[ConfidentialCompute.Session]
+PersistenceEnabled = 'true'
+HeaderName = 'Sticky-Session-A'
 
 [PerOrg]
 BaseTriggerRetransmitEnabled = 'false'
@@ -47,7 +78,11 @@ MtlsRateLimit = 'every30s:3'
 [PerOwner]
 WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'
+VaultCiphertextSizeLimit = '2kb'
 VaultSecretsLimit = '100'
+
+[PerOwner.ConfidentialCompute]
+Rate = '1000rps:1000'
 
 [PerWorkflow]
 TriggerRegistrationsTimeout = '10s'
@@ -76,8 +111,10 @@ UserMetricLabelsPerMetric = '10'
 UserMetricLabelValueLength = '256'
 FeatureMultiTriggerExecutionIDsActiveAt = '2100-01-01 00:00:00 +0000 UTC'
 FeatureMultiTriggerExecutionIDsActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureUseSingleDONTimeProviderPerExecutionActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureChainCapabilityHashBasedOCRActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureEVMWriteReportL1FeeActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureAptosWriteReportBlockTimestampActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'
@@ -145,6 +182,7 @@ CacheAgeLimit = '10m0s'
 ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
+GatewayProxyDonID = ''
 
 [PerWorkflow.ConfidentialHTTP]
 CallLimit = '5'
@@ -152,5 +190,11 @@ ConnectionTimeout = '10s'
 RequestSizeLimit = '10kb'
 ResponseSizeLimit = '100kb'
 
+[PerWorkflow.ConfidentialWorkflows]
+Enabled = 'false'
+
 [PerWorkflow.Secrets]
 CallLimit = '5'
+
+[PerWorkflow.DONTime]
+RequestTimeout = '30s'

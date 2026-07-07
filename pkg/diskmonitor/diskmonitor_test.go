@@ -84,3 +84,26 @@ func TestDiskMonitor_emitDirSizeMetric_error(t *testing.T) {
 
 	assert.Len(t, observed.FilterMessage("Failed to measure directory size").All(), 1)
 }
+
+func TestDiskMonitor_emitDirSizeMetric_prometheusGauge(t *testing.T) {
+	dm := &DiskMonitor{
+		sizeOfDir: func() (int64, error) {
+			return 99, nil
+		},
+		gauge:     &mockGauge{},
+		promGauge: &mockPromGauge{},
+		lggr:      logger.Test(t),
+	}
+
+	dm.emitDirSizeMetric(t.Context())
+	assert.Equal(t, int64(99), dm.gauge.(*mockGauge).gotValue)
+	assert.Equal(t, float64(99), dm.promGauge.(*mockPromGauge).gotValue)
+}
+
+type mockPromGauge struct {
+	gotValue float64
+}
+
+func (m *mockPromGauge) Set(v float64) {
+	m.gotValue = v
+}

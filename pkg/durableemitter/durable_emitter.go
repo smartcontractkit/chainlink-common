@@ -2,6 +2,9 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
@@ -85,6 +89,18 @@ type Config struct {
 	// InsertBatchWorkers is the number of concurrent batch-insert goroutines.
 	// Zero defaults to 4.
 	InsertBatchWorkers int
+	// MarkBatchSize enables mark coalescing when > 0. Instead of issuing one
+	// MarkDeliveredBatch UPDATE per delivered event from the delivery callback,
+	// ids are funneled to background workers that collapse many ids into a
+	// single UPDATE, drastically reducing per-event UPDATE/connection churn.
+	// Each worker collects up to MarkBatchSize ids before flushing.
+	MarkBatchSize int
+	// MarkBatchFlushInterval is the linger time after the first id arrives in a
+	// coalescing batch before it is flushed. Zero defaults to 100ms.
+	MarkBatchFlushInterval time.Duration
+	// MarkBatchWorkers is the number of concurrent batch-mark goroutines.
+	// Zero defaults to 2.
+	MarkBatchWorkers int
 }
 
 // Hooks records delivery latency to locate pipeline bottlenecks.
@@ -103,14 +119,19 @@ type Hooks struct {
 
 func DefaultConfig() Config {
 	return Config{
-		RetransmitInterval:  5 * time.Second,
-		RetransmitAfter:     10 * time.Second,
-		RetransmitBatchSize: 100,
-		ExpiryInterval:      1 * time.Minute,
-		EventTTL:            72 * time.Hour,
-		PublishTimeout:      5 * time.Second,
-		PurgeInterval:       250 * time.Millisecond,
-		PurgeBatchSize:      500,
+		RetransmitInterval:       5 * time.Second,
+		RetransmitAfter:          10 * time.Second,
+		RetransmitBatchSize:      100,
+		ExpiryInterval:           1 * time.Minute,
+		EventTTL:                 1 * time.Hour,
+		PublishTimeout:           5 * time.Second,
+		PurgeInterval:            250 * time.Millisecond,
+		PurgeBatchSize:           500,
+		InsertBatchFlushInterval: 500 * time.Millisecond,
+		InsertBatchSize:          100,
+		MarkBatchSize:            100,
+		MarkBatchFlushInterval:   500 * time.Millisecond,
+		MarkBatchWorkers:         2,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
 		Metrics: nil,
@@ -176,11 +197,19 @@ type DurableEmitter struct {
 	insertShutdown atomic.Bool
 	insertInFlight atomic.Int32
 
-	// pendingCount is an exact, atomic count of rows inserted but not yet
-	// delivered/deleted. Incremented on successful Insert, decremented on
-	// MarkDelivered, Delete, or DeleteExpired. No polling required.
-	pendingCount atomic.Int64
-	pendingMax   atomic.Int64
+	// markCh funnels delivered event ids to the mark coalescer. Nil when mark
+	// coalescing is disabled (MarkBatchSize <= 0). Its only producers are the
+	// delivery callbacks and single-event fallback goroutines, so it is closed
+	// during shutdown only after both have quiesced (see stop). markWg tracks
+	// the markBatchLoop workers, which must outlive d.wg so callbacks running
+	// during the batch emitter's final flush can still enqueue marks.
+	markCh chan int64
+	markWg sync.WaitGroup
+
+	// fallbackInFlightCount is incremented when a single-event fallback
+	// goroutine starts and decremented on its defer. metricsLoop samples
+	// this into the fallback.in_flight gauge.
+	fallbackInFlightCount atomic.Int64
 
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
@@ -264,6 +293,18 @@ func NewDurableEmitter(
 				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
 		}
 	}
+
+	if cfg.MarkBatchSize > 0 {
+		chanSize := cfg.MarkBatchSize * 200
+		if chanSize < 10_000 {
+			chanSize = 10_000
+		}
+		d.markCh = make(chan int64, chanSize)
+		d.eng.Infow("DurableEmitter: mark coalescing enabled",
+			"markBatchSize", cfg.MarkBatchSize,
+			"markBatchWorkers", cfg.MarkBatchWorkers,
+			"markBatchFlushInterval", cfg.MarkBatchFlushInterval)
+	}
 	return d, nil
 }
 
@@ -280,6 +321,18 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 	if d.insertCh != nil {
 		for i := 0; i < insertWorkers; i++ {
 			d.wg.Go(d.insertBatchLoop)
+		}
+	}
+
+	if d.markCh != nil {
+		markWorkers := d.cfg.MarkBatchWorkers
+		if markWorkers <= 0 {
+			markWorkers = 2
+		}
+		// markWg (not d.wg) so the workers keep draining while the batch
+		// emitter flushes its final callbacks during stop().
+		for i := 0; i < markWorkers; i++ {
+			d.markWg.Go(d.markBatchLoop)
 		}
 	}
 
@@ -319,11 +372,16 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return err
 		}
 
-		event, err := chipingress.NewEvent(sourceDomain, entityType, body, parseAttrs(attrKVs...))
+		attrs := parseAttrs(attrKVs...)
+		ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)
 		if err != nil {
 			emitFail()
 			return err
 		}
+
+		event.SetExtension("emitter", "DurableEmitter")
 
 		eventPb, err := chipingress.EventToProto(event)
 		if err != nil {
@@ -376,7 +434,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				h.OnEmitInsert(insElapsed, res.err)
 			}
 			if d.metrics != nil {
-				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				d.metrics.recordEmitDuration(ctx, insElapsed, res.err)
 				if res.err != nil {
 					d.metrics.emitFail.Add(ctx, 1)
 				} else {
@@ -395,7 +453,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				h.OnEmitInsert(insElapsed, err)
 			}
 			if d.metrics != nil {
-				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				d.metrics.recordEmitDuration(ctx, insElapsed, err)
 				if err != nil {
 					d.metrics.emitFail.Add(ctx, 1)
 				} else {
@@ -407,15 +465,17 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			}
 		}
 
-		d.incPending(1)
-
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure). eventPb is
 		// captured in the closure so the fallback path can retry without a
 		// DB round-trip.
 		t0Publish := time.Now()
-		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish)); qErr != nil {
+		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch)); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
+			if d.metrics != nil {
+				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
+					metric.WithAttributes(attribute.String("phase", publishPhaseBatch.String())))
+			}
 		}
 		return nil
 	})
@@ -425,7 +485,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 // On success, it marks the event delivered. On failure, it attempts a
 // single-event fallback via fallbackClient (when configured) in a goroutine
 // before leaving the event in the DB for the retransmit loop.
-func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time) func(error) {
+func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase) func(error) {
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
 
@@ -433,25 +493,27 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			h.OnBatchPublish(publishElapsed, 1, sendErr)
 		}
 
-		cbCtx, cbCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		cbCtx, cbCancel := d.stopCh.NewCtx()
 		defer cbCancel()
 
 		if d.metrics != nil {
-			d.metrics.recordPublish(cbCtx, publishElapsed, "batch", sendErr)
+			d.metrics.recordPublish(cbCtx, publishElapsed, phase, sendErr)
+			d.metrics.recordPublishBatchEvent(cbCtx, phase, sendErr)
 		}
 
 		if sendErr != nil {
-			if d.metrics != nil {
-				d.metrics.publishBatchEvErr.Add(cbCtx, 1)
-			}
 			// Batch path failed. If a fallback client is configured, retry the
 			// single event directly; otherwise leave in DB for retransmit.
 			d.tryFallback(id, eventPb)
 			return
 		}
 
-		if d.metrics != nil {
-			d.metrics.publishBatchEvOK.Add(cbCtx, 1)
+		d.eng.Debugw("DurableEmitter: delivered event", "eventID", eventPb.Id)
+
+		// When mark coalescing is enabled the id is handed to the batch-mark
+		// workers (one UPDATE for many ids); otherwise mark it inline.
+		if d.enqueueMark(id) {
+			return
 		}
 
 		tMark := time.Now()
@@ -465,7 +527,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			d.eng.Errorw("failed to mark event delivered", "id", id, "error", markErr)
 			return
 		}
-		d.decPending(marked)
 		if d.metrics != nil {
 			d.metrics.deliverComplete.Add(cbCtx, marked)
 		}
@@ -480,18 +541,23 @@ func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb
 		return
 	}
 	d.fallbackWg.Add(1)
+	d.fallbackInFlightCount.Add(1)
 	go func() {
 		defer d.fallbackWg.Done()
+		defer d.fallbackInFlightCount.Add(-1)
 		d.singleEventFallback(id, eventPb)
 	}()
 }
 
 // singleEventFallback sends a single event directly via the fallback
-// chipingress.Client. On success, it marks the event delivered and decrements
-// the pending counter. On failure, it logs and returns — the event remains in
-// the DB and the retransmit loop will eventually deliver it.
+// chipingress.Client. On success, it marks the event delivered. On failure, it
+// logs and returns — the event remains in the DB and the retransmit loop will
+// eventually deliver it.
 func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
-	pubCtx, pubCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	stopCtx, stopCancel := d.stopCh.NewCtx()
+	defer stopCancel()
+
+	pubCtx, pubCancel := context.WithTimeout(stopCtx, d.cfg.PublishTimeout)
 	defer pubCancel()
 
 	if _, err := d.fallbackClient.Publish(pubCtx, eventPb); err != nil {
@@ -500,17 +566,17 @@ func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.Clou
 		return
 	}
 
-	markCtx, markCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-	defer markCancel()
+	if d.enqueueMark(id) {
+		return
+	}
 
-	marked, markErr := d.store.MarkDeliveredBatch(markCtx, []int64{id})
+	marked, markErr := d.store.MarkDeliveredBatch(stopCtx, []int64{id})
 	if markErr != nil {
 		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
 		return
 	}
-	d.decPending(marked)
 	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(markCtx, marked)
+		d.metrics.deliverComplete.Add(stopCtx, marked)
 	}
 }
 
@@ -534,6 +600,13 @@ func (d *DurableEmitter) stop() error {
 	// fallbackWg, so we wait on those next.
 	d.batchEmitter.Stop()
 	d.fallbackWg.Wait()
+	// The delivery callbacks (drained by batchEmitter.Stop) and the fallback
+	// goroutines (drained by fallbackWg) are the only producers of markCh, so
+	// it is now safe to close it and let the workers flush any buffered marks.
+	if d.markCh != nil {
+		close(d.markCh)
+		d.markWg.Wait()
+	}
 	if d.fallbackClient != nil {
 		if err := d.fallbackClient.Close(); err != nil {
 			d.eng.Warnw("DurableEmitter: error closing fallback chip client", "error", err)
@@ -548,7 +621,7 @@ func (d *DurableEmitter) insertBatchLoop() {
 	batchSize := d.cfg.InsertBatchSize
 	linger := d.cfg.InsertBatchFlushInterval
 	if linger <= 0 {
-		linger = 2 * time.Millisecond
+		linger = 100 * time.Millisecond
 	}
 	batch := make([]*insertRequest, 0, batchSize)
 
@@ -584,6 +657,9 @@ func (d *DurableEmitter) insertBatchLoop() {
 		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
 		cancel()
+		if batchErr == nil {
+			d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
+		}
 		for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
@@ -594,42 +670,85 @@ func (d *DurableEmitter) insertBatchLoop() {
 	}
 }
 
-// PendingDepth returns the current exact pending queue depth (inserted but not
-// yet delivered/deleted). Thread-safe; no DB query required.
-func (d *DurableEmitter) PendingDepth() int64 { return d.pendingCount.Load() }
-
-// PendingMax returns the highest pending queue depth observed since Start.
-func (d *DurableEmitter) PendingMax() int64 { return d.pendingMax.Load() }
-
-func (d *DurableEmitter) incPending(n int64) {
-	cur := d.pendingCount.Add(n)
-	updated := false
-	for {
-		old := d.pendingMax.Load()
-		if cur <= old {
-			break
-		}
-		if d.pendingMax.CompareAndSwap(old, cur) {
-			updated = true
-			break
-		}
+// enqueueMark hands a delivered event id to the mark coalescer. It returns
+// false when mark coalescing is disabled so the caller can mark inline.
+// Send is a blocking hand-off; back-pressure here slows the delivery callback
+// rather than dropping a mark.
+func (d *DurableEmitter) enqueueMark(id int64) bool {
+	if d.markCh == nil {
+		return false
 	}
-	if d.metrics != nil {
-		ctx, cancel := d.stopCh.NewCtx()
-		defer cancel()
-		d.metrics.queueDepth.Record(ctx, cur)
-		if updated {
-			d.metrics.queueDepthMax.Record(ctx, cur)
+	d.markCh <- id
+	return true
+}
+
+// markBatchLoop collects delivered event ids from markCh and flushes them as
+// batched MarkDeliveredBatch UPDATEs, collapsing many single-row UPDATEs into
+// one and decoupling the mark from the delivery-callback path. On channel close
+// it flushes any partially-collected batch before returning.
+func (d *DurableEmitter) markBatchLoop() {
+	batchSize := d.cfg.MarkBatchSize
+	linger := d.cfg.MarkBatchFlushInterval
+	if linger <= 0 {
+		linger = 100 * time.Millisecond
+	}
+	batch := make([]int64, 0, batchSize)
+
+	for {
+		batch = batch[:0]
+
+		id, ok := <-d.markCh
+		if !ok {
+			return
 		}
+		batch = append(batch, id)
+
+		timer := time.NewTimer(linger)
+	collecting:
+		for len(batch) < batchSize {
+			select {
+			case id, ok := <-d.markCh:
+				if !ok {
+					timer.Stop()
+					d.flushMarks(batch)
+					return
+				}
+				batch = append(batch, id)
+			case <-timer.C:
+				break collecting
+			}
+		}
+		timer.Stop()
+		d.flushMarks(batch)
 	}
 }
 
-func (d *DurableEmitter) decPending(n int64) {
-	cur := d.pendingCount.Add(-n)
+// flushMarks marks a batch of delivered event ids in a single UPDATE. Marks are
+// best-effort: on failure the rows keep delivered_at IS NULL and the retransmit
+// loop re-delivers them (MarkDeliveredBatch is idempotent via the
+// delivered_at IS NULL predicate), so failures are logged rather than retried
+// here.
+func (d *DurableEmitter) flushMarks(ids []int64) {
+	if len(ids) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer cancel()
+
+	tMark := time.Now()
+	marked, err := d.store.MarkDeliveredBatch(ctx, ids)
+	markElapsed := time.Since(tMark)
+
+	if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
+		h.OnBatchMarkDelivered(markElapsed, int(marked))
+	}
+	if err != nil {
+		d.eng.Errorw("failed to batch mark events delivered", "count", len(ids), "error", err)
+		return
+	}
+	d.eng.Debugw("DurableEmitter: coalesced mark delivered flushed", "submitted", len(ids), "marked", marked)
 	if d.metrics != nil {
-		ctx, cancel := d.stopCh.NewCtx()
-		defer cancel()
-		d.metrics.queueDepth.Record(ctx, cur)
+		d.metrics.deliverComplete.Add(ctx, marked)
 	}
 }
 
@@ -679,12 +798,12 @@ func (d *DurableEmitter) retransmitPending() {
 		return
 	}
 
-	d.retransmit(pending)
+	d.retransmit(ctx, pending)
 }
 
 // retransmit re-enqueues pending DB rows through the batch emitter. Each row
 // gets its own delivery callback that marks it delivered on success.
-func (d *DurableEmitter) retransmit(pending []DurableEvent) {
+func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent) {
 	var enqueued, skipped int
 
 	for _, pe := range pending {
@@ -701,8 +820,12 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		}
 
 		id := pe.ID
-		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now())); err != nil {
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit)); err != nil {
 			skipped++
+			if d.metrics != nil {
+				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
+					metric.WithAttributes(attribute.String("phase", publishPhaseRetransmit.String())))
+			}
 		} else {
 			enqueued++
 		}
@@ -734,15 +857,20 @@ func (d *DurableEmitter) purgeLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
+			var purged int64
 			for {
 				n, err := d.store.PurgeDelivered(ctx, batch)
 				if err != nil {
 					d.eng.Errorw("failed to purge delivered chip durable events", "error", err)
 					break
 				}
+				purged += n
 				if n == 0 {
 					break
 				}
+			}
+			if purged > 0 {
+				d.eng.Debugw("DurableEmitter: purged delivered events", "count", purged)
 			}
 		}
 	}
@@ -765,7 +893,6 @@ func (d *DurableEmitter) expiryLoop() {
 				continue
 			}
 			if deleted > 0 {
-				d.decPending(deleted)
 				if d.metrics != nil {
 					d.metrics.expiredPurged.Add(ctx, deleted)
 				}
@@ -787,7 +914,7 @@ func (d *DurableEmitter) metricsLoop() {
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
-		poll = 10 * time.Second
+		poll = 500 * time.Millisecond
 	}
 
 	ctx, cancel := d.stopCh.NewCtx()
@@ -800,13 +927,53 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
-			d.metrics.queueDepthMax.Record(ctx, d.pendingMax.Load())
 			if obs, ok := d.store.(DurableQueueObserver); ok {
-				d.metrics.pollQueueGauges(ctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
+				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
+				if err != nil {
+					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
+				} else {
+					d.metrics.queueDepth.Record(ctx, st.TotalRows)
+					d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
+				}
 			}
+			d.metrics.fallbackInFlight.Record(ctx, d.fallbackInFlightCount.Load())
+			if d.insertCh != nil {
+				if c := cap(d.insertCh); c > 0 {
+					d.metrics.insertCoalescerFill.Record(ctx, float64(len(d.insertCh))/float64(c))
+				}
+			} else {
+				d.metrics.insertCoalescerFill.Record(ctx, 0)
+			}
+			if d.markCh != nil {
+				if c := cap(d.markCh); c > 0 {
+					d.metrics.markCoalescerFill.Record(ctx, float64(len(d.markCh))/float64(c))
+				}
+			} else {
+				d.metrics.markCoalescerFill.Record(ctx, 0)
+			}
+			d.metrics.pollProcessGauges(ctx)
 		}
 	}
+}
+
+// ensureIdempotencyKey sets attrs[IdempotencyKeyAttr] to a deterministic hash
+// of source, type, and body when the caller did not supply a non-empty key.
+func ensureIdempotencyKey(attrs map[string]any, sourceDomain, entityType string, body []byte) {
+	if val, ok := attrs[chipingress.IdempotencyKeyAttr].(string); ok && val != "" {
+		return
+	}
+	attrs[chipingress.IdempotencyKeyAttr] = defaultIdempotencyKey(sourceDomain, entityType, body)
+}
+
+func defaultIdempotencyKey(sourceDomain, entityType string, body []byte) string {
+	h := sha256.New()
+	for _, s := range []string{sourceDomain, entityType} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // parseAttrs converts a variadic slice of (key, value) pairs (with optional

@@ -25,8 +25,10 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 
+	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/actionandtrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
@@ -72,6 +74,44 @@ func TestStandardErrors(t *testing.T) {
 	}).Maybe()
 	errMsg := runWithBasicTrigger(t, mockExecutionHelper)
 	assert.Contains(t, errMsg.GetError(), "workflow execution failure")
+}
+
+func TestStandardCapabilityErrors(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+
+	callIndex := 0
+	mockExecutionHelper.EXPECT().CallCapability(mock.Anything, mock.Anything).RunAndReturn(func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {
+		assert.Equal(t, "basic-test-action@1.0.0", request.Id)
+		assert.Equal(t, "PerformAction", request.Method)
+		input := &basicaction.Inputs{}
+		assert.NoError(t, request.Payload.UnmarshalTo(input))
+
+		if callIndex < len(caperrors.AllErrorCodes) {
+			code := caperrors.AllErrorCodes[callIndex]
+			callIndex++
+			return nil, caperrors.NewPublicSystemError(errors.New(code.String()+" error"), code)
+		}
+
+		callIndex++
+		payload, err := anypb.New(&basicaction.Outputs{AdaptedThing: "Done"})
+		require.NoError(t, err)
+		return &sdk.CapabilityResponse{
+			Response: &sdk.CapabilityResponse_Payload{Payload: payload},
+		}, nil
+	}).Times(len(caperrors.AllErrorCodes) + 1)
+
+	m := makeTestModule(t)
+	request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+	result := executeWithResult[string](t, m, request, mockExecutionHelper)
+	assert.Equal(t, "Done", result)
 }
 
 func TestStandardCapabilityCallsAreAsync(t *testing.T) {
@@ -529,7 +569,7 @@ func TestStandardTeeRuntime(t *testing.T) {
 	t.Parallel()
 
 	cfg := defaultNoDAGModCfg(t)
-	m := makeTestModuleWithConfig(t, cfg)
+	m := makeOptionalTestModuleWithConfig(t, cfg)
 	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
@@ -581,6 +621,33 @@ func TestStandardTeeRuntime(t *testing.T) {
 	assertProto(t, expected, actual.GetTriggerSubscriptions())
 }
 
+func TestStandardRestrictions(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	// Some languages call time during initiation of the executable before the main is called.
+	// This would be in unknown mode, which would call Node mode by default.
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	// subscribe so pre-hooks are known.
+	// subscriptions are always done before the first trigger
+	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+	underlying := makeOptionalTestModuleWithConfig(t, nil)
+	m := host.NewRequirementSelectingModule(host.ModuleAndHandler{Module: underlying}, []host.ModuleAndHandler{})
+	_, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
+	require.NoError(t, err)
+
+	response := runWithBasicTriggerWithModule(t, mockExecutionHelper, m)
+	switch r := response.Result.(type) {
+	case *sdk.ExecutionResult_Error:
+		assert.Contains(t, r.Error, "call denied by user pre-hook restrictions: basic-test-action@1.0.0 PerformAction")
+	default:
+		assert.Fail(t, "Expected an error result due to restricted capability call, got %T", response.Result)
+	}
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)
@@ -594,9 +661,12 @@ func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.
 }
 
 func runWithBasicTrigger(t *testing.T, executor ExecutionHelper) *sdk.ExecutionResult {
+	return runWithBasicTriggerWithModule(t, executor, makeTestModule(t))
+}
+
+func runWithBasicTriggerWithModule(t *testing.T, executor ExecutionHelper, m ModuleV2) *sdk.ExecutionResult {
 	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
 	executeRequest := triggerExecuteRequest(t, 0, trigger)
-	m := makeTestModule(t)
 	response, err := m.Execute(t.Context(), executeRequest, executor)
 	require.NoError(t, err)
 	return response
@@ -612,14 +682,29 @@ func makeTestModule(t *testing.T) *module {
 
 func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return makeTestModuleByName(t, testName, cfg)
+	return makeTestModuleByName(t, testPath, testName, cfg, true)
 }
 
-func makeTestModuleByName(t *testing.T, testName string, cfg *ModuleConfig) *module {
+func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return makeTestModuleByName(t, testPath, testName, cfg, false)
+}
+
+func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) *module {
 	wasmName := path.Join(testName, "test.wasm")
-	cmd := exec.Command("make", wasmName) // #nosec
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
+
+	// An optional test is one whose SDK feature may not be released yet, in which case its
+	// source directory won't exist. Skip only in that case; any other make failure (e.g. a
+	// compilation error in an existing test) must still fail so we don't hide regressions.
+	if !required {
+		if _, statErr := os.Stat(filepath.Join(absPath, testName)); errors.Is(statErr, os.ErrNotExist) {
+			t.Skipf("Optional test %q not found", testName)
+		}
+	}
+
+	cmd := exec.Command("make", wasmName) // #nosec
 	cmd.Dir = absPath
 
 	output, err := cmd.CombinedOutput()

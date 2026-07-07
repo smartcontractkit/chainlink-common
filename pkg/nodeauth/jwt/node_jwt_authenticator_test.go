@@ -1,15 +1,11 @@
 package jwt
 
 import (
-	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
-	"io"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -17,7 +13,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/utils"
@@ -69,8 +67,8 @@ func createValidJWT(privateKey ed25519.PrivateKey, csaPubKey ed25519.PublicKey) 
 	return tokenString
 }
 
-func createTestLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelDebug}))
+func createTestLogger(tb testing.TB) logger.Logger {
+	return logger.Test(tb)
 }
 
 func TestNodeJWTAuthenticator_AuthenticateJWT_ValidToken(t *testing.T) {
@@ -78,7 +76,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ValidToken(t *testing.T) {
 	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
 	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	jwtToken := createValidJWT(privateKey, csaPubKey)
 
@@ -98,7 +96,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_TamperedRequest(t *testing.T) {
 	// Given
 	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	jwtToken := createValidJWT(privateKey, csaPubKey)
 
@@ -114,7 +112,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_TamperedRequest(t *testing.T) {
 func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 	privateKey, csaPubKey := createValidatorTestKeys()
 	mockProvider := &mocks.NodeAuthProvider{}
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	// Given: Expired JWT
 	testRequest := testRequest{Field: "test-request"}
@@ -151,7 +149,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testi
 	_, csaPubKey2 := createValidatorTestKeys()
 
 	mockProvider := &mocks.NodeAuthProvider{}
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	// Given: JWT signature mismatch public key
 	testRequest := testRequest{Field: "test-request"}
@@ -187,7 +185,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_UntrustedPublicKey(t *testing.T) {
 
 	mockProvider := &mocks.NodeAuthProvider{}
 	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, nil)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	// Given: Valid JWT
 	jwtToken := createValidJWT(privateKey, csaPubKey)
@@ -206,7 +204,7 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_UntrustedPublicKey(t *testing.T) {
 
 func TestNodeJWTAuthenticator_parseJWTClaims_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	privateKey, csaPubKey := createValidatorTestKeys()
 
@@ -223,7 +221,7 @@ func TestNodeJWTAuthenticator_parseJWTClaims_Success(t *testing.T) {
 
 func TestNodeJWTAuthenticator_parseJWTClaims_InvalidFormat(t *testing.T) {
 	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	// Test with invalid token format
 	_, err := authenticator.parseJWTClaims("invalid.jwt")
@@ -235,7 +233,7 @@ func TestNodeJWTAuthenticator_parseJWTClaims_InvalidFormat(t *testing.T) {
 
 func TestNodeJWTAuthenticator_verifyJWTSignature_Success(t *testing.T) {
 	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	privateKey, csaPubKey := createValidatorTestKeys()
 
@@ -251,7 +249,7 @@ func TestNodeJWTAuthenticator_verifyJWTSignature_Success(t *testing.T) {
 
 func TestNodeJWTAuthenticator_verifyRequestDigest_DigestMismatch(t *testing.T) {
 	mockProvider := mocks.NewNodeAuthProvider(t)
-	authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+	authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 	originalRequest := testRequest{Field: "original"}
 	differentRequest := testRequest{Field: "different"}
@@ -271,7 +269,7 @@ func TestNodeJWTAuthenticator_verifyRequestDigest_DigestMismatch(t *testing.T) {
 func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 	t.Run("without config - backward compatible", func(t *testing.T) {
 		mockProvider := &mocks.NodeAuthProvider{}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger())
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 		assert.NotNil(t, authenticator)
 		assert.NotNil(t, authenticator.parser)
@@ -282,7 +280,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		config := &NodeJWTAuthenticatorConfig{
 			Leeway: 5 * time.Second,
 		}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t), Leeway: config.Leeway}.New(mockProvider)
 
 		assert.NotNil(t, authenticator)
 		assert.NotNil(t, authenticator.parser)
@@ -296,7 +294,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		config := &NodeJWTAuthenticatorConfig{
 			Leeway: 5 * time.Second,
 		}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t), Leeway: config.Leeway}.New(mockProvider)
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -332,7 +330,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		config := &NodeJWTAuthenticatorConfig{
 			Leeway: 5 * time.Second,
 		}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t), Leeway: config.Leeway}.New(mockProvider)
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -369,7 +367,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		config := &NodeJWTAuthenticatorConfig{
 			Leeway: 5 * time.Second,
 		}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t), Leeway: config.Leeway}.New(mockProvider)
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -405,7 +403,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		config := &NodeJWTAuthenticatorConfig{
 			Leeway: 5 * time.Second,
 		}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t), Leeway: config.Leeway}.New(mockProvider)
 
 		testRequest := testRequest{Field: "test-request"}
 		digest := utils.CalculateRequestDigest(testRequest)
@@ -436,7 +434,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 
 	t.Run("with nil config - same as no config", func(t *testing.T) {
 		mockProvider := &mocks.NodeAuthProvider{}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), nil)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}.New(mockProvider)
 
 		assert.NotNil(t, authenticator)
 		assert.NotNil(t, authenticator.parser)
@@ -447,7 +445,7 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		config := &NodeJWTAuthenticatorConfig{
 			Leeway: 0,
 		}
-		authenticator := NewNodeJWTAuthenticator(mockProvider, createTestLogger(), config)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t), Leeway: config.Leeway}.New(mockProvider)
 
 		assert.NotNil(t, authenticator)
 		assert.NotNil(t, authenticator.parser)
@@ -461,8 +459,8 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderNonContextError(t *testing
 	mockProvider := &mocks.NodeAuthProvider{}
 	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, providerErr)
 
-	logger, buf := newCaptureLogger()
-	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+	lggr, observedLogs := logger.TestObserved(t, zapcore.DebugLevel)
+	authenticator := NodeJWTAuthenticatorConfig{Logger: lggr}.New(mockProvider)
 
 	testRequest := testRequest{Field: "test-request"}
 	valid, claims, err := authenticator.AuthenticateJWT(context.Background(), createValidJWT(privateKey, csaPubKey), testRequest)
@@ -472,8 +470,9 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderNonContextError(t *testing
 	assert.NotNil(t, claims)
 	assert.Contains(t, err.Error(), "node validation failed")
 
-	entry := readLogEntry(t, buf)
-	assert.Equal(t, "ERROR", entry["level"], "non-context provider errors should log at ERROR")
+	entries := observedLogs.FilterMessage("Node validation failed").All()
+	require.Len(t, entries, 1, "expected exactly one 'Node validation failed' log entry")
+	assert.Equal(t, zapcore.ErrorLevel, entries[0].Level, "non-context provider errors should log at ERROR")
 	mockProvider.AssertExpectations(t)
 }
 
@@ -484,8 +483,8 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderContextCancelledError(t *t
 	mockProvider := &mocks.NodeAuthProvider{}
 	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, context.Canceled)
 
-	logger, buf := newCaptureLogger()
-	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+	lggr, observedLogs := logger.TestObserved(t, zapcore.DebugLevel)
+	authenticator := NodeJWTAuthenticatorConfig{Logger: lggr}.New(mockProvider)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // already cancelled
@@ -498,8 +497,10 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderContextCancelledError(t *t
 	assert.NotNil(t, claims)
 	assert.ErrorIs(t, err, context.Canceled)
 
-	entry := readLogEntry(t, buf)
-	assert.Equal(t, "WARN", entry["level"], "context cancellation from provider should log at WARN not ERROR")
+	entries := observedLogs.FilterMessage("Node validation skipped: context canceled or deadline exceeded").All()
+	require.Len(t, entries, 1, "expected exactly one context-cancellation log entry")
+	assert.Equal(t, zapcore.WarnLevel, entries[0].Level, "context cancellation from provider should log at WARN not ERROR")
+	assert.Equal(t, context.Canceled.Error(), entries[0].ContextMap()["contextErr"])
 	mockProvider.AssertExpectations(t)
 }
 
@@ -510,8 +511,8 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderDeadlineExceededError(t *t
 	mockProvider := &mocks.NodeAuthProvider{}
 	mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, context.DeadlineExceeded)
 
-	logger, buf := newCaptureLogger()
-	authenticator := NewNodeJWTAuthenticator(mockProvider, logger)
+	lggr, observedLogs := logger.TestObserved(t, zapcore.DebugLevel)
+	authenticator := NodeJWTAuthenticatorConfig{Logger: lggr}.New(mockProvider)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 0) // immediately expired
 	defer cancel()
@@ -524,20 +525,57 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderDeadlineExceededError(t *t
 	assert.NotNil(t, claims)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 
-	entry := readLogEntry(t, buf)
-	assert.Equal(t, "WARN", entry["level"], "deadline exceeded from provider should log at WARN not ERROR")
+	entries := observedLogs.FilterMessage("Node validation skipped: context canceled or deadline exceeded").All()
+	require.Len(t, entries, 1, "expected exactly one context-cancellation log entry")
+	assert.Equal(t, zapcore.WarnLevel, entries[0].Level, "deadline exceeded from provider should log at WARN not ERROR")
+	assert.Equal(t, context.DeadlineExceeded.Error(), entries[0].ContextMap()["contextErr"])
 	mockProvider.AssertExpectations(t)
 }
 
-func newCaptureLogger() (*slog.Logger, *bytes.Buffer) {
-	var buf bytes.Buffer
-	return slog.New(slog.NewJSONHandler(&buf, nil)), &buf
-}
+func TestNodeJWTAuthenticatorConfig_New(t *testing.T) {
+	t.Run("basic construction via config.New", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		cfg := NodeJWTAuthenticatorConfig{
+			Logger: createTestLogger(t),
+		}
+		authenticator := cfg.New(mockProvider)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
 
-func readLogEntry(t *testing.T, buf *bytes.Buffer) map[string]any {
-	t.Helper()
+	t.Run("config.New with leeway", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		cfg := NodeJWTAuthenticatorConfig{
+			Logger: createTestLogger(t),
+			Leeway: 5 * time.Second,
+		}
+		authenticator := cfg.New(mockProvider)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.parser)
+	})
 
-	var entry map[string]any
-	require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
-	return entry
+	t.Run("config.New with nil logger uses Nop", func(t *testing.T) {
+		mockProvider := &mocks.NodeAuthProvider{}
+		cfg := NodeJWTAuthenticatorConfig{}
+		authenticator := cfg.New(mockProvider)
+		assert.NotNil(t, authenticator)
+		assert.NotNil(t, authenticator.logger)
+	})
+
+	t.Run("config.New full auth flow", func(t *testing.T) {
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(true, nil)
+
+		cfg := NodeJWTAuthenticatorConfig{Logger: createTestLogger(t)}
+		authenticator := cfg.New(mockProvider)
+
+		testReq := testRequest{Field: "test-request"}
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), createValidJWT(privateKey, csaPubKey), testReq)
+
+		require.NoError(t, err)
+		assert.True(t, valid)
+		assert.NotNil(t, claims)
+		mockProvider.AssertExpectations(t)
+	})
 }

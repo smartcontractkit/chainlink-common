@@ -376,6 +376,59 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, uint64(12345), *event.Value.U64)
 	})
 
+	t.Run("GetTransaction_roundtrip", func(t *testing.T) {
+		svc.getTransaction = func(_ context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
+			require.Equal(t, "abc123hash", req.TxHash)
+			return stellartypes.GetTransactionResponse{
+				FeeStroops:      42,
+				LedgerSequence:  100,
+				LedgerCloseTime: 1_700_000_000,
+			}, nil
+		}
+
+		resp, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{TxHash: "abc123hash"})
+		require.NoError(t, err)
+		require.Equal(t, uint64(42), resp.FeeStroops)
+		require.Equal(t, uint32(100), resp.LedgerSequence)
+		require.Equal(t, int64(1_700_000_000), resp.LedgerCloseTime)
+	})
+
+	t.Run("GetTransaction_invalidRequest", func(t *testing.T) {
+		_, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid GetTransaction request")
+	})
+
+	t.Run("GetTransaction_implError", func(t *testing.T) {
+		svc.getTransaction = func(_ context.Context, _ stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
+			return stellartypes.GetTransactionResponse{}, errors.New("rpc unavailable")
+		}
+
+		_, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{TxHash: "abc123hash"})
+		require.Error(t, err)
+	})
+
+	t.Run("GetSigningAccount_roundtrip", func(t *testing.T) {
+		svc.getSigningAccount = func(_ context.Context) (stellartypes.GetSigningAccountResponse, error) {
+			return stellartypes.GetSigningAccountResponse{
+				AccountAddress: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7",
+			}, nil
+		}
+
+		resp, err := client.GetSigningAccount(ctx)
+		require.NoError(t, err)
+		require.Equal(t, "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7", resp.AccountAddress)
+	})
+
+	t.Run("GetSigningAccount_implError", func(t *testing.T) {
+		svc.getSigningAccount = func(_ context.Context) (stellartypes.GetSigningAccountResponse, error) {
+			return stellartypes.GetSigningAccountResponse{}, errors.New("keystore unavailable")
+		}
+
+		_, err := client.GetSigningAccount(ctx)
+		require.Error(t, err)
+	})
+
 	t.Run("SubmitTransaction_roundtrip", func(t *testing.T) {
 		sym := "transfer"
 		argVal := stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
@@ -454,6 +507,8 @@ type staticStellarService struct {
 	getLedgerEntries    func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
 	getLatestLedger     func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
 	getEvents           func(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error)
+	getTransaction      func(ctx context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error)
+	getSigningAccount   func(ctx context.Context) (stellartypes.GetSigningAccountResponse, error)
 	simulateTransaction func(ctx context.Context, req stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error)
 	submitTransaction   func(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error)
 }
@@ -477,6 +532,20 @@ func (s *staticStellarService) GetEvents(ctx context.Context, req stellartypes.G
 		return s.UnimplementedStellarService.GetEvents(ctx, req)
 	}
 	return s.getEvents(ctx, req)
+}
+
+func (s *staticStellarService) GetTransaction(ctx context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
+	if s.getTransaction == nil {
+		return s.UnimplementedStellarService.GetTransaction(ctx, req)
+	}
+	return s.getTransaction(ctx, req)
+}
+
+func (s *staticStellarService) GetSigningAccount(ctx context.Context) (stellartypes.GetSigningAccountResponse, error) {
+	if s.getSigningAccount == nil {
+		return s.UnimplementedStellarService.GetSigningAccount(ctx)
+	}
+	return s.getSigningAccount(ctx)
 }
 
 func (s *staticStellarService) SimulateTransaction(ctx context.Context, req stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {

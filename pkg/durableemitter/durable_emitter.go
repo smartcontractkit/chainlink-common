@@ -258,7 +258,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter)
+		m, err = newDurableEmitterMetrics(meter, "durable_emitter")
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}
@@ -560,7 +560,13 @@ func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.Clou
 	pubCtx, pubCancel := context.WithTimeout(stopCtx, d.cfg.PublishTimeout)
 	defer pubCancel()
 
-	if _, err := d.fallbackClient.Publish(pubCtx, eventPb); err != nil {
+	publishStart := time.Now()
+	_, err := d.fallbackClient.Publish(pubCtx, eventPb)
+	publishElapsed := time.Since(publishStart)
+	if d.metrics != nil {
+		d.metrics.recordFallbackPublish(stopCtx, publishElapsed, err)
+	}
+	if err != nil {
 		d.eng.Warnw("DurableEmitter: single-event fallback publish failed, relying on retransmit",
 			"id", id, "error", err)
 		return

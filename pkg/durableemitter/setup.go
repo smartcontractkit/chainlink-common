@@ -114,6 +114,7 @@ func Setup(
 		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
+		chipingressbatch.WithChipClient("durable_emitter"),
 	)
 	if err != nil {
 		_ = batchChipClient.Close()

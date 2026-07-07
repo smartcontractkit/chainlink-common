@@ -46,6 +46,8 @@ func (p publishPhase) String() string {
 }
 
 type durableEmitterMetrics struct {
+	chipClient         string
+	chipClientFallback string
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -97,11 +99,14 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
 // supplied meter. The caller is responsible for the meter's scope (the
 // instrument prefix below acts as the metric namespace).
-func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error) {
+func newDurableEmitterMetrics(meter metric.Meter, chipClient string) (*durableEmitterMetrics, error) {
 	if meter == nil {
 		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
 	}
-	m := &durableEmitterMetrics{}
+	m := &durableEmitterMetrics{
+		chipClient:         chipClient,
+		chipClientFallback: chipClient + "_fallback",
+	}
 	var err error
 	if m.emitSuccess, err = meter.Int64Counter(
 		"durable_emitter.emit.success",
@@ -355,6 +360,7 @@ func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.
 		metric.WithAttributes(
 			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
+			attribute.String("chip_client", m.chipClient),
 		),
 	)
 }
@@ -363,10 +369,31 @@ func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, pha
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(attribute.String("phase", phase.String()))
+	attrs := metric.WithAttributes(
+		attribute.String("phase", phase.String()),
+		attribute.String("chip_client", m.chipClient),
+	)
 	if err != nil {
 		m.publishBatchEvErr.Add(ctx, 1, attrs)
 	} else {
 		m.publishBatchEvOK.Add(ctx, 1, attrs)
 	}
+}
+
+func (m *durableEmitterMetrics) recordFallbackPublish(ctx context.Context, elapsed time.Duration, err error) {
+	if m == nil {
+		return
+	}
+	attrs := metric.WithAttributes(attribute.String("chip_client", m.chipClientFallback))
+	if err != nil {
+		m.publishImmErr.Add(ctx, 1, attrs)
+	} else {
+		m.publishImmOK.Add(ctx, 1, attrs)
+	}
+	m.publishDuration.Record(ctx, elapsed.Seconds(),
+		metric.WithAttributes(
+			attribute.String("chip_client", m.chipClientFallback),
+			attribute.Bool("error", err != nil),
+		),
+	)
 }

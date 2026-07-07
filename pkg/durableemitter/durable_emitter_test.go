@@ -16,6 +16,7 @@ import (
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -641,6 +642,47 @@ func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase 
 	return total
 }
 
+func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics, name, chipClient string) {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			var count int
+			check := func(attrs attribute.Set) {
+				count++
+				assert.True(t, hasMetricStringAttr(attrs, "chip_client", chipClient),
+					"metric %s missing chip_client=%q", name, chipClient)
+			}
+			switch data := m.Data.(type) {
+			case metricdata.Sum[int64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			case metricdata.Histogram[float64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			default:
+				t.Fatalf("metric %s has unsupported type %T", name, m.Data)
+			}
+			require.NotZero(t, count, "metric %s has no datapoints", name)
+			return
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+}
+
+func hasMetricStringAttr(set attribute.Set, key, want string) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsString() == want
+		}
+	}
+	return false
+}
+
 func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	meter, reader := newTestMeter(t)
 
@@ -690,6 +732,10 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "retransmit"))
 	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
+
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", "durable_emitter")
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", "durable_emitter")
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", "durable_emitter")
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.
@@ -856,22 +902,28 @@ func TestDurableEmitter_FallbackDeliversOnBatchFailure(t *testing.T) {
 	be.setPublishErr(errors.New("batch down"))
 	fallback := &testFallbackClient{}
 
-	em, err := NewDurableEmitter(store, be, fallback, true, DefaultConfig(), logger.Test(t), nil)
+	cfg := DefaultConfig()
+	cfg.Metrics = &DurableEmitterMetricsConfig{}
+	meter, reader := newTestMeter(t)
+
+	em, err := NewDurableEmitter(store, be, fallback, true, cfg, logger.Test(t), meter)
 	require.NoError(t, err)
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
 	require.NoError(t, em.Emit(ctx, []byte("needs-fallback"), testEmitAttrs()...))
 
-	// Batch emitter fires callback with error → fallback client should deliver.
 	require.Eventually(t, func() bool {
 		return fallback.publishCount.Load() >= 1
 	}, 2*time.Second, 10*time.Millisecond, "fallback client should receive one Publish call")
 
-	// Event should be marked delivered and removed from the store.
 	require.Eventually(t, func() bool {
 		return store.Len() == 0
 	}, 2*time.Second, 10*time.Millisecond, "event should be marked delivered after fallback")
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(ctx, &rm))
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.immediate.success", "durable_emitter_fallback")
 }
 
 // TestDurableEmitter_FallbackFailureEventRemainsForRetransmit verifies that

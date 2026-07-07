@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783370697427,
+  "lastUpdate": 1783420589184,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -53580,6 +53580,66 @@ window.BENCHMARK_DATA = {
             "value": 132744,
             "unit": "ns/op",
             "extra": "8984 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cfal@users.noreply.github.com",
+            "name": "cfal",
+            "username": "cfal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ca804079930ef834b3670abcaa848f263a79d46b",
+          "message": "pkg/capabilities/v2/actions/confidentialrelay/types.go: relax validateExecutionID check (#2194)\n\n* pkg/capabilities/v2/actions/confidentialrelay/types.go: relax validateExecutionID check\n\n* capabilities/v2/actions/confidentialrelay/types_test.go: Allow non-hex and arbitrary length execution IDs\n\nRelaxes the validation constraints for the execution_id field on\nSecretsRequestParams and CapabilityRequestParams. The field is\nnow only validated to be non-empty, and no longer restricted to\na 32-byte hex-encoded string.\n\n---------\n\nCo-authored-by: vreff <104409744+vreff@users.noreply.github.com>",
+          "timestamp": "2026-07-07T10:24:57Z",
+          "tree_id": "dc457bfe05f448c6a0f30381bd26c064f032673a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ca804079930ef834b3670abcaa848f263a79d46b"
+        },
+        "date": 1783420586929,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 273.1,
+            "unit": "ns/op",
+            "extra": "4384062 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 61190,
+            "unit": "ns/op",
+            "extra": "19470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 298.7,
+            "unit": "ns/op",
+            "extra": "3945361 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 61597,
+            "unit": "ns/op",
+            "extra": "19495 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22600,
+            "unit": "ns/op",
+            "extra": "53061 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 101180,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

@@ -112,7 +112,100 @@ func TestDefaultViews_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
 
 func TestDefaultViews_count(t *testing.T) {
 	t.Parallel()
-	assert.Len(t, metricviews.DefaultViews(), 3)
+	assert.Len(t, metricviews.DefaultViews(), 6)
+}
+
+func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		instrument string
+		unit       string
+		record     func(t *testing.T, meter metric.Meter)
+		wantBounds []float64
+	}{
+		{
+			name:       "bytes usage",
+			instrument: "bound.PerWorkflow.WASMBinarySizeLimit.usage",
+			unit:       "By",
+			record: func(t *testing.T, meter metric.Meter) {
+				t.Helper()
+				h, err := meter.Int64Histogram("bound.PerWorkflow.WASMBinarySizeLimit.usage", metric.WithUnit("By"))
+				require.NoError(t, err)
+				h.Record(context.Background(), 512*1024, metric.WithAttributes(attribute.String("workflow", "wf-1")))
+			},
+			wantBounds: []float64{0, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8},
+		},
+		{
+			name:       "seconds runtime",
+			instrument: "time.PerWorkflow.ExecutionTimeout.runtime",
+			unit:       "s",
+			record: func(t *testing.T, meter metric.Meter) {
+				t.Helper()
+				h, err := meter.Float64Histogram("time.PerWorkflow.ExecutionTimeout.runtime", metric.WithUnit("s"))
+				require.NoError(t, err)
+				h.Record(context.Background(), 42.5, metric.WithAttributes(attribute.String("workflow", "wf-1")))
+			},
+			wantBounds: []float64{0, 1, 10, 60, 300, 900, 3600},
+		},
+		{
+			name:       "count usage",
+			instrument: "bound.PerWorkflow.TriggerSubscriptionLimit.usage",
+			record: func(t *testing.T, meter metric.Meter) {
+				t.Helper()
+				h, err := meter.Int64Histogram("bound.PerWorkflow.TriggerSubscriptionLimit.usage")
+				require.NoError(t, err)
+				h.Record(context.Background(), 3, metric.WithAttributes(attribute.String("workflow", "wf-1")))
+			},
+			wantBounds: []float64{0, 1, 10, 100, 1e3, 1e4, 1e5},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			reader := sdkmetric.NewManualReader()
+			mp := sdkmetric.NewMeterProvider(
+				sdkmetric.WithReader(reader),
+				sdkmetric.WithView(metricviews.DefaultViews()...),
+			)
+			t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+			meter := mp.Meter("test")
+			tt.record(t, meter)
+
+			var rm metricdata.ResourceMetrics
+			require.NoError(t, reader.Collect(context.Background(), &rm))
+
+			bounds := histogramBounds(t, rm, tt.instrument)
+			assert.Equal(t, tt.wantBounds, bounds)
+			assert.Len(t, bounds, 7, "expected 7 boundaries (8 Prometheus buckets including +Inf)")
+		})
+	}
+}
+
+func histogramBounds(t *testing.T, rm metricdata.ResourceMetrics, name string) []float64 {
+	t.Helper()
+	require.Len(t, rm.ScopeMetrics, 1)
+	for _, m := range rm.ScopeMetrics[0].Metrics {
+		if m.Name != name {
+			continue
+		}
+		switch data := m.Data.(type) {
+		case metricdata.Histogram[int64]:
+			require.Len(t, data.DataPoints, 1)
+			return data.DataPoints[0].Bounds
+		case metricdata.Histogram[float64]:
+			require.Len(t, data.DataPoints, 1)
+			return data.DataPoints[0].Bounds
+		default:
+			t.Fatalf("unexpected metric data type %T for %s", m.Data, name)
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+	return nil
 }
 
 func attributeKeysFromSum(t *testing.T, rm metricdata.ResourceMetrics) []attribute.Key {

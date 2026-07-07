@@ -1,5 +1,6 @@
 // Package metricviews defines Beholder's default OTel metric views for
-// cardinality-limiting attribute filters.
+// cardinality control: PerWorkflow histogram bucket reduction and
+// attribute-filter deny/allow lists.
 //
 // Callers (e.g. chainlink core/cmd/shell.go via beholder.Config.MetricViews)
 // may supply additional views—typically histogram bucket Aggregation overrides
@@ -44,18 +45,14 @@ var (
 	)
 )
 
-// DefaultViews returns attribute-filter views appended after caller-supplied
-// MetricViews by beholder.mergeMetricViews. Within this slice, more specific
-// instrument matchers precede the global "*" catch-all: an instrument like
-// capabilities_base_trigger_stopped_resending_timestamp matches all three, and
-// since these views resolve to the same stream identity the SDK keeps the first
-// in registration order. Ordering most-specific-first gives it precedence:
-//
-//  1. capabilities_base_trigger_stopped_resending_timestamp — allow capability_id, trigger_id
-//  2. capabilities_base_trigger_* — allow capability_id, reason, outcome
-//  3. * — deny event_id, trigger_id, workflow_execution_id
+// DefaultViews returns views appended after caller-supplied MetricViews by
+// beholder.mergeMetricViews. PerWorkflow histogram bucket views are registered
+// first so they apply to CRE limit metrics (chainlink does not supply caller
+// views for those names). Attribute-filter views follow; within that group,
+// more specific instrument matchers precede the global "*" catch-all.
 func DefaultViews() []sdkmetric.View {
-	return []sdkmetric.View{
+	views := perWorkflowHistogramViews()
+	views = append(views,
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: stoppedResendingInstrument},
 			sdkmetric.Stream{AttributeFilter: stoppedResendingAllow},
@@ -68,5 +65,6 @@ func DefaultViews() []sdkmetric.View {
 			sdkmetric.Instrument{Name: "*"},
 			sdkmetric.Stream{AttributeFilter: globalHighCardinalityDeny},
 		),
-	}
+	)
+	return views
 }

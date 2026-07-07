@@ -38,6 +38,7 @@ flowchart
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        TenantID{{TenantID}}:::bound
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
@@ -61,7 +62,6 @@ flowchart
 
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
-        TenantID{{TenantID}}:::bound
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
         PerWorkflow.WASMBinarySizeLimit{{PerWorkflow.WASMBinarySizeLimit}}:::bound
         PerWorkflow.WASMSecretsSizeLimit{{PerWorkflow.WASMSecretsSizeLimit}}:::bound

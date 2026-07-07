@@ -2,7 +2,9 @@ package custmsg
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log"
 	"maps"
 
 	"google.golang.org/protobuf/proto"
@@ -121,8 +123,8 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	}
 
 	err = durableemitter.GlobalEmit(ctx, payloadBytes, "source", "platform", "type", "BaseMessage")
-	if err != nil {
-		return fmt.Errorf("DurableEmitter: sending custom message failed on emit: %w", err)
+	if err != nil && !errors.Is(err, durableemitter.ErrNotInitialized) {
+		log.Printf("custmsg: durable emitter failed to persist custom message: %v", err)
 	}
 
 	return nil

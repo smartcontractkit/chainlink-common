@@ -674,6 +674,51 @@ func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics,
 	t.Fatalf("metric %q not found", name)
 }
 
+func assertMetricHasAttrs(t *testing.T, rm metricdata.ResourceMetrics, name string, want map[string]string) {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			if metricHasAttrs(t, m, want) {
+				return
+			}
+			t.Fatalf("metric %s missing attrs %v", name, want)
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+}
+
+func metricHasAttrs(t *testing.T, m metricdata.Metrics, want map[string]string) bool {
+	t.Helper()
+	check := func(attrs attribute.Set) bool {
+		for k, v := range want {
+			if !hasMetricStringAttr(attrs, k, v) {
+				return false
+			}
+		}
+		return true
+	}
+	switch data := m.Data.(type) {
+	case metricdata.Sum[int64]:
+		for _, dp := range data.DataPoints {
+			if check(dp.Attributes) {
+				return true
+			}
+		}
+	case metricdata.Histogram[float64]:
+		for _, dp := range data.DataPoints {
+			if check(dp.Attributes) {
+				return true
+			}
+		}
+	default:
+		t.Fatalf("metric %s has unsupported type %T", m.Name, m.Data)
+	}
+	return false
+}
+
 func hasMetricStringAttr(set attribute.Set, key, want string) bool {
 	for _, kv := range set.ToSlice() {
 		if string(kv.Key) == key {
@@ -923,7 +968,14 @@ func TestDurableEmitter_FallbackDeliversOnBatchFailure(t *testing.T) {
 
 	var rm metricdata.ResourceMetrics
 	require.NoError(t, reader.Collect(ctx, &rm))
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.immediate.success", "durable_emitter_fallback")
+	assertMetricHasAttrs(t, rm, "durable_emitter.publish.immediate.success", map[string]string{
+		"chip_client": "durable_emitter",
+		"phase":       "fallback",
+	})
+	assertMetricHasAttrs(t, rm, "durable_emitter.publish.duration", map[string]string{
+		"chip_client": "durable_emitter",
+		"phase":       "fallback",
+	})
 }
 
 // TestDurableEmitter_FallbackFailureEventRemainsForRetransmit verifies that

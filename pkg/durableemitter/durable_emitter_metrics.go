@@ -26,12 +26,13 @@ type DurableEmitterMetricsConfig struct {
 	MaxQueuePayloadBytes int64
 }
 
-// publishPhase identifies which delivery path recorded a batch publish metric.
+// publishPhase identifies the delivery path recorded by publish metrics.
 type publishPhase int
 
 const (
 	publishPhaseBatch publishPhase = iota
 	publishPhaseRetransmit
+	publishPhaseFallback
 )
 
 func (p publishPhase) String() string {
@@ -40,6 +41,8 @@ func (p publishPhase) String() string {
 		return "batch"
 	case publishPhaseRetransmit:
 		return "retransmit"
+	case publishPhaseFallback:
+		return "fallback"
 	default:
 		return "unknown"
 	}
@@ -47,7 +50,6 @@ func (p publishPhase) String() string {
 
 type durableEmitterMetrics struct {
 	chipClient         string
-	chipClientFallback string
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -104,8 +106,7 @@ func newDurableEmitterMetrics(meter metric.Meter, chipClient string) (*durableEm
 		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
 	}
 	m := &durableEmitterMetrics{
-		chipClient:         chipClient,
-		chipClientFallback: chipClient + "_fallback",
+		chipClient: chipClient,
 	}
 	var err error
 	if m.emitSuccess, err = meter.Int64Counter(
@@ -141,21 +142,21 @@ func newDurableEmitterMetrics(meter metric.Meter, chipClient string) (*durableEm
 	if m.publishImmOK, err = meter.Int64Counter(
 		"durable_emitter.publish.immediate.success",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Immediate Publish RPC successes"),
+		metric.WithDescription("Single-event fallback Publish RPC successes; labels: phase={fallback}"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishImmErr, err = meter.Int64Counter(
 		"durable_emitter.publish.immediate.failure",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Immediate Publish RPC failures (events await retransmit)"),
+		metric.WithDescription("Single-event fallback Publish RPC failures (events await retransmit); labels: phase={fallback}"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit,fallback}, error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -384,16 +385,14 @@ func (m *durableEmitterMetrics) recordFallbackPublish(ctx context.Context, elaps
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(attribute.String("chip_client", m.chipClientFallback))
+	attrs := metric.WithAttributes(
+		attribute.String("phase", publishPhaseFallback.String()),
+		attribute.String("chip_client", m.chipClient),
+	)
 	if err != nil {
 		m.publishImmErr.Add(ctx, 1, attrs)
 	} else {
 		m.publishImmOK.Add(ctx, 1, attrs)
 	}
-	m.publishDuration.Record(ctx, elapsed.Seconds(),
-		metric.WithAttributes(
-			attribute.String("chip_client", m.chipClientFallback),
-			attribute.Bool("error", err != nil),
-		),
-	)
+	m.recordPublish(ctx, elapsed, publishPhaseFallback, err)
 }

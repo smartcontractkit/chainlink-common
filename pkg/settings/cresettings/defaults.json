@@ -5,6 +5,7 @@
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
 	"CentralizedWorkflowOwnerVerificationEnabled": "false",
+	"TenantID": "1",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
 	"VaultBase64EncodingEnabled": "false",

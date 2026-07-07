@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783442739673,
+  "lastUpdate": 1783447689371,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -53700,6 +53700,66 @@ window.BENCHMARK_DATA = {
             "value": 145363,
             "unit": "ns/op",
             "extra": "8562 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e9b36274d6c859da3fc181ae55393150a22ae614",
+          "message": "Add TenantID cresettings limit with default 0 (#2227)\n\n* Add TenantID cresettings limit with default 1.\n\nIntroduce a global uint64 TenantID setting so CRE nodes can configure the expected tenant numeric id via cresettings defaults and overrides.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* fix label\n\n* change default to 0\n\n* introduce new label setting\n\n---------\n\nCo-authored-by: Cursor <cursoragent@cursor.com>",
+          "timestamp": "2026-07-07T17:56:07Z",
+          "tree_id": "d647c1fb748814ece75359dad68e0260dcda2dc5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e9b36274d6c859da3fc181ae55393150a22ae614"
+        },
+        "date": 1783447687413,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 221.6,
+            "unit": "ns/op",
+            "extra": "5395809 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 48186,
+            "unit": "ns/op",
+            "extra": "23458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 245,
+            "unit": "ns/op",
+            "extra": "4756188 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 49739,
+            "unit": "ns/op",
+            "extra": "23740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 15075,
+            "unit": "ns/op",
+            "extra": "79736 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 72446,
+            "unit": "ns/op",
+            "extra": "16549 times\n4 procs"
           }
         ]
       }

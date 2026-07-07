@@ -27,7 +27,7 @@ flowchart
     classDef rate stroke:#ff0
     classDef resource stroke:#f0f
     classDef time stroke:#0ff
-    classDef setting stroke:#999,fill:#f5f5f5
+    classDef setting stroke:#999
 ```
 
 

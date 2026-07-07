@@ -5,6 +5,7 @@ import (
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/expr"
+	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -545,4 +546,21 @@ func TestBuilder_AddTimeSeriesPanelWithAlert(t *testing.T) {
 		// RuleGroup defaults to Panel Title
 		require.Equal(t, "Panel Title", o.Alerts[0].RuleGroup)
 	})
+}
+
+func TestNewAlertRule_DefaultRuleQueryInterval(t *testing.T) {
+	rule, err := grafana.NewAlertRule(&grafana.AlertOptions{
+		Title: "CPU High",
+		Query: []grafana.RuleQuery{{
+			Expr:       "up",
+			RefID:      "A",
+			Datasource: "prometheus-uid",
+		}},
+	}).Build()
+	require.NoError(t, err)
+	require.Len(t, rule.Data, 1)
+	model, ok := rule.Data[0].Model.(prometheus.Dataquery)
+	require.True(t, ok)
+	require.NotNil(t, model.Interval)
+	require.Equal(t, grafana.DefaultRuleQueryInterval, *model.Interval)
 }

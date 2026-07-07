@@ -292,7 +292,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
-	add(envTelemetryMetricCardinalityLimit, strconv.Itoa(e.TelemetryMetricCardinalityLimit))
+	if e.TelemetryMetricCardinalityLimit != 0 {
+		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(e.TelemetryMetricCardinalityLimit))
+	}
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)

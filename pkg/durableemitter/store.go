@@ -73,7 +73,12 @@ func (s *PgDurableEventStore) BatchDelete(ctx context.Context, ids []int64) (int
 	if len(ids) == 0 {
 		return 0, nil
 	}
-	const q = `DELETE FROM ` + chipDurableEventsTable + ` WHERE id = ANY($1)`
+	const q = `
+DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
+    SELECT id FROM ` + chipDurableEventsTable + `
+    WHERE id = ANY($1)
+    FOR UPDATE SKIP LOCKED
+)`
 	res, err := s.ds.ExecContext(ctx, q, pq.Array(ids))
 	if err != nil {
 		return 0, fmt.Errorf("failed to batch delete delivered chip durable events: %w", err)

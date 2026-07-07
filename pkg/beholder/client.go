@@ -434,7 +434,7 @@ func createConfigMetric(meter otelmetric.Meter, cfg Config) (otelmetric.Int64Gau
 
 		// Metrics config
 		attribute.String(
-			"metric_reader_interval", cfg.MetricReaderInterval.String()),
+			"metric_reader_interval", metricReaderInterval(cfg).String()),
 		attribute.String(
 			"metric_compressor", cfg.MetricCompressor),
 	}
@@ -544,7 +544,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	}
 
 	readerOpts := []sdkmetric.PeriodicReaderOption{
-		sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
+		sdkmetric.WithInterval(metricReaderInterval(cfg)), // Zero uses Beholder default (1s)
 	}
 	for _, p := range cfg.MetricProducers {
 		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))

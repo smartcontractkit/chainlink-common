@@ -52,13 +52,13 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(1000),
-	WorkflowExecutionConcurrencyLimit: Int(1000),
-	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:     Bool(true),
-	VaultJWTAuthEnabled:               Bool(false),
+	WorkflowLimit:                               Int(1000),
+	WorkflowExecutionConcurrencyLimit:           Int(1000),
+	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:               Bool(true),
+	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
-	TenantID:                                    Uint64(1),
+	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
 	PropagateOrgIDInRequestMetadata:                   Bool(false),

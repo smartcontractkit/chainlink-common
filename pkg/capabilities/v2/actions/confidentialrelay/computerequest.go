@@ -48,6 +48,7 @@ func SignedComputeRequestSignaturePayload(computeRequestHash [32]byte) []byte {
 // authorized identity.
 type ComputeRequest struct {
 	RequestID                    [32]byte   `json:"requestID"`
+	ApplicationRequestID         string     `json:"applicationRequestID"`
 	PublicData                   []byte     `json:"publicData"`
 	Ciphertexts                  [][]byte   `json:"ciphertexts"`
 	CiphertextNames              []string   `json:"CiphertextNames"`
@@ -62,7 +63,8 @@ type ComputeRequest struct {
 // reuses this package's length-prefix helpers (writeBytes/writeString/
 // writeLengthPrefix), which are identical to the source's writeWithLength/
 // writeLengthPrefix. EncryptedDecryptionKeyShares is intentionally excluded, and
-// Version is included only for the legacy version, both matching the source.
+// Version is included only for the legacy version, and ApplicationRequestID is
+// included only for non-legacy versions, both matching the source.
 func (cr ComputeRequest) Hash() [32]byte {
 	h := sha256.New()
 
@@ -88,9 +90,12 @@ func (cr ComputeRequest) Hash() [32]byte {
 
 	writeString(h, cr.AppID)
 	// Version is included in the hash only for the legacy version, matching
-	// confidential-compute (which is migrating Version out of the hash).
+	// confidential-compute (which is migrating Version out of the hash). Newer
+	// versions bind the application-specific request ID instead.
 	if cr.Version == computeRequestLegacyVersion {
 		writeString(h, cr.Version)
+	} else {
+		writeString(h, cr.ApplicationRequestID)
 	}
 
 	var result [32]byte

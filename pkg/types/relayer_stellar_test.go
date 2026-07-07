@@ -20,3 +20,21 @@ func TestUnimplementedStellarService_SubmitTransaction(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, codes.Unimplemented, status.Code(err))
 }
+
+func TestUnimplementedStellarService_GetTransaction(t *testing.T) {
+	t.Parallel()
+
+	var svc types.UnimplementedStellarService
+	_, err := svc.GetTransaction(context.Background(), stellartypes.GetTransactionRequest{})
+	require.Error(t, err)
+	require.Equal(t, codes.Unimplemented, status.Code(err))
+}
+
+func TestUnimplementedStellarService_GetSigningAccount(t *testing.T) {
+	t.Parallel()
+
+	var svc types.UnimplementedStellarService
+	_, err := svc.GetSigningAccount(context.Background())
+	require.Error(t, err)
+	require.Equal(t, codes.Unimplemented, status.Code(err))
+}

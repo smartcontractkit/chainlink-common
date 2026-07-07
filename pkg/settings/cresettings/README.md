@@ -11,6 +11,7 @@ flowchart
     rate[\Rate/]
     resource([Resource])
     time>Time]
+    setting[(Setting)]
     
     bound:::bound
     gate:::gate
@@ -18,6 +19,7 @@ flowchart
     rate:::rate
     resource:::resource
     time:::time
+    setting:::setting
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0
@@ -25,6 +27,7 @@ flowchart
     classDef rate stroke:#ff0
     classDef resource stroke:#f0f
     classDef time stroke:#0ff
+    classDef setting stroke:#999
 ```
 
 
@@ -38,12 +41,14 @@ flowchart
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        TenantID[(TenantID)]:::setting
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
+        VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
-        VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
+        VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -59,6 +64,7 @@ flowchart
 %%    PerOrg.ZeroBalancePruningTimeout
 
     subgraph Store.FetchWorkflowArtifacts
+        CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
         PerWorkflow.WASMBinarySizeLimit{{PerWorkflow.WASMBinarySizeLimit}}:::bound
         PerWorkflow.WASMSecretsSizeLimit{{PerWorkflow.WASMSecretsSizeLimit}}:::bound
@@ -224,6 +230,9 @@ flowchart
             PerWorkflow.ConfidentialHTTP.RequestSizeLimit{{RequestSizeLimit}}:::bound
             PerWorkflow.ConfidentialHTTP.ResponseSizeLimit{{ResponseSizeLimit}}:::bound
         end
+        subgraph PerWorkflow.ConfidentialWorkflows
+            PerWorkflow.ConfidentialWorkflows.Enabled[/Enabled\]:::gate
+        end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound
         end
@@ -257,6 +266,33 @@ flowchart
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end
 
+    subgraph ConfidentialCompute[Confidential Compute executor]
+        ConfidentialCompute.GlobalRate[\ConfidentialCompute.GlobalRate/]:::rate
+        PerOwner.ConfidentialCompute.Rate[\PerOwner.ConfidentialCompute.Rate/]:::rate
+        ConfidentialCompute.MaxRetries{{ConfidentialCompute.MaxRetries}}:::bound
+        ConfidentialCompute.RetryBackoff>ConfidentialCompute.RetryBackoff]:::time
+        ConfidentialCompute.SecretsCacheEnabled[/ConfidentialCompute.SecretsCacheEnabled\]:::gate
+        ConfidentialCompute.EnclaveRequestTimeout>ConfidentialCompute.EnclaveRequestTimeout]:::time
+        ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
+        ConfidentialCompute.InsecureSkipTLSVerify[/ConfidentialCompute.InsecureSkipTLSVerify\]:::gate
+        ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
+        subgraph ConfidentialCompute.PublicKeyCache
+            ConfidentialCompute.PublicKeyCache.Enabled[/Enabled\]:::gate
+            ConfidentialCompute.PublicKeyCache.TTL>TTL]:::time
+            ConfidentialCompute.PublicKeyCache.MaxTTL>MaxTTL]:::time
+            ConfidentialCompute.PublicKeyCache.CleanupInterval>CleanupInterval]:::time
+            ConfidentialCompute.PublicKeyCache.TTLBufferPercent{{TTLBufferPercent}}:::bound
+            ConfidentialCompute.PublicKeyCache.ProactiveRefreshEnabled[/ProactiveRefreshEnabled\]:::gate
+            ConfidentialCompute.PublicKeyCache.RefreshIntervalPercent{{RefreshIntervalPercent}}:::bound
+            ConfidentialCompute.PublicKeyCache.MinRefreshInterval>MinRefreshInterval]:::time
+            ConfidentialCompute.PublicKeyCache.RefreshTimeout>RefreshTimeout]:::time
+        end
+        subgraph ConfidentialCompute.Session
+            ConfidentialCompute.Session.PersistenceEnabled[/PersistenceEnabled\]:::gate
+            ConfidentialCompute.Session.HeaderName{{HeaderName}}:::bound
+        end
+    end
+
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault
@@ -270,4 +306,5 @@ flowchart
     classDef rate stroke:#ff0
     classDef resource stroke:#f0f
     classDef time stroke:#0ff
+    classDef setting stroke:#999,fill:#f5f5f5
 ```

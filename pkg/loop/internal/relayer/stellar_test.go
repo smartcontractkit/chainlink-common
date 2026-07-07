@@ -139,38 +139,294 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, int64(9876543210), resp.LedgerCloseTime)
 	})
 
-	t.Run("ReadContract_roundtrip", func(t *testing.T) {
-		sym := "transfer"
-		argVal := stellartypes.ScVal{Type: stellartypes.ScValTypeSymbol, Symbol: &sym}
+	t.Run("SimulateTransaction_roundtrip", func(t *testing.T) {
+		sym := "report"
+		argVal := uint64(12345)
 
-		// Result is an opaque base64-XDR blob to the relayer; the test only verifies
-		// the string is delivered intact across gRPC.
-		const resultB64 = "AAAABAAAACo="
+		expectedReq := stellartypes.SimulateTransactionRequest{
+			ContractID:    "CABC123",
+			Function:      "report",
+			SourceAccount: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+			AuthMode:      stellartypes.SimulateAuthModeRecord,
+			Args: []stellartypes.ScVal{
+				{
+					Type:   stellartypes.ScValTypeSymbol,
+					Symbol: &sym,
+				},
+				{
+					Type: stellartypes.ScValTypeU64,
+					U64:  &argVal,
+				},
+			},
+			ResourceConfig: &stellartypes.SimulateResourceConfig{
+				InstructionLeeway: 10_000,
+			},
+		}
 
-		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
-			require.Equal(t, "CABC123", req.ContractID)
-			require.Equal(t, "my_fn", req.Function)
-			require.Len(t, req.Args, 1)
-			require.Equal(t, stellartypes.ScValTypeSymbol, req.Args[0].Type)
-			require.NotNil(t, req.Args[0].Symbol)
-			require.Equal(t, "transfer", *req.Args[0].Symbol)
-			require.Equal(t, "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H", req.SourceAccount)
-			return stellartypes.ReadContractResponse{
-				Result:         resultB64,
-				LedgerSequence: 101,
+		expectedResp := stellartypes.SimulateTransactionResponse{
+			LedgerSequence:     1234,
+			Success:            true,
+			ReturnValueXDR:     base64.StdEncoding.EncodeToString([]byte("return-value")),
+			RequiredAuthXDR:    []string{base64.StdEncoding.EncodeToString([]byte("auth-1"))},
+			EventsXDR:          []string{base64.StdEncoding.EncodeToString([]byte("event-1"))},
+			TransactionDataXDR: base64.StdEncoding.EncodeToString([]byte("tx-data")),
+			MinResourceFee:     55_000,
+			RestorePreamble: &stellartypes.SimulateRestorePreamble{
+				TransactionDataXDR: base64.StdEncoding.EncodeToString([]byte("restore-tx-data")),
+				MinResourceFee:     12_345,
+			},
+		}
+
+		svc.simulateTransaction = func(_ context.Context, req stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {
+			require.Equal(t, expectedReq, req)
+			return expectedResp, nil
+		}
+
+		resp, err := client.SimulateTransaction(ctx, expectedReq)
+		require.NoError(t, err)
+		require.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("SimulateTransaction_voidReturnNoRestorePreamble", func(t *testing.T) {
+		req := stellartypes.SimulateTransactionRequest{
+			ContractID: "CABC123",
+			Function:   "noop",
+			AuthMode:   stellartypes.SimulateAuthModeRecord,
+		}
+
+		expectedResp := stellartypes.SimulateTransactionResponse{
+			LedgerSequence:     200,
+			Success:            true,
+			ReturnValueXDR:     "",
+			RequiredAuthXDR:    []string{},
+			EventsXDR:          []string{},
+			TransactionDataXDR: base64.StdEncoding.EncodeToString([]byte("tx-data")),
+			MinResourceFee:     100,
+			RestorePreamble:    nil,
+		}
+
+		svc.simulateTransaction = func(_ context.Context, got stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {
+			require.Equal(t, req, got)
+			return expectedResp, nil
+		}
+
+		resp, err := client.SimulateTransaction(ctx, req)
+		require.NoError(t, err)
+
+		require.Equal(t, expectedResp.LedgerSequence, resp.LedgerSequence)
+		require.Equal(t, expectedResp.Success, resp.Success)
+		require.Equal(t, expectedResp.Error, resp.Error)
+		require.Empty(t, resp.ReturnValueXDR)
+		require.Empty(t, resp.RequiredAuthXDR)
+		require.Empty(t, resp.EventsXDR)
+		require.Equal(t, expectedResp.TransactionDataXDR, resp.TransactionDataXDR)
+		require.Equal(t, expectedResp.MinResourceFee, resp.MinResourceFee)
+		require.Nil(t, resp.RestorePreamble)
+	})
+
+	t.Run("SimulateTransaction_simulationError", func(t *testing.T) {
+		req := stellartypes.SimulateTransactionRequest{
+			ContractID: "CABC123",
+			Function:   "report",
+			AuthMode:   stellartypes.SimulateAuthModeRecord,
+		}
+
+		expectedResp := stellartypes.SimulateTransactionResponse{
+			LedgerSequence: 300,
+			Success:        false,
+			Error:          "host invocation failed",
+		}
+
+		svc.simulateTransaction = func(_ context.Context, got stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {
+			require.Equal(t, req, got)
+			return expectedResp, nil
+		}
+
+		resp, err := client.SimulateTransaction(ctx, req)
+		require.NoError(t, err)
+		require.False(t, resp.Success)
+		require.Equal(t, "host invocation failed", resp.Error)
+		require.Equal(t, uint32(300), resp.LedgerSequence)
+	})
+
+	t.Run("SimulateTransaction_invalidRequest", func(t *testing.T) {
+		_, err := client.SimulateTransaction(ctx, stellartypes.SimulateTransactionRequest{Function: "report"})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid SimulateTransaction request")
+	})
+
+	t.Run("SimulateTransaction_implError", func(t *testing.T) {
+		svc.simulateTransaction = func(_ context.Context, _ stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {
+			return stellartypes.SimulateTransactionResponse{}, errors.New("simulation failed")
+		}
+
+		_, err := client.SimulateTransaction(ctx, stellartypes.SimulateTransactionRequest{
+			ContractID: "CABC123",
+			Function:   "report",
+		})
+		require.Error(t, err)
+	})
+
+	t.Run("GetEvents_roundtrip", func(t *testing.T) {
+		topicSym := "transfer"
+		filterSym := "transfer"
+		wildcard := "*"
+		eventValue := uint64(12345)
+
+		svc.getEvents = func(_ context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error) {
+			require.Equal(t, uint32(100), req.StartLedger)
+			require.Equal(t, uint32(200), req.EndLedger)
+			require.NotNil(t, req.Pagination)
+			require.Equal(t, "cursor-in", req.Pagination.Cursor)
+			require.Equal(t, uint32(25), req.Pagination.Limit)
+
+			require.Len(t, req.Filters, 1)
+			require.Equal(t, []stellartypes.EventType{stellartypes.EventTypeContract}, req.Filters[0].EventTypes)
+			require.Equal(t, []string{"CABC123"}, req.Filters[0].ContractIDs)
+			require.Len(t, req.Filters[0].Topics, 1)
+			require.Len(t, req.Filters[0].Topics[0].Segments, 2)
+
+			require.NotNil(t, req.Filters[0].Topics[0].Segments[0].Value)
+			require.Equal(t, stellartypes.ScValTypeSymbol, req.Filters[0].Topics[0].Segments[0].Value.Type)
+			require.NotNil(t, req.Filters[0].Topics[0].Segments[0].Value.Symbol)
+			require.Equal(t, "transfer", *req.Filters[0].Topics[0].Segments[0].Value.Symbol)
+
+			require.NotNil(t, req.Filters[0].Topics[0].Segments[1].Wildcard)
+			require.Equal(t, "*", *req.Filters[0].Topics[0].Segments[1].Wildcard)
+
+			return stellartypes.GetEventsResponse{
+				Events: []stellartypes.EventInfo{
+					{
+						EventType:        stellartypes.EventTypeContract,
+						Ledger:           150,
+						LedgerClosedAt:   "2025-01-01T00:00:00Z",
+						ContractID:       "CABC123",
+						ID:               "0000000150-0000000001",
+						OperationIndex:   1,
+						TransactionIndex: 2,
+						TransactionHash:  "txhash123",
+						Topics: []stellartypes.ScVal{
+							{
+								Type:   stellartypes.ScValTypeSymbol,
+								Symbol: &topicSym,
+							},
+						},
+						Value: stellartypes.ScVal{
+							Type: stellartypes.ScValTypeU64,
+							U64:  &eventValue,
+						},
+					},
+				},
+				Cursor:                "cursor-out",
+				LatestLedger:          200,
+				OldestLedger:          100,
+				LatestLedgerCloseTime: 1_700_000_100,
+				OldestLedgerCloseTime: 1_700_000_000,
 			}, nil
 		}
 
-		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
-			ContractID:    "CABC123",
-			Function:      "my_fn",
-			Args:          []stellartypes.ScVal{argVal},
-			SourceAccount: "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFSHONUCEOASW7QC7OX2H",
+		resp, err := client.GetEvents(ctx, stellartypes.GetEventsRequest{
+			StartLedger: 100,
+			EndLedger:   200,
+			Filters: []stellartypes.EventFilter{
+				{
+					EventTypes:  []stellartypes.EventType{stellartypes.EventTypeContract},
+					ContractIDs: []string{"CABC123"},
+					Topics: []stellartypes.TopicFilter{
+						{
+							Segments: []stellartypes.TopicSegment{
+								{
+									Value: &stellartypes.ScVal{
+										Type:   stellartypes.ScValTypeSymbol,
+										Symbol: &filterSym,
+									},
+								},
+								{Wildcard: &wildcard},
+							},
+						},
+					},
+				},
+			},
+			Pagination: &stellartypes.PaginationOptions{
+				Cursor: "cursor-in",
+				Limit:  25,
+			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, uint32(101), resp.LedgerSequence)
-		require.Empty(t, resp.Error)
-		require.Equal(t, resultB64, resp.Result)
+		require.Equal(t, "cursor-out", resp.Cursor)
+		require.Equal(t, uint32(200), resp.LatestLedger)
+		require.Equal(t, uint32(100), resp.OldestLedger)
+		require.Len(t, resp.Events, 1)
+
+		event := resp.Events[0]
+		require.Equal(t, stellartypes.EventTypeContract, event.EventType)
+		require.Equal(t, uint32(150), event.Ledger)
+		require.Equal(t, "2025-01-01T00:00:00Z", event.LedgerClosedAt)
+		require.Equal(t, "CABC123", event.ContractID)
+		require.Equal(t, "0000000150-0000000001", event.ID)
+		require.Equal(t, uint32(1), event.OperationIndex)
+		require.Equal(t, uint32(2), event.TransactionIndex)
+		require.Equal(t, "txhash123", event.TransactionHash)
+		require.Len(t, event.Topics, 1)
+		require.Equal(t, stellartypes.ScValTypeSymbol, event.Topics[0].Type)
+		require.NotNil(t, event.Topics[0].Symbol)
+		require.Equal(t, "transfer", *event.Topics[0].Symbol)
+		require.Equal(t, stellartypes.ScValTypeU64, event.Value.Type)
+		require.NotNil(t, event.Value.U64)
+		require.Equal(t, uint64(12345), *event.Value.U64)
+	})
+
+	t.Run("GetTransaction_roundtrip", func(t *testing.T) {
+		svc.getTransaction = func(_ context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
+			require.Equal(t, "abc123hash", req.TxHash)
+			return stellartypes.GetTransactionResponse{
+				FeeStroops:      42,
+				LedgerSequence:  100,
+				LedgerCloseTime: 1_700_000_000,
+			}, nil
+		}
+
+		resp, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{TxHash: "abc123hash"})
+		require.NoError(t, err)
+		require.Equal(t, uint64(42), resp.FeeStroops)
+		require.Equal(t, uint32(100), resp.LedgerSequence)
+		require.Equal(t, int64(1_700_000_000), resp.LedgerCloseTime)
+	})
+
+	t.Run("GetTransaction_invalidRequest", func(t *testing.T) {
+		_, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{})
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid GetTransaction request")
+	})
+
+	t.Run("GetTransaction_implError", func(t *testing.T) {
+		svc.getTransaction = func(_ context.Context, _ stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
+			return stellartypes.GetTransactionResponse{}, errors.New("rpc unavailable")
+		}
+
+		_, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{TxHash: "abc123hash"})
+		require.Error(t, err)
+	})
+
+	t.Run("GetSigningAccount_roundtrip", func(t *testing.T) {
+		svc.getSigningAccount = func(_ context.Context) (stellartypes.GetSigningAccountResponse, error) {
+			return stellartypes.GetSigningAccountResponse{
+				AccountAddress: "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7",
+			}, nil
+		}
+
+		resp, err := client.GetSigningAccount(ctx)
+		require.NoError(t, err)
+		require.Equal(t, "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7", resp.AccountAddress)
+	})
+
+	t.Run("GetSigningAccount_implError", func(t *testing.T) {
+		svc.getSigningAccount = func(_ context.Context) (stellartypes.GetSigningAccountResponse, error) {
+			return stellartypes.GetSigningAccountResponse{}, errors.New("keystore unavailable")
+		}
+
+		_, err := client.GetSigningAccount(ctx)
+		require.Error(t, err)
 	})
 
 	t.Run("SubmitTransaction_roundtrip", func(t *testing.T) {
@@ -244,34 +500,17 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		})
 		require.Error(t, err)
 	})
-
-	t.Run("ReadContract_noArgs_noResult", func(t *testing.T) {
-		svc.readContract = func(_ context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
-			require.Empty(t, req.Args)
-			require.Empty(t, req.SourceAccount)
-			return stellartypes.ReadContractResponse{
-				Error:          "contract error: not found",
-				LedgerSequence: 200,
-			}, nil
-		}
-
-		resp, err := client.ReadContract(ctx, stellartypes.ReadContractRequest{
-			ContractID: "CXYZ",
-			Function:   "noop",
-		})
-		require.NoError(t, err)
-		require.Equal(t, "contract error: not found", resp.Error)
-		require.Empty(t, resp.Result)
-		require.Equal(t, uint32(200), resp.LedgerSequence)
-	})
 }
 
 type staticStellarService struct {
 	types.UnimplementedStellarService
-	getLedgerEntries  func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
-	getLatestLedger   func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
-	readContract      func(ctx context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error)
-	submitTransaction func(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error)
+	getLedgerEntries    func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
+	getLatestLedger     func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
+	getEvents           func(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error)
+	getTransaction      func(ctx context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error)
+	getSigningAccount   func(ctx context.Context) (stellartypes.GetSigningAccountResponse, error)
+	simulateTransaction func(ctx context.Context, req stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error)
+	submitTransaction   func(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error)
 }
 
 func (s *staticStellarService) GetLedgerEntries(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
@@ -288,11 +527,32 @@ func (s *staticStellarService) GetLatestLedger(ctx context.Context) (stellartype
 	return s.getLatestLedger(ctx)
 }
 
-func (s *staticStellarService) ReadContract(ctx context.Context, req stellartypes.ReadContractRequest) (stellartypes.ReadContractResponse, error) {
-	if s.readContract == nil {
-		return s.UnimplementedStellarService.ReadContract(ctx, req)
+func (s *staticStellarService) GetEvents(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error) {
+	if s.getEvents == nil {
+		return s.UnimplementedStellarService.GetEvents(ctx, req)
 	}
-	return s.readContract(ctx, req)
+	return s.getEvents(ctx, req)
+}
+
+func (s *staticStellarService) GetTransaction(ctx context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
+	if s.getTransaction == nil {
+		return s.UnimplementedStellarService.GetTransaction(ctx, req)
+	}
+	return s.getTransaction(ctx, req)
+}
+
+func (s *staticStellarService) GetSigningAccount(ctx context.Context) (stellartypes.GetSigningAccountResponse, error) {
+	if s.getSigningAccount == nil {
+		return s.UnimplementedStellarService.GetSigningAccount(ctx)
+	}
+	return s.getSigningAccount(ctx)
+}
+
+func (s *staticStellarService) SimulateTransaction(ctx context.Context, req stellartypes.SimulateTransactionRequest) (stellartypes.SimulateTransactionResponse, error) {
+	if s.simulateTransaction == nil {
+		return s.UnimplementedStellarService.SimulateTransaction(ctx, req)
+	}
+	return s.simulateTransaction(ctx, req)
 }
 
 func (s *staticStellarService) SubmitTransaction(ctx context.Context, req stellartypes.SubmitTransactionRequest) (*stellartypes.SubmitTransactionResponse, error) {

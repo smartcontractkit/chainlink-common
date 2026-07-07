@@ -112,7 +112,7 @@ func TestDefaultViews_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
 
 func TestDefaultViews_count(t *testing.T) {
 	t.Parallel()
-	assert.Len(t, metricviews.DefaultViews(), 6)
+	assert.Len(t, metricviews.DefaultViews(), 7)
 }
 
 func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
@@ -150,6 +150,24 @@ func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
 			wantBounds: []float64{0, 1, 10, 60, 300, 900, 3600},
 		},
 		{
+			name:       "gas usage",
+			instrument: "bound.PerWorkflow.ChainWrite.EVM.GasLimit.usage",
+			unit:       "{gas}",
+			record: func(t *testing.T, meter metric.Meter) {
+				t.Helper()
+				h, err := meter.Int64Histogram("bound.PerWorkflow.ChainWrite.EVM.GasLimit.usage", metric.WithUnit("{gas}"))
+				require.NoError(t, err)
+				// pkg/settings/cresettings ChainWrite gas defaults: Solana
+				// 300_000, Aptos 2_000_000, EVM 5_000_000, up to 50_000_000
+				// for per-chain-selector overrides. All must land in a finite
+				// bucket, not overflow to +Inf.
+				for _, gas := range []int64{300_000, 2_000_000, 5_000_000, 10_000_000, 50_000_000} {
+					h.Record(context.Background(), gas, metric.WithAttributes(attribute.String("workflow", "wf-1")))
+				}
+			},
+			wantBounds: []float64{0, 1e5, 5e5, 1e6, 5e6, 1e7, 5e7},
+		},
+		{
 			name:       "count usage",
 			instrument: "bound.PerWorkflow.TriggerSubscriptionLimit.usage",
 			record: func(t *testing.T, meter metric.Meter) {
@@ -182,8 +200,54 @@ func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
 			bounds := histogramBounds(t, rm, tt.instrument)
 			assert.Equal(t, tt.wantBounds, bounds)
 			assert.Len(t, bounds, 7, "expected 7 boundaries (8 Prometheus buckets including +Inf)")
+
+			if tt.name == "gas usage" {
+				counts := histogramBucketCounts(t, rm, tt.instrument)
+				overflow := counts[len(counts)-1]
+				assert.Zero(t, overflow, "gas observations up to the documented ChainWrite defaults must not collapse into the +Inf bucket")
+			}
 		})
 	}
+}
+
+// TestDefaultViews_perWorkflowHistogramDropsHighCardinalityKeys guards
+// against the bucket-override view for a PerWorkflow histogram claiming the
+// stream identity ahead of the global "*" deny-filter view and, as a result,
+// silently bypassing it (the SDK dedupes matching views by stream identity
+// and keeps only the first match's Stream mask). The bucket-boundary views
+// must carry the deny filter themselves.
+func TestDefaultViews_perWorkflowHistogramDropsHighCardinalityKeys(t *testing.T) {
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithView(metricviews.DefaultViews()...),
+	)
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+	meter := mp.Meter("test")
+	h, err := meter.Int64Histogram("bound.PerWorkflow.WASMBinarySizeLimit.usage", metric.WithUnit("By"))
+	require.NoError(t, err)
+	h.Record(context.Background(), 512*1024, metric.WithAttributes(
+		attribute.String("workflow_execution_id", "wf-exec-1"),
+		attribute.String("event_id", "evt-1"),
+		attribute.String("workflow", "wf-1"),
+	))
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	require.Len(t, rm.ScopeMetrics, 1)
+	require.Len(t, rm.ScopeMetrics[0].Metrics, 1)
+	data, ok := rm.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[int64])
+	require.True(t, ok)
+	require.Len(t, data.DataPoints, 1)
+
+	keys := keysFromSet(data.DataPoints[0].Attributes)
+	assert.Contains(t, keys, attribute.Key("workflow"))
+	assert.NotContains(t, keys, attribute.Key("workflow_execution_id"))
+	assert.NotContains(t, keys, attribute.Key("event_id"))
 }
 
 func histogramBounds(t *testing.T, rm metricdata.ResourceMetrics, name string) []float64 {
@@ -200,6 +264,28 @@ func histogramBounds(t *testing.T, rm metricdata.ResourceMetrics, name string) [
 		case metricdata.Histogram[float64]:
 			require.Len(t, data.DataPoints, 1)
 			return data.DataPoints[0].Bounds
+		default:
+			t.Fatalf("unexpected metric data type %T for %s", m.Data, name)
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+	return nil
+}
+
+func histogramBucketCounts(t *testing.T, rm metricdata.ResourceMetrics, name string) []uint64 {
+	t.Helper()
+	require.Len(t, rm.ScopeMetrics, 1)
+	for _, m := range rm.ScopeMetrics[0].Metrics {
+		if m.Name != name {
+			continue
+		}
+		switch data := m.Data.(type) {
+		case metricdata.Histogram[int64]:
+			require.Len(t, data.DataPoints, 1)
+			return data.DataPoints[0].BucketCounts
+		case metricdata.Histogram[float64]:
+			require.Len(t, data.DataPoints, 1)
+			return data.DataPoints[0].BucketCounts
 		default:
 			t.Fatalf("unexpected metric data type %T for %s", m.Data, name)
 		}

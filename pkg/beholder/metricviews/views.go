@@ -48,8 +48,11 @@ var (
 // DefaultViews returns views appended after caller-supplied MetricViews by
 // beholder.mergeMetricViews. PerWorkflow histogram bucket views are registered
 // first so they apply to CRE limit metrics (chainlink does not supply caller
-// views for those names). Attribute-filter views follow; within that group,
-// more specific instrument matchers precede the global "*" catch-all.
+// views for those names); each carries globalHighCardinalityDeny directly on
+// its Stream mask so claiming the stream identity for a bucket override does
+// not also bypass the deny-filter views below (see the dedup note above).
+// Attribute-filter views follow; within that group, more specific instrument
+// matchers precede the global "*" catch-all.
 func DefaultViews() []sdkmetric.View {
 	views := perWorkflowHistogramViews()
 	views = append(views,

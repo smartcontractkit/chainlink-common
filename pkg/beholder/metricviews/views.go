@@ -26,7 +26,6 @@ var (
 	stoppedResendingAllow = attribute.NewAllowKeysFilter(
 		attribute.Key("capability_id"),
 		attribute.Key("trigger_id"),
-		attribute.Key("event_id"), // kept: low-cardinality vs retry; required by stopped-resending alert
 	)
 )
 

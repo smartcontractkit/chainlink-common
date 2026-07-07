@@ -77,7 +77,7 @@ func TestDefaultViews_dropsHighCardinalityKeysGlobally(t *testing.T) {
 	assert.NotContains(t, keys, attribute.Key("workflow_execution_id"))
 }
 
-func TestDefaultViews_stoppedResendingDropsAttempts(t *testing.T) {
+func TestDefaultViews_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
@@ -106,7 +106,7 @@ func TestDefaultViews_stoppedResendingDropsAttempts(t *testing.T) {
 	keys := attributeKeysFromGauge(t, rm)
 	assert.Contains(t, keys, attribute.Key("capability_id"))
 	assert.Contains(t, keys, attribute.Key("trigger_id"))
-	assert.Contains(t, keys, attribute.Key("event_id"))
+	assert.NotContains(t, keys, attribute.Key("event_id"))
 	assert.NotContains(t, keys, attribute.Key("attempts"))
 }
 

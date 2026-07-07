@@ -578,6 +578,50 @@ func ConvertGetEventsResponseFromProto(p *GetEventsResponse) (stellar.GetEventsR
 	}, nil
 }
 
+func ConvertGetTransactionRequestToProto(req stellar.GetTransactionRequest) *GetTransactionRequest {
+	return &GetTransactionRequest{TxHash: req.TxHash}
+}
+
+func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (stellar.GetTransactionRequest, error) {
+	if p == nil {
+		return stellar.GetTransactionRequest{}, errors.New("get transaction request is nil")
+	}
+	if p.GetTxHash() == "" {
+		return stellar.GetTransactionRequest{}, errors.New("tx hash is required")
+	}
+	return stellar.GetTransactionRequest{TxHash: p.GetTxHash()}, nil
+}
+
+func ConvertGetTransactionResponseToProto(resp stellar.GetTransactionResponse) *GetTransactionResponse {
+	return &GetTransactionResponse{
+		FeeStroops:      resp.FeeStroops,
+		LedgerSequence:  resp.LedgerSequence,
+		LedgerCloseTime: resp.LedgerCloseTime,
+	}
+}
+
+func ConvertGetTransactionResponseFromProto(p *GetTransactionResponse) (stellar.GetTransactionResponse, error) {
+	if p == nil {
+		return stellar.GetTransactionResponse{}, errors.New("get transaction response is nil")
+	}
+	return stellar.GetTransactionResponse{
+		FeeStroops:      p.GetFeeStroops(),
+		LedgerSequence:  p.GetLedgerSequence(),
+		LedgerCloseTime: p.GetLedgerCloseTime(),
+	}, nil
+}
+
+func ConvertGetSigningAccountResponseToProto(resp stellar.GetSigningAccountResponse) *GetSigningAccountResponse {
+	return &GetSigningAccountResponse{AccountAddress: resp.AccountAddress}
+}
+
+func ConvertGetSigningAccountResponseFromProto(p *GetSigningAccountResponse) (stellar.GetSigningAccountResponse, error) {
+	if p == nil {
+		return stellar.GetSigningAccountResponse{}, errors.New("get signing account response is nil")
+	}
+	return stellar.GetSigningAccountResponse{AccountAddress: p.GetAccountAddress()}, nil
+}
+
 func convertEventInfoToProto(e stellar.EventInfo) (*EventInfo, error) {
 	eventType, err := convertEventTypeToProto(e.EventType)
 	if err != nil {

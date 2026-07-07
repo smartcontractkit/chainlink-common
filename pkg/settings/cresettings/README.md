@@ -60,6 +60,7 @@ flowchart
 %%    PerOrg.ZeroBalancePruningTimeout
 
     subgraph Store.FetchWorkflowArtifacts
+        CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
         PerWorkflow.WASMBinarySizeLimit{{PerWorkflow.WASMBinarySizeLimit}}:::bound
         PerWorkflow.WASMSecretsSizeLimit{{PerWorkflow.WASMSecretsSizeLimit}}:::bound
@@ -267,6 +268,25 @@ flowchart
         ConfidentialCompute.MaxRetries{{ConfidentialCompute.MaxRetries}}:::bound
         ConfidentialCompute.RetryBackoff>ConfidentialCompute.RetryBackoff]:::time
         ConfidentialCompute.SecretsCacheEnabled[/ConfidentialCompute.SecretsCacheEnabled\]:::gate
+        ConfidentialCompute.EnclaveRequestTimeout>ConfidentialCompute.EnclaveRequestTimeout]:::time
+        ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
+        ConfidentialCompute.InsecureSkipTLSVerify[/ConfidentialCompute.InsecureSkipTLSVerify\]:::gate
+        ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
+        subgraph ConfidentialCompute.PublicKeyCache
+            ConfidentialCompute.PublicKeyCache.Enabled[/Enabled\]:::gate
+            ConfidentialCompute.PublicKeyCache.TTL>TTL]:::time
+            ConfidentialCompute.PublicKeyCache.MaxTTL>MaxTTL]:::time
+            ConfidentialCompute.PublicKeyCache.CleanupInterval>CleanupInterval]:::time
+            ConfidentialCompute.PublicKeyCache.TTLBufferPercent{{TTLBufferPercent}}:::bound
+            ConfidentialCompute.PublicKeyCache.ProactiveRefreshEnabled[/ProactiveRefreshEnabled\]:::gate
+            ConfidentialCompute.PublicKeyCache.RefreshIntervalPercent{{RefreshIntervalPercent}}:::bound
+            ConfidentialCompute.PublicKeyCache.MinRefreshInterval>MinRefreshInterval]:::time
+            ConfidentialCompute.PublicKeyCache.RefreshTimeout>RefreshTimeout]:::time
+        end
+        subgraph ConfidentialCompute.Session
+            ConfidentialCompute.Session.PersistenceEnabled[/PersistenceEnabled\]:::gate
+            ConfidentialCompute.Session.HeaderName{{HeaderName}}:::bound
+        end
     end
 
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution

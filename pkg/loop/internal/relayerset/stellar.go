@@ -37,6 +37,14 @@ func (sc *stellarClient) GetEvents(ctx context.Context, in *stelpb.GetEventsRequ
 	return sc.client.GetEvents(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *stellarClient) GetTransaction(ctx context.Context, in *stelpb.GetTransactionRequest, opts ...grpc.CallOption) (*stelpb.GetTransactionResponse, error) {
+	return sc.client.GetTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *stellarClient) GetSigningAccount(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*stelpb.GetSigningAccountResponse, error) {
+	return sc.client.GetSigningAccount(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 func (sc *stellarClient) SubmitTransaction(ctx context.Context, in *stelpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*stelpb.SubmitTransactionResponse, error) {
 	return sc.client.SubmitTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
 }
@@ -143,6 +151,34 @@ func (ss *stellarServer) GetEvents(ctx context.Context, req *stelpb.GetEventsReq
 	}
 
 	return pResp, nil
+}
+
+func (ss *stellarServer) GetTransaction(ctx context.Context, req *stelpb.GetTransactionRequest) (*stelpb.GetTransactionResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dReq, err := stelpb.ConvertGetTransactionRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetTransaction request: %w", err)
+	}
+	dResp, err := svc.GetTransaction(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return stelpb.ConvertGetTransactionResponseToProto(dResp), nil
+}
+
+func (ss *stellarServer) GetSigningAccount(ctx context.Context, _ *emptypb.Empty) (*stelpb.GetSigningAccountResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dResp, err := svc.GetSigningAccount(ctx)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	return stelpb.ConvertGetSigningAccountResponseToProto(dResp), nil
 }
 
 // getStellarService extracts the RelayID from context metadata and returns the StellarService

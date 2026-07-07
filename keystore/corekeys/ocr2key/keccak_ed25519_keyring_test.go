@@ -28,6 +28,9 @@ func TestKeccakEd25519Keyring_SignVerify(t *testing.T) {
 		// pubkey(32) || ed25519 signature(64)
 		require.Len(t, sig, ed25519.PublicKeySize+ed25519.SignatureSize)
 		assert.True(t, kr2.Verify(kr1.PublicKey(), ctx, report, sig))
+		// Independently pin the signed message to the keccak256 ReportToSigData digest
+		// (what the Soroban forwarder recomputes) — a blake2b signature would fail here.
+		assert.True(t, ed25519.Verify(ed25519.PublicKey(kr1.PublicKey()), ReportToSigData(ctx, report), sig[ed25519.PublicKeySize:]))
 	})
 
 	t.Run("invalid sig", func(t *testing.T) {
@@ -65,6 +68,8 @@ func TestKeccakEd25519Keyring_Sign3Verify3(t *testing.T) {
 		sig, err := kr1.Sign3(digest, seqNr, r)
 		require.NoError(t, err)
 		assert.True(t, kr2.Verify3(kr1.PublicKey(), digest, seqNr, r, sig))
+		// Independently pin the signed message to the keccak256 ReportToSigData3 digest.
+		assert.True(t, ed25519.Verify(ed25519.PublicKey(kr1.PublicKey()), ReportToSigData3(digest, seqNr, r), sig[ed25519.PublicKeySize:]))
 	})
 
 	t.Run("invalid sig", func(t *testing.T) {

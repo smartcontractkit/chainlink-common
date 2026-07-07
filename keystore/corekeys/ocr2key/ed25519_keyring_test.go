@@ -62,9 +62,7 @@ func TestAptosKeyRing_Marshalling(t *testing.T) {
 
 // TestStellarKeyBundle_Sign_Verify exercises the chain-type wiring (not just the raw keyring):
 // New(corekeys.Stellar) must produce an ed25519-backed OCR2 key bundle that reports
-// ChainType == Stellar and round-trips sign/verify. Note Stellar signs the keccak256 CRE
-// digest (keccakEd25519Keyring), not Aptos's blake2b digest; the keccak-specific behaviour
-// is covered in keccak_ed25519_keyring_test.go. This guards the New() → Stellar mapping.
+// ChainType == Stellar and round-trips sign/verify.
 func TestStellarKeyBundle_Sign_Verify(t *testing.T) {
 	kb1, err := New(corekeys.Stellar)
 	require.NoError(t, err)

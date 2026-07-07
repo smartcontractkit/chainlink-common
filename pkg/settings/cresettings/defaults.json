@@ -4,6 +4,7 @@
 	"GatewayIncomingPayloadSizeLimit": "1mb",
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
+	"CentralizedWorkflowOwnerVerificationEnabled": "false",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
 	"VaultBase64EncodingEnabled": "false",

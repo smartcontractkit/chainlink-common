@@ -82,6 +82,7 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
@@ -176,6 +177,7 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
+	TelemetryMetricCardinalityLimit    int
 	TelemetryPrometheusBridgeEnabled   bool
 	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
@@ -290,6 +292,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryMetricCardinalityLimit, strconv.Itoa(e.TelemetryMetricCardinalityLimit))
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
@@ -530,6 +533,15 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		if v, ok := os.LookupEnv(envTelemetryMetricCardinalityLimit); ok {
+			limit, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCardinalityLimit, err)
+			}
+			e.TelemetryMetricCardinalityLimit = limit
+		} else {
+			e.TelemetryMetricCardinalityLimit = 10000
+		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)

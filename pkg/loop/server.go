@@ -191,6 +191,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
+			MetricCardinalityLimit:         s.EnvConfig.TelemetryMetricCardinalityLimit,
 		}
 
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {

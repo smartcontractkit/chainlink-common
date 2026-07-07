@@ -127,6 +127,8 @@ func Setup(
 		batchClient.Stop()
 		return nil, fmt.Errorf("failed to create fallback chip ingress client: %w", err)
 	}
+	// TODO: Fallback hurts drain if there's a large backup
+	fallbackClient = nil
 
 	emitterCfg := DefaultConfig()
 	if cfg.EmitterConfig != nil {

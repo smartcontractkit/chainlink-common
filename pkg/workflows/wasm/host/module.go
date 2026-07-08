@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -128,9 +127,6 @@ type ModuleV2 = host.Module
 type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
-	engine  *wasmtime.Engine
-	wconfig *wasmtime.Config
-
 	// The compiled module is not kept resident for the lifetime of the module
 	// instance. Instead it is compiled once, serialized to a file in moduleDir,
 	// and the in-memory *wasmtime.Module is closed. Each guest invocation
@@ -142,9 +138,6 @@ type module struct {
 	cfg *ModuleConfig
 
 	metrics *moduleMetrics
-
-	wg     sync.WaitGroup
-	stopCh chan struct{}
 
 	v2ImportName string
 
@@ -375,21 +368,44 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	return newModule(modCfg, binary)
 }
 
-func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+// wasmEngine is the single wasmtime engine shared by every module. Compiling a
+// module, (de)serializing it, and instantiating stores are all done against this
+// engine. It is created once in init and lives for the lifetime of the process,
+// so it is never closed.
+//
+// Note: the config is fixed at init time and can no longer be derived from a
+// per-module ModuleConfig. ModuleConfig.InitialFuel is therefore no longer wired
+// into the engine (fuel metering is disabled; CPU-time is measured via wall-clock
+// in callWasm).
+var wasmEngine *wasmtime.Engine
+
+func init() {
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
-	if modCfg.InitialFuel > 0 {
-		cfg.SetConsumeFuel(true)
-	}
 	if err := cfg.CacheConfigLoadDefault(); err != nil {
-		modCfg.Logger.Errorw("failed to load cache config, continuing without cache", "error", err)
+		// Non-fatal: continue without the compilation cache. There is no logger
+		// available in init, so the error is intentionally swallowed here.
+		_ = err
 	}
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	SetUnwinding(cfg) // Handled differently based on host OS.
 
-	engine := wasmtime.NewEngineWithConfig(cfg)
+	wasmEngine = wasmtime.NewEngineWithConfig(cfg)
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	// A single background goroutine drives epoch interruption for every module by
+	// incrementing the shared engine's epoch. The tick interval is fixed at 100ms;
+	// store deadlines are computed against the same interval in callWasm. It runs
+	// for the lifetime of the process and is intentionally never stopped.
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		for range ticker.C {
+			wasmEngine.IncrementEpoch()
+		}
+	}()
+}
+
+func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+	mod, err := wasmtime.NewModule(wasmEngine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
@@ -431,13 +447,10 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	}
 
 	m := &module{
-		engine:       engine,
 		moduleDir:    moduleDir,
 		modulePath:   modulePath,
-		wconfig:      cfg,
 		cfg:          modCfg,
 		metrics:      metrics,
-		stopCh:       make(chan struct{}),
 		v2ImportName: v2ImportName,
 	}
 	m.callWasm = func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) (time.Duration, error) {
@@ -447,7 +460,7 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 }
 
 func linkNoDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
-	linker, err := newWasiLinker(exec, m.engine)
+	linker, err := newWasiLinker(exec, wasmEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -543,7 +556,7 @@ func linkNoDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *exe
 }
 
 func linkLegacyDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newDagWasiLinker(m.cfg, m.engine)
+	linker, err := newDagWasiLinker(m.cfg, wasmEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -589,26 +602,13 @@ func linkLegacyDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec 
 	return linker.Instantiate(store, mod)
 }
 
-func (m *module) Start() {
-	m.wg.Go(func() {
-		ticker := time.NewTicker(m.cfg.TickInterval)
-		for {
-			select {
-			case <-m.stopCh:
-				return
-			case <-ticker.C:
-				m.engine.IncrementEpoch()
-			}
-		}
-	})
-}
+// Start is a no-op: epoch interruption is driven by a single process-global
+// ticker started in init (see wasmEngine), not per module.
+func (m *module) Start() {}
 
 func (m *module) Close() {
-	close(m.stopCh)
-	m.wg.Wait()
-
-	m.engine.Close()
-	m.wconfig.Close()
+	// The engine and its epoch ticker are process-global (see wasmEngine) and
+	// shared by all modules, so they are intentionally not stopped here.
 	_ = os.RemoveAll(m.moduleDir)
 }
 
@@ -837,7 +837,7 @@ func callWasm[I, O proto.Message](
 	linkWasm linkFn[O],
 	exec *execution[O],
 ) (time.Duration, error) {
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(wasmEngine)
 	defer store.Close()
 
 	wasi := wasmtime.NewWasiConfig()
@@ -877,7 +877,7 @@ func callWasm[I, O proto.Message](
 	// close it before returning. This keeps no module resident between runs, so a
 	// suspended execution (which returns from callWasm via the suspend trap)
 	// holds nothing while it waits; the next resume deserializes again.
-	mod, err := wasmtime.NewModuleDeserializeFile(m.engine, m.modulePath)
+	mod, err := wasmtime.NewModuleDeserializeFile(wasmEngine, m.modulePath)
 	if err != nil {
 		return 0, fmt.Errorf("error deserializing wasm module: %w", err)
 	}

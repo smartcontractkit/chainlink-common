@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // HealthReporter should be implemented by any type requiring health checks.
@@ -50,7 +52,8 @@ type HealthChecker struct {
 	chStop chan struct{}
 	chDone chan struct{}
 
-	cfg HealthCheckerConfig
+	cfg  HealthCheckerConfig
+	lggr logger.SugaredLogger
 
 	servicesMu sync.RWMutex
 	services   map[string]HealthReporter
@@ -88,11 +91,13 @@ func NewHealthChecker(ver, sha string) *HealthChecker {
 type HealthCheckerConfig struct {
 	// Optionally override debug.BuildInfo
 	Ver, Sha string
+	Logger   logger.Logger
 	// Optional hooks for reporting.
-	IncVersion func(ctx context.Context, ver string, sha string)
-	AddUptime  func(ctx context.Context, duration time.Duration)
-	SetStatus  func(ctx context.Context, name string, status int)
-	Delete     func(ctx context.Context, name string)
+	EmitSoTHealthData func(ctx context.Context, isHealthy bool, svcHealth map[string]error)
+	IncVersion        func(ctx context.Context, ver string, sha string)
+	AddUptime         func(ctx context.Context, duration time.Duration)
+	SetStatus         func(ctx context.Context, name string, status int)
+	Delete            func(ctx context.Context, name string)
 }
 
 func (cfg *HealthCheckerConfig) initVerSha() {
@@ -124,6 +129,9 @@ func (cfg *HealthCheckerConfig) setNoopHooks() {
 	if cfg.Delete == nil {
 		cfg.Delete = func(ctx context.Context, name string) {}
 	}
+	if cfg.EmitSoTHealthData == nil {
+		cfg.EmitSoTHealthData = func(ctx context.Context, healthy map[string]error) {}
+	}
 }
 
 func (cfg HealthCheckerConfig) New() *HealthChecker {
@@ -131,6 +139,7 @@ func (cfg HealthCheckerConfig) New() *HealthChecker {
 	cfg.setNoopHooks()
 	return &HealthChecker{
 		cfg:      cfg,
+		lggr:     logger.Sugared(cfg.Logger),
 		services: make(map[string]HealthReporter, 10),
 		healthy:  make(map[string]error, 10),
 		ready:    make(map[string]error, 10),
@@ -203,6 +212,9 @@ func (c *HealthChecker) update(ctx context.Context) {
 		}
 	}
 	c.cfg.AddUptime(ctx, interval)
+
+	// emit beholder metrics for rane-sot-app service
+	c.cfg.EmitSoTHealthData(ctx, healthy)
 
 	// save state
 	c.stateMu.Lock()

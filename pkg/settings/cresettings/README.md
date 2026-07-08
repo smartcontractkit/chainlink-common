@@ -46,6 +46,7 @@ flowchart
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
         VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
+        VaultSkipInvalidPendingItemsEnabled[/VaultSkipInvalidPendingItemsEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]

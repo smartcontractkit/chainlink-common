@@ -1271,6 +1271,52 @@ func (x *ListSecretIdentifiersResponse) GetError() string {
 	return ""
 }
 
+// ObservationError is an item-level Err(E) contribution for a pending queue request.
+// When set on Observation, the observation is an error contribution for that request id.
+type ObservationError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ObservationError) Reset() {
+	*x = ObservationError{}
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ObservationError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ObservationError) ProtoMessage() {}
+
+func (x *ObservationError) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ObservationError.ProtoReflect.Descriptor instead.
+func (*ObservationError) Descriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ObservationError) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type Observation struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1291,13 +1337,14 @@ type Observation struct {
 	//	*Observation_DeleteSecretsResponse
 	//	*Observation_ListSecretIdentifiersResponse
 	Response      isObservation_Response `protobuf_oneof:"response"`
+	Error         *ObservationError      `protobuf:"bytes,13,opt,name=error,proto3" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Observation) Reset() {
 	*x = Observation{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[19]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1309,7 +1356,7 @@ func (x *Observation) String() string {
 func (*Observation) ProtoMessage() {}
 
 func (x *Observation) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[19]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1322,7 +1369,7 @@ func (x *Observation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Observation.ProtoReflect.Descriptor instead.
 func (*Observation) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{19}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *Observation) GetId() string {
@@ -1443,6 +1490,13 @@ func (x *Observation) GetListSecretIdentifiersResponse() *ListSecretIdentifiersR
 	return nil
 }
 
+func (x *Observation) GetError() *ObservationError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
 type isObservation_Request interface {
 	isObservation_Request()
 }
@@ -1522,7 +1576,7 @@ type Observations struct {
 
 func (x *Observations) Reset() {
 	*x = Observations{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[20]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1534,7 +1588,7 @@ func (x *Observations) String() string {
 func (*Observations) ProtoMessage() {}
 
 func (x *Observations) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[20]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1547,7 +1601,7 @@ func (x *Observations) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Observations.ProtoReflect.Descriptor instead.
 func (*Observations) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{20}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Observations) GetObservations() []*Observation {
@@ -1597,7 +1651,7 @@ type Outcome struct {
 
 func (x *Outcome) Reset() {
 	*x = Outcome{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[21]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1609,7 +1663,7 @@ func (x *Outcome) String() string {
 func (*Outcome) ProtoMessage() {}
 
 func (x *Outcome) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[21]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1622,7 +1676,7 @@ func (x *Outcome) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outcome.ProtoReflect.Descriptor instead.
 func (*Outcome) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{21}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *Outcome) GetId() string {
@@ -1820,7 +1874,7 @@ type Outcomes struct {
 
 func (x *Outcomes) Reset() {
 	*x = Outcomes{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[22]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1832,7 +1886,7 @@ func (x *Outcomes) String() string {
 func (*Outcomes) ProtoMessage() {}
 
 func (x *Outcomes) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[22]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1845,7 +1899,7 @@ func (x *Outcomes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Outcomes.ProtoReflect.Descriptor instead.
 func (*Outcomes) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{22}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *Outcomes) GetOutcomes() []*Outcome {
@@ -1866,7 +1920,7 @@ type ReportInfo struct {
 
 func (x *ReportInfo) Reset() {
 	*x = ReportInfo{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[23]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1878,7 +1932,7 @@ func (x *ReportInfo) String() string {
 func (*ReportInfo) ProtoMessage() {}
 
 func (x *ReportInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[23]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1891,7 +1945,7 @@ func (x *ReportInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportInfo.ProtoReflect.Descriptor instead.
 func (*ReportInfo) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{23}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ReportInfo) GetId() string {
@@ -1926,7 +1980,7 @@ type StoredSecret struct {
 
 func (x *StoredSecret) Reset() {
 	*x = StoredSecret{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[24]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1938,7 +1992,7 @@ func (x *StoredSecret) String() string {
 func (*StoredSecret) ProtoMessage() {}
 
 func (x *StoredSecret) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[24]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1951,7 +2005,7 @@ func (x *StoredSecret) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredSecret.ProtoReflect.Descriptor instead.
 func (*StoredSecret) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{24}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *StoredSecret) GetEncryptedSecret() []byte {
@@ -1972,7 +2026,7 @@ type StoredMetadata struct {
 
 func (x *StoredMetadata) Reset() {
 	*x = StoredMetadata{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[25]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1984,7 +2038,7 @@ func (x *StoredMetadata) String() string {
 func (*StoredMetadata) ProtoMessage() {}
 
 func (x *StoredMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[25]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1997,7 +2051,7 @@ func (x *StoredMetadata) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredMetadata.ProtoReflect.Descriptor instead.
 func (*StoredMetadata) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{25}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *StoredMetadata) GetSecretIdentifiers() []*SecretIdentifier {
@@ -2018,7 +2072,7 @@ type StoredPendingQueueIndex struct {
 
 func (x *StoredPendingQueueIndex) Reset() {
 	*x = StoredPendingQueueIndex{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2030,7 +2084,7 @@ func (x *StoredPendingQueueIndex) String() string {
 func (*StoredPendingQueueIndex) ProtoMessage() {}
 
 func (x *StoredPendingQueueIndex) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[26]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2043,7 +2097,7 @@ func (x *StoredPendingQueueIndex) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredPendingQueueIndex.ProtoReflect.Descriptor instead.
 func (*StoredPendingQueueIndex) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{26}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *StoredPendingQueueIndex) GetLength() int64 {
@@ -2065,7 +2119,7 @@ type StoredPendingQueueItem struct {
 
 func (x *StoredPendingQueueItem) Reset() {
 	*x = StoredPendingQueueItem{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[27]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2077,7 +2131,7 @@ func (x *StoredPendingQueueItem) String() string {
 func (*StoredPendingQueueItem) ProtoMessage() {}
 
 func (x *StoredPendingQueueItem) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[27]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2090,7 +2144,7 @@ func (x *StoredPendingQueueItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredPendingQueueItem.ProtoReflect.Descriptor instead.
 func (*StoredPendingQueueItem) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{27}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *StoredPendingQueueItem) GetItem() *anypb.Any {
@@ -2120,7 +2174,7 @@ type PendingQueueBlobItems struct {
 
 func (x *PendingQueueBlobItems) Reset() {
 	*x = PendingQueueBlobItems{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2132,7 +2186,7 @@ func (x *PendingQueueBlobItems) String() string {
 func (*PendingQueueBlobItems) ProtoMessage() {}
 
 func (x *PendingQueueBlobItems) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[28]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2145,7 +2199,7 @@ func (x *PendingQueueBlobItems) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PendingQueueBlobItems.ProtoReflect.Descriptor instead.
 func (*PendingQueueBlobItems) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{28}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *PendingQueueBlobItems) GetItems() []*anypb.Any {
@@ -2196,7 +2250,7 @@ type ReportingPluginConfig struct {
 
 func (x *ReportingPluginConfig) Reset() {
 	*x = ReportingPluginConfig{}
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[29]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2208,7 +2262,7 @@ func (x *ReportingPluginConfig) String() string {
 func (*ReportingPluginConfig) ProtoMessage() {}
 
 func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[29]
+	mi := &file_capabilities_actions_vault_messages_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2221,7 +2275,7 @@ func (x *ReportingPluginConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportingPluginConfig.ProtoReflect.Descriptor instead.
 func (*ReportingPluginConfig) Descriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{29}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ReportingPluginConfig) GetBatchSize() int32 {
@@ -2423,7 +2477,9 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
 	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"\xec\a\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\",\n" +
+	"\x10ObservationError\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\x9b\b\n" +
 	"\vObservation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +
@@ -2437,7 +2493,8 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x17update_secrets_response\x18\n" +
 	" \x01(\v2\x1c.vault.UpdateSecretsResponseH\x01R\x15updateSecretsResponse\x12V\n" +
 	"\x17delete_secrets_response\x18\v \x01(\v2\x1c.vault.DeleteSecretsResponseH\x01R\x15deleteSecretsResponse\x12o\n" +
-	" list_secret_identifiers_response\x18\f \x01(\v2$.vault.ListSecretIdentifiersResponseH\x01R\x1dlistSecretIdentifiersResponseB\t\n" +
+	" list_secret_identifiers_response\x18\f \x01(\v2$.vault.ListSecretIdentifiersResponseH\x01R\x1dlistSecretIdentifiersResponse\x12-\n" +
+	"\x05error\x18\r \x01(\v2\x17.vault.ObservationErrorR\x05errorB\t\n" +
 	"\arequestB\n" +
 	"\n" +
 	"\bresponse\"\x94\x01\n" +
@@ -2526,7 +2583,7 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(RequestType)(0),                      // 0: vault.RequestType
 	(ReportFormat)(0),                     // 1: vault.ReportFormat
@@ -2549,18 +2606,19 @@ var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(*DeleteSecretsResponse)(nil),         // 18: vault.DeleteSecretsResponse
 	(*ListSecretIdentifiersRequest)(nil),  // 19: vault.ListSecretIdentifiersRequest
 	(*ListSecretIdentifiersResponse)(nil), // 20: vault.ListSecretIdentifiersResponse
-	(*Observation)(nil),                   // 21: vault.Observation
-	(*Observations)(nil),                  // 22: vault.Observations
-	(*Outcome)(nil),                       // 23: vault.Outcome
-	(*Outcomes)(nil),                      // 24: vault.Outcomes
-	(*ReportInfo)(nil),                    // 25: vault.ReportInfo
-	(*StoredSecret)(nil),                  // 26: vault.StoredSecret
-	(*StoredMetadata)(nil),                // 27: vault.StoredMetadata
-	(*StoredPendingQueueIndex)(nil),       // 28: vault.StoredPendingQueueIndex
-	(*StoredPendingQueueItem)(nil),        // 29: vault.StoredPendingQueueItem
-	(*PendingQueueBlobItems)(nil),         // 30: vault.PendingQueueBlobItems
-	(*ReportingPluginConfig)(nil),         // 31: vault.ReportingPluginConfig
-	(*anypb.Any)(nil),                     // 32: google.protobuf.Any
+	(*ObservationError)(nil),              // 21: vault.ObservationError
+	(*Observation)(nil),                   // 22: vault.Observation
+	(*Observations)(nil),                  // 23: vault.Observations
+	(*Outcome)(nil),                       // 24: vault.Outcome
+	(*Outcomes)(nil),                      // 25: vault.Outcomes
+	(*ReportInfo)(nil),                    // 26: vault.ReportInfo
+	(*StoredSecret)(nil),                  // 27: vault.StoredSecret
+	(*StoredMetadata)(nil),                // 28: vault.StoredMetadata
+	(*StoredPendingQueueIndex)(nil),       // 29: vault.StoredPendingQueueIndex
+	(*StoredPendingQueueItem)(nil),        // 30: vault.StoredPendingQueueItem
+	(*PendingQueueBlobItems)(nil),         // 31: vault.PendingQueueBlobItems
+	(*ReportingPluginConfig)(nil),         // 32: vault.ReportingPluginConfig
+	(*anypb.Any)(nil),                     // 33: google.protobuf.Any
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	2,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
@@ -2591,29 +2649,30 @@ var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
 	15, // 25: vault.Observation.update_secrets_response:type_name -> vault.UpdateSecretsResponse
 	18, // 26: vault.Observation.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
 	20, // 27: vault.Observation.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
-	21, // 28: vault.Observations.observations:type_name -> vault.Observation
-	0,  // 29: vault.Outcome.request_type:type_name -> vault.RequestType
-	10, // 30: vault.Outcome.create_secrets_request:type_name -> vault.CreateSecretsRequest
-	7,  // 31: vault.Outcome.get_secrets_request:type_name -> vault.GetSecretsRequest
-	13, // 32: vault.Outcome.update_secrets_request:type_name -> vault.UpdateSecretsRequest
-	16, // 33: vault.Outcome.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
-	19, // 34: vault.Outcome.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
-	12, // 35: vault.Outcome.create_secrets_response:type_name -> vault.CreateSecretsResponse
-	8,  // 36: vault.Outcome.get_secrets_response:type_name -> vault.GetSecretsResponse
-	15, // 37: vault.Outcome.update_secrets_response:type_name -> vault.UpdateSecretsResponse
-	18, // 38: vault.Outcome.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
-	20, // 39: vault.Outcome.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
-	23, // 40: vault.Outcomes.outcomes:type_name -> vault.Outcome
-	0,  // 41: vault.ReportInfo.request_type:type_name -> vault.RequestType
-	1,  // 42: vault.ReportInfo.format:type_name -> vault.ReportFormat
-	2,  // 43: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
-	32, // 44: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
-	32, // 45: vault.PendingQueueBlobItems.items:type_name -> google.protobuf.Any
-	46, // [46:46] is the sub-list for method output_type
-	46, // [46:46] is the sub-list for method input_type
-	46, // [46:46] is the sub-list for extension type_name
-	46, // [46:46] is the sub-list for extension extendee
-	0,  // [0:46] is the sub-list for field type_name
+	21, // 28: vault.Observation.error:type_name -> vault.ObservationError
+	22, // 29: vault.Observations.observations:type_name -> vault.Observation
+	0,  // 30: vault.Outcome.request_type:type_name -> vault.RequestType
+	10, // 31: vault.Outcome.create_secrets_request:type_name -> vault.CreateSecretsRequest
+	7,  // 32: vault.Outcome.get_secrets_request:type_name -> vault.GetSecretsRequest
+	13, // 33: vault.Outcome.update_secrets_request:type_name -> vault.UpdateSecretsRequest
+	16, // 34: vault.Outcome.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
+	19, // 35: vault.Outcome.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
+	12, // 36: vault.Outcome.create_secrets_response:type_name -> vault.CreateSecretsResponse
+	8,  // 37: vault.Outcome.get_secrets_response:type_name -> vault.GetSecretsResponse
+	15, // 38: vault.Outcome.update_secrets_response:type_name -> vault.UpdateSecretsResponse
+	18, // 39: vault.Outcome.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
+	20, // 40: vault.Outcome.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
+	24, // 41: vault.Outcomes.outcomes:type_name -> vault.Outcome
+	0,  // 42: vault.ReportInfo.request_type:type_name -> vault.RequestType
+	1,  // 43: vault.ReportInfo.format:type_name -> vault.ReportFormat
+	2,  // 44: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
+	33, // 45: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
+	33, // 46: vault.PendingQueueBlobItems.items:type_name -> google.protobuf.Any
+	47, // [47:47] is the sub-list for method output_type
+	47, // [47:47] is the sub-list for method input_type
+	47, // [47:47] is the sub-list for extension type_name
+	47, // [47:47] is the sub-list for extension extendee
+	0,  // [0:47] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }
@@ -2625,7 +2684,7 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*SecretResponse_Data)(nil),
 		(*SecretResponse_Error)(nil),
 	}
-	file_capabilities_actions_vault_messages_proto_msgTypes[19].OneofWrappers = []any{
+	file_capabilities_actions_vault_messages_proto_msgTypes[20].OneofWrappers = []any{
 		(*Observation_CreateSecretsRequest)(nil),
 		(*Observation_GetSecretsRequest)(nil),
 		(*Observation_UpdateSecretsRequest)(nil),
@@ -2637,7 +2696,7 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*Observation_DeleteSecretsResponse)(nil),
 		(*Observation_ListSecretIdentifiersResponse)(nil),
 	}
-	file_capabilities_actions_vault_messages_proto_msgTypes[21].OneofWrappers = []any{
+	file_capabilities_actions_vault_messages_proto_msgTypes[22].OneofWrappers = []any{
 		(*Outcome_CreateSecretsRequest)(nil),
 		(*Outcome_GetSecretsRequest)(nil),
 		(*Outcome_UpdateSecretsRequest)(nil),
@@ -2649,14 +2708,14 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		(*Outcome_DeleteSecretsResponse)(nil),
 		(*Outcome_ListSecretIdentifiersResponse)(nil),
 	}
-	file_capabilities_actions_vault_messages_proto_msgTypes[29].OneofWrappers = []any{}
+	file_capabilities_actions_vault_messages_proto_msgTypes[30].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   30,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

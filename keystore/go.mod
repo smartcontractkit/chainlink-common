@@ -28,7 +28,7 @@ require (
 	github.com/xssnick/tonutils-go v1.14.1
 	go.dedis.ch/fixbuf v1.0.3
 	go.dedis.ch/kyber/v3 v3.1.0
-	golang.org/x/crypto v0.51.0
+	golang.org/x/crypto v0.52.0
 	google.golang.org/protobuf v1.36.11
 )
 

@@ -478,7 +478,7 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		}
 
 		if sendErr != nil {
-			// Event delivery failed, leave in DB for retransmit.
+			d.eng.Warnw("DurableEmitter: failed to deliver event. Relying on retransmit.", "eventID", eventPb.Id, "err", sendErr)
 			return
 		}
 

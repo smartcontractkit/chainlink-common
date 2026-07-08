@@ -521,6 +521,180 @@ func TestDurableEmitter_RetransmitDeliversManuallyInsertedRow(t *testing.T) {
 	}, 3*time.Second, 20*time.Millisecond, "pending row should be delivered via batch emitter")
 }
 
+// makeCloudEventPayload builds a marshaled CloudEventPb suitable for direct
+// insertion into a store (bypassing Emit). entity becomes the CloudEvent Type,
+// which selectiveBatchEmitter uses to tell poison events from good ones.
+func makeCloudEventPayload(t *testing.T, entity, body string) []byte {
+	t.Helper()
+	ev, err := chipingress.NewEvent("test-domain", entity, []byte(body), nil)
+	require.NoError(t, err)
+	evPb, err := chipingress.EventToProto(ev)
+	require.NoError(t, err)
+	payload, err := proto.Marshal(evPb)
+	require.NoError(t, err)
+	return payload
+}
+
+// selectiveBatchEmitter fails delivery of any event whose CloudEvent Type equals
+// poisonType (modeling a permanently-undeliverable "poison" event) and succeeds
+// all others, so tests can verify poison rows don't block good ones.
+type selectiveBatchEmitter struct {
+	poisonType    string
+	poisonFails   atomic.Int64
+	goodDelivered atomic.Int64
+
+	stopOnce sync.Once
+	stopCh   chan struct{}
+	wg       sync.WaitGroup
+}
+
+func newSelectiveBatchEmitter(poisonType string) *selectiveBatchEmitter {
+	return &selectiveBatchEmitter{poisonType: poisonType, stopCh: make(chan struct{})}
+}
+
+func (b *selectiveBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb func(error)) error {
+	select {
+	case <-b.stopCh:
+		return errors.New("batch emitter stopped")
+	default:
+	}
+	poison := event.GetType() == b.poisonType
+	if cb != nil {
+		b.wg.Add(1)
+		go func() {
+			defer b.wg.Done()
+			if poison {
+				b.poisonFails.Add(1)
+				cb(errors.New("poison: permanent delivery failure"))
+				return
+			}
+			b.goodDelivered.Add(1)
+			cb(nil)
+		}()
+	}
+	return nil
+}
+
+func (b *selectiveBatchEmitter) Start(_ context.Context) {}
+
+func (b *selectiveBatchEmitter) Stop() {
+	b.stopOnce.Do(func() {
+		close(b.stopCh)
+		b.wg.Wait()
+	})
+}
+
+// TestDurableEmitter_RetransmitCursorSkipsPoison verifies the paging cursor: a
+// full RetransmitBatchSize worth of permanently-failing "poison" rows at the
+// head of the queue must NOT block good rows behind them from being
+// retransmitted and delivered. Without the cursor, ListPending would return the
+// same oldest (poison) batch every tick and nothing behind it would ever drain.
+func TestDurableEmitter_RetransmitCursorSkipsPoison(t *testing.T) {
+	store := NewMemDurableEventStore()
+	ctx := context.Background()
+
+	const (
+		poisonType = "poison"
+		goodType   = "good"
+		numPoison  = 2
+		numGood    = 3
+	)
+
+	// Insert poison first so it is the oldest (head of the queue), then good.
+	for i := 0; i < numPoison; i++ {
+		_, err := store.Insert(ctx, makeCloudEventPayload(t, poisonType, "poison-body"))
+		require.NoError(t, err)
+	}
+	for i := 0; i < numGood; i++ {
+		_, err := store.Insert(ctx, makeCloudEventPayload(t, goodType, "good-body"))
+		require.NoError(t, err)
+	}
+
+	be := newSelectiveBatchEmitter(poisonType)
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true // no expiry: only delivery-delete can remove a row
+	cfg.RetransmitInterval = 20 * time.Millisecond
+	cfg.RetransmitAfter = 10 * time.Millisecond
+	cfg.RetransmitBatchSize = numPoison // poison count == batch size: the blocking case
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	servicetest.Run(t, em)
+
+	// All good rows must drain even though a full batch of poison sits ahead of
+	// them; only the poison rows remain.
+	require.Eventually(t, func() bool {
+		return store.Len() == numPoison
+	}, 5*time.Second, 20*time.Millisecond, "good rows must drain past the poison batch")
+
+	assert.GreaterOrEqual(t, be.goodDelivered.Load(), int64(numGood), "every good event should be delivered")
+	assert.GreaterOrEqual(t, be.poisonFails.Load(), int64(numPoison), "poison events should be attempted and fail")
+
+	// The survivors must be exactly the poison rows.
+	remaining, err := store.ListPending(ctx, time.Now().Add(time.Hour), time.Time{}, 0, 100)
+	require.NoError(t, err)
+	require.Len(t, remaining, numPoison)
+	for _, e := range remaining {
+		var evPb cepb.CloudEvent
+		require.NoError(t, proto.Unmarshal(e.Payload, &evPb))
+		assert.Equal(t, poisonType, evPb.GetType(), "only poison rows should remain")
+	}
+}
+
+// TestListPendingCursorPaging verifies the ListPending paging contract the
+// retransmit cursor relies on: rows are returned in (created_at, id) order,
+// strictly after the given cursor, so paging visits every row exactly once with
+// no overlap — even when many rows share an identical created_at (InsertBatch),
+// which forces the id tie-breaker to do the work.
+func TestListPendingCursorPaging(t *testing.T) {
+	store := NewMemDurableEventStore()
+	ctx := context.Background()
+
+	// One InsertBatch → all rows share a single created_at timestamp.
+	const n = 6
+	payloads := make([][]byte, n)
+	for i := range payloads {
+		payloads[i] = []byte{byte(i)}
+	}
+	ids, err := store.InsertBatch(ctx, payloads)
+	require.NoError(t, err)
+	require.Len(t, ids, n)
+
+	createdBefore := time.Now().Add(time.Hour) // everything eligible
+	const limit = 2
+
+	var (
+		cursorTs time.Time
+		cursorID int64
+		seen     []int64
+	)
+	for i := 0; i < n+2; i++ { // bounded: at most ceil(n/limit)+1 pages
+		page, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit)
+		require.NoError(t, err)
+		require.LessOrEqual(t, len(page), limit)
+		for _, e := range page {
+			seen = append(seen, e.ID)
+		}
+		if len(page) < limit {
+			break // short page → end of the eligible set (loop would wrap here)
+		}
+		last := page[len(page)-1]
+		cursorTs, cursorID = last.CreatedAt, last.ID
+	}
+
+	// Every row visited exactly once, in strictly ascending id order (no overlap,
+	// no skips) despite the shared created_at.
+	require.Len(t, seen, n)
+	for i := 1; i < len(seen); i++ {
+		assert.Less(t, seen[i-1], seen[i], "cursor pages must be ordered and non-overlapping")
+	}
+
+	// A cursor at the last row yields an empty page (nothing left).
+	tail, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit)
+	require.NoError(t, err)
+	assert.Empty(t, tail, "cursor past the last row must return no rows")
+}
+
 func TestDurableEmitter_EmitRejectsInvalidAttributes(t *testing.T) {
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()
@@ -1235,17 +1409,26 @@ func (m *MemDurableEventStore) BatchDelete(_ context.Context, ids []int64) (int6
 	return n, nil
 }
 
-func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	var result []DurableEvent
 	for _, e := range m.events {
-		if e.CreatedAt.Before(createdBefore) {
-			result = append(result, *e)
+		if !e.CreatedAt.Before(createdBefore) {
+			continue
 		}
+		// Strictly after the (afterCreatedAt, afterID) cursor.
+		if e.CreatedAt.Before(afterCreatedAt) ||
+			(e.CreatedAt.Equal(afterCreatedAt) && e.ID <= afterID) {
+			continue
+		}
+		result = append(result, *e)
 	}
 	sort.Slice(result, func(i, j int) bool {
+		if result[i].CreatedAt.Equal(result[j].CreatedAt) {
+			return result[i].ID < result[j].ID
+		}
 		return result[i].CreatedAt.Before(result[j].CreatedAt)
 	})
 	if len(result) > limit {

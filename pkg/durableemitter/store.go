@@ -87,14 +87,19 @@ DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
 	return n, nil
 }
 
-func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+	// The (created_at, id) > ($2, $3) row-value comparison is the paging cursor:
+	// the retransmit loop advances it forward through the backlog and wraps to a
+	// zero cursor at the end, so a persistently-failing ("poison") event can't
+	// monopolise the head of the list and block everything behind it.
 	const q = `
 SELECT id, payload, created_at
 FROM ` + chipDurableEventsTable + `
 WHERE delivered_at IS NULL
   AND created_at < $1
-ORDER BY created_at ASC
-LIMIT $2`
+  AND (created_at, id) > ($2, $3)
+ORDER BY created_at ASC, id ASC
+LIMIT $4`
 
 	type row struct {
 		ID        int64     `db:"id"`
@@ -103,7 +108,7 @@ LIMIT $2`
 	}
 
 	var rows []row
-	if err := s.ds.SelectContext(ctx, &rows, q, createdBefore, limit); err != nil {
+	if err := s.ds.SelectContext(ctx, &rows, q, createdBefore, afterCreatedAt, afterID, limit); err != nil {
 		return nil, fmt.Errorf("failed to list pending chip durable events: %w", err)
 	}
 

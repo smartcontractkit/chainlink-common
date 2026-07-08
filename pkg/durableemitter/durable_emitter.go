@@ -191,6 +191,14 @@ type DurableEmitter struct {
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
 	wg     sync.WaitGroup
+
+	// retransmit paging cursor. The retransmit loop pages through the pending
+	// backlog in (created_at, id) order, advancing the cursor each tick and
+	// wrapping to zero at the end, so a persistently-failing ("poison") event
+	// can't monopolise the head of the list and starve everything behind it.
+	// Accessed only from the single retransmit-loop goroutine — no locking.
+	retransmitCursorTs time.Time
+	retransmitCursorID int64
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -676,16 +684,32 @@ func (d *DurableEmitter) retransmitPending() {
 	defer cancel()
 
 	cutoff := time.Now().Add(-d.cfg.RetransmitAfter)
-	pending, err := d.store.ListPending(ctx, cutoff, d.cfg.RetransmitBatchSize)
+	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, d.cfg.RetransmitBatchSize)
 	if err != nil {
 		d.eng.Errorw("failed to list pending events", "error", err)
 		return
+	}
+
+	// Advance the paging cursor. A full page means there may be more rows ahead,
+	// so continue after the last one next tick; a short page means we reached the
+	// end of the currently-eligible set, so wrap back to the oldest. This lets the
+	// loop page through (and past) poison rows instead of re-listing the same head
+	// every tick — a poison row is revisited only once per full sweep.
+	if len(pending) < d.cfg.RetransmitBatchSize {
+		d.retransmitCursorTs = time.Time{}
+		d.retransmitCursorID = 0
+	} else {
+		last := pending[len(pending)-1]
+		d.retransmitCursorTs = last.CreatedAt
+		d.retransmitCursorID = last.ID
 	}
 
 	d.eng.Debugw("DurableEmitter: retransmit pending scan",
 		"retransmit_list_batch", len(pending),
 		"retransmit_after", d.cfg.RetransmitAfter.String(),
 		"list_limit", d.cfg.RetransmitBatchSize,
+		"cursor_ts", d.retransmitCursorTs,
+		"cursor_id", d.retransmitCursorID,
 	)
 
 	if len(pending) == 0 {

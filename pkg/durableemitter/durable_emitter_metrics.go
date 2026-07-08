@@ -80,9 +80,6 @@ type durableEmitterMetrics struct {
 	// deleteCoalescerFill reports the delete-coalescer channel fill ratio
 	// (len/cap). Only meaningful when DeleteBatchSize > 0; otherwise 0.
 	deleteCoalescerFill metric.Float64Gauge
-	// fallbackInFlight reports the number of single-event fallback Publish
-	// goroutines currently in flight.
-	fallbackInFlight metric.Int64Gauge
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -293,13 +290,6 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 		"durable_emitter.delete_coalescer.queue_fill_ratio",
 		metric.WithUnit("1"),
 		metric.WithDescription("Delete-coalescer channel fill ratio (len/cap); 0 when delete coalescing is disabled"),
-	); err != nil {
-		return nil, err
-	}
-	if m.fallbackInFlight, err = meter.Int64Gauge(
-		"durable_emitter.fallback.in_flight",
-		metric.WithUnit("{goroutine}"),
-		metric.WithDescription("Single-event fallback Publish goroutines currently in flight"),
 	); err != nil {
 		return nil, err
 	}

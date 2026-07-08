@@ -161,18 +161,6 @@ type DurableEmitter struct {
 
 	store        DurableEventStore
 	batchEmitter BatchEmitter
-	// fallbackClient, when non-nil, is used for single-event per-RPC retry
-	// whenever the batch emitter reports a delivery failure. Each failed event
-	// is retried individually via Publish (not PublishBatch) in a goroutine.
-	// If the single-event retry also fails the event stays in the DB and the
-	// retransmit loop will eventually deliver it. DurableEmitter owns this
-	// client and closes it during shutdown.
-	fallbackClient chipingress.Client
-	// fallbackWg tracks in-flight single-event fallback goroutines. It is
-	// waited on after batchEmitter.Stop() so that all fallback attempts that
-	// were spawned during the final flush can complete before we close the
-	// fallback client connection.
-	fallbackWg sync.WaitGroup
 	// retransmitEnabled controls whether this instance runs the retransmit and
 	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
 	retransmitEnabled bool
@@ -193,17 +181,12 @@ type DurableEmitter struct {
 
 	// deleteCh funnels delivered event ids to the delete coalescer. Nil when delete
 	// coalescing is disabled (DeleteBatchSize <= 0). Its only producers are the
-	// delivery callbacks and single-event fallback goroutines, so it is closed
-	// during shutdown only after both have quiesced (see stop). deleteWg tracks
+	// delivery callbacks, so it is closed during shutdown only after they have
+	// quiesced (see stop). deleteWg tracks
 	// the deleteBatchLoop workers, which must outlive d.wg so callbacks running
 	// during the batch emitter's final flush can still enqueue deletes.
 	deleteCh chan int64
 	deleteWg sync.WaitGroup
-
-	// fallbackInFlightCount is incremented when a single-event fallback
-	// goroutine starts and decremented on its defer. metricsLoop samples
-	// this into the fallback.in_flight gauge.
-	fallbackInFlightCount atomic.Int64
 
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
@@ -223,15 +206,11 @@ var _ interface {
 // pkg/chipingress/batch) responsible for batched gRPC delivery, seqnum
 // stamping, size splitting, and concurrency limiting.
 //
-// fallbackClient, when non-nil, is used to retry individual events via a
-// direct unary Publish RPC whenever the batch emitter reports a delivery
-// failure. This gives a fast second-chance path before the DB-backed
-// retransmit loop kicks in. Pass nil to disable single-event fallback
-// (events are left in the DB and delivered by the retransmit loop).
+// On a batch delivery failure the event is left in the DB and re-delivered by
+// the DB-backed retransmit loop.
 func NewDurableEmitter(
 	store DurableEventStore,
 	batchEmitter BatchEmitter,
-	fallbackClient chipingress.Client,
 	retransmitEnabled bool,
 	cfg Config,
 	lggr logger.Logger,
@@ -261,7 +240,6 @@ func NewDurableEmitter(
 	d := &DurableEmitter{
 		store:             store,
 		batchEmitter:      batchEmitter,
-		fallbackClient:    fallbackClient,
 		retransmitEnabled: retransmitEnabled,
 		cfg:               cfg,
 		metrics:           m,
@@ -459,9 +437,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		}
 
 		// Hand off to the batch emitter. The callback fires once the batch
-		// containing this event is sent (success or failure). eventPb is
-		// captured in the closure so the fallback path can retry without a
-		// DB round-trip.
+		// containing this event is sent (success or failure).
 		t0Publish := time.Now()
 		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch)); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
@@ -475,9 +451,8 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 }
 
 // deliveryCallback returns the function passed to BatchEmitter.QueueMessage.
-// On success, it deletes the delivered event. On failure, it attempts a
-// single-event fallback via fallbackClient (when configured) in a goroutine
-// before leaving the event in the DB for the retransmit loop.
+// On success, it deletes the delivered event. On failure, it leaves the event
+// in the DB for the retransmit loop.
 func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase) func(error) {
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
@@ -495,9 +470,7 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		}
 
 		if sendErr != nil {
-			// Batch path failed. If a fallback client is configured, retry the
-			// single event directly; otherwise leave in DB for retransmit.
-			d.tryFallback(id, eventPb)
+			// Event delivery failed, leave in DB for retransmit.
 			return
 		}
 
@@ -526,53 +499,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 	}
 }
 
-// tryFallback spawns a goroutine that retries a single event via the direct
-// chipingress.Client.Publish RPC. If fallbackClient is nil this is a no-op
-// and the event is left in the DB for the retransmit loop.
-func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb) {
-	if d.fallbackClient == nil {
-		return
-	}
-	d.fallbackWg.Add(1)
-	d.fallbackInFlightCount.Add(1)
-	go func() {
-		defer d.fallbackWg.Done()
-		defer d.fallbackInFlightCount.Add(-1)
-		d.singleEventFallback(id, eventPb)
-	}()
-}
-
-// singleEventFallback sends a single event directly via the fallback
-// chipingress.Client. On success, it deletes the delivered event. On failure, it
-// logs and returns — the event remains in the DB and the retransmit loop will
-// eventually deliver it.
-func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
-	stopCtx, stopCancel := d.stopCh.NewCtx()
-	defer stopCancel()
-
-	pubCtx, pubCancel := context.WithTimeout(stopCtx, d.cfg.PublishTimeout)
-	defer pubCancel()
-
-	if _, err := d.fallbackClient.Publish(pubCtx, eventPb); err != nil {
-		d.eng.Warnw("DurableEmitter: single-event fallback publish failed, relying on retransmit",
-			"id", id, "error", err)
-		return
-	}
-
-	if d.enqueueDelete(id) {
-		return
-	}
-
-	deleted, delErr := d.store.BatchDelete(stopCtx, []int64{id})
-	if delErr != nil {
-		d.eng.Errorw("DurableEmitter: failed to delete fallback event after delivery", "id", id, "error", delErr)
-		return
-	}
-	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(stopCtx, deleted)
-	}
-}
-
 // stop signals background loops to stop and waits for them to finish, then
 // stops the batch emitter (which flushes any queued events and waits for all
 // in-flight callbacks). It is invoked by the services.Engine when the embedded
@@ -589,21 +515,12 @@ func (d *DurableEmitter) stop() error {
 	d.wg.Wait()
 	// Stop the batch emitter: flushes remaining queued events, waits for all
 	// in-flight PublishBatch RPCs, and waits for all delivery callbacks.
-	// Delivery callbacks may spawn single-event fallback goroutines tracked by
-	// fallbackWg, so we wait on those next.
 	d.batchEmitter.Stop()
-	d.fallbackWg.Wait()
-	// The delivery callbacks (drained by batchEmitter.Stop) and the fallback
-	// goroutines (drained by fallbackWg) are the only producers of deleteCh, so
-	// it is now safe to close it and let the workers flush any buffered deletes.
+	// The delivery callbacks (drained by batchEmitter.Stop) are the only producers
+	// of deleteCh, so it is now safe to close it and let the workers flush any buffered deletes.
 	if d.deleteCh != nil {
 		close(d.deleteCh)
 		d.deleteWg.Wait()
-	}
-	if d.fallbackClient != nil {
-		if err := d.fallbackClient.Close(); err != nil {
-			d.eng.Warnw("DurableEmitter: error closing fallback chip client", "error", err)
-		}
 	}
 	return nil
 }
@@ -875,7 +792,6 @@ func (d *DurableEmitter) metricsLoop() {
 					d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
 				}
 			}
-			d.metrics.fallbackInFlight.Record(ctx, d.fallbackInFlightCount.Load())
 			if d.insertCh != nil {
 				if c := cap(d.insertCh); c > 0 {
 					d.metrics.insertCoalescerFill.Record(ctx, float64(len(d.insertCh))/float64(c))

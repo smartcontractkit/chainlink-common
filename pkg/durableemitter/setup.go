@@ -77,8 +77,8 @@ type SetupConfig struct {
 	Meter metric.Meter
 }
 
-// Setup creates a DurableEmitter with dedicated batch and fallback chip ingress
-// clients, registers it as the global emitter, and returns it unconfigured.
+// Setup creates a DurableEmitter with a dedicated batch chip ingress client,
+// registers it as the global emitter, and returns it unconfigured.
 func Setup(
 	store DurableEventStore,
 	cfg SetupConfig,
@@ -120,25 +120,14 @@ func Setup(
 		return nil, fmt.Errorf("failed to create batch client: %w", err)
 	}
 
-	// Fallback client — owned by DurableEmitter, closed on DurableEmitter.Stop().
-	// Used for single-event direct Publish retry when a batch delivery fails.
-	fallbackClient, err := chipingress.NewClient(cfg.Endpoint, chipOpts...)
-	if err != nil {
-		batchClient.Stop()
-		return nil, fmt.Errorf("failed to create fallback chip ingress client: %w", err)
-	}
-	// TODO: Fallback hurts drain if there's a large backup
-	fallbackClient = nil
-
 	emitterCfg := DefaultConfig()
 	if cfg.EmitterConfig != nil {
 		emitterCfg = *cfg.EmitterConfig
 	}
 
-	emitter, err := NewDurableEmitter(store, batchClient, fallbackClient, cfg.RetransmitEnabled, emitterCfg, lggr, cfg.Meter)
+	emitter, err := NewDurableEmitter(store, batchClient, cfg.RetransmitEnabled, emitterCfg, lggr, cfg.Meter)
 	if err != nil {
 		batchClient.Stop()
-		_ = fallbackClient.Close()
 		return nil, fmt.Errorf("failed to create durable emitter: %w", err)
 	}
 

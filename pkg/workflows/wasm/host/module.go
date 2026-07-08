@@ -382,11 +382,6 @@ var wasmEngine *wasmtime.Engine
 func init() {
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
-	if err := cfg.CacheConfigLoadDefault(); err != nil {
-		// Non-fatal: continue without the compilation cache. There is no logger
-		// available in init, so the error is intentionally swallowed here.
-		_ = err
-	}
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	SetUnwinding(cfg) // Handled differently based on host OS.
 

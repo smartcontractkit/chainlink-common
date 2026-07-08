@@ -482,8 +482,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			return
 		}
 
-		d.eng.Debugw("DurableEmitter: delivered event", "eventID", eventPb.Id)
-
 		// When delete coalescing is enabled the id is handed to the batch-delete
 		// workers (one DELETE for many ids); otherwise delete it inline.
 		if d.enqueueDelete(id) {

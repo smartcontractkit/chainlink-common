@@ -7,7 +7,6 @@ require (
 	github.com/XSAM/otelsql v0.37.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/atombender/go-jsonschema v0.16.1-0.20240916205339-a74cd4e2851c
-	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dominikbraun/graph v0.23.0
@@ -55,6 +54,7 @@ require (
 	github.com/smartcontractkit/grpc-proxy v0.0.0-20240830132753-a7e17fec5ab7
 	github.com/smartcontractkit/libocr v0.0.0-20250912173940-f3ab0246e23d
 	github.com/stretchr/testify v1.11.1
+	github.com/tetratelabs/wazero v1.12.0
 	go.opentelemetry.io/contrib/bridges/prometheus v0.68.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.63.0
 	go.opentelemetry.io/otel v1.43.0

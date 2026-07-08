@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/tetratelabs/wazero/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -70,7 +70,7 @@ func Test_createEmitFn(t *testing.T) {
 				assert.Equal(t, ctxValue, v)
 				return nil
 			}),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
 					RequestId: reqId,
 					Message:   "hello, world",
@@ -87,14 +87,14 @@ func Test_createEmitFn(t *testing.T) {
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -106,19 +106,19 @@ func Test_createEmitFn(t *testing.T) {
 			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return nil
 			}),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -135,19 +135,19 @@ func Test_createEmitFn(t *testing.T) {
 			logger.Test(t),
 			exec,
 			nil,
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, int32(len(respBytes)), 0, 0)
+		gotCode := emitFn(context.Background(), nil, 0, int32(len(respBytes)), 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode, "code mismatch")
 	})
 
@@ -167,23 +167,23 @@ func Test_createEmitFn(t *testing.T) {
 			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return assert.AnError
 			}),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
 					RequestId: reqId,
 				})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -205,19 +205,19 @@ func Test_createEmitFn(t *testing.T) {
 			logger.Test(t),
 			exec,
 			nil,
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				return badData, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
 				return 0
 			}),
 		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 }
@@ -229,17 +229,17 @@ func TestCreateFetchFn(t *testing.T) {
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
 					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 			&ModuleConfig{
@@ -252,7 +252,7 @@ func TestCreateFetchFn(t *testing.T) {
 			exec,
 		)
 
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -261,10 +261,10 @@ func TestCreateFetchFn(t *testing.T) {
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				// the error is handled and written to the buffer
 				resp := &wasmpb.FetchResponse{}
 				err := proto.Unmarshal(src, resp)
@@ -272,7 +272,7 @@ func TestCreateFetchFn(t *testing.T) {
 				assert.Equal(t, assert.AnError.Error(), resp.ErrorMessage)
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 			&ModuleConfig{
@@ -284,7 +284,7 @@ func TestCreateFetchFn(t *testing.T) {
 			exec,
 		)
 
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -293,10 +293,10 @@ func TestCreateFetchFn(t *testing.T) {
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				return []byte("bad-request-payload"), nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				// the error is handled and written to the buffer
 				resp := &wasmpb.FetchResponse{}
 				err := proto.Unmarshal(src, resp)
@@ -305,7 +305,7 @@ func TestCreateFetchFn(t *testing.T) {
 				assert.Contains(t, resp.ErrorMessage, expectedErr)
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 			&ModuleConfig{
@@ -317,7 +317,7 @@ func TestCreateFetchFn(t *testing.T) {
 			exec,
 		)
 
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -326,14 +326,14 @@ func TestCreateFetchFn(t *testing.T) {
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
 					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				// the error is handled and written to the buffer
 				resp := &wasmpb.FetchResponse{}
 				err := proto.Unmarshal(src, resp)
@@ -342,7 +342,7 @@ func TestCreateFetchFn(t *testing.T) {
 				assert.Equal(t, expectedErr, resp.ErrorMessage)
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 			&ModuleConfig{
@@ -355,7 +355,7 @@ func TestCreateFetchFn(t *testing.T) {
 			exec,
 		)
 
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -364,17 +364,17 @@ func TestCreateFetchFn(t *testing.T) {
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
 					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				return -1
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return 0
 			}),
 			&ModuleConfig{
@@ -386,7 +386,7 @@ func TestCreateFetchFn(t *testing.T) {
 			exec,
 		)
 
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoFault, gotCode)
 	})
 
@@ -395,17 +395,17 @@ func TestCreateFetchFn(t *testing.T) {
 
 		fetchFn := createFetchFn(
 			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
+			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				b, err := proto.Marshal(&wasmpb.FetchRequest{
 					Id: testID,
 				})
 				assert.NoError(t, err)
 				return b, nil
 			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
+			unsafeWriterFunc(func(c api.Module, src []byte, ptr, len int32) int64 {
 				return 0
 			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
+			unsafeFixedLengthWriterFunc(func(c api.Module, ptr int32, val uint32) int64 {
 				return -1
 			}),
 			&ModuleConfig{
@@ -417,7 +417,7 @@ func TestCreateFetchFn(t *testing.T) {
 			exec,
 		)
 
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
+		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoFault, gotCode)
 	})
 }

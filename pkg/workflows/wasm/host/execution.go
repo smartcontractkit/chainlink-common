@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/tetratelabs/wazero/api"
 	"google.golang.org/protobuf/proto"
 
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
@@ -267,7 +267,7 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 	}, nil
 }
 
-func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+func (e *execution[T]) log(_ context.Context, mod api.Module, ptr int32, ptrlen int32) {
 	switch e.mode {
 	case sdkpb.Mode_MODE_DON:
 		e.donLogCount++
@@ -297,7 +297,7 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 		return
 	}
 
-	b, innerErr := wasmRead(caller, ptr, ptrlen)
+	b, innerErr := wasmRead(mod, ptr, ptrlen)
 	if innerErr != nil {
 		e.module.cfg.Logger.Errorf("error calling log: %s", innerErr)
 		return
@@ -309,7 +309,7 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 	}
 }
 
-func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+func (e *execution[T]) emitMetric(_ context.Context, mod api.Module, ptr int32, ptrlen int32) int32 {
 	if err := e.module.cfg.EnableUserMetricsLimiter.AllowErr(e.ctx); err != nil {
 		return -1
 	}
@@ -323,7 +323,7 @@ func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int
 		return -1
 	}
 
-	b, err := wasmRead(caller, ptr, ptrlen)
+	b, err := wasmRead(mod, ptr, ptrlen)
 	if err != nil {
 		e.module.cfg.Logger.Errorf("error reading metric payload: %s", err)
 		return -1
@@ -376,14 +376,14 @@ func (e *execution[T]) getSeed(mode int32) int64 {
 	return -1
 }
 
-func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
+func (e *execution[T]) switchModes(_ context.Context, _ api.Module, mode int32) {
 	e.hasRun = true
 	e.mode = sdkpb.Mode(mode)
 }
 
 // clockTimeGet is the default time.Now() which is also called by Go many times.
 // This implementation uses Node Mode to not have to wait for OCR rounds.
-func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
+func (e *execution[T]) clockTimeGet(_ context.Context, mod api.Module, id int32, precision int64, resultTimestamp int32) int32 {
 	donTime, err := e.timeFetcher.GetTime(sdkpb.Mode_MODE_NODE)
 	if err != nil {
 		return ErrnoInval
@@ -408,12 +408,12 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 	uint64Size := int32(8)
 	trg := make([]byte, uint64Size)
 	binary.LittleEndian.PutUint64(trg, uint64(val))
-	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	wasmWrite(mod, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
 }
 
 // now is used by rawsdk for Workflows and should be called instead of Go's time.Now().
-func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+func (e *execution[T]) now(_ context.Context, mod api.Module, resultTimestamp int32) int32 {
 	donTime, err := e.timeFetcher.GetTime(e.mode)
 	if err != nil {
 		return ErrnoInval
@@ -423,7 +423,7 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 	uint64Size := int32(8)
 	trg := make([]byte, uint64Size)
 	binary.LittleEndian.PutUint64(trg, uint64(val))
-	wasmWrite(caller, trg, resultTimestamp, uint64Size)
+	wasmWrite(mod, trg, resultTimestamp, uint64Size)
 	return ErrnoSuccess
 }
 
@@ -433,12 +433,12 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 // https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It sleeps based on the largest timeout
-func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
+func (e *execution[T]) pollOneoff(_ context.Context, mod api.Module, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 		return ErrnoInval
 	}
 
-	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
+	subs, err := wasmRead(mod, subscriptionptr, nsubscriptions*subscriptionLen)
 	if err != nil {
 		return ErrnoFault
 	}
@@ -496,10 +496,10 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 	rne := make([]byte, uint32Size)
 	binary.LittleEndian.PutUint32(rne, uint32(nsubscriptions))
 
-	if wasmWrite(caller, rne, resultNevents, uint32Size) == -1 {
+	if wasmWrite(mod, rne, resultNevents, uint32Size) == -1 {
 		return ErrnoFault
 	}
-	if wasmWrite(caller, events, eventsptr, nsubscriptions*eventsLen) == -1 {
+	if wasmWrite(mod, events, eventsptr, nsubscriptions*eventsLen) == -1 {
 		return ErrnoFault
 	}
 

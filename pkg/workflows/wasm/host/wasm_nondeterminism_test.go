@@ -36,7 +36,6 @@ func TestStandardNonDeterministicInput(t *testing.T) {
 	cfg := &ModuleConfig{
 		Logger:              lggr,
 		IsUncompressed:      true,
-		SuspensionEnabled:   true,
 		PendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 	}
 
@@ -66,15 +65,17 @@ func TestStandardNonDeterministicInput(t *testing.T) {
 	// guarantees the seed's parity - and therefore the request's input - changes.
 	original := m.callWasm
 	var runs int
-	m.callWasm = func(ctx context.Context, timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) error {
+	m.callWasm = func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) (time.Duration, error) {
 		runs++
 		if runs == 2 {
 			exec.donSeed++
 		}
-		return original(ctx, timeout, req, linkWasm, exec)
+		return original(timeout, req, linkWasm, exec)
 	}
 
 	req := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+	// Suspension is opted into per-execution via the request, not the module config.
+	req.SuspendOnAwait = true
 	result, err := m.Execute(t.Context(), req, helper)
 	require.NoError(t, err)
 

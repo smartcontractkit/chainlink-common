@@ -68,12 +68,13 @@ func TestStandardSuspendedExecutions(t *testing.T) {
 		})
 
 		cfg := defaultNoDAGModCfg(t)
-		cfg.SuspensionEnabled = suspensionEnabled
 		m := makeTestModuleByName(t, testPath, "suspended_executions", cfg, false)
 		m.Start()
 		defer m.Close()
 
 		req := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+		// Suspension is opted into per-execution via the request, not the module config.
+		req.SuspendOnAwait = suspensionEnabled
 		result = executeWithResult[string](t, m, req, helper)
 		return result, capabilityCallCount.Load(), runCount.Load()
 	}

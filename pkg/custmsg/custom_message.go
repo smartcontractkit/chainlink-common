@@ -2,16 +2,13 @@ package custmsg
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"maps"
 
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 )
 
 type MessageEmitter interface {
@@ -120,11 +117,6 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 	)
 	if err != nil {
 		return fmt.Errorf("sending custom message failed on emit: %w", err)
-	}
-
-	err = durableemitter.GlobalEmit(ctx, payloadBytes, "source", "platform", "type", "BaseMessage")
-	if err != nil && !errors.Is(err, durableemitter.ErrNotInitialized) {
-		log.Printf("custmsg: durable emitter failed to persist custom message: %v", err)
 	}
 
 	return nil

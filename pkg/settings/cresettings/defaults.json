@@ -13,7 +13,7 @@
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
 	"VaultJSONOmitUnpopulatedEnabled": "false",
 	"VaultGetSecretsRelaxedConsensusEnabled": "false",
-	"VaultSkipInvalidPendingItemsEnabled": "false",
+	"VaultIncludeInvalidPendingItemsEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"GatewayConfidentialRelayGlobalRate": "50rps:10",

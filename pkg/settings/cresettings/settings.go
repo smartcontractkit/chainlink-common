@@ -67,7 +67,7 @@ var Default = Schema{
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
-	VaultSkipInvalidPendingItemsEnabled:               Bool(false),
+	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -325,7 +325,7 @@ type Schema struct {
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
-	VaultSkipInvalidPendingItemsEnabled               Setting[bool]
+	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]

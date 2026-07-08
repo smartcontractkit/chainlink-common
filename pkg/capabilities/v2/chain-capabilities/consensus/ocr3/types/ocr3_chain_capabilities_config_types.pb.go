@@ -31,9 +31,9 @@ type ReportingPluginConfig struct {
 	MaxReportLengthBytes      uint32 `protobuf:"varint,4,opt,name=maxReportLengthBytes,proto3" json:"maxReportLengthBytes,omitempty"`
 	MaxReportCount            uint32 `protobuf:"varint,5,opt,name=maxReportCount,proto3" json:"maxReportCount,omitempty"`
 	MaxBatchSize              uint32 `protobuf:"varint,6,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
-	// minResponsesToAggregate is the minimum number of nodes that must report
+	// MinResponsesToAggregate is the minimum number of nodes that must report
 	// identical observations for a value to be accepted as the read result.
-	// 0 defaults to F+1. Must satisfy F+1 <= minResponsesToAggregate <= N when non-zero.
+	// 0 defaults to F+1. Must satisfy F+1 <= MinResponsesToAggregate <= N when non-zero.
 	MinResponsesToAggregate uint32 `protobuf:"varint,7,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache

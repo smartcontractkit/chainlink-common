@@ -79,12 +79,27 @@ DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
     WHERE id = ANY($1)
     FOR UPDATE SKIP LOCKED
 )`
-	res, err := s.ds.ExecContext(ctx, q, pq.Array(ids))
+	// Delete durability is not required under delete-on-delivery: a delete commit
+	// lost to a crash just leaves the row to be re-delivered (idempotent) or reclaimed
+	// by the expiry loop. We can relax synchronous_commit for the delete transaction,
+	// which removes the commit WAL-flush wait (IO:XactSync) which dominates at high
+	// delete rates, especially on Aurora where commit blocks on a storage-quorum ack.
+	var deleted int64
+	err := sqlutil.TransactDataSource(ctx, s.ds, nil, func(tx sqlutil.DataSource) error {
+		if _, err := tx.ExecContext(ctx, "SET LOCAL synchronous_commit = off"); err != nil {
+			return fmt.Errorf("failed to set synchronous_commit=off: %w", err)
+		}
+		res, err := tx.ExecContext(ctx, q, pq.Array(ids))
+		if err != nil {
+			return err
+		}
+		deleted, _ = res.RowsAffected()
+		return nil
+	})
 	if err != nil {
 		return 0, fmt.Errorf("failed to batch delete delivered chip durable events: %w", err)
 	}
-	n, _ := res.RowsAffected()
-	return n, nil
+	return deleted, nil
 }
 
 func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {

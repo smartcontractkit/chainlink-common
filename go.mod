@@ -163,3 +163,8 @@ require (
 retract v1.3.0 // accidentally published
 
 retract v1.3.1 // exists only to retract v1.3.0
+
+// Local development against the sibling chainlink-protos checkout so common
+// builds/tests against the just-edited metering protos. Removed by the
+// maintainer at merge time (who bumps the pin instead).
+replace github.com/smartcontractkit/chainlink-protos/metering/go => ../chainlink-protos/metering/go

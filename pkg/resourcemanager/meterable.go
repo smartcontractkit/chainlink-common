@@ -2,6 +2,7 @@ package resourcemanager
 
 import (
 	"context"
+	"strconv"
 
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
 )
@@ -10,14 +11,15 @@ import (
 // resources (trigger registrations, workflow specs, log filters). A producer
 // registers itself with a ResourceManager (see ResourceManager.Register) so it
 // is polled once per snapshot tick for the absolute state of its currently
-// active resources, in addition to emitting lifecycle edges inline via
-// EmitMeterRecord.
+// active resources, in addition to emitting request-time deltas inline via
+// EmitDelta / EmitUsage.
 type Meterable interface {
 	// ResourceIdentity returns the producer's base identity: the coarse
 	// dimensions (product, tenant, numeric_tenant_id, environment, zone, don, service) plus
 	// the service-level resource_pool / resource_pool_id. Per-resource billing
-	// fields (resource_type/resource_id/org_id/event_id/value) are carried by
-	// Utilizations on MeterRecord and MeterSnapshot.
+	// fields (resource_type/resource_id/org_id/value) are carried by
+	// Utilizations on MeterRecord and MeterSnapshot; event_id is stamped by the
+	// ResourceManager at emit time.
 	ResourceIdentity() ResourceIdentity
 
 	// GetUtilization returns the current level of the producer's currently
@@ -36,7 +38,8 @@ type Meterable interface {
 
 // SnapshotEntry is the current level of one active resource at a snapshot tick.
 // Identity is the base resource identity, and Utilizations carries one or more
-// billed dimensions for that resource (resource_type/resource_id/org_id/event_id/value).
+// billed dimensions for that resource (resource_type/resource_id/org_id/value);
+// event_id is stamped by the ResourceManager at emit time.
 type SnapshotEntry struct {
 	Identity     ResourceIdentity
 	Utilizations []*meteringpb.Utilization
@@ -154,4 +157,68 @@ func (r ResourceIdentity) NodeID() string {
 		return ""
 	}
 	return r.Don.NodeID
+}
+
+// DefaultMeteringProduct is the fallback product dimension used when the host
+// did not inject one (a legacy node or a boot path that predates the metering
+// deployment-identity plumbing).
+const DefaultMeteringProduct = "cre"
+
+// NewBaseIdentity builds a producer's base ResourceIdentity from its static
+// deployment identity plus the service/resource-pool constants. It centralizes
+// three rules that every producer must apply identically:
+//
+//   - product falls back to DefaultMeteringProduct ("cre") when unset;
+//   - capDONID is the authoritative DON ID supplied over the standardcapabilities
+//     interface (StandardCapabilitiesDependencies, host-injected at Initialise);
+//     it is rendered with strconv.FormatUint, and left empty when 0 (the host
+//     has not populated it) so the request's workflow DON can be applied later
+//     via WithWorkflowDonFallback;
+//   - the Don sub-identity is set only when there is a DON ID or node ID to
+//     carry; otherwise it stays nil rather than an empty struct.
+//
+// Per-resource fields (resource_type/resource_id/org_id/value) and event_id are
+// not part of the base identity; they are carried per emission.
+func NewBaseIdentity(dep DeploymentIdentity, capDONID uint32, service, resourcePool string) ResourceIdentity {
+	product := dep.Product
+	if product == "" {
+		product = DefaultMeteringProduct
+	}
+
+	var donID string
+	if capDONID != 0 {
+		donID = strconv.FormatUint(uint64(capDONID), 10)
+	}
+
+	id := ResourceIdentity{
+		Product:         product,
+		Tenant:          dep.Tenant,
+		NumericTenantID: dep.NumericTenantID,
+		Environment:     dep.Environment,
+		Zone:            dep.Zone,
+		Service:         service,
+		ResourcePool:    resourcePool,
+	}
+	if donID != "" || dep.NodeID != "" {
+		id.Don = &DonIdentity{DonID: donID, NodeID: dep.NodeID}
+	}
+	return id
+}
+
+// WithWorkflowDonFallback returns a copy of r stamped with the request's
+// workflow DON ID, but only when the base identity has no CapDONID. CapDONID
+// (supplied over the standardcapabilities interface) is the authoritative DON
+// ID for a capability node; the request's WorkflowDonID is a fallback that
+// applies only for hosts that have not populated CapDONID (value 0, so
+// NewBaseIdentity left don_id empty). When the base identity already carries a
+// CapDONID, or workflowDonID is 0, r is returned unchanged.
+func (r ResourceIdentity) WithWorkflowDonFallback(workflowDonID uint32) ResourceIdentity {
+	if r.DonID() != "" || workflowDonID == 0 {
+		return r
+	}
+	r.Don = &DonIdentity{
+		DonID:  strconv.FormatUint(uint64(workflowDonID), 10),
+		NodeID: r.NodeID(),
+	}
+	return r
 }

@@ -1,25 +1,44 @@
-// Package resourcemanager emits metering.v1 events for durable billable
+// Package resourcemanager emits metering.v1 billing data for durable billable
 // resources such as trigger registrations, workflow specs, and log filters.
 //
-// It emits two kinds of records, each covering exactly one resource identified
-// by its ResourceIdentity:
+// It emits two complementary, load-bearing billing streams, each covering
+// exactly one resource identified by its ResourceIdentity:
 //
-//   - MeterRecord lifecycle edges, inline, via EmitMeterRecord at the point a
-//     resource is reserved, released, or its utilization changes; and
-//   - MeterSnapshot records, on a timer, one per resource a registered
-//     Meterable reports as currently active. Snapshots are the
-//     liveness/utilization-over-time signal that pure RESERVE/RELEASE cannot
-//     provide (a node panic would otherwise leak a reservation forever).
+//   - MeterRecords: the durable, first-class billing event stream. Each record
+//     captures one signed delta — the level change of one request against a
+//     durable resource (EmitDelta -> METER_ACTION_UPDATE) or one instantaneous
+//     occurrence of consumption (EmitUsage -> METER_ACTION_USAGE). Records give
+//     the consumer precise request-time edges and the audit trail.
+//   - MeterSnapshots: the periodic absolute level of each active resource,
+//     emitted on a timer, one per resource a registered Meterable reports as
+//     active. Snapshots carry the level and the liveness signal; a resource
+//     that stops being snapshotted is released, and that absence is the only
+//     lifecycle-cleanup mechanism.
+//
+// The emitter is stateless with respect to metering: a delta is derived only
+// from the request being fielded plus the producer's own store. There is no
+// pairing contract, no balance ledger, and no emission-history invariant.
+// Producers emit only when fielding a request that changes desired state; there
+// are no process-lifecycle emissions.
+//
+// event_id is generated fresh per emission (a UUIDv4) by this manager and is
+// the consumer's dedup key: deltas have counter semantics, so at-least-once
+// delivery must dedup by event_id, and snapshot reconciliation then bounds any
+// residual level drift.
+//
+// Bucket semantics: An org draws down credits in a time bucket if the bucket
+// contains any positive-delta UPDATE record, any USAGE record, or any nonzero
+// snapshot for a resource attributed to that org. A +N and -N cancelling within
+// one bucket still triggers drawdown via the positive delta.
 //
 // The ResourceManager is the single owner of the snapshot tick: each producer
 // starts the manager as a sub-service and only Registers itself; producers
 // never run their own snapshot loop.
 //
-// Emission is fail-open by design: EmitMeterRecord and the snapshot loop
+// Emission is fail-open by design: EmitDelta, EmitUsage, and the snapshot loop
 // return no error, and a metering failure must never gate, delay, or retry the
 // resource operation being metered. Failures surface via error-level logs and
-// the resource_manager_*_failure_total counters; billing correctness is
-// recovered downstream through idempotency keys and reconciliation.
+// the resource_manager_*_failure_total counters.
 package resourcemanager
 
 import (
@@ -28,6 +47,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jonboulle/clockwork"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -89,7 +109,7 @@ type Emitter interface {
 // ResourceManagerConfig configures a ResourceManager.
 type ResourceManagerConfig struct {
 	// MeterRecordsEnabled is the meter-record rollout gate. When false (the
-	// default), EmitMeterRecord is a no-op.
+	// default), EmitDelta and EmitUsage are no-ops.
 	MeterRecordsEnabled bool
 
 	// MeterSnapshotsEnabled gates snapshot emission. Snapshots are only emitted
@@ -97,15 +117,15 @@ type ResourceManagerConfig struct {
 	MeterSnapshotsEnabled bool
 
 	// Emitter delivers encoded records, typically beholder.GetEmitter(). A nil
-	// Emitter makes EmitMeterRecord a no-op even when Enabled is true and keeps
+	// Emitter makes EmitDelta and EmitUsage no-ops even when enabled and keeps
 	// the snapshot loop from starting.
 	Emitter Emitter
 
 	// SnapshotInterval is the period between snapshots. Zero (the default)
 	// DISABLES the snapshot loop; the manager still starts as a service and
-	// EmitMeterRecord still works. Callers that want snapshots set a positive
-	// value, e.g. DefaultSnapshotInterval. The default is not substituted for
-	// zero — zero means off.
+	// EmitDelta / EmitUsage still work. Callers that want snapshots set a
+	// positive value, e.g. DefaultSnapshotInterval. The default is not
+	// substituted for zero — zero means off.
 	SnapshotInterval time.Duration
 
 	// Clock drives snapshot tick timing and record timestamps. Nil selects the
@@ -147,7 +167,7 @@ type ResourceManager struct {
 // NewResourceManager returns a ResourceManager. A failure to create a metric
 // instrument is logged and that instrument is skipped; it never prevents
 // construction. The manager must be Started before its snapshot loop runs;
-// EmitMeterRecord works regardless of Start.
+// EmitDelta and EmitUsage work regardless of Start.
 func NewResourceManager(lggr logger.Logger, cfg ResourceManagerConfig) *ResourceManager {
 	meter := beholder.GetMeter()
 	sugared := logger.Sugared(lggr)
@@ -200,7 +220,7 @@ func NewResourceManager(lggr logger.Logger, cfg ResourceManagerConfig) *Resource
 // start launches the snapshot loop. The loop runs only when metering is
 // enabled, an emitter is configured, and a positive SnapshotInterval is set;
 // otherwise the service starts cleanly with snapshots disabled and
-// EmitMeterRecord remains available.
+// EmitDelta / EmitUsage remain available.
 func (rm *ResourceManager) start(_ context.Context) error {
 	if !rm.meterSnapshotsEnabled || rm.emitter == nil {
 		rm.lggr.Infow("snapshot loop disabled",
@@ -212,15 +232,29 @@ func (rm *ResourceManager) start(_ context.Context) error {
 		return nil
 	}
 	rm.srvcEng.Go(func(ctx context.Context) {
+		// Align the first tick to the next wall-clock multiple of the interval,
+		// then run on the interval boundary thereafter. For DonTime-synced
+		// clocks this makes cross-node snapshot buckets agree structurally: the
+		// emitted snapshot timestamp is the tick time truncated to the interval.
+		now := rm.clock.Now()
+		firstTick := now.Truncate(rm.snapshotInterval).Add(rm.snapshotInterval)
+		timer := rm.clock.NewTimer(firstTick.Sub(now))
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.Chan():
+		}
+		rm.emitSnapshots(ctx, firstTick)
+
 		ticker := rm.clock.NewTicker(rm.snapshotInterval)
 		defer ticker.Stop()
-
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-ticker.Chan():
-				rm.emitSnapshots(ctx)
+			case tickTime := <-ticker.Chan():
+				rm.emitSnapshots(ctx, tickTime)
 			}
 		}
 	})
@@ -249,9 +283,19 @@ func (rm *ResourceManager) Register(m Meterable) (unregister func()) {
 	}
 }
 
+// snapshotRegistrantTimeoutFloor bounds how long a single Meterable may take
+// (GetUtilization + marshal + emit) before it is skipped for this tick.
+const snapshotRegistrantTimeoutFloor = 5 * time.Second
+
 // emitSnapshots is the snapshot tick: it snapshots the registry under a read
-// lock, then emits snapshots for every registered Meterable.
-func (rm *ResourceManager) emitSnapshots(ctx context.Context) {
+// lock, then emits snapshots for every registered Meterable. tickTime is the
+// interval boundary this tick covers; each snapshot timestamp is tickTime
+// truncated to the snapshot interval so cross-node buckets agree.
+//
+// Each registrant runs under its own context deadline (SnapshotInterval/4,
+// floored at 5s). A registrant that exceeds it is logged and skipped so one
+// slow or stuck Meterable can never stall the tick for the others.
+func (rm *ResourceManager) emitSnapshots(ctx context.Context, tickTime time.Time) {
 	rm.mu.RLock()
 	ms := make([]Meterable, 0, len(rm.registrations))
 	for reg := range rm.registrations {
@@ -259,32 +303,53 @@ func (rm *ResourceManager) emitSnapshots(ctx context.Context) {
 	}
 	rm.mu.RUnlock()
 
+	timeout := rm.snapshotInterval / 4
+	if timeout < snapshotRegistrantTimeoutFloor {
+		timeout = snapshotRegistrantTimeoutFloor
+	}
+
 	for _, m := range ms {
-		rm.emitSnapshot(ctx, m)
+		func(m Meterable) {
+			rctx, cancel := context.WithTimeout(ctx, timeout)
+			defer cancel()
+			rm.emitSnapshot(rctx, m, tickTime)
+			if rctx.Err() != nil && ctx.Err() == nil {
+				rm.lggr.Warnw("snapshot registrant exceeded its per-tick deadline; skipped",
+					"timeout", timeout,
+					"err", rctx.Err(),
+				)
+			}
+		}(m)
 	}
 }
 
 // emitSnapshot emits one MeterSnapshot per active resource reported by m. Each
 // snapshot covers exactly one resource, fully identified by its
-// ResourceIdentity. The interval bucket (timestamp truncated to the snapshot
-// interval) keys the snapshot per interval. An empty utilization list emits
-// nothing: billing zeroes a resource out by its absence from later snapshots.
-// Fail-open: per-resource errors are logged and counted, never returned.
-func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable) {
+// ResourceIdentity. The snapshot timestamp is tickTime truncated to the
+// snapshot interval, so retries of the same interval dedup and cross-node
+// buckets agree. An empty utilization list emits nothing: a resource is
+// released by its absence from later snapshots. Fail-open: per-resource errors
+// are logged and counted, never returned.
+func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable, tickTime time.Time) {
 	if !rm.meterSnapshotsEnabled || rm.emitter == nil {
 		return
 	}
 
-	now := rm.clock.Now()
-	ts := timestamppb.New(now)
+	ts := timestamppb.New(tickTime.Truncate(rm.snapshotInterval))
 	interval := durationpb.New(rm.snapshotInterval)
 
 	for _, e := range m.GetUtilization(ctx) {
 		if len(e.Utilizations) == 0 {
 			continue
 		}
+		// event_id is generated by the manager, never the producer: one fresh
+		// UUIDv4 per snapshot emission, stamped on each utilization.
+		eventID := uuid.NewString()
 		for _, u := range e.Utilizations {
-			rm.recordUtilization(ctx, e.Identity, u, meteringpb.MeterAction_METER_ACTION_UPDATE)
+			if u != nil {
+				u.EventId = eventID
+			}
+			rm.recordUtilization(ctx, e.Identity, u)
 		}
 
 		snapshot := &meteringpb.MeterSnapshot{
@@ -325,14 +390,30 @@ func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable) {
 	}
 }
 
-// EmitMeterRecord emits a metering.v1.MeterRecord, timestamped now, for action
-// on the one resource described by identity.
+// EmitDelta emits a metering.v1.MeterRecord with METER_ACTION_UPDATE: a signed
+// delta to the durable resource's level (register = +N, unregister = -N, resize
+// = ±delta). delta may be negative. The record is timestamped with the raw
+// clock (records are request-time edges, not bucket-aligned).
 //
-// EmitMeterRecord is fail-open and returns no error: when the manager is
-// disabled or has no emitter it does nothing, and marshal or emit failures are
-// recorded only via error-level logs and the failure counter. Callers must
-// never gate resource allocation or deallocation on emission.
-func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity ResourceIdentity, action meteringpb.MeterAction, utilizations []*meteringpb.Utilization) {
+// EmitDelta is fail-open and returns no error: when the manager is disabled or
+// has no emitter it does nothing, and marshal or emit failures are recorded
+// only via error-level logs and the failure counter. Callers must never gate
+// the resource operation being metered on emission.
+func (rm *ResourceManager) EmitDelta(ctx context.Context, identity ResourceIdentity, delta int64, fields UtilizationFields) {
+	rm.emitRecord(ctx, identity, meteringpb.MeterAction_METER_ACTION_UPDATE, NewUtilizationInt(delta, fields))
+}
+
+// EmitUsage emits a metering.v1.MeterRecord with METER_ACTION_USAGE: a one-off
+// instantaneous consumption event billed per occurrence (no level, never
+// snapshotted). Same fail-open semantics as EmitDelta.
+func (rm *ResourceManager) EmitUsage(ctx context.Context, identity ResourceIdentity, quantity int64, fields UtilizationFields) {
+	rm.emitRecord(ctx, identity, meteringpb.MeterAction_METER_ACTION_USAGE, NewUtilizationInt(quantity, fields))
+}
+
+// emitRecord builds and emits a single-utilization MeterRecord for action.
+// event_id is generated here (a fresh UUIDv4 per emission), never supplied by
+// the caller, and stamped on the utilization.
+func (rm *ResourceManager) emitRecord(ctx context.Context, identity ResourceIdentity, action meteringpb.MeterAction, u *meteringpb.Utilization) {
 	if !rm.meterRecordsEnabled {
 		rm.lggr.Debugw("metering disabled; meter record not emitted",
 			"service", identity.Service,
@@ -342,9 +423,11 @@ func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity Resourc
 		return
 	}
 
-	for _, u := range utilizations {
-		rm.recordUtilization(ctx, identity, u, action)
+	if u != nil {
+		u.EventId = uuid.NewString()
 	}
+	utilizations := []*meteringpb.Utilization{u}
+	rm.recordUtilization(ctx, identity, u)
 
 	if rm.emitter == nil {
 		return
@@ -389,7 +472,7 @@ func (rm *ResourceManager) EmitMeterRecord(ctx context.Context, identity Resourc
 
 // recordUtilization records value to the per-resource utilization gauge,
 // labeled with every ResourceIdentity dimension plus utilization identity.
-func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, u *meteringpb.Utilization, action meteringpb.MeterAction) {
+func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, u *meteringpb.Utilization) {
 	if rm.utilization == nil {
 		return
 	}
@@ -397,22 +480,16 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 		return
 	}
 
-	var value int64
-	if action == meteringpb.MeterAction_METER_ACTION_RELEASE {
-		value = 0
-	} else {
-		parsed, err := strconv.ParseInt(u.GetValue(), 10, 64)
-		if err != nil {
-			rm.lggr.Debugw("skipping utilization gauge record for non-int64 value",
-				"value", u.GetValue(),
-				"resourceType", u.GetResourceType(),
-				"resourceID", u.GetResourceId(),
-				"orgID", u.GetOrgId(),
-				"err", err,
-			)
-			return
-		}
-		value = parsed
+	value, err := strconv.ParseInt(u.GetValue(), 10, 64)
+	if err != nil {
+		rm.lggr.Debugw("skipping utilization gauge record for non-int64 value",
+			"value", u.GetValue(),
+			"resourceType", u.GetResourceType(),
+			"resourceID", u.GetResourceId(),
+			"orgID", u.GetOrgId(),
+			"err", err,
+		)
+		return
 	}
 	rm.utilization.Record(ctx, value, metric.WithAttributes(
 		attribute.String("product", id.Product),

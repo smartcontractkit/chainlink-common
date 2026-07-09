@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783524784314,
+  "lastUpdate": 1783603908348,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -53940,6 +53940,66 @@ window.BENCHMARK_DATA = {
             "value": 147448,
             "unit": "ns/op",
             "extra": "7953 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3823ee7915ea7770c23e59711b9a9d7c5f87e363",
+          "message": "DurableEmitter Optimizations (#2224)\n\n* Batch delete instead of mark\n\n* Update store.go\n\n* Update observable_store.go\n\n* Update custom_message.go\n\n* Update custom_message.go\n\n* Log instead of err\n\n* Skip locked rows\n\n* Remove fallback\n\n* Remove fallback client\n\n* Retransmit paging cursor\n\n* Warn on delivery failures\n\n* Remove noisy log\n\n* Remove from custom msg\n\n---------\n\nCo-authored-by: Tarcísio Zotelli Ferraz <tar-2008.ferraz@hotmail.com>",
+          "timestamp": "2026-07-09T13:18:27Z",
+          "tree_id": "fae08373e9324fd94c03c850a3232edeeba85e6c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3823ee7915ea7770c23e59711b9a9d7c5f87e363"
+        },
+        "date": 1783603905031,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 373.9,
+            "unit": "ns/op",
+            "extra": "3296899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91855,
+            "unit": "ns/op",
+            "extra": "12944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.3,
+            "unit": "ns/op",
+            "extra": "2857077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92309,
+            "unit": "ns/op",
+            "extra": "12915 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26651,
+            "unit": "ns/op",
+            "extra": "44954 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139092,
+            "unit": "ns/op",
+            "extra": "7975 times\n4 procs"
           }
         ]
       }

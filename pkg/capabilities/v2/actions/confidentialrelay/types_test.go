@@ -204,13 +204,6 @@ func TestSecretsRequestParams_Validate(t *testing.T) {
 			p.Owner = "0xZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
 		}, "owner must be a 0x-prefixed 20-byte hex address"},
 		{"missing execution_id", func(p *SecretsRequestParams) { p.ExecutionID = "" }, "execution_id is required"},
-		{"execution_id wrong length", func(p *SecretsRequestParams) { p.ExecutionID = "abcd" }, "execution_id must be 32 bytes hex-encoded"},
-		{"execution_id with 0x prefix", func(p *SecretsRequestParams) {
-			p.ExecutionID = "0x" + validExecutionID[:62]
-		}, "execution_id must be 32 bytes hex-encoded"},
-		{"execution_id non-hex digits", func(p *SecretsRequestParams) {
-			p.ExecutionID = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-		}, "execution_id must be 32 bytes hex-encoded"},
 		{"missing enclave_public_key", func(p *SecretsRequestParams) { p.EnclavePublicKey = "" }, "enclave_public_key is required"},
 		{"enclave_public_key non-hex digits", func(p *SecretsRequestParams) {
 			p.EnclavePublicKey = "not-hex"
@@ -243,6 +236,12 @@ func TestSecretsRequestParams_Validate(t *testing.T) {
 		require.NoError(t, validSecretsParams().Validate())
 	})
 
+	t.Run("non-empty execution_id accepted", func(t *testing.T) {
+		p := validSecretsParams()
+		p.ExecutionID = "not-a-hex-execution-id"
+		require.NoError(t, p.Validate())
+	})
+
 	t.Run("optional fields can be empty", func(t *testing.T) {
 		p := validSecretsParams()
 		p.OrgID = ""
@@ -264,10 +263,6 @@ func TestCapabilityRequestParams_Validate(t *testing.T) {
 			p.Owner = "1111111111111111111111111111111111111111"
 		}, "owner must be a 0x-prefixed 20-byte hex address"},
 		{"missing execution_id", func(p *CapabilityRequestParams) { p.ExecutionID = "" }, "execution_id is required"},
-		{"execution_id wrong length", func(p *CapabilityRequestParams) { p.ExecutionID = "abcd" }, "execution_id must be 32 bytes hex-encoded"},
-		{"execution_id non-hex digits", func(p *CapabilityRequestParams) {
-			p.ExecutionID = "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ"
-		}, "execution_id must be 32 bytes hex-encoded"},
 		{"missing reference_id", func(p *CapabilityRequestParams) { p.ReferenceID = "" }, "reference_id is required"},
 		{"missing capability_id", func(p *CapabilityRequestParams) { p.CapabilityID = "" }, "capability_id is required"},
 		{"missing payload", func(p *CapabilityRequestParams) { p.Payload = "" }, "payload is required"},
@@ -284,6 +279,12 @@ func TestCapabilityRequestParams_Validate(t *testing.T) {
 
 	t.Run("valid params accepted", func(t *testing.T) {
 		require.NoError(t, validCapabilityParams().Validate())
+	})
+
+	t.Run("non-empty execution_id accepted", func(t *testing.T) {
+		p := validCapabilityParams()
+		p.ExecutionID = "not-a-hex-execution-id"
+		require.NoError(t, p.Validate())
 	})
 
 	t.Run("attestation can be empty", func(t *testing.T) {

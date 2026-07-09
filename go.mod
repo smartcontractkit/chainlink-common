@@ -159,3 +159,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
+
+retract v1.3.0 // accidentally published
+
+retract v1.3.1 // exists only to retract v1.3.0

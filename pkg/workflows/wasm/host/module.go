@@ -129,16 +129,18 @@ type ModuleV2 = host.Module
 type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
-	// The compiled module is not kept resident for the lifetime of the module
-	// instance. Instead the decompressed guest binary is retained together with an
-	// on-disk wazero compilation cache (rooted at moduleDir). Each guest invocation
-	// (callWasm) spins up its own wazero.Runtime, recompiles the binary - served
-	// from the on-disk cache, so it is cheap - runs, and closes the runtime when
-	// the invocation returns. Nothing wasm-related is held resident while a
-	// suspended execution waits between resumes.
-	moduleDir string
-	cache     wazero.CompilationCache
-	binary    []byte
+	// The guest binary is compiled exactly once, in newModule, into compiled. The
+	// runtime, its standard-WASI import, and the "env" host module are all set up
+	// once and shared by every guest invocation. Each callWasm only instantiates a
+	// fresh, anonymous instance of compiled (cheap - it allocates a new linear
+	// memory but reuses the already-decoded and already-compiled module) and closes
+	// that instance when the invocation returns.
+	//
+	// Decoding the raw WASM into an in-memory module is expensive and allocation
+	// heavy; doing it once - rather than per invocation - is what keeps a fleet of
+	// concurrently-suspended executions from exhausting memory.
+	runtime  wazero.Runtime
+	compiled wazero.CompiledModule
 
 	cfg *ModuleConfig
 
@@ -159,11 +161,12 @@ type callWasmFunc func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWas
 
 var _ ModuleV1 = (*module)(nil)
 
-// linkFn registers the host-provided imports (the "env" module plus any WASI
-// extras) on the runtime before the guest module is instantiated. wazero links
-// imports at the runtime level rather than via a per-store linker, so there is
-// no instance to return here.
-type linkFn[T any] func(m *module, r wazero.Runtime, exec *execution[T]) error
+// linkFn performs per-execution preparation before a guest invocation. The
+// host-provided imports (the "env" module and standard WASI) are registered
+// once on the shared runtime in newModule, not here; this hook exists only for
+// state that must be initialised per execution (e.g. the DON/Node time fetcher
+// used by the v2 path).
+type linkFn[T any] func(m *module, exec *execution[T]) error
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
@@ -381,30 +384,57 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 // limits are expressed to wazero in pages.
 const wasmPageSize = 65536
 
+// execCtxKey is the context key under which the current *execution[T] is stored
+// for the duration of a single guest invocation. The "env" host module is
+// registered once per module and shared by every invocation, so its functions
+// recover the per-execution state from the call context rather than closing over
+// it. See ctxWithExecution / executionFromContext.
+type execCtxKey struct{}
+
+func ctxWithExecution(ctx context.Context, exec any) context.Context {
+	return context.WithValue(ctx, execCtxKey{}, exec)
+}
+
+// executionFromContext returns the *execution[T] carried by ctx. Each module is
+// exclusively a v2 or a legacy-DAG module, so the concrete T registered on the
+// host module always matches the T stored by callWasm.
+func executionFromContext[T proto.Message](ctx context.Context) *execution[T] {
+	exec, _ := ctx.Value(execCtxKey{}).(*execution[T])
+	return exec
+}
+
 func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	ctx := context.Background()
 
-	// Each module gets its own on-disk compilation cache. Compiling the guest
-	// once here both discovers its imports and warms the cache, so the recompile
-	// performed by every callWasm is served from disk rather than re-optimised.
-	moduleDir, err := os.MkdirTemp("", "wasm-module-")
+	// The memory limit is applied at the runtime-config level and therefore fixed
+	// for the module's lifetime (wazero has no per-instantiation memory limit).
+	// Read the configured limit once here.
+	maxMemoryBytes, err := modCfg.MemoryLimiter.Limit(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("error creating module temp dir: %w", err)
+		return nil, fmt.Errorf("failed to get memory limit: %w", err)
+	}
+	memoryLimitPages := uint32(uint64(maxMemoryBytes) / wasmPageSize)
+
+	// A single runtime is shared by every invocation. WithCloseOnContextDone lets
+	// the per-call context deadline (set in callWasm) interrupt a runaway guest,
+	// replacing wasmtime's epoch interruption.
+	runtimeCfg := wazero.NewRuntimeConfig().
+		WithCloseOnContextDone(true).
+		WithMemoryLimitPages(memoryLimitPages)
+	r := wazero.NewRuntimeWithConfig(ctx, runtimeCfg)
+
+	// Standard WASI (clock, poll, random, stdio, proc_exit, args, ...), registered
+	// once.
+	if _, err = wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
+		_ = r.Close(ctx)
+		return nil, fmt.Errorf("error instantiating wasi: %w", err)
 	}
 
-	cache, err := wazero.NewCompilationCacheWithDir(moduleDir)
-	if err != nil {
-		_ = os.RemoveAll(moduleDir)
-		return nil, fmt.Errorf("error creating compilation cache: %w", err)
-	}
-
-	r := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig().WithCompilationCache(cache))
-	defer r.Close(ctx)
-
+	// Compile (decode + code-gen) the guest exactly once. The resulting compiled
+	// module is reused by every invocation; decoding is not repeated per call.
 	compiled, err := r.CompileModule(ctx, binary)
 	if err != nil {
-		_ = cache.Close(ctx)
-		_ = os.RemoveAll(moduleDir)
+		_ = r.Close(ctx)
 		return nil, fmt.Errorf("error compiling wasm module: %w", err)
 	}
 
@@ -421,81 +451,111 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 
 	metrics, err := newModuleMetrics()
 	if err != nil {
-		_ = cache.Close(ctx)
-		_ = os.RemoveAll(moduleDir)
+		_ = r.Close(ctx)
 		return nil, fmt.Errorf("error creating module metrics: %w", err)
 	}
 
 	m := &module{
-		moduleDir:    moduleDir,
-		cache:        cache,
-		binary:       binary,
+		runtime:      r,
+		compiled:     compiled,
 		cfg:          modCfg,
 		metrics:      metrics,
 		v2ImportName: v2ImportName,
 	}
+
+	// Register the "env" host module once. Its functions read the current
+	// execution from the call context.
+	if v2ImportName == "" {
+		err = registerLegacyDAGEnv(m, r)
+	} else {
+		err = registerNoDAGEnv(m, r)
+	}
+	if err != nil {
+		_ = r.Close(ctx)
+		return nil, fmt.Errorf("error instantiating env host module: %w", err)
+	}
+
 	m.callWasm = func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) (time.Duration, error) {
 		return callWasm(timeout, m, req, linkWasm, exec)
 	}
 	return m, nil
 }
 
-func linkNoDAG(m *module, r wazero.Runtime, exec *execution[*sdkpb.ExecutionResult]) error {
-	// `now` reads DON/Node time via a background fetcher; start it before the
-	// guest can call the import.
-	exec.timeFetcher = newTimeFetcher(exec.ctx, exec.executor)
-	exec.timeFetcher.Start()
-
+// registerNoDAGEnv registers the v2 (no-DAG) "env" host module once on the shared
+// runtime. Each function recovers the current *execution[*sdkpb.ExecutionResult]
+// from the call context.
+func registerNoDAGEnv(m *module, r wazero.Runtime) error {
 	logger := m.cfg.Logger
 	_, err := r.NewHostModuleBuilder("env").
 		NewFunctionBuilder().WithFunc(func(context.Context, api.Module) {}).Export(m.v2ImportName).
-		NewFunctionBuilder().WithFunc(createSendResponseFn(logger, exec, func() *sdkpb.ExecutionResult {
+		NewFunctionBuilder().WithFunc(createSendResponseFn(logger, func() *sdkpb.ExecutionResult {
 		return &sdkpb.ExecutionResult{}
 	})).Export("send_response").
-		NewFunctionBuilder().WithFunc(createCallCapFn(logger, exec)).Export("call_capability").
-		NewFunctionBuilder().WithFunc(createAwaitCapsFn(logger, exec)).Export("await_capabilities").
-		NewFunctionBuilder().WithFunc(createGetSecretsFn(logger, exec)).Export("get_secrets").
-		NewFunctionBuilder().WithFunc(createAwaitSecretsFn(logger, exec)).Export("await_secrets").
-		NewFunctionBuilder().WithFunc(exec.log).Export("log").
-		NewFunctionBuilder().WithFunc(exec.emitMetric).Export("emit_metric").
-		NewFunctionBuilder().WithFunc(exec.switchModes).Export("switch_modes").
-		NewFunctionBuilder().WithFunc(exec.getSeed).Export("random_seed").
-		NewFunctionBuilder().WithFunc(exec.now).Export("now").
-		Instantiate(exec.ctx)
-	if err != nil {
-		return fmt.Errorf("error instantiating env host module: %w", err)
-	}
-	return nil
+		NewFunctionBuilder().WithFunc(createCallCapFn(logger)).Export("call_capability").
+		NewFunctionBuilder().WithFunc(createAwaitCapsFn(logger)).Export("await_capabilities").
+		NewFunctionBuilder().WithFunc(createGetSecretsFn(logger)).Export("get_secrets").
+		NewFunctionBuilder().WithFunc(createAwaitSecretsFn(logger)).Export("await_secrets").
+		NewFunctionBuilder().WithFunc(func(ctx context.Context, mod api.Module, ptr, ptrlen int32) {
+		executionFromContext[*sdkpb.ExecutionResult](ctx).log(ctx, mod, ptr, ptrlen)
+	}).Export("log").
+		NewFunctionBuilder().WithFunc(func(ctx context.Context, mod api.Module, ptr, ptrlen int32) int32 {
+		return executionFromContext[*sdkpb.ExecutionResult](ctx).emitMetric(ctx, mod, ptr, ptrlen)
+	}).Export("emit_metric").
+		NewFunctionBuilder().WithFunc(func(ctx context.Context, mod api.Module, mode int32) {
+		executionFromContext[*sdkpb.ExecutionResult](ctx).switchModes(ctx, mod, mode)
+	}).Export("switch_modes").
+		NewFunctionBuilder().WithFunc(func(ctx context.Context, _ api.Module, mode int32) int64 {
+		return executionFromContext[*sdkpb.ExecutionResult](ctx).getSeed(mode)
+	}).Export("random_seed").
+		NewFunctionBuilder().WithFunc(func(ctx context.Context, mod api.Module, resultTimestamp int32) int32 {
+		return executionFromContext[*sdkpb.ExecutionResult](ctx).now(ctx, mod, resultTimestamp)
+	}).Export("now").
+		Instantiate(context.Background())
+	return err
 }
 
-func linkLegacyDAG(m *module, r wazero.Runtime, exec *execution[*wasmdagpb.Response]) error {
+// registerLegacyDAGEnv registers the legacy-DAG "env" host module once on the
+// shared runtime.
+func registerLegacyDAGEnv(m *module, r wazero.Runtime) error {
 	logger := m.cfg.Logger
 	_, err := r.NewHostModuleBuilder("env").
-		NewFunctionBuilder().WithFunc(createSendResponseFn(logger, exec, func() *wasmdagpb.Response {
+		NewFunctionBuilder().WithFunc(createSendResponseFn(logger, func() *wasmdagpb.Response {
 		return &wasmdagpb.Response{}
 	})).Export("sendResponse").
-		NewFunctionBuilder().WithFunc(createFetchFn(logger, wasmRead, wasmWrite, wasmWriteUInt32, m.cfg, exec)).Export("fetch").
-		NewFunctionBuilder().WithFunc(createEmitFn(logger, exec, m.cfg.Labeler, wasmRead, wasmWrite, wasmWriteUInt32)).Export("emit").
+		NewFunctionBuilder().WithFunc(createFetchFn(logger, wasmRead, wasmWrite, wasmWriteUInt32, m.cfg)).Export("fetch").
+		NewFunctionBuilder().WithFunc(createEmitFn(logger, m.cfg.Labeler, wasmRead, wasmWrite, wasmWriteUInt32)).Export("emit").
 		NewFunctionBuilder().WithFunc(createLogFn(logger)).Export("log").
-		Instantiate(exec.ctx)
-	if err != nil {
-		return fmt.Errorf("error instantiating env host module: %w", err)
+		Instantiate(context.Background())
+	return err
+}
+
+// linkNoDAG performs per-execution setup for the v2 path: it starts the DON/Node
+// time fetcher backing the `now` import. The fetcher is created once per
+// execution and survives across resumes.
+func linkNoDAG(_ *module, exec *execution[*sdkpb.ExecutionResult]) error {
+	if exec.timeFetcher == nil {
+		exec.timeFetcher = newTimeFetcher(exec.ctx, exec.executor)
+		exec.timeFetcher.Start()
 	}
 	return nil
 }
 
-// Start is a no-op: each guest invocation creates and tears down its own wazero
-// runtime in callWasm, and execution is bounded by the context deadline rather
-// than a shared epoch ticker.
+// linkLegacyDAG performs per-execution setup for the legacy-DAG path. There is
+// currently none.
+func linkLegacyDAG(_ *module, _ *execution[*wasmdagpb.Response]) error {
+	return nil
+}
+
+// Start is a no-op: the runtime and compiled module are created in newModule and
+// shared by every invocation; execution is bounded by the context deadline.
 func (m *module) Start() {}
 
 func (m *module) Close() {
-	// Release the on-disk compilation cache and its backing temp dir. The wazero
-	// runtimes are per-invocation and already closed in callWasm.
-	if m.cache != nil {
-		_ = m.cache.Close(context.Background())
+	// Closing the runtime releases the compiled module, the WASI and env host
+	// modules, and any lingering instances.
+	if m.runtime != nil {
+		_ = m.runtime.Close(context.Background())
 	}
-	_ = os.RemoveAll(m.moduleDir)
 }
 
 func (m *module) IsLegacyDAG() bool {
@@ -711,10 +771,12 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 	return nil, err
 }
 
-// callWasm performs a single guest invocation in a fresh, self-contained wazero
-// runtime. The runtime - and therefore the instance and its linear memory - is
-// closed before callWasm returns; everything that must survive a resume lives on
-// exec. It returns the error from _start (which encodes the guest exit code as a
+// callWasm performs a single guest invocation by instantiating a fresh, anonymous
+// instance of the module's already-compiled guest on the shared runtime. The
+// instance - and therefore its linear memory - is closed before callWasm returns;
+// everything that must survive a resume lives on exec. The current execution is
+// carried on the call context so the shared "env" host module can recover it. It
+// returns the error from _start (which encodes the guest exit code as a
 // *sys.ExitError, or the suspend trap raised by await_capabilities).
 func callWasm[I, O proto.Message](
 	timeout time.Duration,
@@ -731,47 +793,17 @@ func callWasm[I, O proto.Message](
 	}
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
-	// Limit memory to max memory megabytes per instance. wazero expresses the
-	// limit in pages, so convert from bytes.
-	maxMemoryBytes, err := m.cfg.MemoryLimiter.Limit(ctx)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get memory limit: %w", err)
-	}
-	memoryLimitPages := uint32(uint64(maxMemoryBytes) / wasmPageSize)
-
-	// A fresh runtime is used per (re)start; the previous run's runtime has
-	// already been closed. WithCloseOnContextDone lets the per-call context
-	// deadline (below) interrupt a runaway guest, replacing wasmtime's epoch
-	// interruption.
-	runtimeCfg := wazero.NewRuntimeConfig().
-		WithCompilationCache(m.cache).
-		WithCloseOnContextDone(true).
-		WithMemoryLimitPages(memoryLimitPages)
-	r := wazero.NewRuntimeWithConfig(ctx, runtimeCfg)
-	defer r.Close(ctx)
-
-	// Standard WASI (clock, poll, random, stdio, proc_exit, args, ...).
-	if _, err = wasi_snapshot_preview1.Instantiate(ctx, r); err != nil {
-		return 0, fmt.Errorf("error instantiating wasi: %w", err)
-	}
-
-	// Register the host-provided "env" imports for this execution path.
-	if err = linkWasm(m, r, exec); err != nil {
+	// Per-execution preparation (e.g. starting the time fetcher for the v2 path).
+	if err = linkWasm(m, exec); err != nil {
 		return 0, fmt.Errorf("error linking wasm: %w", err)
 	}
 
-	// Recompile from the on-disk cache (a cheap cache hit) for this invocation
-	// only. Nothing compiled is retained between runs, so a suspended execution
-	// (which returns from callWasm via the suspend trap) holds nothing while it
-	// waits; the next resume recompiles again.
-	compiled, err := r.CompileModule(ctx, m.binary)
-	if err != nil {
-		return 0, fmt.Errorf("error compiling wasm module: %w", err)
-	}
-
 	// Do not auto-run _start on instantiation: we call it explicitly below so we
-	// can time it and read back the peak memory afterwards.
+	// can time it and read back the peak memory afterwards. WithName("") makes the
+	// instance anonymous so the shared, already-compiled module can be
+	// instantiated many times (including concurrently) without name collisions.
 	modCfg := wazero.NewModuleConfig().
+		WithName("").
 		WithArgs("wasi", reqstr).
 		WithStdout(os.Stdout).
 		WithSysWalltime().
@@ -779,10 +811,13 @@ func callWasm[I, O proto.Message](
 		WithSysNanosleep().
 		WithStartFunctions()
 
-	instance, err := r.InstantiateModule(ctx, compiled, modCfg)
+	instance, err := m.runtime.InstantiateModule(ctx, m.compiled, modCfg)
 	if err != nil {
 		return 0, fmt.Errorf("error instantiating wasm module: %w", err)
 	}
+	// Close the instance (freeing its linear memory) when the invocation returns;
+	// the compiled module and runtime are shared and stay alive.
+	defer instance.Close(ctx)
 
 	start := instance.ExportedFunction("_start")
 	if start == nil {
@@ -790,16 +825,18 @@ func callWasm[I, O proto.Message](
 	}
 
 	// Bound this invocation by the remaining timeout. When the deadline fires,
-	// WithCloseOnContextDone closes the module and the call returns a
-	// *sys.ExitError carrying context.DeadlineExceeded.
+	// WithCloseOnContextDone closes the instance and the call returns a
+	// *sys.ExitError carrying context.DeadlineExceeded. The current execution is
+	// attached so the shared env host functions can recover it.
 	callCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	callCtx = ctxWithExecution(callCtx, exec)
 
 	startTime := time.Now()
 	_, err = start.Call(callCtx)
 	executionDuration := time.Since(startTime)
 
-	// Capture the linear memory the guest grew to before the runtime is closed, so
+	// Capture the linear memory the guest grew to before the instance is closed, so
 	// Execute can emit it as the peak memory metric.
 	if mem := instance.Memory(); mem != nil {
 		if used := int64(mem.Size()); used > exec.peakMemoryBytes {
@@ -835,9 +872,9 @@ func isSuspendTrap(err error) bool {
 // send a response back to the host.
 func createSendResponseFn[T proto.Message](
 	logger logger.Logger,
-	exec *execution[T],
 	newT func() T) func(_ context.Context, mod api.Module, ptr int32, ptrlen int32) int32 {
-	return func(_ context.Context, mod api.Module, ptr int32, ptrlen int32) int32 {
+	return func(ctx context.Context, mod api.Module, ptr int32, ptrlen int32) int32 {
+		exec := executionFromContext[T](ctx)
 		b, innerErr := wasmRead(mod, ptr, ptrlen)
 		if innerErr != nil {
 			logger.Errorf("error calling sendResponse: %s", innerErr)
@@ -931,9 +968,9 @@ func createFetchFn(
 	writer unsafeWriterFunc,
 	sizeWriter unsafeFixedLengthWriterFunc,
 	modCfg *ModuleConfig,
-	exec *execution[*wasmdagpb.Response],
 ) func(_ context.Context, mod api.Module, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
-	return func(_ context.Context, mod api.Module, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+	return func(ctx context.Context, mod api.Module, respptr int32, resplenptr int32, reqptr int32, reqptrlen int32) int32 {
+		exec := executionFromContext[*wasmdagpb.Response](ctx)
 		const errFetchSfx = "error calling fetch"
 
 		// writeErr marshals and writes an error response to wasm
@@ -1017,7 +1054,6 @@ func createFetchFn(
 // Emit, if any, are returned in the Error Message of the response.
 func createEmitFn(
 	l logger.Logger,
-	exec *execution[*wasmdagpb.Response],
 	e custmsg.MessageEmitter,
 	reader unsafeReaderFunc,
 	writer unsafeWriterFunc,
@@ -1027,7 +1063,8 @@ func createEmitFn(
 		l.Errorf("error emitting message: %s", err)
 	}
 
-	return func(_ context.Context, mod api.Module, respptr, resplenptr, msgptr, msglen int32) int32 {
+	return func(ctx context.Context, mod api.Module, respptr, resplenptr, msgptr, msglen int32) int32 {
+		exec := executionFromContext[*wasmdagpb.Response](ctx)
 		// writeErr marshals and writes an error response to wasm
 		writeErr := func(err error) int32 {
 			logErr(err)
@@ -1273,9 +1310,9 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 }
 
 func createCallCapFn(
-	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(_ context.Context, mod api.Module, ptr int32, ptrlen int32) int64 {
-	return func(_ context.Context, mod api.Module, ptr int32, ptrlen int32) int64 {
+	logger logger.Logger) func(_ context.Context, mod api.Module, ptr int32, ptrlen int32) int64 {
+	return func(ctx context.Context, mod api.Module, ptr int32, ptrlen int32) int64 {
+		exec := executionFromContext[*sdkpb.ExecutionResult](ctx)
 		b, innerErr := wasmRead(mod, ptr, ptrlen)
 		if innerErr != nil {
 			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
@@ -1304,9 +1341,9 @@ func createCallCapFn(
 
 func createAwaitCapsFn(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult],
 ) func(_ context.Context, mod api.Module, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
-	return func(_ context.Context, mod api.Module, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(ctx context.Context, mod api.Module, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+		exec := executionFromContext[*sdkpb.ExecutionResult](ctx)
 		b, err := wasmRead(mod, awaitRequest, awaitRequestLen)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)
@@ -1356,9 +1393,9 @@ func createAwaitCapsFn(
 }
 
 func createGetSecretsFn(
-	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(_ context.Context, mod api.Module, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
-	return func(_ context.Context, mod api.Module, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	logger logger.Logger) func(_ context.Context, mod api.Module, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(ctx context.Context, mod api.Module, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+		exec := executionFromContext[*sdkpb.ExecutionResult](ctx)
 		b, innerErr := wasmRead(mod, req, requestLen)
 		if innerErr != nil {
 			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
@@ -1386,9 +1423,9 @@ func createGetSecretsFn(
 
 func createAwaitSecretsFn(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult],
 ) func(_ context.Context, mod api.Module, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
-	return func(_ context.Context, mod api.Module, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+	return func(ctx context.Context, mod api.Module, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+		exec := executionFromContext[*sdkpb.ExecutionResult](ctx)
 		b, err := wasmRead(mod, awaitRequest, awaitRequestLen)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)

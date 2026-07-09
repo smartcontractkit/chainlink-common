@@ -64,7 +64,6 @@ func Test_createEmitFn(t *testing.T) {
 		reqId := "random-id"
 		emitFn := createEmitFn(
 			logger.Test(t),
-			exec,
 			newMockMessageEmitter(func(ctx context.Context, _ string, _ map[string]string) error {
 				v := ctx.Value(ctxKey)
 				assert.Equal(t, ctxValue, v)
@@ -94,7 +93,7 @@ func Test_createEmitFn(t *testing.T) {
 				return 0
 			}),
 		)
-		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := emitFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -102,7 +101,6 @@ func Test_createEmitFn(t *testing.T) {
 		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
 		emitFn := createEmitFn(
 			logger.Test(t),
-			exec,
 			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return nil
 			}),
@@ -118,7 +116,7 @@ func Test_createEmitFn(t *testing.T) {
 				return 0
 			}),
 		)
-		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := emitFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -133,7 +131,6 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			exec,
 			nil,
 			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				return nil, assert.AnError
@@ -147,7 +144,7 @@ func Test_createEmitFn(t *testing.T) {
 				return 0
 			}),
 		)
-		gotCode := emitFn(context.Background(), nil, 0, int32(len(respBytes)), 0, 0)
+		gotCode := emitFn(ctxWithExecution(context.Background(), exec), nil, 0, int32(len(respBytes)), 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode, "code mismatch")
 	})
 
@@ -163,7 +160,6 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			exec,
 			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
 				return assert.AnError
 			}),
@@ -183,7 +179,7 @@ func Test_createEmitFn(t *testing.T) {
 				return 0
 			}),
 		)
-		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := emitFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -203,7 +199,6 @@ func Test_createEmitFn(t *testing.T) {
 
 		emitFn := createEmitFn(
 			logger.Test(t),
-			exec,
 			nil,
 			unsafeReaderFunc(func(_ api.Module, _, _ int32) ([]byte, error) {
 				return badData, nil
@@ -217,7 +212,7 @@ func Test_createEmitFn(t *testing.T) {
 				return 0
 			}),
 		)
-		gotCode := emitFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := emitFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 }
@@ -249,10 +244,9 @@ func TestCreateFetchFn(t *testing.T) {
 				},
 				MaxFetchRequests: 5,
 			},
-			exec,
 		)
 
-		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := fetchFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -281,10 +275,9 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			exec,
 		)
 
-		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := fetchFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -314,10 +307,9 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			exec,
 		)
 
-		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := fetchFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -352,10 +344,9 @@ func TestCreateFetchFn(t *testing.T) {
 				},
 				MaxFetchRequests: 1,
 			},
-			exec,
 		)
 
-		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := fetchFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoSuccess, gotCode)
 	})
 
@@ -383,10 +374,9 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			exec,
 		)
 
-		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := fetchFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoFault, gotCode)
 	})
 
@@ -414,10 +404,9 @@ func TestCreateFetchFn(t *testing.T) {
 					return &FetchResponse{}, nil
 				},
 			},
-			exec,
 		)
 
-		gotCode := fetchFn(context.Background(), nil, 0, 0, 0, 0)
+		gotCode := fetchFn(ctxWithExecution(context.Background(), exec), nil, 0, 0, 0, 0)
 		assert.Equal(t, ErrnoFault, gotCode)
 	})
 }

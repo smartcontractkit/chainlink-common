@@ -3,8 +3,10 @@ package host
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +18,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -128,11 +131,14 @@ type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
 	// The compiled module is not kept resident for the lifetime of the module
-	// instance. Instead it is compiled once, serialized to a file in moduleDir,
-	// and the in-memory *wasmtime.Module is closed. Each guest invocation
-	// (callWasm) deserializes its own *wasmtime.Module from modulePath and closes
-	// it when the invocation returns, so nothing is held while suspended.
-	moduleDir  string
+	// instance. Instead it is compiled once, serialized, and written to the
+	// process-global content-addressed moduleFileCache (see moduleCache); the
+	// in-memory *wasmtime.Module is then closed. modulePath points at the cache
+	// entry, which is keyed by the SHA-256 of the serialized bytes so that
+	// modules compiled from identical binaries share a single file. Each guest
+	// invocation (callWasm) deserializes its own *wasmtime.Module from modulePath
+	// and closes it when the invocation returns, so nothing is held while
+	// suspended.
 	modulePath string
 
 	cfg *ModuleConfig
@@ -151,6 +157,77 @@ type module struct {
 
 // callWasmFunc runs one guest invocation for the v2 (no-DAG) execution path.
 type callWasmFunc func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) (time.Duration, error)
+
+// moduleFileCache is the process-global store for serialized wasmtime modules.
+var moduleFileCache = &moduleCache{refs: map[string]int{}}
+
+// moduleCache is a content-addressed, reference-counted store for serialized
+// wasmtime modules. Modules compiled from identical binaries serialize to
+// identical bytes, so they are written once to a shared directory under a key
+// derived from the SHA-256 of the serialized bytes and shared by every module
+// instance that references them. The reference count tracks live users of each
+// key so a file is removed only when the last module referencing it is closed.
+type moduleCache struct {
+	mu   sync.Mutex
+	dir  string
+	refs map[string]int
+}
+
+// store writes serialized to the cache, keyed by the SHA-256 of its contents,
+// and returns the path to the cache entry. The refcount check under the mutex
+// is the atomic decision: only the first reference to a given key writes the
+// file; subsequent references reuse the existing one (dedupe). The returned path
+// must later be passed to release exactly once (see module.Close).
+func (c *moduleCache) store(serialized []byte) (string, error) {
+	sum := sha256.Sum256(serialized)
+	key := hex.EncodeToString(sum[:])
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if err := c.ensureDir(); err != nil {
+		return "", err
+	}
+	path := filepath.Join(c.dir, key)
+
+	if c.refs[key] == 0 {
+		if err := os.WriteFile(path, serialized, 0o600); err != nil {
+			return "", fmt.Errorf("error writing serialized module: %w", err)
+		}
+	}
+	c.refs[key]++
+	return path, nil
+}
+
+// release drops one reference to the cache entry at path, removing the file once
+// the last reference is gone. It is safe to call with a path returned by store.
+func (c *moduleCache) release(path string) {
+	key := filepath.Base(path)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	switch {
+	case c.refs[key] <= 1:
+		delete(c.refs, key)
+		_ = os.Remove(path)
+	default:
+		c.refs[key]--
+	}
+}
+
+// ensureDir lazily creates the shared cache directory. The caller must hold c.mu.
+func (c *moduleCache) ensureDir() error {
+	if c.dir != "" {
+		return nil
+	}
+	dir, err := os.MkdirTemp("", "wasm-module-cache-")
+	if err != nil {
+		return fmt.Errorf("error creating module cache dir: %w", err)
+	}
+	c.dir = dir
+	return nil
+}
 
 var _ ModuleV1 = (*module)(nil)
 
@@ -416,33 +493,29 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 
 	modCfg.SdkLabeler(v2ImportName)
 
-	// Serialize the compiled module to a file and close the in-memory module: it
-	// is not kept resident for the lifetime of the instance. Each guest
-	// invocation deserializes its own copy from this file (see callWasm).
+	// Serialize the compiled module and close the in-memory module: it is not
+	// kept resident for the lifetime of the instance. The serialized bytes are
+	// stored in the process-global content-addressed cache, keyed by their
+	// SHA-256, so modules compiled from identical binaries share one file. Each
+	// guest invocation deserializes its own copy from this file (see callWasm).
 	serialized, err := mod.Serialize()
 	mod.Close()
 	if err != nil {
 		return nil, fmt.Errorf("error serializing wasmtime module: %w", err)
 	}
 
-	moduleDir, err := os.MkdirTemp("", "wasm-module-")
+	modulePath, err := moduleFileCache.store(serialized)
 	if err != nil {
-		return nil, fmt.Errorf("error creating module temp dir: %w", err)
-	}
-	modulePath := filepath.Join(moduleDir, "module.bin")
-	if err := os.WriteFile(modulePath, serialized, 0o600); err != nil {
-		_ = os.RemoveAll(moduleDir)
-		return nil, fmt.Errorf("error writing serialized module: %w", err)
+		return nil, err
 	}
 
 	metrics, err := newModuleMetrics()
 	if err != nil {
-		_ = os.RemoveAll(moduleDir)
+		moduleFileCache.release(modulePath)
 		return nil, fmt.Errorf("error creating module metrics: %w", err)
 	}
 
 	m := &module{
-		moduleDir:    moduleDir,
 		modulePath:   modulePath,
 		cfg:          modCfg,
 		metrics:      metrics,
@@ -603,8 +676,10 @@ func (m *module) Start() {}
 
 func (m *module) Close() {
 	// The engine and its epoch ticker are process-global (see wasmEngine) and
-	// shared by all modules, so they are intentionally not stopped here.
-	_ = os.RemoveAll(m.moduleDir)
+	// shared by all modules, so they are intentionally not stopped here. The
+	// cache entry is reference counted and removed only once the last module
+	// referencing these serialized bytes is closed (see moduleCache).
+	moduleFileCache.release(m.modulePath)
 }
 
 func (m *module) IsLegacyDAG() bool {

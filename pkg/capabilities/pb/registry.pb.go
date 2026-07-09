@@ -304,7 +304,7 @@ type RemoteExecutableConfig struct {
 	RequestTimeout                *durationpb.Duration `protobuf:"bytes,6,opt,name=request_timeout,json=requestTimeout,proto3" json:"request_timeout,omitempty"`
 	ServerMaxParallelRequests     uint32               `protobuf:"varint,7,opt,name=server_max_parallel_requests,json=serverMaxParallelRequests,proto3" json:"server_max_parallel_requests,omitempty"`
 	RequestHasherType             RequestHasherType    `protobuf:"varint,8,opt,name=request_hasher_type,json=requestHasherType,proto3,enum=loop.RequestHasherType" json:"request_hasher_type,omitempty"`
-	// MinResponsesToAggregate is the minimum number of chain-capability DON nodes that must
+	// MinResponsesToAggregate is the minimum number of capability DON nodes that must
 	// return identical responses before the workflow DON accepts the read result.
 	// 0 defaults to F+1 of the remote DON
 	// Must satisfy F+1 <= MinResponsesToAggregate <= N when non-zero.

@@ -24,7 +24,7 @@ func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 	cfg := DefaultConfig()
 	cfg.MetricCardinalityLimit = limit
 
-	mpOpts := cfg.metricOptions(sdkmetric.WithReader(reader))
+	mpOpts := append(cfg.metricOptions(), sdkmetric.WithReader(reader))
 	mp := sdkmetric.NewMeterProvider(mpOpts...)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 

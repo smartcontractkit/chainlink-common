@@ -4,9 +4,11 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
-// metricOptions returns sdkmetric.Option values for caller MetricViews and the
-// SDK per-instrument cardinality limit.
-func (cfg Config) metricOptions(opts ...sdkmetric.Option) []sdkmetric.Option {
+// metricOptions returns cfg-derived sdkmetric.Option values (caller MetricViews
+// and the SDK per-instrument cardinality limit). Callers append reader/resource
+// options at the call site.
+func (cfg Config) metricOptions() []sdkmetric.Option {
+	var opts []sdkmetric.Option
 	if len(cfg.MetricViews) > 0 {
 		opts = append(opts, sdkmetric.WithView(cfg.MetricViews...))
 	}

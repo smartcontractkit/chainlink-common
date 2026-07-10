@@ -4,6 +4,8 @@
 	"GatewayIncomingPayloadSizeLimit": "1mb",
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
+	"CentralizedWorkflowOwnerVerificationEnabled": "false",
+	"TenantID": "0",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
 	"VaultBase64EncodingEnabled": "false",
@@ -47,7 +49,24 @@
 		"RetryBackoff": "2s",
 		"SecretsCacheEnabled": "false",
 		"EnclaveRequestTimeout": "30s",
-		"PublicKeyRequestTimeout": "5s"
+		"PublicKeyRequestTimeout": "5s",
+		"InsecureSkipTLSVerify": "false",
+		"EnclaveRefreshInterval": "10s",
+		"PublicKeyCache": {
+			"Enabled": "true",
+			"TTL": "5m0s",
+			"MaxTTL": "30m0s",
+			"CleanupInterval": "10m0s",
+			"TTLBufferPercent": "0.1",
+			"ProactiveRefreshEnabled": "true",
+			"RefreshIntervalPercent": "0",
+			"MinRefreshInterval": "10s",
+			"RefreshTimeout": "5s"
+		},
+		"Session": {
+			"PersistenceEnabled": "true",
+			"HeaderName": "Sticky-Session-A"
+		}
 	},
 	"PerOrg": {
 		"BaseTriggerRetransmitEnabled": "false",

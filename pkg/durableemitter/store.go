@@ -73,6 +73,9 @@ func (s *PgDurableEventStore) BatchDelete(ctx context.Context, ids []int64) (int
 	if len(ids) == 0 {
 		return 0, nil
 	}
+	// FOR UPDATE SKIP LOCKED avoids deadlocks (40P01) when a backlog re-delivers
+	// the same id in two concurrent delete batches: each batch skips rows the
+	// other already locked instead of waiting. Safe since deletes are idempotent.
 	const q = `
 DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
     SELECT id FROM ` + chipDurableEventsTable + `

@@ -1460,12 +1460,13 @@ func (m *MemDurableEventStore) Len() int {
 }
 
 // ObserveDurableQueue implements DurableQueueObserver.
-func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL time.Duration) (DurableQueueStats, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	now := time.Now()
 	var st DurableQueueStats
 	st.TotalRows = int64(len(m.events))
+	st.TTLBudget = eventTTL
 	if len(m.events) == 0 {
 		return st, nil
 	}
@@ -1478,14 +1479,8 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, 
 			oldest = e.CreatedAt
 			first = false
 		}
-		age := now.Sub(e.CreatedAt)
-		if eventTTL > 0 && nearExpiryLead > 0 && nearExpiryLead < eventTTL {
-			threshold := eventTTL - nearExpiryLead
-			if age >= threshold && age < eventTTL {
-				st.NearTTLCount++
-			}
-		}
 	}
 	st.OldestPendingAge = now.Sub(oldest)
+	st.TTLBudget = eventTTL - st.OldestPendingAge
 	return st, nil
 }

@@ -165,7 +165,7 @@ type chipDurableQueueAgg struct {
 // cnt/payload_sum/min_created describe only the undelivered backlog, while total
 // is the authoritative physical row count (incl. delivered-but-not-purged rows)
 // used as the queue-depth gauge.
-func (s *PgDurableEventStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (s *PgDurableEventStore) ObserveDurableQueue(ctx context.Context, eventTTL time.Duration) (DurableQueueStats, error) {
 	const qAgg = `
 SELECT
 	count(*) FILTER (WHERE delivered_at IS NULL)::bigint AS cnt,
@@ -182,21 +182,13 @@ FROM ` + chipDurableEventsTable
 	st.Depth = row.Cnt
 	st.TotalRows = row.Total
 	st.PayloadBytes = row.PayloadSum
+	// TTLBudget is the headroom of the oldest pending event before it hits EventTTL.
+	// With no backlog the whole budget is available; the "near expiry" threshold is
+	// applied downstream by the alert engine, not here.
+	st.TTLBudget = eventTTL
 	if row.MinCreated != nil {
 		st.OldestPendingAge = time.Since(*row.MinCreated)
-	}
-	if eventTTL > 0 && nearExpiryLead > 0 && nearExpiryLead < eventTTL {
-		ttlSec := int64(eventTTL.Round(time.Second) / time.Second)
-		leadSec := int64(nearExpiryLead.Round(time.Second) / time.Second)
-		const qNear = `
-SELECT count(*)::bigint
-FROM ` + chipDurableEventsTable + `
-WHERE delivered_at IS NULL
-  AND created_at >= now() - ($1::bigint * interval '1 second')
-  AND created_at < now() - (($1::bigint - $2::bigint) * interval '1 second')`
-		if err := s.ds.GetContext(ctx, &st.NearTTLCount, qNear, ttlSec, leadSec); err != nil {
-			return DurableQueueStats{}, fmt.Errorf("durable queue near-ttl: %w", err)
-		}
+		st.TTLBudget = eventTTL - st.OldestPendingAge
 	}
 	return st, nil
 }

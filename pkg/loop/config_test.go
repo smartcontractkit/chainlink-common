@@ -216,6 +216,7 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
 	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
+	TelemetryMetricViewsDisabled:       false,
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
@@ -290,6 +291,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 	assert.Equal(t, strconv.Itoa(beholder.DefaultMetricCardinalityLimit), got[envTelemetryMetricCardinalityLimit])
+	assert.Equal(t, "false", got[envTelemetryMetricViewsDisabled])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])
@@ -359,6 +361,48 @@ func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
 		require.NoError(t, parsed.parse())
 		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
 		assert.Equal(t, 100000, *parsed.TelemetryMetricCardinalityLimit)
+	})
+}
+
+// TestEnvConfig_MetricViewsDisabled_RoundTrip verifies that an explicit
+// disable survives an AsCmdEnv -> parse round trip and that leaving the field
+// unset keeps default views enabled.
+func TestEnvConfig_MetricViewsDisabled_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("explicit disable propagates as true", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsDisabled = true
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.True(t, parsed.TelemetryMetricViewsDisabled)
+	})
+
+	t.Run("unset keeps default views enabled", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsDisabled = false
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			if pair[0] == envTelemetryMetricViewsDisabled {
+				continue
+			}
+			t.Setenv(pair[0], pair[1])
+		}
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.False(t, parsed.TelemetryMetricViewsDisabled)
 	})
 }
 

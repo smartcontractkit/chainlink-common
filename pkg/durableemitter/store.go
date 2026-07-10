@@ -73,9 +73,6 @@ func (s *PgDurableEventStore) BatchDelete(ctx context.Context, ids []int64) (int
 	if len(ids) == 0 {
 		return 0, nil
 	}
-	// FOR UPDATE SKIP LOCKED avoids deadlocks (40P01) when a backlog re-delivers
-	// the same id in two concurrent delete batches: each batch skips rows the
-	// other already locked instead of waiting. Safe since deletes are idempotent.
 	const q = `
 DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
     SELECT id FROM ` + chipDurableEventsTable + `
@@ -86,7 +83,7 @@ DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
 	// lost to a crash just leaves the row to be re-delivered (idempotent) or reclaimed
 	// by the expiry loop. We can relax synchronous_commit for the delete transaction,
 	// which removes the commit WAL-flush wait (IO:XactSync) which dominates at high
-	// delete rates, especially on Aurora where commit blocks on a storage-quorum ack.
+	// delete rates.
 	var deleted int64
 	err := sqlutil.TransactDataSource(ctx, s.ds, nil, func(tx sqlutil.DataSource) error {
 		if _, err := tx.ExecContext(ctx, "SET LOCAL synchronous_commit = off"); err != nil {

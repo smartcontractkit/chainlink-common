@@ -549,11 +549,11 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	for _, p := range cfg.MetricProducers {
 		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))
 	}
-	return sdkmetric.NewMeterProvider(
+	mpOpts := cfg.metricOptions(
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, readerOpts...)),
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithView(cfg.MetricViews...),
-	), nil
+	)
+	return sdkmetric.NewMeterProvider(mpOpts...), nil
 }
 
 // newLoggerOpts creates options for a logger exporter

@@ -69,59 +69,52 @@ func (s *PgDurableEventStore) Delete(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (s *PgDurableEventStore) MarkDelivered(ctx context.Context, id int64) error {
-	const q = `UPDATE ` + chipDurableEventsTable + ` SET delivered_at = now() WHERE id = $1 AND delivered_at IS NULL`
-	if _, err := s.ds.ExecContext(ctx, q, id); err != nil {
-		return fmt.Errorf("failed to mark chip durable event delivered id=%d: %w", id, err)
-	}
-	return nil
-}
-
-func (s *PgDurableEventStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
+func (s *PgDurableEventStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
-	const q = `UPDATE ` + chipDurableEventsTable + ` SET delivered_at = now() WHERE id = ANY($1) AND delivered_at IS NULL`
-	res, err := s.ds.ExecContext(ctx, q, pq.Array(ids))
-	if err != nil {
-		return 0, fmt.Errorf("failed to batch mark chip durable events delivered: %w", err)
-	}
-	n, _ := res.RowsAffected()
-	return n, nil
-}
-
-func (s *PgDurableEventStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
-	if batchLimit <= 0 {
-		return 0, nil
-	}
 	const q = `
-WITH picked AS (
+DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
     SELECT id FROM ` + chipDurableEventsTable + `
-    WHERE delivered_at IS NOT NULL
-    ORDER BY delivered_at ASC
-    LIMIT $1
-)
-DELETE FROM ` + chipDurableEventsTable + ` AS t
-USING picked WHERE t.id = picked.id`
-	res, err := s.ds.ExecContext(ctx, q, batchLimit)
+    WHERE id = ANY($1)
+    FOR UPDATE SKIP LOCKED
+)`
+	// Delete durability is not required under delete-on-delivery: a delete commit
+	// lost to a crash just leaves the row to be re-delivered (idempotent) or reclaimed
+	// by the expiry loop. We can relax synchronous_commit for the delete transaction,
+	// which removes the commit WAL-flush wait (IO:XactSync) which dominates at high
+	// delete rates.
+	var deleted int64
+	err := sqlutil.TransactDataSource(ctx, s.ds, nil, func(tx sqlutil.DataSource) error {
+		if _, err := tx.ExecContext(ctx, "SET LOCAL synchronous_commit = off"); err != nil {
+			return fmt.Errorf("failed to set synchronous_commit=off: %w", err)
+		}
+		res, err := tx.ExecContext(ctx, q, pq.Array(ids))
+		if err != nil {
+			return err
+		}
+		deleted, _ = res.RowsAffected()
+		return nil
+	})
 	if err != nil {
-		return 0, fmt.Errorf("failed to purge delivered chip durable events: %w", err)
+		return 0, fmt.Errorf("failed to batch delete delivered chip durable events: %w", err)
 	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return 0, fmt.Errorf("purge delivered rows affected: %w", err)
-	}
-	return n, nil
+	return deleted, nil
 }
 
-func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
+func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+	// The (created_at, id) > ($2, $3) row-value comparison is the paging cursor:
+	// the retransmit loop advances it forward through the backlog and wraps to a
+	// zero cursor at the end, so a persistently-failing ("poison") event can't
+	// monopolise the head of the list and block everything behind it.
 	const q = `
 SELECT id, payload, created_at
 FROM ` + chipDurableEventsTable + `
 WHERE delivered_at IS NULL
   AND created_at < $1
-ORDER BY created_at ASC
-LIMIT $2`
+  AND (created_at, id) > ($2, $3)
+ORDER BY created_at ASC, id ASC
+LIMIT $4`
 
 	type row struct {
 		ID        int64     `db:"id"`
@@ -130,7 +123,7 @@ LIMIT $2`
 	}
 
 	var rows []row
-	if err := s.ds.SelectContext(ctx, &rows, q, createdBefore, limit); err != nil {
+	if err := s.ds.SelectContext(ctx, &rows, q, createdBefore, afterCreatedAt, afterID, limit); err != nil {
 		return nil, fmt.Errorf("failed to list pending chip durable events: %w", err)
 	}
 
@@ -149,8 +142,7 @@ func (s *PgDurableEventStore) DeleteExpired(ctx context.Context, ttl time.Durati
 	const q = `
 WITH deleted AS (
     DELETE FROM ` + chipDurableEventsTable + `
-    WHERE delivered_at IS NULL
-      AND created_at <= now() - $1::interval
+    WHERE created_at <= now() - $1::interval
     RETURNING id
 )
 SELECT count(*) FROM deleted`

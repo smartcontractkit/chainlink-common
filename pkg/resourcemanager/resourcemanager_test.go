@@ -236,6 +236,8 @@ func decodeSnapshots(t *testing.T, calls []emitCall) []*meteringpb.MeterSnapshot
 		if attrs[beholder.AttrKeyEntity] != "metering.v1.MeterSnapshot" {
 			continue
 		}
+		// Snapshots route on the cll-meter beholder domain, same as records.
+		assert.Equal(t, "cll-meter", attrs[beholder.AttrKeyDomain])
 		var s meteringpb.MeterSnapshot
 		require.NoError(t, proto.Unmarshal(c.body, &s))
 		snaps = append(snaps, &s)

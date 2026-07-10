@@ -83,6 +83,7 @@ const (
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
+	envTelemetryMetricViewsDisabled       = "CL_TELEMETRY_METRIC_VIEWS_DISABLED"
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
@@ -181,6 +182,8 @@ type EnvConfig struct {
 	// distinguish "no opinion" (child applies its own default) from an
 	// explicit 0, which disables the limit.
 	TelemetryMetricCardinalityLimit   *int
+	// TelemetryMetricViewsDisabled skips metricviews.DefaultViews() in the beholder client.
+	TelemetryMetricViewsDisabled      bool
 	TelemetryPrometheusBridgeEnabled  bool
 	TelemetryPrometheusBridgePrefixes []string
 	TelemetryLogCompressor            string
@@ -298,6 +301,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	if e.TelemetryMetricCardinalityLimit != nil {
 		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
 	}
+	add(envTelemetryMetricViewsDisabled, strconv.FormatBool(e.TelemetryMetricViewsDisabled))
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
@@ -550,6 +554,10 @@ func (e *EnvConfig) parse() error {
 		} else {
 			defaultLimit := 100000
 			e.TelemetryMetricCardinalityLimit = &defaultLimit
+		}
+		e.TelemetryMetricViewsDisabled, err = getBool(envTelemetryMetricViewsDisabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricViewsDisabled, err)
 		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {

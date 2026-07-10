@@ -10,6 +10,8 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
 func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
@@ -23,6 +25,7 @@ func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	cfg := DefaultConfig()
 	cfg.MetricCardinalityLimit = limit
+	cfg.MetricViewsDisabled = true
 
 	mpOpts := append(cfg.metricOptions(), sdkmetric.WithReader(reader))
 	mp := sdkmetric.NewMeterProvider(mpOpts...)
@@ -47,4 +50,33 @@ func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 		total += dp.Value
 	}
 	assert.Equal(t, int64(uniqueAttributes), total)
+}
+
+func TestConfig_metricViews_appendsDefaultsAfterCallerViews(t *testing.T) {
+	t.Parallel()
+
+	callerView := sdkmetric.NewView(
+		sdkmetric.Instrument{Name: "custom_metric"},
+		sdkmetric.Stream{},
+	)
+	cfg := DefaultConfig()
+	cfg.MetricViews = []sdkmetric.View{callerView}
+
+	views := cfg.metricViews()
+	require.GreaterOrEqual(t, len(views), len(metricviews.DefaultViews())+1)
+}
+
+func TestConfig_metricViews_disabledSkipsDefaults(t *testing.T) {
+	t.Parallel()
+
+	callerView := sdkmetric.NewView(
+		sdkmetric.Instrument{Name: "custom_metric"},
+		sdkmetric.Stream{},
+	)
+	cfg := DefaultConfig()
+	cfg.MetricViews = []sdkmetric.View{callerView}
+	cfg.MetricViewsDisabled = true
+
+	views := cfg.metricViews()
+	require.Len(t, views, 1)
 }

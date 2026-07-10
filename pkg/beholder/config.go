@@ -40,6 +40,9 @@ type Config struct {
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews []metric.View
+	// MetricViewsDisabled skips metricviews.DefaultViews() attribute filtering.
+	// Caller-supplied MetricViews are still applied. Set via CL_TELEMETRY_METRIC_VIEWS_DISABLED.
+	MetricViewsDisabled bool
 	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
 	// DefaultConfig uses 100000 as a production safety valve for high-cardinality workloads.
 	MetricCardinalityLimit int

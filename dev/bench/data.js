@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783612319056,
+  "lastUpdate": 1783703893417,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -54060,6 +54060,66 @@ window.BENCHMARK_DATA = {
             "value": 127742,
             "unit": "ns/op",
             "extra": "8769 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34754799+dhaidashenko@users.noreply.github.com",
+            "name": "Dmytro Haidashenko",
+            "username": "dhaidashenko"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d224f9e6f0b7a7a0b259cd160749994d1e72c9e3",
+          "message": "API to fetch panels for a dashboard (#2218)\n\n* Handle nil pointer error\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* fix\n\n* API to fetch panels for a dashboard\n\n* lint\n\n* Update dashboard.go\n\n* fix\n\n* fix merge\n\n* linter fixes\n\n* lint\n\n---------\n\nCo-authored-by: yashnevatia <yashvardhan.nevatia@smartcontract.com>\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-10T17:06:52Z",
+          "tree_id": "79ec720787a19da7e2ef1d674ee8e90e6e703266",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d224f9e6f0b7a7a0b259cd160749994d1e72c9e3"
+        },
+        "date": 1783703891286,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 366.2,
+            "unit": "ns/op",
+            "extra": "3278043 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 86991,
+            "unit": "ns/op",
+            "extra": "13802 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.3,
+            "unit": "ns/op",
+            "extra": "2924065 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 88255,
+            "unit": "ns/op",
+            "extra": "13551 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26627,
+            "unit": "ns/op",
+            "extra": "45036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136546,
+            "unit": "ns/op",
+            "extra": "8641 times\n4 procs"
           }
         ]
       }

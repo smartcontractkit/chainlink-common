@@ -47,7 +47,7 @@ require (
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20251024234028-0988426d98f4
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20260622152157-c8e129347b8b
 	github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b
-	github.com/smartcontractkit/chainlink-protos/metering/go v0.0.0-20260706185759-873029fd9019
+	github.com/smartcontractkit/chainlink-protos/metering/go v0.0.0-20260710151514-27b5a126dabe
 	github.com/smartcontractkit/chainlink-protos/node-platform v0.0.0-20260709145319-7782fb89eb16
 	github.com/smartcontractkit/chainlink-protos/storage-service v0.3.0
 	github.com/smartcontractkit/chainlink-protos/workflows/go v0.0.0-20260528173149-f5b8336b19d9
@@ -163,8 +163,3 @@ require (
 retract v1.3.0 // accidentally published
 
 retract v1.3.1 // exists only to retract v1.3.0
-
-// Local development against the sibling chainlink-protos checkout so common
-// builds/tests against the just-edited metering protos. Removed by the
-// maintainer at merge time (who bumps the pin instead).
-replace github.com/smartcontractkit/chainlink-protos/metering/go => ../chainlink-protos/metering/go

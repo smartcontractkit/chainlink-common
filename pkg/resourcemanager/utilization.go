@@ -10,7 +10,7 @@ import (
 // UtilizationFields identifies one billed utilization dimension.
 //
 // EventID is intentionally NOT a field here: event_id is the consumer's dedup
-// key and is generated fresh per emission by the ResourceManager (a UUIDv4).
+// key and is generated fresh per emission by the ResourceManager.
 // Producers must never populate it, so it cannot be supplied through this
 // struct; the manager stamps it on every emitted Utilization.
 type UtilizationFields struct {

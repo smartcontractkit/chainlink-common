@@ -163,3 +163,5 @@ require (
 retract v1.3.0 // accidentally published
 
 retract v1.3.1 // exists only to retract v1.3.0
+
+replace github.com/smartcontractkit/chainlink-common/pkg/chipingress => ./pkg/chipingress

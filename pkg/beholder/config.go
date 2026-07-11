@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -56,8 +57,9 @@ type Config struct {
 	ChipIngressSendInterval        time.Duration // Flush interval (default 100ms)
 	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 3s)
 	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 10s)
-	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls (default 10)
-	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
+	ChipIngressMaxConcurrentSends     int           // Max concurrent PublishBatch calls (default 10)
+	ChipIngressMaxMessageBufferBytes  uint          // Max live byte size of buffered messages (default 1 GiB)
+	ChipIngressLogger                 logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
 	LogExportTimeout      time.Duration
@@ -157,7 +159,8 @@ func DefaultConfig() Config {
 		ChipIngressSendInterval:        100 * time.Millisecond,
 		ChipIngressSendTimeout:         3 * time.Second,
 		ChipIngressDrainTimeout:        10 * time.Second,
-		ChipIngressMaxConcurrentSends:  defaultMaxConcurrentSends,
+		ChipIngressMaxConcurrentSends:    defaultMaxConcurrentSends,
+		ChipIngressMaxMessageBufferBytes: uint(batch.DefaultMaxMessageBufferBytes),
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

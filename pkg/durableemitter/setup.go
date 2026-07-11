@@ -70,6 +70,8 @@ type SetupConfig struct {
 	// channel. QueueMessage drops events (non-blocking send) when this is full,
 	// which happens when emit throughput outpaces the batcher.
 	MessageBufferSize int // default: 10000
+	// MaxMessageBufferBytes caps live buffered message bytes. Zero uses batch client default (1 GiB).
+	MaxMessageBufferBytes int
 
 	// EmitterConfig overrides DefaultConfig when non-nil.
 	EmitterConfig *Config
@@ -107,14 +109,19 @@ func Setup(
 		return nil, fmt.Errorf("failed to create batch chip ingress client: %w", err)
 	}
 
-	batchClient, err := chipingressbatch.NewBatchClient(batchChipClient,
+	batchOpts := []chipingressbatch.Opt{
 		chipingressbatch.WithBatchSize(defaultInt(cfg.BatchSize, 50)),
 		chipingressbatch.WithBatchInterval(defaultDuration(cfg.BatchInterval, 50*time.Millisecond)),
 		chipingressbatch.WithMaxConcurrentSends(defaultInt(cfg.MaxConcurrentSends, 4)),
 		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
-	)
+	}
+	if cfg.MaxMessageBufferBytes > 0 {
+		batchOpts = append(batchOpts, chipingressbatch.WithMaxMessageBufferBytes(cfg.MaxMessageBufferBytes))
+	}
+
+	batchClient, err := chipingressbatch.NewBatchClient(batchChipClient, batchOpts...)
 	if err != nil {
 		_ = batchChipClient.Close()
 		return nil, fmt.Errorf("failed to create batch client: %w", err)

@@ -126,6 +126,15 @@ func TestEnvConfig_parse(t *testing.T) {
 			},
 			expectError: true,
 		},
+		{
+			name: "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT negative value rejected",
+			envVars: map[string]string{
+				envPromPort:                        "8080",
+				envTelemetryEnabled:                "true",
+				envTelemetryMetricCardinalityLimit: "-1",
+			},
+			expectError: true,
+		},
 	}
 
 	for _, tc := range cases {
@@ -146,6 +155,8 @@ func TestEnvConfig_parse(t *testing.T) {
 		})
 	}
 }
+
+func ptr[T any](v T) *T { return &v }
 
 var envCfgFull = EnvConfig{
 	AppID: "app-id",
@@ -205,6 +216,7 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterExportMaxBatchSize: 100,
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
+	TelemetryMetricCardinalityLimit:    ptr(100000),
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
@@ -278,6 +290,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
+	assert.Equal(t, "100000", got[envTelemetryMetricCardinalityLimit])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])
@@ -296,6 +309,58 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 
 	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
 	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
+}
+
+// TestEnvConfig_MetricCardinalityLimit_RoundTrip verifies that an explicit
+// disable (0) survives a AsCmdEnv -> parse round trip the same way an
+// explicit positive limit does, and that leaving the field unset lets the
+// child apply its own default instead of forcing a value.
+func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("explicit disable propagates as 0", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = ptr(0)
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 0, *parsed.TelemetryMetricCardinalityLimit)
+	})
+
+	t.Run("explicit positive limit propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = ptr(500)
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 500, *parsed.TelemetryMetricCardinalityLimit)
+	})
+
+	t.Run("unset falls back to child default", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryMetricCardinalityLimit+"=", "unset limit must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 100000, *parsed.TelemetryMetricCardinalityLimit)
+	})
 }
 
 func TestGetMap(t *testing.T) {

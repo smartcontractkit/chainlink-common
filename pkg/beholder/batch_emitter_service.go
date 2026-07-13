@@ -15,6 +15,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
+// ChipClient is the chip_client metric label for beholder's Chip Ingress metrics.
+const ChipClient = "beholder"
+
 // ChipIngressBatchEmitterService batches events and sends them via chipingress.Client.PublishBatch.
 // It implements the Emitter interface.
 type ChipIngressBatchEmitterService struct {
@@ -78,7 +81,6 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batch.WithShutdownTimeout(drainTimeout),
 		batch.WithMaxConcurrentSends(maxConcurrentSends),
 		batch.WithEventClone(false),
-		batch.WithChipClient("beholder"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create batch client: %w", err)
@@ -187,7 +189,7 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	attrs := otelmetric.WithAttributeSet(attribute.NewSet(
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
-		attribute.String("chip_client", "beholder"),
+		attribute.String("chip_client", ChipClient),
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)

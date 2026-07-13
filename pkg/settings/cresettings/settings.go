@@ -52,11 +52,13 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(1000),
-	WorkflowExecutionConcurrencyLimit: Int(1000),
-	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:     Bool(true),
-	VaultJWTAuthEnabled:               Bool(false),
+	WorkflowLimit:                               Int(1000),
+	WorkflowExecutionConcurrencyLimit:           Int(1000),
+	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:               Bool(true),
+	VaultJWTAuthEnabled:                         Bool(false),
+	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
+	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
 	PropagateOrgIDInRequestMetadata:                   Bool(false),
@@ -65,6 +67,7 @@ var Default = Schema{
 	VaultOptimizationsEnabled:                         Bool(false),
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
+	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
@@ -133,6 +136,35 @@ var Default = Schema{
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
 
+	// Confidential Compute (San Marino framework) node-level settings. Defaults
+	// mirror the previous hardcoded executor defaults so behavior is unchanged
+	// until explicitly overridden.
+	ConfidentialCompute: confidentialCompute{
+		GlobalRate:              Rate(rate.Limit(1000), 1000),
+		MaxRetries:              Int(3),
+		RetryBackoff:            Duration(2 * time.Second),
+		SecretsCacheEnabled:     Bool(false),
+		EnclaveRequestTimeout:   Duration(30 * time.Second),
+		PublicKeyRequestTimeout: Duration(5 * time.Second),
+		InsecureSkipTLSVerify:   Bool(false),
+		EnclaveRefreshInterval:  Duration(10 * time.Second),
+		PublicKeyCache: ccPublicKeyCache{
+			Enabled:                 Bool(true),
+			TTL:                     Duration(5 * time.Minute),
+			MaxTTL:                  Duration(30 * time.Minute),
+			CleanupInterval:         Duration(10 * time.Minute),
+			TTLBufferPercent:        Float64(0.1),
+			ProactiveRefreshEnabled: Bool(true),
+			RefreshIntervalPercent:  Float64(0),
+			MinRefreshInterval:      Duration(10 * time.Second),
+			RefreshTimeout:          Duration(5 * time.Second),
+		},
+		Session: ccSession{
+			PersistenceEnabled: Bool(true),
+			HeaderName:         String("Sticky-Session-A"),
+		},
+	},
+
 	PerOrg: Orgs{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
@@ -151,6 +183,12 @@ var Default = Schema{
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
 		VaultCiphertextSizeLimit: Size(2 * config.KByte),
 		VaultSecretsLimit:        Int(100),
+
+		// Confidential Compute per-workflow-owner request rate. Mirrors the
+		// previous hardcoded WorkflowOwner RPS/burst executor defaults.
+		ConfidentialCompute: ownerConfidentialCompute{
+			Rate: Rate(rate.Limit(1000), 1000),
+		},
 	},
 	PerWorkflow: Workflows{
 		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
@@ -283,6 +321,8 @@ type Schema struct {
 	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
 	GatewayVaultManagementEnabled                     Setting[bool]
 	VaultJWTAuthEnabled                               Setting[bool]
+	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]
@@ -290,6 +330,7 @@ type Schema struct {
 	VaultOptimizationsEnabled                         Setting[bool]
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
+	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
@@ -325,6 +366,9 @@ type Schema struct {
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
+	// Confidential Compute (San Marino framework) node-level settings.
+	ConfidentialCompute confidentialCompute
+
 	PerOrg      Orgs      `scope:"org"`
 	PerOwner    Owners    `scope:"owner"`
 	PerWorkflow Workflows `scope:"workflow"`
@@ -341,6 +385,9 @@ type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
+
+	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
+	ConfidentialCompute ownerConfidentialCompute
 }
 
 type Workflows struct {
@@ -457,6 +504,47 @@ type confidentialHTTP struct {
 	ConnectionTimeout Setting[time.Duration]
 	RequestSizeLimit  Setting[config.Size]
 	ResponseSizeLimit Setting[config.Size]
+}
+
+// confidentialCompute holds node-level Confidential Compute (San Marino
+// framework) settings. These are global scope (no scope tag), like the other
+// top-level settings.
+type confidentialCompute struct {
+	GlobalRate              Setting[config.Rate]
+	MaxRetries              Setting[int] `unit:"{attempt}"`
+	RetryBackoff            Setting[time.Duration]
+	SecretsCacheEnabled     Setting[bool]
+	EnclaveRequestTimeout   Setting[time.Duration]
+	PublicKeyRequestTimeout Setting[time.Duration]
+
+	InsecureSkipTLSVerify  Setting[bool]
+	EnclaveRefreshInterval Setting[time.Duration]
+	PublicKeyCache         ccPublicKeyCache
+	Session                ccSession
+}
+
+// ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.
+type ccPublicKeyCache struct {
+	Enabled                 Setting[bool]
+	TTL                     Setting[time.Duration]
+	MaxTTL                  Setting[time.Duration]
+	CleanupInterval         Setting[time.Duration]
+	TTLBufferPercent        Setting[float64]
+	ProactiveRefreshEnabled Setting[bool]
+	RefreshIntervalPercent  Setting[float64]
+	MinRefreshInterval      Setting[time.Duration]
+	RefreshTimeout          Setting[time.Duration]
+}
+
+// ccSession holds executor-side sticky-session settings for enclave routing.
+type ccSession struct {
+	PersistenceEnabled Setting[bool]
+	HeaderName         Setting[string]
+}
+
+// ownerConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
+type ownerConfidentialCompute struct {
+	Rate Setting[config.Rate]
 }
 
 type confidentialWorkflows struct {

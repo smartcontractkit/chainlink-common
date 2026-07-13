@@ -13,6 +13,7 @@ func sampleComputeRequest() ComputeRequest {
 	}
 	return ComputeRequest{
 		RequestID:                 rid,
+		ApplicationRequestID:      "application-request-id",
 		PublicData:                []byte("public-data"),
 		Ciphertexts:               [][]byte{[]byte("ct-a"), []byte("ct-b")},
 		CiphertextNames:           []string{"name-a", "name-b"},
@@ -73,4 +74,22 @@ func TestComputeRequestHash_VersionOnlyHashedForLegacy(t *testing.T) {
 	legacy := sampleComputeRequest()
 	legacy.Version = computeRequestLegacyVersion
 	require.NotEqual(t, legacy.Hash(), nonLegacyA.Hash(), "legacy Version must be bound into the hash")
+}
+
+// ApplicationRequestID is the post-legacy replacement for binding application-level
+// request identity without constraining RequestID's 32-byte protocol shape.
+func TestComputeRequestHash_ApplicationRequestIDOnlyHashedForNonLegacy(t *testing.T) {
+	legacyA := sampleComputeRequest()
+	legacyA.ApplicationRequestID = "exec-a"
+	legacyB := sampleComputeRequest()
+	legacyB.ApplicationRequestID = "exec-b"
+	require.Equal(t, legacyA.Hash(), legacyB.Hash(), "legacy ApplicationRequestID must not affect the hash")
+
+	nonLegacyA := sampleComputeRequest()
+	nonLegacyA.Version = "0.0.7"
+	nonLegacyA.ApplicationRequestID = "exec-a"
+	nonLegacyB := sampleComputeRequest()
+	nonLegacyB.Version = "0.0.7"
+	nonLegacyB.ApplicationRequestID = "exec-b"
+	require.NotEqual(t, nonLegacyA.Hash(), nonLegacyB.Hash(), "non-legacy ApplicationRequestID must be bound into the hash")
 }

@@ -26,6 +26,25 @@ type DurableEmitterMetricsConfig struct {
 	MaxQueuePayloadBytes int64
 }
 
+// publishPhase identifies which delivery path recorded a batch publish metric.
+type publishPhase int
+
+const (
+	publishPhaseBatch publishPhase = iota
+	publishPhaseRetransmit
+)
+
+func (p publishPhase) String() string {
+	switch p {
+	case publishPhaseBatch:
+		return "batch"
+	case publishPhaseRetransmit:
+		return "retransmit"
+	default:
+		return "unknown"
+	}
+}
+
 type durableEmitterMetrics struct {
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
@@ -53,17 +72,14 @@ type durableEmitterMetrics struct {
 	procCPUSys         metric.Float64Gauge
 	// batchEnqueueBufferFull counts events that could not be handed to the
 	// batch emitter because its internal queue was full and must be picked up
-	// by the retransmit loop instead. Labels: phase={immediate,retransmit}.
+	// by the retransmit loop instead. Labels: phase={batch,retransmit}.
 	batchEnqueueBufferFull metric.Int64Counter
 	// insertCoalescerFill reports the write-coalescer channel fill ratio
 	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
 	insertCoalescerFill metric.Float64Gauge
-	// markCoalescerFill reports the mark-coalescer channel fill ratio
-	// (len/cap). Only meaningful when MarkBatchSize > 0; otherwise 0.
-	markCoalescerFill metric.Float64Gauge
-	// fallbackInFlight reports the number of single-event fallback Publish
-	// goroutines currently in flight.
-	fallbackInFlight metric.Int64Gauge
+	// deleteCoalescerFill reports the delete-coalescer channel fill ratio
+	// (len/cap). Only meaningful when DeleteBatchSize > 0; otherwise 0.
+	deleteCoalescerFill metric.Float64Gauge
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -131,7 +147,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={immediate,retransmit,best_effort}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit}, error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -139,28 +155,28 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishBatchOK, err = meter.Int64Counter(
 		"durable_emitter.publish.retransmit.batch.success",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchErr, err = meter.Int64Counter(
 		"durable_emitter.publish.retransmit.batch.failure",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchEvOK, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.events.success",
+		"durable_emitter.publish.batch.events.success",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Retransmit Publish RPC successes (one RPC per queued event)"),
+		metric.WithDescription("Batch Publish RPC successes (one count per event in a completed batch); labels: phase={batch,retransmit}"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchEvErr, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.events.failure",
+		"durable_emitter.publish.batch.events.failure",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Retransmit Publish RPC failures (event stays queued)"),
+		metric.WithDescription("Batch Publish RPC failures (event stays queued); labels: phase={batch,retransmit}"),
 	); err != nil {
 		return nil, err
 	}
@@ -259,7 +275,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.batchEnqueueBufferFull, err = meter.Int64Counter(
 		"durable_emitter.batch_enqueue.buffer_full",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={immediate,retransmit}."),
+		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={batch,retransmit}."),
 	); err != nil {
 		return nil, err
 	}
@@ -270,17 +286,10 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.markCoalescerFill, err = meter.Float64Gauge(
-		"durable_emitter.mark_coalescer.queue_fill_ratio",
+	if m.deleteCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.delete_coalescer.queue_fill_ratio",
 		metric.WithUnit("1"),
-		metric.WithDescription("Mark-coalescer channel fill ratio (len/cap); 0 when mark coalescing is disabled"),
-	); err != nil {
-		return nil, err
-	}
-	if m.fallbackInFlight, err = meter.Int64Gauge(
-		"durable_emitter.fallback.in_flight",
-		metric.WithUnit("{goroutine}"),
-		metric.WithDescription("Single-event fallback Publish goroutines currently in flight"),
+		metric.WithDescription("Delete-coalescer channel fill ratio (len/cap); 0 when delete coalescing is disabled"),
 	); err != nil {
 		return nil, err
 	}
@@ -328,14 +337,26 @@ func (m *durableEmitterMetrics) recordEmitDuration(ctx context.Context, elapsed 
 	)
 }
 
-func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase string, err error) {
+func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase publishPhase, err error) {
 	if m == nil {
 		return
 	}
 	m.publishDuration.Record(ctx, elapsed.Seconds(),
 		metric.WithAttributes(
-			attribute.String("phase", phase),
+			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
 		),
 	)
+}
+
+func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, phase publishPhase, err error) {
+	if m == nil {
+		return
+	}
+	attrs := metric.WithAttributes(attribute.String("phase", phase.String()))
+	if err != nil {
+		m.publishBatchEvErr.Add(ctx, 1, attrs)
+	} else {
+		m.publishBatchEvOK.Add(ctx, 1, attrs)
+	}
 }

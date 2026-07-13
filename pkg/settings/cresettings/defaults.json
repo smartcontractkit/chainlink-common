@@ -4,6 +4,8 @@
 	"GatewayIncomingPayloadSizeLimit": "1mb",
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
+	"CentralizedWorkflowOwnerVerificationEnabled": "false",
+	"TenantID": "0",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
 	"VaultBase64EncodingEnabled": "false",
@@ -11,6 +13,7 @@
 	"VaultOptimizationsEnabled": "false",
 	"VaultGetSecretsShareAggregationIncludesPublicKeys": "false",
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
+	"VaultJSONOmitUnpopulatedEnabled": "false",
 	"VaultSignedResponseRequestIDEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
@@ -41,6 +44,31 @@
 	"VaultMaxBlobPayloadSizeLimit": "25.6kb",
 	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
+	"ConfidentialCompute": {
+		"GlobalRate": "1000rps:1000",
+		"MaxRetries": "3",
+		"RetryBackoff": "2s",
+		"SecretsCacheEnabled": "false",
+		"EnclaveRequestTimeout": "30s",
+		"PublicKeyRequestTimeout": "5s",
+		"InsecureSkipTLSVerify": "false",
+		"EnclaveRefreshInterval": "10s",
+		"PublicKeyCache": {
+			"Enabled": "true",
+			"TTL": "5m0s",
+			"MaxTTL": "30m0s",
+			"CleanupInterval": "10m0s",
+			"TTLBufferPercent": "0.1",
+			"ProactiveRefreshEnabled": "true",
+			"RefreshIntervalPercent": "0",
+			"MinRefreshInterval": "10s",
+			"RefreshTimeout": "5s"
+		},
+		"Session": {
+			"PersistenceEnabled": "true",
+			"HeaderName": "Sticky-Session-A"
+		}
+	},
 	"PerOrg": {
 		"BaseTriggerRetransmitEnabled": "false",
 		"WorkflowExecutionConcurrencyLimit": "100",
@@ -53,7 +81,10 @@
 		"WorkflowLimit": "1000",
 		"WorkflowExecutionConcurrencyLimit": "5",
 		"VaultCiphertextSizeLimit": "2kb",
-		"VaultSecretsLimit": "100"
+		"VaultSecretsLimit": "100",
+		"ConfidentialCompute": {
+			"Rate": "1000rps:1000"
+		}
 	},
 	"PerWorkflow": {
 		"TriggerRegistrationsTimeout": "10s",

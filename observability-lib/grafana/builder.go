@@ -36,6 +36,7 @@ type Builder struct {
 	contactPointsBuilder        []*alerting.ContactPointBuilder
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
+	usedStableIDs               map[uint32]struct{}
 	stablePanelIDs              map[string]uint32
 	alertsTags                  map[string]string
 	rows                        map[string]*dashboard.RowBuilder
@@ -143,8 +144,7 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 }
 
 // WithStablePanelIDs pins Grafana panel IDs by panel title after the dashboard is built.
-// Titles must match PanelOptions.Title exactly. Use high ID blocks (e.g. 20100+) to avoid
-// colliding with auto-assigned sequential IDs from the builder.
+// Prefer PanelOptions.StableID at panel definition time; this remains for legacy title-based pinning.
 func (b *Builder) WithStablePanelIDs(byTitle map[string]uint32) *Builder {
 	if len(byTitle) == 0 {
 		b.stablePanelIDs = nil
@@ -154,18 +154,42 @@ func (b *Builder) WithStablePanelIDs(byTitle map[string]uint32) *Builder {
 	return b
 }
 
+func (b *Builder) assignPanelID(panel *Panel) (uint32, error) {
+	if panel == nil || panel.stableID == 0 {
+		return b.getPanelCounter(), nil
+	}
+	if b.usedStableIDs == nil {
+		b.usedStableIDs = make(map[uint32]struct{})
+	}
+	if _, dup := b.usedStableIDs[panel.stableID]; dup {
+		return 0, fmt.Errorf("duplicate StableID %d", panel.stableID)
+	}
+	b.usedStableIDs[panel.stableID] = struct{}{}
+	return panel.stableID, nil
+}
+
 // addPanelToBuilder assigns an ID and adds the panel to the dashboard builder.
-func (b *Builder) addPanelToBuilder(item *Panel) {
-	if pb := item.panelBuilder(b.getPanelCounter()); pb != nil {
+func (b *Builder) addPanelToBuilder(item *Panel) error {
+	id, err := b.assignPanelID(item)
+	if err != nil {
+		return err
+	}
+	if pb := item.panelBuilder(id); pb != nil {
 		b.dashboardBuilder.WithPanel(pb)
 	}
+	return nil
 }
 
 // addPanelToRow assigns an ID and adds the panel to a row builder.
-func (b *Builder) addPanelToRow(row *dashboard.RowBuilder, item *Panel) {
-	if pb := item.panelBuilder(b.getPanelCounter()); pb != nil {
+func (b *Builder) addPanelToRow(row *dashboard.RowBuilder, item *Panel) error {
+	id, err := b.assignPanelID(item)
+	if err != nil {
+		return err
+	}
+	if pb := item.panelBuilder(id); pb != nil {
 		row.WithPanel(pb)
 	}
+	return nil
 }
 
 func (b *Builder) Build() (*Observability, error) {
@@ -188,7 +212,9 @@ func (b *Builder) Build() (*Observability, error) {
 				if !ok {
 					return nil, fmt.Errorf("AddPanelToRow references unknown row %q; call AddRow first", e.rowTitle)
 				}
-				b.addPanelToRow(row, e.panel)
+				if err := b.addPanelToRow(row, e.panel); err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -200,7 +226,9 @@ func (b *Builder) Build() (*Observability, error) {
 					b.dashboardBuilder.WithRow(row)
 				}
 			case entryPanel:
-				b.addPanelToBuilder(e.panel)
+				if err := b.addPanelToBuilder(e.panel); err != nil {
+					return nil, err
+				}
 			default:
 				continue
 			}

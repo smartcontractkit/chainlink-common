@@ -73,6 +73,47 @@ func TestApplyStablePanelIDs(t *testing.T) {
 	require.NotEqual(t, uint32(20110), id)
 }
 
+func TestBuilderPanelOptionsStableID(t *testing.T) {
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{Name: "PanelOptions StableID"})
+	builder.AddRow("Row")
+	builder.AddPanelToRow("Row", grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Title:    grafana.Pointer("Inside Row"),
+			StableID: 20127,
+		},
+	}))
+	builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{Title: grafana.Pointer("Auto Panel")},
+	}))
+
+	o, err := builder.Build()
+	require.NoError(t, err)
+
+	id, ok := grafana.PanelIDByTitle(o.Dashboard, "Inside Row")
+	require.True(t, ok)
+	require.Equal(t, uint32(20127), id)
+
+	id, ok = grafana.PanelIDByTitle(o.Dashboard, "Auto Panel")
+	require.True(t, ok)
+	require.NotEqual(t, uint32(20127), id)
+}
+
+func TestBuilderPanelOptionsStableIDDuplicate(t *testing.T) {
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{Name: "Duplicate StableID"})
+	builder.AddPanel(
+		grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{Title: grafana.Pointer("A"), StableID: 20101},
+		}),
+		grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{Title: grafana.Pointer("B"), StableID: 20101},
+		}),
+	)
+
+	_, err := builder.Build()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "duplicate StableID")
+}
+
 func TestBuilderWithStablePanelIDs(t *testing.T) {
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{Name: "Builder Stable IDs"})
 	builder.WithStablePanelIDs(map[string]uint32{

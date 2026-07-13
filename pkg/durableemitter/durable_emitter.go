@@ -22,9 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// ChipClient is the chip_client metric label for DurableEmitter publish metrics.
-const ChipClient = "durable_emitter"
-
 // BatchEmitter is the transport interface DurableEmitter delegates to for
 // batched delivery of CloudEvents to Chip Ingress.
 //
@@ -242,7 +239,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter, ChipClient)
+		m, err = newDurableEmitterMetrics(meter, "durable_emitter")
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}

@@ -70,6 +70,7 @@ type Client struct {
 	batcherDone             chan struct{}
 	started                 bool
 	counters                sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
+	chipClient              string
 
 	metrics batchClientMetrics
 
@@ -88,6 +89,7 @@ type batchClientMetrics struct {
 	maxGRPCReqSizeAttr   otelmetric.MeasurementOption
 	successStatusAttr    otelmetric.MeasurementOption
 	failureStatusAttr    otelmetric.MeasurementOption
+	chipClientAttr       otelmetric.MeasurementOption
 }
 
 // Opt is a functional option for configuring the batch Client.
@@ -118,7 +120,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	}
 
 	var err error
-	c.metrics, err = newBatchClientMetrics()
+	c.metrics, err = newBatchClientMetrics(c.chipClient)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +293,7 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 
 		splitBatches := splitMessagesByRequestSize(messages, b.effectiveMaxRequestSize, b.transactionEnabled)
 		if len(splitBatches) > 1 {
-			b.metrics.batchSplitsTotal.Add(ctx, 1)
+			b.metrics.batchSplitsTotal.Add(ctx, 1, b.metrics.chipClientAddOpts()...)
 		}
 		for _, batchMessages := range splitBatches {
 			batchReq, batchBytes := newBatchRequest(batchMessages, b.transactionEnabled)
@@ -350,7 +352,7 @@ func (b *Client) completeBatchCallbacksFromResults(messages []*messageWithCallba
 			"results", len(results),
 			"messages", len(messages),
 		)
-		b.metrics.resultsMismatchTotal.Add(context.Background(), 1)
+		b.metrics.resultsMismatchTotal.Add(context.Background(), 1, b.metrics.chipClientAddOpts()...)
 	}
 
 	b.callbackWg.Go(func() {
@@ -377,7 +379,7 @@ func (b *Client) completeBatchCallbacksFromResults(messages []*messageWithCallba
 					"expected", msg.event.Id,
 					"got", result.EventId,
 				)
-				b.metrics.resultsMismatchTotal.Add(context.Background(), 1)
+				b.metrics.resultsMismatchTotal.Add(context.Background(), 1, b.metrics.chipClientAddOpts()...)
 			}
 			if result.Error != nil {
 				msg.callback(&PublishError{
@@ -511,6 +513,13 @@ func WithLogger(log *zap.SugaredLogger) Opt {
 	}
 }
 
+// WithChipClient sets chip_client on batch client metrics. Omitted when unset.
+func WithChipClient(name string) Opt {
+	return func(c *Client) {
+		c.chipClient = name
+	}
+}
+
 // WithTransactionEnabled sets PublishOptions.transaction_enabled on every
 // batch request. The option is always emitted on the wire so client intent
 // is explicit in traces/logs; the server treats unset and explicit false
@@ -525,7 +534,14 @@ func WithTransactionEnabled(transactionEnabled bool) Opt {
 	}
 }
 
-func newBatchClientMetrics() (batchClientMetrics, error) {
+func batchMetricAttributeSet(chipClient string, kvs ...attribute.KeyValue) attribute.Set {
+	if chipClient != "" {
+		kvs = append(kvs, attribute.String("chip_client", chipClient))
+	}
+	return attribute.NewSet(kvs...)
+}
+
+func newBatchClientMetrics(chipClient string) (batchClientMetrics, error) {
 	meter := otel.Meter("chipingress/batch_client")
 	sendRequestsTotal, err := meter.Int64Counter(
 		"chip_ingress.batch.send_requests_total",
@@ -590,6 +606,13 @@ func newBatchClientMetrics() (batchClientMetrics, error) {
 		return batchClientMetrics{}, err
 	}
 
+	var chipClientAttr otelmetric.MeasurementOption
+	if chipClient != "" {
+		chipClientAttr = otelmetric.WithAttributeSet(attribute.NewSet(
+			attribute.String("chip_client", chipClient),
+		))
+	}
+
 	return batchClientMetrics{
 		sendRequestsTotal:    sendRequestsTotal,
 		requestSizeMessages:  requestSizeMessages,
@@ -598,23 +621,32 @@ func newBatchClientMetrics() (batchClientMetrics, error) {
 		configInfo:           configInfo,
 		batchSplitsTotal:     batchSplitsTotal,
 		resultsMismatchTotal: resultsMismatchTotal,
-		successStatusAttr: otelmetric.WithAttributeSet(attribute.NewSet(
+		chipClientAttr:       chipClientAttr,
+		successStatusAttr: otelmetric.WithAttributeSet(batchMetricAttributeSet(chipClient,
 			attribute.String("status", "success"),
 		)),
-		failureStatusAttr: otelmetric.WithAttributeSet(attribute.NewSet(
+		failureStatusAttr: otelmetric.WithAttributeSet(batchMetricAttributeSet(chipClient,
 			attribute.String("status", "failure"),
 		)),
 	}, nil
 }
 
+func (m *batchClientMetrics) chipClientAddOpts() []otelmetric.AddOption {
+	if m.chipClientAttr != nil {
+		return []otelmetric.AddOption{m.chipClientAttr}
+	}
+	return nil
+}
+
 func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
-	m.batchSizeAttr = otelmetric.WithAttributeSet(attribute.NewSet(
+	chipClient := c.chipClient
+	m.batchSizeAttr = otelmetric.WithAttributeSet(batchMetricAttributeSet(chipClient,
 		attribute.Int("max_batch_size", c.batchSize),
 	))
-	m.maxGRPCReqSizeAttr = otelmetric.WithAttributeSet(attribute.NewSet(
+	m.maxGRPCReqSizeAttr = otelmetric.WithAttributeSet(batchMetricAttributeSet(chipClient,
 		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
 	))
-	m.configInfo.Record(ctx, 1, otelmetric.WithAttributes(
+	m.configInfo.Record(ctx, 1, otelmetric.WithAttributeSet(batchMetricAttributeSet(chipClient,
 		attribute.Int("max_batch_size", c.batchSize),
 		attribute.Int("message_buffer_size", cap(c.messageBuffer)),
 		attribute.Int("max_concurrent_sends", cap(c.maxConcurrentSends)),
@@ -624,7 +656,7 @@ func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
 		attribute.Bool("clone_event", c.cloneEvent),
 		attribute.Bool("transaction_enabled", c.transactionEnabled),
 		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
-	))
+	)))
 }
 
 func (m *batchClientMetrics) recordSend(ctx context.Context, messageCount int, requestBytes int, latency time.Duration, success bool) {

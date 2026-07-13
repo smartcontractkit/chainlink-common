@@ -218,7 +218,7 @@ var envCfgFull = EnvConfig{
 	TelemetryLogStreamingEnabled:       false,
 	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
 	TelemetryMetricViewsDisabled:       false,
-	TelemetryMetricViewsAttributeBlacklist: nil,
+	TelemetryMetricViewsAttributeBlacklist: []string{"event_id"},
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
@@ -294,8 +294,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 	assert.Equal(t, strconv.Itoa(beholder.DefaultMetricCardinalityLimit), got[envTelemetryMetricCardinalityLimit])
 	assert.Equal(t, "false", got[envTelemetryMetricViewsDisabled])
-	_, hasBlacklist := got[envTelemetryMetricViewsAttributeBlacklist]
-	assert.False(t, hasBlacklist)
+	assert.Equal(t, "event_id", got[envTelemetryMetricViewsAttributeBlacklist])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])

@@ -907,9 +907,9 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
 
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", "durable_emitter")
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", "durable_emitter")
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", "durable_emitter")
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", batch.ChipClientDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", batch.ChipClientDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", batch.ChipClientDurableEmitter)
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.

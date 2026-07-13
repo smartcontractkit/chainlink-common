@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -239,7 +240,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter, "durable_emitter")
+		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ChipClientDurableEmitter)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}

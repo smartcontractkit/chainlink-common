@@ -166,8 +166,28 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 	}, nil
 }
 
+func validateGetLedgersRequest(startLedger uint32, cursor string) error {
+	startSet := startLedger != 0
+	cursorSet := cursor != ""
+	switch {
+	case startSet && cursorSet:
+		return fmt.Errorf("invalid request: startLedger (%d) and cursor (%q) are mutually exclusive", startLedger, cursor)
+	case !startSet && !cursorSet:
+		return errors.New("invalid request: startLedger is required unless cursor is set")
+	default:
+		return nil
+	}
+}
+
 // ConvertGetLedgersRequestToProto converts a domain GetLedgersRequest to its proto representation.
 func ConvertGetLedgersRequestToProto(req stellar.GetLedgersRequest) (*GetLedgersRequest, error) {
+	var cursor string
+	if req.Pagination != nil {
+		cursor = req.Pagination.Cursor
+	}
+	if err := validateGetLedgersRequest(req.StartLedger, cursor); err != nil {
+		return nil, err
+	}
 	return &GetLedgersRequest{
 		StartLedger: req.StartLedger,
 		Pagination:  ledgerPaginationToProto(req.Pagination),
@@ -178,6 +198,13 @@ func ConvertGetLedgersRequestToProto(req stellar.GetLedgersRequest) (*GetLedgers
 func ConvertGetLedgersRequestFromProto(p *GetLedgersRequest) (stellar.GetLedgersRequest, error) {
 	if p == nil {
 		return stellar.GetLedgersRequest{}, errors.New("get ledgers request is nil")
+	}
+	var cursor string
+	if pg := p.GetPagination(); pg != nil {
+		cursor = pg.GetCursor()
+	}
+	if err := validateGetLedgersRequest(p.GetStartLedger(), cursor); err != nil {
+		return stellar.GetLedgersRequest{}, err
 	}
 	return stellar.GetLedgersRequest{
 		StartLedger: p.GetStartLedger(),

@@ -141,19 +141,46 @@ func TestConvertGetLatestLedgerResponseFromProto_Nil(t *testing.T) {
 
 func TestConvertGetLedgersRequest_RoundTrip(t *testing.T) {
 	domain := stellartypes.GetLedgersRequest{
-		StartLedger: 987654,
-		Pagination:  &stellartypes.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
+		Pagination: &stellartypes.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
 	}
 
 	proto, err := conv.ConvertGetLedgersRequestToProto(domain)
 	require.NoError(t, err)
-	require.Equal(t, uint32(987654), proto.GetStartLedger())
+	require.Equal(t, uint32(0), proto.GetStartLedger())
 	require.Equal(t, "cur-1", proto.GetPagination().GetCursor())
 	require.Equal(t, uint32(5), proto.GetPagination().GetLimit())
 
 	got, err := conv.ConvertGetLedgersRequestFromProto(proto)
 	require.NoError(t, err)
 	require.Equal(t, domain, got)
+}
+
+func TestConvertGetLedgersRequest_RejectsStartLedgerAndCursorTogether(t *testing.T) {
+	domain := stellartypes.GetLedgersRequest{
+		StartLedger: 987654,
+		Pagination:  &stellartypes.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
+	}
+
+	_, err := conv.ConvertGetLedgersRequestToProto(domain)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "mutually exclusive")
+
+	_, err = conv.ConvertGetLedgersRequestFromProto(&conv.GetLedgersRequest{
+		StartLedger: 987654,
+		Pagination:  &conv.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "mutually exclusive")
+}
+
+func TestConvertGetLedgersRequest_RejectsNeitherStartLedgerNorCursor(t *testing.T) {
+	_, err := conv.ConvertGetLedgersRequestToProto(stellartypes.GetLedgersRequest{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "StartLedger is required")
+
+	_, err = conv.ConvertGetLedgersRequestFromProto(&conv.GetLedgersRequest{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "StartLedger is required")
 }
 
 func TestConvertGetLedgersRequest_RoundTrip_NoPagination(t *testing.T) {

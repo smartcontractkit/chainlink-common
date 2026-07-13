@@ -28,6 +28,20 @@ func TestComputeRequestHash_Deterministic(t *testing.T) {
 	require.Equal(t, sampleComputeRequest().Hash(), sampleComputeRequest().Hash())
 }
 
+func TestUsesLegacyComputeRequestHash(t *testing.T) {
+	for _, v := range []string{computeRequestLegacyVersion, "0.0.1", "0.0.5"} {
+		require.True(t, usesLegacyComputeRequestHash(v), "version %q should use the legacy hashing scheme", v)
+	}
+
+	for _, v := range []string{"0.0.7", "0.1.0", "1.2.3"} {
+		require.False(t, usesLegacyComputeRequestHash(v), "version %q should use the current hashing scheme", v)
+	}
+
+	for _, v := range []string{"", "not-a-version", "1.x"} {
+		require.False(t, usesLegacyComputeRequestHash(v), "unparseable version %q degrades to the current scheme", v)
+	}
+}
+
 // Every field the source binds must change the hash. (Conformance with
 // confidential-compute's source Hash is enforced by a test in that repo, which can
 // import this package; chainlink-common cannot import confidential-compute.)
@@ -61,9 +75,9 @@ func TestComputeRequestHash_IgnoresEncryptedShares(t *testing.T) {
 	require.Equal(t, sampleComputeRequest().Hash(), withShares.Hash())
 }
 
-// Version is hashed only for the legacy version, matching confidential-compute (which is
+// Version is hashed for the legacy scheme, matching confidential-compute (which is
 // migrating Version out of the hash). Non-legacy versions are excluded, so different
-// non-legacy versions hash identically, while the legacy version is bound.
+// non-legacy versions hash identically, while legacy-scheme versions are bound.
 func TestComputeRequestHash_VersionOnlyHashedForLegacy(t *testing.T) {
 	nonLegacyA := sampleComputeRequest()
 	nonLegacyA.Version = "0.0.7"
@@ -74,6 +88,12 @@ func TestComputeRequestHash_VersionOnlyHashedForLegacy(t *testing.T) {
 	legacy := sampleComputeRequest()
 	legacy.Version = computeRequestLegacyVersion
 	require.NotEqual(t, legacy.Hash(), nonLegacyA.Hash(), "legacy Version must be bound into the hash")
+
+	olderLegacyA := sampleComputeRequest()
+	olderLegacyA.Version = "0.0.5"
+	olderLegacyB := sampleComputeRequest()
+	olderLegacyB.Version = "0.0.4"
+	require.NotEqual(t, olderLegacyA.Hash(), olderLegacyB.Hash(), "versions at or below legacy must be bound into the hash")
 }
 
 // ApplicationRequestID is the post-legacy replacement for binding application-level
@@ -84,6 +104,14 @@ func TestComputeRequestHash_ApplicationRequestIDOnlyHashedForNonLegacy(t *testin
 	legacyB := sampleComputeRequest()
 	legacyB.ApplicationRequestID = "exec-b"
 	require.Equal(t, legacyA.Hash(), legacyB.Hash(), "legacy ApplicationRequestID must not affect the hash")
+
+	olderLegacyA := sampleComputeRequest()
+	olderLegacyA.Version = "0.0.5"
+	olderLegacyA.ApplicationRequestID = "exec-a"
+	olderLegacyB := sampleComputeRequest()
+	olderLegacyB.Version = "0.0.5"
+	olderLegacyB.ApplicationRequestID = "exec-b"
+	require.Equal(t, olderLegacyA.Hash(), olderLegacyB.Hash(), "legacy-scheme ApplicationRequestID must not affect the hash")
 
 	nonLegacyA := sampleComputeRequest()
 	nonLegacyA.Version = "0.0.7"

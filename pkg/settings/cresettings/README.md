@@ -52,6 +52,7 @@ flowchart
         VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
         VaultIncludeInvalidPendingItemsEnabled[/VaultIncludeInvalidPendingItemsEnabled\]:::gate
         VaultPendingQueueStallThreshold{{VaultPendingQueueStallThreshold}}:::bound
+        VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]

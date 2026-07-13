@@ -7,12 +7,13 @@
 package vault
 
 import (
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	anypb "google.golang.org/protobuf/types/known/anypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
+
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	anypb "google.golang.org/protobuf/types/known/anypb"
 )
 
 const (
@@ -784,6 +785,7 @@ func (x *CreateSecretResponse) GetError() string {
 type CreateSecretsResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Responses     []*CreateSecretResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	RequestId     string                  `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -823,6 +825,13 @@ func (x *CreateSecretsResponse) GetResponses() []*CreateSecretResponse {
 		return x.Responses
 	}
 	return nil
+}
+
+func (x *CreateSecretsResponse) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 type UpdateSecretsRequest struct {
@@ -960,6 +969,7 @@ func (x *UpdateSecretResponse) GetError() string {
 type UpdateSecretsResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Responses     []*UpdateSecretResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	RequestId     string                  `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -999,6 +1009,13 @@ func (x *UpdateSecretsResponse) GetResponses() []*UpdateSecretResponse {
 		return x.Responses
 	}
 	return nil
+}
+
+func (x *UpdateSecretsResponse) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 type DeleteSecretsRequest struct {
@@ -1136,6 +1153,7 @@ func (x *DeleteSecretResponse) GetError() string {
 type DeleteSecretsResponse struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Responses     []*DeleteSecretResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	RequestId     string                  `protobuf:"bytes,2,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1175,6 +1193,13 @@ func (x *DeleteSecretsResponse) GetResponses() []*DeleteSecretResponse {
 		return x.Responses
 	}
 	return nil
+}
+
+func (x *DeleteSecretsResponse) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
 }
 
 type ListSecretIdentifiersRequest struct {
@@ -1262,6 +1287,7 @@ type ListSecretIdentifiersResponse struct {
 	Identifiers   []*SecretIdentifier    `protobuf:"bytes,1,rep,name=identifiers,proto3" json:"identifiers,omitempty"`
 	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
 	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	RequestId     string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1359,6 +1385,13 @@ func (*ObservationError) Descriptor() ([]byte, []int) {
 func (x *ObservationError) GetMessage() string {
 	if x != nil {
 		return x.Message
+	}
+	return ""
+}
+
+func (x *ListSecretIdentifiersResponse) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
 	}
 	return ""
 }
@@ -2494,9 +2527,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x14CreateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"q\n" +
 	"\x15CreateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\"\xc0\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.CreateSecretResponseR\tresponses\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"\xc0\x01\n" +
 	"\x14UpdateSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12C\n" +
@@ -2506,9 +2541,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x14UpdateSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"q\n" +
 	"\x15UpdateSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\"\xa6\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.UpdateSecretResponseR\tresponses\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"\xa6\x01\n" +
 	"\x14DeleteSecretsRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12)\n" +
@@ -2518,22 +2555,27 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x14DeleteSecretResponse\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"R\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"q\n" +
 	"\x15DeleteSecretsResponse\x129\n" +
-	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\"\xb7\x01\n" +
+	"\tresponses\x18\x01 \x03(\v2\x1b.vault.DeleteSecretResponseR\tresponses\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x02 \x01(\tR\trequestId\"\xb7\x01\n" +
 	"\x1cListSecretIdentifiersRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x14\n" +
 	"\x05owner\x18\x02 \x01(\tR\x05owner\x12\x1c\n" +
 	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x19\n" +
 	"\x06org_id\x18\x04 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
-	"\x0eworkflow_owner\x18\x05 \x01(\tB\x02\x18\x01R\rworkflowOwner\"\x8a\x01\n" +
+	"\x0eworkflow_owner\x18\x05 \x01(\tB\x02\x18\x01R\rworkflowOwner\"\xa9\x01\n" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
 	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\",\n" +
 	"\x10ObservationError\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\"\x9b\b\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x04 \x01(\tR\trequestId\"\xec\a\n" +
 	"\vObservation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +

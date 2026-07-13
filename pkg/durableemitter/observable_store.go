@@ -55,26 +55,22 @@ type DurableEventStore interface {
 	Insert(ctx context.Context, payload []byte) (int64, error)
 	// Delete physically removes a row (corrupt payloads, policy drops, tests).
 	Delete(ctx context.Context, id int64) error
-	// MarkDelivered records successful delivery to Chip. The row must no longer
-	// appear in ListPending. Postgres implementations typically set delivered_at;
-	// a background PurgeDelivered removes rows later. MemDurableEventStore removes
-	// the row immediately (same as Delete).
-	MarkDelivered(ctx context.Context, id int64) error
-	// MarkDeliveredBatch marks multiple events as delivered in a single operation.
-	// Semantically equivalent to calling MarkDelivered for each id.
-	MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error)
-	// PurgeDelivered deletes up to batchLimit rows already marked delivered.
-	// Implementations that remove rows in MarkDelivered may return 0, nil always.
-	PurgeDelivered(ctx context.Context, batchLimit int) (deleted int64, err error)
-	// ListPending returns events created before the given cutoff, ordered by
-	// creation time ascending, up to limit rows.
-	ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error)
-	// DeleteExpired removes undelivered events older than ttl and returns the
-	// count deleted. Implementations MUST NOT delete or count already-delivered
-	// rows here (those are reclaimed by PurgeDelivered): the returned count is
-	// used to decrement the in-memory pending/queue-depth counter, which only
-	// tracks undelivered events. Counting delivered rows would double-subtract
-	// them and drive the queue-depth gauge negative.
+	// BatchDelete records successful delivery of multiple events to Chip by
+	// deleting them in a single operation (delete-on-delivery)
+	BatchDelete(ctx context.Context, ids []int64) (int64, error)
+	// ListPending returns undelivered events created before createdBefore,
+	// ordered by (created_at, id) ascending and strictly after the
+	// (afterCreatedAt, afterID) cursor, up to limit rows. Pass a zero cursor
+	// (time.Time{}, 0) to start from the oldest. The retransmit loop pages
+	// through the backlog with this cursor — advancing it each tick and wrapping
+	// to a zero cursor at the end — so a persistently-failing event can't
+	// monopolise the head of the list. Under delete-on-delivery every row still
+	// present is undelivered, so this is the pending backlog.
+	ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error)
+	// DeleteExpired removes any events older than ttl and returns the count
+	// deleted — a time-based garbage collector that also reclaims rows which
+	// failed to delete on delivery (e.g. a DB error in the delivery callback), so
+	// nothing lingers past EventTTL.
 	DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error)
 }
 
@@ -108,30 +104,16 @@ func (s *metricsInstrumentedStore) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
-func (s *metricsInstrumentedStore) MarkDelivered(ctx context.Context, id int64) error {
+func (s *metricsInstrumentedStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
 	t0 := time.Now()
-	err := s.inner.MarkDelivered(ctx, id)
-	s.m.recordStoreOp(ctx, "mark_delivered", time.Since(t0), err)
-	return err
-}
-
-func (s *metricsInstrumentedStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
-	t0 := time.Now()
-	n, err := s.inner.MarkDeliveredBatch(ctx, ids)
-	s.m.recordStoreOp(ctx, "mark_delivered_batch", time.Since(t0), err)
+	n, err := s.inner.BatchDelete(ctx, ids)
+	s.m.recordStoreOp(ctx, "batch_delete", time.Since(t0), err)
 	return n, err
 }
 
-func (s *metricsInstrumentedStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
+func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
 	t0 := time.Now()
-	n, err := s.inner.PurgeDelivered(ctx, batchLimit)
-	s.m.recordStoreOp(ctx, "purge_delivered", time.Since(t0), err)
-	return n, err
-}
-
-func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
-	t0 := time.Now()
-	evs, err := s.inner.ListPending(ctx, createdBefore, limit)
+	evs, err := s.inner.ListPending(ctx, createdBefore, afterCreatedAt, afterID, limit)
 	s.m.recordStoreOp(ctx, "list_pending", time.Since(t0), err)
 	return evs, err
 }

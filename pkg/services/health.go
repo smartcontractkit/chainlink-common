@@ -93,6 +93,7 @@ type HealthCheckerConfig struct {
 	AddUptime  func(ctx context.Context, duration time.Duration)
 	SetStatus  func(ctx context.Context, name string, status int)
 	Delete     func(ctx context.Context, name string)
+	SetHealth  func(ctx context.Context, health map[string]error)
 }
 
 func (cfg *HealthCheckerConfig) initVerSha() {
@@ -123,6 +124,9 @@ func (cfg *HealthCheckerConfig) setNoopHooks() {
 	}
 	if cfg.Delete == nil {
 		cfg.Delete = func(ctx context.Context, name string) {}
+	}
+	if cfg.SetHealth == nil {
+		cfg.SetHealth = func(ctx context.Context, svcHealth map[string]error) {}
 	}
 }
 
@@ -203,6 +207,8 @@ func (c *HealthChecker) update(ctx context.Context) {
 		}
 	}
 	c.cfg.AddUptime(ctx, interval)
+
+	c.cfg.SetHealth(ctx, healthy)
 
 	// save state
 	c.stateMu.Lock()

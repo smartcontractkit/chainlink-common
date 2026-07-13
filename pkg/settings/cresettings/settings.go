@@ -52,12 +52,13 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(1000),
-	WorkflowExecutionConcurrencyLimit: Int(1000),
-	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:     Bool(true),
-	VaultJWTAuthEnabled:               Bool(false),
+	WorkflowLimit:                               Int(1000),
+	WorkflowExecutionConcurrencyLimit:           Int(1000),
+	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:               Bool(true),
+	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
+	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
 	PropagateOrgIDInRequestMetadata:                   Bool(false),
@@ -67,6 +68,7 @@ var Default = Schema{
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -316,6 +318,7 @@ type Schema struct {
 	GatewayVaultManagementEnabled                     Setting[bool]
 	VaultJWTAuthEnabled                               Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]
@@ -324,6 +327,7 @@ type Schema struct {
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]

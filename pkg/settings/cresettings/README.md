@@ -11,6 +11,7 @@ flowchart
     rate[\Rate/]
     resource([Resource])
     time>Time]
+    setting[(Setting)]
     
     bound:::bound
     gate:::gate
@@ -18,6 +19,7 @@ flowchart
     rate:::rate
     resource:::resource
     time:::time
+    setting:::setting
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0
@@ -25,6 +27,7 @@ flowchart
     classDef rate stroke:#ff0
     classDef resource stroke:#f0f
     classDef time stroke:#0ff
+    classDef setting stroke:#999
 ```
 
 
@@ -38,6 +41,7 @@ flowchart
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
+        TenantID[(TenantID)]:::setting
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
@@ -45,6 +49,7 @@ flowchart
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
+        VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -302,4 +307,5 @@ flowchart
     classDef rate stroke:#ff0
     classDef resource stroke:#f0f
     classDef time stroke:#0ff
+    classDef setting stroke:#999,fill:#f5f5f5
 ```

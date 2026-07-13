@@ -78,7 +78,6 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batch.WithShutdownTimeout(drainTimeout),
 		batch.WithMaxConcurrentSends(maxConcurrentSends),
 		batch.WithEventClone(false),
-		batch.WithChipClient("beholder"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create batch client: %w", err)

@@ -139,6 +139,55 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, int64(9876543210), resp.LedgerCloseTime)
 	})
 
+	t.Run("GetLedgers", func(t *testing.T) {
+		svc.getLedgers = func(_ context.Context, req stellartypes.GetLedgersRequest) (stellartypes.GetLedgersResponse, error) {
+			require.Equal(t, uint32(4242), req.StartLedger)
+			require.NotNil(t, req.Pagination)
+			require.Equal(t, "cur-in", req.Pagination.Cursor)
+			require.Equal(t, uint32(2), req.Pagination.Limit)
+			return stellartypes.GetLedgersResponse{
+				Ledgers: []stellartypes.LedgerInfo{
+					{
+						Hash:              "deadbeef", // valid 4-byte hex
+						Sequence:          4242,
+						LedgerCloseTime:   9876543210,
+						LedgerHeaderXDR:   base64.StdEncoding.EncodeToString([]byte("header-xdr")),
+						LedgerMetadataXDR: base64.StdEncoding.EncodeToString([]byte("meta-xdr")),
+					},
+				},
+				LatestLedger:          5000,
+				LatestLedgerCloseTime: 9876543299,
+				OldestLedger:          1,
+				OldestLedgerCloseTime: 1000,
+				Cursor:                "cur-out",
+			}, nil
+		}
+
+		resp, err := client.GetLedgers(ctx, stellartypes.GetLedgersRequest{
+			StartLedger: 4242,
+			Pagination:  &stellartypes.LedgerPaginationOptions{Cursor: "cur-in", Limit: 2},
+		})
+		require.NoError(t, err)
+		require.Len(t, resp.Ledgers, 1)
+		require.Equal(t, "deadbeef", resp.Ledgers[0].Hash)
+		require.Equal(t, uint32(4242), resp.Ledgers[0].Sequence)
+		require.Equal(t, int64(9876543210), resp.Ledgers[0].LedgerCloseTime)
+		require.Equal(t, base64.StdEncoding.EncodeToString([]byte("header-xdr")), resp.Ledgers[0].LedgerHeaderXDR)
+		require.Equal(t, base64.StdEncoding.EncodeToString([]byte("meta-xdr")), resp.Ledgers[0].LedgerMetadataXDR)
+		require.Equal(t, uint32(5000), resp.LatestLedger)
+		require.Equal(t, uint32(1), resp.OldestLedger)
+		require.Equal(t, "cur-out", resp.Cursor)
+	})
+
+	t.Run("GetLedgers_implError", func(t *testing.T) {
+		svc.getLedgers = func(_ context.Context, _ stellartypes.GetLedgersRequest) (stellartypes.GetLedgersResponse, error) {
+			return stellartypes.GetLedgersResponse{}, errors.New("rpc unavailable")
+		}
+
+		_, err := client.GetLedgers(ctx, stellartypes.GetLedgersRequest{StartLedger: 1})
+		require.Error(t, err)
+	})
+
 	t.Run("SimulateTransaction_roundtrip", func(t *testing.T) {
 		sym := "report"
 		argVal := uint64(12345)
@@ -506,6 +555,7 @@ type staticStellarService struct {
 	types.UnimplementedStellarService
 	getLedgerEntries    func(ctx context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error)
 	getLatestLedger     func(ctx context.Context) (stellartypes.GetLatestLedgerResponse, error)
+	getLedgers          func(ctx context.Context, req stellartypes.GetLedgersRequest) (stellartypes.GetLedgersResponse, error)
 	getEvents           func(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error)
 	getTransaction      func(ctx context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error)
 	getSigningAccount   func(ctx context.Context) (stellartypes.GetSigningAccountResponse, error)
@@ -525,6 +575,13 @@ func (s *staticStellarService) GetLatestLedger(ctx context.Context) (stellartype
 		return s.UnimplementedStellarService.GetLatestLedger(ctx)
 	}
 	return s.getLatestLedger(ctx)
+}
+
+func (s *staticStellarService) GetLedgers(ctx context.Context, req stellartypes.GetLedgersRequest) (stellartypes.GetLedgersResponse, error) {
+	if s.getLedgers == nil {
+		return s.UnimplementedStellarService.GetLedgers(ctx, req)
+	}
+	return s.getLedgers(ctx, req)
 }
 
 func (s *staticStellarService) GetEvents(ctx context.Context, req stellartypes.GetEventsRequest) (stellartypes.GetEventsResponse, error) {

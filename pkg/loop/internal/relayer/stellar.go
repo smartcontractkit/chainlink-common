@@ -53,6 +53,22 @@ func (sc *StellarClient) GetLatestLedger(ctx context.Context) (stellar.GetLatest
 	return resp, nil
 }
 
+func (sc *StellarClient) GetLedgers(ctx context.Context, req stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error) {
+	pReq, err := stelpb.ConvertGetLedgersRequestToProto(req)
+	if err != nil {
+		return stellar.GetLedgersResponse{}, fmt.Errorf("invalid GetLedgers request: %w", err)
+	}
+	pResp, err := sc.grpcClient.GetLedgers(ctx, pReq)
+	if err != nil {
+		return stellar.GetLedgersResponse{}, net.WrapRPCErr(err)
+	}
+	resp, err := stelpb.ConvertGetLedgersResponseFromProto(pResp)
+	if err != nil {
+		return stellar.GetLedgersResponse{}, fmt.Errorf("invalid GetLedgers response: %w", err)
+	}
+	return resp, nil
+}
+
 func (sc *StellarClient) GetEvents(ctx context.Context, req stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
 	pReq, err := stelpb.ConvertGetEventsRequestToProto(req)
 	if err != nil {
@@ -187,6 +203,22 @@ func (s *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) (
 	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
 	if err != nil {
 		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (s *stellarServer) GetLedgers(ctx context.Context, req *stelpb.GetLedgersRequest) (*stelpb.GetLedgersResponse, error) {
+	dReq, err := stelpb.ConvertGetLedgersRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLedgers request: %w", err)
+	}
+	dResp, err := s.impl.GetLedgers(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertGetLedgersResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLedgers response: %w", err)
 	}
 	return pResp, nil
 }

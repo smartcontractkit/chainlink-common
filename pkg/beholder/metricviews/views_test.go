@@ -15,14 +15,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-func TestDefaultViews_emptyByDefault(t *testing.T) {
+func TestDefaultViews_emptyBlacklist(t *testing.T) {
 	t.Parallel()
-	assert.Empty(t, metricviews.DefaultViews())
+	assert.Nil(t, metricviews.DefaultViews(nil))
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews()...),
+		sdkmetric.WithView(metricviews.DefaultViews(nil)...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 
@@ -44,6 +44,37 @@ func TestDefaultViews_emptyByDefault(t *testing.T) {
 	keys := attributeKeysFromSum(t, rm)
 	assert.Contains(t, keys, attribute.Key("service"))
 	assert.Contains(t, keys, attribute.Key("event_id"))
+	assert.Contains(t, keys, attribute.Key("workflow_execution_id"))
+}
+
+func TestDefaultViews_dropsBlacklistedAttributes(t *testing.T) {
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithView(metricviews.DefaultViews([]string{"event_id"})...),
+	)
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+	meter := mp.Meter("test")
+	counter, err := meter.Int64Counter("some_metric_total")
+	require.NoError(t, err)
+
+	counter.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("service", "foo"),
+			attribute.String("event_id", "ev-1"),
+			attribute.String("workflow_execution_id", "exec-1"),
+		),
+	)
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	keys := attributeKeysFromSum(t, rm)
+	assert.Contains(t, keys, attribute.Key("service"))
+	assert.NotContains(t, keys, attribute.Key("event_id"))
 	assert.Contains(t, keys, attribute.Key("workflow_execution_id"))
 }
 

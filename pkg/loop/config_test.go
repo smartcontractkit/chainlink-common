@@ -84,6 +84,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
 				envTelemetryLogStreamingEnabled:       "false",
+				envTelemetryMetricViewsAttributeBlacklist: "event_id",
 				envTelemetryPrometheusBridgeEnabled:   "true",
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
 				envMeterRecordsEnabled:                "true",
@@ -217,6 +218,7 @@ var envCfgFull = EnvConfig{
 	TelemetryLogStreamingEnabled:       false,
 	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
 	TelemetryMetricViewsDisabled:       false,
+	TelemetryMetricViewsAttributeBlacklist: nil,
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
@@ -292,6 +294,8 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 	assert.Equal(t, strconv.Itoa(beholder.DefaultMetricCardinalityLimit), got[envTelemetryMetricCardinalityLimit])
 	assert.Equal(t, "false", got[envTelemetryMetricViewsDisabled])
+	_, hasBlacklist := got[envTelemetryMetricViewsAttributeBlacklist]
+	assert.False(t, hasBlacklist)
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])
@@ -361,6 +365,43 @@ func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
 		require.NoError(t, parsed.parse())
 		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
 		assert.Equal(t, 100000, *parsed.TelemetryMetricCardinalityLimit)
+	})
+}
+
+// TestEnvConfig_MetricViewsAttributeBlacklist_RoundTrip verifies that a
+// comma-separated blacklist survives an AsCmdEnv -> parse round trip.
+func TestEnvConfig_MetricViewsAttributeBlacklist_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("blacklist propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsAttributeBlacklist = []string{"event_id", "workflow_execution_id"}
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Equal(t, []string{"event_id", "workflow_execution_id"}, parsed.TelemetryMetricViewsAttributeBlacklist)
+	})
+
+	t.Run("unset leaves blacklist nil", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsAttributeBlacklist = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryMetricViewsAttributeBlacklist+"=", "unset blacklist must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Nil(t, parsed.TelemetryMetricViewsAttributeBlacklist)
 	})
 }
 

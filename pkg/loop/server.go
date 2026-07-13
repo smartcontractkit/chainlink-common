@@ -193,6 +193,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
 			MetricViewsDisabled:            s.EnvConfig.TelemetryMetricViewsDisabled,
+			MetricViewsAttributeBlacklist:  s.EnvConfig.TelemetryMetricViewsAttributeBlacklist,
 		}
 
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {

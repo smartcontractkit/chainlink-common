@@ -16,12 +16,25 @@
 package metricviews
 
 import (
+	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
 // DefaultViews returns deny-only attribute-filter views appended after
-// caller-supplied MetricViews by beholder.Config.metricViews. The denylist is
-// empty by default so no attributes are stripped until keys are configured.
-func DefaultViews() []sdkmetric.View {
-	return nil
+// caller-supplied MetricViews by beholder.Config.metricViews. When denyKeys is
+// empty, no views are returned and no attributes are stripped.
+func DefaultViews(denyKeys []string) []sdkmetric.View {
+	if len(denyKeys) == 0 {
+		return nil
+	}
+	keys := make([]attribute.Key, len(denyKeys))
+	for i, k := range denyKeys {
+		keys[i] = attribute.Key(k)
+	}
+	return []sdkmetric.View{
+		sdkmetric.NewView(
+			sdkmetric.Instrument{Name: "*"},
+			sdkmetric.Stream{AttributeFilter: attribute.NewDenyKeysFilter(keys...)},
+		),
+	}
 }

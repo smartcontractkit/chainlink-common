@@ -19,7 +19,7 @@ func (cfg Config) metricViews() []sdkmetric.View {
 	if cfg.MetricViewsDisabled {
 		return cfg.MetricViews
 	}
-	return append(cfg.MetricViews, metricviews.DefaultViews()...)
+	return append(cfg.MetricViews, metricviews.DefaultViews(cfg.MetricViewsAttributeBlacklist)...)
 }
 
 // metricOptions returns cfg-derived sdkmetric.Option values (metric views and the

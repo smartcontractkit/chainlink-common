@@ -33,6 +33,7 @@
   "MetricRetryConfig": null,
   "MetricViews": null,
   "MetricViewsDisabled": false,
+  "MetricViewsAttributeBlacklist": null,
   "MetricCardinalityLimit": 0,
   "MetricCompressor": "gzip",
   "MetricProducers": null,

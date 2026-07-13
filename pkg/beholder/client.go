@@ -61,6 +61,9 @@ type Client struct {
 	// lazySigner allows updating the keystore after client initialization.
 	lazySigner *lazySigner
 
+	// fullResource retains all resource attributes for the info gauge export.
+	fullResource *sdkresource.Resource
+
 	// OnClose
 	OnClose func() error
 }
@@ -111,10 +114,12 @@ type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, er
 // NewGRPCClient creates a GRPC based beholder Client. Use NewClient to create a client from a Config which will pick
 // the best client type from the Config.
 func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
-	baseResource, err := newOtelResource(cfg)
+	resources, err := buildOtelResources(cfg)
 	if err != nil {
 		return nil, err
 	}
+	fullResource := resources.Full
+	metricResource := resources.Metric
 	creds := insecure.NewCredentials()
 	if !cfg.InsecureConnection && cfg.CACertFile != "" {
 		creds, err = credentials.NewClientTLSFromFile(cfg.CACertFile, "")
@@ -133,14 +138,14 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 
 	// Tracer
-	tracerProvider, err := newTracerProvider(cfg, baseResource, auth, creds)
+	tracerProvider, err := newTracerProvider(cfg, fullResource, auth, creds)
 	if err != nil {
 		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newMeterProvider(cfg, baseResource, auth, creds)
+	meterProvider, err := newMeterProvider(cfg, metricResource, auth, creds)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +166,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	if !cfg.LogStreamingEnabled {
 		loggerProvider = BeholderNoopLoggerProvider()
 	} else {
-		loggerOpts, err := newLoggerProviderOpts(cfg, baseResource, sharedLogExporter)
+		loggerOpts, err := newLoggerProviderOpts(cfg, fullResource, sharedLogExporter)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +175,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Message emitter
-	messageLoggerOpts, err := newMessageLoggerProviderOpts(cfg, baseResource, sharedLogExporter)
+	messageLoggerOpts, err := newMessageLoggerProviderOpts(cfg, fullResource, sharedLogExporter)
 	if err != nil {
 		return nil, err
 	}
@@ -265,9 +270,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		MeterProvider:         meterProvider,
 		MessageLoggerProvider: messageLoggerProvider,
 		lazySigner:            signer,
+		fullResource:          fullResource,
 		OnClose:               onClose,
 	}
 	c.initService(lggr, batchEmitterService)
+	if err := c.RecordFullResourceAttributesMetric(context.Background()); err != nil {
+		return nil, err
+	}
 	return c, nil
 }
 
@@ -331,49 +340,6 @@ func (c *Client) IsSignerSet() bool {
 	return c.lazySigner != nil && c.lazySigner.IsSet()
 }
 
-func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
-	extraResources, err := sdkresource.New(
-		context.Background(),
-		sdkresource.WithOS(),
-		sdkresource.WithContainer(),
-		sdkresource.WithHost(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	resource, err = sdkresource.Merge(
-		sdkresource.Default(),
-		extraResources,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add csa public key resource attribute
-	csaPublicKeyHex := "not-configured"
-	if len(cfg.AuthPublicKeyHex) > 0 {
-		csaPublicKeyHex = cfg.AuthPublicKeyHex
-	}
-	csaPublicKeyAttr := attribute.String("csa_public_key", csaPublicKeyHex)
-	resource, err = sdkresource.Merge(
-		sdkresource.NewSchemaless(csaPublicKeyAttr),
-		resource,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add custom resource attributes
-	resource, err = sdkresource.Merge(
-		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
-		resource,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return
-}
-
 // RecordConfig records the beholder config as a metric.
 func (c *Client) RecordConfigMetric(ctx context.Context) error {
 	configGauge, configAttrs, err := createConfigMetric(c.Meter, c.Config)
@@ -381,6 +347,22 @@ func (c *Client) RecordConfigMetric(ctx context.Context) error {
 		return err
 	}
 	configGauge.Record(ctx, 1, otelmetric.WithAttributes(configAttrs...))
+	return nil
+}
+
+// RecordFullResourceAttributesMetric records all full-resource attributes on a
+// single info gauge. The metric resource itself remains reduced when enabled.
+func (c *Client) RecordFullResourceAttributesMetric(ctx context.Context) error {
+	resourceGauge, err := c.Meter.Int64Gauge(
+		"beholder.otel.resource_attributes.full",
+		otelmetric.WithDescription("Full OTel resource attributes before metric-resource filtering"),
+		otelmetric.WithUnit("{info}"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create full resource attributes metric: %w", err)
+	}
+
+	resourceGauge.Record(ctx, 1, otelmetric.WithAttributes(resourceAttributesAsKV(c.fullResource)...))
 	return nil
 }
 
@@ -437,6 +419,12 @@ func createConfigMetric(meter otelmetric.Meter, cfg Config) (otelmetric.Int64Gau
 			"metric_reader_interval", cfg.MetricReaderInterval.String()),
 		attribute.String(
 			"metric_compressor", cfg.MetricCompressor),
+		attribute.Bool(
+			"reduced_metric_resource_attributes_enabled",
+			cfg.ReducedMetricResourceAttributesEnabled),
+		attribute.Bool(
+			"exclude_volatile_resource_attributes_from_metrics_enabled",
+			cfg.ExcludeVolatileResourceAttributesFromMetricsEnabled),
 	}
 
 	return configGauge, configAttrs, nil

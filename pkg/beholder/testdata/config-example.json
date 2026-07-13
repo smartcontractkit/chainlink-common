@@ -19,6 +19,9 @@
       }
     }
   ],
+  "NodeID": "",
+  "ReducedMetricResourceAttributesEnabled": false,
+  "ExcludeVolatileResourceAttributesFromMetricsEnabled": false,
   "EmitterExportTimeout": 1000000000,
   "EmitterExportInterval": 1000000000,
   "EmitterExportMaxBatchSize": 512,

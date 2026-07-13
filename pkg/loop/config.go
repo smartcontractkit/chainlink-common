@@ -59,40 +59,43 @@ const (
 	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
 	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
 
-	envTelemetryEnabled                   = "CL_TELEMETRY_ENABLED"
-	envTelemetryEndpoint                  = "CL_TELEMETRY_ENDPOINT"
-	envTelemetryInsecureConn              = "CL_TELEMETRY_INSECURE_CONNECTION"
-	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
-	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
-	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
-	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
-	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
-	envTelemetryAuthHeadersTTL            = "CL_TELEMETRY_AUTH_HEADERS_TTL"
-	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
-	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
-	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
-	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
-	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
-	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
-	envTelemetryLogLevel                  = "CL_TELEMETRY_LOG_LEVEL"
-	envTelemetryLogBatchProcessor         = "CL_TELEMETRY_LOG_BATCH_PROCESSOR"
-	envTelemetryLogExportTimeout          = "CL_TELEMETRY_LOG_EXPORT_TIMEOUT"
-	envTelemetryLogExportMaxBatchSize     = "CL_TELEMETRY_LOG_EXPORT_MAX_BATCH_SIZE"
-	envTelemetryLogExportInterval         = "CL_TELEMETRY_LOG_EXPORT_INTERVAL"
-	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
-	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
-	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
-	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
-	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
-	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
-	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
-	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
-	envMeterProduct                       = "CL_METER_PRODUCT"
-	envMeterTenant                        = "CL_METER_TENANT"
-	envMeterNumericTenantID               = "CL_METER_NUMERIC_TENANT_ID"
-	envMeterEnvironment                   = "CL_METER_ENVIRONMENT"
-	envMeterZone                          = "CL_METER_ZONE"
-	envMeterNodeID                        = "CL_METER_NODE_ID"
+	envTelemetryEnabled                           = "CL_TELEMETRY_ENABLED"
+	envTelemetryEndpoint                          = "CL_TELEMETRY_ENDPOINT"
+	envTelemetryInsecureConn                      = "CL_TELEMETRY_INSECURE_CONNECTION"
+	envTelemetryCACertFile                        = "CL_TELEMETRY_CA_CERT_FILE"
+	envTelemetryAttribute                         = "CL_TELEMETRY_ATTRIBUTE_"
+	envTelemetryTraceSampleRatio                  = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryAuthHeader                        = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthPubKeyHex                     = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryAuthHeadersTTL                    = "CL_TELEMETRY_AUTH_HEADERS_TTL"
+	envTelemetryEmitterBatchProcessor             = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
+	envTelemetryEmitterExportTimeout              = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
+	envTelemetryEmitterExportInterval             = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
+	envTelemetryEmitterExportMaxBatchSize         = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
+	envTelemetryEmitterMaxQueueSize               = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
+	envTelemetryLogStreamingEnabled               = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
+	envTelemetryLogLevel                          = "CL_TELEMETRY_LOG_LEVEL"
+	envTelemetryLogBatchProcessor                 = "CL_TELEMETRY_LOG_BATCH_PROCESSOR"
+	envTelemetryLogExportTimeout                  = "CL_TELEMETRY_LOG_EXPORT_TIMEOUT"
+	envTelemetryLogExportMaxBatchSize             = "CL_TELEMETRY_LOG_EXPORT_MAX_BATCH_SIZE"
+	envTelemetryLogExportInterval                 = "CL_TELEMETRY_LOG_EXPORT_INTERVAL"
+	envTelemetryLogMaxQueueSize                   = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
+	envTelemetryTraceCompressor                   = "CL_TELEMETRY_TRACE_COMPRESSOR"
+	envTelemetryMetricCompressor                  = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryReducedMetricResourceAttributes   = "CL_TELEMETRY_REDUCED_METRIC_RESOURCE_ATTRIBUTES_ENABLED"
+	envTelemetryExcludeVolatileResourceAttributes = "CL_TELEMETRY_EXCLUDE_VOLATILE_RESOURCE_ATTRIBUTES_FROM_METRICS_ENABLED"
+	envTelemetryNodeID                            = "CL_TELEMETRY_NODE_ID"
+	envTelemetryPrometheusBridgeEnabled           = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryPrometheusBridgePrefixes          = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
+	envTelemetryLogCompressor                     = "CL_TELEMETRY_LOG_COMPRESSOR"
+	envMeterRecordsEnabled                        = "CL_METER_RECORDS_ENABLED"
+	envMeterSnapshotsEnabled                      = "CL_METER_SNAPSHOTS_ENABLED"
+	envMeterProduct                               = "CL_METER_PRODUCT"
+	envMeterTenant                                = "CL_METER_TENANT"
+	envMeterNumericTenantID                       = "CL_METER_NUMERIC_TENANT_ID"
+	envMeterEnvironment                           = "CL_METER_ENVIRONMENT"
+	envMeterZone                                  = "CL_METER_ZONE"
+	envMeterNodeID                                = "CL_METER_NODE_ID"
 
 	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -162,25 +165,28 @@ type EnvConfig struct {
 	TelemetryAuthHeadersTTL     time.Duration
 	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor
 	// (batched async custom-message export vs immediate per-record export).
-	TelemetryEmitterBatchProcessor     bool
-	TelemetryEmitterExportTimeout      time.Duration
-	TelemetryEmitterExportInterval     time.Duration
-	TelemetryEmitterExportMaxBatchSize int
-	TelemetryEmitterMaxQueueSize       int
-	TelemetryLogStreamingEnabled       bool
-	TelemetryLogLevel                  zapcore.Level
-	TelemetryLogBatchProcessor         bool
-	TelemetryLogExportTimeout          time.Duration
-	TelemetryLogExportMaxBatchSize     int
-	TelemetryLogExportInterval         time.Duration
-	TelemetryLogMaxQueueSize           int
-	TelemetryTraceCompressor           string
-	TelemetryMetricCompressor          string
-	TelemetryPrometheusBridgeEnabled   bool
-	TelemetryPrometheusBridgePrefixes  []string
-	TelemetryLogCompressor             string
-	MeterRecordsEnabled                bool
-	MeterSnapshotsEnabled              bool
+	TelemetryEmitterBatchProcessor                               bool
+	TelemetryEmitterExportTimeout                                time.Duration
+	TelemetryEmitterExportInterval                               time.Duration
+	TelemetryEmitterExportMaxBatchSize                           int
+	TelemetryEmitterMaxQueueSize                                 int
+	TelemetryLogStreamingEnabled                                 bool
+	TelemetryLogLevel                                            zapcore.Level
+	TelemetryLogBatchProcessor                                   bool
+	TelemetryLogExportTimeout                                    time.Duration
+	TelemetryLogExportMaxBatchSize                               int
+	TelemetryLogExportInterval                                   time.Duration
+	TelemetryLogMaxQueueSize                                     int
+	TelemetryTraceCompressor                                     string
+	TelemetryMetricCompressor                                    string
+	TelemetryReducedMetricResourceAttributesEnabled              bool
+	TelemetryExcludeVolatileResourceAttributesFromMetricsEnabled bool
+	TelemetryNodeID                                              string
+	TelemetryPrometheusBridgeEnabled                             bool
+	TelemetryPrometheusBridgePrefixes                            []string
+	TelemetryLogCompressor                                       string
+	MeterRecordsEnabled                                          bool
+	MeterSnapshotsEnabled                                        bool
 
 	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /
 	// MeterZone / MeterNodeID are
@@ -290,6 +296,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryReducedMetricResourceAttributes, strconv.FormatBool(e.TelemetryReducedMetricResourceAttributesEnabled))
+	add(envTelemetryExcludeVolatileResourceAttributes, strconv.FormatBool(e.TelemetryExcludeVolatileResourceAttributesFromMetricsEnabled))
+	add(envTelemetryNodeID, e.TelemetryNodeID)
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
@@ -530,6 +539,15 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		e.TelemetryReducedMetricResourceAttributesEnabled, err = getBool(envTelemetryReducedMetricResourceAttributes)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryReducedMetricResourceAttributes, err)
+		}
+		e.TelemetryExcludeVolatileResourceAttributesFromMetricsEnabled, err = getBool(envTelemetryExcludeVolatileResourceAttributes)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryExcludeVolatileResourceAttributes, err)
+		}
+		e.TelemetryNodeID = os.Getenv(envTelemetryNodeID)
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)

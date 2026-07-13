@@ -19,6 +19,14 @@ type Config struct {
 
 	// OTel Resource
 	ResourceAttributes []attribute.KeyValue
+	// NodeID is the stable node identifier (1:1 with csa_public_key).
+	NodeID string
+	// ReducedMetricResourceAttributesEnabled uses a slim OTel resource on the metric
+	// export path while traces and logs keep the full resource.
+	ReducedMetricResourceAttributesEnabled bool
+	// ExcludeVolatileResourceAttributesFromMetricsEnabled strips volatile resource
+	// attributes (process.pid, k8s.pod.*, etc.) from the metric resource only.
+	ExcludeVolatileResourceAttributesFromMetricsEnabled bool
 	// Message Emitter
 	EmitterExportTimeout      time.Duration
 	EmitterExportInterval     time.Duration
@@ -26,7 +34,7 @@ type Config struct {
 	EmitterMaxQueueSize       int
 	// EmitterBatchProcessor controls custom-message export mode:
 	// true = batched async export; false = immediate per-record export.
-	EmitterBatchProcessor     bool
+	EmitterBatchProcessor bool
 
 	// OTel Trace
 	TraceSampleRatio  float64
@@ -127,7 +135,7 @@ func DefaultConfig() Config {
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
 		// Keep batched export enabled by default for throughput.
-		EmitterBatchProcessor:     true,
+		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
@@ -148,8 +156,8 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
-		LogLevel:      zapcore.InfoLevel,
-		LogCompressor: "gzip",
+		LogLevel:              zapcore.InfoLevel,
+		LogCompressor:         "gzip",
 		// Chip Ingress Batch Emitter
 		ChipIngressBatchEmitterEnabled: false,
 		ChipIngressBufferSize:          1000,

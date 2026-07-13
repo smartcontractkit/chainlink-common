@@ -215,15 +215,15 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 						// A 409 means a provenance mismatch: the stored rule was created with a
 						// different provenance (e.g. "api") than what we send (""). Migrate by
 						// deleting the old rule and recreating it with the current provenance.
-						if updateResp != nil && updateResp.StatusCode() == 409 {
-							if _, _, errDelete := grafanaClient.DeleteAlertRule(*alertToUpdate.Uid); errDelete != nil {
-								return fmt.Errorf("provenance migration: delete alert rule %q: %w", alert.Title, errDelete)
-							}
-							if _, _, errPost := grafanaClient.PostAlertRule(alert); errPost != nil {
-								return fmt.Errorf("provenance migration: recreate alert rule %q: %w", alert.Title, errPost)
-							}
-						} else {
+						if updateResp != nil && updateResp.StatusCode() != 409 {
 							return errPutAlertRule
+						}
+
+						if _, _, errDelete := grafanaClient.DeleteAlertRule(*alertToUpdate.Uid); errDelete != nil {
+							return fmt.Errorf("provenance migration: delete alert rule %q: %w", alert.Title, errDelete)
+						}
+						if _, _, errPost := grafanaClient.PostAlertRule(alert); errPost != nil {
+							return fmt.Errorf("provenance migration: recreate alert rule %q: %w", alert.Title, errPost)
 						}
 					}
 				}

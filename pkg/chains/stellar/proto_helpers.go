@@ -166,6 +166,120 @@ func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stella
 	}, nil
 }
 
+// ConvertGetLedgersRequestToProto converts a domain GetLedgersRequest to its proto representation.
+func ConvertGetLedgersRequestToProto(req stellar.GetLedgersRequest) (*GetLedgersRequest, error) {
+	return &GetLedgersRequest{
+		StartLedger: req.StartLedger,
+		Pagination:  ledgerPaginationToProto(req.Pagination),
+	}, nil
+}
+
+// ConvertGetLedgersRequestFromProto converts a proto GetLedgersRequest to the domain type.
+func ConvertGetLedgersRequestFromProto(p *GetLedgersRequest) (stellar.GetLedgersRequest, error) {
+	if p == nil {
+		return stellar.GetLedgersRequest{}, errors.New("get ledgers request is nil")
+	}
+	return stellar.GetLedgersRequest{
+		StartLedger: p.GetStartLedger(),
+		Pagination:  ledgerPaginationFromProto(p.GetPagination()),
+	}, nil
+}
+
+// ConvertLedgerInfoToProto converts a domain LedgerInfo to its proto representation.
+func ConvertLedgerInfoToProto(l stellar.LedgerInfo) (*LedgerInfo, error) {
+	hash, err := hex.DecodeString(l.Hash)
+	if err != nil {
+		return nil, fmt.Errorf("invalid hex hash %q: %w", l.Hash, err)
+	}
+	headerXDR, err := base64.StdEncoding.DecodeString(l.LedgerHeaderXDR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ledger header xdr %q: %w", l.LedgerHeaderXDR, err)
+	}
+	metaXDR, err := base64.StdEncoding.DecodeString(l.LedgerMetadataXDR)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ledger metadata xdr %q: %w", l.LedgerMetadataXDR, err)
+	}
+	return &LedgerInfo{
+		Hash:              hash,
+		Sequence:          l.Sequence,
+		LedgerCloseTime:   l.LedgerCloseTime,
+		LedgerHeaderXdr:   headerXDR,
+		LedgerMetadataXdr: metaXDR,
+	}, nil
+}
+
+// ConvertLedgerInfoFromProto converts a proto LedgerInfo to the domain type.
+func ConvertLedgerInfoFromProto(p *LedgerInfo) (stellar.LedgerInfo, error) {
+	if p == nil {
+		return stellar.LedgerInfo{}, errors.New("ledger info is nil")
+	}
+	return stellar.LedgerInfo{
+		Hash:              hex.EncodeToString(p.GetHash()),
+		Sequence:          p.GetSequence(),
+		LedgerCloseTime:   p.GetLedgerCloseTime(),
+		LedgerHeaderXDR:   base64.StdEncoding.EncodeToString(p.GetLedgerHeaderXdr()),
+		LedgerMetadataXDR: base64.StdEncoding.EncodeToString(p.GetLedgerMetadataXdr()),
+	}, nil
+}
+
+// ConvertGetLedgersResponseToProto converts a domain GetLedgersResponse to its proto representation.
+func ConvertGetLedgersResponseToProto(resp stellar.GetLedgersResponse) (*GetLedgersResponse, error) {
+	ledgers := make([]*LedgerInfo, 0, len(resp.Ledgers))
+	for i, l := range resp.Ledgers {
+		pl, err := ConvertLedgerInfoToProto(l)
+		if err != nil {
+			return nil, fmt.Errorf("ledgers[%d]: %w", i, err)
+		}
+		ledgers = append(ledgers, pl)
+	}
+	return &GetLedgersResponse{
+		Ledgers:               ledgers,
+		LatestLedger:          resp.LatestLedger,
+		LatestLedgerCloseTime: resp.LatestLedgerCloseTime,
+		OldestLedger:          resp.OldestLedger,
+		OldestLedgerCloseTime: resp.OldestLedgerCloseTime,
+		Cursor:                resp.Cursor,
+	}, nil
+}
+
+// ConvertGetLedgersResponseFromProto converts a proto GetLedgersResponse to the domain type.
+func ConvertGetLedgersResponseFromProto(p *GetLedgersResponse) (stellar.GetLedgersResponse, error) {
+	if p == nil {
+		return stellar.GetLedgersResponse{}, errors.New("get ledgers response is nil")
+	}
+	pLedgers := p.GetLedgers()
+	ledgers := make([]stellar.LedgerInfo, 0, len(pLedgers))
+	for i, pl := range pLedgers {
+		l, err := ConvertLedgerInfoFromProto(pl)
+		if err != nil {
+			return stellar.GetLedgersResponse{}, fmt.Errorf("ledgers[%d]: %w", i, err)
+		}
+		ledgers = append(ledgers, l)
+	}
+	return stellar.GetLedgersResponse{
+		Ledgers:               ledgers,
+		LatestLedger:          p.GetLatestLedger(),
+		LatestLedgerCloseTime: p.GetLatestLedgerCloseTime(),
+		OldestLedger:          p.GetOldestLedger(),
+		OldestLedgerCloseTime: p.GetOldestLedgerCloseTime(),
+		Cursor:                p.GetCursor(),
+	}, nil
+}
+
+func ledgerPaginationToProto(p *stellar.LedgerPaginationOptions) *LedgerPaginationOptions {
+	if p == nil {
+		return nil
+	}
+	return &LedgerPaginationOptions{Cursor: p.Cursor, Limit: p.Limit}
+}
+
+func ledgerPaginationFromProto(p *LedgerPaginationOptions) *stellar.LedgerPaginationOptions {
+	if p == nil {
+		return nil
+	}
+	return &stellar.LedgerPaginationOptions{Cursor: p.GetCursor(), Limit: p.GetLimit()}
+}
+
 // ConvertSimulateTransactionRequestToProto converts a domain SimulateTransactionRequest to proto.
 func ConvertSimulateTransactionRequestToProto(req stellar.SimulateTransactionRequest) (*SimulateTransactionRequest, error) {
 	if req.ContractID == "" {

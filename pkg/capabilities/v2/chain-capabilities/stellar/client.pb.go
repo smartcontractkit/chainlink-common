@@ -291,12 +291,12 @@ func (*GetLatestLedgerRequest) Descriptor() ([]byte, []int) {
 
 type GetLatestLedgerResponse struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	Hash              []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"` // 32-byte raw ledger hash
+	Hash              []byte                 `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"` // Raw 32-byte ledger hash
 	ProtocolVersion   uint32                 `protobuf:"varint,2,opt,name=protocol_version,json=protocolVersion,proto3" json:"protocol_version,omitempty"`
 	Sequence          uint32                 `protobuf:"varint,3,opt,name=sequence,proto3" json:"sequence,omitempty"`
 	LedgerCloseTime   int64                  `protobuf:"varint,4,opt,name=ledger_close_time,json=ledgerCloseTime,proto3" json:"ledger_close_time,omitempty"`
-	LedgerHeaderXdr   []byte                 `protobuf:"bytes,5,opt,name=ledger_header_xdr,json=ledgerHeaderXdr,proto3" json:"ledger_header_xdr,omitempty"`       // LedgerHeader binary XDR
-	LedgerMetadataXdr []byte                 `protobuf:"bytes,6,opt,name=ledger_metadata_xdr,json=ledgerMetadataXdr,proto3" json:"ledger_metadata_xdr,omitempty"` // LedgerCloseMetaV2 binary XDR
+	LedgerHeaderXdr   []byte                 `protobuf:"bytes,5,opt,name=ledger_header_xdr,json=ledgerHeaderXdr,proto3" json:"ledger_header_xdr,omitempty"`       // Binary XDR encoding of LedgerHeader
+	LedgerMetadataXdr []byte                 `protobuf:"bytes,6,opt,name=ledger_metadata_xdr,json=ledgerMetadataXdr,proto3" json:"ledger_metadata_xdr,omitempty"` // Binary XDR encoding of LedgerCloseMeta
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }

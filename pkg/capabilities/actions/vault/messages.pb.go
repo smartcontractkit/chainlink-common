@@ -80,6 +80,52 @@ func (RequestType) EnumDescriptor() ([]byte, []int) {
 	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{0}
 }
 
+type PendingQueueStallSignal int32
+
+const (
+	PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_CONTINUE PendingQueueStallSignal = 0
+	PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_STALLED  PendingQueueStallSignal = 1
+)
+
+// Enum value maps for PendingQueueStallSignal.
+var (
+	PendingQueueStallSignal_name = map[int32]string{
+		0: "PENDING_QUEUE_STALL_SIGNAL_CONTINUE",
+		1: "PENDING_QUEUE_STALL_SIGNAL_STALLED",
+	}
+	PendingQueueStallSignal_value = map[string]int32{
+		"PENDING_QUEUE_STALL_SIGNAL_CONTINUE": 0,
+		"PENDING_QUEUE_STALL_SIGNAL_STALLED":  1,
+	}
+)
+
+func (x PendingQueueStallSignal) Enum() *PendingQueueStallSignal {
+	p := new(PendingQueueStallSignal)
+	*p = x
+	return p
+}
+
+func (x PendingQueueStallSignal) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PendingQueueStallSignal) Descriptor() protoreflect.EnumDescriptor {
+	return file_capabilities_actions_vault_messages_proto_enumTypes[1].Descriptor()
+}
+
+func (PendingQueueStallSignal) Type() protoreflect.EnumType {
+	return &file_capabilities_actions_vault_messages_proto_enumTypes[1]
+}
+
+func (x PendingQueueStallSignal) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PendingQueueStallSignal.Descriptor instead.
+func (PendingQueueStallSignal) EnumDescriptor() ([]byte, []int) {
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{1}
+}
+
 type ReportFormat int32
 
 const (
@@ -113,11 +159,11 @@ func (x ReportFormat) String() string {
 }
 
 func (ReportFormat) Descriptor() protoreflect.EnumDescriptor {
-	return file_capabilities_actions_vault_messages_proto_enumTypes[1].Descriptor()
+	return file_capabilities_actions_vault_messages_proto_enumTypes[2].Descriptor()
 }
 
 func (ReportFormat) Type() protoreflect.EnumType {
-	return &file_capabilities_actions_vault_messages_proto_enumTypes[1]
+	return &file_capabilities_actions_vault_messages_proto_enumTypes[2]
 }
 
 func (x ReportFormat) Number() protoreflect.EnumNumber {
@@ -126,7 +172,7 @@ func (x ReportFormat) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ReportFormat.Descriptor instead.
 func (ReportFormat) EnumDescriptor() ([]byte, []int) {
-	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{1}
+	return file_capabilities_actions_vault_messages_proto_rawDescGZIP(), []int{2}
 }
 
 type SecretIdentifier struct {
@@ -1566,12 +1612,13 @@ func (*Observation_DeleteSecretsResponse) isObservation_Response() {}
 func (*Observation_ListSecretIdentifiersResponse) isObservation_Response() {}
 
 type Observations struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Observations      []*Observation         `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
-	PendingQueueItems [][]byte               `protobuf:"bytes,2,rep,name=pending_queue_items,json=pendingQueueItems,proto3" json:"pending_queue_items,omitempty"`
-	SortNonce         []byte                 `protobuf:"bytes,3,opt,name=sortNonce,proto3" json:"sortNonce,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                   protoimpl.MessageState  `protogen:"open.v1"`
+	Observations            []*Observation          `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty"`
+	PendingQueueItems       [][]byte                `protobuf:"bytes,2,rep,name=pending_queue_items,json=pendingQueueItems,proto3" json:"pending_queue_items,omitempty"`
+	SortNonce               []byte                  `protobuf:"bytes,3,opt,name=sortNonce,proto3" json:"sortNonce,omitempty"`
+	PendingQueueStallSignal PendingQueueStallSignal `protobuf:"varint,4,opt,name=pending_queue_stall_signal,json=pendingQueueStallSignal,proto3,enum=vault.PendingQueueStallSignal" json:"pending_queue_stall_signal,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *Observations) Reset() {
@@ -1623,6 +1670,13 @@ func (x *Observations) GetSortNonce() []byte {
 		return x.SortNonce
 	}
 	return nil
+}
+
+func (x *Observations) GetPendingQueueStallSignal() PendingQueueStallSignal {
+	if x != nil {
+		return x.PendingQueueStallSignal
+	}
+	return PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_CONTINUE
 }
 
 type Outcome struct {
@@ -2497,11 +2551,12 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x05error\x18\r \x01(\v2\x17.vault.ObservationErrorR\x05errorB\t\n" +
 	"\arequestB\n" +
 	"\n" +
-	"\bresponse\"\x94\x01\n" +
+	"\bresponse\"\xf1\x01\n" +
 	"\fObservations\x126\n" +
 	"\fobservations\x18\x01 \x03(\v2\x12.vault.ObservationR\fobservations\x12.\n" +
 	"\x13pending_queue_items\x18\x02 \x03(\fR\x11pendingQueueItems\x12\x1c\n" +
-	"\tsortNonce\x18\x03 \x01(\fR\tsortNonce\"\xe8\a\n" +
+	"\tsortNonce\x18\x03 \x01(\fR\tsortNonce\x12[\n" +
+	"\x1apending_queue_stall_signal\x18\x04 \x01(\x0e2\x1e.vault.PendingQueueStallSignalR\x17pendingQueueStallSignal\"\xe8\a\n" +
 	"\aOutcome\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +
@@ -2564,7 +2619,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x0eCREATE_SECRETS\x10\x02\x12\x12\n" +
 	"\x0eUPDATE_SECRETS\x10\x03\x12\x12\n" +
 	"\x0eDELETE_SECRETS\x10\x04\x12\x1b\n" +
-	"\x17LIST_SECRET_IDENTIFIERS\x10\x05*]\n" +
+	"\x17LIST_SECRET_IDENTIFIERS\x10\x05*j\n" +
+	"\x17PendingQueueStallSignal\x12'\n" +
+	"#PENDING_QUEUE_STALL_SIGNAL_CONTINUE\x10\x00\x12&\n" +
+	"\"PENDING_QUEUE_STALL_SIGNAL_STALLED\x10\x01*]\n" +
 	"\fReportFormat\x12\x19\n" +
 	"\x15REPORT_FORMAT_UNKNOWN\x10\x00\x12\x16\n" +
 	"\x12REPORT_FORMAT_JSON\x10\x01\x12\x1a\n" +
@@ -2582,97 +2640,99 @@ func file_capabilities_actions_vault_messages_proto_rawDescGZIP() []byte {
 	return file_capabilities_actions_vault_messages_proto_rawDescData
 }
 
-var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_capabilities_actions_vault_messages_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_capabilities_actions_vault_messages_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_capabilities_actions_vault_messages_proto_goTypes = []any{
 	(RequestType)(0),                      // 0: vault.RequestType
-	(ReportFormat)(0),                     // 1: vault.ReportFormat
-	(*SecretIdentifier)(nil),              // 2: vault.SecretIdentifier
-	(*SecretRequest)(nil),                 // 3: vault.SecretRequest
-	(*EncryptedShares)(nil),               // 4: vault.EncryptedShares
-	(*SecretData)(nil),                    // 5: vault.SecretData
-	(*SecretResponse)(nil),                // 6: vault.SecretResponse
-	(*GetSecretsRequest)(nil),             // 7: vault.GetSecretsRequest
-	(*GetSecretsResponse)(nil),            // 8: vault.GetSecretsResponse
-	(*EncryptedSecret)(nil),               // 9: vault.EncryptedSecret
-	(*CreateSecretsRequest)(nil),          // 10: vault.CreateSecretsRequest
-	(*CreateSecretResponse)(nil),          // 11: vault.CreateSecretResponse
-	(*CreateSecretsResponse)(nil),         // 12: vault.CreateSecretsResponse
-	(*UpdateSecretsRequest)(nil),          // 13: vault.UpdateSecretsRequest
-	(*UpdateSecretResponse)(nil),          // 14: vault.UpdateSecretResponse
-	(*UpdateSecretsResponse)(nil),         // 15: vault.UpdateSecretsResponse
-	(*DeleteSecretsRequest)(nil),          // 16: vault.DeleteSecretsRequest
-	(*DeleteSecretResponse)(nil),          // 17: vault.DeleteSecretResponse
-	(*DeleteSecretsResponse)(nil),         // 18: vault.DeleteSecretsResponse
-	(*ListSecretIdentifiersRequest)(nil),  // 19: vault.ListSecretIdentifiersRequest
-	(*ListSecretIdentifiersResponse)(nil), // 20: vault.ListSecretIdentifiersResponse
-	(*ObservationError)(nil),              // 21: vault.ObservationError
-	(*Observation)(nil),                   // 22: vault.Observation
-	(*Observations)(nil),                  // 23: vault.Observations
-	(*Outcome)(nil),                       // 24: vault.Outcome
-	(*Outcomes)(nil),                      // 25: vault.Outcomes
-	(*ReportInfo)(nil),                    // 26: vault.ReportInfo
-	(*StoredSecret)(nil),                  // 27: vault.StoredSecret
-	(*StoredMetadata)(nil),                // 28: vault.StoredMetadata
-	(*StoredPendingQueueIndex)(nil),       // 29: vault.StoredPendingQueueIndex
-	(*StoredPendingQueueItem)(nil),        // 30: vault.StoredPendingQueueItem
-	(*PendingQueueBlobItems)(nil),         // 31: vault.PendingQueueBlobItems
-	(*ReportingPluginConfig)(nil),         // 32: vault.ReportingPluginConfig
-	(*anypb.Any)(nil),                     // 33: google.protobuf.Any
+	(PendingQueueStallSignal)(0),          // 1: vault.PendingQueueStallSignal
+	(ReportFormat)(0),                     // 2: vault.ReportFormat
+	(*SecretIdentifier)(nil),              // 3: vault.SecretIdentifier
+	(*SecretRequest)(nil),                 // 4: vault.SecretRequest
+	(*EncryptedShares)(nil),               // 5: vault.EncryptedShares
+	(*SecretData)(nil),                    // 6: vault.SecretData
+	(*SecretResponse)(nil),                // 7: vault.SecretResponse
+	(*GetSecretsRequest)(nil),             // 8: vault.GetSecretsRequest
+	(*GetSecretsResponse)(nil),            // 9: vault.GetSecretsResponse
+	(*EncryptedSecret)(nil),               // 10: vault.EncryptedSecret
+	(*CreateSecretsRequest)(nil),          // 11: vault.CreateSecretsRequest
+	(*CreateSecretResponse)(nil),          // 12: vault.CreateSecretResponse
+	(*CreateSecretsResponse)(nil),         // 13: vault.CreateSecretsResponse
+	(*UpdateSecretsRequest)(nil),          // 14: vault.UpdateSecretsRequest
+	(*UpdateSecretResponse)(nil),          // 15: vault.UpdateSecretResponse
+	(*UpdateSecretsResponse)(nil),         // 16: vault.UpdateSecretsResponse
+	(*DeleteSecretsRequest)(nil),          // 17: vault.DeleteSecretsRequest
+	(*DeleteSecretResponse)(nil),          // 18: vault.DeleteSecretResponse
+	(*DeleteSecretsResponse)(nil),         // 19: vault.DeleteSecretsResponse
+	(*ListSecretIdentifiersRequest)(nil),  // 20: vault.ListSecretIdentifiersRequest
+	(*ListSecretIdentifiersResponse)(nil), // 21: vault.ListSecretIdentifiersResponse
+	(*ObservationError)(nil),              // 22: vault.ObservationError
+	(*Observation)(nil),                   // 23: vault.Observation
+	(*Observations)(nil),                  // 24: vault.Observations
+	(*Outcome)(nil),                       // 25: vault.Outcome
+	(*Outcomes)(nil),                      // 26: vault.Outcomes
+	(*ReportInfo)(nil),                    // 27: vault.ReportInfo
+	(*StoredSecret)(nil),                  // 28: vault.StoredSecret
+	(*StoredMetadata)(nil),                // 29: vault.StoredMetadata
+	(*StoredPendingQueueIndex)(nil),       // 30: vault.StoredPendingQueueIndex
+	(*StoredPendingQueueItem)(nil),        // 31: vault.StoredPendingQueueItem
+	(*PendingQueueBlobItems)(nil),         // 32: vault.PendingQueueBlobItems
+	(*ReportingPluginConfig)(nil),         // 33: vault.ReportingPluginConfig
+	(*anypb.Any)(nil),                     // 34: google.protobuf.Any
 }
 var file_capabilities_actions_vault_messages_proto_depIdxs = []int32{
-	2,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
-	4,  // 1: vault.SecretData.encrypted_decryption_key_shares:type_name -> vault.EncryptedShares
-	2,  // 2: vault.SecretResponse.id:type_name -> vault.SecretIdentifier
-	5,  // 3: vault.SecretResponse.data:type_name -> vault.SecretData
-	3,  // 4: vault.GetSecretsRequest.requests:type_name -> vault.SecretRequest
-	6,  // 5: vault.GetSecretsResponse.responses:type_name -> vault.SecretResponse
-	2,  // 6: vault.EncryptedSecret.id:type_name -> vault.SecretIdentifier
-	9,  // 7: vault.CreateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
-	2,  // 8: vault.CreateSecretResponse.id:type_name -> vault.SecretIdentifier
-	11, // 9: vault.CreateSecretsResponse.responses:type_name -> vault.CreateSecretResponse
-	9,  // 10: vault.UpdateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
-	2,  // 11: vault.UpdateSecretResponse.id:type_name -> vault.SecretIdentifier
-	14, // 12: vault.UpdateSecretsResponse.responses:type_name -> vault.UpdateSecretResponse
-	2,  // 13: vault.DeleteSecretsRequest.ids:type_name -> vault.SecretIdentifier
-	2,  // 14: vault.DeleteSecretResponse.id:type_name -> vault.SecretIdentifier
-	17, // 15: vault.DeleteSecretsResponse.responses:type_name -> vault.DeleteSecretResponse
-	2,  // 16: vault.ListSecretIdentifiersResponse.identifiers:type_name -> vault.SecretIdentifier
+	3,  // 0: vault.SecretRequest.id:type_name -> vault.SecretIdentifier
+	5,  // 1: vault.SecretData.encrypted_decryption_key_shares:type_name -> vault.EncryptedShares
+	3,  // 2: vault.SecretResponse.id:type_name -> vault.SecretIdentifier
+	6,  // 3: vault.SecretResponse.data:type_name -> vault.SecretData
+	4,  // 4: vault.GetSecretsRequest.requests:type_name -> vault.SecretRequest
+	7,  // 5: vault.GetSecretsResponse.responses:type_name -> vault.SecretResponse
+	3,  // 6: vault.EncryptedSecret.id:type_name -> vault.SecretIdentifier
+	10, // 7: vault.CreateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
+	3,  // 8: vault.CreateSecretResponse.id:type_name -> vault.SecretIdentifier
+	12, // 9: vault.CreateSecretsResponse.responses:type_name -> vault.CreateSecretResponse
+	10, // 10: vault.UpdateSecretsRequest.encrypted_secrets:type_name -> vault.EncryptedSecret
+	3,  // 11: vault.UpdateSecretResponse.id:type_name -> vault.SecretIdentifier
+	15, // 12: vault.UpdateSecretsResponse.responses:type_name -> vault.UpdateSecretResponse
+	3,  // 13: vault.DeleteSecretsRequest.ids:type_name -> vault.SecretIdentifier
+	3,  // 14: vault.DeleteSecretResponse.id:type_name -> vault.SecretIdentifier
+	18, // 15: vault.DeleteSecretsResponse.responses:type_name -> vault.DeleteSecretResponse
+	3,  // 16: vault.ListSecretIdentifiersResponse.identifiers:type_name -> vault.SecretIdentifier
 	0,  // 17: vault.Observation.request_type:type_name -> vault.RequestType
-	10, // 18: vault.Observation.create_secrets_request:type_name -> vault.CreateSecretsRequest
-	7,  // 19: vault.Observation.get_secrets_request:type_name -> vault.GetSecretsRequest
-	13, // 20: vault.Observation.update_secrets_request:type_name -> vault.UpdateSecretsRequest
-	16, // 21: vault.Observation.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
-	19, // 22: vault.Observation.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
-	12, // 23: vault.Observation.create_secrets_response:type_name -> vault.CreateSecretsResponse
-	8,  // 24: vault.Observation.get_secrets_response:type_name -> vault.GetSecretsResponse
-	15, // 25: vault.Observation.update_secrets_response:type_name -> vault.UpdateSecretsResponse
-	18, // 26: vault.Observation.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
-	20, // 27: vault.Observation.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
-	21, // 28: vault.Observation.error:type_name -> vault.ObservationError
-	22, // 29: vault.Observations.observations:type_name -> vault.Observation
-	0,  // 30: vault.Outcome.request_type:type_name -> vault.RequestType
-	10, // 31: vault.Outcome.create_secrets_request:type_name -> vault.CreateSecretsRequest
-	7,  // 32: vault.Outcome.get_secrets_request:type_name -> vault.GetSecretsRequest
-	13, // 33: vault.Outcome.update_secrets_request:type_name -> vault.UpdateSecretsRequest
-	16, // 34: vault.Outcome.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
-	19, // 35: vault.Outcome.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
-	12, // 36: vault.Outcome.create_secrets_response:type_name -> vault.CreateSecretsResponse
-	8,  // 37: vault.Outcome.get_secrets_response:type_name -> vault.GetSecretsResponse
-	15, // 38: vault.Outcome.update_secrets_response:type_name -> vault.UpdateSecretsResponse
-	18, // 39: vault.Outcome.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
-	20, // 40: vault.Outcome.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
-	24, // 41: vault.Outcomes.outcomes:type_name -> vault.Outcome
-	0,  // 42: vault.ReportInfo.request_type:type_name -> vault.RequestType
-	1,  // 43: vault.ReportInfo.format:type_name -> vault.ReportFormat
-	2,  // 44: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
-	33, // 45: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
-	33, // 46: vault.PendingQueueBlobItems.items:type_name -> google.protobuf.Any
-	47, // [47:47] is the sub-list for method output_type
-	47, // [47:47] is the sub-list for method input_type
-	47, // [47:47] is the sub-list for extension type_name
-	47, // [47:47] is the sub-list for extension extendee
-	0,  // [0:47] is the sub-list for field type_name
+	11, // 18: vault.Observation.create_secrets_request:type_name -> vault.CreateSecretsRequest
+	8,  // 19: vault.Observation.get_secrets_request:type_name -> vault.GetSecretsRequest
+	14, // 20: vault.Observation.update_secrets_request:type_name -> vault.UpdateSecretsRequest
+	17, // 21: vault.Observation.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
+	20, // 22: vault.Observation.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
+	13, // 23: vault.Observation.create_secrets_response:type_name -> vault.CreateSecretsResponse
+	9,  // 24: vault.Observation.get_secrets_response:type_name -> vault.GetSecretsResponse
+	16, // 25: vault.Observation.update_secrets_response:type_name -> vault.UpdateSecretsResponse
+	19, // 26: vault.Observation.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
+	21, // 27: vault.Observation.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
+	22, // 28: vault.Observation.error:type_name -> vault.ObservationError
+	23, // 29: vault.Observations.observations:type_name -> vault.Observation
+	1,  // 30: vault.Observations.pending_queue_stall_signal:type_name -> vault.PendingQueueStallSignal
+	0,  // 31: vault.Outcome.request_type:type_name -> vault.RequestType
+	11, // 32: vault.Outcome.create_secrets_request:type_name -> vault.CreateSecretsRequest
+	8,  // 33: vault.Outcome.get_secrets_request:type_name -> vault.GetSecretsRequest
+	14, // 34: vault.Outcome.update_secrets_request:type_name -> vault.UpdateSecretsRequest
+	17, // 35: vault.Outcome.delete_secrets_request:type_name -> vault.DeleteSecretsRequest
+	20, // 36: vault.Outcome.list_secret_identifiers_request:type_name -> vault.ListSecretIdentifiersRequest
+	13, // 37: vault.Outcome.create_secrets_response:type_name -> vault.CreateSecretsResponse
+	9,  // 38: vault.Outcome.get_secrets_response:type_name -> vault.GetSecretsResponse
+	16, // 39: vault.Outcome.update_secrets_response:type_name -> vault.UpdateSecretsResponse
+	19, // 40: vault.Outcome.delete_secrets_response:type_name -> vault.DeleteSecretsResponse
+	21, // 41: vault.Outcome.list_secret_identifiers_response:type_name -> vault.ListSecretIdentifiersResponse
+	25, // 42: vault.Outcomes.outcomes:type_name -> vault.Outcome
+	0,  // 43: vault.ReportInfo.request_type:type_name -> vault.RequestType
+	2,  // 44: vault.ReportInfo.format:type_name -> vault.ReportFormat
+	3,  // 45: vault.StoredMetadata.secret_identifiers:type_name -> vault.SecretIdentifier
+	34, // 46: vault.StoredPendingQueueItem.item:type_name -> google.protobuf.Any
+	34, // 47: vault.PendingQueueBlobItems.items:type_name -> google.protobuf.Any
+	48, // [48:48] is the sub-list for method output_type
+	48, // [48:48] is the sub-list for method input_type
+	48, // [48:48] is the sub-list for extension type_name
+	48, // [48:48] is the sub-list for extension extendee
+	0,  // [0:48] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_actions_vault_messages_proto_init() }
@@ -2714,7 +2774,7 @@ func file_capabilities_actions_vault_messages_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_actions_vault_messages_proto_rawDesc), len(file_capabilities_actions_vault_messages_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   0,

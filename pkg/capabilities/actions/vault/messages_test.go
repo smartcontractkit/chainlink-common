@@ -51,3 +51,34 @@ func TestObservationErrorField_RoundTrip(t *testing.T) {
 	require.Equal(t, "request is not valid", out.GetError().GetMessage())
 	require.Nil(t, out.GetCreateSecretsResponse())
 }
+
+func TestPendingQueueStallSignal_DefaultIsWireStable(t *testing.T) {
+	t.Parallel()
+
+	obs := &Observations{SortNonce: make([]byte, 32)}
+	before, err := proto.MarshalOptions{Deterministic: true}.Marshal(obs)
+	require.NoError(t, err)
+
+	roundTrip := &Observations{}
+	require.NoError(t, proto.Unmarshal(before, roundTrip))
+	require.Equal(t, PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_CONTINUE, roundTrip.GetPendingQueueStallSignal())
+
+	after, err := proto.MarshalOptions{Deterministic: true}.Marshal(roundTrip)
+	require.NoError(t, err)
+	require.Equal(t, before, after)
+}
+
+func TestPendingQueueStallSignal_RoundTrip(t *testing.T) {
+	t.Parallel()
+
+	obs := &Observations{
+		SortNonce:               make([]byte, 32),
+		PendingQueueStallSignal: PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_STALLED,
+	}
+	b, err := proto.MarshalOptions{Deterministic: true}.Marshal(obs)
+	require.NoError(t, err)
+
+	out := &Observations{}
+	require.NoError(t, proto.Unmarshal(b, out))
+	require.Equal(t, PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_STALLED, out.GetPendingQueueStallSignal())
+}

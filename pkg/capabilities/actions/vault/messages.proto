@@ -155,10 +155,16 @@ message Observation {
   ObservationError error = 13;
 }
 
+enum PendingQueueStallSignal {
+  PENDING_QUEUE_STALL_SIGNAL_CONTINUE = 0;
+  PENDING_QUEUE_STALL_SIGNAL_STALLED = 1;
+}
+
 message Observations {
   repeated Observation observations = 1;
   repeated bytes pending_queue_items = 2;
   bytes sortNonce = 3;
+  PendingQueueStallSignal pending_queue_stall_signal = 4;
 }
 
 message Outcome {

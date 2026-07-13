@@ -47,6 +47,7 @@ flowchart
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
         VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
         VaultIncludeInvalidPendingItemsEnabled[/VaultIncludeInvalidPendingItemsEnabled\]:::gate
+        VaultPendingQueueStallThreshold{{VaultPendingQueueStallThreshold}}:::bound
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]

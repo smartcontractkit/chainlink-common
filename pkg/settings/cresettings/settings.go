@@ -68,6 +68,7 @@ var Default = Schema{
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
 	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
+	VaultPendingQueueStallThreshold:                   Int(0),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -326,6 +327,7 @@ type Schema struct {
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
 	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
+	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]

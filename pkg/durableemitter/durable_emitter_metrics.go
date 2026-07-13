@@ -62,7 +62,7 @@ type durableEmitterMetrics struct {
 	queueDepth         metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
-	queueTTLBudgetSec  metric.Float64Gauge
+	queueTTLBudgetSec  metric.Int64Gauge
 	queueCapacityRatio metric.Float64Gauge
 	procHeapInuse      metric.Int64Gauge
 	procHeapSys        metric.Int64Gauge
@@ -228,7 +228,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.queueTTLBudgetSec, err = meter.Float64Gauge(
+	if m.queueTTLBudgetSec, err = meter.Int64Gauge(
 		"durable_emitter.queue.ttl_budget_seconds",
 		metric.WithUnit("s"),
 		metric.WithDescription("Seconds of TTL headroom for the oldest pending event (EventTTL - oldest age); low/negative → DLQ/expiry pressure. Alert engine decides what 'near' means"),
@@ -320,7 +320,7 @@ func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st Durable
 	} else {
 		m.queueOldestAgeSec.Record(ctx, st.OldestPendingAge.Seconds())
 	}
-	m.queueTTLBudgetSec.Record(ctx, st.TTLBudget.Seconds())
+	m.queueTTLBudgetSec.Record(ctx, int64(st.TTLBudget/time.Second))
 	if maxBytes > 0 {
 		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
 	}

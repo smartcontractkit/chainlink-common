@@ -37,7 +37,6 @@ type Builder struct {
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
 	usedStableIDs               map[uint32]struct{}
-	stablePanelIDs              map[string]uint32
 	alertsTags                  map[string]string
 	rows                        map[string]*dashboard.RowBuilder
 	entries                     []buildEntry
@@ -143,17 +142,6 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 	b.notificationPoliciesBuilder = append(b.notificationPoliciesBuilder, notificationPolicies...)
 }
 
-// WithStablePanelIDs pins Grafana panel IDs by panel title after the dashboard is built.
-// Prefer PanelOptions.StableID at panel definition time; this remains for legacy title-based pinning.
-func (b *Builder) WithStablePanelIDs(byTitle map[string]uint32) *Builder {
-	if len(byTitle) == 0 {
-		b.stablePanelIDs = nil
-		return b
-	}
-	b.stablePanelIDs = maps.Clone(byTitle)
-	return b
-}
-
 func (b *Builder) assignPanelID(panel *Panel) (uint32, error) {
 	if panel == nil || panel.stableID == 0 {
 		return b.getPanelCounter(), nil
@@ -239,11 +227,6 @@ func (b *Builder) Build() (*Observability, error) {
 			return nil, errBuildDashboard
 		}
 		observability.Dashboard = &db
-		if len(b.stablePanelIDs) > 0 {
-			if err := ApplyStablePanelIDs(observability.Dashboard, b.stablePanelIDs); err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	var alerts []alerting.Rule

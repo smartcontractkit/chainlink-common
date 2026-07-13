@@ -300,8 +300,8 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
-		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchPublish: func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchDelete:  func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -321,8 +321,8 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
-		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchPublish: func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchDelete:  func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -846,51 +846,6 @@ func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics,
 		}
 	}
 	t.Fatalf("metric %q not found", name)
-}
-
-func assertMetricHasAttrs(t *testing.T, rm metricdata.ResourceMetrics, name string, want map[string]string) {
-	t.Helper()
-	for _, sm := range rm.ScopeMetrics {
-		for _, m := range sm.Metrics {
-			if m.Name != name {
-				continue
-			}
-			if metricHasAttrs(t, m, want) {
-				return
-			}
-			t.Fatalf("metric %s missing attrs %v", name, want)
-		}
-	}
-	t.Fatalf("metric %q not found", name)
-}
-
-func metricHasAttrs(t *testing.T, m metricdata.Metrics, want map[string]string) bool {
-	t.Helper()
-	check := func(attrs attribute.Set) bool {
-		for k, v := range want {
-			if !hasMetricStringAttr(attrs, k, v) {
-				return false
-			}
-		}
-		return true
-	}
-	switch data := m.Data.(type) {
-	case metricdata.Sum[int64]:
-		for _, dp := range data.DataPoints {
-			if check(dp.Attributes) {
-				return true
-			}
-		}
-	case metricdata.Histogram[float64]:
-		for _, dp := range data.DataPoints {
-			if check(dp.Attributes) {
-				return true
-			}
-		}
-	default:
-		t.Fatalf("metric %s has unsupported type %T", m.Name, m.Data)
-	}
-	return false
 }
 
 func hasMetricStringAttr(set attribute.Set, key, want string) bool {

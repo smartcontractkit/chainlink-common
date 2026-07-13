@@ -142,21 +142,21 @@ func newDurableEmitterMetrics(meter metric.Meter, chipClient string) (*durableEm
 	if m.publishImmOK, err = meter.Int64Counter(
 		"durable_emitter.publish.immediate.success",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Single-event fallback Publish RPC successes; labels: phase={fallback}"),
+		metric.WithDescription("Single-event fallback Publish RPC successes; labels: phase={fallback}, chip_client"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishImmErr, err = meter.Int64Counter(
 		"durable_emitter.publish.immediate.failure",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Single-event fallback Publish RPC failures (events await retransmit); labels: phase={fallback}"),
+		metric.WithDescription("Single-event fallback Publish RPC failures; labels: phase={fallback}, chip_client"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit,fallback}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit,fallback}, error={true,false}, chip_client"),
 		durationBuckets,
 	); err != nil {
 		return nil, err

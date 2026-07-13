@@ -16,10 +16,10 @@ import (
 // resolve to the same output stream (same name/description/unit/kind), the SDK
 // keeps only the first in registration order and drops the rest.
 func (cfg Config) metricViews() []sdkmetric.View {
-	if cfg.MetricViewsDisabled {
+	if len(cfg.MetricViewsAttributeDenylist) == 0 {
 		return cfg.MetricViews
 	}
-	return append(cfg.MetricViews, metricviews.DefaultViews(cfg.MetricViewsAttributeBlacklist)...)
+	return append(cfg.MetricViews, metricviews.DefaultViews(cfg.MetricViewsAttributeDenylist)...)
 }
 
 // metricOptions returns cfg-derived sdkmetric.Option values (metric views and the

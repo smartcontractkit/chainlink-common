@@ -84,8 +84,7 @@ const (
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
-	envTelemetryMetricViewsDisabled           = "CL_TELEMETRY_METRIC_VIEWS_DISABLED"
-	envTelemetryMetricViewsAttributeBlacklist = "CL_TELEMETRY_METRIC_VIEWS_ATTRIBUTE_BLACKLIST"
+	envTelemetryMetricViewsAttributeDenylist = "CL_TELEMETRY_METRIC_VIEWS_ATTRIBUTE_DENYLIST"
 	envTelemetryPrometheusBridgeEnabled       = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
@@ -184,11 +183,9 @@ type EnvConfig struct {
 	// distinguish "no opinion" (child applies its own default) from an
 	// explicit 0, which disables the limit.
 	TelemetryMetricCardinalityLimit   *int
-	// TelemetryMetricViewsDisabled skips metricviews.DefaultViews() in the beholder client.
-	TelemetryMetricViewsDisabled bool
-	// TelemetryMetricViewsAttributeBlacklist lists attribute keys dropped by the
-	// default global deny view (e.g. event_id). Empty means no keys are stripped.
-	TelemetryMetricViewsAttributeBlacklist []string
+	// TelemetryMetricViewsAttributeDenylist lists attribute keys dropped by the
+	// default global deny view (e.g. event_id). Empty skips DefaultViews().
+	TelemetryMetricViewsAttributeDenylist []string
 	TelemetryPrometheusBridgeEnabled       bool
 	TelemetryPrometheusBridgePrefixes []string
 	TelemetryLogCompressor            string
@@ -306,9 +303,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	if e.TelemetryMetricCardinalityLimit != nil {
 		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
 	}
-	add(envTelemetryMetricViewsDisabled, strconv.FormatBool(e.TelemetryMetricViewsDisabled))
-	if len(e.TelemetryMetricViewsAttributeBlacklist) > 0 {
-		add(envTelemetryMetricViewsAttributeBlacklist, strings.Join(e.TelemetryMetricViewsAttributeBlacklist, ","))
+	if len(e.TelemetryMetricViewsAttributeDenylist) > 0 {
+		add(envTelemetryMetricViewsAttributeDenylist, strings.Join(e.TelemetryMetricViewsAttributeDenylist, ","))
 	}
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
@@ -563,12 +559,8 @@ func (e *EnvConfig) parse() error {
 			defaultLimit := beholder.DefaultMetricCardinalityLimit
 			e.TelemetryMetricCardinalityLimit = &defaultLimit
 		}
-		e.TelemetryMetricViewsDisabled, err = getBool(envTelemetryMetricViewsDisabled)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricViewsDisabled, err)
-		}
-		if v, ok := os.LookupEnv(envTelemetryMetricViewsAttributeBlacklist); ok && v != "" {
-			e.TelemetryMetricViewsAttributeBlacklist = splitCommaTrimmed(v)
+		if v, ok := os.LookupEnv(envTelemetryMetricViewsAttributeDenylist); ok && v != "" {
+			e.TelemetryMetricViewsAttributeDenylist = splitCommaTrimmed(v)
 		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {

@@ -15,7 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-func TestDefaultViews_emptyBlacklist(t *testing.T) {
+func TestDefaultViews_emptyDenylist(t *testing.T) {
 	t.Parallel()
 	assert.Nil(t, metricviews.DefaultViews(nil))
 
@@ -47,7 +47,7 @@ func TestDefaultViews_emptyBlacklist(t *testing.T) {
 	assert.Contains(t, keys, attribute.Key("workflow_execution_id"))
 }
 
-func TestDefaultViews_dropsBlacklistedAttributes(t *testing.T) {
+func TestDefaultViews_dropsDeniedAttributes(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()

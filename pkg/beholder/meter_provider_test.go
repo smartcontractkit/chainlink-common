@@ -25,7 +25,6 @@ func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	cfg := DefaultConfig()
 	cfg.MetricCardinalityLimit = limit
-	cfg.MetricViewsDisabled = true
 
 	mpOpts := append(cfg.metricOptions(), sdkmetric.WithReader(reader))
 	mp := sdkmetric.NewMeterProvider(mpOpts...)
@@ -66,18 +65,18 @@ func TestConfig_metricViews_appendsDefaultsAfterCallerViews(t *testing.T) {
 	require.GreaterOrEqual(t, len(views), len(metricviews.DefaultViews(nil))+1)
 }
 
-func TestConfig_metricViews_includesBlacklistDefaultView(t *testing.T) {
+func TestConfig_metricViews_includesDenylistDefaultView(t *testing.T) {
 	t.Parallel()
 
 	cfg := DefaultConfig()
-	cfg.MetricViewsAttributeBlacklist = []string{"event_id"}
+	cfg.MetricViewsAttributeDenylist = []string{"event_id"}
 
 	views := cfg.metricViews()
-	require.Len(t, views, len(metricviews.DefaultViews(cfg.MetricViewsAttributeBlacklist)))
+	require.Len(t, views, len(metricviews.DefaultViews(cfg.MetricViewsAttributeDenylist)))
 	require.NotEmpty(t, views)
 }
 
-func TestConfig_metricViews_disabledSkipsDefaults(t *testing.T) {
+func TestConfig_metricViews_emptyDenylistSkipsDefaults(t *testing.T) {
 	t.Parallel()
 
 	callerView := sdkmetric.NewView(
@@ -86,7 +85,6 @@ func TestConfig_metricViews_disabledSkipsDefaults(t *testing.T) {
 	)
 	cfg := DefaultConfig()
 	cfg.MetricViews = []sdkmetric.View{callerView}
-	cfg.MetricViewsDisabled = true
 
 	views := cfg.metricViews()
 	require.Len(t, views, 1)

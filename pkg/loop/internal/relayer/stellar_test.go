@@ -143,7 +143,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		svc.getLedgers = func(_ context.Context, req stellartypes.GetLedgersRequest) (stellartypes.GetLedgersResponse, error) {
 			require.Equal(t, uint32(4242), req.StartLedger)
 			require.NotNil(t, req.Pagination)
-			require.Equal(t, "cur-in", req.Pagination.Cursor)
+			require.Empty(t, req.Pagination.Cursor)
 			require.Equal(t, uint32(2), req.Pagination.Limit)
 			return stellartypes.GetLedgersResponse{
 				Ledgers: []stellartypes.LedgerInfo{
@@ -165,7 +165,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 
 		resp, err := client.GetLedgers(ctx, stellartypes.GetLedgersRequest{
 			StartLedger: 4242,
-			Pagination:  &stellartypes.LedgerPaginationOptions{Cursor: "cur-in", Limit: 2},
+			Pagination:  &stellartypes.LedgerPaginationOptions{Limit: 2},
 		})
 		require.NoError(t, err)
 		require.Len(t, resp.Ledgers, 1)

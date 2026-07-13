@@ -176,11 +176,11 @@ func TestConvertGetLedgersRequest_RejectsStartLedgerAndCursorTogether(t *testing
 func TestConvertGetLedgersRequest_RejectsNeitherStartLedgerNorCursor(t *testing.T) {
 	_, err := conv.ConvertGetLedgersRequestToProto(stellartypes.GetLedgersRequest{})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "StartLedger is required")
+	require.Contains(t, err.Error(), "startLedger is required")
 
 	_, err = conv.ConvertGetLedgersRequestFromProto(&conv.GetLedgersRequest{})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "StartLedger is required")
+	require.Contains(t, err.Error(), "startLedger is required")
 }
 
 func TestConvertGetLedgersRequest_RoundTrip_NoPagination(t *testing.T) {

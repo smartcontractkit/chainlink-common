@@ -7,13 +7,12 @@
 package vault
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	anypb "google.golang.org/protobuf/types/known/anypb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -1343,6 +1342,13 @@ func (x *ListSecretIdentifiersResponse) GetError() string {
 	return ""
 }
 
+func (x *ListSecretIdentifiersResponse) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
 // ObservationError is an item-level Err(E) contribution for a pending queue request.
 // When set on Observation, the observation is an error contribution for that request id.
 type ObservationError struct {
@@ -1385,13 +1391,6 @@ func (*ObservationError) Descriptor() ([]byte, []int) {
 func (x *ObservationError) GetMessage() string {
 	if x != nil {
 		return x.Message
-	}
-	return ""
-}
-
-func (x *ListSecretIdentifiersResponse) GetRequestId() string {
-	if x != nil {
-		return x.RequestId
 	}
 	return ""
 }
@@ -2570,12 +2569,11 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x1dListSecretIdentifiersResponse\x129\n" +
 	"\videntifiers\x18\x01 \x03(\v2\x17.vault.SecretIdentifierR\videntifiers\x12\x18\n" +
 	"\asuccess\x18\x02 \x01(\bR\asuccess\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\",\n" +
-	"\x10ObservationError\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\x9b\b\n" +
 	"\x05error\x18\x03 \x01(\tR\x05error\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x04 \x01(\tR\trequestId\"\xec\a\n" +
+	"request_id\x18\x04 \x01(\tR\trequestId\",\n" +
+	"\x10ObservationError\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\x9b\b\n" +
 	"\vObservation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +

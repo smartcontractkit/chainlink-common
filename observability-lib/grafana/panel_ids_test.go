@@ -1,6 +1,7 @@
 package grafana_test
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -42,4 +43,39 @@ func TestBuilderPanelOptionsStableID(t *testing.T) {
 	require.True(t, ok)
 	require.NotEqual(t, uint32(20127), id)
 	require.NotEqual(t, uint32(20110), id)
+}
+
+func TestBuilderAutoPanelIDSkipsStableID(t *testing.T) {
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{Name: "Skip Stable ID"})
+	builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+		PanelOptions: &grafana.PanelOptions{
+			Title:    grafana.Pointer("Pinned Low"),
+			StableID: 5,
+		},
+	}))
+	for i := 1; i <= 5; i++ {
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: grafana.Pointer("Auto " + strconv.Itoa(i)),
+			},
+		}))
+	}
+
+	o, err := builder.Build()
+	require.NoError(t, err)
+
+	pinned, ok := grafana.PanelIDByTitle(o.Dashboard, "Pinned Low")
+	require.True(t, ok)
+	require.Equal(t, uint32(5), pinned)
+
+	for i := 1; i <= 5; i++ {
+		title := "Auto " + strconv.Itoa(i)
+		id, ok := grafana.PanelIDByTitle(o.Dashboard, title)
+		require.True(t, ok, "panel %q", title)
+		require.NotEqual(t, uint32(5), id, "auto panel %q should skip reserved stable id", title)
+	}
+
+	sixth, ok := grafana.PanelIDByTitle(o.Dashboard, "Auto 5")
+	require.True(t, ok)
+	require.Equal(t, uint32(6), sixth)
 }

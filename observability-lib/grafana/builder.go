@@ -36,6 +36,7 @@ type Builder struct {
 	contactPointsBuilder        []*alerting.ContactPointBuilder
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
+	usedPanelIDs                map[uint32]struct{}
 	alertsTags                  map[string]string
 	rows                        map[string]*dashboard.RowBuilder
 	entries                     []buildEntry
@@ -141,11 +142,33 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 	b.notificationPoliciesBuilder = append(b.notificationPoliciesBuilder, notificationPolicies...)
 }
 
+func (b *Builder) markPanelIDUsed(id uint32) {
+	if b.usedPanelIDs == nil {
+		b.usedPanelIDs = make(map[uint32]struct{})
+	}
+	b.usedPanelIDs[id] = struct{}{}
+}
+
+func (b *Builder) nextAutoPanelID() uint32 {
+	for {
+		candidate := b.getPanelCounter()
+		if b.usedPanelIDs == nil {
+			b.markPanelIDUsed(candidate)
+			return candidate
+		}
+		if _, taken := b.usedPanelIDs[candidate]; !taken {
+			b.markPanelIDUsed(candidate)
+			return candidate
+		}
+	}
+}
+
 func (b *Builder) panelID(panel *Panel) uint32 {
 	if panel != nil && panel.stableID > 0 {
+		b.markPanelIDUsed(panel.stableID)
 		return panel.stableID
 	}
-	return b.getPanelCounter()
+	return b.nextAutoPanelID()
 }
 
 // addPanelToBuilder assigns an ID and adds the panel to the dashboard builder.

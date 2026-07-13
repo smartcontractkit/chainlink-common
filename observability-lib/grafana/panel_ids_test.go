@@ -45,6 +45,22 @@ func TestBuilderPanelOptionsStableID(t *testing.T) {
 	require.NotEqual(t, uint32(20110), id)
 }
 
+func TestBuilderPanelOptionsStableIDDuplicate(t *testing.T) {
+	builder := grafana.NewBuilder(&grafana.BuilderOptions{Name: "Duplicate StableID"})
+	builder.AddPanel(
+		grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{Title: grafana.Pointer("A"), StableID: 20101},
+		}),
+		grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{Title: grafana.Pointer("B"), StableID: 20101},
+		}),
+	)
+
+	_, err := builder.Build()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "duplicate panel ID 20101")
+}
+
 func TestBuilderAutoPanelIDSkipsStableID(t *testing.T) {
 	builder := grafana.NewBuilder(&grafana.BuilderOptions{Name: "Skip Stable ID"})
 	builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{

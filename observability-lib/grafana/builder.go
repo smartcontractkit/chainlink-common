@@ -163,6 +163,8 @@ func (b *Builder) nextAutoPanelID() uint32 {
 	}
 }
 
+// panelID returns a pinned StableID when set; otherwise the next auto-increment ID.
+// Auto-increment skips IDs already reserved by StableID panels in this build.
 func (b *Builder) panelID(panel *Panel) uint32 {
 	if panel != nil && panel.stableID > 0 {
 		b.markPanelIDUsed(panel.stableID)

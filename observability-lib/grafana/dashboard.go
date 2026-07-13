@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -276,7 +277,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 
 func panelIDByTitle(db *dashboard.Dashboard, title string) string {
 	if id, ok := PanelIDByTitle(db, title); ok {
-		return fmt.Sprintf("%d", id)
+		return strconv.FormatUint(uint64(id), 10)
 	}
 	return ""
 }

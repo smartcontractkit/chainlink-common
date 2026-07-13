@@ -178,13 +178,13 @@ func newToolTip(options *ToolTipOptions) *common.VizTooltipOptionsBuilder {
 }
 
 type PanelOptions struct {
-	Datasource    string
-	Title         *string
-	Description   string
+	Datasource  string
+	Title       *string
+	Description string
 	// StableID pins the Grafana panel ID at build time. Use high ID blocks (e.g. 20100+)
 	// to avoid colliding with auto-assigned sequential IDs. Zero means auto-increment.
-	StableID      uint32
-	Transparent   bool
+	StableID    uint32
+	Transparent bool
 	Span          uint32
 	Height        uint32
 	Decimals      *float64

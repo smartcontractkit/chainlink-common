@@ -4,7 +4,9 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 )
 
-// PanelIDByTitle returns the panel ID for a dashboard panel title, including row panels.
+// PanelIDByTitle returns the panel ID for a dashboard panel matched by title.
+// It searches top-level panels and panels nested inside row containers; row
+// container panels themselves are not matched.
 func PanelIDByTitle(db *dashboard.Dashboard, title string) (uint32, bool) {
 	if db == nil || title == "" {
 		return 0, false

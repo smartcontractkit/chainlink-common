@@ -70,12 +70,12 @@ func TestBuilderAutoPanelIDSkipsStableID(t *testing.T) {
 
 	for i := 1; i <= 5; i++ {
 		title := "Auto " + strconv.Itoa(i)
-		id, ok := grafana.PanelIDByTitle(o.Dashboard, title)
-		require.True(t, ok, "panel %q", title)
+		id, found := grafana.PanelIDByTitle(o.Dashboard, title)
+		require.True(t, found, "panel %q", title)
 		require.NotEqual(t, uint32(5), id, "auto panel %q should skip reserved stable id", title)
 	}
 
-	sixth, ok := grafana.PanelIDByTitle(o.Dashboard, "Auto 5")
-	require.True(t, ok)
+	sixth, found := grafana.PanelIDByTitle(o.Dashboard, "Auto 5")
+	require.True(t, found)
 	require.Equal(t, uint32(6), sixth)
 }

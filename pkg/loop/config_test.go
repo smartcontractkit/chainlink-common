@@ -156,8 +156,6 @@ func TestEnvConfig_parse(t *testing.T) {
 	}
 }
 
-func ptr[T any](v T) *T { return &v }
-
 var envCfgFull = EnvConfig{
 	AppID: "app-id",
 
@@ -216,7 +214,7 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterExportMaxBatchSize: 100,
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
-	TelemetryMetricCardinalityLimit:    ptr(100000),
+	TelemetryMetricCardinalityLimit:    new(100000),
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
@@ -327,7 +325,7 @@ func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
 
 	t.Run("explicit disable propagates as 0", func(t *testing.T) {
 		cfg := envCfgFull
-		cfg.TelemetryMetricCardinalityLimit = ptr(0)
+		cfg.TelemetryMetricCardinalityLimit = new(0)
 		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
 
 		var parsed EnvConfig
@@ -338,7 +336,7 @@ func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
 
 	t.Run("explicit positive limit propagates", func(t *testing.T) {
 		cfg := envCfgFull
-		cfg.TelemetryMetricCardinalityLimit = ptr(500)
+		cfg.TelemetryMetricCardinalityLimit = new(500)
 		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
 
 		var parsed EnvConfig

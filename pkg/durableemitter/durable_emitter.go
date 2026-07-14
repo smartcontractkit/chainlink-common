@@ -780,19 +780,11 @@ func (d *DurableEmitter) expiryLoop() {
 	}
 }
 
-func (d *DurableEmitter) queueStatsNearExpiryLead() time.Duration {
-	lead := 5 * time.Minute
-	if d.cfg.Metrics != nil && d.cfg.Metrics.NearExpiryLead > 0 {
-		lead = d.cfg.Metrics.NearExpiryLead
-	}
-	return lead
-}
-
 func (d *DurableEmitter) metricsLoop() {
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
-		poll = 500 * time.Millisecond
+		poll = 10 * time.Second
 	}
 
 	ctx, cancel := d.stopCh.NewCtx()
@@ -806,7 +798,7 @@ func (d *DurableEmitter) metricsLoop() {
 			return
 		case <-ticker.C:
 			if obs, ok := d.store.(DurableQueueObserver); ok {
-				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
+				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
 				if err != nil {
 					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
 				} else {

@@ -2,7 +2,6 @@ package resourcemanager
 
 import (
 	"context"
-	"strconv"
 
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
 )
@@ -159,37 +158,19 @@ func (r ResourceIdentity) NodeID() string {
 	return r.Don.NodeID
 }
 
-// DefaultMeteringProduct is the fallback product dimension used when the host
-// did not inject one (a legacy node or a boot path that predates the metering
-// deployment-identity plumbing).
-const DefaultMeteringProduct = "cre"
+// UnsetProduct is a non-silent default product for misconfigured producers.
+const UnsetProduct = "unset"
 
 // NewBaseIdentity builds a producer's base ResourceIdentity from its static
-// deployment identity plus the service/resource-pool constants. It centralizes
-// three rules that every producer must apply identically:
-//
-//   - product falls back to DefaultMeteringProduct ("cre") when unset;
-//   - capDONID is the authoritative DON ID supplied over the standardcapabilities
-//     interface (StandardCapabilitiesDependencies, host-injected at Initialise);
-//     it is rendered with strconv.FormatUint, and left empty when 0 (the host
-//     has not populated it) so the request's workflow DON can be applied later
-//     via WithWorkflowDonFallback;
-//   - the Don sub-identity is set only when there is a DON ID or node ID to
-//     carry; otherwise it stays nil rather than an empty struct.
-//
-// Per-resource fields (resource_type/resource_id/org_id/value) and event_id are
-// not part of the base identity; they are carried per emission.
-func NewBaseIdentity(dep DeploymentIdentity, capDONID uint32, service, resourcePool string) ResourceIdentity {
+// deployment identity plus the service and resource-pool constants. Product
+// falls back to UnsetProduct when empty, and the Don sub-identity is set only
+// when there is a node ID to carry. DON ID is stamped separately via WithDonID
+// once the producer knows it (e.g. after Initialise for LOOP plugins).
+func NewBaseIdentity(dep DeploymentIdentity, service, resourcePool string) ResourceIdentity {
 	product := dep.Product
 	if product == "" {
-		product = DefaultMeteringProduct
+		product = UnsetProduct
 	}
-
-	var donID string
-	if capDONID != 0 {
-		donID = strconv.FormatUint(uint64(capDONID), 10)
-	}
-
 	id := ResourceIdentity{
 		Product:         product,
 		Tenant:          dep.Tenant,
@@ -199,26 +180,18 @@ func NewBaseIdentity(dep DeploymentIdentity, capDONID uint32, service, resourceP
 		Service:         service,
 		ResourcePool:    resourcePool,
 	}
-	if donID != "" || dep.NodeID != "" {
-		id.Don = &DonIdentity{DonID: donID, NodeID: dep.NodeID}
+	if dep.NodeID != "" {
+		id.Don = &DonIdentity{NodeID: dep.NodeID}
 	}
 	return id
 }
 
-// WithWorkflowDonFallback returns a copy of r stamped with the request's
-// workflow DON ID, but only when the base identity has no CapDONID. CapDONID
-// (supplied over the standardcapabilities interface) is the authoritative DON
-// ID for a capability node; the request's WorkflowDonID is a fallback that
-// applies only for hosts that have not populated CapDONID (value 0, so
-// NewBaseIdentity left don_id empty). When the base identity already carries a
-// CapDONID, or workflowDonID is 0, r is returned unchanged.
-func (r ResourceIdentity) WithWorkflowDonFallback(workflowDonID uint32) ResourceIdentity {
-	if r.DonID() != "" || workflowDonID == 0 {
+// WithDonID returns a copy of r stamped with donID (empty donID is a no-op),
+// necessary for any resource that is scoped to a DON.
+func (r ResourceIdentity) WithDonID(donID string) ResourceIdentity {
+	if donID == "" {
 		return r
 	}
-	r.Don = &DonIdentity{
-		DonID:  strconv.FormatUint(uint64(workflowDonID), 10),
-		NodeID: r.NodeID(),
-	}
+	r.Don = &DonIdentity{DonID: donID, NodeID: r.NodeID()}
 	return r
 }

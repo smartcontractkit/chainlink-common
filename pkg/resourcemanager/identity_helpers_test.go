@@ -47,57 +47,52 @@ func TestNewBaseIdentity(t *testing.T) {
 		NodeID:          "clp-cre-wf-zone-a-1",
 	}
 
-	t.Run("with CapDONID sets Don", func(t *testing.T) {
-		id := NewBaseIdentity(dep, 7, "cron-trigger", "trigger_registrations")
+	t.Run("sets coarse dimensions and node id", func(t *testing.T) {
+		id := NewBaseIdentity(dep, "cron-trigger", "trigger_registrations")
 		assert.Equal(t, "cre", id.Product)
 		assert.Equal(t, "cron-trigger", id.Service)
 		assert.Equal(t, "trigger_registrations", id.ResourcePool)
-		require.NotNil(t, id.Don)
-		assert.Equal(t, "7", id.Don.DonID)
-		assert.Equal(t, "clp-cre-wf-zone-a-1", id.Don.NodeID)
-	})
-
-	t.Run("product falls back to cre", func(t *testing.T) {
-		d := dep
-		d.Product = ""
-		id := NewBaseIdentity(d, 7, "svc", "pool")
-		assert.Equal(t, DefaultMeteringProduct, id.Product)
-	})
-
-	t.Run("CapDONID 0 leaves don_id empty but keeps node_id", func(t *testing.T) {
-		id := NewBaseIdentity(dep, 0, "svc", "pool")
 		require.NotNil(t, id.Don)
 		assert.Empty(t, id.Don.DonID)
 		assert.Equal(t, "clp-cre-wf-zone-a-1", id.Don.NodeID)
 	})
 
-	t.Run("no don id or node id leaves Don nil", func(t *testing.T) {
+	t.Run("product falls back to unset", func(t *testing.T) {
+		d := dep
+		d.Product = ""
+		id := NewBaseIdentity(d, "svc", "pool")
+		assert.Equal(t, UnsetProduct, id.Product)
+	})
+
+	t.Run("no node id leaves Don nil", func(t *testing.T) {
 		d := dep
 		d.NodeID = ""
-		id := NewBaseIdentity(d, 0, "svc", "pool")
+		id := NewBaseIdentity(d, "svc", "pool")
 		assert.Nil(t, id.Don)
 	})
 }
 
-func TestWithWorkflowDonFallback(t *testing.T) {
-	t.Run("applies workflow DON when CapDONID absent", func(t *testing.T) {
-		base := NewBaseIdentity(DeploymentIdentity{NodeID: "node-1"}, 0, "svc", "pool")
-		got := base.WithWorkflowDonFallback(99)
+func TestWithDonID(t *testing.T) {
+	base := NewBaseIdentity(DeploymentIdentity{NodeID: "node-1"}, "svc", "pool")
+
+	t.Run("stamps DON id preserving node id", func(t *testing.T) {
+		got := base.WithDonID("7")
 		require.NotNil(t, got.Don)
-		assert.Equal(t, "99", got.Don.DonID)
+		assert.Equal(t, "7", got.Don.DonID)
 		assert.Equal(t, "node-1", got.Don.NodeID)
 	})
 
-	t.Run("keeps authoritative CapDONID over workflow DON", func(t *testing.T) {
-		base := NewBaseIdentity(DeploymentIdentity{NodeID: "node-1"}, 5, "svc", "pool")
-		got := base.WithWorkflowDonFallback(99)
-		assert.Equal(t, "5", got.Don.DonID)
+	t.Run("empty DON id is a no-op", func(t *testing.T) {
+		got := base.WithDonID("")
+		assert.Empty(t, got.DonID())
+		assert.Equal(t, "node-1", got.NodeID())
 	})
 
-	t.Run("workflow DON 0 is a no-op", func(t *testing.T) {
-		base := NewBaseIdentity(DeploymentIdentity{NodeID: "node-1"}, 0, "svc", "pool")
-		got := base.WithWorkflowDonFallback(0)
-		assert.Empty(t, got.DonID())
+	t.Run("overwrites previous DON id", func(t *testing.T) {
+		first := base.WithDonID("5")
+		second := first.WithDonID("99")
+		assert.Equal(t, "99", second.DonID())
+		assert.Equal(t, "node-1", second.NodeID())
 	})
 }
 

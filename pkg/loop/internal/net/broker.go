@@ -8,6 +8,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -77,9 +78,10 @@ func (b *BrokerExt) WithName(name string) *BrokerExt {
 // NewClientConn return a new *clientConn backed by this *BrokerExt.
 func (b *BrokerExt) NewClientConn(name string, newClient newClientFn) *clientConn {
 	return &clientConn{
-		BrokerExt: b.WithName(name),
-		newClient: newClient,
-		name:      name,
+		BrokerExt:  b.WithName(name),
+		newClient:  newClient,
+		name:       name,
+		refreshSem: semaphore.NewWeighted(1),
 	}
 }
 

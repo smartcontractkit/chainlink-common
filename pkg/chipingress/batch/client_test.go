@@ -1566,8 +1566,8 @@ func TestBatchClient_Metrics(t *testing.T) {
 	})
 }
 
-func TestBatchClient_ChipClientMetricAttribute(t *testing.T) {
-	const chipClient = "test_client"
+func TestBatchClient_ClientNameMetricAttribute(t *testing.T) {
+	const clientName = "test_client"
 
 	batchMetricNames := []string{
 		"chip_ingress.batch.send_requests_total",
@@ -1579,7 +1579,7 @@ func TestBatchClient_ChipClientMetricAttribute(t *testing.T) {
 		"chip_ingress.batch.results_mismatch_total",
 	}
 
-	t.Run("with WithChipClient sets chip_client on all batch metrics", func(t *testing.T) {
+	t.Run("with WithClientName sets client_name on all batch metrics", func(t *testing.T) {
 		reader, restore := useTestMeterProvider(t)
 		defer restore()
 
@@ -1609,7 +1609,7 @@ func TestBatchClient_ChipClientMetricAttribute(t *testing.T) {
 
 		client, err := NewBatchClient(
 			mockClient,
-			WithChipClient(chipClient),
+			WithClientName(clientName),
 			WithBatchSize(1),
 			WithBatchInterval(time.Second),
 			WithMessageBuffer(10),
@@ -1649,11 +1649,11 @@ func TestBatchClient_ChipClientMetricAttribute(t *testing.T) {
 		rm := collectResourceMetrics(t, reader)
 		for _, name := range batchMetricNames {
 			metric := mustMetric(t, rm, name)
-			assertMetricHasChipClient(t, metric, chipClient)
+			assertMetricHasClientName(t, metric, clientName)
 		}
 	})
 
-	t.Run("without WithChipClient omits chip_client", func(t *testing.T) {
+	t.Run("without WithClientName omits client_name", func(t *testing.T) {
 		reader, restore := useTestMeterProvider(t)
 		defer restore()
 
@@ -1692,25 +1692,25 @@ func TestBatchClient_ChipClientMetricAttribute(t *testing.T) {
 				if !strings.HasPrefix(metric.Name, "chip_ingress.batch.") {
 					continue
 				}
-				assertMetricOmitsChipClient(t, metric)
+				assertMetricOmitsClientName(t, metric)
 			}
 		}
 	})
 }
 
-func assertMetricHasChipClient(t *testing.T, metric metricdata.Metrics, chipClient string) {
+func assertMetricHasClientName(t *testing.T, metric metricdata.Metrics, clientName string) {
 	t.Helper()
 	forEachMetricAttrSet(t, metric, func(attrs attribute.Set) {
-		assert.True(t, hasStringAttr(attrs, "chip_client", chipClient),
-			"metric %s missing chip_client=%q", metric.Name, chipClient)
+		assert.True(t, hasStringAttr(attrs, "client_name", clientName),
+			"metric %s missing client_name=%q", metric.Name, clientName)
 	})
 }
 
-func assertMetricOmitsChipClient(t *testing.T, metric metricdata.Metrics) {
+func assertMetricOmitsClientName(t *testing.T, metric metricdata.Metrics) {
 	t.Helper()
 	forEachMetricAttrSet(t, metric, func(attrs attribute.Set) {
 		for _, kv := range attrs.ToSlice() {
-			assert.NotEqual(t, "chip_client", string(kv.Key), "metric %s should not have chip_client", metric.Name)
+			assert.NotEqual(t, "client_name", string(kv.Key), "metric %s should not have client_name", metric.Name)
 		}
 	})
 }

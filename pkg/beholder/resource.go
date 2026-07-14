@@ -38,10 +38,9 @@ var (
 		"container.id":        {},
 		"host.id":             {},
 		"host.name":           {},
-		"k8s.pod.uid":         {},
-		"k8s.pod.ip":          {},
-		"k8s.pod.name":        {},
 	}
+
+	volatileResourceAttributePrefixDenylist = []string{"k8s.pod."}
 )
 
 func buildOtelResources(cfg Config) (ResourcePair, error) {
@@ -50,8 +49,7 @@ func buildOtelResources(cfg Config) (ResourcePair, error) {
 		return ResourcePair{}, err
 	}
 
-	if !cfg.ReducedMetricResourceAttributesEnabled &&
-		!cfg.ExcludeVolatileResourceAttributesFromMetricsEnabled {
+	if !cfg.metricResourceFilteringEnabled() {
 		return ResourcePair{Full: full, Metric: full}, nil
 	}
 
@@ -61,6 +59,11 @@ func buildOtelResources(cfg Config) (ResourcePair, error) {
 	}
 
 	return ResourcePair{Full: full, Metric: metric}, nil
+}
+
+func (cfg Config) metricResourceFilteringEnabled() bool {
+	return cfg.ReducedMetricResourceAttributesEnabled ||
+		cfg.ExcludeVolatileResourceAttributesFromMetricsEnabled
 }
 
 func buildFullOtelResource(cfg Config) (*sdkresource.Resource, error) {
@@ -102,15 +105,9 @@ func buildFullOtelResource(cfg Config) (*sdkresource.Resource, error) {
 }
 
 func buildMetricOtelResource(cfg Config, full *sdkresource.Resource) (*sdkresource.Resource, error) {
-	var attrs []attribute.KeyValue
-
+	attrs := resourceAttributesAsKV(full)
 	if cfg.ReducedMetricResourceAttributesEnabled {
-		serviceName := serviceNameFrom(cfg)
-		attrs = append(attrs, attribute.String("service.name", serviceName))
-		attrs = append(attrs, identityResourceAttributes(cfg)...)
-		attrs = append(attrs, filterResourceAttributes(cfg.ResourceAttributes, reducedResourceAttributeFilter())...)
-	} else {
-		attrs = resourceAttributesAsKV(full)
+		attrs = filterResourceAttributes(attrs, reducedResourceAttributeFilter())
 	}
 
 	if cfg.ExcludeVolatileResourceAttributesFromMetricsEnabled {
@@ -137,15 +134,6 @@ func identityResourceAttributes(cfg Config) []attribute.KeyValue {
 	return attrs
 }
 
-func serviceNameFrom(cfg Config) string {
-	for _, attr := range cfg.ResourceAttributes {
-		if string(attr.Key) == "service.name" {
-			return attr.Value.AsString()
-		}
-	}
-	return "chainlink"
-}
-
 type resourceAttributeFilter func(key string) bool
 
 func reducedResourceAttributeFilter() resourceAttributeFilter {
@@ -164,8 +152,15 @@ func reducedResourceAttributeFilter() resourceAttributeFilter {
 
 func volatileResourceAttributeFilter() resourceAttributeFilter {
 	return func(key string) bool {
-		_, denied := volatileResourceAttributeDenylist[key]
-		return denied
+		if _, denied := volatileResourceAttributeDenylist[key]; denied {
+			return true
+		}
+		for _, prefix := range volatileResourceAttributePrefixDenylist {
+			if strings.HasPrefix(key, prefix) {
+				return true
+			}
+		}
+		return false
 	}
 }
 

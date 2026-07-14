@@ -213,8 +213,10 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		lggr = pkglogger.Nop()
 	}
 	c.initService(lggr, nil)
-	if err := c.RecordFullResourceAttributesMetric(context.Background()); err != nil {
-		return nil, err
+	if cfg.metricResourceFilteringEnabled() {
+		if err := c.RecordFullResourceAttributesMetric(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 	return c, nil
 }

@@ -24,6 +24,7 @@ func TestBuildOtelResources(t *testing.T) {
 				attribute.String("package_name", "beholder"),
 				attribute.Int("process.pid", 1234),
 				attribute.String("service.instance.id", "instance-1"),
+				attribute.String("k8s.pod.owner", "deployment-1"),
 				attribute.String("custom.attribute", "keep"),
 			},
 		}
@@ -59,7 +60,7 @@ func TestBuildOtelResources(t *testing.T) {
 				"service.sha", "package_name", attrKeyCSAPublicKey, attrKeyNodeID,
 			},
 			wantAbsentMetricKeys: []string{
-				"process.pid", "service.instance.id",
+				"process.pid", "service.instance.id", "k8s.pod.owner",
 			},
 		},
 		{
@@ -70,7 +71,7 @@ func TestBuildOtelResources(t *testing.T) {
 				"service.name", "service.version", "custom.attribute", attrKeyCSAPublicKey, attrKeyNodeID,
 			},
 			wantAbsentMetricKeys: []string{
-				"service.sha", "service.shortversion", "package_name", "process.pid", "service.instance.id",
+				"service.sha", "service.shortversion", "package_name", "process.pid", "service.instance.id", "k8s.pod.owner",
 			},
 		},
 	}
@@ -96,6 +97,34 @@ func TestBuildOtelResources(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReducedMetricResourcePreservesFullAttributesAndIdentity(t *testing.T) {
+	cfg := Config{
+		ReducedMetricResourceAttributesEnabled: true,
+		AuthPublicKeyHex:                       "authoritative-csa-key",
+		NodeID:                                 "authoritative-node-id",
+		ResourceAttributes: []attribute.KeyValue{
+			attribute.String(attrKeyCSAPublicKey, "caller-csa-key"),
+			attribute.String(attrKeyNodeID, "caller-node-id"),
+			attribute.String("k8s.pod.extra", "pod-attribute"),
+		},
+	}
+	resources, err := buildOtelResources(cfg)
+	require.NoError(t, err)
+
+	fullAttrs := resourceAttributeMap(resources.Full)
+	metricAttrs := resourceAttributeMap(resources.Metric)
+	assert.Equal(t, "authoritative-csa-key", fullAttrs[attrKeyCSAPublicKey].AsString())
+	assert.Equal(t, "authoritative-csa-key", metricAttrs[attrKeyCSAPublicKey].AsString())
+	assert.Equal(t, "authoritative-node-id", fullAttrs[attrKeyNodeID].AsString())
+	assert.Equal(t, "authoritative-node-id", metricAttrs[attrKeyNodeID].AsString())
+	assert.Equal(t, fullAttrs["service.name"], metricAttrs["service.name"])
+
+	cfg.ExcludeVolatileResourceAttributesFromMetricsEnabled = true
+	resources, err = buildOtelResources(cfg)
+	require.NoError(t, err)
+	assert.NotContains(t, resourceAttributeMap(resources.Metric), "k8s.pod.extra")
 }
 
 func TestRecordFullResourceAttributesMetric(t *testing.T) {

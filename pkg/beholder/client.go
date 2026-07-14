@@ -274,8 +274,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		OnClose:               onClose,
 	}
 	c.initService(lggr, batchEmitterService)
-	if err := c.RecordFullResourceAttributesMetric(context.Background()); err != nil {
-		return nil, err
+	if cfg.metricResourceFilteringEnabled() {
+		if err := c.RecordFullResourceAttributesMetric(context.Background()); err != nil {
+			return nil, err
+		}
 	}
 	return c, nil
 }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784023796466,
+  "lastUpdate": 1784029200010,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -54360,6 +54360,66 @@ window.BENCHMARK_DATA = {
             "value": 137000,
             "unit": "ns/op",
             "extra": "8460 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f33a9715c14a7316a11513d0fce6b911b260b31f",
+          "message": "[PLEX - 3243] - Stellar chain service GetLedgers (#2243)\n\n* Add GetLedgers to Stellar service\n\n* Add GetLedgers proto helpers\n\n* run generate\n\n* Add strict cursors validation\n\n* update tests",
+          "timestamp": "2026-07-14T11:28:01Z",
+          "tree_id": "5ffe9760a00342ea7ee95ad49d34aaaf78cab0cd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f33a9715c14a7316a11513d0fce6b911b260b31f"
+        },
+        "date": 1784029197293,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 446.1,
+            "unit": "ns/op",
+            "extra": "2594635 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93586,
+            "unit": "ns/op",
+            "extra": "12741 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 437.6,
+            "unit": "ns/op",
+            "extra": "2793186 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93559,
+            "unit": "ns/op",
+            "extra": "12778 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26643,
+            "unit": "ns/op",
+            "extra": "45036 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139220,
+            "unit": "ns/op",
+            "extra": "8497 times\n4 procs"
           }
         ]
       }

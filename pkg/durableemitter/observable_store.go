@@ -26,18 +26,20 @@ type DurableQueueStats struct {
 	TotalRows        int64
 	PayloadBytes     int64
 	OldestPendingAge time.Duration // 0 if the queue is empty
-	// NearTTLCount is the number of rows within nearExpiryLead of EventTTL (still
-	// pending, not yet removed by expiry). Serves as a DLQ-pressure proxy; there is
-	// no separate dead-letter table in the default design.
-	NearTTLCount int64
+	// TTLBudget is the remaining time before the oldest still-pending event hits
+	// EventTTL (i.e. EventTTL - OldestPendingAge). It is the headroom of the event
+	// closest to expiry and serves as a DLQ-pressure proxy; there is no separate
+	// dead-letter table in the default design. It goes negative when the expiry
+	// loop is behind. Equals EventTTL when the queue is empty.
+	TTLBudget time.Duration
 }
 
 // DurableQueueObserver is optionally implemented by DurableEventStore implementations
 // so DurableEmitter can export queue depth and age gauges when metrics are enabled.
 type DurableQueueObserver interface {
-	// ObserveDurableQueue returns live queue statistics. eventTTL and nearExpiryLead
-	// match Config (nearExpiryLead should be << eventTTL).
-	ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error)
+	// ObserveDurableQueue returns live queue statistics. eventTTL matches Config and
+	// is used to derive the remaining TTL budget of the oldest pending event.
+	ObserveDurableQueue(ctx context.Context, eventTTL time.Duration) (DurableQueueStats, error)
 }
 
 // BatchInserter is optionally implemented by DurableEventStore implementations
@@ -125,12 +127,12 @@ func (s *metricsInstrumentedStore) DeleteExpired(ctx context.Context, ttl time.D
 	return n, err
 }
 
-func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, eventTTL time.Duration) (DurableQueueStats, error) {
 	o, ok := s.inner.(DurableQueueObserver)
 	if !ok {
 		return DurableQueueStats{}, errors.New("inner DurableEventStore does not implement DurableQueueObserver")
 	}
-	return o.ObserveDurableQueue(ctx, eventTTL, nearExpiryLead)
+	return o.ObserveDurableQueue(ctx, eventTTL)
 }
 
 func (s *metricsInstrumentedStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {

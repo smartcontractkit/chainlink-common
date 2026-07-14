@@ -19,7 +19,6 @@
       }
     }
   ],
-  "NodeID": "",
   "ReducedMetricResourceAttributesEnabled": false,
   "ExcludeVolatileResourceAttributesFromMetricsEnabled": false,
   "EmitterExportTimeout": 1000000000,

@@ -15,9 +15,9 @@ func TestBuildOtelResources(t *testing.T) {
 	baseConfig := func() Config {
 		return Config{
 			AuthPublicKeyHex: "csa-key",
-			NodeID:           "node-1",
 			ResourceAttributes: []attribute.KeyValue{
 				attribute.String("service.name", "chainlink"),
+				attribute.String("node_id", "node-1"),
 				attribute.String("service.version", "1.2.3"),
 				attribute.String("service.sha", "abcdef"),
 				attribute.String("service.shortversion", "1.2.3@abcdef"),
@@ -39,7 +39,7 @@ func TestBuildOtelResources(t *testing.T) {
 		{
 			name: "default is backwards compatible",
 			wantMetricKeys: []string{
-				"service.sha", "package_name", "process.pid", attrKeyCSAPublicKey, attrKeyNodeID,
+				"service.sha", "package_name", "process.pid", attrKeyCSAPublicKey, "node_id",
 			},
 		},
 		{
@@ -47,7 +47,7 @@ func TestBuildOtelResources(t *testing.T) {
 			reduced: true,
 			wantMetricKeys: []string{
 				"service.name", "service.version", "custom.attribute", "process.pid", "service.instance.id",
-				attrKeyCSAPublicKey, attrKeyNodeID,
+				attrKeyCSAPublicKey, "node_id",
 			},
 			wantAbsentMetricKeys: []string{
 				"service.sha", "service.shortversion", "package_name",
@@ -57,7 +57,7 @@ func TestBuildOtelResources(t *testing.T) {
 			name:     "volatile removes process scoped attributes",
 			volatile: true,
 			wantMetricKeys: []string{
-				"service.sha", "package_name", attrKeyCSAPublicKey, attrKeyNodeID,
+				"service.sha", "package_name", attrKeyCSAPublicKey, "node_id",
 			},
 			wantAbsentMetricKeys: []string{
 				"process.pid", "service.instance.id", "k8s.pod.owner",
@@ -68,7 +68,7 @@ func TestBuildOtelResources(t *testing.T) {
 			reduced:  true,
 			volatile: true,
 			wantMetricKeys: []string{
-				"service.name", "service.version", "custom.attribute", attrKeyCSAPublicKey, attrKeyNodeID,
+				"service.name", "service.version", "custom.attribute", attrKeyCSAPublicKey, "node_id",
 			},
 			wantAbsentMetricKeys: []string{
 				"service.sha", "service.shortversion", "package_name", "process.pid", "service.instance.id", "k8s.pod.owner",
@@ -103,10 +103,9 @@ func TestReducedMetricResourcePreservesFullAttributesAndIdentity(t *testing.T) {
 	cfg := Config{
 		ReducedMetricResourceAttributesEnabled: true,
 		AuthPublicKeyHex:                       "authoritative-csa-key",
-		NodeID:                                 "authoritative-node-id",
 		ResourceAttributes: []attribute.KeyValue{
 			attribute.String(attrKeyCSAPublicKey, "caller-csa-key"),
-			attribute.String(attrKeyNodeID, "caller-node-id"),
+			attribute.String("node_id", "configured-node-id"),
 			attribute.String("k8s.pod.extra", "pod-attribute"),
 		},
 	}
@@ -117,8 +116,8 @@ func TestReducedMetricResourcePreservesFullAttributesAndIdentity(t *testing.T) {
 	metricAttrs := resourceAttributeMap(resources.Metric)
 	assert.Equal(t, "authoritative-csa-key", fullAttrs[attrKeyCSAPublicKey].AsString())
 	assert.Equal(t, "authoritative-csa-key", metricAttrs[attrKeyCSAPublicKey].AsString())
-	assert.Equal(t, "authoritative-node-id", fullAttrs[attrKeyNodeID].AsString())
-	assert.Equal(t, "authoritative-node-id", metricAttrs[attrKeyNodeID].AsString())
+	assert.Equal(t, "configured-node-id", fullAttrs["node_id"].AsString())
+	assert.Equal(t, "configured-node-id", metricAttrs["node_id"].AsString())
 	assert.Equal(t, fullAttrs["service.name"], metricAttrs["service.name"])
 	assert.NotEmpty(t, metricAttrs["service.name"].AsString())
 	assert.Contains(t, metricAttrs, "k8s.pod.extra")
@@ -157,9 +156,9 @@ func TestRecordFullResourceAttributesMetric(t *testing.T) {
 	cfg := Config{
 		ReducedMetricResourceAttributesEnabled: true,
 		AuthPublicKeyHex:                       "csa-key",
-		NodeID:                                 "node-1",
 		ResourceAttributes: []attribute.KeyValue{
 			attribute.String("service.name", "chainlink"),
+			attribute.String("node_id", "node-1"),
 			attribute.Int("process.pid", 1234),
 		},
 	}

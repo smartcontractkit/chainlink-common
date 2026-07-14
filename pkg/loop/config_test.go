@@ -85,7 +85,6 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryLogStreamingEnabled:               "false",
 				envTelemetryReducedMetricResourceAttributes:   "true",
 				envTelemetryExcludeVolatileResourceAttributes: "true",
-				envTelemetryNodeID:                            "node-1",
 				envTelemetryPrometheusBridgeEnabled:           "true",
 				envTelemetryPrometheusBridgePrefixes:          "foo,bar",
 				envMeterRecordsEnabled:                        "true",
@@ -210,7 +209,6 @@ var envCfgFull = EnvConfig{
 	TelemetryLogStreamingEnabled:                                 false,
 	TelemetryReducedMetricResourceAttributesEnabled:              true,
 	TelemetryExcludeVolatileResourceAttributesFromMetricsEnabled: true,
-	TelemetryNodeID:                                              "node-1",
 	TelemetryPrometheusBridgeEnabled:                             true,
 	TelemetryPrometheusBridgePrefixes:                            []string{"foo", "bar"},
 	MeterRecordsEnabled:                                          true,
@@ -286,7 +284,6 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
 	assert.Equal(t, "true", got[envTelemetryReducedMetricResourceAttributes])
 	assert.Equal(t, "true", got[envTelemetryExcludeVolatileResourceAttributes])
-	assert.Equal(t, "node-1", got[envTelemetryNodeID])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])

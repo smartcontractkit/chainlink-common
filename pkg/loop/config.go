@@ -84,7 +84,6 @@ const (
 	envTelemetryMetricCompressor                  = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryReducedMetricResourceAttributes   = "CL_TELEMETRY_REDUCED_METRIC_RESOURCE_ATTRIBUTES_ENABLED"
 	envTelemetryExcludeVolatileResourceAttributes = "CL_TELEMETRY_EXCLUDE_VOLATILE_RESOURCE_ATTRIBUTES_FROM_METRICS_ENABLED"
-	envTelemetryNodeID                            = "CL_TELEMETRY_NODE_ID"
 	envTelemetryPrometheusBridgeEnabled           = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes          = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor                     = "CL_TELEMETRY_LOG_COMPRESSOR"
@@ -181,7 +180,6 @@ type EnvConfig struct {
 	TelemetryMetricCompressor                                    string
 	TelemetryReducedMetricResourceAttributesEnabled              bool
 	TelemetryExcludeVolatileResourceAttributesFromMetricsEnabled bool
-	TelemetryNodeID                                              string
 	TelemetryPrometheusBridgeEnabled                             bool
 	TelemetryPrometheusBridgePrefixes                            []string
 	TelemetryLogCompressor                                       string
@@ -298,7 +296,6 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
 	add(envTelemetryReducedMetricResourceAttributes, strconv.FormatBool(e.TelemetryReducedMetricResourceAttributesEnabled))
 	add(envTelemetryExcludeVolatileResourceAttributes, strconv.FormatBool(e.TelemetryExcludeVolatileResourceAttributesFromMetricsEnabled))
-	add(envTelemetryNodeID, e.TelemetryNodeID)
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
@@ -547,7 +544,6 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryExcludeVolatileResourceAttributes, err)
 		}
-		e.TelemetryNodeID = os.Getenv(envTelemetryNodeID)
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)

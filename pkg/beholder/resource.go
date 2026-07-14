@@ -10,7 +10,6 @@ import (
 
 const (
 	attrKeyCSAPublicKey = "csa_public_key"
-	attrKeyNodeID       = "node_id"
 )
 
 // ResourcePair holds full and metric-scoped OTel resources.
@@ -125,10 +124,6 @@ func identityResourceAttributes(cfg Config) []attribute.KeyValue {
 
 	attrs := []attribute.KeyValue{
 		attribute.String(attrKeyCSAPublicKey, csaPublicKeyHex),
-	}
-
-	if cfg.NodeID != "" {
-		attrs = append(attrs, attribute.String(attrKeyNodeID, cfg.NodeID))
 	}
 
 	return attrs

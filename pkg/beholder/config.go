@@ -19,8 +19,6 @@ type Config struct {
 
 	// OTel Resource
 	ResourceAttributes []attribute.KeyValue
-	// NodeID is the stable node identifier (1:1 with csa_public_key).
-	NodeID string
 	// ReducedMetricResourceAttributesEnabled uses a slim OTel resource on the metric
 	// export path while traces and logs keep the full resource.
 	ReducedMetricResourceAttributesEnabled bool

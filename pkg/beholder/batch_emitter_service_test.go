@@ -498,7 +498,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricEvent")
-		assert.True(t, hasEmitterStringAttr(dp.Attributes, "chip_client", batch.ChipClientBeholder))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 	})
 
@@ -542,7 +542,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricDropEvent")
-		assert.True(t, hasEmitterStringAttr(dp.Attributes, "chip_client", batch.ChipClientBeholder))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 
 		logs := observed.FilterMessage("failed to emit to chip ingress")

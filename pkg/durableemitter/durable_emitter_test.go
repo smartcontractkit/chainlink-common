@@ -816,7 +816,7 @@ func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase 
 	return total
 }
 
-func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics, name, chipClient string) {
+func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics, name, clientName string) {
 	t.Helper()
 	for _, sm := range rm.ScopeMetrics {
 		for _, m := range sm.Metrics {
@@ -826,8 +826,8 @@ func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics,
 			var count int
 			check := func(attrs attribute.Set) {
 				count++
-				assert.True(t, hasMetricStringAttr(attrs, "chip_client", chipClient),
-					"metric %s missing chip_client=%q", name, chipClient)
+				assert.True(t, hasMetricStringAttr(attrs, "client_name", clientName),
+					"metric %s missing client_name=%q", name, clientName)
 			}
 			switch data := m.Data.(type) {
 			case metricdata.Sum[int64]:
@@ -907,9 +907,9 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
 
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", batch.ChipClientDurableEmitter)
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", batch.ChipClientDurableEmitter)
-	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", batch.ChipClientDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", batch.ClientNameDurableEmitter)
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.

@@ -240,7 +240,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ChipClientDurableEmitter)
+		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ClientNameDurableEmitter)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}

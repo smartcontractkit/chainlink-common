@@ -78,7 +78,7 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batch.WithShutdownTimeout(drainTimeout),
 		batch.WithMaxConcurrentSends(maxConcurrentSends),
 		batch.WithEventClone(false),
-		batch.WithChipClient(batch.ChipClientBeholder),
+		batch.WithClientName(batch.ClientNameBeholder),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create batch client: %w", err)
@@ -187,7 +187,7 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	attrs := otelmetric.WithAttributeSet(attribute.NewSet(
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
-		attribute.String("chip_client", batch.ChipClientBeholder),
+		attribute.String("client_name", batch.ClientNameBeholder),
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)

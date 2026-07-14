@@ -46,7 +46,7 @@ func (p publishPhase) String() string {
 }
 
 type durableEmitterMetrics struct {
-	chipClient         string
+	clientName         string
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -95,12 +95,12 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
 // supplied meter. The caller is responsible for the meter's scope (the
 // instrument prefix below acts as the metric namespace).
-func newDurableEmitterMetrics(meter metric.Meter, chipClient string) (*durableEmitterMetrics, error) {
+func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEmitterMetrics, error) {
 	if meter == nil {
 		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
 	}
 	m := &durableEmitterMetrics{
-		chipClient: chipClient,
+		clientName: clientName,
 	}
 	var err error
 	if m.emitSuccess, err = meter.Int64Counter(
@@ -150,7 +150,7 @@ func newDurableEmitterMetrics(meter metric.Meter, chipClient string) (*durableEm
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit}, error={true,false}, chip_client"),
+		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit}, error={true,false}, client_name"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.
 		metric.WithAttributes(
 			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
-			attribute.String("chip_client", m.chipClient),
+			attribute.String("client_name", m.clientName),
 		),
 	)
 }
@@ -359,7 +359,7 @@ func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, pha
 	}
 	attrs := metric.WithAttributes(
 		attribute.String("phase", phase.String()),
-		attribute.String("chip_client", m.chipClient),
+		attribute.String("client_name", m.clientName),
 	)
 	if err != nil {
 		m.publishBatchEvErr.Add(ctx, 1, attrs)

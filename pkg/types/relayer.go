@@ -683,6 +683,10 @@ func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stella
 	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
 }
 
+func (u *UnimplementedStellarService) GetLedgers(_ context.Context, _ stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error) {
+	return stellar.GetLedgersResponse{}, status.Errorf(codes.Unimplemented, "method GetLedgers not implemented")
+}
+
 func (u *UnimplementedStellarService) SubmitTransaction(_ context.Context, _ stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }

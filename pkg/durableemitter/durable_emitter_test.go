@@ -790,6 +790,35 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
 }
 
+func TestDurableEmitter_MetricsRegistersQueueTTLBudget(t *testing.T) {
+	meter, reader := newTestMeter(t)
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = time.Hour
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
+
+	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), meter)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.Eventually(t, func() bool {
+		var rm metricdata.ResourceMetrics
+		require.NoError(t, reader.Collect(ctx, &rm))
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				if m.Name == "durable_emitter.queue.ttl_budget_seconds" {
+					_, ok := m.Data.(metricdata.Gauge[int64])
+					return ok
+				}
+			}
+		}
+		return false
+	}, 2*time.Second, 10*time.Millisecond, "expected durable_emitter.queue.ttl_budget_seconds Int64 gauge in exported metrics")
+}
+
 func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase string) int64 {
 	t.Helper()
 	var total int64
@@ -1506,12 +1535,13 @@ func (m *MemDurableEventStore) Len() int {
 }
 
 // ObserveDurableQueue implements DurableQueueObserver.
-func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL time.Duration) (DurableQueueStats, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	now := time.Now()
 	var st DurableQueueStats
 	st.TotalRows = int64(len(m.events))
+	st.TTLBudget = eventTTL
 	if len(m.events) == 0 {
 		return st, nil
 	}
@@ -1524,14 +1554,8 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, 
 			oldest = e.CreatedAt
 			first = false
 		}
-		age := now.Sub(e.CreatedAt)
-		if eventTTL > 0 && nearExpiryLead > 0 && nearExpiryLead < eventTTL {
-			threshold := eventTTL - nearExpiryLead
-			if age >= threshold && age < eventTTL {
-				st.NearTTLCount++
-			}
-		}
 	}
 	st.OldestPendingAge = now.Sub(oldest)
+	st.TTLBudget = eventTTL - st.OldestPendingAge
 	return st, nil
 }

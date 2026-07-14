@@ -20,8 +20,6 @@ import (
 type DurableEmitterMetricsConfig struct {
 	// PollInterval is how often queue and optional process gauges refresh. Zero = 10s.
 	PollInterval time.Duration
-	// NearExpiryLead is the window before EventTTL used for queue.near_ttl (DLQ pressure proxy). Zero = 5m.
-	NearExpiryLead time.Duration
 	// MaxQueuePayloadBytes, if > 0, records capacity_usage_ratio = queue_payload_bytes / max.
 	MaxQueuePayloadBytes int64
 }
@@ -65,7 +63,7 @@ type durableEmitterMetrics struct {
 	queueDepth         metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
-	queueNearTTL       metric.Int64Gauge
+	queueTTLBudgetSec  metric.Int64Gauge
 	queueCapacityRatio metric.Float64Gauge
 	procHeapInuse      metric.Int64Gauge
 	procHeapSys        metric.Int64Gauge
@@ -233,10 +231,10 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 	); err != nil {
 		return nil, err
 	}
-	if m.queueNearTTL, err = meter.Int64Gauge(
-		"durable_emitter.queue.near_ttl",
-		metric.WithUnit("{row}"),
-		metric.WithDescription("Rows within near-expiry window of EventTTL (DLQ pressure proxy; no separate DLQ table)"),
+	if m.queueTTLBudgetSec, err = meter.Int64Gauge(
+		"durable_emitter.queue.ttl_budget_seconds",
+		metric.WithUnit("s"),
+		metric.WithDescription("Seconds of TTL headroom for the oldest pending event (EventTTL - oldest age); low/negative → DLQ/expiry pressure. Alert engine decides what 'near' means"),
 	); err != nil {
 		return nil, err
 	}
@@ -312,7 +310,7 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 }
 
 // recordQueueStats records the DB-derived queue statistics (payload bytes,
-// oldest pending age, near-TTL count) from an already-observed snapshot. The
+// oldest pending age, TTL budget) from an already-observed snapshot. The
 // queue depth gauge itself is recorded separately by DurableEmitter from the
 // same snapshot's authoritative TotalRows count.
 func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st DurableQueueStats, maxBytes int64) {
@@ -325,7 +323,7 @@ func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st Durable
 	} else {
 		m.queueOldestAgeSec.Record(ctx, st.OldestPendingAge.Seconds())
 	}
-	m.queueNearTTL.Record(ctx, st.NearTTLCount)
+	m.queueTTLBudgetSec.Record(ctx, int64(st.TTLBudget/time.Second))
 	if maxBytes > 0 {
 		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
 	}

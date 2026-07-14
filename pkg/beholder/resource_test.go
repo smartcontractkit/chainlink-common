@@ -120,11 +120,37 @@ func TestReducedMetricResourcePreservesFullAttributesAndIdentity(t *testing.T) {
 	assert.Equal(t, "authoritative-node-id", fullAttrs[attrKeyNodeID].AsString())
 	assert.Equal(t, "authoritative-node-id", metricAttrs[attrKeyNodeID].AsString())
 	assert.Equal(t, fullAttrs["service.name"], metricAttrs["service.name"])
+	assert.NotEmpty(t, metricAttrs["service.name"].AsString())
+	assert.Contains(t, metricAttrs, "k8s.pod.extra")
 
 	cfg.ExcludeVolatileResourceAttributesFromMetricsEnabled = true
 	resources, err = buildOtelResources(cfg)
 	require.NoError(t, err)
 	assert.NotContains(t, resourceAttributeMap(resources.Metric), "k8s.pod.extra")
+}
+
+func TestMetricResourceFilteringEnabled(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		cfg  Config
+		want bool
+	}{
+		{name: "default", want: false},
+		{
+			name: "reduced resource enabled",
+			cfg:  Config{ReducedMetricResourceAttributesEnabled: true},
+			want: true,
+		},
+		{
+			name: "volatile attributes excluded",
+			cfg:  Config{ExcludeVolatileResourceAttributesFromMetricsEnabled: true},
+			want: true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, tc.cfg.metricResourceFilteringEnabled())
+		})
+	}
 }
 
 func TestRecordFullResourceAttributesMetric(t *testing.T) {

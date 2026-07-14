@@ -146,12 +146,19 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
-	// Shared log exporter for both logger and message emitter
-	logOpts, err := newLoggerOpts(cfg, auth, creds, meterProvider, tracerProvider)
+	// Shared log exporter for both logger and message emitter.
+	// capture is shared between the gRPC stats handler writer and the metered
+	// exporter reader to track outbound proto byte counts without retries accumulating.
+	capture := &sizeCapture{}
+	logOpts, err := newLoggerOpts(cfg, auth, creds, meterProvider, tracerProvider, capture)
 	if err != nil {
 		return nil, err
 	}
-	sharedLogExporter, err := otlploggrpcNew(logOpts...)
+	rawLogExporter, err := otlploggrpcNew(logOpts...)
+	if err != nil {
+		return nil, err
+	}
+	sharedLogExporter, err := newMeteredLogsExporter(rawLogExporter, meter, cfg.AuthPublicKeyHex, capture)
 	if err != nil {
 		return nil, err
 	}
@@ -557,7 +564,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 }
 
 // newLoggerOpts creates options for a logger exporter
-func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials, meter *sdkmetric.MeterProvider, tracer *sdktrace.TracerProvider) ([]otlploggrpc.Option, error) {
+func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials, meter *sdkmetric.MeterProvider, tracer *sdktrace.TracerProvider, capture *sizeCapture) ([]otlploggrpc.Option, error) {
 	otelOpts := []otelgrpc.Option{
 		otelgrpc.WithMeterProvider(meter),
 		otelgrpc.WithTracerProvider(tracer),
@@ -565,6 +572,7 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
+		grpc.WithStatsHandler(&sizeCaptureHandler{capture: capture}),
 	}
 
 	opts := []otlploggrpc.Option{

@@ -69,6 +69,20 @@ type DeploymentIdentity struct {
 	NodeID string
 }
 
+// Config is everything a LOOP producer needs to wire metering from its resolved
+// process environment: the ResourceManagerConfig for NewResourceManager, plus
+// the DeploymentIdentity used to build base ResourceIdentities via
+// NewBaseIdentity. See loop.EnvConfig.MeteringConfig, which builds one of these
+// from a resolved LOOP environment so the mapping lives in one place instead
+// of being copy-pasted into every producer main.
+type Config struct {
+	ResourceManagerConfig
+
+	// DeploymentIdentity carries the static deployment + node identity
+	// dimensions resolved from the LOOP environment.
+	DeploymentIdentity DeploymentIdentity
+}
+
 // DonIdentity captures DON-specific identity dimensions as one unit.
 type DonIdentity struct {
 	// DonID is the DON ID the emitting service belongs to.

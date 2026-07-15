@@ -244,6 +244,12 @@ func (rm *ResourceManager) start(_ context.Context) error {
 		// then run on the interval boundary thereafter. For DonTime-synced
 		// clocks this makes cross-node snapshot buckets agree structurally: the
 		// emitted snapshot timestamp is the tick time truncated to the interval.
+		//
+		// This is hand-rolled instead of services.TickerConfig/GoTick because
+		// that path is built on real time.Timer with no clockwork injection
+		// (resourcemanager_test.go drives this with a clockwork.FakeClock to
+		// test the alignment deterministically) and applies jitter by default,
+		// which would break the exact-interval-boundary agreement above.
 		now := rm.clock.Now()
 		firstTick := now.Truncate(rm.snapshotInterval).Add(rm.snapshotInterval)
 		timer := rm.clock.NewTimer(firstTick.Sub(now))
@@ -317,17 +323,22 @@ func (rm *ResourceManager) emitSnapshots(ctx context.Context, tickTime time.Time
 	}
 
 	for _, m := range ms {
-		func(m Meterable) {
-			rctx, cancel := context.WithTimeout(ctx, timeout)
-			defer cancel()
-			rm.emitSnapshot(rctx, m, tickTime)
-			if rctx.Err() != nil && ctx.Err() == nil {
-				rm.lggr.Warnw("snapshot registrant exceeded its per-tick deadline; skipped",
-					"timeout", timeout,
-					"err", rctx.Err(),
-				)
-			}
-		}(m)
+		rm.emitSnapshotWithDeadline(ctx, m, tickTime, timeout)
+	}
+}
+
+// emitSnapshotWithDeadline runs emitSnapshot for m under its own deadline so
+// one slow or stuck Meterable can never stall the tick for the others. A
+// registrant that exceeds timeout is logged and skipped.
+func (rm *ResourceManager) emitSnapshotWithDeadline(ctx context.Context, m Meterable, tickTime time.Time, timeout time.Duration) {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	rm.emitSnapshot(ctx, m, tickTime)
+	if ctx.Err() != nil {
+		rm.lggr.Warnw("snapshot registrant exceeded its per-tick deadline; skipped",
+			"timeout", timeout,
+			"err", ctx.Err(),
+		)
 	}
 }
 

@@ -95,6 +95,10 @@ func (e evmClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts
 	return e.client.GetLatestLPBlock(appendRelayID(ctx, e.relayID), in, opts...)
 }
 
+func (e evmClient) LPSkipToBlock(ctx context.Context, in *evmpb.LPSkipToBlockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return e.client.LPSkipToBlock(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 	parent *Server
@@ -487,6 +491,19 @@ func (es *evmServer) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty) (*
 			BlockTimestamp:       b.BlockTimestamp,
 		},
 	}, nil
+}
+
+func (es *evmServer) LPSkipToBlock(ctx context.Context, request *evmpb.LPSkipToBlockRequest) (*emptypb.Empty, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = evmService.LPSkipToBlock(ctx, request.GetBlockNumber()); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
 }
 
 func (es *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {

@@ -73,6 +73,7 @@ jobs:
         working-directory: chainlink
         run: |
           go get "github.com/smartcontractkit/chainlink-common@${COMMON_SHA}"
+          go get "github.com/smartcontractkit/chainlink-common/keystore@${COMMON_SHA}"
           go mod tidy
           make install-chainlink
 

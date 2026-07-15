@@ -37,10 +37,12 @@ func newCertFromFile(certFile string) (*x509.CertPool, error) {
 // NewHTTPClient creates a HTTP based beholder Client. Use NewClient to create a client from a Config which will pick
 // the best client type from the Config.
 func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
-	baseResource, err := newOtelResource(cfg)
+	resources, err := buildOtelResources(cfg)
 	if err != nil {
 		return nil, err
 	}
+	fullResource := resources.Full
+	metricResource := resources.Metric
 	var tlsConfig *tls.Config
 	if !cfg.InsecureConnection {
 		tlsConfig = &tls.Config{
@@ -106,7 +108,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 	loggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(loggerAttributes...),
-		baseResource,
+		fullResource,
 	)
 	if err != nil {
 		return nil, err
@@ -124,14 +126,14 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
-	tracerProvider, err := newHTTPTracerProvider(cfg, baseResource, tlsConfig)
+	tracerProvider, err := newHTTPTracerProvider(cfg, fullResource, tlsConfig)
 	if err != nil {
 		return nil, err
 	}
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newHTTPMeterProvider(cfg, baseResource, tlsConfig)
+	meterProvider, err := newHTTPMeterProvider(cfg, metricResource, tlsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +170,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 	messageLoggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(messageAttributes...),
-		baseResource,
+		fullResource,
 	)
 	if err != nil {
 		return nil, err
@@ -203,6 +205,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		MeterProvider:         meterProvider,
 		MessageLoggerProvider: messageLoggerProvider,
 		lazySigner:            nil,
+		fullResource:          fullResource,
 		OnClose:               onClose,
 	}
 	lggr := cfg.ChipIngressLogger
@@ -210,6 +213,11 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		lggr = pkglogger.Nop()
 	}
 	c.initService(lggr, nil)
+	if cfg.metricResourceFilteringEnabled() {
+		if err := c.RecordFullResourceAttributesMetric(context.Background()); err != nil {
+			return nil, err
+		}
+	}
 	return c, nil
 }
 

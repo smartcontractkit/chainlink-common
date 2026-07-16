@@ -13,7 +13,7 @@ func NewSlice(field, size TypeCodec) (TypeCodec, error) {
 		return nil, fmt.Errorf("%w: field and size must be non-nil", types.ErrInvalidConfig)
 	}
 
-	if size.GetType() != reflect.TypeOf(0) {
+	if size.GetType() != reflect.TypeFor[int]() {
 		return nil, fmt.Errorf("%w: size must be an int", types.ErrInvalidConfig)
 	}
 

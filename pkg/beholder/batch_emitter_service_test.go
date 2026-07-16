@@ -95,7 +95,7 @@ func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			err = emitter.Emit(t.Context(), []byte("body"),
 				beholder.AttrKeyDomain, "platform",
 				beholder.AttrKeyEntity, "TestEvent",
@@ -190,7 +190,7 @@ func TestChipIngressBatchEmitterService_PublishBatchError(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, emitter.Start(t.Context()))
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		err = emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
 			beholder.AttrKeyEntity, "TestEvent",
@@ -401,7 +401,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 		<-firstCallSignal
 		time.Sleep(100 * time.Millisecond)
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_ = emitter.Emit(t.Context(), []byte("filler"),
 				beholder.AttrKeyDomain, "platform",
 				beholder.AttrKeyEntity, "TestEvent",

@@ -65,7 +65,7 @@ func TestFloat64(t *testing.T) {
 	})
 
 	t.Run("GetType returns the correct type", func(t *testing.T) {
-		assert.Equal(t, reflect.TypeOf(fVal), f.GetType())
+		assert.Equal(t, reflect.TypeFor[float64](), f.GetType())
 	})
 
 	t.Run("Size returns the correct size", func(t *testing.T) {

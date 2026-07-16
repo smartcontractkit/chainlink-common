@@ -63,7 +63,7 @@ func TestBool(t *testing.T) {
 	})
 
 	t.Run("GetType returns the correct type", func(t *testing.T) {
-		assert.Equal(t, reflect.TypeOf(true), b.GetType())
+		assert.Equal(t, reflect.TypeFor[bool](), b.GetType())
 	})
 
 	t.Run("Size returns the correct size", func(t *testing.T) {

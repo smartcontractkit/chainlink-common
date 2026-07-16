@@ -43,7 +43,7 @@ func (s *PgDurableEventStore) InsertBatch(ctx context.Context, payloads [][]byte
 		return nil, nil
 	}
 	placeholders := make([]string, len(payloads))
-	args := make([]interface{}, len(payloads))
+	args := make([]any, len(payloads))
 	for i, p := range payloads {
 		placeholders[i] = fmt.Sprintf("($%d)", i+1)
 		args[i] = p

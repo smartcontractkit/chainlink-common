@@ -150,9 +150,7 @@ func (s *Store) replaceDonTimes(donTimes map[string][]int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for executionID, timestamps := range donTimes {
-		s.donTimes[executionID] = timestamps
-	}
+	maps.Copy(s.donTimes, donTimes)
 
 	for executionID := range s.donTimes {
 		if _, ok := donTimes[executionID]; !ok {

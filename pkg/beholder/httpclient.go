@@ -285,14 +285,13 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 		return nil, err
 	}
 
-	mp := sdkmetric.NewMeterProvider(
+	mpOpts := append(config.metricOptions(),
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				exporter,
 				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithView(config.MetricViews...),
 	)
-	return mp, nil
+	return sdkmetric.NewMeterProvider(mpOpts...), nil
 }

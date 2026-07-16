@@ -698,10 +698,7 @@ func (b *BaseTriggerCapability[T]) pruneLoop() {
 		if age <= 0 {
 			age = 24 * time.Hour
 		}
-		tick := age / 4
-		if tick < minPruneInterval {
-			tick = minPruneInterval
-		}
+		tick := max(age/4, minPruneInterval)
 
 		timer := time.NewTimer(tick)
 		select {

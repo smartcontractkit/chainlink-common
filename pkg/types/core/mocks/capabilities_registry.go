@@ -129,6 +129,63 @@ func (_c *CapabilitiesRegistry_ConfigForCapability_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// DONByID provides a mock function with given fields: ctx, donID
+func (_m *CapabilitiesRegistry) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+	ret := _m.Called(ctx, donID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DONByID")
+	}
+
+	var r0 capabilities.DON
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32) (capabilities.DON, error)); ok {
+		return rf(ctx, donID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32) capabilities.DON); ok {
+		r0 = rf(ctx, donID)
+	} else {
+		r0 = ret.Get(0).(capabilities.DON)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32) error); ok {
+		r1 = rf(ctx, donID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CapabilitiesRegistry_DONByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DONByID'
+type CapabilitiesRegistry_DONByID_Call struct {
+	*mock.Call
+}
+
+// DONByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - donID uint32
+func (_e *CapabilitiesRegistry_Expecter) DONByID(ctx interface{}, donID interface{}) *CapabilitiesRegistry_DONByID_Call {
+	return &CapabilitiesRegistry_DONByID_Call{Call: _e.mock.On("DONByID", ctx, donID)}
+}
+
+func (_c *CapabilitiesRegistry_DONByID_Call) Run(run func(ctx context.Context, donID uint32)) *CapabilitiesRegistry_DONByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32))
+	})
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_DONByID_Call) Return(_a0 capabilities.DON, _a1 error) *CapabilitiesRegistry_DONByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *CapabilitiesRegistry_DONByID_Call) RunAndReturn(run func(context.Context, uint32) (capabilities.DON, error)) *CapabilitiesRegistry_DONByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DONsForCapability provides a mock function with given fields: ctx, capabilityID
 func (_m *CapabilitiesRegistry) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
 	ret := _m.Called(ctx, capabilityID)

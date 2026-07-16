@@ -19,6 +19,11 @@ type CapabilitiesRegistryMetadata interface {
 	NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error)
 	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
 	DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error)
+	// DONByID resolves a DON by its registry ID. Unlike DONsForCapability, this
+	// resolves any DON known to the registry (including caller/workflow DONs that
+	// do not host a given capability), which is required to authoritatively read
+	// a caller DON's Families (e.g. zone membership) from its WorkflowDonID.
+	DONByID(ctx context.Context, donID uint32) (capabilities.DON, error)
 }
 
 type CapabilitiesRegistryBase interface {
@@ -54,6 +59,10 @@ func (UnimplementedCapabilitiesRegistryMetadata) ConfigForCapability(ctx context
 
 func (UnimplementedCapabilitiesRegistryMetadata) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
 	return nil, errors.New("DONsForCapability not implemented")
+}
+
+func (UnimplementedCapabilitiesRegistryMetadata) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+	return capabilities.DON{}, errors.New("DONByID not implemented")
 }
 
 type UnimplementedCapabilitiesRegistryBase struct {

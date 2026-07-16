@@ -52,6 +52,10 @@ flowchart
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
     end
 
+    subgraph executableServer[remote executable capability server.OnMessage]
+        RemoteExecutableWorkflowDONBindingEnabled[/RemoteExecutableWorkflowDONBindingEnabled\]:::gate
+    end
+
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
 %%      DON nodes → gateway (separate from the inbound trigger flow)
         GatewayHTTPGlobalRate[\GatewayHTTPGlobalRate/]:::rate

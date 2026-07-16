@@ -58,6 +58,7 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:               Bool(true),
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
+	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
 	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
@@ -318,6 +319,12 @@ type Schema struct {
 	GatewayVaultManagementEnabled                     Setting[bool]
 	VaultJWTAuthEnabled                               Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
+	// executable capability server reject any request whose
+	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
+	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
+	// sender DON so it cannot be spoofed by a colluding calling DON.
+	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
 	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]

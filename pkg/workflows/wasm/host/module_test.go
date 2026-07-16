@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"encoding/binary"
+	"math"
 	"strings"
 	"sync"
 	"testing"
@@ -498,6 +499,26 @@ func Test_write(t *testing.T) {
 		n := write(memory, giveSrc, 0, 20)
 		// TODO verify this won't break anything...
 		assert.Equal(t, int64(12), n)
+	})
+
+	t.Run("near-MaxInt32 ptr does not overflow the bounds check", func(t *testing.T) {
+		giveSrc := []byte("12345678")
+		memory := make([]byte, 12)
+		// ptr+maxSize would wrap negative with signed int32 arithmetic.
+		n := write(memory, giveSrc, math.MaxInt32-4, int32(len(giveSrc)))
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("negative maxSize is rejected", func(t *testing.T) {
+		memory := make([]byte, 12)
+		n := write(memory, nil, 0, math.MinInt32)
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("zero-length write at end of memory is allowed", func(t *testing.T) {
+		memory := make([]byte, 12)
+		n := write(memory, nil, int32(len(memory)), 0)
+		assert.Equal(t, int64(0), n)
 	})
 }
 

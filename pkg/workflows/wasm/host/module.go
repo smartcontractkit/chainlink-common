@@ -3,8 +3,10 @@ package host
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +14,8 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -126,21 +130,108 @@ type ModuleV2 = host.Module
 type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
-	engine  *wasmtime.Engine
-	module  *wasmtime.Module
-	wconfig *wasmtime.Config
+	// The compiled module is not kept resident for the lifetime of the module
+	// instance. Instead it is compiled once, serialized, and written to the
+	// process-global content-addressed moduleFileCache (see moduleCache); the
+	// in-memory *wasmtime.Module is then closed. modulePath points at the cache
+	// entry, which is keyed by the SHA-256 of the serialized bytes so that
+	// modules compiled from identical binaries share a single file. Each guest
+	// invocation (callWasm) deserializes its own *wasmtime.Module from modulePath
+	// and closes it when the invocation returns, so nothing is held while
+	// suspended.
+	modulePath string
 
 	cfg *ModuleConfig
 
-	wg     sync.WaitGroup
-	stopCh chan struct{}
+	metrics *moduleMetrics
 
 	v2ImportName string
+
+	// callWasm runs a single guest invocation for the v2 (no-DAG) execution path.
+	// It is a field so that tests can wrap it - e.g. to perturb the execution
+	// between the suspended run and the resume - while still exercising the real
+	// Execute loop. It is initialised in newModule to delegate to the package-level
+	// callWasm and is invoked by Execute via m.callWasm.
+	callWasm callWasmFunc
+}
+
+// callWasmFunc runs one guest invocation for the v2 (no-DAG) execution path.
+type callWasmFunc func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) (time.Duration, error)
+
+// moduleFileCache is the process-global store for serialized wasmtime modules.
+var moduleFileCache = &moduleCache{refs: map[string]int{}}
+
+// moduleCache is a content-addressed, reference-counted store for serialized
+// wasmtime modules. Modules compiled from identical binaries serialize to
+// identical bytes, so they are written once to a shared directory under a key
+// derived from the SHA-256 of the serialized bytes and shared by every module
+// instance that references them. The reference count tracks live users of each
+// key so a file is removed only when the last module referencing it is closed.
+type moduleCache struct {
+	mu   sync.Mutex
+	dir  string
+	refs map[string]int
+}
+
+// store writes serialized to the cache, keyed by the SHA-256 of its contents,
+// and returns the path to the cache entry. The refcount check under the mutex
+// is the atomic decision: only the first reference to a given key writes the
+// file; subsequent references reuse the existing one (dedupe). The returned path
+// must later be passed to release exactly once (see module.Close).
+func (c *moduleCache) store(serialized []byte) (string, error) {
+	sum := sha256.Sum256(serialized)
+	key := hex.EncodeToString(sum[:])
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if err := c.ensureDir(); err != nil {
+		return "", err
+	}
+	path := filepath.Join(c.dir, key)
+
+	if c.refs[key] == 0 {
+		if err := os.WriteFile(path, serialized, 0o600); err != nil {
+			return "", fmt.Errorf("error writing serialized module: %w", err)
+		}
+	}
+	c.refs[key]++
+	return path, nil
+}
+
+// release drops one reference to the cache entry at path, removing the file once
+// the last reference is gone. It is safe to call with a path returned by store.
+func (c *moduleCache) release(path string) {
+	key := filepath.Base(path)
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	switch {
+	case c.refs[key] <= 1:
+		delete(c.refs, key)
+		_ = os.Remove(path)
+	default:
+		c.refs[key]--
+	}
+}
+
+// ensureDir lazily creates the shared cache directory. The caller must hold c.mu.
+func (c *moduleCache) ensureDir() error {
+	if c.dir != "" {
+		return nil
+	}
+	dir, err := os.MkdirTemp("", "wasm-module-cache-")
+	if err != nil {
+		return fmt.Errorf("error creating module cache dir: %w", err)
+	}
+	c.dir = dir
+	return nil
 }
 
 var _ ModuleV1 = (*module)(nil)
 
-type linkFn[T any] func(m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
+type linkFn[T any] func(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[T]) (*wasmtime.Instance, error)
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
@@ -354,21 +445,39 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	return newModule(modCfg, binary)
 }
 
-func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+// wasmEngine is the single wasmtime engine shared by every module. Compiling a
+// module, (de)serializing it, and instantiating stores are all done against this
+// engine. It is created once in init and lives for the lifetime of the process,
+// so it is never closed.
+//
+// Note: the config is fixed at init time and can no longer be derived from a
+// per-module ModuleConfig. ModuleConfig.InitialFuel is therefore no longer wired
+// into the engine (fuel metering is disabled; CPU-time is measured via wall-clock
+// in callWasm).
+var wasmEngine *wasmtime.Engine
+
+func init() {
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
-	if modCfg.InitialFuel > 0 {
-		cfg.SetConsumeFuel(true)
-	}
-	if err := cfg.CacheConfigLoadDefault(); err != nil {
-		modCfg.Logger.Errorw("failed to load cache config, continuing without cache", "error", err)
-	}
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	SetUnwinding(cfg) // Handled differently based on host OS.
 
-	engine := wasmtime.NewEngineWithConfig(cfg)
+	wasmEngine = wasmtime.NewEngineWithConfig(cfg)
 
-	mod, err := wasmtime.NewModule(engine, binary)
+	// A single background goroutine drives epoch interruption for every module by
+	// incrementing the shared engine's epoch. The tick interval is fixed at 100ms;
+	// store deadlines are computed against the same interval in callWasm. It runs
+	// for the lifetime of the process and is intentionally never stopped.
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		for range ticker.C {
+			wasmEngine.IncrementEpoch()
+		}
+	}()
+}
+
+func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+	mod, err := wasmtime.NewModule(wasmEngine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
@@ -384,18 +493,42 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 
 	modCfg.SdkLabeler(v2ImportName)
 
-	return &module{
-		engine:       engine,
-		module:       mod,
-		wconfig:      cfg,
+	// Serialize the compiled module and close the in-memory module: it is not
+	// kept resident for the lifetime of the instance. The serialized bytes are
+	// stored in the process-global content-addressed cache, keyed by their
+	// SHA-256, so modules compiled from identical binaries share one file. Each
+	// guest invocation deserializes its own copy from this file (see callWasm).
+	serialized, err := mod.Serialize()
+	mod.Close()
+	if err != nil {
+		return nil, fmt.Errorf("error serializing wasmtime module: %w", err)
+	}
+
+	modulePath, err := moduleFileCache.store(serialized)
+	if err != nil {
+		return nil, err
+	}
+
+	metrics, err := newModuleMetrics()
+	if err != nil {
+		moduleFileCache.release(modulePath)
+		return nil, fmt.Errorf("error creating module metrics: %w", err)
+	}
+
+	m := &module{
+		modulePath:   modulePath,
 		cfg:          modCfg,
-		stopCh:       make(chan struct{}),
+		metrics:      metrics,
 		v2ImportName: v2ImportName,
-	}, nil
+	}
+	m.callWasm = func(timeout time.Duration, req *sdkpb.ExecuteRequest, linkWasm linkFn[*sdkpb.ExecutionResult], exec *execution[*sdkpb.ExecutionResult]) (time.Duration, error) {
+		return callWasm(timeout, m, req, linkWasm, exec)
+	}
+	return m, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
-	linker, err := newWasiLinker(exec, m.engine)
+func linkNoDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+	linker, err := newWasiLinker(exec, wasmEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -487,11 +620,11 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 		return nil, fmt.Errorf("error wrapping get_time func: %w", err)
 	}
 
-	return linker.Instantiate(store, m.module)
+	return linker.Instantiate(store, mod)
 }
 
-func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newDagWasiLinker(m.cfg, m.engine)
+func linkLegacyDAG(m *module, store *wasmtime.Store, mod *wasmtime.Module, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
+	linker, err := newDagWasiLinker(m.cfg, wasmEngine)
 	if err != nil {
 		return nil, err
 	}
@@ -534,30 +667,19 @@ func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.
 		return nil, fmt.Errorf("error wrapping log func: %w", err)
 	}
 
-	return linker.Instantiate(store, m.module)
+	return linker.Instantiate(store, mod)
 }
 
-func (m *module) Start() {
-	m.wg.Go(func() {
-		ticker := time.NewTicker(m.cfg.TickInterval)
-		for {
-			select {
-			case <-m.stopCh:
-				return
-			case <-ticker.C:
-				m.engine.IncrementEpoch()
-			}
-		}
-	})
-}
+// Start is a no-op: epoch interruption is driven by a single process-global
+// ticker started in init (see wasmEngine), not per module.
+func (m *module) Start() {}
 
 func (m *module) Close() {
-	close(m.stopCh)
-	m.wg.Wait()
-
-	m.engine.Close()
-	m.module.Close()
-	m.wconfig.Close()
+	// The engine and its epoch ticker are process-global (see wasmEngine) and
+	// shared by all modules, so they are intentionally not stopped here. The
+	// cache entry is reference counted and removed only once the last module
+	// referencing these serialized bytes is closed (see moduleCache).
+	moduleFileCache.release(m.modulePath)
 }
 
 func (m *module) IsLegacyDAG() bool {
@@ -577,16 +699,122 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 		return nil, errors.New("invalid request: can't be nil")
 	}
 
-	setMaxResponseSize := func(r *sdkpb.ExecuteRequest, maxSize uint64) {
-		r.MaxResponseSize = maxSize
+	maxResponseSizeBytes, err := m.cfg.MaxResponseSizeLimiter.Limit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get response size limit: %w", err)
+	}
+	req.MaxResponseSize = uint64(maxResponseSizeBytes)
+
+	h := fnv.New64a()
+	executionId := executor.GetWorkflowExecutionID()
+	_, _ = h.Write([]byte(executionId))
+	donSeed := int64(h.Sum64())
+
+	exec := &execution[*sdkpb.ExecutionResult]{
+		capabilityResponses: map[int32]*asyncResponse[sdkpb.CapabilityRequest, sdkpb.CapabilityResponse]{},
+		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
+		module:              m,
+		executor:            executor,
+		donSeed:             donSeed,
+		nodeSeed:            int64(rand.Uint64()),
+		suspendOnAwait:      req.SuspendOnAwait,
 	}
 
-	timeout := *m.cfg.Timeout
+	// The overall timeout bounds the entire execution, including any time spent
+	// suspended while waiting for capability responses. Reuse a single
+	// deadline-bearing context across every resume so the budget is shared.
+	overallTimeout := *m.cfg.Timeout
 	switch req.Request.(type) {
 	case *sdkpb.ExecuteRequest_PreHook:
-		timeout = *m.cfg.PrehookTimeout
+		overallTimeout = *m.cfg.PrehookTimeout
 	}
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, overallTimeout)
+	exec.ctx = ctxWithTimeout
+	defer cancel()
+	overallStart := time.Now()
+
+	m.metrics.IncActiveExecutions(ctx, req.SuspendOnAwait)
+	defer m.metrics.DecActiveExecutions(ctx, req.SuspendOnAwait)
+
+	// Accumulated across (re)starts and emitted once the execution completes,
+	// regardless of outcome. wasmDuration is the wall-clock time spent executing
+	// guest code (which is also the CPU-time signal), waitDuration the time spent
+	// suspended waiting for capability responses, and suspensions the number of
+	// times the execution suspended.
+	var (
+		wasmDuration time.Duration
+		waitDuration time.Duration
+		suspensions  int64
+	)
+	defer func() {
+		m.metrics.RecordExecutionPhase(ctx, req.SuspendOnAwait, phaseWasm, wasmDuration)
+		m.metrics.RecordExecutionPhase(ctx, req.SuspendOnAwait, phaseWaiting, waitDuration)
+		m.metrics.RecordExecutionPhase(ctx, req.SuspendOnAwait, phaseTotal, time.Since(overallStart))
+		m.metrics.RecordSuspensions(ctx, req.SuspendOnAwait, suspensions)
+		m.metrics.RecordMemory(ctx, req.SuspendOnAwait, exec.peakMemoryBytes)
+	}()
+
+	for {
+		// Each (re)start is bounded by the time left in the overall timeout, so a
+		// resumed run - and the wait for its capability responses - cannot extend
+		// the workflow's total run time beyond the original deadline.
+		remaining := overallTimeout - time.Since(overallStart)
+		if remaining <= 0 {
+			return nil, context.DeadlineExceeded
+		}
+
+		executionDuration, err := m.callWasm(remaining, req, linkNoDAG, exec)
+		wasmDuration += executionDuration
+
+		switch {
+		case containsCode(err, wasm.CodeSuccess):
+			if any(exec.response) == nil {
+				return nil, errors.New("could not find response for execution")
+			}
+			return exec.response, nil
+		case isSuspendTrap(err):
+			m.cfg.Logger.Debugw("received suspension, awaiting responses", "executionID", executionId)
+			suspensions++
+			// The execution is suspended for as long as we wait for its pending
+			// capability responses; track it as such for the duration of the wait.
+			m.metrics.IncSuspendedExecutions(ctx, req.SuspendOnAwait)
+			waitStart := time.Now()
+			// Wait for the pending capability responses, then resume on the next
+			// loop iteration with a fresh store.
+			werr := func() error {
+				for _, id := range exec.awaiting {
+					ar, ok := exec.capabilityResponses[id]
+					if !ok {
+						return fmt.Errorf("missing capability response for awaited callback %d", id)
+					}
+
+					if _, werr := ar.wait(ctxWithTimeout); werr != nil {
+						return werr
+					}
+				}
+				return nil
+			}()
+			waitDuration += time.Since(waitStart)
+			m.metrics.DecSuspendedExecutions(ctx, req.SuspendOnAwait)
+			if werr != nil {
+				return nil, werr
+			}
+
+			continue
+		default:
+			// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
+			// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
+			// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
+			// context.DeadlineExceeded.
+			if err != nil && ((executionDuration >= remaining-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+				m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
+				return nil, context.DeadlineExceeded
+			}
+
+			return nil, err
+		}
+	}
 }
 
 // Run is deprecated, use execute instead
@@ -603,77 +831,107 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		return nil, errors.New("cannot use Run on a non-legacy dag workflow, use Execute instead")
 	}
 
-	setMaxResponseSize := func(r *wasmdagpb.Request, maxSize uint64) {
-		computeRequest := r.GetComputeRequest()
-		if computeRequest != nil {
-			computeRequest.RuntimeConfig = &wasmdagpb.RuntimeConfig{
-				MaxResponseSizeBytes: int64(maxSize),
-			}
+	maxResponseSizeBytes, err := m.cfg.MaxResponseSizeLimiter.Limit(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get response size limit: %w", err)
+	}
+
+	computeRequest := request.GetComputeRequest()
+	if computeRequest != nil {
+		computeRequest.RuntimeConfig = &wasmdagpb.RuntimeConfig{
+			MaxResponseSizeBytes: int64(maxResponseSizeBytes),
 		}
 	}
 
-	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil, *m.cfg.Timeout)
-}
-
-func runWasm[I, O proto.Message](
-	ctx context.Context,
-	m *module,
-	request I,
-	setMaxResponseSize func(i I, maxSize uint64),
-	linkWasm linkFn[O],
-	helper ExecutionHelper,
-	maxTimeout time.Duration) (O, error) {
-	var o O
+	exec := &execution[*wasmdagpb.Response]{
+		module: m,
+	}
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
+	// TODO: this should live higher up.
 	ctxDeadline, hasDeadline := ctx.Deadline()
 	var ctxWithTimeout context.Context
 	var cancel func()
-
-	if hasDeadline && ctxDeadline.Before(time.Now().Add(maxTimeout)) {
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
 		ctxWithTimeout, cancel = context.WithCancel(ctx)
 	} else {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, maxTimeout)
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
 	}
-
+	exec.ctx = ctxWithTimeout
 	defer cancel()
 
-	store := wasmtime.NewStore(m.engine)
+	execDuration, err := callWasm(*m.cfg.Timeout, m, request, linkLegacyDAG, exec)
 
+	switch {
+	case containsCode(err, wasm.CodeSuccess):
+		if exec.response == nil {
+			return nil, errors.New("could not find response for execution")
+		}
+		return exec.response, nil
+	case containsCode(err, wasm.CodeInvalidResponse):
+		return nil, errors.New("invariant violation: error marshaling response")
+	case containsCode(err, wasm.CodeInvalidRequest):
+		return nil, errors.New("invariant violation: invalid request to runner")
+	case containsCode(err, wasm.CodeRunnerErr):
+		// legacy DAG captured all errors, since the function didn't return an error
+		resp, ok := any(exec).(*execution[*wasmdagpb.Response])
+		if ok && resp.response != nil {
+			return nil, fmt.Errorf("error executing runner: %s: %w", resp.response.ErrMsg, err)
+		}
+		return nil, errors.New("error executing runner")
+	case containsCode(err, wasm.CodeHostErr):
+		return nil, errors.New("invariant violation: host errored during sendResponse")
+	}
+
+	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
+	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
+	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
+	// context.DeadlineExceeded.
+	if err != nil && ((execDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
+		return nil, context.DeadlineExceeded
+	}
+
+	return nil, err
+}
+
+// callWasm performs a single guest invocation in a fresh, self-contained store.
+// The store - and therefore the instance and its linear memory - is closed
+// before callWasm returns; everything that must survive a resume lives on exec.
+// It returns the error from _start (which encodes the guest exit code, or the
+// suspend trap raised by await_capabilities).
+func callWasm[I, O proto.Message](
+	timeout time.Duration,
+	m *module,
+	req I,
+	linkWasm linkFn[O],
+	exec *execution[O],
+) (time.Duration, error) {
+	store := wasmtime.NewStore(wasmEngine)
 	defer store.Close()
-
-	maxResponseSizeBytes, err := m.cfg.MaxResponseSizeLimiter.Limit(ctx)
-	if err != nil {
-		return o, fmt.Errorf("failed to get response size limit: %w", err)
-	}
-	setMaxResponseSize(request, uint64(maxResponseSizeBytes))
-	reqpb, err := proto.Marshal(request)
-	if err != nil {
-		return o, err
-	}
-
-	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
 	wasi.InheritStdout()
 	defer wasi.Close()
 
-	wasi.SetArgv([]string{"wasi", reqstr})
+	reqpb, err := proto.Marshal(req)
+	if err != nil {
+		return 0, nil
+	}
 
+	reqstr := base64.StdEncoding.EncodeToString(reqpb)
+
+	wasi.SetArgv([]string{"wasi", reqstr})
 	store.SetWasi(wasi)
 
-	if m.cfg.InitialFuel > 0 {
-		err = store.SetFuel(m.cfg.InitialFuel)
-		if err != nil {
-			return o, fmt.Errorf("error setting fuel: %w", err)
-		}
+	// Limit memory to max memory megabytes per instance.
+	maxMemoryBytes, err := m.cfg.MemoryLimiter.Limit(exec.ctx)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get memory limit: %w", err)
 	}
 
-	// Limit memory to max memory megabytes per instance.
-	maxMemoryBytes, err := m.cfg.MemoryLimiter.Limit(ctx)
-	if err != nil {
-		return o, fmt.Errorf("failed to get memory limit: %w", err)
-	}
+	// A fresh store is used per (re)start, so a single instance/table/memory is
+	// sufficient; the previous run's store has already been closed.
 	store.Limiter(
 		int64(maxMemoryBytes/config.MByte)*int64(math.Pow(10, 6)),
 		-1, // tableElements, -1 == default
@@ -682,74 +940,44 @@ func runWasm[I, O proto.Message](
 		1,  // memories
 	)
 
-	deadline := maxTimeout / m.cfg.TickInterval
+	deadline := timeout / m.cfg.TickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
-	h := fnv.New64a()
-	if helper != nil {
-		executionId := helper.GetWorkflowExecutionID()
-		_, _ = h.Write([]byte(executionId))
-	}
-
-	donSeed := int64(h.Sum64())
-
-	exec := &execution[O]{
-		ctx:                 ctxWithTimeout,
-		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
-		secretsResponses:    map[int32]<-chan *secretsResponse{},
-		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
-		module:              m,
-		executor:            helper,
-		donSeed:             donSeed,
-		nodeSeed:            int64(rand.Uint64()),
-	}
-
-	instance, err := linkWasm(m, store, exec)
+	// Deserialize the compiled module from disk for this invocation only, and
+	// close it before returning. This keeps no module resident between runs, so a
+	// suspended execution (which returns from callWasm via the suspend trap)
+	// holds nothing while it waits; the next resume deserializes again.
+	mod, err := wasmtime.NewModuleDeserializeFile(wasmEngine, m.modulePath)
 	if err != nil {
-		return o, fmt.Errorf("error linking wasm: %w", err)
+		return 0, fmt.Errorf("error deserializing wasm module: %w", err)
+	}
+	defer mod.Close()
+
+	instance, err := linkWasm(m, store, mod, exec)
+	if err != nil {
+		return 0, fmt.Errorf("error linking wasm: %w", err)
 	}
 
 	start := instance.GetFunc(store, "_start")
 	if start == nil {
-		return o, errors.New("could not get start function")
+		return 0, errors.New("could not get start function")
 	}
 
 	startTime := time.Now()
 	_, err = start.Call(store)
 	executionDuration := time.Since(startTime)
 
-	// The error codes below are only returned by the v1 legacy DAG workflow.
-	switch {
-	case containsCode(err, wasm.CodeSuccess):
-		if any(exec.response) == nil {
-			return o, errors.New("could not find response for execution")
+	// Capture the linear memory the guest grew to before the store is closed, so
+	// Execute can emit it as the peak memory metric.
+	if mem := instance.GetExport(store, "memory"); mem != nil {
+		if memory := mem.Memory(); memory != nil {
+			if used := int64(memory.DataSize(store)); used > exec.peakMemoryBytes {
+				exec.peakMemoryBytes = used
+			}
 		}
-		return exec.response, nil
-	case containsCode(err, wasm.CodeInvalidResponse):
-		return o, errors.New("invariant violation: error marshaling response")
-	case containsCode(err, wasm.CodeInvalidRequest):
-		return o, errors.New("invariant violation: invalid request to runner")
-	case containsCode(err, wasm.CodeRunnerErr):
-		// legacy DAG captured all errors, since the function didn't return an error
-		resp, ok := any(exec).(*execution[*wasmdagpb.Response])
-		if ok && resp.response != nil {
-			return o, fmt.Errorf("error executing runner: %s: %w", resp.response.ErrMsg, err)
-		}
-		return o, errors.New("error executing runner")
-	case containsCode(err, wasm.CodeHostErr):
-		return o, errors.New("invariant violation: host errored during sendResponse")
 	}
 
-	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
-	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
-	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
-	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
-		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
-		return o, context.DeadlineExceeded
-	}
-
-	return o, err
+	return executionDuration, err
 }
 
 func containsCode(err error, code int) bool {
@@ -757,6 +985,13 @@ func containsCode(err error, code int) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), fmt.Sprintf("exit status %d", code))
+}
+
+// isSuspendTrap reports whether err is the trap raised by await_capabilities to
+// suspend the execution (see createAwaitCapsFn). The trap message round-trips
+// through start.Call as the returned error's message.
+func isSuspendTrap(err error) bool {
+	return err != nil && strings.Contains(err.Error(), errSuspendExecution.Error())
 }
 
 // createSendResponseFn injects the dependency required by a WASM guest to
@@ -1233,13 +1468,13 @@ func createCallCapFn(
 func createAwaitCapsFn(
 	logger logger.Logger,
 	exec *execution[*sdkpb.ExecutionResult],
-) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
-	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) (int64, *wasmtime.Trap) {
+	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) (int64, *wasmtime.Trap) {
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		req := &sdkpb.AwaitCapabilitiesRequest{}
@@ -1247,31 +1482,37 @@ func createAwaitCapsFn(
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		resp, err := exec.awaitCapabilities(exec.ctx, req)
-		if err != nil {
+		switch {
+		case errors.Is(err, errSuspendExecution):
+			// awaitCapabilities has recorded exec.awaiting. Trap to unwind the
+			// guest immediately; the host detects this trap (isSuspendTrap), waits
+			// for the pending responses, and resumes by re-instantiating the guest.
+			return 0, wasmtime.NewTrap(errSuspendExecution.Error())
+		case err != nil:
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		respBytes, err := proto.Marshal(resp)
 		if err != nil {
 			errStr := err.Error()
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
 		size := wasmWrite(caller, respBytes, responseBuffer, maxResponseLen)
 		if size == -1 {
 			errStr := ResponseBufferTooSmall
 			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen), nil
 		}
 
-		return size
+		return size, nil
 	}
 }
 

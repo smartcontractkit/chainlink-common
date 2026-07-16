@@ -70,7 +70,7 @@ func TestAwaitCapabilities_headOfLineBlocksOnEarlierID(t *testing.T) {
 
 	exec := &execution[*sdkpb.ExecutionResult]{
 		ctx:                 t.Context(),
-		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
+		capabilityResponses: make(map[int32]*asyncResponse[sdkpb.CapabilityRequest, sdkpb.CapabilityResponse]),
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 		executor:            stub,
 	}

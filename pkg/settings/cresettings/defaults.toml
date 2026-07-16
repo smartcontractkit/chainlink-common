@@ -82,6 +82,7 @@ WorkflowLimit = '1000'
 WorkflowExecutionConcurrencyLimit = '5'
 VaultCiphertextSizeLimit = '2kb'
 VaultSecretsLimit = '100'
+SuspendOnAwaitEnabled = 'false'
 
 [PerOwner.ConfidentialCompute]
 Rate = '1000rps:1000'

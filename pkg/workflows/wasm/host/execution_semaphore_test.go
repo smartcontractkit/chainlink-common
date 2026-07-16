@@ -59,7 +59,7 @@ var _ ExecutionHelper = (*slowCapStub)(nil)
 func newTestExec(maxPending int, stub ExecutionHelper) *execution[*sdkpb.ExecutionResult] {
 	return &execution[*sdkpb.ExecutionResult]{
 		ctx:                 context.Background(),
-		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
+		capabilityResponses: make(map[int32]*asyncResponse[sdkpb.CapabilityRequest, sdkpb.CapabilityResponse]),
 		secretsResponses:    make(map[int32]<-chan *secretsResponse),
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter[int](maxPending),
 		executor:            stub,

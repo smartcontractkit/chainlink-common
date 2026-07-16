@@ -19,11 +19,13 @@ import (
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 )
 
+// Here we need to distinguish between variables that should survive a replay and
+// variables that need to be re-initialized every replay.
 type execution[T any] struct {
 	fetchRequestsCounter int
 	response             T
 	ctx                  context.Context
-	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
+	capabilityResponses  map[int32]*asyncResponse[sdkpb.CapabilityRequest, sdkpb.CapabilityResponse]
 	secretsResponses     map[int32]<-chan *secretsResponse
 	pendingCallsLimiter  limits.ResourcePoolLimiter[int]
 	lock                 sync.RWMutex
@@ -37,12 +39,65 @@ type execution[T any] struct {
 	nodeSeed             int64
 	donLogCount          uint32
 	nodeLogCount         uint32
+	awaiting             []int32
+	// peakMemoryBytes is the largest linear memory observed across (re)starts.
+	// It is populated by callWasm and read by Execute to emit the memory metric.
+	peakMemoryBytes int64
+	// suspendOnAwait gates the suspend/resume behaviour. When false, the
+	// execution behaves as it did before suspension was introduced:
+	// awaitCapabilities blocks until each response is available and callCapAsync
+	// always dispatches a fresh call. When true, awaitCapabilities returns
+	// errSuspendExecution while responses are pending and callCapAsync replays
+	// recorded calls instead of re-dispatching them.
+	suspendOnAwait bool
+}
+
+type asyncResponse[I, O any] struct {
+	mu   sync.Mutex
+	ch   <-chan *O
+	resp *O
+	req  *I
+}
+
+func (a *asyncResponse[I, O]) wait(ctx context.Context) (*O, error) {
+	if resp := a.getResp(ctx); resp != nil {
+		return resp, nil
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case o := <-a.ch:
+		a.mu.Lock()
+		defer a.mu.Unlock()
+		a.resp = o
+		return o, nil
+	}
+}
+
+func (a *asyncResponse[I, O]) getResp(ctx context.Context) *O {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.resp
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
 // channel and storing each channel with a unique identifier for future
 // retrieval on await.
 func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRequest) error {
+	if e.suspendOnAwait {
+		// check if there is already an item in the capabilityResponses for a given callback id.
+		// if there is -> integrity check (matching requests); return without firing goroutine.
+		// else -> legacy path.
+		if asyncResponse, ok := e.capabilityResponses[req.CallbackId]; ok {
+			// there is already an item for this callback id; we must therefore be replaying
+			// perform an integrity check to enforce determinism and return early.
+			if !proto.Equal(asyncResponse.req, req) {
+				return errors.New("non-determinism error")
+			}
+			return nil
+		}
+	}
 	// Acquire a slot from the pool limiter to bound concurrency.
 	free, err := e.pendingCallsLimiter.Wait(ctx, 1)
 	if err != nil {
@@ -52,7 +107,13 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	ch := make(chan *sdkpb.CapabilityResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
-	e.capabilityResponses[req.CallbackId] = ch
+	e.capabilityResponses[req.CallbackId] = &asyncResponse[
+		sdkpb.CapabilityRequest,
+		sdkpb.CapabilityResponse,
+	]{
+		ch:  ch,
+		req: req,
+	}
 
 	go func() {
 		defer free()
@@ -82,25 +143,61 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	return nil
 }
 
+var errSuspendExecution = errors.New("__SUSPEND_EXECUTION__")
+
 func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error) {
 	responses := make(map[int32]*sdkpb.CapabilityResponse, len(acr.Ids))
 
 	e.lock.Lock()
 	defer e.lock.Unlock()
+
+	if !e.suspendOnAwait {
+		// Legacy behaviour: block until each requested response is available,
+		// then consume and remove it from the store.
+		for _, callId := range acr.Ids {
+			ar, ok := e.capabilityResponses[callId]
+			if !ok {
+				return nil, fmt.Errorf("failed to get call from store : %d", callId)
+			}
+
+			select {
+			case <-ctx.Done():
+				return nil, fmt.Errorf("failed to wait for capability response %d : %w", callId, ctx.Err())
+			case resp := <-ar.ch:
+				responses[callId] = resp
+			}
+
+			delete(e.capabilityResponses, callId)
+		}
+
+		return &sdkpb.AwaitCapabilitiesResponse{
+			Responses: responses,
+		}, nil
+	}
+
+	// for all ids, check whether we have a response
+	// if yes: return the response
+	// if no: return suspend execution error, record the ids for which we are still waiting
+	// 	to be picked up by the runWasm routine
+	responsesForAll := true
 	for _, callId := range acr.Ids {
-		ch, ok := e.capabilityResponses[callId]
+		ar, ok := e.capabilityResponses[callId]
 		if !ok {
 			return nil, fmt.Errorf("failed to get call from store : %d", callId)
 		}
 
-		select {
-		case <-ctx.Done():
-			return nil, fmt.Errorf("failed to wait for capability response %d : %w", callId, ctx.Err())
-		case resp := <-ch:
-			responses[callId] = resp
+		resp := ar.getResp(ctx)
+		if resp == nil {
+			responsesForAll = false
+			break
 		}
 
-		delete(e.capabilityResponses, callId)
+		responses[callId] = resp
+	}
+
+	if !responsesForAll {
+		e.awaiting = acr.Ids
+		return nil, errSuspendExecution
 	}
 
 	return &sdkpb.AwaitCapabilitiesResponse{

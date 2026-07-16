@@ -657,7 +657,7 @@ func Test_CallAwaitRace(t *testing.T) {
 
 	exec := &execution[*wasmpb.ExecutionResult]{
 		module:              m,
-		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		capabilityResponses: map[int32]*asyncResponse[sdkpb.CapabilityRequest, sdkpb.CapabilityResponse]{},
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 		ctx:                 t.Context(),
 		executor:            mockExecHelper,

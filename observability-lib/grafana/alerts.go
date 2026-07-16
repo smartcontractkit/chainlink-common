@@ -147,37 +147,41 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 		if options.ReduceExpression.ReduceSettings != nil && options.ReduceExpression.ReduceSettings.Mode != "" {
 			reduceBuider.Settings(newReduceSettingsOptions(*options.ReduceExpression.ReduceSettings))
 		}
-		res.Model(reduceBuider)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeReduce(reduceBuider))
 	}
 
 	if options.MathExpression != nil {
-		res.Model(expr.NewTypeMathBuilder().
-			RefId(options.RefID).
-			Expression(options.MathExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeMath(expr.NewTypeMathBuilder().
+				RefId(options.RefID).
+				Expression(options.MathExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints),
+			))
 	}
 
 	if options.ResampleExpression != nil {
-		res.Model(expr.NewTypeResampleBuilder().
-			RefId(options.RefID).
-			Expression(options.ResampleExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints).
-			Downsampler(options.ResampleExpression.DownSampler).
-			Upsampler(options.ResampleExpression.UpSampler),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeResample(expr.NewTypeResampleBuilder().
+				RefId(options.RefID).
+				Expression(options.ResampleExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints).
+				Downsampler(options.ResampleExpression.DownSampler).
+				Upsampler(options.ResampleExpression.UpSampler),
+			))
 	}
 
 	if options.ThresholdExpression != nil {
-		res.Model(expr.NewTypeThresholdBuilder().
-			RefId(options.RefID).
-			Expression(options.ThresholdExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints).
-			Conditions(newThresholdConditionsOptions(options.ThresholdExpression.ThresholdConditionsOptions)),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeThreshold(expr.NewTypeThresholdBuilder().
+				RefId(options.RefID).
+				Expression(options.ThresholdExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints).
+				Conditions(newThresholdConditionsOptions(options.ThresholdExpression.ThresholdConditionsOptions)),
+			))
 	}
 
 	return res

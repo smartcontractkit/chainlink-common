@@ -51,14 +51,14 @@ func (m *byteToBooleanModifier) TransformToOffChain(onChainValue any, _ string) 
 // we convert it to bool. If it's a slice/array of uint8, convert to a slice/array of bool, etc.
 func convertUint8InTypeToBool(t reflect.Type, field string) (reflect.Type, error) {
 	if t.Kind() == reflect.Uint8 {
-		return reflect.TypeOf(true), nil
+		return reflect.TypeFor[bool](), nil
 	}
 
 	switch t.Kind() {
 	case reflect.Pointer:
 		t = t.Elem()
 		if t.Kind() == reflect.Uint8 {
-			return reflect.PointerTo(reflect.TypeOf(true)), nil
+			return reflect.PointerTo(reflect.TypeFor[bool]()), nil
 		}
 		fallthrough
 	default:

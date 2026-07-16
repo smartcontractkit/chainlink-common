@@ -197,11 +197,11 @@ func (f *Attestor) CARootsPEM() string {
 // TrustedPCRsJSON returns the PCR values as a JSON object matching the
 // format expected by the attestation validator.
 func (f *Attestor) TrustedPCRsJSON() []byte {
-	return []byte(fmt.Sprintf(`{"pcr0":"%s","pcr1":"%s","pcr2":"%s"}`,
+	return fmt.Appendf(nil, `{"pcr0":"%s","pcr1":"%s","pcr2":"%s"}`,
 		hex.EncodeToString(f.pcrs[0]),
 		hex.EncodeToString(f.pcrs[1]),
 		hex.EncodeToString(f.pcrs[2]),
-	))
+	)
 }
 
 func sha384Sum(data []byte) []byte {

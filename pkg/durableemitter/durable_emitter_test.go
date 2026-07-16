@@ -72,11 +72,9 @@ func (b *testBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb func
 
 	b.callCount.Add(1)
 	if cb != nil {
-		b.wg.Add(1)
-		go func() {
-			defer b.wg.Done()
+		b.wg.Go(func() {
 			cb(err)
-		}()
+		})
 	}
 	return nil
 }
@@ -210,7 +208,7 @@ func TestDurableEmitter_MarkCoalescingBatchesIds(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 25
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(ctx, []byte("coalesce-me"), testEmitAttrs()...))
 	}
 
@@ -247,7 +245,7 @@ func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
 	require.NoError(t, em.Start(t.Context()))
 
 	const n = 5
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(t.Context(), []byte("buffer-me"), testEmitAttrs()...))
 	}
 
@@ -279,7 +277,7 @@ func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 3
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(ctx, []byte("inline"), testEmitAttrs()...))
 	}
 	require.Eventually(t, func() bool {
@@ -299,8 +297,8 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
-		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchPublish: func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchDelete:  func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -320,8 +318,8 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
-		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchPublish: func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchDelete:  func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -560,9 +558,7 @@ func (b *selectiveBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb
 	}
 	poison := event.GetType() == b.poisonType
 	if cb != nil {
-		b.wg.Add(1)
-		go func() {
-			defer b.wg.Done()
+		b.wg.Go(func() {
 			if poison {
 				b.poisonFails.Add(1)
 				cb(errors.New("poison: permanent delivery failure"))
@@ -570,7 +566,7 @@ func (b *selectiveBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb
 			}
 			b.goodDelivered.Add(1)
 			cb(nil)
-		}()
+		})
 	}
 	return nil
 }
@@ -601,11 +597,11 @@ func TestDurableEmitter_RetransmitCursorSkipsPoison(t *testing.T) {
 	)
 
 	// Insert poison first so it is the oldest (head of the queue), then good.
-	for i := 0; i < numPoison; i++ {
+	for range numPoison {
 		_, err := store.Insert(ctx, makeCloudEventPayload(t, poisonType, "poison-body"))
 		require.NoError(t, err)
 	}
-	for i := 0; i < numGood; i++ {
+	for range numGood {
 		_, err := store.Insert(ctx, makeCloudEventPayload(t, goodType, "good-body"))
 		require.NoError(t, err)
 	}
@@ -668,7 +664,7 @@ func TestListPendingCursorPaging(t *testing.T) {
 		cursorID int64
 		seen     []int64
 	)
-	for i := 0; i < n+2; i++ { // bounded: at most ceil(n/limit)+1 pages
+	for range n + 2 { // bounded: at most ceil(n/limit)+1 pages
 		page, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit)
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(page), limit)
@@ -713,7 +709,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 50
-	for i := 0; i < n; i++ {
+	for range n {
 		err := em.Emit(ctx, []byte("event"), testEmitAttrs()...)
 		require.NoError(t, err)
 	}
@@ -1086,8 +1082,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	require.NoError(t, em.Start(ctx))
 
 	// Stop the gRPC server entirely.
@@ -1139,7 +1134,7 @@ func TestIntegration_HighThroughput(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 500
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(ctx, []byte("event"), emitAttrs()...))
 	}
 
@@ -1189,7 +1184,7 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
 	}
 

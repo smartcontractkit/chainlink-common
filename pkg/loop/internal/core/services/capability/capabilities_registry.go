@@ -103,6 +103,14 @@ func (cr *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, cap
 	return donsWithNodes, nil
 }
 
+func (cr *capabilitiesRegistryClient) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+	res, err := cr.grpc.DONByID(ctx, &pb.DONByIDRequest{DonID: donID})
+	if err != nil {
+		return capabilities.DON{}, err
+	}
+	return toDON(res.Don), nil
+}
+
 func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
 	var pid *p2ptypes.PeerID
 	if len(nodeReply.PeerID) > 0 {
@@ -591,6 +599,14 @@ func (c *capabilitiesRegistryServer) DONsForCapability(ctx context.Context, req 
 	return &pb.DONForCapabilityReply{
 		Dons: donWithNodes,
 	}, nil
+}
+
+func (c *capabilitiesRegistryServer) DONByID(ctx context.Context, req *pb.DONByIDRequest) (*pb.DONByIDReply, error) {
+	don, err := c.impl.DONByID(ctx, req.DonID)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DONByIDReply{Don: toPbDON(don)}, nil
 }
 
 func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *pb.NodeReply {

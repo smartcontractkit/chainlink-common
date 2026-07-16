@@ -22,6 +22,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	Stellar_GetLedgerEntries_FullMethodName    = "/loop.stellar.Stellar/GetLedgerEntries"
 	Stellar_GetLatestLedger_FullMethodName     = "/loop.stellar.Stellar/GetLatestLedger"
+	Stellar_GetLedgers_FullMethodName          = "/loop.stellar.Stellar/GetLedgers"
 	Stellar_SimulateTransaction_FullMethodName = "/loop.stellar.Stellar/SimulateTransaction"
 	Stellar_GetEvents_FullMethodName           = "/loop.stellar.Stellar/GetEvents"
 	Stellar_GetTransaction_FullMethodName      = "/loop.stellar.Stellar/GetTransaction"
@@ -35,6 +36,7 @@ const (
 type StellarClient interface {
 	GetLedgerEntries(ctx context.Context, in *GetLedgerEntriesRequest, opts ...grpc.CallOption) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLedgerResponse, error)
+	GetLedgers(ctx context.Context, in *GetLedgersRequest, opts ...grpc.CallOption) (*GetLedgersResponse, error)
 	SimulateTransaction(ctx context.Context, in *SimulateTransactionRequest, opts ...grpc.CallOption) (*SimulateTransactionResponse, error)
 	GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error)
 	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error)
@@ -64,6 +66,16 @@ func (c *stellarClient) GetLatestLedger(ctx context.Context, in *emptypb.Empty, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetLatestLedgerResponse)
 	err := c.cc.Invoke(ctx, Stellar_GetLatestLedger_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stellarClient) GetLedgers(ctx context.Context, in *GetLedgersRequest, opts ...grpc.CallOption) (*GetLedgersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLedgersResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetLedgers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +138,7 @@ func (c *stellarClient) SubmitTransaction(ctx context.Context, in *SubmitTransac
 type StellarServer interface {
 	GetLedgerEntries(context.Context, *GetLedgerEntriesRequest) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error)
+	GetLedgers(context.Context, *GetLedgersRequest) (*GetLedgersResponse, error)
 	SimulateTransaction(context.Context, *SimulateTransactionRequest) (*SimulateTransactionResponse, error)
 	GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error)
 	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error)
@@ -146,6 +159,9 @@ func (UnimplementedStellarServer) GetLedgerEntries(context.Context, *GetLedgerEn
 }
 func (UnimplementedStellarServer) GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
+}
+func (UnimplementedStellarServer) GetLedgers(context.Context, *GetLedgersRequest) (*GetLedgersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLedgers not implemented")
 }
 func (UnimplementedStellarServer) SimulateTransaction(context.Context, *SimulateTransactionRequest) (*SimulateTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SimulateTransaction not implemented")
@@ -215,6 +231,24 @@ func _Stellar_GetLatestLedger_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StellarServer).GetLatestLedger(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stellar_GetLedgers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLedgersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetLedgers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetLedgers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetLedgers(ctx, req.(*GetLedgersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -323,6 +357,10 @@ var Stellar_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLatestLedger",
 			Handler:    _Stellar_GetLatestLedger_Handler,
+		},
+		{
+			MethodName: "GetLedgers",
+			Handler:    _Stellar_GetLedgers_Handler,
 		},
 		{
 			MethodName: "SimulateTransaction",

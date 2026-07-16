@@ -31,8 +31,12 @@ type ReportingPluginConfig struct {
 	MaxReportLengthBytes      uint32 `protobuf:"varint,4,opt,name=maxReportLengthBytes,proto3" json:"maxReportLengthBytes,omitempty"`
 	MaxReportCount            uint32 `protobuf:"varint,5,opt,name=maxReportCount,proto3" json:"maxReportCount,omitempty"`
 	MaxBatchSize              uint32 `protobuf:"varint,6,opt,name=maxBatchSize,proto3" json:"maxBatchSize,omitempty"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	// MinResponsesToAggregate is the minimum number of nodes that must report
+	// identical observations for a value to be accepted as the read result.
+	// 0 defaults to F+1. Must satisfy F+1 <= MinResponsesToAggregate <= N when non-zero.
+	MinResponsesToAggregate uint32 `protobuf:"varint,7,opt,name=minResponsesToAggregate,proto3" json:"minResponsesToAggregate,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ReportingPluginConfig) Reset() {
@@ -107,18 +111,26 @@ func (x *ReportingPluginConfig) GetMaxBatchSize() uint32 {
 	return 0
 }
 
+func (x *ReportingPluginConfig) GetMinResponsesToAggregate() uint32 {
+	if x != nil {
+		return x.MinResponsesToAggregate
+	}
+	return 0
+}
+
 var File_ocr3_chain_capabilities_config_types_proto protoreflect.FileDescriptor
 
 const file_ocr3_chain_capabilities_config_types_proto_rawDesc = "" +
 	"\n" +
-	"*ocr3_chain_capabilities_config_types.proto\x12$chain_capabilities_ocr3_config_types\"\xbd\x02\n" +
+	"*ocr3_chain_capabilities_config_types.proto\x12$chain_capabilities_ocr3_config_types\"\xf7\x02\n" +
 	"\x15ReportingPluginConfig\x120\n" +
 	"\x13maxQueryLengthBytes\x18\x01 \x01(\rR\x13maxQueryLengthBytes\x12<\n" +
 	"\x19maxObservationLengthBytes\x18\x02 \x01(\rR\x19maxObservationLengthBytes\x124\n" +
 	"\x15maxOutcomeLengthBytes\x18\x03 \x01(\rR\x15maxOutcomeLengthBytes\x122\n" +
 	"\x14maxReportLengthBytes\x18\x04 \x01(\rR\x14maxReportLengthBytes\x12&\n" +
 	"\x0emaxReportCount\x18\x05 \x01(\rR\x0emaxReportCount\x12\"\n" +
-	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSizeB9Z7capabilities/v2/chain-capabilities/consensus/ocr3/typesb\x06proto3"
+	"\fmaxBatchSize\x18\x06 \x01(\rR\fmaxBatchSize\x128\n" +
+	"\x17minResponsesToAggregate\x18\a \x01(\rR\x17minResponsesToAggregateB9Z7capabilities/v2/chain-capabilities/consensus/ocr3/typesb\x06proto3"
 
 var (
 	file_ocr3_chain_capabilities_config_types_proto_rawDescOnce sync.Once

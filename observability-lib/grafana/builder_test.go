@@ -1,6 +1,7 @@
 package grafana_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
@@ -478,6 +479,81 @@ func TestBuilder_AddPanel(t *testing.T) {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 		require.IsType(t, dashboard.Panel{}, *o.Dashboard.Panels[0].Panel)
+	})
+}
+
+func TestNewAlertRule_ConditionExpressionModels(t *testing.T) {
+	t.Run("builds a model for every expression type", func(t *testing.T) {
+		ruleBuilder := grafana.NewAlertRule(&grafana.AlertOptions{
+			Title: "Expression Alert",
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `my_metric`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: "datasource-uid",
+				},
+			},
+			QueryRefCondition: "E",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ReduceExpression: &grafana.ReduceExpression{
+						Expression: "A",
+						Reducer:    expr.TypeReduceReducerSum,
+					},
+				},
+				{
+					RefID: "C",
+					MathExpression: &grafana.MathExpression{
+						Expression: "$B * 2",
+					},
+				},
+				{
+					RefID: "D",
+					ResampleExpression: &grafana.ResampleExpression{
+						Expression:  "A",
+						Window:      "10s",
+						DownSampler: expr.TypeResampleDownsamplerMean,
+						UpSampler:   expr.TypeResampleUpsamplerPad,
+					},
+				},
+				{
+					RefID: "E",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "D",
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{2},
+							Type:   expr.ExprTypeThresholdConditionsEvaluatorTypeLt,
+						},
+					},
+				},
+			},
+		})
+
+		rule, err := ruleBuilder.Build()
+		require.NoError(t, err)
+
+		models := map[string]string{}
+		for _, query := range rule.Data {
+			require.NotNil(t, query.RefId)
+			raw, errMarshal := json.Marshal(query.Model)
+			require.NoError(t, errMarshal)
+			models[*query.RefId] = string(raw)
+		}
+
+		require.Contains(t, models["B"], `"type":"reduce"`)
+
+		require.Contains(t, models["C"], `"type":"math"`)
+		require.Contains(t, models["C"], `"expression":"$B * 2"`)
+
+		require.Contains(t, models["D"], `"type":"resample"`)
+		require.Contains(t, models["D"], `"downsampler":"mean"`)
+		require.Contains(t, models["D"], `"upsampler":"pad"`)
+		require.Contains(t, models["D"], `"expression":"A"`)
+		require.Contains(t, models["D"], `"window":"10s"`)
+
+		require.Contains(t, models["E"], `"type":"threshold"`)
 	})
 }
 

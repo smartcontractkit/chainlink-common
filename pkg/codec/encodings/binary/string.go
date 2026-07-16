@@ -54,7 +54,7 @@ func (s stringCodec) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (s stringCodec) GetType() reflect.Type {
-	return reflect.TypeOf("")
+	return reflect.TypeFor[string]()
 }
 
 func (s stringCodec) Size(_ int) (int, error) {

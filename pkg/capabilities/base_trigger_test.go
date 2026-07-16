@@ -790,7 +790,7 @@ func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 	require.NotNil(t, reg)
 	reg.pending = make(map[string]*PendingEvent)
 	n := defaultMaxSendsPerTick + 30
-	for i := 0; i < n; i++ {
+	for i := range n {
 		eid := fmt.Sprintf("e%d", i)
 		rec := &PendingEvent{
 			TriggerId: "trig",
@@ -939,7 +939,7 @@ func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 	require.NoError(t, err)
 
 	// Pre-populate the store with events (simulates restart loading).
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		require.NoError(t, store.Insert(ctx, PendingEvent{
 			TriggerId:  "trig",
 			EventId:    fmt.Sprintf("e%d", i),

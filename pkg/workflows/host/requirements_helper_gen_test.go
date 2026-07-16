@@ -46,3 +46,38 @@ func Test_CheckRequirements(t *testing.T) {
 		assert.True(t, CheckRequirements(context.Background(), handler, req))
 	})
 }
+
+func Test_HandlesRequirements(t *testing.T) {
+	t.Parallel()
+	t.Run("nil req always passes", func(t *testing.T) {
+		assert.True(t, HandlesRequirements(RequirementsHandler{}, nil))
+	})
+
+	t.Run("no fields always passes", func(t *testing.T) {
+		assert.True(t, HandlesRequirements(RequirementsHandler{}, &sdk.Requirements{}))
+	})
+
+	t.Run("unknown proto fields", func(t *testing.T) {
+		// Encode a field number (99) unknown to Requirements so proto.Unmarshal
+		// preserves it as unknown bytes.
+		b := protowire.AppendTag(nil, 99, protowire.VarintType)
+		b = protowire.AppendVarint(b, 1)
+		req := &sdk.Requirements{}
+		require.NoError(t, proto.Unmarshal(b, req))
+
+		assert.False(t, HandlesRequirements(RequirementsHandler{}, req))
+	})
+
+	t.Run("required field with nil handler returns false", func(t *testing.T) {
+		req := &sdk.Requirements{Tee: &sdk.Tee{}}
+		assert.False(t, HandlesRequirements(RequirementsHandler{}, req))
+	})
+
+	t.Run("handler present passes regardless of callback result", func(t *testing.T) {
+		req := &sdk.Requirements{Tee: &sdk.Tee{}}
+		// HandlesRequirements only checks coverage, not whether the callback passes,
+		// so a handler that would fail CheckRequirements still handles the request.
+		handler := RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }}
+		assert.True(t, HandlesRequirements(handler, req))
+	})
+}

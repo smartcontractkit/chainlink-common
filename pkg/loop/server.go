@@ -188,7 +188,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
-			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressBatchEmitterEnabled:   s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressMaxMessageBufferBytes: s.EnvConfig.ChipIngressMaxMessageBufferBytes,
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 		}
@@ -356,8 +357,9 @@ func (s *Server) start(opts ...ServerOpt) error {
 		emitterCfg := durableemitter.DefaultConfig()
 		emitterCfg.Metrics = &durableemitter.DurableEmitterMetricsConfig{}
 		durableCfg := durableemitter.SetupConfig{
-			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
-			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,
+			Endpoint:                s.EnvConfig.ChipIngressEndpoint,
+			InsecureConnection:      s.EnvConfig.ChipIngressInsecureConnection,
+			MaxMessageBufferBytes:   int(s.EnvConfig.ChipIngressMaxMessageBufferBytes),
 			Auth: durableemitter.AuthConfig{
 				AuthHeaders:      s.EnvConfig.TelemetryAuthHeaders,
 				AuthHeadersTTL:   s.EnvConfig.TelemetryAuthHeadersTTL,

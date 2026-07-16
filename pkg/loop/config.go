@@ -98,6 +98,7 @@ const (
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
 	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
+	envChipIngressMaxMessageBufferBytes = "CL_CHIP_INGRESS_MAX_MESSAGE_BUFFER_BYTES"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -112,6 +113,7 @@ type EnvConfig struct {
 	ChipIngressInsecureConnection    bool
 	ChipIngressBatchEmitterEnabled   bool
 	ChipIngressDurableEmitterEnabled bool
+	ChipIngressMaxMessageBufferBytes uint
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -306,6 +308,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
 	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(e.ChipIngressDurableEmitterEnabled))
+	if e.ChipIngressMaxMessageBufferBytes > 0 {
+		add(envChipIngressMaxMessageBufferBytes, strconv.FormatUint(uint64(e.ChipIngressMaxMessageBufferBytes), 10))
+	}
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -549,6 +554,13 @@ func (e *EnvConfig) parse() error {
 		e.ChipIngressDurableEmitterEnabled, err = getBool(envChipIngressDurableEmitterEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
+		}
+		if v := os.Getenv(envChipIngressMaxMessageBufferBytes); v != "" {
+			n, parseErr := strconv.ParseUint(v, 10, 64)
+			if parseErr != nil {
+				return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxMessageBufferBytes, parseErr)
+			}
+			e.ChipIngressMaxMessageBufferBytes = uint(n)
 		}
 	}
 

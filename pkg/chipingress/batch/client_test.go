@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -63,6 +64,16 @@ func TestNewBatchClient(t *testing.T) {
 		client, err := NewBatchClient(mocks.NewClient(t), WithMessageBuffer(1000))
 		require.NoError(t, err)
 		assert.Equal(t, 1000, cap(client.messageBuffer))
+	})
+
+	t.Run("WithMaxMessageBufferBytes", func(t *testing.T) {
+		client, err := NewBatchClient(mocks.NewClient(t), WithMaxMessageBufferBytes(4096))
+		require.NoError(t, err)
+		assert.Equal(t, 4096, client.maxMessageBufferBytes)
+
+		defaultClient, err := NewBatchClient(mocks.NewClient(t))
+		require.NoError(t, err)
+		assert.Equal(t, defaultMaxMessageBufferBytes, defaultClient.maxMessageBufferBytes)
 	})
 
 	t.Run("WithMaxGRPCRequestSize", func(t *testing.T) {
@@ -201,6 +212,157 @@ func TestQueueMessage(t *testing.T) {
 		require.NoError(t, err)
 		assert.Empty(t, client.messageBuffer)
 	})
+}
+
+func TestQueueMessageByteCap(t *testing.T) {
+	t.Run("drops when byte cap exceeded before count cap", func(t *testing.T) {
+		client, err := NewBatchClient(
+			mocks.NewClient(t),
+			WithMessageBuffer(100),
+			WithMaxMessageBufferBytes(512),
+		)
+		require.NoError(t, err)
+
+		event := eventWithMinProtoSize(t, 400)
+		require.NoError(t, client.QueueMessage(event, nil))
+		assert.Greater(t, client.bufferedBytes.Load(), int64(0))
+
+		err = client.QueueMessage(eventWithMinProtoSize(t, 400), nil)
+		require.ErrorIs(t, err, ErrMessageBufferBytesExceeded)
+		assert.Len(t, client.messageBuffer, 1)
+	})
+
+	t.Run("drops when count cap hit before byte cap", func(t *testing.T) {
+		client, err := NewBatchClient(
+			mocks.NewClient(t),
+			WithMessageBuffer(1),
+			WithMaxMessageBufferBytes(0),
+		)
+		require.NoError(t, err)
+
+		event := &chipingress.CloudEventPb{Id: "a", Source: "src", Type: "typ"}
+		require.NoError(t, client.QueueMessage(event, nil))
+		err = client.QueueMessage(event, nil)
+		require.ErrorIs(t, err, ErrMessageBufferFull)
+	})
+
+	t.Run("rejects single message larger than byte cap", func(t *testing.T) {
+		client, err := NewBatchClient(
+			mocks.NewClient(t),
+			WithMessageBuffer(10),
+			WithMaxMessageBufferBytes(128),
+		)
+		require.NoError(t, err)
+
+		err = client.QueueMessage(eventWithMinProtoSize(t, 256), nil)
+		require.ErrorIs(t, err, ErrMessageBufferBytesExceeded)
+		assert.Empty(t, client.messageBuffer)
+	})
+
+	t.Run("bufferedBytes drains to zero after batcher consumes messages", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithBatchSize(2),
+			WithBatchInterval(time.Hour),
+			WithMessageBuffer(10),
+			WithMaxMessageBufferBytes(1<<20),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+		defer client.Stop()
+
+		event := eventWithMinProtoSize(t, 256)
+		require.NoError(t, client.QueueMessage(event, nil))
+		require.NoError(t, client.QueueMessage(event, nil))
+		assert.Greater(t, client.bufferedBytes.Load(), int64(0))
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for batch publish")
+		}
+
+		assert.Eventually(t, func() bool {
+			return client.bufferedBytes.Load() == 0
+		}, time.Second, 10*time.Millisecond)
+	})
+
+	t.Run("records max_message_buffer_bytes in config metric", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		const capBytes = 8192
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		client, err := NewBatchClient(
+			mockClient,
+			WithMaxMessageBufferBytes(capBytes),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+		client.Stop()
+
+		rm := collectResourceMetrics(t, reader)
+		config := mustMetric(t, rm, "chip_ingress.batch.config.info")
+		configGauge, ok := config.Data.(metricdata.Gauge[int64])
+		require.True(t, ok)
+		require.NotEmpty(t, configGauge.DataPoints)
+		assert.True(t, hasIntAttr(configGauge.DataPoints[0].Attributes, "max_message_buffer_bytes", capBytes))
+	})
+
+	t.Run("concurrent enqueue respects byte cap", func(t *testing.T) {
+		client, err := NewBatchClient(
+			mocks.NewClient(t),
+			WithMessageBuffer(1000),
+			WithMaxMessageBufferBytes(4096),
+			WithBatchInterval(time.Hour),
+		)
+		require.NoError(t, err)
+
+		event := eventWithMinProtoSize(t, 512)
+		var wg sync.WaitGroup
+		var dropped atomic.Int64
+		for range 20 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := client.QueueMessage(event, nil); err != nil {
+					dropped.Add(1)
+				}
+			}()
+		}
+		wg.Wait()
+
+		assert.Greater(t, dropped.Load(), int64(0))
+		assert.LessOrEqual(t, client.bufferedBytes.Load(), int64(4096))
+	})
+}
+
+func eventWithMinProtoSize(t *testing.T, minSize int) *chipingress.CloudEventPb {
+	t.Helper()
+	data := []byte{}
+	event := &chipingress.CloudEventPb{
+		Id:     "payload-event",
+		Source: "test-source",
+		Type:   "test.event.type",
+		Data: &cepb.CloudEvent_BinaryData{
+			BinaryData: data,
+		},
+	}
+	for proto.Size(event) < minSize {
+		data = append(data, 'x')
+		event.Data = &cepb.CloudEvent_BinaryData{BinaryData: data}
+	}
+	return event
 }
 
 func TestSendBatch(t *testing.T) {

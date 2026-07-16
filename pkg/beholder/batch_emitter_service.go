@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -63,6 +64,10 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	if drainTimeout == 0 {
 		drainTimeout = defaults.ChipIngressDrainTimeout
 	}
+	maxMessageBufferBytes := int(cfg.ChipIngressMaxMessageBufferBytes)
+	if maxMessageBufferBytes == 0 {
+		maxMessageBufferBytes = int(defaults.ChipIngressMaxMessageBufferBytes)
+	}
 
 	meter := otel.Meter("beholder/chip_ingress_batch_emitter")
 	metrics, err := newBatchEmitterMetrics(meter)
@@ -73,6 +78,7 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	batchClient, err := batch.NewBatchClient(client,
 		batch.WithBatchSize(maxBatchSize),
 		batch.WithMessageBuffer(bufferSize),
+		batch.WithMaxMessageBufferBytes(maxMessageBufferBytes),
 		batch.WithBatchInterval(sendInterval),
 		batch.WithMaxPublishTimeout(sendTimeout),
 		batch.WithShutdownTimeout(drainTimeout),
@@ -167,7 +173,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			}
 		})
 		if queueErr != nil {
-			e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
+			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrs(domain, entity, queueFailureType(queueErr)))
 			e.eng.Errorw("failed to queue message for chip ingress", "error", queueErr, "domain", domain, "entity", entity)
 			if callback != nil {
 				callback(queueErr)
@@ -176,6 +182,31 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 
 		return nil
 	})
+}
+
+func queueFailureType(err error) string {
+	switch {
+	case errors.Is(err, batch.ErrMessageBufferBytesExceeded):
+		return "buffer_bytes_exceeded"
+	case errors.Is(err, batch.ErrMessageBufferFull):
+		return "buffer_full"
+	default:
+		return "queue_error"
+	}
+}
+
+func (e *ChipIngressBatchEmitterService) dropMetricAttrs(domain, entity, failureType string) otelmetric.MeasurementOption {
+	key := domain + "\x00" + entity + "\x00" + failureType
+	if v, ok := e.metricAttrsCache.Load(key); ok {
+		return v.(otelmetric.MeasurementOption)
+	}
+	attrs := otelmetric.WithAttributeSet(attribute.NewSet(
+		attribute.String("domain", domain),
+		attribute.String("entity", entity),
+		attribute.String("failure_type", failureType),
+	))
+	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
+	return v.(otelmetric.MeasurementOption)
 }
 
 func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) otelmetric.MeasurementOption {

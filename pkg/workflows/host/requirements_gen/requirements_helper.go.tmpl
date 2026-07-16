@@ -34,12 +34,9 @@ func CheckRequirements(ctx context.Context, handler RequirementsHandler, req *sd
 	return true
 }
 
-// HandlesRequirements reports whether handler is the right *type* of runner for req:
-// it has a (non-nil) callback for every non-nil field in req, regardless of whether
-// those callbacks would be satisfied. It lets callers distinguish a transient
-// "a runner of this type exists but cannot currently satisfy the requirements"
-// (e.g. a capability that gates the runner is unavailable or not yet activated
-// across the DON) from a permanent "no runner of this type is configured at all".
+// HandlesRequirements reports whether handler covers every non-nil field in req (the
+// right runner type), regardless of whether those callbacks pass. Distinguishes a
+// present-but-unavailable runner from a missing one.
 func HandlesRequirements(handler RequirementsHandler, req *sdk.Requirements) bool {
 	if req == nil {
 		return true

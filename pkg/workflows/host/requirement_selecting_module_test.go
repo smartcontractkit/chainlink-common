@@ -237,9 +237,6 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
-		// A Tee runner exists (add has a Tee handler) but it cannot currently satisfy
-		// the requirement, so this is the transient, retryable case, not a permanent
-		// "no such runner" misconfiguration.
 		assert.ErrorIs(t, err, ErrRunnerUnavailable)
 	})
 
@@ -544,8 +541,6 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
-		// No module handles a Tee requirement at all, so this is the permanent
-		// "no such runner" case, distinct from the transient ErrRunnerUnavailable.
 		assert.Contains(t, err.Error(), "cannot find a runner")
 		assert.NotErrorIs(t, err, ErrRunnerUnavailable)
 	})

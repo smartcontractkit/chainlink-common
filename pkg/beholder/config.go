@@ -26,7 +26,7 @@ type Config struct {
 	EmitterMaxQueueSize       int
 	// EmitterBatchProcessor controls custom-message export mode:
 	// true = batched async export; false = immediate per-record export.
-	EmitterBatchProcessor     bool
+	EmitterBatchProcessor bool
 
 	// OTel Trace
 	TraceSampleRatio  float64
@@ -39,7 +39,10 @@ type Config struct {
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
-	MetricViews          []metric.View
+	MetricViews []metric.View
+	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
+	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
+	MetricCardinalityLimit int
 	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "none".
 	MetricCompressor string
 	MetricProducers  []metric.Producer // For example, a prometheus bridge
@@ -108,6 +111,9 @@ var defaultRetryConfig = RetryConfig{
 const (
 	defaultPackageName        = "beholder"
 	defaultMaxConcurrentSends = 10
+
+	// DefaultMetricCardinalityLimit is the production safety valve for high-cardinality workloads.
+	DefaultMetricCardinalityLimit = 100000
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{
@@ -127,7 +133,7 @@ func DefaultConfig() Config {
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
 		// Keep batched export enabled by default for throughput.
-		EmitterBatchProcessor:     true,
+		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
@@ -137,8 +143,9 @@ func DefaultConfig() Config {
 		// OTel trace exporter retry config
 		TraceRetryConfig: defaultRetryConfig.Copy(),
 		// Metric
-		MetricReaderInterval: 1 * time.Second,
-		MetricCompressor:     "gzip",
+		MetricReaderInterval:   1 * time.Second,
+		MetricCompressor:       "gzip",
+		MetricCardinalityLimit: DefaultMetricCardinalityLimit,
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
@@ -148,8 +155,8 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
-		LogLevel:      zapcore.InfoLevel,
-		LogCompressor: "gzip",
+		LogLevel:              zapcore.InfoLevel,
+		LogCompressor:         "gzip",
 		// Chip Ingress Batch Emitter
 		ChipIngressBatchEmitterEnabled: false,
 		ChipIngressBufferSize:          1000,
@@ -173,6 +180,7 @@ func TestDefaultConfig() Config {
 	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
 	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
 	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	config.MetricCardinalityLimit = 0           // Disable overflow aggregation in unit tests
 	// Auth disabled for testing (TTL=0 means static auth mode)
 	config.AuthHeadersTTL = 0
 	return config
@@ -186,6 +194,7 @@ func TestDefaultConfigHTTPClient() Config {
 	config.LogBatchProcessor = false
 	config.OtelExporterGRPCEndpoint = ""
 	config.OtelExporterHTTPEndpoint = "localhost:4318"
+	config.MetricCardinalityLimit = 0
 	// Auth disabled for testing (TTL=0 means static auth mode)
 	config.AuthHeadersTTL = 0
 	return config

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784230968487,
+  "lastUpdate": 1784231793875,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55020,6 +55020,66 @@ window.BENCHMARK_DATA = {
             "value": 143412,
             "unit": "ns/op",
             "extra": "8361 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "93eeb23b3f6b7d28e517206cab7c3b5e0238d3bd",
+          "message": "feat(capabilities): add DONByID registry lookup + vault zone-b gates (#2256)\n\nAdd DONByID(ctx, donID) to core.CapabilitiesRegistryMetadata (interface,\nUnimplemented stub, LOOP gRPC client/server, regenerated proto/pb, mock) so a\nnode can authoritatively resolve any DON's Families by ID.\n\nAdd cresettings gates for the vault zone-b GetSecrets restriction:\n- VaultZoneBWorkflowGetSecretsRestrictEnabled (global master gate, default false)\n- PerOwner.VaultZoneBGetSecretsAllowed (owner-scoped allowlist, default false)\n\nCo-authored-by: Claude Opus 4.8 <noreply@anthropic.com>",
+          "timestamp": "2026-07-16T19:44:07Z",
+          "tree_id": "1cdced0bf73fde1b73d46809870feb9797dba6af",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/93eeb23b3f6b7d28e517206cab7c3b5e0238d3bd"
+        },
+        "date": 1784231791219,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 275.1,
+            "unit": "ns/op",
+            "extra": "4328046 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 59279,
+            "unit": "ns/op",
+            "extra": "20095 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 301.4,
+            "unit": "ns/op",
+            "extra": "4069303 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58008,
+            "unit": "ns/op",
+            "extra": "21432 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22636,
+            "unit": "ns/op",
+            "extra": "53054 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 99360,
+            "unit": "ns/op",
+            "extra": "12052 times\n4 procs"
           }
         ]
       }

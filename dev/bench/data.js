@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784226480563,
+  "lastUpdate": 1784230968487,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -54960,6 +54960,66 @@ window.BENCHMARK_DATA = {
             "value": 140546,
             "unit": "ns/op",
             "extra": "8605 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a7d01d2467db0090f876d7031ba6f37c5791cb76",
+          "message": "feat(cresettings): add RemoteExecutableWorkflowDONBindingEnabled gate (#2257)\n\nGlobal bool (default false) that, when enabled, lets the remote executable\ncapability server reject requests whose RequestMetadata.WorkflowDonID does not\nmatch the authenticated calling DON.\n\nCo-authored-by: Claude Opus 4.8 <noreply@anthropic.com>",
+          "timestamp": "2026-07-16T19:33:14Z",
+          "tree_id": "64904603d6a8ff0ac3bada7d803d2bcd3c297a05",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a7d01d2467db0090f876d7031ba6f37c5791cb76"
+        },
+        "date": 1784230965778,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 813.5,
+            "unit": "ns/op",
+            "extra": "1427152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 96819,
+            "unit": "ns/op",
+            "extra": "12252 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.2,
+            "unit": "ns/op",
+            "extra": "2932856 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95936,
+            "unit": "ns/op",
+            "extra": "12532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26809,
+            "unit": "ns/op",
+            "extra": "44124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 143412,
+            "unit": "ns/op",
+            "extra": "8361 times\n4 procs"
           }
         ]
       }

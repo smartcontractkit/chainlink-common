@@ -41,7 +41,7 @@ type Config struct {
 	MetricRetryConfig    *RetryConfig
 	MetricViews []metric.View
 	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
-	// DefaultConfig uses 100000 as a production safety valve for high-cardinality workloads.
+	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
 	MetricCardinalityLimit int
 	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "none".
 	MetricCompressor string
@@ -111,6 +111,9 @@ var defaultRetryConfig = RetryConfig{
 const (
 	defaultPackageName        = "beholder"
 	defaultMaxConcurrentSends = 10
+
+	// DefaultMetricCardinalityLimit is the production safety valve for high-cardinality workloads.
+	DefaultMetricCardinalityLimit = 100000
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{
@@ -142,7 +145,7 @@ func DefaultConfig() Config {
 		// Metric
 		MetricReaderInterval:   1 * time.Second,
 		MetricCompressor:       "gzip",
-		MetricCardinalityLimit: 100000,
+		MetricCardinalityLimit: DefaultMetricCardinalityLimit,
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log

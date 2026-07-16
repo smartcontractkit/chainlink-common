@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
@@ -548,7 +549,7 @@ func (e *EnvConfig) parse() error {
 			}
 			e.TelemetryMetricCardinalityLimit = &limit
 		} else {
-			defaultLimit := 100000
+			defaultLimit := beholder.DefaultMetricCardinalityLimit
 			e.TelemetryMetricCardinalityLimit = &defaultLimit
 		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)

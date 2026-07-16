@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784128267803,
+  "lastUpdate": 1784212730786,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -54720,6 +54720,66 @@ window.BENCHMARK_DATA = {
             "value": 121127,
             "unit": "ns/op",
             "extra": "8914 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "962670781b75b8a18a9dbe2a8283122c9ede18ef",
+          "message": "Add Beholder OTel SDK metric cardinality limit (#2225)\n\n* Add Beholder OTel SDK metric cardinality limit.\n\nWire CL_TELEMETRY_METRIC_CARDINALITY_LIMIT through loop EnvConfig and\nserver into beholder clients. Default limit is 100,000; 0 disables it.\nUse *int in EnvConfig so unset vs explicit-disable propagate correctly\nacross LOOP parent/child processes.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* Use zero-arg Config.metricOptions(); callers append reader/resource.\n\nAddresses jmank88 review: replace variadic metricOptions with a cfg-only\nmethod; call sites use append(cfg.metricOptions(), ...).\n\n* Replace ptr helper with Go 1.26 new(expr) in loop tests.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* chore: extract DefaultMetricCardinalityLimit to avoid duplicate literal\n\n* refactor: use DefaultMetricCardinalityLimit in config_test.go\n\n---------\n\nCo-authored-by: Cursor <cursoragent@cursor.com>",
+          "timestamp": "2026-07-16T14:28:11Z",
+          "tree_id": "adefeec43ac7c943d9a5c66371eb5f68b45cccd7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/962670781b75b8a18a9dbe2a8283122c9ede18ef"
+        },
+        "date": 1784212728541,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 410,
+            "unit": "ns/op",
+            "extra": "2856180 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 82340,
+            "unit": "ns/op",
+            "extra": "14476 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 385.5,
+            "unit": "ns/op",
+            "extra": "3131472 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79555,
+            "unit": "ns/op",
+            "extra": "15450 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29225,
+            "unit": "ns/op",
+            "extra": "41098 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132198,
+            "unit": "ns/op",
+            "extra": "9322 times\n4 procs"
           }
         ]
       }

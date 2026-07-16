@@ -9,6 +9,13 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
+// ErrRunnerUnavailable indicates that a trigger's requirements are handled by a
+// known runner type, but no runner can currently satisfy them, e.g. a capability
+// that gates the runner is temporarily unavailable or not yet activated across the
+// DON. It is distinct from a permanent "no such runner is configured": callers may
+// treat it as transient and retry rather than failing workflow initialization.
+var ErrRunnerUnavailable = errors.New("no runner can currently satisfy the trigger requirements")
+
 type ModuleAndHandler struct {
 	Module
 	RequirementsHandler
@@ -109,11 +116,31 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 			}
 		}
 		if !matched {
+			if r.runnerTypeAvailable(sub.Requirements) {
+				// A runner of the right type exists but cannot currently satisfy the
+				// requirements (e.g. a gated or temporarily unavailable capability).
+				// Surface this as transient so callers can hold and retry rather than
+				// failing workflow initialization outright.
+				return nil, fmt.Errorf("%w for trigger %d", ErrRunnerUnavailable, i)
+			}
 			return nil, fmt.Errorf("cannot find a runner that can satisfy the requirements for trigger %d", i)
 		}
 	}
 
 	return result, nil
+}
+
+// runnerTypeAvailable reports whether any module is the right type of runner for req
+// (it handles every requirement field), even if none can currently satisfy the
+// requirement values. Used to distinguish a transient ErrRunnerUnavailable from a
+// permanent "no such runner".
+func (r *requirementSelectingModule) runnerTypeAvailable(req *sdk.Requirements) bool {
+	for _, m := range r.modules {
+		if HandlesRequirements(m.RequirementsHandler, req) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {

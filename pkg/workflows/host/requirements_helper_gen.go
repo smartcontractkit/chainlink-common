@@ -35,3 +35,25 @@ func CheckRequirements(ctx context.Context, handler RequirementsHandler, req *sd
 
 	return true
 }
+
+// HandlesRequirements reports whether handler is the right *type* of runner for req:
+// it has a (non-nil) callback for every non-nil field in req, regardless of whether
+// those callbacks would be satisfied. It lets callers distinguish a transient
+// "a runner of this type exists but cannot currently satisfy the requirements"
+// (e.g. a capability that gates the runner is unavailable or not yet activated
+// across the DON) from a permanent "no runner of this type is configured at all".
+func HandlesRequirements(handler RequirementsHandler, req *sdk.Requirements) bool {
+	if req == nil {
+		return true
+	}
+
+	if len(req.ProtoReflect().GetUnknown()) != 0 {
+		return false
+	}
+
+	if req.Tee != nil && handler.Tee == nil {
+		return false
+	}
+
+	return true
+}

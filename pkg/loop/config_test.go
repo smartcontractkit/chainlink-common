@@ -93,7 +93,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envMeterNumericTenantID:               "42",
 				envMeterEnvironment:                   "production",
 				envMeterZone:                          "wf-zone-a",
-				envMeterNodeID:                        "csa-pubkey-1",
+				envMeterNodeID:                        "clp-cre-wf-zone-a-1",
 
 				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection:  "true",
@@ -225,7 +225,7 @@ var envCfgFull = EnvConfig{
 	MeterNumericTenantID:               "42",
 	MeterEnvironment:                   "production",
 	MeterZone:                          "wf-zone-a",
-	MeterNodeID:                        "csa-pubkey-1",
+	MeterNodeID:                        "clp-cre-wf-zone-a-1",
 
 	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection:    true,
@@ -299,7 +299,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "42", got[envMeterNumericTenantID])
 	assert.Equal(t, "production", got[envMeterEnvironment])
 	assert.Equal(t, "wf-zone-a", got[envMeterZone])
-	assert.Equal(t, "csa-pubkey-1", got[envMeterNodeID])
+	assert.Equal(t, "clp-cre-wf-zone-a-1", got[envMeterNodeID])
 
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])

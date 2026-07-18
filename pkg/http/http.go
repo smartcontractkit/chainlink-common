@@ -29,25 +29,26 @@ type clientConfig interface {
 // NewRestrictedClient returns a secure HTTP Client (queries to certain
 // local addresses are blocked)
 func NewRestrictedClient(cfg clientConfig, lggr logger.Logger) *http.Client {
-	tr := newDefaultTransport()
+	return NewRestrictedClientWithTransportConfig(cfg, lggr, TransportConfig{})
+}
+
+// NewRestrictedClientWithTransportConfig returns a secure HTTP Client with custom
+// connection pool settings.
+func NewRestrictedClientWithTransportConfig(cfg clientConfig, lggr logger.Logger, transportCfg TransportConfig) *http.Client {
+	tr := newDefaultTransport(transportCfg)
 	tr.DialContext = makeRestrictedDialContext(cfg, lggr)
 	return &http.Client{Transport: tr}
 }
 
 // NewUnrestrictedClient returns a HTTP Client with no Transport restrictions
 func NewUnrestrictedClient() *http.Client {
-	unrestrictedTr := newDefaultTransport()
-	return &http.Client{Transport: unrestrictedTr}
+	return NewUnrestrictedClientWithTransportConfig(TransportConfig{})
 }
 
-func newDefaultTransport() *http.Transport {
-	t := http.DefaultTransport.(*http.Transport).Clone()
-	// There are certain classes of vulnerabilities that open up when
-	// compression is enabled. For simplicity, we disable compression
-	// to cut off this class of attacks.
-	// https://www.cyberis.co.uk/2013/08/vulnerabilities-that-just-wont-die.html
-	t.DisableCompression = true
-	return t
+// NewUnrestrictedClientWithTransportConfig returns an HTTP Client with custom
+// connection pool settings and no transport restrictions.
+func NewUnrestrictedClientWithTransportConfig(transportCfg TransportConfig) *http.Client {
+	return &http.Client{Transport: newDefaultTransport(transportCfg)}
 }
 
 type Client interface {

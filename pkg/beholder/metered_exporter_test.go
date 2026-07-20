@@ -134,7 +134,7 @@ func dpForSignal(t *testing.T, ms []metricdata.Metrics, signal string) (metricda
 
 // --- exportSizeHandler ---------------------------------------------------
 
-func TestexportSizeHandler_StoresOutPayloadLength(t *testing.T) {
+func TestExportSizeHandler_StoresOutPayloadLength(t *testing.T) {
 	var holder atomic.Int64
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &holder)
 
@@ -143,7 +143,7 @@ func TestexportSizeHandler_StoresOutPayloadLength(t *testing.T) {
 	assert.Equal(t, int64(1234), holder.Load())
 }
 
-func TestexportSizeHandler_IgnoresNonOutPayload(t *testing.T) {
+func TestExportSizeHandler_IgnoresNonOutPayload(t *testing.T) {
 	var holder atomic.Int64
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &holder)
 
@@ -154,7 +154,7 @@ func TestexportSizeHandler_IgnoresNonOutPayload(t *testing.T) {
 	assert.Equal(t, int64(0), holder.Load())
 }
 
-func TestexportSizeHandler_LastWriteWins(t *testing.T) {
+func TestExportSizeHandler_LastWriteWins(t *testing.T) {
 	// Retries resend the same proto, so each OutPayload reports the same length.
 	// Store means the holder ends at that length, not a multiple of it.
 	var holder atomic.Int64
@@ -168,13 +168,13 @@ func TestexportSizeHandler_LastWriteWins(t *testing.T) {
 	assert.Equal(t, int64(700), holder.Load())
 }
 
-func TestexportSizeHandler_NoHolderInContextIsNoop(t *testing.T) {
+func TestExportSizeHandler_NoHolderInContextIsNoop(t *testing.T) {
 	assert.NotPanics(t, func() {
 		exportSizeHandler{}.HandleRPC(context.Background(), &stats.OutPayload{Length: 5})
 	})
 }
 
-func TestexportSizeHandler_TagAndConnAreInert(t *testing.T) {
+func TestExportSizeHandler_TagAndConnAreInert(t *testing.T) {
 	h := exportSizeHandler{}
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &atomic.Int64{})
 

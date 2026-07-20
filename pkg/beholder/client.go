@@ -520,9 +520,10 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
 	}
 	// All gRPC dial options must go through a single WithDialOption call:
-	// otlpmetricgrpc.WithDialOption overwrites (does not append) cfg.DialOptions,
-	// so multiple calls would clobber each other. Capture the outbound proto size
-	// of each metric export (beholder.export.bytes) here.
+	// each otlpmetricgrpc.WithDialOption call replaces (does not append) the
+	// previously configured dial options, so multiple calls would clobber each
+	// other. Capture the outbound proto size of each metric export
+	// (beholder.export.bytes) here.
 	dialOpts := []grpc.DialOption{
 		grpc.WithStatsHandler(sizeCaptureHandler{}),
 	}

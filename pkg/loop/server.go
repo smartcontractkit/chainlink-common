@@ -27,6 +27,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promutil"
+	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
@@ -381,6 +382,19 @@ func (s *Server) start(opts ...ServerOpt) error {
 	}
 
 	return nil
+}
+
+// MeteringConfig returns the resourcemanager.Config for this server's EnvConfig,
+// injecting the server's own durable emitter (if durable emission is configured)
+// rather than reaching for durableemitter's process-global. Opt-in: only LOOPs
+// that want metering (e.g. capability producers) need call this; LOOPs that
+// never will (e.g. csa_keystore, relayer) can ignore it entirely.
+func (s *Server) MeteringConfig() resourcemanager.Config {
+	var emitter resourcemanager.Emitter
+	if s.durableEmitter != nil {
+		emitter = s.durableEmitter
+	}
+	return s.EnvConfig.MeteringConfig(emitter)
 }
 
 // MustRegister registers the HealthReporter with services.HealthChecker, or exits upon failure.

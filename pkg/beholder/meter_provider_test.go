@@ -25,7 +25,7 @@ func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 	reader := sdkmetric.NewManualReader()
 	cfg := DefaultConfig()
 	cfg.MetricCardinalityLimit = limit
-	cfg.MetricViewsDisabled = true
+	cfg.metricViewsDisabled = true
 
 	mpOpts := append(cfg.metricOptions(), sdkmetric.WithReader(reader))
 	mp := sdkmetric.NewMeterProvider(mpOpts...)

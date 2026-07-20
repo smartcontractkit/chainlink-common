@@ -32,7 +32,6 @@
   "MetricReaderInterval": 1000000000,
   "MetricRetryConfig": null,
   "MetricViews": null,
-  "MetricViewsDisabled": false,
   "MetricCardinalityLimit": 0,
   "MetricCompressor": "gzip",
   "MetricProducers": null,

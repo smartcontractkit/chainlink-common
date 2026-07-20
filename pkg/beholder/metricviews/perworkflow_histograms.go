@@ -29,18 +29,11 @@ var (
 )
 
 // perWorkflowHistogramViews returns bucket-boundary overrides for
-// *.PerWorkflow.* histograms, keyed by unit. Each view also carries
-// globalHighCardinalityDeny so the attribute deny-list travels with the
-// bucket override: see the ordering note on DefaultViews for why a view
-// registered here would otherwise silently bypass the deny-filter views
-// below it.
-//
-// The unit-less (count) view matches any unit and only acts as a fallback
-// because the more specific By/s/gas views are registered first: the OTel
-// SDK dedupes views that resolve to the same stream identity (name/
-// description/unit/kind) and keeps only the first match, so an instrument
-// with unit "By" is already claimed by perWorkflowBytesBoundaries by the
-// time the count view is evaluated for it.
+// *.PerWorkflow.* histograms, keyed by unit. Each view carries
+// globalHighCardinalityDeny so the deny-list travels with the bucket override
+// (see the view-precedence rule in the package doc). The unit-less count view
+// is registered last and acts as a fallback: the more specific By/s/{gas} views
+// win for their units, and the count view claims every other unit.
 func perWorkflowHistogramViews() []sdkmetric.View {
 	return []sdkmetric.View{
 		sdkmetric.NewView(

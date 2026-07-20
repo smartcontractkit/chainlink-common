@@ -6,23 +6,15 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-// mergeMetricViews builds the view list passed to sdkmetric.WithView.
-//
-// Final order:
-//  1. cfg.MetricViews — caller overrides (e.g. chainlink metricViews() histogram buckets)
-//  2. metricviews.DefaultViews() — attribute filters for high-cardinality labels
-//
-// Caller views must come first: when multiple views match an instrument and
-// resolve to the same output stream (same name/description/unit/kind), the SDK
-// keeps only the first in registration order and drops the rest. If the default
-// "*" denylist ran first, caller histogram-bucket views would be silently dropped.
-//
-// A consequence is that filters do not compose: once a caller view wins for a
-// stream, the default attribute filter no longer applies to it. That is acceptable
-// because caller views target metrics that do not emit the denied labels; capability
-// trigger metrics carry no caller view and fall through to the defaults below.
+// mergeMetricViews builds the view list passed to sdkmetric.WithView: caller
+// cfg.MetricViews first, then metricviews.DefaultViews(). Caller views must come
+// first so a caller's histogram-bucket override wins over the default "*" deny
+// view for the same instrument (see the view-precedence rule in the metricviews
+// package doc). A caller view's attribute filter, if any, therefore replaces
+// rather than composes with the defaults—acceptable because caller views target
+// metrics that do not emit the denied labels.
 func mergeMetricViews(cfg Config) []sdkmetric.View {
-	if cfg.MetricViewsDisabled {
+	if cfg.metricViewsDisabled {
 		return cfg.MetricViews
 	}
 	return append(append([]sdkmetric.View{}, cfg.MetricViews...), metricviews.DefaultViews()...)

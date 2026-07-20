@@ -40,8 +40,12 @@ type Config struct {
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View
-	// MetricViewsDisabled skips DefaultViews attribute filtering (for tests).
-	MetricViewsDisabled bool
+	// metricViewsDisabled skips metricviews.DefaultViews so mergeMetricViews
+	// returns only the caller's MetricViews. It is a test seam for isolating
+	// behavior (e.g. cardinality limits) from the default bucket/deny views;
+	// production callers control views via MetricViews. Unexported so it is not
+	// public API and does not appear in marshaled Config.
+	metricViewsDisabled bool
 	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
 	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
 	MetricCardinalityLimit int

@@ -61,6 +61,7 @@ func newTestExec(maxPending int, stub ExecutionHelper) *execution[*sdkpb.Executi
 		ctx:                 context.Background(),
 		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
 		secretsResponses:    make(map[int32]<-chan *secretsResponse),
+		usedCallbackIDs:     make(map[string]bool),
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter[int](maxPending),
 		executor:            stub,
 	}

@@ -62,17 +62,17 @@ func TestConfig_metricViews_appendsDefaultsAfterCallerViews(t *testing.T) {
 	cfg.MetricViews = []sdkmetric.View{callerView}
 
 	views := cfg.metricViews()
-	require.GreaterOrEqual(t, len(views), len(metricviews.DefaultViews(nil))+1)
+	require.GreaterOrEqual(t, len(views), len(metricviews.Default(nil))+1)
 }
 
 func TestConfig_metricViews_includesDenylistDefaultView(t *testing.T) {
 	t.Parallel()
 
 	cfg := DefaultConfig()
-	cfg.MetricViewsAttributeDenylist = []string{"event_id"}
+	cfg.MetricViewsDenyAttributes = []string{"event_id"}
 
 	views := cfg.metricViews()
-	require.Len(t, views, len(metricviews.DefaultViews(cfg.MetricViewsAttributeDenylist)))
+	require.Len(t, views, len(metricviews.Default(cfg.MetricViewsDenyAttributes)))
 	require.NotEmpty(t, views)
 }
 

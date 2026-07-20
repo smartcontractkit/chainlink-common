@@ -10,16 +10,16 @@ import (
 //
 // Final order:
 //  1. cfg.MetricViews — caller overrides (e.g. chainlink metricViews() histogram buckets)
-//  2. metricviews.DefaultViews() — attribute filters for high-cardinality labels
+//  2. metricviews.Default() — attribute filters for high-cardinality labels
 //
 // Caller views must come first: when multiple views match an instrument and
 // resolve to the same output stream (same name/description/unit/kind), the SDK
 // keeps only the first in registration order and drops the rest.
 func (cfg Config) metricViews() []sdkmetric.View {
-	if len(cfg.MetricViewsAttributeDenylist) == 0 {
+	if len(cfg.MetricViewsDenyAttributes) == 0 {
 		return cfg.MetricViews
 	}
-	return append(cfg.MetricViews, metricviews.DefaultViews(cfg.MetricViewsAttributeDenylist)...)
+	return append(cfg.MetricViews, metricviews.Default(cfg.MetricViewsDenyAttributes)...)
 }
 
 // metricOptions returns cfg-derived sdkmetric.Option values (metric views and the

@@ -15,14 +15,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-func TestDefaultViews_emptyDenylist(t *testing.T) {
+func TestDefault_emptyDenylist(t *testing.T) {
 	t.Parallel()
-	assert.Nil(t, metricviews.DefaultViews(nil))
+	assert.Nil(t, metricviews.Default(nil))
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews(nil)...),
+		sdkmetric.WithView(metricviews.Default(nil)...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 
@@ -47,13 +47,13 @@ func TestDefaultViews_emptyDenylist(t *testing.T) {
 	assert.Contains(t, keys, attribute.Key("workflow_execution_id"))
 }
 
-func TestDefaultViews_dropsDeniedAttributes(t *testing.T) {
+func TestDefault_dropsDeniedAttributes(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews([]string{"event_id"})...),
+		sdkmetric.WithView(metricviews.Default([]string{"event_id"})...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 

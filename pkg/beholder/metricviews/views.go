@@ -5,7 +5,7 @@
 // may supply additional views—typically histogram bucket Aggregation overrides
 // for specific instrument names. Beholder merges caller views before these
 // defaults (see beholder.Config.metricViews); callers do not need to invoke
-// DefaultViews themselves.
+// Default themselves.
 //
 // An instrument may match multiple views. When several matching views resolve
 // to the same output stream (same name/description/unit/kind), the SDK keeps
@@ -20,10 +20,10 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
 
-// DefaultViews returns deny-only attribute-filter views appended after
+// Default returns deny-only attribute-filter views appended after
 // caller-supplied MetricViews by beholder.Config.metricViews. When denyKeys is
 // empty, no views are returned and no attributes are stripped.
-func DefaultViews(denyKeys []string) []sdkmetric.View {
+func Default(denyKeys []string) []sdkmetric.View {
 	if len(denyKeys) == 0 {
 		return nil
 	}

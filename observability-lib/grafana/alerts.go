@@ -76,6 +76,7 @@ type MathExpression struct {
 
 type ResampleExpression struct {
 	Expression  string
+	Window      string
 	DownSampler expr.TypeResampleDownsampler
 	UpSampler   expr.TypeResampleUpsampler
 }
@@ -137,7 +138,7 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 		DatasourceUid("__expr__")
 
 	if options.ReduceExpression != nil {
-		reduceBuider := expr.NewTypeReduceBuilder().
+		reduceBuilder := expr.NewTypeReduceBuilder().
 			RefId(options.RefID).
 			Expression(options.ReduceExpression.Expression).
 			IntervalMs(*options.IntervalMs).
@@ -145,39 +146,49 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 			Reducer(options.ReduceExpression.Reducer)
 
 		if options.ReduceExpression.ReduceSettings != nil && options.ReduceExpression.ReduceSettings.Mode != "" {
-			reduceBuider.Settings(newReduceSettingsOptions(*options.ReduceExpression.ReduceSettings))
+			reduceBuilder.Settings(newReduceSettingsOptions(*options.ReduceExpression.ReduceSettings))
 		}
-		res.Model(reduceBuider)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeReduce(reduceBuilder))
 	}
 
 	if options.MathExpression != nil {
-		res.Model(expr.NewTypeMathBuilder().
-			RefId(options.RefID).
-			Expression(options.MathExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeMath(expr.NewTypeMathBuilder().
+				RefId(options.RefID).
+				Expression(options.MathExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints),
+			))
 	}
 
 	if options.ResampleExpression != nil {
-		res.Model(expr.NewTypeResampleBuilder().
-			RefId(options.RefID).
-			Expression(options.ResampleExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints).
-			Downsampler(options.ResampleExpression.DownSampler).
-			Upsampler(options.ResampleExpression.UpSampler),
-		)
+		window := options.ResampleExpression.Window
+		if window == "" {
+			// Window is required (>= 1 char) by the SDK; default to the relative time range.
+			window = "10m"
+		}
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeResample(expr.NewTypeResampleBuilder().
+				RefId(options.RefID).
+				Expression(options.ResampleExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints).
+				Window(window).
+				Downsampler(options.ResampleExpression.DownSampler).
+				Upsampler(options.ResampleExpression.UpSampler),
+			))
 	}
 
 	if options.ThresholdExpression != nil {
-		res.Model(expr.NewTypeThresholdBuilder().
-			RefId(options.RefID).
-			Expression(options.ThresholdExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints).
-			Conditions(newThresholdConditionsOptions(options.ThresholdExpression.ThresholdConditionsOptions)),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeThreshold(expr.NewTypeThresholdBuilder().
+				RefId(options.RefID).
+				Expression(options.ThresholdExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints).
+				Conditions(newThresholdConditionsOptions(options.ThresholdExpression.ThresholdConditionsOptions)),
+			))
 	}
 
 	return res

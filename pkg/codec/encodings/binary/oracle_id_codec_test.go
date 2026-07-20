@@ -68,7 +68,7 @@ func TestOracleID(t *testing.T) {
 
 	t.Run("GetType returns correct type", func(t *testing.T) {
 		i := &binary.OracleID{}
-		assert.Equal(t, i.GetType(), reflect.TypeOf(commontypes.OracleID(0)))
+		assert.Equal(t, i.GetType(), reflect.TypeFor[commontypes.OracleID]())
 	})
 
 	t.Run("Size returns correct size", func(t *testing.T) {

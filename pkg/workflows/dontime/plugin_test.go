@@ -244,7 +244,7 @@ func TestPlugin_Outcome_SequenceNumberHandling(t *testing.T) {
 	makeObservations := func(t *testing.T, timestamp int64, requests map[string]int64, numNodes int) []types.AttributedObservation {
 		t.Helper()
 		aos := make([]types.AttributedObservation, numNodes)
-		for i := 0; i < numNodes; i++ {
+		for i := range numNodes {
 			obs := &pb.Observation{
 				Timestamp: timestamp + int64(i),
 				Requests:  requests,
@@ -563,7 +563,7 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 	timestamp := time.Now().UnixMilli()
 	makeObservations := func(limitByBatchSize bool) []types.AttributedObservation {
 		aos := make([]types.AttributedObservation, 4)
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			obs := &pb.Observation{
 				Timestamp:            timestamp + int64(i),
 				Requests:             map[string]int64{},

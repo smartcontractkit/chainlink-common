@@ -138,6 +138,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.False(t, cfg.VaultGetSecretsShareAggregationIncludesPublicKeys.DefaultValue)
 	assert.False(t, cfg.VaultOwnerAddressCanonicalizationEnabled.DefaultValue)
 	assert.False(t, cfg.VaultJSONOmitUnpopulatedEnabled.DefaultValue)
+	assert.False(t, cfg.VaultSignedResponseRequestIDEnabled.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)
 	assert.Equal(t, 48*time.Hour, cfg.PerOrg.ZeroBalancePruningTimeout.DefaultValue)
@@ -469,8 +470,8 @@ func TestFlowchartComplete(t *testing.T) {
 	var addKeys func(a any)
 	addKeys = func(a any) {
 		if v := reflect.ValueOf(a).Elem(); v.Type().Kind() == reflect.Struct {
-			for i := range v.NumField() {
-				f := v.Field(i)
+			for _, f := range v.Fields() {
+				f := f
 				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
 					keys = append(keys, gk.GetKey())
 					continue

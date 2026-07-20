@@ -40,6 +40,8 @@ type Client interface {
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
+	// GetLedgers returns a paginated range of ledgers starting at a height/cursor.
+	GetLedgers(ctx context.Context, req GetLedgersRequest) (GetLedgersResponse, error)
 	// GetEvents fetches contract events matching the provided ledger range, filters, and pagination.
 	GetEvents(ctx context.Context, req GetEventsRequest) (GetEventsResponse, error)
 	// GetTransaction fetches an on-chain transaction by hash.
@@ -232,6 +234,60 @@ type SubmitTransactionResponse struct {
 	BlockTimestamp *uint64
 }
 
+// LedgerPaginationOptions controls GetLedgers paging. Mirrors the native
+// go-stellar-sdk rpc.LedgerPaginationOptions.
+type LedgerPaginationOptions struct {
+	// Cursor is the paging cursor from a previous GetLedgersResponse.
+	// Mutually exclusive with GetLedgersRequest.StartLedger (native RPC rejects both being set).
+	Cursor string
+	// Limit is the maximum number of ledgers to return.
+	Limit uint32
+}
+
+// GetLedgersRequest fetches a paginated range of ledgers. Mirrors the native
+// go-stellar-sdk rpc.GetLedgersRequest (the XDR format is always base64).
+type GetLedgersRequest struct {
+	// StartLedger is the first ledger sequence to fetch.
+	// Required unless Pagination.Cursor is set. Mutually exclusive with Pagination.Cursor
+	// (native RPC rejects both being set).
+	StartLedger uint32
+	// Pagination optionally sets the cursor and limit.
+	Pagination *LedgerPaginationOptions
+}
+
+// LedgerInfo is a single ledger returned by GetLedgers. Mirrors the native
+// go-stellar-sdk rpc.LedgerInfo (hex hash, base64 XDR blobs).
+type LedgerInfo struct {
+	// Hash is the hex-encoded ledger hash.
+	Hash string
+	// Sequence is the ledger sequence number.
+	Sequence uint32
+	// LedgerCloseTime is the unix timestamp when the ledger closed.
+	LedgerCloseTime int64
+	// LedgerHeaderXDR is the base64-encoded LedgerHeaderHistoryEntry XDR.
+	LedgerHeaderXDR string
+	// LedgerMetadataXDR is the base64-encoded LedgerCloseMeta XDR.
+	LedgerMetadataXDR string
+}
+
+// GetLedgersResponse holds a paginated range of ledgers. Mirrors the native
+// go-stellar-sdk rpc.GetLedgersResponse.
+type GetLedgersResponse struct {
+	// Ledgers holds the returned ledgers (may be fewer than the limit requested).
+	Ledgers []LedgerInfo
+	// LatestLedger is the latest ledger sequence known to the RPC.
+	LatestLedger uint32
+	// LatestLedgerCloseTime is the close time of the latest ledger.
+	LatestLedgerCloseTime int64
+	// OldestLedger is the oldest ledger retained by the RPC.
+	OldestLedger uint32
+	// OldestLedgerCloseTime is the close time of the oldest retained ledger.
+	OldestLedgerCloseTime int64
+	// Cursor is the paging cursor for the next page; pass as Pagination.Cursor
+	// on a subsequent GetLedgersRequest.
+	Cursor string
+}
+
 // GetLatestLedgerResponse holds the current ledger state.
 type GetLatestLedgerResponse struct {
 	// Hash is the hex-encoded latest ledger hash.
@@ -244,7 +300,7 @@ type GetLatestLedgerResponse struct {
 	LedgerCloseTime int64
 	// LedgerHeaderXDR is the base64-encoded LedgerHeader XDR for the latest ledger.
 	LedgerHeaderXDR string
-	// LedgerMetadataXDR is the base64-encoded LedgerCloseMetaV2 XDR for the latest ledger.
+	// LedgerMetadataXDR is the base64-encoded LedgerCloseMeta XDR for the latest ledger.
 	LedgerMetadataXDR string
 }
 

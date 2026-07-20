@@ -789,7 +789,7 @@ func ConvertGetTransactionReplyFromProto(p *GetTransactionReply) (*solana.GetTra
 	}
 	var bt *solana.UnixTimeSeconds
 	if p.BlockTime != nil {
-		bt = ptrUnix(solana.UnixTimeSeconds(*p.BlockTime))
+		bt = new(solana.UnixTimeSeconds(*p.BlockTime))
 	}
 
 	return &solana.GetTransactionReply{
@@ -901,7 +901,7 @@ func ConvertGetBlockOptsReplyFromProto(p *GetBlockReply) (*solana.GetBlockReply,
 
 	var bt *solana.UnixTimeSeconds
 	if p.BlockTime != nil {
-		bt = ptrUnix(solana.UnixTimeSeconds(*p.BlockTime))
+		bt = new(solana.UnixTimeSeconds(*p.BlockTime))
 	}
 
 	return &solana.GetBlockReply{
@@ -1640,4 +1640,5 @@ func ptrUint64(v uint64) *uint64 {
 	return &v
 }
 
-func ptrUnix(v solana.UnixTimeSeconds) *solana.UnixTimeSeconds { return &v }
+//go:fix inline
+func ptrUnix(v solana.UnixTimeSeconds) *solana.UnixTimeSeconds { return new(v) }

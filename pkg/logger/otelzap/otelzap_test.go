@@ -410,7 +410,7 @@ func Test_otelAttrEncoder_AddArray(t *testing.T) {
 		{
 			name:     "mixed array",
 			key:      "mixed",
-			array:    &testMixedArray{data: []interface{}{"hello", 42, true}},
+			array:    &testMixedArray{data: []any{"hello", 42, true}},
 			expected: attribute.StringSlice("mixed", []string{"hello", "42", "true"}),
 		},
 		{
@@ -495,7 +495,7 @@ func (t *testBoolArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
 }
 
 type testMixedArray struct {
-	data []interface{}
+	data []any
 }
 
 func (t *testMixedArray) MarshalLogArray(enc zapcore.ArrayEncoder) error {
@@ -567,7 +567,7 @@ func TestCallerInfo(t *testing.T) {
 					Attributes []struct {
 						Key   string `json:"key"`
 						Value struct {
-							Value interface{} `json:"value"`
+							Value any `json:"value"`
 						} `json:"value"`
 					} `json:"attributes"`
 				}

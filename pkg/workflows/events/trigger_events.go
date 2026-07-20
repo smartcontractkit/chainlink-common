@@ -62,27 +62,34 @@ func EmitTriggerExecutionStarted(ctx context.Context, labeler custmsg.MessageEmi
 		Timestamp: time.Now().Format(time.RFC3339),
 	}
 
+	// creInfo lazily allocates event.CreInfo so each optional field below can
+	// be set independently of whether KeyDonID was present/parseable.
+	creInfo := func() *workflowsevents.CreInfo {
+		if event.CreInfo == nil {
+			event.CreInfo = &workflowsevents.CreInfo{}
+		}
+		return event.CreInfo
+	}
+
 	// Optional; downstream consumers could infer from csa public key,
 	// as of now Beholder/ChiP autohydrates csa public key
 	if donIDStr, exists := labels[KeyDonID]; exists {
 		if donID, err := strconv.ParseInt(donIDStr, 10, 32); err == nil {
-			event.CreInfo = &workflowsevents.CreInfo{
-				DonID:      int32(donID),
-				DonVersion: labels[KeyDonVersion],
-			}
+			creInfo().DonID = int32(donID)
+			creInfo().DonVersion = labels[KeyDonVersion]
 		}
 	}
 
 	if workflowRegistryChainSelector, exists := labels[KeyWorkflowRegistryChainSelector]; exists {
-		event.CreInfo.WorkflowRegistryChain = workflowRegistryChainSelector
+		creInfo().WorkflowRegistryChain = workflowRegistryChainSelector
 	}
 
 	if workflowRegistryAddress, exists := labels[KeyWorkflowRegistryAddress]; exists {
-		event.CreInfo.WorkflowRegistryAddress = workflowRegistryAddress
+		creInfo().WorkflowRegistryAddress = workflowRegistryAddress
 	}
 
 	if engineVersion, exists := labels[KeyEngineVersion]; exists {
-		event.CreInfo.EngineVersion = engineVersion
+		creInfo().EngineVersion = engineVersion
 	}
 
 	b, err := proto.Marshal(event)

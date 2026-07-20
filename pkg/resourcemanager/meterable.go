@@ -10,14 +10,15 @@ import (
 // resources (trigger registrations, workflow specs, log filters). A producer
 // registers itself with a ResourceManager (see ResourceManager.Register) so it
 // is polled once per snapshot tick for the absolute state of its currently
-// active resources, in addition to emitting lifecycle edges inline via
-// EmitMeterRecord.
+// active resources, in addition to emitting request-time deltas inline via
+// EmitDelta / EmitUsage.
 type Meterable interface {
 	// ResourceIdentity returns the producer's base identity: the coarse
 	// dimensions (product, tenant, numeric_tenant_id, environment, zone, don, service) plus
 	// the service-level resource_pool / resource_pool_id. Per-resource billing
-	// fields (resource_type/resource_id/org_id/event_id/value) are carried by
-	// Utilizations on MeterRecord and MeterSnapshot.
+	// fields (resource_type/resource_id/org_id/value) are carried by
+	// Utilizations on MeterRecord and MeterSnapshot; event_id is stamped by the
+	// ResourceManager at emit time.
 	ResourceIdentity() ResourceIdentity
 
 	// GetUtilization returns the current level of the producer's currently
@@ -36,7 +37,8 @@ type Meterable interface {
 
 // SnapshotEntry is the current level of one active resource at a snapshot tick.
 // Identity is the base resource identity, and Utilizations carries one or more
-// billed dimensions for that resource (resource_type/resource_id/org_id/event_id/value).
+// billed dimensions for that resource (resource_type/resource_id/org_id/value);
+// event_id is stamped by the ResourceManager at emit time.
 type SnapshotEntry struct {
 	Identity     ResourceIdentity
 	Utilizations []*meteringpb.Utilization
@@ -65,6 +67,20 @@ type DeploymentIdentity struct {
 	// look up the node's CSA key in the workflow registry. The CSA key itself is
 	// carried separately as the node_csa_key event attribute.
 	NodeID string
+}
+
+// Config is everything a LOOP producer needs to wire metering from its resolved
+// process environment: the ResourceManagerConfig for NewResourceManager, plus
+// the DeploymentIdentity used to build base ResourceIdentities via
+// NewBaseIdentity. See loop.EnvConfig.MeteringConfig, which builds one of these
+// from a resolved LOOP environment so the mapping lives in one place instead
+// of being copy-pasted into every producer main.
+type Config struct {
+	ResourceManagerConfig
+
+	// DeploymentIdentity carries the static deployment + node identity
+	// dimensions resolved from the LOOP environment.
+	DeploymentIdentity DeploymentIdentity
 }
 
 // DonIdentity captures DON-specific identity dimensions as one unit.
@@ -154,4 +170,42 @@ func (r ResourceIdentity) NodeID() string {
 		return ""
 	}
 	return r.Don.NodeID
+}
+
+// UnsetProduct is a non-silent default product for misconfigured producers.
+const UnsetProduct = "unset"
+
+// NewBaseIdentity builds a producer's base ResourceIdentity from its static
+// deployment identity plus the service and resource-pool constants. Product
+// falls back to UnsetProduct when empty, and the Don sub-identity is set only
+// when there is a node ID to carry. DON ID is stamped separately via WithDonID
+// once the producer knows it (e.g. after Initialise for LOOP plugins).
+func NewBaseIdentity(dep DeploymentIdentity, service, resourcePool string) ResourceIdentity {
+	product := dep.Product
+	if product == "" {
+		product = UnsetProduct
+	}
+	id := ResourceIdentity{
+		Product:         product,
+		Tenant:          dep.Tenant,
+		NumericTenantID: dep.NumericTenantID,
+		Environment:     dep.Environment,
+		Zone:            dep.Zone,
+		Service:         service,
+		ResourcePool:    resourcePool,
+	}
+	if dep.NodeID != "" {
+		id.Don = &DonIdentity{NodeID: dep.NodeID}
+	}
+	return id
+}
+
+// WithDonID returns a copy of r stamped with donID (empty donID is a no-op),
+// necessary for any resource that is scoped to a DON.
+func (r ResourceIdentity) WithDonID(donID string) ResourceIdentity {
+	if donID == "" {
+		return r
+	}
+	r.Don = &DonIdentity{DonID: donID, NodeID: r.NodeID()}
+	return r
 }

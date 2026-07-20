@@ -79,7 +79,7 @@ func TestSemaphore_BackpressureBlocksCallN(t *testing.T) {
 	ctx := t.Context()
 
 	// Fill semaphore.
-	for i := int32(0); i < max; i++ {
+	for i := range int32(max) {
 		require.NoError(t, exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: i}))
 	}
 
@@ -126,9 +126,9 @@ func TestSemaphore_HighThroughputBounded(t *testing.T) {
 	ctx := t.Context()
 	var callId int32
 
-	for b := 0; b < batches; b++ {
+	for range batches {
 		ids := make([]int32, callsPerBatch)
-		for i := 0; i < callsPerBatch; i++ {
+		for i := range callsPerBatch {
 			ids[i] = callId
 			require.NoError(t, exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: callId}))
 			callId++
@@ -155,7 +155,7 @@ func TestSemaphore_ContextCancelUnblocksCall(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 
 	// Fill semaphore.
-	for i := int32(0); i < max; i++ {
+	for i := range int32(max) {
 		require.NoError(t, exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: i}))
 	}
 
@@ -190,9 +190,9 @@ func TestSemaphore_SlotsRecycledCorrectly(t *testing.T) {
 
 	ctx := t.Context()
 
-	for r := 0; r < rounds; r++ {
+	for r := range rounds {
 		ids := make([]int32, max)
-		for i := int32(0); i < max; i++ {
+		for i := range int32(max) {
 			id := int32(r*max) + i
 			ids[i] = id
 			require.NoError(t, exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: id}))
@@ -225,7 +225,7 @@ func TestSemaphore_MapCleanedOnAwait(t *testing.T) {
 
 	for i := int32(0); i < total; i += max {
 		ids := make([]int32, max)
-		for j := int32(0); j < max; j++ {
+		for j := range int32(max) {
 			id := i + j
 			ids[j] = id
 			require.NoError(t, exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: id}))
@@ -261,9 +261,9 @@ func TestSemaphore_ConcurrentCallAndAwait(t *testing.T) {
 
 	// Simulate sequential call-then-await pattern from a single WASM thread
 	// (the real case). We run it in parallel workers to stress-test the lock.
-	for w := 0; w < workers; w++ {
+	for w := range workers {
 		wg.Go(func() {
-			for i := 0; i < callsPerWorker; i++ {
+			for i := range callsPerWorker {
 				id := int32(w*callsPerWorker + i)
 				err := exec.callCapAsync(ctx, &sdkpb.CapabilityRequest{CallbackId: id})
 				if err != nil {

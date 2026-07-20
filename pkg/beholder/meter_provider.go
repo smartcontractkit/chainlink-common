@@ -28,8 +28,14 @@ func mergeMetricViews(cfg Config) []sdkmetric.View {
 	return append(append([]sdkmetric.View{}, cfg.MetricViews...), metricviews.DefaultViews()...)
 }
 
-func appendMeterProviderOptions(cfg Config, opts ...sdkmetric.Option) []sdkmetric.Option {
-	opts = append(opts, sdkmetric.WithView(mergeMetricViews(cfg)...))
+// metricOptions returns cfg-derived sdkmetric.Option values (the merged
+// MetricViews and the SDK per-instrument cardinality limit). Callers append
+// reader/resource options at the call site.
+func (cfg Config) metricOptions() []sdkmetric.Option {
+	var opts []sdkmetric.Option
+	if views := mergeMetricViews(cfg); len(views) > 0 {
+		opts = append(opts, sdkmetric.WithView(views...))
+	}
 	if cfg.MetricCardinalityLimit > 0 {
 		opts = append(opts, sdkmetric.WithCardinalityLimit(cfg.MetricCardinalityLimit))
 	}

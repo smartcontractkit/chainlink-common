@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
@@ -177,12 +178,15 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
-	TelemetryMetricCardinalityLimit    int
-	TelemetryPrometheusBridgeEnabled   bool
-	TelemetryPrometheusBridgePrefixes  []string
-	TelemetryLogCompressor             string
-	MeterRecordsEnabled                bool
-	MeterSnapshotsEnabled              bool
+	// TelemetryMetricCardinalityLimit is nil when unset, so AsCmdEnv can
+	// distinguish "no opinion" (child applies its own default) from an
+	// explicit 0, which disables the limit.
+	TelemetryMetricCardinalityLimit   *int
+	TelemetryPrometheusBridgeEnabled  bool
+	TelemetryPrometheusBridgePrefixes []string
+	TelemetryLogCompressor            string
+	MeterRecordsEnabled               bool
+	MeterSnapshotsEnabled             bool
 
 	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /
 	// MeterZone / MeterNodeID are
@@ -292,8 +296,8 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
-	if e.TelemetryMetricCardinalityLimit != 0 {
-		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(e.TelemetryMetricCardinalityLimit))
+	if e.TelemetryMetricCardinalityLimit != nil {
+		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
 	}
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
@@ -540,9 +544,13 @@ func (e *EnvConfig) parse() error {
 			if err != nil {
 				return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCardinalityLimit, err)
 			}
-			e.TelemetryMetricCardinalityLimit = limit
+			if limit < 0 {
+				return fmt.Errorf("failed to parse %s: value %d must not be negative (0 disables the limit)", envTelemetryMetricCardinalityLimit, limit)
+			}
+			e.TelemetryMetricCardinalityLimit = &limit
 		} else {
-			e.TelemetryMetricCardinalityLimit = 10000
+			defaultLimit := beholder.DefaultMetricCardinalityLimit
+			e.TelemetryMetricCardinalityLimit = &defaultLimit
 		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {

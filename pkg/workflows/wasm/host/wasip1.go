@@ -247,6 +247,11 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 			return ErrnoInval
 		}
 
+		// bufLen is guest-controlled; a negative value would panic make below.
+		if bufLen < 0 {
+			return ErrnoInval
+		}
+
 		var (
 			// Fix the random source with a hardcoded seed
 			seed       = cfg.Determinism.Seed

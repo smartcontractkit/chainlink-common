@@ -61,7 +61,7 @@ func writeDefaults(r io.Reader, w *io.PipeWriter) {
 
 var (
 	textUnmarshaler     encoding.TextUnmarshaler
-	textUnmarshalerType = reflect.TypeOf(&textUnmarshaler).Elem()
+	textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
 )
 
 func nilToZero(val reflect.Value) {
@@ -80,8 +80,8 @@ func nilToZero(val reflect.Value) {
 		if val.Type().Implements(textUnmarshalerType) {
 			return // skip values unmarshaled from strings
 		}
-		for i := 0; i < val.NumField(); i++ {
-			f := val.Field(i)
+		for _, f := range val.Fields() {
+			f := f
 			nilToZero(f)
 		}
 		return

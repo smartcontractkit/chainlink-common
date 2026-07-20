@@ -28,7 +28,7 @@ func (b PlainHexBytes) String() string {
 // UnmarshalJSON implements json.Unmarshaler.
 func (b *PlainHexBytes) UnmarshalJSON(input []byte) (err error) {
 	if !isString(input) {
-		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.TypeOf((PlainHexBytes)(nil))}
+		return &json.UnmarshalTypeError{Value: "non-string", Type: reflect.TypeFor[PlainHexBytes]()}
 	}
 	err = b.UnmarshalText(input[1 : len(input)-1])
 	if err != nil {

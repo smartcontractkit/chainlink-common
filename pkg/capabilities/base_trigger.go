@@ -64,9 +64,9 @@ type EventStore interface {
 type BaseTriggerMetrics interface {
 	IncActiveTriggers()
 	DecActiveTriggers()
-	IncRetry(triggerID, eventID string)
-	IncAck(triggerID, eventID string)
-	ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int)
+	IncRetry(triggerID string)
+	IncAck(triggerID string)
+	ObserveTimeToAck(triggerID string, d time.Duration, attempts int)
 	IncInboxMissing(triggerID string)
 	IncInboxFull(triggerID string)
 	// IncAckError counts ACK paths that return an error (e.g. store delete failure). reason is a stable identifier for dashboards.
@@ -76,7 +76,7 @@ type BaseTriggerMetrics interface {
 	// AddPendingEvents adjusts the live gauge of events awaiting ACK. Positive on insert, negative on ACK/unregister.
 	AddPendingEvents(delta int64)
 	// IncStoppedResending records a gauge (Unix seconds) when the node exhausted max retries and stopped resending.
-	IncStoppedResending(triggerID, eventID string, attempts int)
+	IncStoppedResending(triggerID string, attempts int)
 }
 
 // BaseTriggerCapability keeps track of trigger registrations and handles resending events until
@@ -500,8 +500,8 @@ func (b *BaseTriggerCapability[T]) AckEvent(ctx context.Context, triggerId strin
 			"capabilityID", b.capabilityId, "triggerID", triggerId, "eventID", eventId,
 			"attempts", attempts, "firstAt", firstAt)
 		b.metrics.IncAckMemoryOutcome(ackMemoryOutcomeHit)
-		b.metrics.IncAck(triggerId, eventId)
-		b.metrics.ObserveTimeToAck(triggerId, eventId, time.Since(firstAt), attempts)
+		b.metrics.IncAck(triggerId)
+		b.metrics.ObserveTimeToAck(triggerId, time.Since(firstAt), attempts)
 		b.metrics.AddPendingEvents(-1)
 	} else {
 		b.lggr.Infow("base trigger ACK: event not found in memory (reconciling store)",
@@ -683,7 +683,7 @@ func (b *BaseTriggerCapability[T]) emitStoppedResending(ev stoppedResendingEvent
 		"capabilityID", b.capabilityId, "triggerID", ev.triggerID, "eventID", ev.eventID,
 		"attempts", ev.attempts, "maxRetries", maxRetries,
 		"reason", "max_retries_exhausted")
-	b.metrics.IncStoppedResending(ev.triggerID, ev.eventID, ev.attempts)
+	b.metrics.IncStoppedResending(ev.triggerID, ev.attempts)
 	b.metrics.AddPendingEvents(-1)
 }
 
@@ -698,10 +698,7 @@ func (b *BaseTriggerCapability[T]) pruneLoop() {
 		if age <= 0 {
 			age = 24 * time.Hour
 		}
-		tick := age / 4
-		if tick < minPruneInterval {
-			tick = minPruneInterval
-		}
+		tick := max(age/4, minPruneInterval)
 
 		timer := time.NewTimer(tick)
 		select {
@@ -792,7 +789,7 @@ func (b *BaseTriggerCapability[T]) trySend(event PendingEvent) {
 	lastSent := rec.LastSentAt
 	b.mu.Unlock()
 
-	b.metrics.IncRetry(event.TriggerId, event.EventId)
+	b.metrics.IncRetry(event.TriggerId)
 	if err := b.store.UpdateDelivery(b.ctx, event.TriggerId, event.EventId, lastSent, attempts); err != nil {
 		b.lggr.Errorf("failed to persist delivery update for trigger=%s event=%s: %v", event.TriggerId, event.EventId, err)
 	}

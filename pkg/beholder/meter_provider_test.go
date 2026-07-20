@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-func TestAppendMeterProviderOptions_cardinalityLimit(t *testing.T) {
+func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 	t.Parallel()
 
 	const (
@@ -27,7 +27,7 @@ func TestAppendMeterProviderOptions_cardinalityLimit(t *testing.T) {
 	cfg.MetricCardinalityLimit = limit
 	cfg.MetricViewsDisabled = true
 
-	mpOpts := appendMeterProviderOptions(cfg, sdkmetric.WithReader(reader))
+	mpOpts := append(cfg.metricOptions(), sdkmetric.WithReader(reader))
 	mp := sdkmetric.NewMeterProvider(mpOpts...)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 

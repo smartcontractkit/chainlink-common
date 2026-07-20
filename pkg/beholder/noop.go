@@ -109,7 +109,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 	if err != nil {
 		return NewNoopClient(), err
 	}
-	mpOpts := appendMeterProviderOptions(cfg.Config,
+	mpOpts := append(cfg.Config.metricOptions(),
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				metricExporter,

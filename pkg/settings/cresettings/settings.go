@@ -52,12 +52,14 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                     Int(1000),
-	WorkflowExecutionConcurrencyLimit: Int(1000),
-	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:     Bool(true),
-	VaultJWTAuthEnabled:               Bool(false),
+	WorkflowLimit:                               Int(1000),
+	WorkflowExecutionConcurrencyLimit:           Int(1000),
+	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:               Bool(true),
+	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
+	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
+	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
 	PropagateOrgIDInRequestMetadata:                   Bool(false),
@@ -67,6 +69,8 @@ var Default = Schema{
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	VaultSignedResponseRequestIDEnabled:               Bool(false),
+	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -181,6 +185,10 @@ var Default = Schema{
 		// must ensure that we are overriding the default in the onchain configuration for the contract.
 		VaultCiphertextSizeLimit: Size(2 * config.KByte),
 		VaultSecretsLimit:        Int(100),
+
+		// Default deny: no zone-b workflow owner may read vault secrets unless
+		// explicitly allowlisted via owner.<addr>.PerOwner.VaultZoneBGetSecretsAllowed.
+		VaultZoneBGetSecretsAllowed: Bool(false),
 
 		// Confidential Compute per-workflow-owner request rate. Mirrors the
 		// previous hardcoded WorkflowOwner RPS/burst executor defaults.
@@ -316,6 +324,13 @@ type Schema struct {
 	GatewayVaultManagementEnabled                     Setting[bool]
 	VaultJWTAuthEnabled                               Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
+	// executable capability server reject any request whose
+	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
+	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
+	// sender DON so it cannot be spoofed by a colluding calling DON.
+	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
+	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]
@@ -324,6 +339,8 @@ type Schema struct {
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	VaultSignedResponseRequestIDEnabled               Setting[bool]
+	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
@@ -377,6 +394,12 @@ type Owners struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
+
+	// VaultZoneBGetSecretsAllowed allowlists this owner for vault GetSecrets
+	// reads originating from a zone-b workflow DON. Only consulted when the
+	// global VaultZoneBWorkflowGetSecretsRestrictEnabled gate is open and the
+	// calling DON is in the zone-b family. Defaults to false (deny).
+	VaultZoneBGetSecretsAllowed Setting[bool]
 
 	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
 	ConfidentialCompute ownerConfidentialCompute

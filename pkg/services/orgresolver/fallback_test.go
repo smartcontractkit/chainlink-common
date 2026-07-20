@@ -344,7 +344,7 @@ func TestOrgResolverFallback_ConcurrentAccess(t *testing.T) {
 
 	var wg sync.WaitGroup
 	owners := []string{"owner-1", "owner-2", "owner-3", "owner-4", "owner-5"}
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()

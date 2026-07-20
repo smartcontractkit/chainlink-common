@@ -15,7 +15,7 @@ func (Empty) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (Empty) GetType() reflect.Type {
-	return reflect.TypeOf(struct{}{})
+	return reflect.TypeFor[struct{}]()
 }
 
 func (Empty) Size(numItems int) (int, error) {

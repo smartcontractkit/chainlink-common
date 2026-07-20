@@ -43,14 +43,14 @@ func TestElementExtractor(t *testing.T) {
 	invalidExtractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "W": &middle})
 	nestedExtractor := codec.NewElementExtractor(map[string]*codec.ElementExtractorLocation{"A": &first, "B.A": &first, "B.C": &middle, "B.D": &last, "C.A": &first, "C.C": &middle, "C.D": &last, "B": &last})
 	t.Run("RetypeToOffChain gets non-slice type", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 		require.NoError(t, err)
 
 		assertBasicElementExtractTransform(t, inputType)
 	})
 
 	t.Run("RetypeToOffChain works on slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf([]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[[]testStruct](), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Slice, inputType.Kind())
@@ -58,7 +58,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(&testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[*testStruct](), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -66,7 +66,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain works on pointers to non structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(&[]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[*[]testStruct](), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Pointer, inputType.Kind())
@@ -75,7 +75,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain works on arrays", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf([2]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[[2]testStruct](), "")
 		require.NoError(t, err)
 
 		assert.Equal(t, reflect.Array, inputType.Kind())
@@ -84,18 +84,18 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain returns exception if a field is not on the type", func(t *testing.T) {
-		_, err := invalidExtractor.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		_, err := invalidExtractor.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
-		inputType, err := nestedExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		inputType, err := nestedExtractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		fmt.Printf("%+v\n", inputType)
 		require.NoError(t, err)
 		assert.Equal(t, 4, inputType.NumField())
 		f0 := inputType.Field(0)
 		assert.Equal(t, "A", f0.Name)
-		assert.Equal(t, reflect.TypeOf([]string{}), f0.Type)
+		assert.Equal(t, reflect.TypeFor[[]string](), f0.Type)
 		f1 := inputType.Field(1)
 		assert.Equal(t, "B", f1.Name)
 		require.Equal(t, reflect.Slice, f1.Type.Kind())
@@ -105,11 +105,11 @@ func TestElementExtractor(t *testing.T) {
 		assertBasicElementExtractTransform(t, f2.Type.Elem())
 		f3 := inputType.Field(3)
 		assert.Equal(t, "D", f3.Name)
-		assert.Equal(t, reflect.TypeOf(""), f3.Type)
+		assert.Equal(t, reflect.TypeFor[string](), f3.Type)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 		require.NoError(t, err)
 		iInput := reflect.Indirect(reflect.New(inputType))
 		iInput.FieldByName("A").Set(reflect.ValueOf([]string{"A", "B", "C"}))
@@ -138,7 +138,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on nil ptr by initialising empty values", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(nilFields{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[nilFields](), "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(inputType))
@@ -166,7 +166,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(&testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[*testStruct](), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		iInput := reflect.Indirect(rInput)
@@ -196,7 +196,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf([]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[[]testStruct](), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		iInput := rInput.Index(0)
@@ -244,7 +244,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on nested slices", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf([][]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[[][]testStruct](), "")
 		require.NoError(t, err)
 		rInput := reflect.MakeSlice(inputType, 2, 2)
 		rOuter := rInput.Index(0)
@@ -334,7 +334,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers to non structs", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf(&[]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[*[]testStruct](), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType.Elem())
 		rElm := reflect.MakeSlice(inputType.Elem(), 2, 2)
@@ -383,7 +383,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on arrays", func(t *testing.T) {
-		inputType, err := extractor.RetypeToOffChain(reflect.TypeOf([2]testStruct{}), "")
+		inputType, err := extractor.RetypeToOffChain(reflect.TypeFor[[2]testStruct](), "")
 		require.NoError(t, err)
 		rInput := reflect.New(inputType).Elem()
 		iInput := rInput.Index(0)
@@ -431,7 +431,7 @@ func TestElementExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on nested fields even if the field itself is also extracted", func(t *testing.T) {
-		inputType, err := nestedExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		inputType, err := nestedExtractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(inputType))
@@ -540,14 +540,14 @@ func assertBasicElementExtractTransform(t *testing.T, inputType reflect.Type) {
 	require.Equal(t, 4, inputType.NumField())
 	f0 := inputType.Field(0)
 	assert.Equal(t, "A", f0.Name)
-	assert.Equal(t, reflect.TypeOf([]string{}), f0.Type)
+	assert.Equal(t, reflect.TypeFor[[]string](), f0.Type)
 	f1 := inputType.Field(1)
 	assert.Equal(t, "B", f1.Name)
-	assert.Equal(t, reflect.TypeOf(int64(0)), f1.Type)
+	assert.Equal(t, reflect.TypeFor[int64](), f1.Type)
 	f2 := inputType.Field(2)
 	assert.Equal(t, "C", f2.Name)
-	assert.Equal(t, reflect.TypeOf([]int64{}), f2.Type)
+	assert.Equal(t, reflect.TypeFor[[]int64](), f2.Type)
 	f3 := inputType.Field(3)
 	assert.Equal(t, "D", f3.Name)
-	assert.Equal(t, reflect.TypeOf([]uint64{}), f3.Type)
+	assert.Equal(t, reflect.TypeFor[[]uint64](), f3.Type)
 }

@@ -249,13 +249,10 @@ func validateOwnerAddress(s string) error {
 	return nil
 }
 
-// validateExecutionID enforces 32-byte hex with no prefix.
+// validateExecutionID enforces a non-empty value.
 func validateExecutionID(s string) error {
-	if len(s) != 64 {
-		return errors.New("execution_id must be 32 bytes hex-encoded (64 hex chars, no 0x prefix)")
-	}
-	if _, err := hex.DecodeString(s); err != nil {
-		return errors.New("execution_id must be 32 bytes hex-encoded (64 hex chars, no 0x prefix)")
+	if s == "" {
+		return errors.New("execution_id must be non-empty")
 	}
 	return nil
 }

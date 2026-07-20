@@ -40,25 +40,25 @@ func TestBoolToByteModifier(t *testing.T) {
 
 	t.Run("RetypeToOffChain returns error if field type is not convertible", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
-		_, err := converter.RetypeToOffChain(reflect.TypeOf(testInvalidStruct{}), "")
+		_, err := converter.RetypeToOffChain(reflect.TypeFor[testInvalidStruct](), "")
 		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain converts uint8 to bool", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
-		convertedType, err := converter.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		convertedType, err := converter.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 		require.NoError(t, err)
-		assert.Equal(t, reflect.TypeOf(""), convertedType.Field(0).Type)
-		assert.Equal(t, reflect.TypeOf(true), convertedType.Field(1).Type)
+		assert.Equal(t, reflect.TypeFor[string](), convertedType.Field(0).Type)
+		assert.Equal(t, reflect.TypeFor[bool](), convertedType.Field(1).Type)
 	})
 
 	t.Run("RetypeToOffChain converts pointer to uint8 to pointer to bool", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
-		convertedType, err := converter.RetypeToOffChain(reflect.TypeOf(ptrTestStruct{}), "")
+		convertedType, err := converter.RetypeToOffChain(reflect.TypeFor[ptrTestStruct](), "")
 		require.NoError(t, err)
 
-		assert.Equal(t, reflect.TypeOf(""), convertedType.Field(0).Type)
-		assert.Equal(t, reflect.PointerTo(reflect.TypeOf(true)), convertedType.Field(1).Type)
+		assert.Equal(t, reflect.TypeFor[string](), convertedType.Field(0).Type)
+		assert.Equal(t, reflect.PointerTo(reflect.TypeFor[bool]()), convertedType.Field(1).Type)
 	})
 
 	t.Run("RetypeToOffChain converts nested field", func(t *testing.T) {
@@ -72,24 +72,24 @@ func TestBoolToByteModifier(t *testing.T) {
 			B inner
 		}
 		converter := codec.NewByteToBooleanModifier([]string{"B.C"})
-		convertedType, err := converter.RetypeToOffChain(reflect.TypeOf(outer{}), "")
+		convertedType, err := converter.RetypeToOffChain(reflect.TypeFor[outer](), "")
 		require.NoError(t, err)
 		// Expect a pointer to outer.
 		outStruct := convertedType
 		require.Equal(t, 2, outStruct.NumField())
 		// Field A remains string.
-		assert.Equal(t, reflect.TypeOf(""), outStruct.Field(0).Type)
+		assert.Equal(t, reflect.TypeFor[string](), outStruct.Field(0).Type)
 		// Field B is a nested struct; its field C should be retyped from uint8 to bool.
 		nestedType := outStruct.Field(1).Type
 		assert.Equal(t, reflect.Struct, nestedType.Kind())
 		require.Equal(t, 1, nestedType.NumField())
 		assert.Equal(t, "C", nestedType.Field(0).Name)
-		assert.Equal(t, reflect.TypeOf(true), nestedType.Field(0).Type)
+		assert.Equal(t, reflect.TypeFor[bool](), nestedType.Field(0).Type)
 	})
 
 	t.Run("TransformToOnChain converts off-chain bool to on-chain uint8", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
-		convertedType, err := converter.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		convertedType, err := converter.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 		require.NoError(t, err)
 
 		offchain := reflect.New(convertedType).Elem()
@@ -112,7 +112,7 @@ func TestBoolToByteModifier(t *testing.T) {
 			B inner
 		}
 		converter := codec.NewByteToBooleanModifier([]string{"B.C"})
-		convertedType, err := converter.RetypeToOffChain(reflect.TypeOf(outer{}), "")
+		convertedType, err := converter.RetypeToOffChain(reflect.TypeFor[outer](), "")
 		require.NoError(t, err)
 
 		// Create an off-chain instance.
@@ -130,7 +130,7 @@ func TestBoolToByteModifier(t *testing.T) {
 
 	t.Run("TransformToOffChain converts on-chain uint8 to off-chain bool", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
-		_, err := converter.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+		_, err := converter.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 		require.NoError(t, err)
 
 		// On-chain instance with B=0 (false).
@@ -153,7 +153,7 @@ func TestBoolToByteModifier(t *testing.T) {
 			E inner
 		}
 		converter := codec.NewByteToBooleanModifier([]string{"E.F"})
-		_, err := converter.RetypeToOffChain(reflect.TypeOf(outer{}), "")
+		_, err := converter.RetypeToOffChain(reflect.TypeFor[outer](), "")
 		require.NoError(t, err)
 
 		// On-chain instance with nested field B.C set to 1 (true).
@@ -169,7 +169,7 @@ func TestBoolToByteModifier(t *testing.T) {
 
 	t.Run("TransformToOnChain and TransformToOffChain work on pointer fields", func(t *testing.T) {
 		converter := codec.NewByteToBooleanModifier([]string{"B"})
-		convertedType, err := converter.RetypeToOffChain(reflect.TypeOf(ptrTestStruct{}), "")
+		convertedType, err := converter.RetypeToOffChain(reflect.TypeFor[ptrTestStruct](), "")
 		require.NoError(t, err)
 
 		// Create an off-chain instance.

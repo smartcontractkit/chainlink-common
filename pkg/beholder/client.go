@@ -525,7 +525,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	// other. Capture the outbound proto size of each metric export
 	// (beholder.export.bytes) here.
 	dialOpts := []grpc.DialOption{
-		grpc.WithStatsHandler(sizeCaptureHandler{}),
+		grpc.WithStatsHandler(exportSizeHandler{}),
 	}
 	switch compressor := cfg.MetricCompressor; compressor {
 	case "none":
@@ -587,7 +587,7 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
-		grpc.WithStatsHandler(sizeCaptureHandler{}),
+		grpc.WithStatsHandler(exportSizeHandler{}),
 	}
 
 	opts := []otlploggrpc.Option{

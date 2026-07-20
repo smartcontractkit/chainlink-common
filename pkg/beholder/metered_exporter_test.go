@@ -43,7 +43,7 @@ func (f *fakeLogExporter) Export(ctx context.Context, records []sdklog.Record) e
 		n = 1
 	}
 	for i := 0; i < n; i++ {
-		sizeCaptureHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: sz})
+		exportSizeHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: sz})
 	}
 	if f.delay > 0 {
 		time.Sleep(f.delay)
@@ -79,7 +79,7 @@ func (f *fakeMetricExporter) Aggregation(k sdkmetric.InstrumentKind) sdkmetric.A
 }
 
 func (f *fakeMetricExporter) Export(ctx context.Context, _ *metricdata.ResourceMetrics) error {
-	sizeCaptureHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: f.size})
+	exportSizeHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: f.size})
 	return f.err
 }
 
@@ -132,34 +132,34 @@ func dpForSignal(t *testing.T, ms []metricdata.Metrics, signal string) (metricda
 	return metricdata.DataPoint[int64]{}, false
 }
 
-// --- sizeCaptureHandler ---------------------------------------------------
+// --- exportSizeHandler ---------------------------------------------------
 
-func TestSizeCaptureHandler_StoresOutPayloadLength(t *testing.T) {
+func TestexportSizeHandler_StoresOutPayloadLength(t *testing.T) {
 	var holder atomic.Int64
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &holder)
 
-	sizeCaptureHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: 1234})
+	exportSizeHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: 1234})
 
 	assert.Equal(t, int64(1234), holder.Load())
 }
 
-func TestSizeCaptureHandler_IgnoresNonOutPayload(t *testing.T) {
+func TestexportSizeHandler_IgnoresNonOutPayload(t *testing.T) {
 	var holder atomic.Int64
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &holder)
 
-	sizeCaptureHandler{}.HandleRPC(ctx, &stats.InPayload{Length: 999})
-	sizeCaptureHandler{}.HandleRPC(ctx, &stats.Begin{})
-	sizeCaptureHandler{}.HandleRPC(ctx, &stats.End{})
+	exportSizeHandler{}.HandleRPC(ctx, &stats.InPayload{Length: 999})
+	exportSizeHandler{}.HandleRPC(ctx, &stats.Begin{})
+	exportSizeHandler{}.HandleRPC(ctx, &stats.End{})
 
 	assert.Equal(t, int64(0), holder.Load())
 }
 
-func TestSizeCaptureHandler_LastWriteWins(t *testing.T) {
+func TestexportSizeHandler_LastWriteWins(t *testing.T) {
 	// Retries resend the same proto, so each OutPayload reports the same length.
 	// Store means the holder ends at that length, not a multiple of it.
 	var holder atomic.Int64
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &holder)
-	h := sizeCaptureHandler{}
+	h := exportSizeHandler{}
 
 	h.HandleRPC(ctx, &stats.OutPayload{Length: 700})
 	h.HandleRPC(ctx, &stats.OutPayload{Length: 700})
@@ -168,14 +168,14 @@ func TestSizeCaptureHandler_LastWriteWins(t *testing.T) {
 	assert.Equal(t, int64(700), holder.Load())
 }
 
-func TestSizeCaptureHandler_NoHolderInContextIsNoop(t *testing.T) {
+func TestexportSizeHandler_NoHolderInContextIsNoop(t *testing.T) {
 	assert.NotPanics(t, func() {
-		sizeCaptureHandler{}.HandleRPC(context.Background(), &stats.OutPayload{Length: 5})
+		exportSizeHandler{}.HandleRPC(context.Background(), &stats.OutPayload{Length: 5})
 	})
 }
 
-func TestSizeCaptureHandler_TagAndConnAreInert(t *testing.T) {
-	h := sizeCaptureHandler{}
+func TestexportSizeHandler_TagAndConnAreInert(t *testing.T) {
+	h := exportSizeHandler{}
 	ctx := context.WithValue(context.Background(), exportSizeKey{}, &atomic.Int64{})
 
 	assert.Equal(t, ctx, h.TagRPC(ctx, &stats.RPCTagInfo{}))

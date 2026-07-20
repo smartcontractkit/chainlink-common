@@ -13,27 +13,27 @@ import (
 )
 
 // exportSizeKey is the context key under which a metered exporter stashes a
-// per-export byte holder for sizeCaptureHandler to fill in.
+// per-export byte holder for exportSizeHandler to fill in.
 type exportSizeKey struct{}
 
-// sizeCaptureHandler is a minimal, stateless gRPC stats.Handler that records the
+// exportSizeHandler is a minimal, stateless gRPC stats.Handler that records the
 // uncompressed proto size of each outbound message.
-type sizeCaptureHandler struct{}
+type exportSizeHandler struct{}
 
-func (sizeCaptureHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
+func (exportSizeHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
 	return ctx
 }
 
-func (sizeCaptureHandler) HandleConn(context.Context, stats.ConnStats) {}
+func (exportSizeHandler) HandleConn(context.Context, stats.ConnStats) {}
 
-func (sizeCaptureHandler) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context {
+func (exportSizeHandler) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context {
 	return ctx
 }
 
 // HandleRPC fires on every gRPC stats event. On OutPayload it stores the
 // uncompressed message length, the same field otelgrpc used for
 // rpc.client.request.size
-func (sizeCaptureHandler) HandleRPC(ctx context.Context, rs stats.RPCStats) {
+func (exportSizeHandler) HandleRPC(ctx context.Context, rs stats.RPCStats) {
 	op, ok := rs.(*stats.OutPayload)
 	if !ok {
 		return

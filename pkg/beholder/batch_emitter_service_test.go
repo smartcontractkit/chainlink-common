@@ -16,6 +16,8 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -458,6 +460,167 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 	})
 }
 
+func TestChipIngressBatchEmitterService_PartialDeliveryError(t *testing.T) {
+	t.Run("does not log on per-event PublishError, only records the metric", func(t *testing.T) {
+		lggr, observed := logger.TestObserved(t, zap.InfoLevel)
+
+		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
+
+		partialResp := &chipingress.PublishResponse{
+			Results: []*chipingress.PublishResult{
+				{
+					Error: &chipingress.PublishError{
+						ErrorCode: chipingress.PublishErrorCode(1), // VALIDATION_FAILED
+						Reason:    "schema not found",
+					},
+				},
+			},
+		}
+		done := make(chan struct{})
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(partialResp, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressSendInterval = time.Second
+
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, lggr)
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for publish")
+		}
+		require.NoError(t, emitter.Close())
+
+		// Partial delivery is intentionally not logged (see dropMetricAttrsFor / emitInternal):
+		// it's a per-event, often persistent condition that would otherwise spam logs at
+		// fleet-wide volume. The events_dropped metric (error_type, error_code) is the
+		// intended signal; see the "records events_dropped" subtest below.
+		logs := observed.FilterMessage("failed to emit to chip ingress")
+		assert.Zero(t, logs.Len(), "partial delivery drops must not be logged")
+	})
+
+	t.Run("records events_dropped with partial_delivery error_type", func(t *testing.T) {
+		reader, restore := useEmitterTestMeterProvider(t)
+		defer restore()
+
+		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
+
+		partialResp := &chipingress.PublishResponse{
+			Results: []*chipingress.PublishResult{
+				{
+					Error: &chipingress.PublishError{
+						ErrorCode: chipingress.PublishErrorCode(1),
+						Reason:    "encode error",
+					},
+				},
+			},
+		}
+		done := make(chan struct{})
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(partialResp, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressSendInterval = time.Second
+
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "PartialEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for publish")
+		}
+		require.NoError(t, emitter.Close())
+
+		rm := collectEmitterMetrics(t, reader)
+		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
+		sum, ok := metric.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		dp := mustEmitterInt64SumPoint(t, sum, "error_type", "partial_delivery", "entity", "PartialEvent")
+		assert.GreaterOrEqual(t, dp.Value, int64(1))
+		assert.True(t,
+			hasEmitterStringAttr(dp.Attributes, "error_code", "PUBLISH_ERROR_CODE_VALIDATION_FAILED"),
+			"expected error_code label on partial_delivery drop metric datapoint",
+		)
+	})
+}
+
+func TestChipIngressBatchEmitterService_RPCError(t *testing.T) {
+	t.Run("records events_dropped with error_code on RPC failure", func(t *testing.T) {
+		reader, restore := useEmitterTestMeterProvider(t)
+		defer restore()
+
+		clientMock := mocks.NewClient(t)
+		clientMock.EXPECT().Close().Return(nil).Maybe()
+
+		done := make(chan struct{})
+		clientMock.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(nil, status.Error(codes.Internal, "failed to publish events")).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		cfg := newTestConfig()
+		cfg.ChipIngressMaxBatchSize = 1
+		cfg.ChipIngressSendInterval = time.Second
+
+		emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, newTestLogger(t))
+		require.NoError(t, err)
+		require.NoError(t, emitter.Start(t.Context()))
+
+		err = emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "RPCDropEvent",
+		)
+		require.NoError(t, err)
+
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for publish")
+		}
+		require.NoError(t, emitter.Close())
+
+		rm := collectEmitterMetrics(t, reader)
+		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
+		sum, ok := metric.Data.(metricdata.Sum[int64])
+		require.True(t, ok)
+		dp := mustEmitterInt64SumPoint(t, sum, "error_type", "rpc_error", "entity", "RPCDropEvent")
+		assert.GreaterOrEqual(t, dp.Value, int64(1))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "Internal"))
+		// error_reason is free-form server/gRPC text and must never be a metric attribute -
+		// it would create unbounded cardinality. It's still available on the log line.
+		assert.False(t, hasEmitterStringAttr(dp.Attributes, "error_reason", "failed to publish events"))
+	})
+}
+
+
 func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 	t.Run("records events_sent on successful publish", func(t *testing.T) {
 		reader, restore := useEmitterTestMeterProvider(t)
@@ -511,7 +674,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		done := make(chan struct{})
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
-			Return(nil, assert.AnError).
+			Return(nil, status.Error(codes.DeadlineExceeded, "context deadline exceeded")).
 			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 
@@ -539,8 +702,9 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
-		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricDropEvent")
+		dp := mustEmitterInt64SumPoint(t, sum, "error_type", "rpc_error", "entity", "MetricDropEvent")
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "DeadlineExceeded"))
 
 		logs := observed.FilterMessage("failed to emit to chip ingress")
 		require.GreaterOrEqual(t, logs.Len(), 1, "expected error log for publish failure")
@@ -548,6 +712,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		assert.Equal(t, zap.ErrorLevel, entry.Level)
 		fieldMap := logFieldMap(entry)
 		assert.Contains(t, fieldMap, "error")
+		assert.Equal(t, "DeadlineExceeded", fieldMap["error_code"])
 		assert.Equal(t, "platform", fieldMap["domain"])
 		assert.Equal(t, "MetricDropEvent", fieldMap["entity"])
 	})

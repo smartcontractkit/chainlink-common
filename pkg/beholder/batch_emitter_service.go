@@ -157,8 +157,24 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			// for metric recording — OTel Add is non-blocking and tolerates
 			// cancelled contexts.
 			if sendErr != nil {
-				e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
-				e.eng.Errorw("failed to emit to chip ingress", "error", sendErr, "domain", domain, "entity", entity)
+				drop := batch.ClassifyDropFailure(sendErr)
+				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, drop))
+				// Partial delivery is not logged: it is a per-event, often persistent
+				// server-side condition (e.g. missing schema) that would otherwise log on
+				// every dropped event. chip_ingress.events_dropped (error_type, error_code)
+				// already captures that it's happening and roughly why; the free-text
+				// error_reason is not on the metric, but a bounded error_code is enough to
+				// alert on, and the full reason isn't needed at fleet-wide log volume.
+				if drop.ErrorType != batch.ErrorTypePartialDelivery {
+					e.eng.Errorw("failed to emit to chip ingress",
+						"error", sendErr,
+						"error_type", drop.ErrorType,
+						"error_code", drop.ErrorCode,
+						"error_reason", drop.ErrorReason,
+						"domain", domain,
+						"entity", entity,
+					)
+				}
 			} else {
 				e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
 			}
@@ -167,8 +183,16 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			}
 		})
 		if queueErr != nil {
-			e.metrics.eventsDropped.Add(ctx, 1, metricAttrs)
-			e.eng.Errorw("failed to queue message for chip ingress", "error", queueErr, "domain", domain, "entity", entity)
+			drop := batch.ClassifyDropFailure(queueErr)
+			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, drop))
+			e.eng.Errorw("failed to queue message for chip ingress",
+				"error", queueErr,
+				"error_type", drop.ErrorType,
+				"error_code", drop.ErrorCode,
+				"error_reason", drop.ErrorReason,
+				"domain", domain,
+				"entity", entity,
+			)
 			if callback != nil {
 				callback(queueErr)
 			}
@@ -189,6 +213,26 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)
+}
+
+// dropMetricAttrsFor returns a measurement option for the eventsDropped counter.
+// Not cached — drop paths are not on the hot path.
+//
+// error_reason is deliberately excluded: it is free-form text from the server/gRPC
+// stack (e.g. validation messages, status details) and is not a bounded value, so using
+// it as a metric attribute would create unbounded cardinality. domain/entity/error_type/
+// error_code are all closed, bounded sets. error_reason is still available on the
+// corresponding log line.
+func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity string, drop batch.DropFailure) otelmetric.MeasurementOption {
+	attrs := []attribute.KeyValue{
+		attribute.String("domain", domain),
+		attribute.String("entity", entity),
+		attribute.String("error_type", drop.ErrorType),
+	}
+	if drop.ErrorCode != "" {
+		attrs = append(attrs, attribute.String("error_code", drop.ErrorCode))
+	}
+	return otelmetric.WithAttributeSet(attribute.NewSet(attrs...))
 }
 
 func newBatchEmitterMetrics(meter otelmetric.Meter) (batchEmitterMetrics, error) {

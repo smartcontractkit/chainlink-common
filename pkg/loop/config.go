@@ -101,6 +101,14 @@ const (
 	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
 
+	envChipIngressBufferSize          = "CL_CHIP_INGRESS_BUFFER_SIZE"
+	envChipIngressMaxBatchSize        = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
+	envChipIngressMaxConcurrentSends  = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
+	envChipIngressSendInterval        = "CL_CHIP_INGRESS_SEND_INTERVAL"
+	envChipIngressSendTimeout         = "CL_CHIP_INGRESS_SEND_TIMEOUT"
+	envChipIngressDrainTimeout        = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
+	envChipIngressMaxGRPCRequestSize  = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
 )
@@ -114,6 +122,14 @@ type EnvConfig struct {
 	ChipIngressInsecureConnection    bool
 	ChipIngressBatchEmitterEnabled   bool
 	ChipIngressDurableEmitterEnabled bool
+
+	ChipIngressBufferSize         uint
+	ChipIngressMaxBatchSize       uint
+	ChipIngressMaxConcurrentSends int
+	ChipIngressSendInterval       time.Duration
+	ChipIngressSendTimeout        time.Duration
+	ChipIngressDrainTimeout       time.Duration
+	ChipIngressMaxGRPCRequestSize uint
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -315,6 +331,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
 	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(e.ChipIngressDurableEmitterEnabled))
+	add(envChipIngressBufferSize, strconv.FormatUint(uint64(e.ChipIngressBufferSize), 10))
+	add(envChipIngressMaxBatchSize, strconv.FormatUint(uint64(e.ChipIngressMaxBatchSize), 10))
+	add(envChipIngressMaxConcurrentSends, strconv.Itoa(e.ChipIngressMaxConcurrentSends))
+	add(envChipIngressSendInterval, e.ChipIngressSendInterval.String())
+	add(envChipIngressSendTimeout, e.ChipIngressSendTimeout.String())
+	add(envChipIngressDrainTimeout, e.ChipIngressDrainTimeout.String())
+	add(envChipIngressMaxGRPCRequestSize, strconv.FormatUint(uint64(e.ChipIngressMaxGRPCRequestSize), 10))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -572,6 +595,34 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
 		}
+		e.ChipIngressBufferSize, err = getUint(envChipIngressBufferSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressBufferSize, err)
+		}
+		e.ChipIngressMaxBatchSize, err = getUint(envChipIngressMaxBatchSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxBatchSize, err)
+		}
+		e.ChipIngressMaxConcurrentSends, err = getInt(envChipIngressMaxConcurrentSends)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxConcurrentSends, err)
+		}
+		e.ChipIngressSendInterval, err = getDuration(envChipIngressSendInterval)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendInterval, err)
+		}
+		e.ChipIngressSendTimeout, err = getDuration(envChipIngressSendTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendTimeout, err)
+		}
+		e.ChipIngressDrainTimeout, err = getDuration(envChipIngressDrainTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressDrainTimeout, err)
+		}
+		e.ChipIngressMaxGRPCRequestSize, err = getUint(envChipIngressMaxGRPCRequestSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxGRPCRequestSize, err)
+		}
 	}
 
 	e.CRESettings = os.Getenv(envCRESettings)
@@ -678,6 +729,18 @@ func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
 		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
 	return
+}
+
+func getUint(envKey string) (uint, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	u, err := strconv.ParseUint(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uint(u), nil
 }
 
 func getInt(envKey string) (int, error) {

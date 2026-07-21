@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784649428432,
+  "lastUpdate": 1784658971158,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55260,6 +55260,66 @@ window.BENCHMARK_DATA = {
             "value": 73187,
             "unit": "ns/op",
             "extra": "16424 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cfal@users.noreply.github.com",
+            "name": "cfal",
+            "username": "cfal"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d4a8db50b451340ce1af399ea9a72b900bbcaeb3",
+          "message": "workflows: upgrade Wasmtime to v47 (#2270)\n\nwasmtime-go v28 embeds an unsupported runtime that predates the guest-controlled WASI resource limits added for CVE-2026-27204. Move directly to v47 because the v36 Go binding does not publish the patched LTS releases.",
+          "timestamp": "2026-07-21T18:23:42Z",
+          "tree_id": "9780b152f6f3dcf2cbb2fab8b5a2f4c1daed246b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d4a8db50b451340ce1af399ea9a72b900bbcaeb3"
+        },
+        "date": 1784658968684,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 593,
+            "unit": "ns/op",
+            "extra": "2004152 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 68448,
+            "unit": "ns/op",
+            "extra": "17959 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 335.7,
+            "unit": "ns/op",
+            "extra": "3475266 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 61077,
+            "unit": "ns/op",
+            "extra": "19474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22655,
+            "unit": "ns/op",
+            "extra": "53034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 100796,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

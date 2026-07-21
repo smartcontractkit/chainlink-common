@@ -67,8 +67,8 @@ func TestMonitor(t *testing.T) {
 		stopCh,
 		newNullLogger(),
 		chainConfig,
-		&fakeRandomDataSourceFactory{make(chan interface{})},
-		&fakeRandomDataSourceFactory{make(chan interface{})},
+		&fakeRandomDataSourceFactory{make(chan any)},
+		&fakeRandomDataSourceFactory{make(chan any)},
 		func(buf io.ReadCloser) ([]FeedConfig, error) { return []FeedConfig{}, nil },
 		func(buf io.ReadCloser) ([]NodeConfig, error) { return []NodeConfig{}, nil },
 	)

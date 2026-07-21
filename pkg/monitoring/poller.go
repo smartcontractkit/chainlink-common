@@ -29,7 +29,7 @@ func NewSourcePoller(
 	return &sourcePoller{
 		log,
 		source,
-		make(chan interface{}, bufferCapacity),
+		make(chan any, bufferCapacity),
 		pollInterval,
 		fetchTimeout,
 	}
@@ -38,7 +38,7 @@ func NewSourcePoller(
 type sourcePoller struct {
 	log     Logger
 	source  Source
-	updates chan interface{}
+	updates chan any
 
 	pollInterval time.Duration
 	fetchTimeout time.Duration
@@ -99,13 +99,13 @@ func (s *sourcePoller) Run(ctx context.Context) {
 	}
 }
 
-func (s *sourcePoller) Updates() <-chan interface{} {
+func (s *sourcePoller) Updates() <-chan any {
 	return s.updates
 }
 
 // executeFetch runs Source#Fetch() with a timeout.
 // It also captures the error if Fetch() panics and returns it.
-func (s *sourcePoller) executeFetch(ctx context.Context) (data interface{}, err error) {
+func (s *sourcePoller) executeFetch(ctx context.Context) (data any, err error) {
 	ctx, cancel := context.WithTimeout(ctx, s.fetchTimeout)
 	defer cancel()
 	defer func() {

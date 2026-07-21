@@ -471,7 +471,6 @@ func TestFlowchartComplete(t *testing.T) {
 	addKeys = func(a any) {
 		if v := reflect.ValueOf(a).Elem(); v.Type().Kind() == reflect.Struct {
 			for _, f := range v.Fields() {
-				f := f
 				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
 					keys = append(keys, gk.GetKey())
 					continue

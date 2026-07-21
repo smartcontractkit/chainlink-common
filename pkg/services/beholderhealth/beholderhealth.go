@@ -15,7 +15,7 @@ import (
 
 const (
 	beholderDomain             = "node-platform"
-	beholderProtobufEntity     = "common.v1.NodeHealthInfo"
+	beholderProtobufEntity     = "common.v1.HealthInfo"
 	beholderProtobufDataSchema = "/node-platform/common/v1"
 )
 

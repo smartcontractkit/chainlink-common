@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"go.opentelemetry.io/otel"
@@ -157,20 +158,21 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			// for metric recording — OTel Add is non-blocking and tolerates
 			// cancelled contexts.
 			if sendErr != nil {
-				drop := batch.ClassifyDropFailure(sendErr)
-				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, drop))
+				errorCode := batch.ErrorCodeFor(sendErr)
+				errorType := errorTypeFromCode(errorCode)
+				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorType, errorCode))
 				// Partial delivery is not logged: it is a per-event, often persistent
 				// server-side condition (e.g. missing schema) that would otherwise log on
 				// every dropped event. chip_ingress.events_dropped (error_type, error_code)
 				// already captures that it's happening and roughly why; the free-text
 				// error_reason is not on the metric, but a bounded error_code is enough to
 				// alert on, and the full reason isn't needed at fleet-wide log volume.
-				if drop.ErrorType != batch.ErrorTypePartialDelivery {
+				if errorType != batch.ErrorTypePartialDelivery {
 					e.eng.Errorw("failed to emit to chip ingress",
 						"error", sendErr,
-						"error_type", drop.ErrorType,
-						"error_code", drop.ErrorCode,
-						"error_reason", drop.ErrorReason,
+						"error_type", errorType,
+						"error_code", errorCode,
+						"error_reason", sendErr.Error(),
 						"domain", domain,
 						"entity", entity,
 					)
@@ -183,13 +185,14 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			}
 		})
 		if queueErr != nil {
-			drop := batch.ClassifyDropFailure(queueErr)
-			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, drop))
+			errorCode := batch.ErrorCodeFor(queueErr)
+			errorType := errorTypeFromCode(errorCode)
+			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorType, errorCode))
 			e.eng.Errorw("failed to queue message for chip ingress",
 				"error", queueErr,
-				"error_type", drop.ErrorType,
-				"error_code", drop.ErrorCode,
-				"error_reason", drop.ErrorReason,
+				"error_type", errorType,
+				"error_code", errorCode,
+				"error_reason", queueErr.Error(),
 				"domain", domain,
 				"entity", entity,
 			)
@@ -215,6 +218,23 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	return v.(otelmetric.MeasurementOption)
 }
 
+// errorTypeFromCode infers the error category from the bounded error code
+// produced by batch.ErrorCodeFor.
+func errorTypeFromCode(code string) string {
+	switch {
+	case code == "":
+		return ""
+	case strings.HasPrefix(code, chipingress.PublishErrorCode(0).String()) || strings.HasPrefix(code, "PUBLISH_ERROR_CODE_"):
+		return batch.ErrorTypePartialDelivery
+	case code == batch.ErrMessageBufferFull.Error():
+		return batch.ErrorTypeBufferFull
+	case code == batch.ErrClientShutdown.Error() || code == batch.ErrorTypeClientError:
+		return batch.ErrorTypeClientError
+	default:
+		return batch.ErrorTypeRPCError
+	}
+}
+
 // dropMetricAttrsFor returns a measurement option for the eventsDropped counter.
 // Not cached — drop paths are not on the hot path.
 //
@@ -223,14 +243,14 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 // it as a metric attribute would create unbounded cardinality. domain/entity/error_type/
 // error_code are all closed, bounded sets. error_reason is still available on the
 // corresponding log line.
-func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity string, drop batch.DropFailure) otelmetric.MeasurementOption {
+func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity, errorType, errorCode string) otelmetric.MeasurementOption {
 	attrs := []attribute.KeyValue{
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
-		attribute.String("error_type", drop.ErrorType),
+		attribute.String("error_type", errorType),
 	}
-	if drop.ErrorCode != "" {
-		attrs = append(attrs, attribute.String("error_code", drop.ErrorCode))
+	if errorCode != "" {
+		attrs = append(attrs, attribute.String("error_code", errorCode))
 	}
 	return otelmetric.WithAttributeSet(attribute.NewSet(attrs...))
 }

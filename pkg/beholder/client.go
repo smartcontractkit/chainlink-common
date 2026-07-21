@@ -363,10 +363,10 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 
-	// Add custom resource attributes
+	// Add custom resource attributes last so they override detected and default values.
 	resource, err = sdkresource.Merge(
-		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
 		resource,
+		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
 	)
 	if err != nil {
 		return nil, err

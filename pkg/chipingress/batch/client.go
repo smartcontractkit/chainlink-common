@@ -19,6 +19,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+var (
+	ErrMessageBufferFull = errors.New("message buffer is full")
+	ErrClientShutdown    = errors.New("client is shutdown")
+)
+
 type messageWithCallback struct {
 	event    *chipingress.CloudEventPb
 	callback func(error)
@@ -242,7 +247,7 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	// Check shutdown first to avoid race with buffer send
 	select {
 	case <-b.stopCh:
-		return errors.New("client is shutdown")
+		return ErrClientShutdown
 	default:
 	}
 
@@ -276,7 +281,7 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	case b.messageBuffer <- msg:
 		return nil
 	default:
-		return errors.New("message buffer is full")
+		return ErrMessageBufferFull
 	}
 }
 

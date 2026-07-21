@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -106,6 +107,74 @@ func NewHeaderProvider(cfg HeaderProviderConfig) (HeaderProvider, error) {
 // given headers.
 func newStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderProvider {
 	return &staticHeaderProvider{headers: headers, requireTLS: requireTLS}
+}
+
+// NewStaticHeaderProvider returns a HeaderProvider that always returns the given headers,
+// for use with WithHeaderProvider to attach fixed, non-auth gRPC metadata (e.g. resource
+// attributes) to every request.
+func NewStaticHeaderProvider(headers map[string]string) HeaderProvider {
+	return newStaticHeaderProvider(headers, false)
+}
+
+// SanitizeMetadataValue replaces any byte outside the printable ASCII range [0x20-0x7E]
+// with '?'. grpc-go hard-fails the entire RPC when an outgoing metadata value fails this
+// check (unlike the CE-extension path, where an invalid entry is simply dropped), so
+// values headed for gRPC metadata must be normalized before being sent.
+func SanitizeMetadataValue(val string) string {
+	b := []byte(val)
+	out := make([]byte, len(b))
+	for i, c := range b {
+		if c >= 0x20 && c <= 0x7E {
+			out[i] = c
+		} else {
+			out[i] = '?'
+		}
+	}
+	return string(out)
+}
+
+// SanitizeMetadataHeaders sanitizes a map of resource-attribute headers for use as outgoing
+// gRPC metadata (e.g. via NewStaticHeaderProvider). Keys are sanitized with
+// SanitizeExtensionName — the same strict [a-z0-9] charset used for CloudEvent extensions —
+// which is a subset of grpc's allowed metadata-key charset, so a sanitized key can never trip
+// grpc's key validation or the reserved "-bin" suffix, and produces the same key stem as the
+// corresponding CE extension (differing only by the CloudEvents Kafka binding's "ce_" prefix
+// once on the wire). Values are sanitized via SanitizeMetadataValue, since grpc-go fails the
+// whole RPC on a non-printable value. Entries that sanitize to an empty key, or that collide
+// with a reserved extension name (see reservedExtensionNames) or a gRPC-reserved header name
+// (see reservedMetadataKeys), are skipped. Keys are applied in sorted order so duplicate
+// sanitized keys resolve deterministically (first in sorted order wins), matching
+// WithResourceAttributeExtensions' collision handling.
+//
+// Note: unlike the CloudEvents Kafka binding, gRPC metadata keys are NOT prefixed with "ce_" —
+// that prefix is a CloudEvents-binding concept, not a metadata one, and reusing it here would
+// collide with the CE binding's own "ce_<name>" Kafka header if the server ever forwards gRPC
+// metadata verbatim onto Kafka.
+func SanitizeMetadataHeaders(in map[string]string) map[string]string {
+	keys := make([]string, 0, len(in))
+	for k := range in {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	out := make(map[string]string, len(in))
+	for _, k := range keys {
+		name := SanitizeExtensionName(k)
+		if name == "" {
+			continue
+		}
+		if _, reserved := reservedExtensionNames[name]; reserved {
+			continue
+		}
+		if _, reserved := reservedMetadataKeys[name]; reserved {
+			continue
+		}
+		if _, exists := out[name]; exists {
+			continue
+		}
+		out[name] = SanitizeMetadataValue(in[k])
+	}
+	return out
 }
 
 // newRotatingHeaderProvider returns a HeaderProvider that refreshes its

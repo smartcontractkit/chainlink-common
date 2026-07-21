@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784329481817,
+  "lastUpdate": 1784625592333,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55140,6 +55140,66 @@ window.BENCHMARK_DATA = {
             "value": 150930,
             "unit": "ns/op",
             "extra": "7341 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thomas.kaliakos@smartcontract.com",
+            "name": "Thomas Kaliakos",
+            "username": "thomaska"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "64b10da41e7e5ee26d6c985d5e343901c89fa4a4",
+          "message": "Add chip_client metric label for Chip Ingress batch clients (#2228)\n\n* 1st version\n\n* Consolidate clients\n\n* Fix go.sum\n\n* Amend descriptions\n\n* Remove fallback\n\n* Simplify\n\n* Revert \"Simplify\"\n\nThis reverts commit 36a336007d1510e57644766ecfb4ae7ecd058f97.\n\n* Remove WithChipClient\n\n* Add back withChipClient\n\n* chip_client -> client_name\n\n* Update go mod\n\n---------\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>",
+          "timestamp": "2026-07-21T09:07:21Z",
+          "tree_id": "e11cddde15f45bf347591df6cb80f50c4d1f8ecb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/64b10da41e7e5ee26d6c985d5e343901c89fa4a4"
+        },
+        "date": 1784625589750,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 571.1,
+            "unit": "ns/op",
+            "extra": "2352074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 51734,
+            "unit": "ns/op",
+            "extra": "22270 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 313.3,
+            "unit": "ns/op",
+            "extra": "3523948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58928,
+            "unit": "ns/op",
+            "extra": "20823 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 18099,
+            "unit": "ns/op",
+            "extra": "66210 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 96997,
+            "unit": "ns/op",
+            "extra": "12462 times\n4 procs"
           }
         ]
       }

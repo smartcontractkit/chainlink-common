@@ -36,12 +36,11 @@ func newTestConfig() beholder.Config {
 	}
 }
 
+// Deprecated: use [logger.Test] instead.
+//
+//go:fix inline
 func newTestLogger(t *testing.T) logger.Logger {
-	t.Helper()
-	lggr, err := logger.New()
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = lggr.Sync() })
-	return lggr
+	return logger.Test(t)
 }
 
 func TestNewChipIngressBatchEmitterService(t *testing.T) {

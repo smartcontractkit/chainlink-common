@@ -237,7 +237,7 @@ func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Dura
 		if tenant == "" {
 			if !l.scope.IsTenantRequired() {
 				kvs := contexts.CREValue(ctx).LoggerKVs()
-				l.lggr.Warnw("Unable to get scoped time limit due to missing tenant: failing open", append([]any{"scope", l.scope}, kvs...)...)
+				l.lggr.Errorw("Unable to get scoped time limit due to missing tenant: failing open", append([]any{"scope", l.scope}, kvs...)...)
 				return
 			}
 			err = fmt.Errorf("unable to get scoped time limit due to missing tenant for scope: %s", l.scope)

@@ -739,7 +739,7 @@ func getUint(envKey string) (uint, error) {
 	if s == "" {
 		return 0, nil
 	}
-	u, err := strconv.ParseUint(s, 10, 64)
+	u, err := strconv.ParseUint(s, 10, strconv.IntSize)
 	if err != nil {
 		return 0, err
 	}

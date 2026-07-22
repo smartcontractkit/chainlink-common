@@ -18,61 +18,80 @@ func TestErrorCodeFor(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
-		err  error
-		want string
+		name     string
+		err      error
+		wantType string
+		wantCode string
 	}{
 		{
-			name: "partial delivery publish error",
-			err:  &batch.PublishError{Code: chipingress.PublishErrorCode(1), Reason: "schema not found"},
-			want: chipingress.PublishErrorCode(1).String(),
+			name:     "partial delivery publish error",
+			err:      &batch.PublishError{Code: chipingress.PublishErrorCode(1), Reason: "schema not found"},
+			wantType: batch.ErrorTypePartialDelivery,
+			wantCode: chipingress.PublishErrorCode(1).String(),
 		},
 		{
-			name: "deadline exceeded status",
-			err:  status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
-			want: codes.DeadlineExceeded.String(),
+			name:     "results mismatch is classified as partial delivery",
+			err:      &batch.PublishError{Code: batch.ErrCodeResultsMismatch, Reason: "server returned 1 results for 2 events"},
+			wantType: batch.ErrorTypePartialDelivery,
+			wantCode: batch.ErrCodeResultsMismatch.String(),
 		},
 		{
-			name: "deadline exceeded context",
-			err:  context.DeadlineExceeded,
-			want: codes.DeadlineExceeded.String(),
+			name:     "deadline exceeded status",
+			err:      status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
+			wantType: batch.ErrorTypeRPCError,
+			wantCode: codes.DeadlineExceeded.String(),
 		},
 		{
-			name: "unavailable gateway 502",
-			err:  status.Error(codes.Unavailable, `unexpected HTTP status code received from server: 502 (Bad Gateway)`),
-			want: codes.Unavailable.String(),
+			name:     "deadline exceeded context",
+			err:      context.DeadlineExceeded,
+			wantType: batch.ErrorTypeRPCError,
+			wantCode: codes.DeadlineExceeded.String(),
 		},
 		{
-			name: "internal publish failure",
-			err:  status.Error(codes.Internal, "failed to publish events"),
-			want: codes.Internal.String(),
+			name:     "unavailable gateway 502",
+			err:      status.Error(codes.Unavailable, `unexpected HTTP status code received from server: 502 (Bad Gateway)`),
+			wantType: batch.ErrorTypeRPCError,
+			wantCode: codes.Unavailable.String(),
 		},
 		{
-			name: "buffer full",
-			err:  batch.ErrMessageBufferFull,
-			want: batch.ErrMessageBufferFull.Error(),
+			name:     "internal publish failure",
+			err:      status.Error(codes.Internal, "failed to publish events"),
+			wantType: batch.ErrorTypeRPCError,
+			wantCode: codes.Internal.String(),
 		},
 		{
-			name: "client shutdown",
-			err:  batch.ErrClientShutdown,
-			want: batch.ErrClientShutdown.Error(),
+			name:     "buffer full",
+			err:      batch.ErrMessageBufferFull,
+			wantType: batch.ErrorTypeBufferFull,
+			wantCode: batch.ErrMessageBufferFull.Error(),
 		},
 		{
-			name: "unknown error",
-			err:  errors.New("something else"),
-			want: batch.ErrorTypeClientError,
+			name:     "client shutdown",
+			err:      batch.ErrClientShutdown,
+			wantType: batch.ErrorTypeClientError,
+			wantCode: batch.ErrClientShutdown.Error(),
+		},
+		{
+			name:     "unknown error",
+			err:      errors.New("something else"),
+			wantType: batch.ErrorTypeClientError,
+			wantCode: batch.ErrorTypeClientError,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, tt.want, batch.ErrorCodeFor(tt.err))
+			errorType, errorCode := batch.ErrorCodeFor(tt.err)
+			assert.Equal(t, tt.wantType, errorType)
+			assert.Equal(t, tt.wantCode, errorCode)
 		})
 	}
 }
 
 func TestErrorCodeFor_nil(t *testing.T) {
 	t.Parallel()
-	require.Empty(t, batch.ErrorCodeFor(nil))
+	errorType, errorCode := batch.ErrorCodeFor(nil)
+	require.Empty(t, errorType)
+	require.Empty(t, errorCode)
 }

@@ -15,39 +15,33 @@ const (
 	ErrorTypeClientError     = "client_error"
 )
 
-// ErrorCodeFor returns a bounded error code string for a batch send/queue error.
-// The returned code is intended for metric dimensions; callers can infer the
-// error category from the code:
-//   - PUBLISH_ERROR_CODE_*  -> partial_delivery
-//   - "buffer_full"         -> buffer_full
-//   - "client_shutdown"     -> client_error
-//   - gRPC code name        -> rpc_error
-//   - "client_error"        -> client_error (fallback for unrecognized client-side errors)
-func ErrorCodeFor(err error) string {
+// ErrorCodeFor classifies a batch send/queue error for metric dimensions,
+// returning both a coarse-grained error type and a bounded error code.
+func ErrorCodeFor(err error) (errorType, errorCode string) {
 	if err == nil {
-		return ""
+		return "", ""
 	}
 
 	var pubErr *PublishError
 	if errors.As(err, &pubErr) {
-		return pubErr.Code.String()
+		return ErrorTypePartialDelivery, pubErr.Code.String()
 	}
 
 	if errors.Is(err, ErrMessageBufferFull) {
-		return ErrMessageBufferFull.Error()
+		return ErrorTypeBufferFull, ErrMessageBufferFull.Error()
 	}
 	if errors.Is(err, ErrClientShutdown) {
-		return ErrClientShutdown.Error()
+		return ErrorTypeClientError, ErrClientShutdown.Error()
 	}
 	if st, ok := status.FromError(err); ok {
-		return st.Code().String()
+		return ErrorTypeRPCError, st.Code().String()
 	}
 	if errors.Is(err, context.DeadlineExceeded) {
-		return codes.DeadlineExceeded.String()
+		return ErrorTypeRPCError, codes.DeadlineExceeded.String()
 	}
 	if errors.Is(err, context.Canceled) {
-		return codes.Canceled.String()
+		return ErrorTypeRPCError, codes.Canceled.String()
 	}
 
-	return ErrorTypeClientError
+	return ErrorTypeClientError, ErrorTypeClientError
 }

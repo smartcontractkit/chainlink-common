@@ -7,7 +7,7 @@ require (
 	github.com/XSAM/otelsql v0.37.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/atombender/go-jsonschema v0.16.1-0.20240916205339-a74cd4e2851c
-	github.com/bytecodealliance/wasmtime-go/v28 v28.0.0
+	github.com/bytecodealliance/wasmtime-go/v47 v47.0.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/dominikbraun/graph v0.23.0
@@ -43,7 +43,7 @@ require (
 	github.com/scylladb/go-reflectx v1.0.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartcontractkit/chain-selectors v1.0.100
-	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.11-0.20260721062847-690c417fc953
+	github.com/smartcontractkit/chainlink-common/pkg/chipingress v0.0.11-0.20260721062813-b92a569e44a3
 	github.com/smartcontractkit/chainlink-protos/billing/go v0.0.0-20251024234028-0988426d98f4
 	github.com/smartcontractkit/chainlink-protos/cre/go v0.0.0-20260622152157-c8e129347b8b
 	github.com/smartcontractkit/chainlink-protos/linking-service/go v0.0.0-20251002192024-d2ad9222409b

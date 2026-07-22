@@ -3,7 +3,7 @@ package batch
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -1401,10 +1401,10 @@ func TestSeqnum(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(numGoroutines)
 
-		for g := 0; g < numGoroutines; g++ {
+		for g := range numGoroutines {
 			go func(goroutineID int) {
 				defer wg.Done()
-				for i := 0; i < eventsPerGoroutine; i++ {
+				for i := range eventsPerGoroutine {
 					event := &chipingress.CloudEventPb{
 						Id:     strconv.Itoa(goroutineID*eventsPerGoroutine + i),
 						Source: "concurrent-domain",
@@ -1428,7 +1428,7 @@ func TestSeqnum(t *testing.T) {
 
 		// Collect all seqnums
 		seqnums := make([]uint64, 0, totalEvents)
-		for i := 0; i < totalEvents; i++ {
+		for range totalEvents {
 			msg := <-client.messageBuffer
 			seqAttr := msg.event.Attributes["seqnum"]
 			require.NotNil(t, seqAttr)
@@ -1438,7 +1438,7 @@ func TestSeqnum(t *testing.T) {
 		}
 
 		// Sort and verify all unique and in range [1, totalEvents]
-		sort.Slice(seqnums, func(i, j int) bool { return seqnums[i] < seqnums[j] })
+		slices.Sort(seqnums)
 
 		expectedSeq := uint64(1)
 		for i, seq := range seqnums {
@@ -2365,7 +2365,7 @@ func TestErrorCodeFor(t *testing.T) {
 		{
 			name: "results mismatch",
 			err:  &PublishError{Code: ErrCodeResultsMismatch, Reason: "server returned 1 results for 2 events"},
-			want: ErrCodeResultsMismatch.String(),
+			want: "results_mismatch",
 		},
 		{
 			name: "deadline exceeded status",

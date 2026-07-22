@@ -46,7 +46,7 @@ func NewRDDSource(
 	}
 }
 
-func (r *rddSource) Fetch(ctx context.Context) (interface{}, error) {
+func (r *rddSource) Fetch(ctx context.Context) (any, error) {
 	var subs utils.Subprocesses
 	data := RDDData{}
 	dataMu := &sync.Mutex{}

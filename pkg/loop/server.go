@@ -190,9 +190,17 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressBufferSize:          s.EnvConfig.ChipIngressBufferSize,
+			ChipIngressMaxBatchSize:        s.EnvConfig.ChipIngressMaxBatchSize,
+			ChipIngressMaxConcurrentSends:  s.EnvConfig.ChipIngressMaxConcurrentSends,
+			ChipIngressSendInterval:        s.EnvConfig.ChipIngressSendInterval,
+			ChipIngressSendTimeout:         s.EnvConfig.ChipIngressSendTimeout,
+			ChipIngressDrainTimeout:        s.EnvConfig.ChipIngressDrainTimeout,
+			ChipIngressMaxGRPCRequestSize:  s.EnvConfig.ChipIngressMaxGRPCRequestSize,
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
+			MetricViewsDenyAttributes:    s.EnvConfig.TelemetryMetricViewsDenyAttributes,
 		}
 
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {

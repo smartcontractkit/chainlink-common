@@ -121,6 +121,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 			"CallLimit": "3"
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2025-06-15 00:00:00 +0000 UTC",
+		"FeatureHTTPTriggerNewExecutionIDsActivePeriod": "[2025-06-20 00:00:00 +0000 UTC,2025-07-20 00:00:00 +0000 UTC]",
 		"FeatureUseSingleDONTimeProviderPerExecutionActivePeriod": "[2025-08-15 00:00:00 +0000 UTC,2025-09-15 00:00:00 +0000 UTC]",
 		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2025-07-15 00:00:00 +0000 UTC,2025-08-15 00:00:00 +0000 UTC]",
 		"FeatureEVMWriteReportL1FeeActivePeriod": "[2025-09-15 00:00:00 +0000 UTC,2025-10-15 00:00:00 +0000 UTC]",
@@ -159,6 +160,10 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, uint64(500000), cfg.PerWorkflow.ChainWrite.EVM.TransactionGasLimit.DefaultValue)
 	assert.Equal(t, 3, cfg.PerWorkflow.ChainRead.CallLimit.DefaultValue)
 	assert.Equal(t, config.Timestamp(time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC).Unix()), cfg.PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2025, 6, 20, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2025, 7, 20, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod.DefaultValue)
 	assert.Equal(t, settings.Range[config.Timestamp]{
 		Lower: config.Timestamp(time.Date(2025, 8, 15, 0, 0, 0, 0, time.UTC).Unix()),
 		Upper: config.Timestamp(time.Date(2025, 9, 15, 0, 0, 0, 0, time.UTC).Unix()),
@@ -230,6 +235,18 @@ func TestFeatureUseSingleDONTimeProviderPerExecutionActivePeriodKeyInit(t *testi
 	s := Default.PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod
 
 	assert.Equal(t, "PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
+}
+
+func TestFeatureHTTPTriggerNewExecutionIDsActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod", s.GetKey())
 	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
 	assert.NotNil(t, s.Parse)
 	assert.Equal(t, settings.Range[config.Timestamp]{
@@ -471,7 +488,6 @@ func TestFlowchartComplete(t *testing.T) {
 	addKeys = func(a any) {
 		if v := reflect.ValueOf(a).Elem(); v.Type().Kind() == reflect.Struct {
 			for _, f := range v.Fields() {
-				f := f
 				if gk, ok := f.Addr().Interface().(interface{ GetKey() string }); ok {
 					keys = append(keys, gk.GetKey())
 					continue

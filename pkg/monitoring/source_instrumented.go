@@ -37,7 +37,7 @@ type instrumentedSource struct {
 	feedMetrics FeedMetrics
 }
 
-func (i *instrumentedSource) Fetch(ctx context.Context) (interface{}, error) {
+func (i *instrumentedSource) Fetch(ctx context.Context) (any, error) {
 	fetchStart := time.Now()
 	data, err := i.source.Fetch(ctx)
 	i.feedMetrics.ObserveFetchFromSourceDuraction(time.Since(fetchStart), i.sourceType)

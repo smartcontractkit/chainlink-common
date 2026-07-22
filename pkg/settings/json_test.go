@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 //go:embed testdata/json
@@ -34,7 +35,7 @@ func TestCombineJSONFiles(t *testing.T) {
 func Test_jsonSettings_GetScoped(t *testing.T) {
 	s, err := newJSONSettings([]byte(configJSON))
 	require.NoError(t, err)
-	r := jsonGetter{s}
+	r := jsonGetter{settings: s, lggr: logger.Test(t)}
 
 	ctx := contexts.WithCRE(t.Context(), contexts.CRE{
 		Org:      "123",

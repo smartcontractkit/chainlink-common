@@ -67,6 +67,9 @@ func ErrorCodeFor(err error) string {
 
 	var pubErr *PublishError
 	if errors.As(err, &pubErr) {
+		if pubErr.Code == ErrCodeResultsMismatch {
+			return "results_mismatch"
+		}
 		return pubErr.Code.String()
 	}
 
@@ -600,6 +603,7 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 		"chip_ingress.batch.request_size_messages",
 		otelmetric.WithDescription("PublishBatch request size measured in number of events"),
 		otelmetric.WithUnit("{event}"),
+		otelmetric.WithExplicitBucketBoundaries(1, 2, 3, 5, 8, 13, 21, 34, 55, 100, 250, 500, 1000),
 	)
 	if err != nil {
 		return batchClientMetrics{}, err
@@ -609,8 +613,8 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 		otelmetric.WithDescription("PublishBatch request size measured in bytes"),
 		otelmetric.WithUnit("By"),
 		otelmetric.WithExplicitBucketBoundaries(
-			// Buckets from 1 KiB to 10 MiB (default maxGRPCRequestSize).
-			1*1024, 4*1024, 16*1024, 64*1024, 256*1024,
+			// Buckets from 128 B to 10 MiB (default maxGRPCRequestSize).
+			128, 256, 512, 1*1024, 4*1024, 16*1024, 64*1024, 256*1024,
 			512*1024, 1*1024*1024, 2*1024*1024, 4*1024*1024,
 			8*1024*1024, 10*1024*1024,
 		),

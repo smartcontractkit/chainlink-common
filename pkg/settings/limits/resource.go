@@ -674,7 +674,7 @@ func (s *scopedResourcePoolLimiter[N]) getOrCreate(ctx context.Context) (resourc
 	if tenant == "" {
 		if !s.scope.IsTenantRequired() {
 			kvs := contexts.CREValue(ctx).LoggerKVs()
-			s.lggr.Warnw("Unable to apply scoped resource pool limit due to missing tenant: failing open", append([]any{"scope", s.scope}, kvs...)...)
+			s.lggr.Errorw("Unable to apply scoped resource pool limit due to missing tenant: failing open", append([]any{"scope", s.scope}, kvs...)...)
 			return unlimitedResourcePool[N]{}, s.wg.Done, nil
 		}
 		s.wg.Done()

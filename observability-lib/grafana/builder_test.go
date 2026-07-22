@@ -148,7 +148,7 @@ func TestNewBuilder(t *testing.T) {
 		builder.AddRow("Row Title")
 		builder.AddPanelToRow("Row Title", grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel Title"),
+				Title: new("Panel Title"),
 			},
 		}))
 
@@ -172,17 +172,17 @@ func TestNewBuilder(t *testing.T) {
 		builder.AddPanelToRow("Row Title",
 			grafana.NewStatPanel(&grafana.StatPanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("Stat Panel"),
+					Title: new("Stat Panel"),
 				},
 			}),
 			grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("TimeSeries Panel"),
+					Title: new("TimeSeries Panel"),
 				},
 			}),
 			grafana.NewTablePanel(&grafana.TablePanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("Table Panel"),
+					Title: new("Table Panel"),
 				},
 			}),
 		)
@@ -203,13 +203,13 @@ func TestNewBuilder(t *testing.T) {
 		})
 		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Top Panel 1"),
+				Title: new("Top Panel 1"),
 			},
 		}))
 		builder.AddRow("Row A")
 		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Top Panel 2"),
+				Title: new("Top Panel 2"),
 			},
 		}))
 
@@ -235,25 +235,25 @@ func TestNewBuilder(t *testing.T) {
 		builder.AddRow("Open Row")
 		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel After Open Row"),
+				Title: new("Panel After Open Row"),
 			},
 		}))
 		builder.AddRow("Row With Panels")
 		builder.AddPanelToRow("Row With Panels",
 			grafana.NewStatPanel(&grafana.StatPanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("Inside Row 1"),
+					Title: new("Inside Row 1"),
 				},
 			}),
 			grafana.NewGaugePanel(&grafana.GaugePanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("Inside Row 2"),
+					Title: new("Inside Row 2"),
 				},
 			}),
 		)
 		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel After Row With Panels"),
+				Title: new("Panel After Row With Panels"),
 			},
 		}))
 
@@ -289,19 +289,19 @@ func TestNewBuilder(t *testing.T) {
 		builder.AddRow("Row A")
 		builder.AddPanelToRow("Row A", grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel in A"),
+				Title: new("Panel in A"),
 			},
 		}))
 		builder.AddRow("Row B")
 		builder.AddPanelToRow("Row B",
 			grafana.NewStatPanel(&grafana.StatPanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("Panel in B1"),
+					Title: new("Panel in B1"),
 				},
 			}),
 			grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 				PanelOptions: &grafana.PanelOptions{
-					Title: grafana.Pointer("Panel in B2"),
+					Title: new("Panel in B2"),
 				},
 			}),
 		)
@@ -354,7 +354,7 @@ func TestBuilder_BuildOnce(t *testing.T) {
 		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
 		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel Title"),
+				Title: new("Panel Title"),
 			},
 		}))
 
@@ -369,7 +369,7 @@ func TestBuilder_BuildOnce(t *testing.T) {
 		})
 		builder.AddPanelToRow("NonExistent Row", grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel Title"),
+				Title: new("Panel Title"),
 			},
 		}))
 
@@ -469,7 +469,7 @@ func TestBuilder_AddPanel(t *testing.T) {
 
 		panel := grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel Title"),
+				Title: new("Panel Title"),
 			},
 		})
 
@@ -565,7 +565,7 @@ func TestBuilder_AddTimeSeriesPanelWithAlert(t *testing.T) {
 
 		panel := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: grafana.Pointer("Panel Title"),
+				Title: new("Panel Title"),
 			},
 			AlertsOptions: []grafana.AlertOptions{
 				{

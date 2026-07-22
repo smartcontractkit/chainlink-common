@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -33,8 +32,7 @@ func BenchmarkMultiFeedMonitor(b *testing.B) {
 	var subs utils.Subprocesses
 	defer subs.Wait()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := b.Context()
 
 	cfg := config.Config{}
 	chainCfg := generateChainConfig().(fakeChainConfig)
@@ -48,7 +46,7 @@ func BenchmarkMultiFeedMonitor(b *testing.B) {
 
 	producer := fakeProducer{make(chan producerMessage), make(chan struct{})}
 	defer func() { assert.NoError(b, producer.Close()) }()
-	factory := &fakeRandomDataSourceFactory{make(chan interface{})}
+	factory := &fakeRandomDataSourceFactory{make(chan any)}
 
 	prometheusExporterFactory := NewPrometheusExporterFactory(
 		newNullLogger(),

@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt/mocks"
@@ -447,6 +449,88 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 
 		assert.NotNil(t, authenticator)
 		assert.NotNil(t, authenticator.parser)
+	})
+}
+
+func TestNodeJWTAuthenticator_AuthenticateJWT_ProviderErrors(t *testing.T) {
+	t.Run("non-context error logs at error level", func(t *testing.T) {
+		// Non-context provider errors must be logged at ERROR level.
+		privateKey, csaPubKey := createValidatorTestKeys()
+		providerErr := errors.New("database unavailable")
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, providerErr)
+
+		lggr, observedLogs := logger.TestObserved(t, zapcore.DebugLevel)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: lggr}.New(mockProvider)
+
+		testRequest := testRequest{Field: "test-request"}
+		valid, claims, err := authenticator.AuthenticateJWT(context.Background(), createValidJWT(privateKey, csaPubKey), testRequest)
+
+		require.Error(t, err)
+		assert.False(t, valid)
+		assert.NotNil(t, claims)
+		assert.Contains(t, err.Error(), "node validation failed")
+
+		entries := observedLogs.FilterMessage("Node validation failed").All()
+		require.Len(t, entries, 1, "expected exactly one 'Node validation failed' log entry")
+		assert.Equal(t, zapcore.ErrorLevel, entries[0].Level, "non-context provider errors should log at ERROR")
+		mockProvider.AssertExpectations(t)
+	})
+
+	t.Run("context cancelled error logs at warn level", func(t *testing.T) {
+		// Context-cancellation errors from the provider must be logged at WARN, not ERROR,
+		// because they are caused by the caller cancelling the request — not a system fault.
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, context.Canceled)
+
+		lggr, observedLogs := logger.TestObserved(t, zapcore.DebugLevel)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: lggr}.New(mockProvider)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // already cancelled
+
+		testRequest := testRequest{Field: "test-request"}
+		valid, claims, err := authenticator.AuthenticateJWT(ctx, createValidJWT(privateKey, csaPubKey), testRequest)
+
+		require.Error(t, err)
+		assert.False(t, valid)
+		assert.NotNil(t, claims)
+		assert.ErrorIs(t, err, context.Canceled)
+
+		entries := observedLogs.FilterMessage("Node validation skipped: context canceled or deadline exceeded").All()
+		require.Len(t, entries, 1, "expected exactly one context-cancellation log entry")
+		assert.Equal(t, zapcore.WarnLevel, entries[0].Level, "context cancellation from provider should log at WARN not ERROR")
+		assert.Equal(t, context.Canceled.Error(), entries[0].ContextMap()["contextErr"])
+		mockProvider.AssertExpectations(t)
+	})
+
+	t.Run("deadline exceeded error logs at warn level", func(t *testing.T) {
+		// context.DeadlineExceeded from the provider must also be logged at WARN, not ERROR,
+		// because it is an expected transient condition (e.g. slow upstream), not a system fault.
+		privateKey, csaPubKey := createValidatorTestKeys()
+		mockProvider := &mocks.NodeAuthProvider{}
+		mockProvider.On("IsNodePubKeyTrusted", mock.Anything, csaPubKey).Return(false, context.DeadlineExceeded)
+
+		lggr, observedLogs := logger.TestObserved(t, zapcore.DebugLevel)
+		authenticator := NodeJWTAuthenticatorConfig{Logger: lggr}.New(mockProvider)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 0) // immediately expired
+		defer cancel()
+
+		testRequest := testRequest{Field: "test-request"}
+		valid, claims, err := authenticator.AuthenticateJWT(ctx, createValidJWT(privateKey, csaPubKey), testRequest)
+
+		require.Error(t, err)
+		assert.False(t, valid)
+		assert.NotNil(t, claims)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+
+		entries := observedLogs.FilterMessage("Node validation skipped: context canceled or deadline exceeded").All()
+		require.Len(t, entries, 1, "expected exactly one context-cancellation log entry")
+		assert.Equal(t, zapcore.WarnLevel, entries[0].Level, "deadline exceeded from provider should log at WARN not ERROR")
+		assert.Equal(t, context.DeadlineExceeded.Error(), entries[0].ContextMap()["contextErr"])
+		mockProvider.AssertExpectations(t)
 	})
 }
 

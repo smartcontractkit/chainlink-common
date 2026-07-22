@@ -5,8 +5,8 @@
 // Callers (e.g. chainlink core/cmd/shell.go via beholder.Config.MetricViews)
 // may supply additional views—typically histogram bucket Aggregation overrides
 // for specific instrument names. Beholder merges caller views before these
-// defaults (see beholder.mergeMetricViews); callers do not need to invoke
-// DefaultViews themselves.
+// defaults (see beholder.Config.metricViews); callers do not need to invoke
+// Default themselves.
 //
 // View precedence (the rule the rest of this package relies on): a single
 // instrument may match several views, but the SDK identifies a stream by
@@ -35,12 +35,6 @@ const (
 )
 
 var (
-	globalHighCardinalityDeny = attribute.NewDenyKeysFilter(
-		attribute.Key("event_id"),
-		attribute.Key("trigger_id"),
-		attribute.Key("workflow_execution_id"),
-	)
-
 	baseTriggerAllow = attribute.NewAllowKeysFilter(
 		attribute.Key("capability_id"),
 		attribute.Key("reason"),
@@ -53,18 +47,22 @@ var (
 	)
 )
 
-// DefaultViews returns views appended after caller-supplied MetricViews by
-// beholder.mergeMetricViews, in the registration order the precedence rule in
-// the package doc depends on:
+// Default returns views appended after caller-supplied MetricViews by
+// beholder.Config.metricViews, in the registration order the precedence rule
+// in the package doc depends on:
 //
 //  1. PerWorkflow histogram bucket views, so they win for CRE limit metrics
-//     (chainlink supplies no caller views for those names). Each carries
-//     globalHighCardinalityDeny on its own Stream mask, because winning the
+//     (chainlink supplies no caller views for those names). Each carries the
+//     denyKeys attribute filter on its own Stream mask, because winning the
 //     stream identity for a bucket override also excludes the "*" deny view.
-//  2. Attribute-filter views, most-specific matcher first, ending with the
-//     global "*" catch-all.
-func DefaultViews() []sdkmetric.View {
-	views := perWorkflowHistogramViews()
+//  2. Attribute-filter allow-list views, most-specific matcher first.
+//  3. The global "*" deny-list catch-all, built from denyKeys. Skipped when
+//     denyKeys is empty—no attributes are stripped globally until configured—
+//     but the fixed views above still apply.
+func Default(denyKeys []string) []sdkmetric.View {
+	denyFilter := denyKeysFilter(denyKeys)
+
+	views := perWorkflowHistogramViews(denyFilter)
 	views = append(views,
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: stoppedResendingInstrument},
@@ -74,10 +72,25 @@ func DefaultViews() []sdkmetric.View {
 			sdkmetric.Instrument{Name: baseTriggerInstrumentGlob},
 			sdkmetric.Stream{AttributeFilter: baseTriggerAllow},
 		),
+	)
+	if denyFilter == nil {
+		return views
+	}
+	return append(views,
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: "*"},
-			sdkmetric.Stream{AttributeFilter: globalHighCardinalityDeny},
+			sdkmetric.Stream{AttributeFilter: denyFilter},
 		),
 	)
-	return views
+}
+
+func denyKeysFilter(denyKeys []string) attribute.Filter {
+	if len(denyKeys) == 0 {
+		return nil
+	}
+	keys := make([]attribute.Key, len(denyKeys))
+	for i, k := range denyKeys {
+		keys[i] = attribute.Key(k)
+	}
+	return attribute.NewDenyKeysFilter(keys...)
 }

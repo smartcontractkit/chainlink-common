@@ -193,6 +193,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
+			MetricViewsDenyAttributes:    s.EnvConfig.TelemetryMetricViewsDenyAttributes,
 		}
 
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {

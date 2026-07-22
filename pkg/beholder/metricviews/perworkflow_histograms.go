@@ -1,6 +1,9 @@
 package metricviews
 
-import sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+import (
+	"go.opentelemetry.io/otel/attribute"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+)
 
 const perWorkflowInstrumentGlob = "*.PerWorkflow.*"
 
@@ -29,12 +32,13 @@ var (
 )
 
 // perWorkflowHistogramViews returns bucket-boundary overrides for
-// *.PerWorkflow.* histograms, keyed by unit. Each view carries
-// globalHighCardinalityDeny so the deny-list travels with the bucket override
-// (see the view-precedence rule in the package doc). The unit-less count view
-// is registered last and acts as a fallback: the more specific By/s/{gas} views
+// *.PerWorkflow.* histograms, keyed by unit. Each view carries denyFilter so
+// the deny-list travels with the bucket override (see the view-precedence
+// rule in the package doc); denyFilter is nil when no deny keys are
+// configured, which is a no-op attribute filter. The unit-less count view is
+// registered last and acts as a fallback: the more specific By/s/{gas} views
 // win for their units, and the count view claims every other unit.
-func perWorkflowHistogramViews() []sdkmetric.View {
+func perWorkflowHistogramViews(denyFilter attribute.Filter) []sdkmetric.View {
 	return []sdkmetric.View{
 		sdkmetric.NewView(
 			sdkmetric.Instrument{
@@ -46,7 +50,7 @@ func perWorkflowHistogramViews() []sdkmetric.View {
 				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: perWorkflowBytesBoundaries,
 				},
-				AttributeFilter: globalHighCardinalityDeny,
+				AttributeFilter: denyFilter,
 			},
 		),
 		sdkmetric.NewView(
@@ -59,7 +63,7 @@ func perWorkflowHistogramViews() []sdkmetric.View {
 				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: perWorkflowSecondsBoundaries,
 				},
-				AttributeFilter: globalHighCardinalityDeny,
+				AttributeFilter: denyFilter,
 			},
 		),
 		sdkmetric.NewView(
@@ -72,7 +76,7 @@ func perWorkflowHistogramViews() []sdkmetric.View {
 				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: perWorkflowGasBoundaries,
 				},
-				AttributeFilter: globalHighCardinalityDeny,
+				AttributeFilter: denyFilter,
 			},
 		),
 		sdkmetric.NewView(
@@ -84,7 +88,7 @@ func perWorkflowHistogramViews() []sdkmetric.View {
 				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: perWorkflowCountBoundaries,
 				},
-				AttributeFilter: globalHighCardinalityDeny,
+				AttributeFilter: denyFilter,
 			},
 		),
 	}

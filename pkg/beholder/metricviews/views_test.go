@@ -15,25 +15,25 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-func TestDefaultViews_dropsEventIDFromBaseTriggerRetry(t *testing.T) {
+func TestDefault_emptyDenylist(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews()...),
+		sdkmetric.WithView(metricviews.Default(nil)...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 
 	meter := mp.Meter("test")
-	counter, err := meter.Int64Counter("capabilities_base_trigger_retry_total")
+	counter, err := meter.Int64Counter("some_metric_total")
 	require.NoError(t, err)
 
 	counter.Add(context.Background(), 1,
 		metric.WithAttributes(
-			attribute.String("capability_id", "cap-a"),
-			attribute.String("trigger_id", "trig-a"),
+			attribute.String("service", "foo"),
 			attribute.String("event_id", "ev-1"),
+			attribute.String("workflow_execution_id", "exec-1"),
 		),
 	)
 
@@ -41,18 +41,18 @@ func TestDefaultViews_dropsEventIDFromBaseTriggerRetry(t *testing.T) {
 	require.NoError(t, reader.Collect(context.Background(), &rm))
 
 	keys := attributeKeysFromSum(t, rm)
-	assert.Contains(t, keys, attribute.Key("capability_id"))
-	assert.NotContains(t, keys, attribute.Key("trigger_id"))
-	assert.NotContains(t, keys, attribute.Key("event_id"))
+	assert.Contains(t, keys, attribute.Key("service"))
+	assert.Contains(t, keys, attribute.Key("event_id"))
+	assert.Contains(t, keys, attribute.Key("workflow_execution_id"))
 }
 
-func TestDefaultViews_dropsHighCardinalityKeysGlobally(t *testing.T) {
+func TestDefault_dropsDeniedAttributes(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews()...),
+		sdkmetric.WithView(metricviews.Default([]string{"trigger_id", "workflow_execution_id"})...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 
@@ -77,13 +77,44 @@ func TestDefaultViews_dropsHighCardinalityKeysGlobally(t *testing.T) {
 	assert.NotContains(t, keys, attribute.Key("workflow_execution_id"))
 }
 
-func TestDefaultViews_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
+func TestDefault_dropsEventIDFromBaseTriggerRetry(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews()...),
+		sdkmetric.WithView(metricviews.Default(nil)...),
+	)
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+	meter := mp.Meter("test")
+	counter, err := meter.Int64Counter("capabilities_base_trigger_retry_total")
+	require.NoError(t, err)
+
+	counter.Add(context.Background(), 1,
+		metric.WithAttributes(
+			attribute.String("capability_id", "cap-a"),
+			attribute.String("trigger_id", "trig-a"),
+			attribute.String("event_id", "ev-1"),
+		),
+	)
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	keys := attributeKeysFromSum(t, rm)
+	assert.Contains(t, keys, attribute.Key("capability_id"))
+	assert.NotContains(t, keys, attribute.Key("trigger_id"))
+	assert.NotContains(t, keys, attribute.Key("event_id"))
+}
+
+func TestDefault_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithView(metricviews.Default(nil)...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 
@@ -110,12 +141,15 @@ func TestDefaultViews_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
 	assert.NotContains(t, keys, attribute.Key("attempts"))
 }
 
-func TestDefaultViews_count(t *testing.T) {
+func TestDefault_viewCount(t *testing.T) {
 	t.Parallel()
-	assert.Len(t, metricviews.DefaultViews(), 7)
+	// PerWorkflow histogram bucket views (4) + base-trigger allow-lists (2).
+	assert.Len(t, metricviews.Default(nil), 6)
+	// Same fixed views, plus the global "*" deny-list catch-all.
+	assert.Len(t, metricviews.Default([]string{"event_id"}), 7)
 }
 
-func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
+func TestDefault_perWorkflowHistogramBuckets(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -187,7 +221,7 @@ func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
 			reader := sdkmetric.NewManualReader()
 			mp := sdkmetric.NewMeterProvider(
 				sdkmetric.WithReader(reader),
-				sdkmetric.WithView(metricviews.DefaultViews()...),
+				sdkmetric.WithView(metricviews.Default(nil)...),
 			)
 			t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 
@@ -210,19 +244,19 @@ func TestDefaultViews_perWorkflowHistogramBuckets(t *testing.T) {
 	}
 }
 
-// TestDefaultViews_perWorkflowHistogramDropsHighCardinalityKeys guards
-// against the bucket-override view for a PerWorkflow histogram claiming the
-// stream identity ahead of the global "*" deny-filter view and, as a result,
-// silently bypassing it (the SDK dedupes matching views by stream identity
-// and keeps only the first match's Stream mask). The bucket-boundary views
-// must carry the deny filter themselves.
-func TestDefaultViews_perWorkflowHistogramDropsHighCardinalityKeys(t *testing.T) {
+// TestDefault_perWorkflowHistogramDropsHighCardinalityKeys guards against the
+// bucket-override view for a PerWorkflow histogram claiming the stream
+// identity ahead of the global "*" deny-filter view and, as a result, silently
+// bypassing it (the SDK dedupes matching views by stream identity and keeps
+// only the first match's Stream mask). The bucket-boundary views must carry
+// the configured deny filter themselves.
+func TestDefault_perWorkflowHistogramDropsHighCardinalityKeys(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
 	mp := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
-		sdkmetric.WithView(metricviews.DefaultViews()...),
+		sdkmetric.WithView(metricviews.Default([]string{"workflow_execution_id", "event_id"})...),
 	)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 

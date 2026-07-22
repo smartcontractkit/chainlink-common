@@ -52,16 +52,40 @@ func TestConfig_metricOptions_cardinalityLimit(t *testing.T) {
 	assert.Equal(t, int64(uniqueAttributes), total)
 }
 
-func TestMergeMetricViews_prependsDefaults(t *testing.T) {
+func TestConfig_metricViews_appendsDefaultsAfterCallerViews(t *testing.T) {
 	t.Parallel()
 
-	views := mergeMetricViews(Config{
-		MetricViews: []sdkmetric.View{
-			sdkmetric.NewView(
-				sdkmetric.Instrument{Name: "custom_metric"},
-				sdkmetric.Stream{},
-			),
-		},
-	})
-	require.GreaterOrEqual(t, len(views), len(metricviews.DefaultViews())+1)
+	callerView := sdkmetric.NewView(
+		sdkmetric.Instrument{Name: "custom_metric"},
+		sdkmetric.Stream{},
+	)
+	cfg := DefaultConfig()
+	cfg.MetricViews = []sdkmetric.View{callerView}
+
+	views := cfg.metricViews()
+	require.GreaterOrEqual(t, len(views), len(metricviews.Default(nil))+1)
+}
+
+func TestConfig_metricViews_includesDenylistDefaultView(t *testing.T) {
+	t.Parallel()
+
+	cfg := DefaultConfig()
+	cfg.MetricViewsDenyAttributes = []string{"event_id"}
+
+	views := cfg.metricViews()
+	require.Len(t, views, len(metricviews.Default(cfg.MetricViewsDenyAttributes)))
+	require.NotEmpty(t, views)
+}
+
+// TestConfig_metricViews_emptyDenylistOmitsCatchAll verifies that leaving
+// MetricViewsDenyAttributes empty skips only the configurable global "*"
+// deny-list view; the fixed PerWorkflow histogram bucket and base-trigger
+// allow-list defaults still apply (see metricviews.Default).
+func TestConfig_metricViews_emptyDenylistOmitsCatchAll(t *testing.T) {
+	t.Parallel()
+
+	cfg := DefaultConfig()
+	views := cfg.metricViews()
+	require.Len(t, views, len(metricviews.Default(nil)))
+	require.NotEmpty(t, views)
 }

@@ -101,13 +101,13 @@ const (
 	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
 
-	envChipIngressBufferSize          = "CL_CHIP_INGRESS_BUFFER_SIZE"
-	envChipIngressMaxBatchSize        = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
-	envChipIngressMaxConcurrentSends  = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
-	envChipIngressSendInterval        = "CL_CHIP_INGRESS_SEND_INTERVAL"
-	envChipIngressSendTimeout         = "CL_CHIP_INGRESS_SEND_TIMEOUT"
-	envChipIngressDrainTimeout        = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
-	envChipIngressMaxGRPCRequestSize  = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+	envChipIngressBufferSize         = "CL_CHIP_INGRESS_BUFFER_SIZE"
+	envChipIngressMaxBatchSize       = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
+	envChipIngressMaxConcurrentSends = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
+	envChipIngressSendInterval       = "CL_CHIP_INGRESS_SEND_INTERVAL"
+	envChipIngressSendTimeout        = "CL_CHIP_INGRESS_SEND_TIMEOUT"
+	envChipIngressDrainTimeout       = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
+	envChipIngressMaxGRPCRequestSize = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -129,7 +129,7 @@ type EnvConfig struct {
 	ChipIngressSendInterval       time.Duration
 	ChipIngressSendTimeout        time.Duration
 	ChipIngressDrainTimeout       time.Duration
-	ChipIngressMaxGRPCRequestSize uint
+	ChipIngressMaxGRPCRequestSize int
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -337,7 +337,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressSendInterval, e.ChipIngressSendInterval.String())
 	add(envChipIngressSendTimeout, e.ChipIngressSendTimeout.String())
 	add(envChipIngressDrainTimeout, e.ChipIngressDrainTimeout.String())
-	add(envChipIngressMaxGRPCRequestSize, strconv.FormatUint(uint64(e.ChipIngressMaxGRPCRequestSize), 10))
+	add(envChipIngressMaxGRPCRequestSize, strconv.Itoa(e.ChipIngressMaxGRPCRequestSize))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -619,9 +619,12 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressDrainTimeout, err)
 		}
-		e.ChipIngressMaxGRPCRequestSize, err = getUint(envChipIngressMaxGRPCRequestSize)
+		e.ChipIngressMaxGRPCRequestSize, err = getInt(envChipIngressMaxGRPCRequestSize)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxGRPCRequestSize, err)
+		}
+		if e.ChipIngressMaxGRPCRequestSize < 0 {
+			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxGRPCRequestSize, e.ChipIngressMaxGRPCRequestSize)
 		}
 	}
 

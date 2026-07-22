@@ -63,9 +63,9 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	if drainTimeout == 0 {
 		drainTimeout = defaults.ChipIngressDrainTimeout
 	}
-	maxGRPCRequestSize := int(cfg.ChipIngressMaxGRPCRequestSize)
+	maxGRPCRequestSize := cfg.ChipIngressMaxGRPCRequestSize
 	if maxGRPCRequestSize == 0 {
-		maxGRPCRequestSize = int(defaults.ChipIngressMaxGRPCRequestSize)
+		maxGRPCRequestSize = defaults.ChipIngressMaxGRPCRequestSize
 	}
 
 	meter := otel.Meter("beholder/chip_ingress_batch_emitter")

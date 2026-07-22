@@ -39,7 +39,7 @@ type Config struct {
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
-	MetricViews []metric.View
+	MetricViews          []metric.View
 	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
 	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
 	MetricCardinalityLimit int
@@ -60,7 +60,7 @@ type Config struct {
 	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 10s)
 	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 30s)
 	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls (default 10)
-	ChipIngressMaxGRPCRequestSize  uint          // Max serialized PublishBatch request size in bytes (default 10 MiB)
+	ChipIngressMaxGRPCRequestSize  int           // Max serialized PublishBatch request size in bytes (default 10 MiB)
 	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log

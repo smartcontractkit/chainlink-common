@@ -11,6 +11,7 @@ func inc(p *uint32) uint32 {
 	return *p
 }
 
+//go:fix inline
 func Pointer[T any](d T) *T {
-	return &d
+	return new(d)
 }

@@ -5,7 +5,7 @@ import "github.com/grafana/grafana-foundation-sdk/go/alerting"
 type ContactPointOptions struct {
 	Name                  string
 	Type                  alerting.ContactPointType
-	Settings              map[string]interface{}
+	Settings              map[string]any
 	DisableResolveMessage bool
 	Uid                   string
 }

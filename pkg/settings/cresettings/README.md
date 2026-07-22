@@ -164,6 +164,7 @@ flowchart
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
+        PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod[/PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod\]:::gate
         PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod[/PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate

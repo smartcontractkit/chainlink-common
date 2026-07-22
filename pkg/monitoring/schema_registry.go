@@ -76,7 +76,7 @@ func isNotFoundErr(err error) bool {
 }
 
 func isEqualJSON(a, b string) (bool, error) {
-	var aUntyped, bUntyped interface{}
+	var aUntyped, bUntyped any
 
 	if err := json.Unmarshal([]byte(a), &aUntyped); err != nil {
 		return false, fmt.Errorf("failed to unmarshal first avro schema: %w", err)

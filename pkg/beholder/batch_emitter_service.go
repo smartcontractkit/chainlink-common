@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -157,18 +158,17 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			// for metric recording — OTel Add is non-blocking and tolerates
 			// cancelled contexts.
 			if sendErr != nil {
-				errorType, errorCode := batch.ErrorCodeFor(sendErr)
-				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorType, errorCode))
+				errorCode := batch.ErrorCodeFor(sendErr)
+				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
 				// Partial delivery is not logged: it is a per-event, often persistent
 				// server-side condition (e.g. missing schema) that would otherwise log on
-				// every dropped event. chip_ingress.events_dropped (error_type, error_code)
-				// already captures that it's happening and roughly why; the free-text
-				// error_reason is not on the metric, but a bounded error_code is enough to
-				// alert on, and the full reason isn't needed at fleet-wide log volume.
-				if errorType != batch.ErrorTypePartialDelivery {
+				// every dropped event. chip_ingress.events_dropped (error_code) already
+				// captures that it's happening and roughly why; the full reason isn't
+				// needed at fleet-wide log volume.
+				var pubErr *batch.PublishError
+				if !errors.As(sendErr, &pubErr) {
 					e.eng.Errorw("failed to emit to chip ingress",
 						"error", sendErr,
-						"error_type", errorType,
 						"error_code", errorCode,
 						"error_reason", sendErr.Error(),
 						"domain", domain,
@@ -183,11 +183,10 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			}
 		})
 		if queueErr != nil {
-			errorType, errorCode := batch.ErrorCodeFor(queueErr)
-			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorType, errorCode))
+			errorCode := batch.ErrorCodeFor(queueErr)
+			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
 			e.eng.Errorw("failed to queue message for chip ingress",
 				"error", queueErr,
-				"error_type", errorType,
 				"error_code", errorCode,
 				"error_reason", queueErr.Error(),
 				"domain", domain,
@@ -220,14 +219,13 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 //
 // error_reason is deliberately excluded: it is free-form text from the server/gRPC
 // stack (e.g. validation messages, status details) and is not a bounded value, so using
-// it as a metric attribute would create unbounded cardinality. domain/entity/error_type/
-// error_code are all closed, bounded sets. error_reason is still available on the
-// corresponding log line.
-func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity, errorType, errorCode string) otelmetric.MeasurementOption {
+// it as a metric attribute would create unbounded cardinality. domain/entity/error_code
+// are all closed, bounded sets. error_reason is still available on the corresponding
+// log line.
+func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity, errorCode string) otelmetric.MeasurementOption {
 	attrs := []attribute.KeyValue{
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
-		attribute.String("error_type", errorType),
 	}
 	if errorCode != "" {
 		attrs = append(attrs, attribute.String("error_code", errorCode))

@@ -507,13 +507,13 @@ func TestChipIngressBatchEmitterService_PartialDeliveryError(t *testing.T) {
 
 		// Partial delivery is intentionally not logged (see dropMetricAttrsFor / emitInternal):
 		// it's a per-event, often persistent condition that would otherwise spam logs at
-		// fleet-wide volume. The events_dropped metric (error_type, error_code) is the
-		// intended signal; see the "records events_dropped" subtest below.
+		// fleet-wide volume. The events_dropped metric (error_code) is the intended signal;
+		// see the "records events_dropped" subtest below.
 		logs := observed.FilterMessage("failed to emit to chip ingress")
 		assert.Zero(t, logs.Len(), "partial delivery drops must not be logged")
 	})
 
-	t.Run("records events_dropped with partial_delivery error_type", func(t *testing.T) {
+	t.Run("records events_dropped with the PublishError code", func(t *testing.T) {
 		reader, restore := useEmitterTestMeterProvider(t)
 		defer restore()
 
@@ -562,12 +562,8 @@ func TestChipIngressBatchEmitterService_PartialDeliveryError(t *testing.T) {
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
-		dp := mustEmitterInt64SumPoint(t, sum, "error_type", "partial_delivery", "entity", "PartialEvent")
+		dp := mustEmitterInt64SumPoint(t, sum, "error_code", "PUBLISH_ERROR_CODE_VALIDATION_FAILED", "entity", "PartialEvent")
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
-		assert.True(t,
-			hasEmitterStringAttr(dp.Attributes, "error_code", "PUBLISH_ERROR_CODE_VALIDATION_FAILED"),
-			"expected error_code label on partial_delivery drop metric datapoint",
-		)
 	})
 }
 
@@ -611,9 +607,8 @@ func TestChipIngressBatchEmitterService_RPCError(t *testing.T) {
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
-		dp := mustEmitterInt64SumPoint(t, sum, "error_type", "rpc_error", "entity", "RPCDropEvent")
+		dp := mustEmitterInt64SumPoint(t, sum, "error_code", "Internal", "entity", "RPCDropEvent")
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
-		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "Internal"))
 		// error_reason is free-form server/gRPC text and must never be a metric attribute -
 		// it would create unbounded cardinality. It's still available on the log line.
 		assert.False(t, hasEmitterStringAttr(dp.Attributes, "error_reason", "failed to publish events"))
@@ -702,9 +697,8 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
-		dp := mustEmitterInt64SumPoint(t, sum, "error_type", "rpc_error", "entity", "MetricDropEvent")
+		dp := mustEmitterInt64SumPoint(t, sum, "error_code", "DeadlineExceeded", "entity", "MetricDropEvent")
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
-		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "DeadlineExceeded"))
 
 		logs := observed.FilterMessage("failed to emit to chip ingress")
 		require.GreaterOrEqual(t, logs.Len(), 1, "expected error log for publish failure")

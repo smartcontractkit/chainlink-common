@@ -681,6 +681,19 @@ func TestOptions(t *testing.T) {
 		assert.Equal(t, mockProvider, config.headerProvider)
 	})
 
+	t.Run("WithResourceAttributeHeaders", func(t *testing.T) {
+		config := defaultCfg
+		WithResourceAttributeHeaders(map[string]string{
+			"Chain-ID": "1",
+			"id":       "skipped", // reserved extension name
+			"chain_id": "2",       // duplicate sanitized key, first wins
+		})(&config)
+		assert.NotNil(t, config.headerProvider)
+		headers, err := config.headerProvider.Headers(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{"chainid": "1"}, headers)
+	})
+
 	t.Run("WithBasicAuth", func(t *testing.T) {
 		config := defaultCfg
 		WithBasicAuth("user", "pass")(&config)

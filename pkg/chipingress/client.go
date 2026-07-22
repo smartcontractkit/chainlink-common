@@ -215,6 +215,13 @@ func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *clientConfig) { c.headerProvider = provider }
 }
 
+// WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes
+// as sanitized gRPC metadata headers. It combines SanitizeMetadataHeaders with
+// NewStaticHeaderProvider so the safe, validated path is used by default.
+func WithResourceAttributeHeaders(attrs map[string]string) Opt {
+	return WithHeaderProvider(NewStaticHeaderProvider(SanitizeMetadataHeaders(attrs)))
+}
+
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).
 func WithInsecureConnection() Opt {
 	return func(config *clientConfig) {

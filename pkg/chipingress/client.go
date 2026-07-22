@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"sort"
 	"strings"
 	"time"
 
@@ -292,33 +291,15 @@ func sanitizeExtensionName(name string) string {
 	return b.String()
 }
 
-	// WithResourceAttributeExtensions returns an EventOpt that sets a CloudEvent extension for each
-	// entry in attrs, sanitizing keys via sanitizeExtensionName so they satisfy the CloudEvents
-	// extension-name character set. Entries that sanitize to an empty string, or that collide with a
-	// reserved extension name (see reservedExtensionNames), are skipped. Keys are applied in sorted
-	// order so that if two distinct keys sanitize to the same name, the result is deterministic.
+// WithResourceAttributeExtensions returns an EventOpt that sets a CloudEvent extension for each
+// entry in attrs, sanitizing keys via sanitizeExtensionName so they satisfy the CloudEvents
+// extension-name character set. Entries that sanitize to an empty string, or that collide with a
+// reserved extension name (see reservedExtensionNames), are skipped. Keys are applied in sorted
+// order so that if two distinct keys sanitize to the same name, the result is deterministic.
 func WithResourceAttributeExtensions(attrs map[string]string) EventOpt {
 	return func(event *ce.Event) {
-		keys := make([]string, 0, len(attrs))
-		for k := range attrs {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-
-		set := make(map[string]struct{}, len(attrs))
-		for _, k := range keys {
-			name := sanitizeExtensionName(k)
-			if name == "" {
-				continue
-			}
-			if _, reserved := reservedExtensionNames[name]; reserved {
-				continue
-			}
-			if _, already := set[name]; already {
-				continue
-			}
-			set[name] = struct{}{}
-			event.SetExtension(name, attrs[k])
+		for _, pair := range sanitizeResourceAttributeKeys(attrs, nil) {
+			event.SetExtension(pair.name, attrs[pair.key])
 		}
 	}
 }

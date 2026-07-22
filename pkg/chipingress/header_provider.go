@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -151,28 +150,9 @@ func SanitizeMetadataValue(val string) string {
 // collide with the CE binding's own "ce_<name>" Kafka header if the server ever forwards gRPC
 // metadata verbatim onto Kafka.
 func SanitizeMetadataHeaders(in map[string]string) map[string]string {
-	keys := make([]string, 0, len(in))
-	for k := range in {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
 	out := make(map[string]string, len(in))
-	for _, k := range keys {
-		name := sanitizeExtensionName(k)
-		if name == "" {
-			continue
-		}
-		if _, reserved := reservedExtensionNames[name]; reserved {
-			continue
-		}
-		if _, reserved := reservedMetadataKeys[name]; reserved {
-			continue
-		}
-		if _, exists := out[name]; exists {
-			continue
-		}
-		out[name] = SanitizeMetadataValue(in[k])
+	for _, pair := range sanitizeResourceAttributeKeys(in, reservedMetadataKeys) {
+		out[pair.name] = SanitizeMetadataValue(in[pair.key])
 	}
 	return out
 }

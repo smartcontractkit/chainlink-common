@@ -55,6 +55,7 @@
 		"PublicKeyRequestTimeout": "5s",
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
+		"QuorumTimeoutIsUserError": "true",
 		"PublicKeyCache": {
 			"Enabled": "true",
 			"TTL": "5m0s",

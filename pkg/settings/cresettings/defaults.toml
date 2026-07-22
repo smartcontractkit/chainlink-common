@@ -55,6 +55,7 @@ EnclaveRequestTimeout = '30s'
 PublicKeyRequestTimeout = '5s'
 InsecureSkipTLSVerify = 'false'
 EnclaveRefreshInterval = '10s'
+QuorumTimeoutIsUserError = 'true'
 
 [ConfidentialCompute.PublicKeyCache]
 Enabled = 'true'

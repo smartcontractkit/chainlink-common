@@ -283,6 +283,7 @@ flowchart
         ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
         ConfidentialCompute.InsecureSkipTLSVerify[/ConfidentialCompute.InsecureSkipTLSVerify\]:::gate
         ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
+        ConfidentialCompute.QuorumTimeoutIsUserError[/ConfidentialCompute.QuorumTimeoutIsUserError\]:::gate
         subgraph ConfidentialCompute.PublicKeyCache
             ConfidentialCompute.PublicKeyCache.Enabled[/Enabled\]:::gate
             ConfidentialCompute.PublicKeyCache.TTL>TTL]:::time

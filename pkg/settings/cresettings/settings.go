@@ -142,14 +142,15 @@ var Default = Schema{
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
 	ConfidentialCompute: confidentialCompute{
-		GlobalRate:              Rate(rate.Limit(1000), 1000),
-		MaxRetries:              Int(3),
-		RetryBackoff:            Duration(2 * time.Second),
-		SecretsCacheEnabled:     Bool(false),
-		EnclaveRequestTimeout:   Duration(30 * time.Second),
-		PublicKeyRequestTimeout: Duration(5 * time.Second),
-		InsecureSkipTLSVerify:   Bool(false),
-		EnclaveRefreshInterval:  Duration(10 * time.Second),
+		GlobalRate:               Rate(rate.Limit(1000), 1000),
+		MaxRetries:               Int(3),
+		RetryBackoff:             Duration(2 * time.Second),
+		SecretsCacheEnabled:      Bool(false),
+		EnclaveRequestTimeout:    Duration(30 * time.Second),
+		PublicKeyRequestTimeout:  Duration(5 * time.Second),
+		InsecureSkipTLSVerify:    Bool(false),
+		EnclaveRefreshInterval:   Duration(10 * time.Second),
+		QuorumTimeoutIsUserError: Bool(true),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -318,18 +319,18 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                                     Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit                 Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
-	GatewayVaultManagementEnabled                     Setting[bool]
-	VaultJWTAuthEnabled                               Setting[bool]
-	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
+	GatewayVaultManagementEnabled               Setting[bool]
+	VaultJWTAuthEnabled                         Setting[bool]
+	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
 	// executable capability server reject any request whose
 	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
-	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
+	RemoteExecutableWorkflowDONBindingEnabled         Setting[bool]
 	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
@@ -529,8 +530,11 @@ type confidentialCompute struct {
 
 	InsecureSkipTLSVerify  Setting[bool]
 	EnclaveRefreshInterval Setting[time.Duration]
-	PublicKeyCache         ccPublicKeyCache
-	Session                ccSession
+
+	QuorumTimeoutIsUserError Setting[bool]
+
+	PublicKeyCache ccPublicKeyCache
+	Session        ccSession
 }
 
 // ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.

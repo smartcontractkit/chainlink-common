@@ -226,13 +226,14 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 //
 // error_reason is deliberately excluded: it is free-form text from the server/gRPC
 // stack (e.g. validation messages, status details) and is not a bounded value, so using
-// it as a metric attribute would create unbounded cardinality. domain/entity/error_code
+// it as a metric attribute would create unbounded cardinality. domain/entity/client_name/error_code
 // are all closed, bounded sets. error_reason is still available on the corresponding
 // log line.
 func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity, errorCode string) otelmetric.MeasurementOption {
 	attrs := []attribute.KeyValue{
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
+		attribute.String("client_name", batch.ClientNameBeholder),
 	}
 	if errorCode != "" {
 		attrs = append(attrs, attribute.String("error_code", errorCode))

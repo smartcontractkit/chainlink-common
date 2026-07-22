@@ -563,7 +563,9 @@ func TestChipIngressBatchEmitterService_PartialDeliveryError(t *testing.T) {
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
-		dp := mustEmitterInt64SumPoint(t, sum, "error_code", "PUBLISH_ERROR_CODE_VALIDATION_FAILED", "entity", "PartialEvent")
+		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "PartialEvent")
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "PUBLISH_ERROR_CODE_VALIDATION_FAILED"))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 	})
 }
@@ -608,7 +610,9 @@ func TestChipIngressBatchEmitterService_RPCError(t *testing.T) {
 		metric := mustEmitterMetric(t, rm, "chip_ingress.events_dropped")
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
-		dp := mustEmitterInt64SumPoint(t, sum, "error_code", "Internal", "entity", "RPCDropEvent")
+		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "RPCDropEvent")
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "Internal"))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 		// error_reason is free-form server/gRPC text and must never be a metric attribute -
 		// it would create unbounded cardinality. It's still available on the log line.
@@ -701,6 +705,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricDropEvent")
 		assert.True(t, hasEmitterStringAttr(dp.Attributes, "error_code", "DeadlineExceeded"))
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 
 		logs := observed.FilterMessage("failed to emit to chip ingress")

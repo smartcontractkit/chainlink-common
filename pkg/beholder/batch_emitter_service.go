@@ -3,7 +3,6 @@ package beholder
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"go.opentelemetry.io/otel"
@@ -158,8 +157,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			// for metric recording — OTel Add is non-blocking and tolerates
 			// cancelled contexts.
 			if sendErr != nil {
-				errorCode := batch.ErrorCodeFor(sendErr)
-				errorType := errorTypeFromCode(errorCode)
+				errorType, errorCode := batch.ErrorCodeFor(sendErr)
 				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorType, errorCode))
 				// Partial delivery is not logged: it is a per-event, often persistent
 				// server-side condition (e.g. missing schema) that would otherwise log on
@@ -185,8 +183,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			}
 		})
 		if queueErr != nil {
-			errorCode := batch.ErrorCodeFor(queueErr)
-			errorType := errorTypeFromCode(errorCode)
+			errorType, errorCode := batch.ErrorCodeFor(queueErr)
 			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorType, errorCode))
 			e.eng.Errorw("failed to queue message for chip ingress",
 				"error", queueErr,
@@ -216,23 +213,6 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)
-}
-
-// errorTypeFromCode infers the error category from the bounded error code
-// produced by batch.ErrorCodeFor.
-func errorTypeFromCode(code string) string {
-	switch {
-	case code == "":
-		return ""
-	case strings.HasPrefix(code, chipingress.PublishErrorCode(0).String()) || strings.HasPrefix(code, "PUBLISH_ERROR_CODE_"):
-		return batch.ErrorTypePartialDelivery
-	case code == batch.ErrMessageBufferFull.Error():
-		return batch.ErrorTypeBufferFull
-	case code == batch.ErrClientShutdown.Error() || code == batch.ErrorTypeClientError:
-		return batch.ErrorTypeClientError
-	default:
-		return batch.ErrorTypeRPCError
-	}
 }
 
 // dropMetricAttrsFor returns a measurement option for the eventsDropped counter.

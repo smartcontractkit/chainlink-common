@@ -135,7 +135,7 @@ func SanitizeMetadataValue(val string) string {
 
 // SanitizeMetadataHeaders sanitizes a map of resource-attribute headers for use as outgoing
 // gRPC metadata (e.g. via NewStaticHeaderProvider). Keys are sanitized with
-// SanitizeExtensionName — the same strict [a-z0-9] charset used for CloudEvent extensions —
+// sanitizeExtensionName — the same strict [a-z0-9] charset used for CloudEvent extensions —
 // which is a subset of grpc's allowed metadata-key charset, so a sanitized key can never trip
 // grpc's key validation or the reserved "-bin" suffix, and produces the same key stem as the
 // corresponding CE extension (differing only by the CloudEvents Kafka binding's "ce_" prefix
@@ -159,7 +159,7 @@ func SanitizeMetadataHeaders(in map[string]string) map[string]string {
 
 	out := make(map[string]string, len(in))
 	for _, k := range keys {
-		name := SanitizeExtensionName(k)
+		name := sanitizeExtensionName(k)
 		if name == "" {
 			continue
 		}

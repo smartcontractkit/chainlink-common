@@ -168,7 +168,7 @@ func TestNewEvent_IdempotencyKey(t *testing.T) {
 	})
 }
 
-func TestSanitizeExtensionName(t *testing.T) {
+func Test_sanitizeExtensionName(t *testing.T) {
 	tests := []struct {
 		name string
 		in   string
@@ -184,7 +184,7 @@ func TestSanitizeExtensionName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, SanitizeExtensionName(tt.in))
+			assert.Equal(t, tt.want, sanitizeExtensionName(tt.in))
 		})
 	}
 }

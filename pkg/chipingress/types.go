@@ -33,7 +33,7 @@ var reservedExtensionNames = map[string]struct{}{
 }
 
 // reservedMetadataKeys holds gRPC-reserved header names that could otherwise be reached by
-// SanitizeExtensionName's [a-z0-9] sanitization. Verified against grpc-go v1.79.1's
+// sanitizeExtensionName's [a-z0-9] sanitization. Verified against grpc-go v1.79.1's
 // isReservedHeader: every other reserved header (pseudo-headers, "content-type", "grpc-*")
 // contains a ':' or '-' that sanitization strips, so "te" is the only one actually reachable.
 // SanitizeMetadataHeaders consults this set so that edge case is handled deterministically

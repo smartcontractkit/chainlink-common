@@ -121,92 +121,92 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain converts type to codec.CreateType type", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.TypeFor[testStructOn](), "")
 		require.NoError(t, err)
 		require.Equal(t, 2, offChainType.NumField())
 		field0 := offChainType.Field(0)
 		assert.Equal(t, "Ask", field0.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field0.Type)
 		field1 := offChainType.Field(1)
 		assert.Equal(t, "Bid", field1.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field1.Type)
 	})
 
 	t.Run("RetypeToOffChain works on pointers to type", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeFor[testStructOn]()), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
 		assert.Equal(t, "Ask", field0.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field0.Type)
 		field1 := elem.Field(1)
 		assert.Equal(t, "Bid", field1.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field1.Type)
 	})
 
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
-		offChainType, err := pointerPreCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOnPointer{})), "")
+		offChainType, err := pointerPreCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeFor[testStructOnPointer]()), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Pointer, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
 		assert.Equal(t, "Ask", field0.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field0.Type)
 		field1 := elem.Field(1)
 		assert.Equal(t, "Bid", field1.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field1.Type)
 	})
 
 	t.Run("RetypeToOffChain works on slices", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.SliceOf(reflect.TypeOf(testStructOn{})), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.SliceOf(reflect.TypeFor[testStructOn]()), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Slice, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
 		assert.Equal(t, "Ask", field0.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field0.Type)
 		field1 := elem.Field(1)
 		assert.Equal(t, "Bid", field1.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field1.Type)
 	})
 
 	t.Run("RetypeToOffChain works on arrays", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.ArrayOf(1, reflect.TypeOf(testStructOn{})), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.ArrayOf(1, reflect.TypeFor[testStructOn]()), "")
 		require.NoError(t, err)
 		assert.Equal(t, reflect.Array, offChainType.Kind())
 		elem := offChainType.Elem()
 		require.Equal(t, 2, elem.NumField())
 		field0 := elem.Field(0)
 		assert.Equal(t, "Ask", field0.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field0.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field0.Type)
 		field1 := elem.Field(1)
 		assert.Equal(t, "Bid", field1.Name)
-		assert.Equal(t, reflect.TypeOf(int(0)), field1.Type)
+		assert.Equal(t, reflect.TypeFor[int](), field1.Type)
 	})
 
 	t.Run("RetypeToOffChain converts nested type to codec.CreateType type", func(t *testing.T) {
-		offChainType, err := nestedPreCodec.RetypeToOffChain(reflect.TypeOf(nestedTestStructOn{}), "")
+		offChainType, err := nestedPreCodec.RetypeToOffChain(reflect.TypeFor[nestedTestStructOn](), "")
 
 		require.NoError(t, err)
 
 		require.Equal(t, 3, offChainType.NumField())
 		field0 := offChainType.Field(0)
 		assert.Equal(t, "Report", field0.Name)
-		assert.Equal(t, reflect.TypeOf(testStructOff{}), field0.Type)
+		assert.Equal(t, reflect.TypeFor[testStructOff](), field0.Type)
 		field1 := offChainType.Field(1)
 		assert.Equal(t, "FeedID", field1.Name)
-		assert.Equal(t, reflect.TypeOf([32]byte{}), field1.Type)
+		assert.Equal(t, reflect.TypeFor[[32]byte](), field1.Type)
 		field2 := offChainType.Field(2)
 		assert.Equal(t, "Timestamp", field2.Name)
-		assert.Equal(t, reflect.TypeOf(int64(0)), field2.Type)
+		assert.Equal(t, reflect.TypeFor[int64](), field2.Type)
 	})
 
 	t.Run("RetypeToOffChain converts deep nested type to codec.CreateType type", func(t *testing.T) {
-		offChainType, err := deepNestedPreCodec.RetypeToOffChain(reflect.TypeOf(deepNestedTestStructOn{}), "")
+		offChainType, err := deepNestedPreCodec.RetypeToOffChain(reflect.TypeFor[deepNestedTestStructOn](), "")
 
 		require.NoError(t, err)
 
@@ -216,23 +216,23 @@ func TestPreCodec(t *testing.T) {
 		require.Equal(t, 3, report.NumField())
 		field0 := report.Field(0)
 		assert.Equal(t, "Report", field0.Name)
-		assert.Equal(t, reflect.TypeOf(testStructOff{}), field0.Type)
+		assert.Equal(t, reflect.TypeFor[testStructOff](), field0.Type)
 		field1 := report.Field(1)
 		assert.Equal(t, "FeedID", field1.Name)
-		assert.Equal(t, reflect.TypeOf([32]byte{}), field1.Type)
+		assert.Equal(t, reflect.TypeFor[[32]byte](), field1.Type)
 		field2 := report.Field(2)
 		assert.Equal(t, "Timestamp", field2.Name)
-		assert.Equal(t, reflect.TypeOf(int64(0)), field2.Type)
+		assert.Equal(t, reflect.TypeFor[int64](), field2.Type)
 	})
 
 	t.Run("RetypeToOffChain only works on byte arrays", func(t *testing.T) {
-		_, err := preCodec.RetypeToOffChain(reflect.TypeOf(testStructOff{}), "")
+		_, err := preCodec.RetypeToOffChain(reflect.TypeFor[testStructOff](), "")
 		require.Error(t, err)
 		assert.Equal(t, "can only decode []byte from on-chain: int", err.Error())
 	})
 
 	t.Run("RetypeToOffChain only works with a valid path", func(t *testing.T) {
-		_, err := invalidPreCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
+		_, err := invalidPreCodec.RetypeToOffChain(reflect.TypeFor[testStructOn](), "")
 		require.Error(t, err)
 		assert.Equal(t, "invalid type: cannot find Unknown", err.Error())
 	})
@@ -246,7 +246,7 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.TypeOf(testStructOn{}), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.TypeFor[testStructOn](), "")
 		require.NoError(t, err)
 		iOffchain := reflect.Indirect(reflect.New(offChainType))
 		iOffchain.FieldByName("Ask").SetInt(20)
@@ -268,7 +268,7 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on pointers", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeOf(testStructOn{})), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.PointerTo(reflect.TypeFor[testStructOn]()), "")
 		require.NoError(t, err)
 
 		rOffchain := reflect.New(offChainType.Elem())
@@ -291,7 +291,7 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on slices", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.SliceOf(reflect.TypeOf(testStructOn{})), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.SliceOf(reflect.TypeFor[testStructOn]()), "")
 		require.NoError(t, err)
 
 		iOffchain := reflect.MakeSlice(offChainType, 2, 2)
@@ -324,7 +324,7 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on arrays", func(t *testing.T) {
-		offChainType, err := preCodec.RetypeToOffChain(reflect.ArrayOf(2, reflect.TypeOf(testStructOn{})), "")
+		offChainType, err := preCodec.RetypeToOffChain(reflect.ArrayOf(2, reflect.TypeFor[testStructOn]()), "")
 		require.NoError(t, err)
 
 		iOffchain := reflect.New(offChainType).Elem()
@@ -357,7 +357,7 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on nested fields", func(t *testing.T) {
-		offChainType, err := nestedPreCodec.RetypeToOffChain(reflect.TypeOf(nestedTestStructOn{}), "")
+		offChainType, err := nestedPreCodec.RetypeToOffChain(reflect.TypeFor[nestedTestStructOn](), "")
 		require.NoError(t, err)
 
 		iOffchain := reflect.Indirect(reflect.New(offChainType))
@@ -384,7 +384,7 @@ func TestPreCodec(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on deeply nested fields", func(t *testing.T) {
-		offChainType, err := deepNestedPreCodec.RetypeToOffChain(reflect.TypeOf(deepNestedTestStructOn{}), "")
+		offChainType, err := deepNestedPreCodec.RetypeToOffChain(reflect.TypeFor[deepNestedTestStructOn](), "")
 		require.NoError(t, err)
 
 		iOffchain := reflect.Indirect(reflect.New(offChainType))

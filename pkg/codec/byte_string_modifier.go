@@ -156,10 +156,10 @@ func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 	if err != nil {
 		// Handle additional cases specific to bytesToStringModifier
 		if onChainType.Kind() == reflect.Array {
-			addrType := reflect.ArrayOf(m.modifier.Length(), reflect.TypeOf(byte(0)))
+			addrType := reflect.ArrayOf(m.modifier.Length(), reflect.TypeFor[byte]())
 			// Check for nested byte arrays (e.g., [n][20]byte)
 			if onChainType.Elem() == addrType.Elem() {
-				return reflect.ArrayOf(onChainType.Len(), reflect.TypeOf("")), nil
+				return reflect.ArrayOf(onChainType.Len(), reflect.TypeFor[string]()), nil
 			}
 		}
 	}
@@ -224,7 +224,7 @@ func addressTransformationAction(length int) func(extractMap map[string]any, key
 				rVal = reflect.Indirect(rVal)
 			}
 
-			expectedType := reflect.ArrayOf(length, reflect.TypeOf(byte(0)))
+			expectedType := reflect.ArrayOf(length, reflect.TypeFor[byte]())
 			if rVal.Type().ConvertibleTo(expectedType) {
 				if !rVal.CanConvert(expectedType) {
 					return fmt.Errorf("cannot convert type %v to expected type %v for field %s", rVal.Type(), expectedType, fieldName)
@@ -287,17 +287,17 @@ func createStringTypeForBytes(t reflect.Type, field string, length int) (reflect
 	case reflect.Array:
 		// Handle arrays, convert array of bytes to array of strings
 		if t.Elem().Kind() == reflect.Uint8 && t.Len() == length {
-			return reflect.TypeOf(""), nil
+			return reflect.TypeFor[string](), nil
 		} else if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
 			// Handle nested arrays (e.g., [2][20]byte to [2]string)
-			return reflect.ArrayOf(t.Len(), reflect.TypeOf("")), nil
+			return reflect.ArrayOf(t.Len(), reflect.TypeFor[string]()), nil
 		}
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
 	case reflect.Slice:
 		// Handle slices of byte arrays, convert to slice of strings
 		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
-			return reflect.SliceOf(reflect.TypeOf("")), nil
+			return reflect.SliceOf(reflect.TypeFor[string]()), nil
 		}
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
@@ -309,8 +309,8 @@ func createStringTypeForBytes(t reflect.Type, field string, length int) (reflect
 // stringToAddressHookForOnChain converts a string representation of an address back into a byte array for on-chain use.
 func stringToAddressHookForOnChain(modifier AddressModifier) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeOf(byte(0)))
-		strTyp := reflect.TypeOf("")
+		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeFor[byte]())
+		strTyp := reflect.TypeFor[string]()
 
 		// Convert from string to byte array (e.g., string -> [20]byte)
 		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
@@ -339,8 +339,8 @@ func stringToAddressHookForOnChain(modifier AddressModifier) func(from reflect.T
 // addressToStringHookForOffChain converts byte arrays to their string representation for off-chain use.
 func addressToStringHookForOffChain(modifier AddressModifier) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeOf(byte(0)))
-		strTyp := reflect.TypeOf("")
+		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeFor[byte]())
+		strTyp := reflect.TypeFor[string]()
 		rVal := reflect.ValueOf(data)
 
 		if !reflect.ValueOf(data).IsValid() {

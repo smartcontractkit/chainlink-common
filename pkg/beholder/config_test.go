@@ -55,7 +55,8 @@ func TestConfig(t *testing.T) {
 		// Metric
 		MetricReaderInterval:   1 * time.Second,
 		MetricCompressor:       "gzip",
-		MetricCardinalityLimit: 0,
+		MetricViewsDenyAttributes: nil,
+		MetricCardinalityLimit:        0,
 		// OTel metric exporter retry config
 		MetricRetryConfig: nil,
 		// Log

@@ -2,15 +2,34 @@ package beholder
 
 import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
 
-// metricOptions returns cfg-derived sdkmetric.Option values (caller MetricViews
-// and the SDK per-instrument cardinality limit). Callers append reader/resource
-// options at the call site.
+// metricViews returns the view list passed to sdkmetric.WithView.
+//
+// Final order:
+//  1. cfg.MetricViews — caller overrides (e.g. chainlink metricViews() histogram buckets)
+//  2. metricviews.Default() — attribute filters for high-cardinality labels
+//
+// Caller views must come first: when multiple views match an instrument and
+// resolve to the same output stream (same name/description/unit/kind), the SDK
+// keeps only the first in registration order and drops the rest.
+func (cfg Config) metricViews() []sdkmetric.View {
+	if len(cfg.MetricViewsDenyAttributes) == 0 {
+		return cfg.MetricViews
+	}
+	return append(cfg.MetricViews, metricviews.Default(cfg.MetricViewsDenyAttributes)...)
+}
+
+// metricOptions returns cfg-derived sdkmetric.Option values (metric views and the
+// SDK per-instrument cardinality limit). Callers append reader/resource options
+// at the call site.
 func (cfg Config) metricOptions() []sdkmetric.Option {
+	views := cfg.metricViews()
 	var opts []sdkmetric.Option
-	if len(cfg.MetricViews) > 0 {
-		opts = append(opts, sdkmetric.WithView(cfg.MetricViews...))
+	if len(views) > 0 {
+		opts = append(opts, sdkmetric.WithView(views...))
 	}
 	if cfg.MetricCardinalityLimit > 0 {
 		opts = append(opts, sdkmetric.WithCardinalityLimit(cfg.MetricCardinalityLimit))

@@ -19,6 +19,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -31,6 +32,7 @@ func newTestConfig() beholder.Config {
 		ChipIngressSendInterval:       50 * time.Millisecond,
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 1024 * 1024,
 	}
 }
 
@@ -94,7 +96,7 @@ func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, emitter.Start(t.Context()))
 
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			err = emitter.Emit(t.Context(), []byte("body"),
 				beholder.AttrKeyDomain, "platform",
 				beholder.AttrKeyEntity, "TestEvent",
@@ -189,7 +191,7 @@ func TestChipIngressBatchEmitterService_PublishBatchError(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, emitter.Start(t.Context()))
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		err = emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
 			beholder.AttrKeyEntity, "TestEvent",
@@ -400,7 +402,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 		<-firstCallSignal
 		time.Sleep(100 * time.Millisecond)
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			_ = emitter.Emit(t.Context(), []byte("filler"),
 				beholder.AttrKeyDomain, "platform",
 				beholder.AttrKeyEntity, "TestEvent",
@@ -497,6 +499,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricEvent")
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 	})
 
@@ -540,6 +543,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricDropEvent")
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 
 		logs := observed.FilterMessage("failed to emit to chip ingress")
@@ -573,6 +577,7 @@ func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {
 		ChipIngressSendInterval:       time.Hour,
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 1024 * 1024,
 	}
 	emitter, err := beholder.NewChipIngressBatchEmitterService(&chipingress.NoopClient{}, cfg, logger.Test(b))
 	if err != nil {

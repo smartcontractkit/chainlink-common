@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -239,7 +240,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter)
+		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ClientNameDurableEmitter)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}
@@ -262,10 +263,7 @@ func NewDurableEmitter(
 	if cfg.InsertBatchSize > 0 {
 		if bi, ok := store.(BatchInserter); ok {
 			d.batchInserter = bi
-			chanSize := cfg.InsertBatchSize * 200
-			if chanSize < 10_000 {
-				chanSize = 10_000
-			}
+			chanSize := max(cfg.InsertBatchSize*200, 10_000)
 			d.insertCh = make(chan *insertRequest, chanSize)
 			d.eng.Infow("DurableEmitter: write coalescing enabled",
 				"insertBatchSize", cfg.InsertBatchSize,
@@ -275,10 +273,7 @@ func NewDurableEmitter(
 	}
 
 	if cfg.DeleteBatchSize > 0 {
-		chanSize := cfg.DeleteBatchSize * 200
-		if chanSize < 10_000 {
-			chanSize = 10_000
-		}
+		chanSize := max(cfg.DeleteBatchSize*200, 10_000)
 		d.deleteCh = make(chan int64, chanSize)
 		d.eng.Infow("DurableEmitter: delete coalescing enabled",
 			"deleteBatchSize", cfg.DeleteBatchSize,

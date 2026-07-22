@@ -5,6 +5,7 @@
 	"GatewayVaultManagementEnabled": "true",
 	"VaultJWTAuthEnabled": "false",
 	"CentralizedWorkflowOwnerVerificationEnabled": "false",
+	"RemoteExecutableWorkflowDONBindingEnabled": "false",
 	"TenantID": "0",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
@@ -18,6 +19,7 @@
 	"VaultIncludeInvalidPendingItemsEnabled": "false",
 	"VaultPendingQueueStallThreshold": "0",
 	"VaultSignedResponseRequestIDEnabled": "false",
+	"VaultZoneBWorkflowGetSecretsRestrictEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"GatewayConfidentialRelayGlobalRate": "50rps:10",
@@ -85,6 +87,7 @@
 		"WorkflowExecutionConcurrencyLimit": "5",
 		"VaultCiphertextSizeLimit": "2kb",
 		"VaultSecretsLimit": "100",
+		"VaultZoneBGetSecretsAllowed": "false",
 		"ConfidentialCompute": {
 			"Rate": "1000rps:1000"
 		}

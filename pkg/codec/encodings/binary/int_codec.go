@@ -43,7 +43,7 @@ func (i *intCodec) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (i *intCodec) GetType() reflect.Type {
-	return reflect.TypeOf(0)
+	return reflect.TypeFor[int]()
 }
 
 type uintCodec struct {
@@ -73,7 +73,7 @@ func (i *uintCodec) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (i *uintCodec) GetType() reflect.Type {
-	return reflect.TypeOf(uint(0))
+	return reflect.TypeFor[uint]()
 }
 
 func (i *uintCodec) Size(numItems int) (int, error) {

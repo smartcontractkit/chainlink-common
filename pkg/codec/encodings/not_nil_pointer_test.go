@@ -56,7 +56,7 @@ func TestNotNilPointer(t *testing.T) {
 	})
 
 	t.Run("GetType returns pointer to element's GetType", func(t *testing.T) {
-		assert.Equal(t, reflect.TypeOf(&anyValue), nnp.GetType())
+		assert.Equal(t, reflect.TypeFor[*string](), nnp.GetType())
 	})
 
 	t.Run("Size delegates", func(t *testing.T) {

@@ -14,7 +14,7 @@ func TestMultiModifier(t *testing.T) {
 	t.Parallel()
 
 	type testStruct struct{ A int }
-	testType := reflect.TypeOf(testStruct{})
+	testType := reflect.TypeFor[testStruct]()
 	mod1 := codec.NewRenamer(map[string]string{"A": "B"})
 	mod2 := codec.NewRenamer(map[string]string{"B": "C"})
 	chainMod := codec.MultiModifier{mod1, mod2}

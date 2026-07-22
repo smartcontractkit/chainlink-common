@@ -23,10 +23,10 @@ func TestGenerateJSON(t *testing.T) {
 		builder.AddPanel(grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
 				Datasource: "datasource-name",
-				Title:      grafana.Pointer("ETH Balance"),
+				Title:      new("ETH Balance"),
 				Span:       12,
 				Height:     6,
-				Decimals:   grafana.Pointer(2.0),
+				Decimals:   new(2.0),
 				Query: []grafana.Query{
 					{
 						Expr:   `eth_balance`,

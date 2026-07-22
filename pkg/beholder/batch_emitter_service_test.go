@@ -19,6 +19,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -31,15 +32,15 @@ func newTestConfig() beholder.Config {
 		ChipIngressSendInterval:       50 * time.Millisecond,
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 1024 * 1024,
 	}
 }
 
+// Deprecated: use [logger.Test] instead.
+//
+//go:fix inline
 func newTestLogger(t *testing.T) logger.Logger {
-	t.Helper()
-	lggr, err := logger.New()
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = lggr.Sync() })
-	return lggr
+	return logger.Test(t)
 }
 
 func TestNewChipIngressBatchEmitterService(t *testing.T) {
@@ -497,6 +498,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricEvent")
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 	})
 
@@ -540,6 +542,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		sum, ok := metric.Data.(metricdata.Sum[int64])
 		require.True(t, ok)
 		dp := mustEmitterInt64SumPoint(t, sum, "domain", "platform", "entity", "MetricDropEvent")
+		assert.True(t, hasEmitterStringAttr(dp.Attributes, "client_name", batch.ClientNameBeholder))
 		assert.GreaterOrEqual(t, dp.Value, int64(1))
 
 		logs := observed.FilterMessage("failed to emit to chip ingress")
@@ -573,6 +576,7 @@ func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {
 		ChipIngressSendInterval:       time.Hour,
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 1024 * 1024,
 	}
 	emitter, err := beholder.NewChipIngressBatchEmitterService(&chipingress.NoopClient{}, cfg, logger.Test(b))
 	if err != nil {

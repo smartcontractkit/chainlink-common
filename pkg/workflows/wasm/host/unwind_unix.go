@@ -2,7 +2,7 @@
 
 package host
 
-import "github.com/bytecodealliance/wasmtime-go/v28"
+import "github.com/bytecodealliance/wasmtime-go/v47"
 
 // Load testing shows that leaving native unwind info enabled causes a very large slowdown when loading multiple modules.
 func SetUnwinding(cfg *wasmtime.Config) {

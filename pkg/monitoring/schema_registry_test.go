@@ -51,7 +51,7 @@ func TestSchemaRegistry(t *testing.T) {
 		schema, err := registry.EnsureSchema("person", baseSchema)
 		require.NoError(t, err)
 
-		subject := map[string]interface{}{"name": "test"}
+		subject := map[string]any{"name": "test"}
 		expectedEncoded := []byte{
 			0x0,                // "magic" byte
 			0x0, 0x0, 0x0, 0x1, // 4 bytes for schema id

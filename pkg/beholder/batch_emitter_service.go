@@ -63,6 +63,10 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	if drainTimeout == 0 {
 		drainTimeout = defaults.ChipIngressDrainTimeout
 	}
+	maxGRPCRequestSize := cfg.ChipIngressMaxGRPCRequestSize
+	if maxGRPCRequestSize == 0 {
+		maxGRPCRequestSize = defaults.ChipIngressMaxGRPCRequestSize
+	}
 
 	meter := otel.Meter("beholder/chip_ingress_batch_emitter")
 	metrics, err := newBatchEmitterMetrics(meter)
@@ -77,7 +81,9 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batch.WithMaxPublishTimeout(sendTimeout),
 		batch.WithShutdownTimeout(drainTimeout),
 		batch.WithMaxConcurrentSends(maxConcurrentSends),
+		batch.WithMaxGRPCRequestSize(maxGRPCRequestSize),
 		batch.WithEventClone(false),
+		batch.WithClientName(batch.ClientNameBeholder),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create batch client: %w", err)
@@ -186,6 +192,7 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	attrs := otelmetric.WithAttributeSet(attribute.NewSet(
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
+		attribute.String("client_name", batch.ClientNameBeholder),
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)

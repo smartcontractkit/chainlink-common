@@ -77,8 +77,8 @@ func parseEnvVars(cfg *Config) error {
 		cfg.Feeds.RDDPollInterval = pollInterval
 	}
 	if value, isPresent := os.LookupEnv("FEEDS_IGNORE_IDS"); isPresent {
-		ids := strings.Split(value, ",")
-		for _, id := range ids {
+		ids := strings.SplitSeq(value, ",")
+		for id := range ids {
 			if id == "" {
 				continue
 			}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784668571537,
+  "lastUpdate": 1784716775589,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55440,6 +55440,66 @@ window.BENCHMARK_DATA = {
             "value": 112924,
             "unit": "ns/op",
             "extra": "9810 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c08ad805d9db57063aca9449ff2b4304f746e411",
+          "message": "Add Beholder default metric filter views (#2238)\n\n* Add Beholder default metric filter views plumbing.\n\nIntroduce metricviews.DefaultViews() with an empty denylist by default,\nConfig.metricViews/metricOptions methods, and CL_TELEMETRY_METRIC_VIEWS_DISABLED\nwiring through loop env and server. Caller views precede defaults so\nhistogram-bucket overrides are not shadowed.\n\n* Add configurable metric views attribute denylist.\n\nExpose MetricViewsAttributeBlacklist on beholder.Config and wire\nCL_TELEMETRY_METRIC_VIEWS_ATTRIBUTE_BLACKLIST through loop env and server.\nDefaultViews builds a global deny view when keys are configured.\n\n* Add configurable metric attribute blacklist for default views.\n\nWire MetricViewsAttributeBlacklist through beholder.Config and\nCL_TELEMETRY_METRIC_VIEWS_ATTRIBUTE_BLACKLIST via loop env/server.\nDefaultViews(blacklist) registers a global deny view when non-empty;\nempty by default so no attributes are stripped until configured.\n\n* Drop MetricViewsDisabled; rename attribute blacklist to denylist.\n\nEmpty MetricViewsAttributeDenylist skips DefaultViews() instead of a\nseparate disabled flag. Env var is CL_TELEMETRY_METRIC_VIEWS_ATTRIBUTE_DENYLIST.\n\n* Address review comments: rename DefaultViews to Default and MetricViewsAttributeDenylist to MetricViewsDenyAttributes\n\n---------\n\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>",
+          "timestamp": "2026-07-22T10:27:21Z",
+          "tree_id": "a6659714b98b2aa3d1649f6e2faaf3bfb5c20eba",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c08ad805d9db57063aca9449ff2b4304f746e411"
+        },
+        "date": 1784716773482,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 583.2,
+            "unit": "ns/op",
+            "extra": "1868842 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90636,
+            "unit": "ns/op",
+            "extra": "13112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 410.4,
+            "unit": "ns/op",
+            "extra": "2909718 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 89276,
+            "unit": "ns/op",
+            "extra": "13426 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26635,
+            "unit": "ns/op",
+            "extra": "45044 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 137235,
+            "unit": "ns/op",
+            "extra": "8470 times\n4 procs"
           }
         ]
       }

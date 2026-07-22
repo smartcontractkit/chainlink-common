@@ -9,6 +9,10 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
+// ErrRunnerUnavailable means a runner of the required type exists but cannot yet
+// satisfy the requirements (e.g. a gated capability); callers may retry, not fail.
+var ErrRunnerUnavailable = errors.New("no runner can currently satisfy the trigger requirements")
+
 type ModuleAndHandler struct {
 	Module
 	RequirementsHandler
@@ -109,11 +113,25 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 			}
 		}
 		if !matched {
+			if r.runnerTypeAvailable(sub.Requirements) {
+				return nil, fmt.Errorf("%w for trigger %d", ErrRunnerUnavailable, i)
+			}
 			return nil, fmt.Errorf("cannot find a runner that can satisfy the requirements for trigger %d", i)
 		}
 	}
 
 	return result, nil
+}
+
+// runnerTypeAvailable reports whether any module handles req's requirement types,
+// even if it can't currently satisfy them: a present-but-unavailable runner vs none.
+func (r *requirementSelectingModule) runnerTypeAvailable(req *sdk.Requirements) bool {
+	for _, m := range r.modules {
+		if HandlesRequirements(m.RequirementsHandler, req) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {

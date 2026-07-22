@@ -35,3 +35,22 @@ func CheckRequirements(ctx context.Context, handler RequirementsHandler, req *sd
 
 	return true
 }
+
+// HandlesRequirements reports whether handler covers every non-nil field in req (the
+// right runner type), regardless of whether those callbacks pass. Distinguishes a
+// present-but-unavailable runner from a missing one.
+func HandlesRequirements(handler RequirementsHandler, req *sdk.Requirements) bool {
+	if req == nil {
+		return true
+	}
+
+	if len(req.ProtoReflect().GetUnknown()) != 0 {
+		return false
+	}
+
+	if req.Tee != nil && handler.Tee == nil {
+		return false
+	}
+
+	return true
+}

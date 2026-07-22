@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784716775589,
+  "lastUpdate": 1784722590688,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55500,6 +55500,66 @@ window.BENCHMARK_DATA = {
             "value": 137235,
             "unit": "ns/op",
             "extra": "8470 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c1a1e0e75034056a6ec3f0f835bc8e4c9a162f08",
+          "message": "feat: add chip-ingress batch config keys and tune defaults (#2207)\n\n* feat: add chip-ingress batch config keys and tune defaults\n\nExpose 7 chip-ingress batch emitter configuration keys in beholder.Config\nand wire them through the batch emitter and LOOP plugin env config.\n\nDefault changes:\n- ChipIngressBufferSize: 1000 -> 10000\n- ChipIngressMaxBatchSize: 500 -> 1000\n- ChipIngressSendInterval: 100ms -> 500ms\n- ChipIngressSendTimeout: 3s -> 10s\n- ChipIngressDrainTimeout: 10s -> 30s\n\nAlso fix the chip_ingress.batch.request_size_* histogram buckets to use\nexplicit low-cardinality boundaries, and remove the previous\nCo-authored-by Cursor attribution from the commit history.\n\n* beholder: make ChipIngressMaxGRPCRequestSize int to match batch client\n\n* Apply suggestions from code review\n\nCo-authored-by: Copilot Autofix powered by AI <62310815+github-advanced-security[bot]@users.noreply.github.com>\n\n---------\n\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>\nCo-authored-by: Copilot Autofix powered by AI <62310815+github-advanced-security[bot]@users.noreply.github.com>",
+          "timestamp": "2026-07-22T12:04:18Z",
+          "tree_id": "94e4c2b705d2382acc7fa85fe1af1cf30f5795df",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c1a1e0e75034056a6ec3f0f835bc8e4c9a162f08"
+        },
+        "date": 1784722588263,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 303.7,
+            "unit": "ns/op",
+            "extra": "3839502 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 59863,
+            "unit": "ns/op",
+            "extra": "19396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 306.8,
+            "unit": "ns/op",
+            "extra": "3531369 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 61159,
+            "unit": "ns/op",
+            "extra": "19644 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22632,
+            "unit": "ns/op",
+            "extra": "52965 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 99618,
+            "unit": "ns/op",
+            "extra": "12052 times\n4 procs"
           }
         ]
       }

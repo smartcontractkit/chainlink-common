@@ -39,7 +39,10 @@ type Config struct {
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
-	MetricViews          []metric.View
+	MetricViews []metric.View
+	// MetricViewsDenyAttributes lists attribute keys dropped by the default
+	// global deny view (e.g. event_id). Empty skips metricviews.Default().
+	MetricViewsDenyAttributes []string
 	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
 	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
 	MetricCardinalityLimit int

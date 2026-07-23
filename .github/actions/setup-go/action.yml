@@ -50,7 +50,7 @@ runs:
         echo "version=$version" | tee -a "$GITHUB_OUTPUT"
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
         go-version: ${{ steps.go-version.outputs.version }}
         cache: false
@@ -98,7 +98,7 @@ runs:
 
     # By default, restore the cache only.
     # Let the `go-mod-cache.yml` workflow handle the creation of new module caches.
-    - uses: actions/cache/restore@v4
+    - uses: actions/cache/restore@v6
       if: ${{ inputs.restore-module-cache-only == 'true' }}
       name: Cache Go Modules (Restore)
       id: cache-modules-restore
@@ -111,7 +111,7 @@ runs:
 
     # If this is called, then it will create the cache entry upon a cache miss.
     # The cache is created after a cache miss, and after job completes successfully.
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       if: ${{ inputs.restore-module-cache-only != 'true' }}
       id: cache-modules
       name: Cache Go Modules
@@ -171,7 +171,7 @@ runs:
     # ---
     # We restore the build cache if it exists, but we do not create a new cache entry.
     # The restore key matches the prefix of a the primary key for the build cache from trunk.
-    - uses: actions/cache/restore@v4
+    - uses: actions/cache/restore@v6
       name: Cache Go Build Outputs (restore)
       id: build-cache-restore
       if: ${{ inputs.only-modules == 'false' && steps.build-cache-setup.outputs.create-build-cache != 'true' }}
@@ -188,7 +188,7 @@ runs:
     #   as we're only supplying the primary key.
     # - If the cache does not exist, then nothing will be restored and it will create a new cache entry once
     #   the job completes successfully.
-    - uses: actions/cache@v4
+    - uses: actions/cache@v6
       if: ${{ inputs.only-modules == 'false' && steps.build-cache-setup.outputs.create-build-cache == 'true'}}
       id: build-cache
       name: Cache Go Build Outputs

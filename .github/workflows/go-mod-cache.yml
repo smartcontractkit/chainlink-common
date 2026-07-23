@@ -33,7 +33,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 

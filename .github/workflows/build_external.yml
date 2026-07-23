@@ -21,12 +21,12 @@ jobs:
       solana-ref: ${{ steps.set-git-refs.outputs.solana-ref }}
       starknet-ref: ${{ steps.set-git-refs.outputs.starknet-ref }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Get refs from PR body
         id: set-git-refs
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const script = require('./.github/scripts/get-refs-from-pr-body.js')
@@ -46,14 +46,14 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout the chainlink-common repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: smartcontractkit/chainlink-common
           persist-credentials: false
           path: chainlink-common
 
       - name: Checkout the chainlink core repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: smartcontractkit/chainlink
           ref: ${{ needs.init.outputs.core-ref }}
@@ -90,13 +90,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the solana repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: smartcontractkit/chainlink-solana
           ref: ${{ needs.init.outputs.solana-ref }}
 
       - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
 
@@ -131,13 +131,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the starknet repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: smartcontractkit/chainlink-starknet
           ref: ${{ needs.init.outputs.starknet-ref }}
 
       - name: Setup Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        uses: actions/setup-go@v7
         with:
           go-version-file: ./relayer/go.mod
 
@@ -148,7 +148,7 @@ jobs:
           go mod tidy
 
       - name: Install Nix
-        uses: cachix/install-nix-action@8887e596b4ee1134dae06b98d573bd674693f47c # v26
+        uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
@@ -167,7 +167,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout the terra repo
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v7
   #       with:
   #         repository: smartcontractkit/chainlink-terra
   #     - name: Setup Go

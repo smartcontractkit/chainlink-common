@@ -3,6 +3,7 @@ package confidentialrelay
 import (
 	"crypto/sha256"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
 )
 
@@ -24,10 +25,10 @@ const signedComputeRequestSignaturePrefix = "CONFIDENTIAL_COMPUTE_PAYLOAD_"
 
 // computeRequestLegacyVersion is vendored from confidential-compute
 // types.ServiceConfidentialComputeVersionLegacy. Hash includes the Version field only
-// when it equals this value, matching the source (confidential-compute is migrating
-// Version out of the hash for newer versions). It MUST stay in sync with the source, or
-// ComputeRequest.Hash will diverge from the digest the Workflow DON nodes signed once the
-// enclave moves past the legacy version.
+// when the request uses the legacy scheme, matching the source (confidential-compute
+// is migrating Version out of the hash for newer versions). It MUST stay in sync with
+// the source, or ComputeRequest.Hash will diverge from the digest the Workflow DON nodes
+// signed once the enclave moves past the legacy version.
 const computeRequestLegacyVersion = "0.0.6"
 
 // SignedComputeRequestSignaturePayload reconstructs the exact payload a Workflow DON node
@@ -63,8 +64,8 @@ type ComputeRequest struct {
 // reuses this package's length-prefix helpers (writeBytes/writeString/
 // writeLengthPrefix), which are identical to the source's writeWithLength/
 // writeLengthPrefix. EncryptedDecryptionKeyShares is intentionally excluded, and
-// Version is included only for the legacy version, and ApplicationRequestID is
-// included only for non-legacy versions, both matching the source.
+// Version is included only for the legacy hashing scheme, and ApplicationRequestID
+// is included only for non-legacy versions, both matching the source.
 func (cr ComputeRequest) Hash() [32]byte {
 	h := sha256.New()
 
@@ -89,10 +90,10 @@ func (cr ComputeRequest) Hash() [32]byte {
 	writeBytes(h, cr.MasterPublicKey)
 
 	writeString(h, cr.AppID)
-	// Version is included in the hash only for the legacy version, matching
+	// Version is included in the hash only for the legacy scheme, matching
 	// confidential-compute (which is migrating Version out of the hash). Newer
 	// versions bind the application-specific request ID instead.
-	if cr.Version == computeRequestLegacyVersion {
+	if usesLegacyComputeRequestHash(cr.Version) {
 		writeString(h, cr.Version)
 	} else {
 		writeString(h, cr.ApplicationRequestID)
@@ -101,6 +102,26 @@ func (cr ComputeRequest) Hash() [32]byte {
 	var result [32]byte
 	h.Sum(result[:0])
 	return result
+}
+
+func usesLegacyComputeRequestHash(version string) bool {
+	c, err := compareComputeRequestVersions(version, computeRequestLegacyVersion)
+	if err != nil {
+		return version == computeRequestLegacyVersion
+	}
+	return c <= 0
+}
+
+func compareComputeRequestVersions(a, b string) (int, error) {
+	av, err := semver.NewVersion(a)
+	if err != nil {
+		return 0, err
+	}
+	bv, err := semver.NewVersion(b)
+	if err != nil {
+		return 0, err
+	}
+	return av.Compare(bv), nil
 }
 
 // SignedComputeRequest is vendored from confidential-compute

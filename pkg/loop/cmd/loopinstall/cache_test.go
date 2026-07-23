@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,16 +17,20 @@ import (
 )
 
 func TestComputeCacheKey(t *testing.T) {
+	t.Parallel()
+
 	defaults := DefaultsConfig{GoFlags: "-tags=foo"}
 	plugin1 := PluginDef{
-		ModuleURI: "github.com/smartcontractkit/chainlink-cosmos",
-		GitRef:    "v1.0.0",
-		Flags:     "-s -w",
+		ModuleURI:   "github.com/smartcontractkit/chainlink-cosmos",
+		GitRef:      "v1.0.0",
+		InstallPath: "cmd/cosmos",
+		Flags:       "-s -w",
 	}
 	plugin2 := PluginDef{
-		ModuleURI: "github.com/smartcontractkit/chainlink-cosmos",
-		GitRef:    "v1.0.1", // different gitRef
-		Flags:     "-s -w",
+		ModuleURI:   "github.com/smartcontractkit/chainlink-cosmos",
+		GitRef:      "v1.0.1", // different gitRef
+		InstallPath: "cmd/cosmos",
+		Flags:       "-s -w",
 	}
 
 	key1 := computeCacheKey("cosmos", plugin1, defaults, "linux", "amd64")
@@ -35,15 +38,158 @@ func TestComputeCacheKey(t *testing.T) {
 
 	assert.NotEqual(t, key1, key2, "expected different cache keys for different gitRef")
 
-	// Verify key format: baseName-hash
 	expectedPrefix := "chainlink-cosmos-"
 	assert.True(t, strings.HasPrefix(key1, expectedPrefix), "expected key %q to start with prefix %q", key1, expectedPrefix)
+}
 
-	// Hash component check
-	h := sha256.New()
-	h.Write([]byte("cosmos|github.com/smartcontractkit/chainlink-cosmos|v1.0.0|-s -w|-tags=foo|linux|amd64"))
-	expectedKey := fmt.Sprintf("chainlink-cosmos-%x", h.Sum(nil)[:12])
-	assert.Equal(t, expectedKey, key1)
+func TestComputeCacheKey_Variations(t *testing.T) {
+	t.Parallel()
+
+	basePlugin := PluginDef{
+		ModuleURI:   "github.com/smartcontractkit/chainlink-cosmos",
+		GitRef:      "v1.0.0",
+		InstallPath: ".",
+		Flags:       "-s -w",
+		EnvVars:     []string{"CGO_ENABLED=0"},
+		BinaryURL:   "https://example.com/binary",
+	}
+	baseDefaults := DefaultsConfig{GoFlags: "-tags=foo", EnvVars: []string{"FOO=bar"}}
+	baseKey := computeCacheKey("cosmos", basePlugin, baseDefaults, "linux", "amd64")
+
+	tests := []struct {
+		name      string
+		modify    func(p *PluginDef, d *DefaultsConfig)
+		different bool
+	}{
+		{
+			name: "different_install_path",
+			modify: func(p *PluginDef, d *DefaultsConfig) {
+				p.InstallPath = "cmd/plugin"
+			},
+			different: true,
+		},
+		{
+			name: "different_binary_url",
+			modify: func(p *PluginDef, d *DefaultsConfig) {
+				p.BinaryURL = "https://example.com/other-binary"
+			},
+			different: true,
+		},
+		{
+			name: "different_plugin_envvars",
+			modify: func(p *PluginDef, d *DefaultsConfig) {
+				p.EnvVars = []string{"CGO_ENABLED=1"}
+			},
+			different: true,
+		},
+		{
+			name: "different_defaults_envvars",
+			modify: func(p *PluginDef, d *DefaultsConfig) {
+				d.EnvVars = []string{"FOO=baz"}
+			},
+			different: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := basePlugin
+			d := baseDefaults
+			tc.modify(&p, &d)
+			key := computeCacheKey("cosmos", p, d, "linux", "amd64")
+			if tc.different {
+				assert.NotEqual(t, baseKey, key)
+			} else {
+				assert.Equal(t, baseKey, key)
+			}
+		})
+	}
+}
+
+func TestDownloadAndInstallPlugin_DisabledAndValidation(t *testing.T) {
+	tempCacheDir := t.TempDir()
+	tempBinDir := t.TempDir()
+	t.Setenv("GOBIN", tempBinDir)
+
+	falseVal := false
+	tests := []struct {
+		name        string
+		plugin      PluginDef
+		wantErr     bool
+		errContains string
+		wasSkipped  bool
+	}{
+		{
+			name: "disabled_plugin_skipped",
+			plugin: PluginDef{
+				ModuleURI: "github.com/smartcontractkit/chainlink-cosmos",
+				Enabled:   &falseVal,
+			},
+			wantErr:    false,
+			wasSkipped: true,
+		},
+		{
+			name: "invalid_plugin_validation_failed",
+			plugin: PluginDef{
+				ModuleURI: "", // empty module URI fails validation
+			},
+			wantErr:     true,
+			errContains: "plugin input validation failed",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			withMockExec(t, func(cmd *exec.Cmd) error {
+				require.Failf(t, "execCommand invoked", "execCommand should not be called for disabled or invalid plugin")
+				return fmt.Errorf("should not be called")
+			}, func() {
+				err := downloadAndInstallPluginWithCache("cosmos", 0, tc.plugin, DefaultsConfig{}, tempCacheDir, "")
+				if tc.wantErr {
+					require.Error(t, err)
+					assert.Contains(t, err.Error(), tc.errContains)
+				} else {
+					require.NoError(t, err)
+				}
+			})
+		})
+	}
+}
+
+func TestDownloadAndInstallPlugin_Tier2_BinaryURL(t *testing.T) {
+	tempCacheDir := t.TempDir()
+	tempBinDir := t.TempDir()
+	t.Setenv("GOBIN", tempBinDir)
+
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/custom-binary" {
+			_, _ = w.Write([]byte("custom-url-binary"))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer mockServer.Close()
+
+	plugin := PluginDef{
+		ModuleURI:   "github.com/smartcontractkit/chainlink-custom",
+		GitRef:      "v1.0.0",
+		InstallPath: ".",
+		BinaryURL:   mockServer.URL + "/custom-binary",
+	}
+	defaults := DefaultsConfig{}
+
+	withMockExec(t, func(cmd *exec.Cmd) error {
+		require.Failf(t, "execCommand invoked", "execCommand should not be called when BinaryURL succeeds")
+		return fmt.Errorf("should not be called")
+	}, func() {
+		err := downloadAndInstallPluginWithCache("custom", 0, plugin, defaults, tempCacheDir, "")
+		require.NoError(t, err)
+
+		installedPath := filepath.Join(tempBinDir, "chainlink-custom")
+		gotContent, err := os.ReadFile(installedPath)
+		require.NoError(t, err)
+		assert.Equal(t, "custom-url-binary", string(gotContent))
+	})
 }
 
 func TestResolveCacheDir(t *testing.T) {

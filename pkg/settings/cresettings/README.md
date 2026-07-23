@@ -215,6 +215,10 @@ flowchart
             PerWorkflow.ChainRead.CallLimit{{CallLimit}}:::bound
             PerWorkflow.ChainRead.LogQueryBlockLimit{{LogQueryBlockLimit}}:::bound
             PerWorkflow.ChainRead.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            subgraph SolanaRead
+                PerWorkflow.ChainRead.Solana.BatchItemLimit{{BatchItemLimit}}:::bound
+                PerWorkflow.ChainRead.Solana.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            end
         end
         subgraph PerWorkflow.Consensus
             PerWorkflow.Consensus.ObservationSizeLimit{{ObservationSizeLimit}}:::bound

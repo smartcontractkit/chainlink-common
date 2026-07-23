@@ -269,6 +269,10 @@ var Default = Schema{
 			CallLimit:          Int(15),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
+			Solana: solanaChainRead{
+				BatchItemLimit:   Int(100),
+				PayloadSizeLimit: Size(5 * config.KByte),
+			},
 		},
 		Consensus: consensus{
 			ObservationSizeLimit: Size(100 * config.KByte),
@@ -501,6 +505,11 @@ type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`
 	LogQueryBlockLimit Setting[uint64] `unit:"{block}"`
 	PayloadSizeLimit   Setting[config.Size]
+	Solana             solanaChainRead
+}
+type solanaChainRead struct {
+	BatchItemLimit   Setting[int] `unit:"{item}"`
+	PayloadSizeLimit Setting[config.Size]
 }
 type httpAction struct {
 	CallLimit         Setting[int] `unit:"{call}"`

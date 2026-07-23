@@ -10,6 +10,7 @@ import (
 
 type serverArgs struct {
 	*protogen.File
+	WithMonitoring bool
 }
 
 type ServerLanguage string
@@ -45,16 +46,17 @@ func GenerateServer(
 	file *protogen.File,
 	serverLanguage ServerLanguage,
 	toolName,
-	localPrefix string) error {
+	localPrefix string,
+	withMonitoring bool) error {
 	if len(file.Services) == 0 {
 		return nil
 	}
 
-	template, ok := serverTemplates[serverLanguage]
+	tmpl, ok := serverTemplates[serverLanguage]
 	if !ok {
 		return fmt.Errorf("unsupported server language: %s", serverLanguage)
 	}
 
-	args := serverArgs{File: file}
-	return template.GenerateFile(file, plugin, args, toolName, localPrefix)
+	args := serverArgs{File: file, WithMonitoring: withMonitoring}
+	return tmpl.GenerateFile(file, plugin, args, toolName, localPrefix)
 }

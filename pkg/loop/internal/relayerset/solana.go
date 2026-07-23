@@ -12,7 +12,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
 )
 
 // solClient wraps the SolanaRelayerSetClient by attaching a RelayerID to SolClient requests.
@@ -46,6 +45,10 @@ func (sc *solClient) GetFeeForMessage(ctx context.Context, in *solpb.GetFeeForMe
 
 func (sc *solClient) GetMultipleAccountsWithOpts(ctx context.Context, in *solpb.GetMultipleAccountsWithOptsRequest, opts ...grpc.CallOption) (*solpb.GetMultipleAccountsWithOptsReply, error) {
 	return sc.client.GetMultipleAccountsWithOpts(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
+func (sc *solClient) GetProgramAccounts(ctx context.Context, in *solpb.GetProgramAccountsRequest, opts ...grpc.CallOption) (*solpb.GetProgramAccountsReply, error) {
+	return sc.client.GetProgramAccounts(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
 func (sc *solClient) GetSignatureStatuses(ctx context.Context, in *solpb.GetSignatureStatusesRequest, opts ...grpc.CallOption) (*solpb.GetSignatureStatusesReply, error) {
@@ -214,14 +217,11 @@ func (ss *solServer) GetAccountInfoWithOpts(ctx context.Context, req *solpb.GetA
 		return nil, err
 	}
 
-	addr, err := solpb.ConvertPublicKeyFromProto(req.GetAccount())
+	dReq, err := solpb.ConvertGetAccountInfoRequestFromProto(req)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
 
-	opts := solpb.ConvertGetAccountInfoOptsFromProto(req.GetOpts())
-
-	dReq := solana.GetAccountInfoRequest{Account: addr, Opts: opts}
 	dResp, err := solService.GetAccountInfoWithOpts(ctx, dReq)
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
@@ -246,6 +246,25 @@ func (ss *solServer) GetMultipleAccountsWithOpts(ctx context.Context, req *solpb
 	}
 
 	return solpb.ConvertGetMultipleAccountsReplyToProto(dResp), nil
+}
+
+func (ss *solServer) GetProgramAccounts(ctx context.Context, req *solpb.GetProgramAccountsRequest) (*solpb.GetProgramAccountsReply, error) {
+	solService, err := ss.parent.getSolService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dReq, err := solpb.ConvertGetProgramAccountsRequestFromProto(req)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	dResp, err := solService.GetProgramAccounts(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+
+	return solpb.ConvertGetProgramAccountsReplyToProto(dResp), nil
 }
 
 func (ss *solServer) GetBlock(ctx context.Context, req *solpb.GetBlockRequest) (*solpb.GetBlockReply, error) {

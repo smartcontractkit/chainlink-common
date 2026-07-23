@@ -61,6 +61,17 @@ func TestDomainHash_DifferentData(t *testing.T) {
 }
 
 func TestDomainHash_InvalidTag(t *testing.T) {
-	_, err := DomainHash("A\nB", []byte("C"))
-	require.Equal(t, err.Error(), "invalid tag: must be non-empty and contain only alphanumeric characters")
+	for _, tag := range []string{"", "A\nB", "tag-1"} {
+		_, err := DomainHash(tag, []byte("C"))
+		require.EqualError(t, err, "invalid tag: must be non-empty and contain only alphanumeric characters")
+	}
+}
+
+// CL112-14 regression: without length-prefixing, ("AB","C") and ("A","BC") could collide.
+func TestDomainHash_NoBoundaryCollision(t *testing.T) {
+	h1, err := DomainHash("AB", []byte("C"))
+	require.NoError(t, err)
+	h2, err := DomainHash("A", []byte("BC"))
+	require.NoError(t, err)
+	require.NotEqual(t, h1, h2)
 }

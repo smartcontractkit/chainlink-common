@@ -1,16 +1,18 @@
 package teeattestation
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDomainHash(t *testing.T) {
 	tag := "TestTag"
 	data := []byte(`{"key":"value"}`)
 
-	got := DomainHash(tag, data)
+	got, err := DomainHash(tag, data)
+	require.NoError(t, err)
 
 	h := sha256.New()
 	h.Write([]byte(DomainSeparator))
@@ -30,8 +32,10 @@ func TestDomainHash(t *testing.T) {
 
 func TestDomainHash_DifferentTags(t *testing.T) {
 	data := []byte("same-data")
-	h1 := DomainHash("Tag1", data)
-	h2 := DomainHash("Tag2", data)
+	h1, err := DomainHash("Tag1", data)
+	require.NoError(t, err)
+	h2, err := DomainHash("Tag2", data)
+	require.NoError(t, err)
 
 	for i := range h1 {
 		if h1[i] != h2[i] {
@@ -43,8 +47,10 @@ func TestDomainHash_DifferentTags(t *testing.T) {
 
 func TestDomainHash_DifferentData(t *testing.T) {
 	tag := "SameTag"
-	h1 := DomainHash(tag, []byte("data-a"))
-	h2 := DomainHash(tag, []byte("data-b"))
+	h1, err := DomainHash(tag, []byte("data-a"))
+	require.NoError(t, err)
+	h2, err := DomainHash(tag, []byte("data-b"))
+	require.NoError(t, err)
 
 	for i := range h1 {
 		if h1[i] != h2[i] {
@@ -54,9 +60,7 @@ func TestDomainHash_DifferentData(t *testing.T) {
 	t.Fatal("different data should produce different hashes")
 }
 
-// CL112-14 regression: the old newline scheme let ("A\nB","C") and ("A","B\nC") collide.
-func TestDomainHash_NoBoundaryCollision(t *testing.T) {
-	if bytes.Equal(DomainHash("A\nB", []byte("C")), DomainHash("A", []byte("B\nC"))) {
-		t.Fatal("tag/data boundary collision: distinct pairs must not share a hash")
-	}
+func TestDomainHash_InvalidTag(t *testing.T) {
+	_, err := DomainHash("A\nB", []byte("C"))
+	require.Equal(t, err.Error(), "invalid tag: must be non-empty and contain only alphanumeric characters")
 }

@@ -21,6 +21,7 @@ type PluginDef struct {
 	Libs        []string `yaml:"libs"`
 	Flags       string   `yaml:"flags,omitempty"`
 	EnvVars     []string `yaml:"envvars,omitempty"`
+	BinaryURL   string   `yaml:"binaryURL,omitempty"` // Optional explicit release asset URL override
 }
 
 // ModDownloadResult represents the JSON directory (dir) output from 'go mod download -json'

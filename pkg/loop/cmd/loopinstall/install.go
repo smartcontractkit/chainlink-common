@@ -365,7 +365,7 @@ func writeBuildManifest(tasks []PluginInstallTask, outputFile string) error {
 }
 
 // installPlugins installs plugins concurrently using a worker pool.
-func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, outputFile string) error {
+func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, outputFile string, cacheDir string) error {
 	if len(tasks) == 0 {
 		log.Println("No enabled plugins found to install")
 		return nil
@@ -395,7 +395,7 @@ func installPlugins(tasks []PluginInstallTask, concurrency int, verbose bool, ou
 
 				start := time.Now()
 
-				err := downloadAndInstallPlugin(task.PluginType, 0, task.Plugin, task.Defaults)
+				err := downloadAndInstallPluginWithCache(task.PluginType, 0, task.Plugin, task.Defaults, cacheDir, "")
 				duration := time.Since(start)
 
 				if err != nil {

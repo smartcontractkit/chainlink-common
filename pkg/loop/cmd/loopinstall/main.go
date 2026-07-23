@@ -13,6 +13,7 @@ func main() {
 	var concurrency int
 	var sequential bool
 	var outputFile string
+	var cacheDir string
 
 	// Define flags
 	flag.BoolVar(&showHelp, "help", false, "Show help")
@@ -25,6 +26,7 @@ func main() {
 	flag.BoolVar(&sequential, "s", false, "Install plugins sequentially (shorthand)")
 	flag.StringVar(&outputFile, "output-installation-artifacts", "", "Path for installation artifacts JSON file (optional)")
 	flag.StringVar(&outputFile, "o", "", "Path for installation artifacts JSON file (optional, shorthand)")
+	flag.StringVar(&cacheDir, "cache-dir", "", "Directory path for caching compiled plugin binaries (optional)")
 
 	// Parse flags
 	flag.Parse()
@@ -85,7 +87,7 @@ func main() {
 	}
 
 	// Install all plugins
-	if err := installPlugins(allTasks, concurrency, verbose, outputFile); err != nil {
+	if err := installPlugins(allTasks, concurrency, verbose, outputFile, cacheDir); err != nil {
 		os.Exit(1)
 	}
 }

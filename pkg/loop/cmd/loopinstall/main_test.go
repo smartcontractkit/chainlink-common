@@ -96,7 +96,7 @@ func TestWriteBuildManifest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(dir)
+	defer func() { _ = os.RemoveAll(dir) }()
 
 	// Create tasks with and without libs
 	tasks := []PluginInstallTask{
@@ -186,7 +186,7 @@ func TestWriteBuildManifest(t *testing.T) {
 		}
 
 		// For a plugin with empty libs, the libs field should be omitted or empty in the JSON
-		if testNoLibs.Libs != nil && len(testNoLibs.Libs) > 0 {
+		if len(testNoLibs.Libs) > 0 {
 			t.Errorf("Expected empty libs, got %v", testNoLibs.Libs)
 		}
 	}
@@ -200,7 +200,7 @@ func TestFileSpecificDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Create first config file with complex ldflags
 	file1Content := `
@@ -337,7 +337,7 @@ plugins:
 	// Skip actual module download and installation since we're mocking
 	// by not executing the real commands, but still call installPlugins
 	// to test the file-specific defaults behavior
-	if err := installPlugins(allTasks, 1, true, outputFile); err != nil {
+	if err := installPlugins(allTasks, 1, true, outputFile, ""); err != nil {
 		t.Fatalf("Failed to install plugins: %v", err)
 	}
 
@@ -528,7 +528,7 @@ func TestProcessConfigFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Config with duplicate plugin definition
 	duplicateContent := `
@@ -585,7 +585,7 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Test cases
 	tests := []struct {
@@ -788,7 +788,7 @@ func TestFlags(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create temp dir: %v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		mockDownload := func(cmd *exec.Cmd) error {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
@@ -862,7 +862,7 @@ func TestEnvVars(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create temp dir: %v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		mockDownload := func(cmd *exec.Cmd) error {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
@@ -945,7 +945,7 @@ func TestEnvVars(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create temp dir: %v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		mockDownload := func(cmd *exec.Cmd) error {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
@@ -1023,7 +1023,7 @@ func TestEnvVars(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create temp dir: %v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		mockDownload := func(cmd *exec.Cmd) error {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
@@ -1108,7 +1108,7 @@ func TestEnvVars(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create temp dir: %v", err)
 		}
-		defer os.RemoveAll(tempDir)
+		defer func() { _ = os.RemoveAll(tempDir) }()
 
 		mockDownload := func(cmd *exec.Cmd) error {
 			if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {

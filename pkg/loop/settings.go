@@ -6,6 +6,7 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -15,14 +16,25 @@ var _ core.SettingsBroadcaster = (*AtomicSettings)(nil)
 
 // AtomicSettings implements settings.Getter, and supports atomic updates with subscriptions.
 type AtomicSettings struct {
+	Lggr logger.Logger // optional
+
 	mu      sync.RWMutex
 	current *core.SettingsUpdate
 	getter  settings.Getter
 	subs    []chan core.SettingsUpdate
 }
 
+// Deprecated: instantiate AtomicSettings directly, then use AtomicSettings.SetGetter.
 func NewAtomicSettings(initial settings.Getter) *AtomicSettings {
-	return &AtomicSettings{getter: initial}
+	var as AtomicSettings
+	as.SetGetter(initial)
+	return &as
+}
+
+func (a *AtomicSettings) SetGetter(getter settings.Getter) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.getter = getter
 }
 
 func (a *AtomicSettings) Subscribe(ctx context.Context) (<-chan core.SettingsUpdate, error) {
@@ -73,11 +85,18 @@ func (a *AtomicSettings) Unsubscribe(ch <-chan core.SettingsUpdate) {
 func (a *AtomicSettings) Load() (core.SettingsUpdate, error) {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
+	if a.current == nil {
+		return core.SettingsUpdate{}, nil
+	}
 	return *a.current, nil
 }
 
 func (a *AtomicSettings) Store(update core.SettingsUpdate) error {
-	getter, err := settings.NewTOMLGetter([]byte(update.Settings))
+	cfg := settings.GetterConfig{Logger: a.Lggr}
+	if cfg.Logger == nil {
+		cfg.Logger = logger.Nop()
+	}
+	getter, err := cfg.NewTOMLGetter([]byte(update.Settings))
 	if err != nil {
 		return fmt.Errorf("failed to initialize settings: %w", err)
 	}

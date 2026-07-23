@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 var update = flag.Bool("update", false, "update the golden files of this test")
@@ -53,7 +54,7 @@ func TestCombineTOMLFiles(t *testing.T) {
 func Test_tomlSettings_GetScoped(t *testing.T) {
 	s, err := newTOMLSettings([]byte(configTOML))
 	require.NoError(t, err)
-	r := tomlGetter{s}
+	r := tomlGetter{settings: s, lggr: logger.Test(t)}
 
 	ctx := contexts.WithCRE(t.Context(), contexts.CRE{
 		Org:      "123",

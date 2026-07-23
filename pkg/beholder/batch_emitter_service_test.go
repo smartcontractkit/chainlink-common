@@ -32,15 +32,15 @@ func newTestConfig() beholder.Config {
 		ChipIngressSendInterval:       50 * time.Millisecond,
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 1024 * 1024,
 	}
 }
 
+// Deprecated: use [logger.Test] instead.
+//
+//go:fix inline
 func newTestLogger(t *testing.T) logger.Logger {
-	t.Helper()
-	lggr, err := logger.New()
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = lggr.Sync() })
-	return lggr
+	return logger.Test(t)
 }
 
 func TestNewChipIngressBatchEmitterService(t *testing.T) {
@@ -576,6 +576,7 @@ func BenchmarkChipIngressBatchEmitterService_Emit(b *testing.B) {
 		ChipIngressSendInterval:       time.Hour,
 		ChipIngressSendTimeout:        5 * time.Second,
 		ChipIngressDrainTimeout:       5 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 1024 * 1024,
 	}
 	emitter, err := beholder.NewChipIngressBatchEmitterService(&chipingress.NoopClient{}, cfg, logger.Test(b))
 	if err != nil {

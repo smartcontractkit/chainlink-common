@@ -92,7 +92,7 @@ func TestPoller(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
-		source := &fakeSourceWithError{make(chan interface{}), make(chan error)}
+		source := &fakeSourceWithError{make(chan any), make(chan error)}
 		poller := NewSourcePoller(
 			source,
 			newNullLogger(),
@@ -118,7 +118,7 @@ func TestPoller(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
-		source := &fakeSourceWithPanic{make(chan interface{}), make(chan error)}
+		source := &fakeSourceWithPanic{make(chan any), make(chan error)}
 		poller := NewSourcePoller(
 			source,
 			newNullLogger(),
@@ -145,7 +145,7 @@ func TestPoller(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
-		source := &fakeSourceWithError{make(chan interface{}), make(chan error)}
+		source := &fakeSourceWithError{make(chan any), make(chan error)}
 		poller := NewSourcePoller(
 			source,
 			newNullLogger(),
@@ -179,7 +179,7 @@ func TestPoller(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
-		source := &fakeSourceWithError{make(chan interface{}), make(chan error)}
+		source := &fakeSourceWithError{make(chan any), make(chan error)}
 		poller := NewSourcePoller(
 			source,
 			newNullLogger(),
@@ -206,7 +206,7 @@ func TestPoller(t *testing.T) {
 		defer goleak.VerifyNone(t)
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 		defer cancel()
-		source := &fakeSourceWithError{make(chan interface{}), make(chan error)}
+		source := &fakeSourceWithError{make(chan any), make(chan error)}
 		poller := NewSourcePoller(
 			source,
 			newNullLogger(),

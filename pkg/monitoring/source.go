@@ -16,7 +16,7 @@ var (
 type Source interface {
 	// Fetch must be thread-safe!
 	// There is no guarantee on the ordering of Fetch() calls for the same source instance.
-	Fetch(context.Context) (interface{}, error)
+	Fetch(context.Context) (any, error)
 }
 
 type SourceFactory interface {

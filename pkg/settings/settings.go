@@ -31,7 +31,6 @@ type Registry interface {
 	SubscribeScoped(ctx context.Context, scope Scope, key string) (updates <-chan Update[string], stop func())
 }
 
-// TODO use this everywhere
 type IsSetting[T any] interface {
 	GetSpec() SettingSpec[T]
 }

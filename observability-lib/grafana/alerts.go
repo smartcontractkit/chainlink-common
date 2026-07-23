@@ -126,11 +126,11 @@ func newReduceSettingsOptions(options expr.ExprTypeReduceSettings) cog.Builder[e
 func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 	if options.IntervalMs == nil {
 		// Recommended value for intervalMs is 30s
-		options.IntervalMs = Pointer[float64](30 * 1000)
+		options.IntervalMs = new(float64(30 * 1000))
 	}
 
 	if options.MaxDataPoints == nil {
-		options.MaxDataPoints = Pointer[int64](43200)
+		options.MaxDataPoints = new(int64(43200))
 	}
 
 	res := alerting.NewQueryBuilder(options.RefID).

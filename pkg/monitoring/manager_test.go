@@ -34,7 +34,7 @@ func TestManager(t *testing.T) {
 
 		poller := &fakePoller{
 			numPollerUpdates,
-			make(chan interface{}),
+			make(chan any),
 		}
 		subs.Go(func() {
 			poller.Run(ctx)
@@ -47,7 +47,7 @@ func TestManager(t *testing.T) {
 		managed := func(ctx context.Context, _ RDDData) {
 			var localSubs utils.Subprocesses
 			defer localSubs.Wait()
-			for i := 0; i < numGoroutinesPerManaged; i++ {
+			for range numGoroutinesPerManaged {
 				localSubs.Go(func() {
 					atomic.AddInt64(&goRoutineCounter, 1)
 					<-ctx.Done()
@@ -69,7 +69,7 @@ func TestManager(t *testing.T) {
 			generateFeedConfig(),
 		}
 		nodes := []NodeConfig{generateNodeConfig()}
-		rddPoller := &fakePoller{0, make(chan interface{})}
+		rddPoller := &fakePoller{0, make(chan any)}
 		manager := NewManager(
 			newNullLogger(),
 			rddPoller,
@@ -88,7 +88,7 @@ func TestManager(t *testing.T) {
 		})
 
 		// The rdd poller returns the same feed configs three times!
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			select {
 			case rddPoller.ch <- RDDData{feeds, nodes}:
 			case <-ctx.Done():
@@ -106,7 +106,7 @@ func TestManager(t *testing.T) {
 		nodes := []NodeConfig{generateNodeConfig()}
 		manager := &managerImpl{
 			newNullLogger(),
-			&fakePoller{0, make(chan interface{})},
+			&fakePoller{0, make(chan any)},
 			RDDData{feeds, nodes},
 			sync.Mutex{},
 		}
@@ -131,7 +131,7 @@ func TestManager(t *testing.T) {
 		var subs utils.Subprocesses
 		ctx, cancel := context.WithCancel(t.Context())
 
-		poller := &fakePoller{ch: make(chan interface{})}
+		poller := &fakePoller{ch: make(chan any)}
 
 		manager := NewManager(logger.Test(t), poller)
 

@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
-	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana"
 )
 
 var deleteCmd = &cobra.Command{
@@ -31,7 +30,7 @@ var deleteCmd = &cobra.Command{
 		if len(matchers) > 0 {
 			objectMatchers := alerting.ObjectMatchers{}
 			notificationPolicy := alerting.NotificationPolicy{
-				Receiver: grafana.Pointer(args[0]),
+				Receiver: new(args[0]),
 			}
 			for _, matcher := range matchers {
 				objectMatcher := strings.Split(matcher, ",")

@@ -26,11 +26,11 @@ func TestFeedMonitor(t *testing.T) {
 		feedConfig := generateFeedConfig()
 		nodes := []NodeConfig{generateNodeConfig()}
 
-		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan interface{})}
+		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan any)}
 		source1, err := sourceFactory1.NewSource(chainConfig, feedConfig)
 		require.NoError(t, err)
 
-		sourceFactory2 := &fakeRandomDataSourceFactory{make(chan interface{})}
+		sourceFactory2 := &fakeRandomDataSourceFactory{make(chan any)}
 		source2, err := sourceFactory2.NewSource(chainConfig, feedConfig)
 		require.NoError(t, err)
 
@@ -131,7 +131,7 @@ func TestFeedMonitor(t *testing.T) {
 	t.Run("cleanup is called once for each exporter", func(t *testing.T) {
 		// put timers on exports of 100ms + keep a counter of all the running exporters.
 		// check how many running exporters still execute when Cleanup happens.
-		poller := &fakePoller{0, make(chan interface{})}
+		poller := &fakePoller{0, make(chan any)}
 		exporter1 := new(ExporterMock)
 		exporter2 := new(ExporterMock)
 
@@ -163,7 +163,7 @@ func TestFeedMonitor(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, exporter2)
 	})
 	t.Run("panics during Export() or Cleanup() get reported but don't crash the monitor", func(t *testing.T) {
-		poller := &fakePoller{0, make(chan interface{})}
+		poller := &fakePoller{0, make(chan any)}
 		exporter := new(ExporterMock)
 
 		monitor := NewFeedMonitor(

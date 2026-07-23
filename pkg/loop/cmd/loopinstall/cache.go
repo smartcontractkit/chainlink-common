@@ -88,6 +88,7 @@ func tryDownloadGitHubRelease(plugin PluginDef, binaryName, goos, goarch, github
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
+	req.Header.Set("User-Agent", "chainlink-common-loopinstall")
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	client := &http.Client{Timeout: 15 * time.Second}
@@ -245,7 +246,9 @@ func downloadAndInstallPluginWithCache(pluginType string, pluginIdx int, plugin 
 		req, err := http.NewRequest("GET", plugin.BinaryURL, nil)
 		if err == nil {
 			if token := getAuthToken(); token != "" {
-				req.Header.Set("Authorization", "Bearer "+token)
+				if strings.Contains(plugin.BinaryURL, "github.com") || strings.Contains(plugin.BinaryURL, "githubusercontent.com") || strings.Contains(plugin.BinaryURL, "amazonaws.com") {
+					req.Header.Set("Authorization", "Bearer "+token)
+				}
 			}
 			resp, err := client.Do(req)
 			if err == nil {

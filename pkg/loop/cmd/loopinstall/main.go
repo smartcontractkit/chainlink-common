@@ -26,7 +26,7 @@ func main() {
 	flag.BoolVar(&sequential, "s", false, "Install plugins sequentially (shorthand)")
 	flag.StringVar(&outputFile, "output-installation-artifacts", "", "Path for installation artifacts JSON file (optional)")
 	flag.StringVar(&outputFile, "o", "", "Path for installation artifacts JSON file (optional, shorthand)")
-	flag.StringVar(&cacheDir, "cache-dir", "", "Directory path for caching compiled plugin binaries (optional)")
+	flag.StringVar(&cacheDir, "cache-dir", "", "Directory path for caching compiled plugin binaries (optional; defaults to $CL_LOOPINSTALL_CACHE_DIR, else os.UserCacheDir())")
 
 	// Parse flags
 	flag.Parse()

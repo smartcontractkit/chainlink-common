@@ -367,3 +367,52 @@ func TestDownloadAndInstallPlugin_Tier3_SourceBuildAndCacheWrite(t *testing.T) {
 		assert.Equal(t, "compiled-source-binary", string(cachedContent))
 	})
 }
+
+func TestDownloadAndInstallPlugin_Tier2_WindowsExe(t *testing.T) {
+	tempCacheDir := t.TempDir()
+	tempBinDir := t.TempDir()
+	t.Setenv("GOBIN", tempBinDir)
+	t.Setenv("GOOS", "windows")
+	t.Setenv("GOARCH", "amd64")
+
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/repos/smartcontractkit/chainlink-win/releases/tags/v1.0.0" {
+			jsonResp := `{
+				"assets": [
+					{
+						"name": "chainlink-win_windows_amd64.exe",
+						"browser_download_url": "http://` + r.Host + `/download/chainlink-win.exe"
+					}
+				]
+			}`
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(jsonResp))
+			return
+		}
+		if r.URL.Path == "/download/chainlink-win.exe" {
+			_, _ = w.Write([]byte("windows-exe-binary"))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer mockServer.Close()
+
+	plugin := PluginDef{
+		ModuleURI:   "github.com/smartcontractkit/chainlink-win",
+		GitRef:      "v1.0.0",
+		InstallPath: ".",
+	}
+
+	withMockExec(t, func(cmd *exec.Cmd) error {
+		require.Failf(t, "execCommand invoked", "execCommand should not be called on GitHub Release hit")
+		return fmt.Errorf("should not be called")
+	}, func() {
+		err := downloadAndInstallPluginWithCache("win", 0, plugin, DefaultsConfig{}, tempCacheDir, "http://"+mockServer.Listener.Addr().String())
+		require.NoError(t, err)
+
+		installedPath := filepath.Join(tempBinDir, "chainlink-win.exe")
+		gotContent, err := os.ReadFile(installedPath)
+		require.NoError(t, err)
+		assert.Equal(t, "windows-exe-binary", string(gotContent))
+	})
+}

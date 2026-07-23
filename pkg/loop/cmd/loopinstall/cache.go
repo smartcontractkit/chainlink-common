@@ -112,6 +112,11 @@ func tryDownloadGitHubRelease(plugin PluginDef, binaryName, goos, goarch, github
 		fmt.Sprintf("%s-%s-%s", binaryName, goos, goarch): true,
 		binaryName: true,
 	}
+	if goos == "windows" && !strings.HasSuffix(binaryName, ".exe") {
+		expectedNames[binaryName+".exe"] = true
+		expectedNames[fmt.Sprintf("%s_%s_%s.exe", binaryName, goos, goarch)] = true
+		expectedNames[fmt.Sprintf("%s-%s-%s.exe", binaryName, goos, goarch)] = true
+	}
 
 	var downloadURL string
 	for _, asset := range release.Assets {
@@ -217,7 +222,11 @@ func downloadAndInstallPluginWithCache(pluginType string, pluginIdx int, plugin 
 	if binaryName == "." {
 		binaryName = filepath.Base(filepath.Clean(plugin.ModuleURI))
 	}
-	outputPath := filepath.Join(outputDir, binaryName)
+	outputBinaryName := binaryName
+	if goos == "windows" && !strings.HasSuffix(outputBinaryName, ".exe") {
+		outputBinaryName += ".exe"
+	}
+	outputPath := filepath.Join(outputDir, outputBinaryName)
 
 	// Tier 1: Check Local Disk Cache Hit
 	if _, err := os.Stat(cachedBinaryPath); err == nil {

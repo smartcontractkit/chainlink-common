@@ -140,21 +140,31 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
 	// Meter
-	meterProvider, err := newMeterProvider(cfg, baseResource, auth, creds)
+	meterProvider, meteredMetrics, err := newMeterProvider(cfg, baseResource, auth, creds)
 	if err != nil {
 		return nil, err
 	}
 	meter := meterProvider.Meter(defaultPackageName)
 
-	// Shared log exporter for both logger and message emitter
+	// Shared export-size counter (beholder.export.bytes, labelled per signal).
+	// It lives on this MeterProvider, so the metrics exporter can only be wired
+	// up once the provider and its meter exist.
+	exportBytes, err := newExportBytesCounter(meter)
+	if err != nil {
+		return nil, err
+	}
+	meteredMetrics.attachCounter(exportBytes, cfg.AuthPublicKeyHex)
+
+	// Shared log exporter for both logger and message emitter.
 	logOpts, err := newLoggerOpts(cfg, auth, creds, meterProvider, tracerProvider)
 	if err != nil {
 		return nil, err
 	}
-	sharedLogExporter, err := otlploggrpcNew(logOpts...)
+	rawLogExporter, err := otlploggrpcNew(logOpts...)
 	if err != nil {
 		return nil, err
 	}
+	sharedLogExporter := newMeteredLogExporter(rawLogExporter, exportBytes, cfg.AuthPublicKeyHex)
 
 	// Logger
 	var loggerProvider *sdklog.LoggerProvider
@@ -503,11 +513,19 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	return sdktrace.NewTracerProvider(opts...), nil
 }
 
-func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, error) {
+func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials) (*sdkmetric.MeterProvider, *meteredMetricExporter, error) {
 	ctx := context.Background()
 	opts := []otlpmetricgrpc.Option{
 		otlpmetricgrpc.WithTLSCredentials(creds),
 		otlpmetricgrpc.WithEndpoint(cfg.OtelExporterGRPCEndpoint),
+	}
+	// All gRPC dial options must go through a single WithDialOption call:
+	// each otlpmetricgrpc.WithDialOption call replaces (does not append) the
+	// previously configured dial options, so multiple calls would clobber each
+	// other. Capture the outbound proto size of each metric export
+	// (beholder.export.bytes) here.
+	dialOpts := []grpc.DialOption{
+		grpc.WithStatsHandler(exportSizeHandler{}),
 	}
 	switch compressor := cfg.MetricCompressor; compressor {
 	case "none":
@@ -520,13 +538,14 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	switch {
 	// Rotating auth
 	case auth != nil:
-		opts = append(opts, otlpmetricgrpc.WithDialOption(authDialOpt(auth)))
+		dialOpts = append(dialOpts, authDialOpt(auth))
 	// Static auth
 	case len(cfg.AuthHeaders) > 0:
 		opts = append(opts, otlpmetricgrpc.WithHeaders(cfg.AuthHeaders))
 	// No auth
 	default:
 	}
+	opts = append(opts, otlpmetricgrpc.WithDialOption(dialOpts...))
 
 	if cfg.MetricRetryConfig != nil {
 		// NOTE: By default, the retry is enabled in the OTel SDK
@@ -540,8 +559,11 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	// note: context is unused internally
 	exporter, err := otlpmetricgrpc.New(ctx, opts...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	// Wrap so each metric export batch's proto size is recorded. The counter is
+	// attached later (attachCounter) once this provider's meter exists.
+	metered := newMeteredMetricExporter(exporter)
 
 	readerOpts := []sdkmetric.PeriodicReaderOption{
 		sdkmetric.WithInterval(cfg.MetricReaderInterval), // Default is 10s
@@ -549,11 +571,11 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	for _, p := range cfg.MetricProducers {
 		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))
 	}
-	mpOpts := append(cfg.metricOptions(),
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, readerOpts...)),
+	return sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metered, readerOpts...)),
 		sdkmetric.WithResource(resource),
-	)
-	return sdkmetric.NewMeterProvider(mpOpts...), nil
+		sdkmetric.WithView(cfg.MetricViews...),
+	), metered, nil
 }
 
 // newLoggerOpts creates options for a logger exporter
@@ -565,6 +587,7 @@ func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials
 
 	dialOpts := []grpc.DialOption{
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
+		grpc.WithStatsHandler(exportSizeHandler{}),
 	}
 
 	opts := []otlploggrpc.Option{

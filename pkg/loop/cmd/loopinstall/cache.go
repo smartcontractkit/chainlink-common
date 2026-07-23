@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,8 +37,10 @@ func resolveCacheDir(cliCacheDir string) (string, error) {
 // computeCacheKey calculates a deterministic cache key for a plugin.
 func computeCacheKey(pluginType string, plugin PluginDef, defaults DefaultsConfig, goos, goarch string) string {
 	h := sha256.New()
-	_, _ = fmt.Fprintf(h, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%v|%v",
-		pluginType, plugin.ModuleURI, plugin.GitRef, plugin.InstallPath, plugin.Flags, defaults.GoFlags, plugin.BinaryURL, goos, goarch, plugin.EnvVars, defaults.EnvVars)
+	envGoFlags := os.Getenv("CL_PLUGIN_GOFLAGS")
+	envEnvVars := os.Getenv("CL_PLUGIN_ENVVARS")
+	_, _ = fmt.Fprintf(h, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%v|%v|%s|%s",
+		pluginType, plugin.ModuleURI, plugin.GitRef, plugin.InstallPath, plugin.Flags, defaults.GoFlags, plugin.BinaryURL, goos, goarch, plugin.EnvVars, defaults.EnvVars, envGoFlags, envEnvVars)
 	base := filepath.Base(filepath.Clean(plugin.ModuleURI))
 	return fmt.Sprintf("%s-%x", base, h.Sum(nil)[:12])
 }
@@ -48,6 +51,59 @@ func getAuthToken() string {
 		return token
 	}
 	return os.Getenv("GITHUB_TOKEN")
+}
+
+// isTrustedAuthDomain returns true if the URL domain is safe to send bearer auth tokens to.
+func isTrustedAuthDomain(rawURL string) bool {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(parsed.Hostname())
+	return host == "github.com" ||
+		strings.HasSuffix(host, ".github.com") ||
+		host == "githubusercontent.com" ||
+		strings.HasSuffix(host, ".githubusercontent.com") ||
+		strings.HasSuffix(host, ".amazonaws.com")
+}
+
+// tryDownloadBinaryURL downloads a binary from an explicit BinaryURL.
+func tryDownloadBinaryURL(pluginKey, binaryURL string) ([]byte, error) {
+	client := &http.Client{Timeout: 15 * time.Second}
+	req, err := http.NewRequest("GET", binaryURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("binaryURL request creation failed: %w", err)
+	}
+
+	if token := getAuthToken(); token != "" && isTrustedAuthDomain(binaryURL) {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("binaryURL request failed: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("binaryURL returned HTTP %d", resp.StatusCode)
+	}
+
+	return io.ReadAll(resp.Body)
+}
+
+// saveAndInstallCachedBinary writes asset data to the cache directory and copies it to target binary path.
+func saveAndInstallCachedBinary(pluginKey string, data []byte, cacheDir, cachePath, targetPath string) error {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return fmt.Errorf("%s - failed to create cache dir: %w", pluginKey, err)
+	}
+	if err := os.WriteFile(cachePath, data, 0755); err != nil {
+		return fmt.Errorf("%s - failed to write binary to cache: %w", pluginKey, err)
+	}
+	if err := copyFile(cachePath, targetPath); err != nil {
+		return fmt.Errorf("%s - failed to copy binary to output: %w", pluginKey, err)
+	}
+	return nil
 }
 
 // githubReleaseAsset represents GitHub release JSON structure.
@@ -80,8 +136,8 @@ func tryDownloadGitHubRelease(plugin PluginDef, binaryName, goos, goarch, github
 		return nil, fmt.Errorf("empty gitRef, release download skipped")
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/releases/tags/%s", githubAPIBaseURL, owner, repo, ref)
-	req, err := http.NewRequest("GET", url, nil)
+	urlStr := fmt.Sprintf("%s/repos/%s/%s/releases/tags/%s", githubAPIBaseURL, owner, repo, ref)
+	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -245,43 +301,12 @@ func downloadAndInstallPluginWithCache(pluginType string, pluginIdx int, plugin 
 	// Tier 2: Try explicit binary URL override, then GitHub Release Asset fallback
 	if plugin.BinaryURL != "" {
 		log.Printf("%s - cache miss, attempting binaryURL download (%s)", pluginKey, plugin.BinaryURL)
-
-		client := &http.Client{Timeout: 15 * time.Second}
-		req, err := http.NewRequest("GET", plugin.BinaryURL, nil)
+		assetData, err := tryDownloadBinaryURL(pluginKey, plugin.BinaryURL)
 		if err != nil {
-			log.Printf("%s - binaryURL request creation failed (%v)", pluginKey, err)
+			log.Printf("%s - %v", pluginKey, err)
 		} else {
-			if token := getAuthToken(); token != "" {
-				if strings.Contains(plugin.BinaryURL, "github.com") || strings.Contains(plugin.BinaryURL, "githubusercontent.com") || strings.Contains(plugin.BinaryURL, "amazonaws.com") {
-					req.Header.Set("Authorization", "Bearer "+token)
-				}
-			}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Printf("%s - binaryURL request failed (%v)", pluginKey, err)
-			} else {
-				defer func() { _ = resp.Body.Close() }()
-				if resp.StatusCode != http.StatusOK {
-					log.Printf("%s - binaryURL returned HTTP %d", pluginKey, resp.StatusCode)
-				} else {
-					assetData, err := io.ReadAll(resp.Body)
-					if err != nil {
-						log.Printf("%s - failed to read binaryURL response body (%v)", pluginKey, err)
-					} else {
-						log.Printf("%s - binaryURL downloaded successfully", pluginKey)
-						if err := os.MkdirAll(resolvedCacheDir, 0755); err != nil {
-							return fmt.Errorf("%s - failed to create cache dir: %w", pluginKey, err)
-						}
-						if err := os.WriteFile(cachedBinaryPath, assetData, 0755); err != nil {
-							return fmt.Errorf("%s - failed to write binary to cache: %w", pluginKey, err)
-						}
-						if err := copyFile(cachedBinaryPath, outputPath); err != nil {
-							return fmt.Errorf("%s - failed to copy binary to output: %w", pluginKey, err)
-						}
-						return nil
-					}
-				}
-			}
+			log.Printf("%s - binaryURL downloaded successfully", pluginKey)
+			return saveAndInstallCachedBinary(pluginKey, assetData, resolvedCacheDir, cachedBinaryPath, outputPath)
 		}
 	}
 
@@ -290,16 +315,7 @@ func downloadAndInstallPluginWithCache(pluginType string, pluginIdx int, plugin 
 		assetData, relErr := tryDownloadGitHubRelease(plugin, binaryName, goos, goarch, githubAPIBaseURL)
 		if relErr == nil {
 			log.Printf("%s - release asset downloaded successfully", pluginKey)
-			if err := os.MkdirAll(resolvedCacheDir, 0755); err != nil {
-				return fmt.Errorf("%s - failed to create cache dir: %w", pluginKey, err)
-			}
-			if err := os.WriteFile(cachedBinaryPath, assetData, 0755); err != nil {
-				return fmt.Errorf("%s - failed to write binary to cache: %w", pluginKey, err)
-			}
-			if err := copyFile(cachedBinaryPath, outputPath); err != nil {
-				return fmt.Errorf("%s - failed to copy binary to output: %w", pluginKey, err)
-			}
-			return nil
+			return saveAndInstallCachedBinary(pluginKey, assetData, resolvedCacheDir, cachedBinaryPath, outputPath)
 		}
 		log.Printf("%s - release asset download not available (%v), falling back to source build", pluginKey, relErr)
 	}

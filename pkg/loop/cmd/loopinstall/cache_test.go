@@ -43,8 +43,6 @@ func TestComputeCacheKey(t *testing.T) {
 }
 
 func TestComputeCacheKey_Variations(t *testing.T) {
-	t.Parallel()
-
 	basePlugin := PluginDef{
 		ModuleURI:   "github.com/smartcontractkit/chainlink-cosmos",
 		GitRef:      "v1.0.0",
@@ -89,6 +87,20 @@ func TestComputeCacheKey_Variations(t *testing.T) {
 			},
 			different: true,
 		},
+		{
+			name: "different_cl_plugin_goflags_env",
+			modify: func(p *PluginDef, d *DefaultsConfig) {
+				t.Setenv("CL_PLUGIN_GOFLAGS", "-tags=custom")
+			},
+			different: true,
+		},
+		{
+			name: "different_cl_plugin_envvars_env",
+			modify: func(p *PluginDef, d *DefaultsConfig) {
+				t.Setenv("CL_PLUGIN_ENVVARS", "CGO_ENABLED=1")
+			},
+			different: true,
+		},
 	}
 
 	for _, tc := range tests {
@@ -104,6 +116,24 @@ func TestComputeCacheKey_Variations(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTryDownloadBinaryURL_DomainSecurity(t *testing.T) {
+	t.Setenv("GITHUB_TOKEN", "secret-token")
+
+	var receivedAuthHeader string
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedAuthHeader = r.Header.Get("Authorization")
+		_, _ = w.Write([]byte("binary-data"))
+	}))
+	defer mockServer.Close()
+
+	// 1. Untrusted domain with github.com in path should NOT receive auth token
+	untrustedURL := mockServer.URL + "/github.com/fake-asset"
+	data, err := tryDownloadBinaryURL("key", untrustedURL)
+	require.NoError(t, err)
+	assert.Equal(t, "binary-data", string(data))
+	assert.Empty(t, receivedAuthHeader, "untrusted domain with github.com in path should not receive Authorization header")
 }
 
 func TestDownloadAndInstallPlugin_DisabledAndValidation(t *testing.T) {

@@ -75,6 +75,7 @@ var Default = Schema{
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
 	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
+	GatewayConfidentialRelayUserRate:                  Rate(rate.Limit(100), 10),
 	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
 	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
 	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
@@ -348,6 +349,11 @@ type Schema struct {
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
 	GatewayConfidentialRelayPerNodeRate               Setting[config.Rate]
+	// GatewayConfidentialRelayUserRate bounds inbound user (ingress) requests to the
+	// confidential relay handler, before they are fanned out to DON nodes. The
+	// GlobalRate/PerNodeRate limiters above only bound node responses, so without this
+	// an unauthenticated caller can amplify one request into per-node attestation work.
+	GatewayConfidentialRelayUserRate Setting[config.Rate]
 	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
 	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
 	TriggerRegistrationStatusUpdateTimeout            Setting[time.Duration]

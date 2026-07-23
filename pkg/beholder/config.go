@@ -175,6 +175,13 @@ func DefaultConfig() Config {
 	}
 }
 
+func metricReaderInterval(cfg Config) time.Duration {
+	if cfg.MetricReaderInterval > 0 {
+		return cfg.MetricReaderInterval
+	}
+	return DefaultConfig().MetricReaderInterval
+}
+
 func TestDefaultConfig() Config {
 	config := DefaultConfig()
 	// Should be only disabled for testing

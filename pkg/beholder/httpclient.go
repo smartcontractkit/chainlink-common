@@ -289,7 +289,7 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				exporter,
-				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
+				sdkmetric.WithInterval(metricReaderInterval(config)), // Zero uses Beholder default (1s)
 			)),
 		sdkmetric.WithResource(resource),
 	)

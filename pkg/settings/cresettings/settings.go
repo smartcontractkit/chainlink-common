@@ -66,6 +66,7 @@ var Default = Schema{
 	VaultBase64EncodingEnabled:                        Bool(false),
 	VaultForceEmptyOCRRounds:                          Bool(false),
 	VaultOptimizationsEnabled:                         Bool(false),
+	VaultFastPathGetSecretsEnabled:                    Bool(false),
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
@@ -339,6 +340,7 @@ type Schema struct {
 	VaultBase64EncodingEnabled                        Setting[bool]
 	VaultForceEmptyOCRRounds                          Setting[bool]
 	VaultOptimizationsEnabled                         Setting[bool]
+	VaultFastPathGetSecretsEnabled                    Setting[bool]
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]

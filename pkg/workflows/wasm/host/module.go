@@ -706,6 +706,9 @@ func runWasm[I, O proto.Message](
 
 	instance, err := linkWasm(m, store, exec)
 	if err != nil {
+		if ctx.Err() != nil || strings.Contains(err.Error(), "wasm trap: interrupt") {
+			return o, context.DeadlineExceeded
+		}
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
 
@@ -744,7 +747,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil || strings.Contains(err.Error(), "wasm trap: interrupt")) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

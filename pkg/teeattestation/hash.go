@@ -15,6 +15,7 @@ const DomainSeparator = "CONFIDENTIAL_COMPUTE_PAYLOAD"
 
 // DomainHash computes SHA-256 over the DomainSeparator and the length-prefixed
 // tag and data, so distinct (tag, data) pairs can never share a pre-image. [CL112-14]
+// It returns an error if tag is empty or contains non-ASCII alphanumeric characters.
 func DomainHash(tag string, data []byte) ([]byte, error) {
 	if tag == "" || !isAlphanumeric(tag) {
 		return nil, fmt.Errorf("invalid tag: must be non-empty and contain only alphanumeric characters")

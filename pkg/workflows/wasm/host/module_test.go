@@ -40,6 +40,23 @@ func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) custmsg.Mes
 	return m
 }
 
+func (m *mockMessageEmitter) WithType(msgType string) custmsg.MessageEmitter {
+	if m.labels == nil {
+		m.labels = map[string]string{}
+	}
+	m.labels[custmsg.LabelKeyType] = msgType
+	return m
+}
+
+func (m *mockMessageEmitter) WithLabelsAndType(labels map[string]string, msgType string) custmsg.MessageEmitter {
+	m.labels = labels
+	if m.labels == nil {
+		m.labels = map[string]string{}
+	}
+	m.labels[custmsg.LabelKeyType] = msgType
+	return m
+}
+
 func (m *mockMessageEmitter) With(keyValues ...string) custmsg.MessageEmitter {
 	// do nothing
 	return m

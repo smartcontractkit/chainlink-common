@@ -11,12 +11,21 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
 )
 
+const LabelKeyType = "type"
+
 type MessageEmitter interface {
 	// Emit sends a message to the labeler's destination.
 	Emit(context.Context, string) error
 
 	// WithMapLabels sets the labels for the message to be emitted.  Labels are cumulative.
 	WithMapLabels(map[string]string) MessageEmitter
+
+	// WithType sets the required message type label (BaseMessage.Labels["type"]).
+	WithType(msgType string) MessageEmitter
+
+	// WithLabelsAndType sets labels and the required message type label.
+	// msgType wins over any "type" key already present in labels.
+	WithLabelsAndType(labels map[string]string, msgType string) MessageEmitter
 
 	// With adds multiple key-value pairs to the emission.
 	With(keyValues ...string) MessageEmitter
@@ -46,6 +55,22 @@ func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 
 	return newCustomMessageLabeler
 }
+
+func (l Labeler) WithType(msgType string) MessageEmitter {
+	newCustomMessageLabeler := NewLabeler()
+	maps.Copy(newCustomMessageLabeler.labels, l.labels)
+	newCustomMessageLabeler.labels[LabelKeyType] = msgType
+	return newCustomMessageLabeler
+}
+
+func (l Labeler) WithLabelsAndType(labels map[string]string, msgType string) MessageEmitter {
+	newCustomMessageLabeler := NewLabeler()
+	maps.Copy(newCustomMessageLabeler.labels, l.labels)
+	maps.Copy(newCustomMessageLabeler.labels, labels)
+	newCustomMessageLabeler.labels[LabelKeyType] = msgType
+	return newCustomMessageLabeler
+}
+
 
 // With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
 func (l Labeler) With(keyValues ...string) MessageEmitter {
@@ -88,6 +113,10 @@ func (l Labeler) SendLogAsCustomMessage(ctx context.Context, msg string) error {
 }
 
 func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]string) error {
+	if labels[LabelKeyType] == "" {
+		return fmt.Errorf("custmsg: missing required label %q", LabelKeyType)
+	}
+
 	// TODO un-comment after INFOPLAT-1386
 	// cast to map[string]any
 	//newLabels := map[string]any{}

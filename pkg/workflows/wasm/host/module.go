@@ -1062,6 +1062,14 @@ func (u *unimplementedMessageEmitter) WithMapLabels(map[string]string) custmsg.M
 	return u
 }
 
+func (u *unimplementedMessageEmitter) WithType(string) custmsg.MessageEmitter {
+	return u
+}
+
+func (u *unimplementedMessageEmitter) WithLabelsAndType(map[string]string, string) custmsg.MessageEmitter {
+	return u
+}
+
 func (u *unimplementedMessageEmitter) With(kvs ...string) custmsg.MessageEmitter {
 	return u
 }

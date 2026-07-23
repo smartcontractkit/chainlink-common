@@ -108,6 +108,8 @@ Options:
   -s, --sequential          Install plugins sequentially (no concurrency)
   -o, --output-installation-artifacts <file>  Path for installation artifacts JSON file
                              (optional, no installation artifacts written if not specified)
+  --cache-dir <path>        Directory path for caching compiled plugin binaries
+                             (optional, defaults to $CL_LOOPINSTALL_CACHE_DIR or os.UserCacheDir())
 
 Examples:
   # Install plugins from the default configuration
@@ -126,8 +128,9 @@ Examples:
   CL_PLUGIN_ENVVARS="GOOS=linux GOARCH=amd64 CGO_ENABLED=0" loopinstall plugins.default.yaml
 
 Environment Variables:
-  CL_PLUGIN_GOFLAGS  Override the goflags option from the configuration
-  CL_PLUGIN_ENVVARS  Space-separated list of environment variables to set during installation (for example for cross-compilation)
+  CL_PLUGIN_GOFLAGS        Override the goflags option from the configuration
+  CL_PLUGIN_ENVVARS        Space-separated list of environment variables to set during installation (for example for cross-compilation)
+  CL_LOOPINSTALL_CACHE_DIR Override default directory path for caching compiled plugin binaries
 
 Plugin Configuration Format:
   defaults:

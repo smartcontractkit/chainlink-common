@@ -285,6 +285,7 @@ func TestDownloadAndInstallPlugin_Tier2_GitHubReleaseAsset(t *testing.T) {
 			jsonResp := fmt.Sprintf(`{
 				"assets": [
 					{
+						"id": 12345,
 						"name": "%s",
 						"browser_download_url": "http://%s/download/%s"
 					}
@@ -294,7 +295,8 @@ func TestDownloadAndInstallPlugin_Tier2_GitHubReleaseAsset(t *testing.T) {
 			_, _ = w.Write([]byte(jsonResp))
 			return
 		}
-		if filepath.Base(r.URL.Path) == fmt.Sprintf("chainlink-starknet_%s_%s", runtime.GOOS, runtime.GOARCH) {
+		if r.URL.Path == "/repos/smartcontractkit/chainlink-starknet/releases/assets/12345" {
+			assert.Equal(t, "application/octet-stream", r.Header.Get("Accept"))
 			_, _ = w.Write([]byte("release-asset-binary"))
 			return
 		}
@@ -380,6 +382,7 @@ func TestDownloadAndInstallPlugin_Tier2_WindowsExe(t *testing.T) {
 			jsonResp := `{
 				"assets": [
 					{
+						"id": 67890,
 						"name": "chainlink-win_windows_amd64.exe",
 						"browser_download_url": "http://` + r.Host + `/download/chainlink-win.exe"
 					}
@@ -389,7 +392,8 @@ func TestDownloadAndInstallPlugin_Tier2_WindowsExe(t *testing.T) {
 			_, _ = w.Write([]byte(jsonResp))
 			return
 		}
-		if r.URL.Path == "/download/chainlink-win.exe" {
+		if r.URL.Path == "/repos/smartcontractkit/chainlink-win/releases/assets/67890" {
+			assert.Equal(t, "application/octet-stream", r.Header.Get("Accept"))
 			_, _ = w.Write([]byte("windows-exe-binary"))
 			return
 		}

@@ -52,6 +52,7 @@ func getAuthToken() string {
 
 // githubReleaseAsset represents GitHub release JSON structure.
 type githubReleaseAsset struct {
+	ID                 int64  `json:"id"`
 	Name               string `json:"name"`
 	BrowserDownloadURL string `json:"browser_download_url"`
 }
@@ -119,26 +120,29 @@ func tryDownloadGitHubRelease(plugin PluginDef, binaryName, goos, goarch, github
 		expectedNames[fmt.Sprintf("%s-%s-%s.exe", binaryName, goos, goarch)] = true
 	}
 
-	var downloadURL string
+	var assetID int64
 	for _, asset := range release.Assets {
 		if expectedNames[asset.Name] {
-			downloadURL = asset.BrowserDownloadURL
+			assetID = asset.ID
 			break
 		}
 	}
 
-	if downloadURL == "" {
+	if assetID == 0 {
 		return nil, fmt.Errorf("no matching release asset found for binary %s (%s/%s)", binaryName, goos, goarch)
 	}
 
-	// Download asset
-	dlReq, err := http.NewRequest("GET", downloadURL, nil)
+	// Download asset via GitHub API assets endpoint to preserve auth on redirects
+	dlURL := fmt.Sprintf("%s/repos/%s/%s/releases/assets/%d", githubAPIBaseURL, owner, repo, assetID)
+	dlReq, err := http.NewRequest("GET", dlURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	if token != "" && !strings.Contains(downloadURL, "githubusercontent.com") && !strings.Contains(downloadURL, "amazonaws.com") {
+	if token != "" {
 		dlReq.Header.Set("Authorization", "Bearer "+token)
 	}
+	dlReq.Header.Set("User-Agent", "chainlink-common-loopinstall")
+	dlReq.Header.Set("Accept", "application/octet-stream")
 
 	dlResp, err := client.Do(dlReq)
 	if err != nil {
@@ -244,18 +248,26 @@ func downloadAndInstallPluginWithCache(pluginType string, pluginIdx int, plugin 
 
 		client := &http.Client{Timeout: 15 * time.Second}
 		req, err := http.NewRequest("GET", plugin.BinaryURL, nil)
-		if err == nil {
+		if err != nil {
+			log.Printf("%s - binaryURL request creation failed (%v)", pluginKey, err)
+		} else {
 			if token := getAuthToken(); token != "" {
 				if strings.Contains(plugin.BinaryURL, "github.com") || strings.Contains(plugin.BinaryURL, "githubusercontent.com") || strings.Contains(plugin.BinaryURL, "amazonaws.com") {
 					req.Header.Set("Authorization", "Bearer "+token)
 				}
 			}
 			resp, err := client.Do(req)
-			if err == nil {
+			if err != nil {
+				log.Printf("%s - binaryURL request failed (%v)", pluginKey, err)
+			} else {
 				defer func() { _ = resp.Body.Close() }()
-				if resp.StatusCode == http.StatusOK {
+				if resp.StatusCode != http.StatusOK {
+					log.Printf("%s - binaryURL returned HTTP %d", pluginKey, resp.StatusCode)
+				} else {
 					assetData, err := io.ReadAll(resp.Body)
-					if err == nil {
+					if err != nil {
+						log.Printf("%s - failed to read binaryURL response body (%v)", pluginKey, err)
+					} else {
 						log.Printf("%s - binaryURL downloaded successfully", pluginKey)
 						if err := os.MkdirAll(resolvedCacheDir, 0755); err != nil {
 							return fmt.Errorf("%s - failed to create cache dir: %w", pluginKey, err)

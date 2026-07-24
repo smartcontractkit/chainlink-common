@@ -130,6 +130,12 @@ enum RequestType {
   LIST_SECRET_IDENTIFIERS = 5;
 }
 
+// ObservationError is an item-level Err(E) contribution for a pending queue request.
+// When set on Observation, the observation is an error contribution for that request id.
+message ObservationError {
+  string message = 1;
+}
+
 message Observation {
   string id = 1;
   RequestType request_type = 2;
@@ -149,12 +155,20 @@ message Observation {
     DeleteSecretsResponse delete_secrets_response = 11;
     ListSecretIdentifiersResponse list_secret_identifiers_response = 12;
   }
+
+  ObservationError error = 13;
+}
+
+enum PendingQueueStallSignal {
+  PENDING_QUEUE_STALL_SIGNAL_CONTINUE = 0;
+  PENDING_QUEUE_STALL_SIGNAL_STALLED = 1;
 }
 
 message Observations {
   repeated Observation observations = 1;
   repeated bytes pending_queue_items = 2;
   bytes sortNonce = 3;
+  PendingQueueStallSignal pending_queue_stall_signal = 4;
 }
 
 message Outcome {

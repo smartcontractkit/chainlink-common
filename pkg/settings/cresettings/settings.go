@@ -69,6 +69,9 @@ var Default = Schema{
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
+	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
+	VaultPendingQueueStallThreshold:                   Int(0),
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
@@ -342,6 +345,9 @@ type Schema struct {
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
+	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
+	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]

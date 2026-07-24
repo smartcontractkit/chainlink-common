@@ -178,9 +178,12 @@ func newToolTip(options *ToolTipOptions) *common.VizTooltipOptionsBuilder {
 }
 
 type PanelOptions struct {
-	Datasource    string
-	Title         *string
-	Description   string
+	Datasource  string
+	Title       *string
+	Description string
+	// StableID pins the Grafana panel ID at build time. Use high ID blocks (e.g. 20100+)
+	// to avoid colliding with auto-assigned sequential IDs. Zero means auto-increment.
+	StableID      uint32
 	Transparent   bool
 	Span          uint32
 	Height        uint32
@@ -212,6 +215,15 @@ type Panel struct {
 	businessVariablePanelBuilder *businessvariable.PanelBuilder
 	polystatPanelBuilder         *polystat.PanelBuilder
 	alertBuilders                []*alerting.RuleBuilder
+	stableID                     uint32
+}
+
+func attachPanelMeta(panel *Panel, panelOptions *PanelOptions) *Panel {
+	if panel == nil || panelOptions == nil {
+		return panel
+	}
+	panel.stableID = panelOptions.StableID
+	return panel
 }
 
 // panelBuilder sets the panel ID and returns the underlying builder as a cog.Builder[dashboard.Panel].
@@ -385,9 +397,9 @@ func NewStatPanel(options *StatPanelOptions) *Panel {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		statPanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type TimeSeriesPanelOptions struct {
@@ -526,10 +538,10 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		}
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		timeSeriesPanelBuilder: newPanel,
 		alertBuilders:          alertBuilders,
-	}
+	}, options.PanelOptions)
 }
 
 type BarGaugePanelOptions struct {
@@ -605,9 +617,9 @@ func NewBarGaugePanel(options *BarGaugePanelOptions) *Panel {
 		newPanel.Orientation(options.Orientation)
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		barGaugePanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type GaugePanelOptions struct {
@@ -673,9 +685,9 @@ func NewGaugePanel(options *GaugePanelOptions) *Panel {
 		}
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		gaugePanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type SortByOptions struct {
@@ -791,9 +803,9 @@ func NewTablePanel(options *TablePanelOptions) *Panel {
 		newPanel.SortBy(sortBy)
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		tablePanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type LogPanelOptions struct {
@@ -879,9 +891,9 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		logPanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type HeatmapPanelOptions struct {
@@ -943,9 +955,9 @@ func NewHeatmapPanel(options *HeatmapPanelOptions) *Panel {
 		newPanel.ColorScheme(dashboard.NewFieldColorBuilder().Mode(options.ColorScheme))
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		heatmapBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type TextPanelOptions struct {
@@ -974,9 +986,9 @@ func NewTextPanel(options *TextPanelOptions) *Panel {
 		newPanel.Interval(options.Interval)
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		textPanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type HistogramPanelOptions struct {
@@ -1141,9 +1153,9 @@ func NewHistogramPanel(options *HistogramPanelOptions) *Panel {
 		newPanel.AxisWidth(*options.AxisWidth)
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		histogramPanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type BusinessVariablePanelOptions struct {
@@ -1171,9 +1183,9 @@ func NewBusinessVariablePanel(options *BusinessVariablePanelOptions) *Panel {
 		newPanel.Padding(*options.Padding)
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		businessVariablePanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }
 
 type PolystatPanelOptions struct {
@@ -1294,7 +1306,7 @@ func NewPolystatPanel(options *PolystatPanelOptions) *Panel {
 		newPanel.WithTarget(newQuery(query))
 	}
 
-	return &Panel{
+	return attachPanelMeta(&Panel{
 		polystatPanelBuilder: newPanel,
-	}
+	}, options.PanelOptions)
 }

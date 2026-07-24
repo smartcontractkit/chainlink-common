@@ -4,7 +4,7 @@ on:
   pull_request:
   merge_group:
   schedule:
-    - cron: '0 0 * * 1-5' # every week-day at midnight
+    - cron: "0 0 * * 1-5" # every week-day at midnight
 
 jobs:
   detect-modules:
@@ -16,7 +16,7 @@ jobs:
       modules: ${{ steps.changed-modules.outputs.modules-json }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -53,7 +53,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           persist-credentials: false
 

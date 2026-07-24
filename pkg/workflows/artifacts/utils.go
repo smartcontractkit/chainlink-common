@@ -94,7 +94,7 @@ func GetBuildCmd(inputFile string, outputFile string, rootFolder string) *exec.C
 	return buildCmd
 }
 
-// goToolchain returns a GOTOOLCHAIN value (e.g. "go1.26.2") to pin the build
+// goToolchain returns a GOTOOLCHAIN value (e.g. "go1.26.5") to pin the build
 // to. It prefers the configured `go env GOTOOLCHAIN`; when that is unset (e.g.
 // "auto") it falls back to the go version declared in the module's go.mod. The
 // local Go version is not used as a fallback because it would not pin a

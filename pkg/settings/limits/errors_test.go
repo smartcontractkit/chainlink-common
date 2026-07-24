@@ -31,12 +31,12 @@ func TestLimitError_As(t *testing.T) {
 	for _, err := range cases {
 		t.Run(err.Error(), func(t *testing.T) {
 			t.Parallel()
-		limitErr, ok := errors.AsType[LimitError](err)
-		require.True(t, ok)
-		_ = limitErr
-		_, ok = errors.AsType[LimitError](fmt.Errorf("wrapped: %w", err))
-		require.True(t, ok)
-	})
+			limitErr, ok := errors.AsType[LimitError](err)
+			require.True(t, ok)
+			_ = limitErr
+			_, ok = errors.AsType[LimitError](fmt.Errorf("wrapped: %w", err))
+			require.True(t, ok)
+		})
 	}
 
 	_, ok := errors.AsType[LimitError](errors.New("other"))

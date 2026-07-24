@@ -75,7 +75,6 @@ func TestRelayerService(t *testing.T) {
 }
 
 func TestRelayerService_recovery(t *testing.T) {
-	t.Parallel()
 	var limit atomic.Int32
 	relayer := loop.NewRelayerService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return HelperProcessCommand{
@@ -85,7 +84,7 @@ func TestRelayerService_recovery(t *testing.T) {
 	}, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
 	servicetest.Run(t, relayer)
 
-	relayertest.Run(t, relayer)
+	relayertest.RunSequential(t, relayer)
 
 	if hp := relayer.HealthReport(); len(hp) == 2 {
 		servicetest.AssertHealthReportNames(t, hp, relayerServiceNames[:2]...)

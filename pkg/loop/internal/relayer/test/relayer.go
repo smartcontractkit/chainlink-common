@@ -422,8 +422,21 @@ func (s staticRelayer) Replay(ctx context.Context, fromBlock string, args map[st
 }
 
 func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer looptypes.Relayer) {
+	s.assertEqual(t, relayer, true)
+}
+
+// assertEqual checks that the relayer exposes all expected functionality. When parallel is true,
+// subtests run concurrently; when false, they run sequentially so callers can ensure the underlying
+// service has recovered between assertions.
+func (s staticRelayer) assertEqual(t *testing.T, relayer looptypes.Relayer, parallel bool) {
+	maybeParallel := func(t *testing.T) {
+		if parallel {
+			t.Parallel()
+		}
+	}
+
 	t.Run("ContractReader", func(t *testing.T) {
-		//t.Parallel()
+		// ContractReader is intentionally not parallel so it is created before the other subtests.
 		ctx := t.Context()
 		contractReader, err := relayer.NewContractReader(ctx, []byte("test"))
 		require.NoError(t, err)
@@ -431,7 +444,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 	})
 
 	t.Run("ConfigProvider", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		configProvider, err := relayer.NewConfigProvider(ctx, RelayArgs)
 		require.NoError(t, err)
@@ -441,7 +454,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 	})
 
 	t.Run("MedianProvider", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		ra := newRelayArgsWithProviderType(types.Median)
 		p, err := relayer.NewPluginProvider(ctx, ra, PluginArgs)
@@ -451,25 +464,25 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 		servicetest.Run(t, provider)
 
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
-			t.Parallel()
+			maybeParallel(t)
 			s.medianProvider.AssertEqual(ctx, t, provider)
 		})
 	})
 
 	t.Run("PluginProvider", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ra := newRelayArgsWithProviderType(types.GenericPlugin)
 		provider, err := relayer.NewPluginProvider(t.Context(), ra, PluginArgs)
 		require.NoError(t, err)
 		servicetest.Run(t, provider)
 		t.Run("ReportingPluginProvider", func(t *testing.T) {
-			t.Parallel()
+			maybeParallel(t)
 			s.agnosticProvider.AssertEqual(t.Context(), t, provider)
 		})
 	})
 
 	t.Run("GetChainStatus", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		gotChain, err := relayer.GetChainStatus(ctx)
 		require.NoError(t, err)
@@ -477,7 +490,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 	})
 
 	t.Run("GetChainInfo", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		chainInfoReply, err := relayer.GetChainInfo(ctx)
 		require.NoError(t, err)
@@ -485,7 +498,7 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 	})
 
 	t.Run("ListNodeStatuses", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		gotNodes, gotNextToken, gotCount, err := relayer.ListNodeStatuses(ctx, s.nodeRequest.pageSize, s.nodeRequest.pageToken)
 		require.NoError(t, err)
@@ -495,14 +508,14 @@ func (s staticRelayer) AssertEqual(_ context.Context, t *testing.T, relayer loop
 	})
 
 	t.Run("Transact", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		err := relayer.Transact(ctx, s.transactionRequest.from, s.transactionRequest.to, s.transactionRequest.amount, s.transactionRequest.balanceCheck)
 		require.NoError(t, err)
 	})
 
 	t.Run("Replay", func(t *testing.T) {
-		t.Parallel()
+		maybeParallel(t)
 		ctx := t.Context()
 		err := relayer.Replay(ctx, s.replayRequest.fromBlock, s.replayRequest.args)
 		require.NoError(t, err)
@@ -563,6 +576,13 @@ func Run(t *testing.T, relayer looptypes.Relayer) {
 	ctx := t.Context()
 	expectedRelayer := NewRelayerTester(logger.Test(t), false)
 	expectedRelayer.AssertEqual(ctx, t, relayer)
+}
+
+// RunSequential is like Run but executes the subtests sequentially. This is useful when the relayer
+// is expected to recover from plugin failures between assertions, so each assertion has a chance to
+// wait for the service to relaunch before the next one runs.
+func RunSequential(t *testing.T, relayer looptypes.Relayer) {
+	newStaticRelayer(logger.Test(t), false).assertEqual(t, relayer, false)
 }
 
 func RunFuzzPluginRelayer(f *testing.F, relayerFunc func(*testing.T) looptypes.PluginRelayer) {

@@ -60,6 +60,10 @@ modgraph: gomods
 	go install github.com/jmank88/modgraph@v0.1.0
 	./modgraph > go.md
 
+.PHONY: gofix
+gofix: ## Run go fix across all packages
+	go fix ./...
+
 .PHONY: dependabot
 ifndef DEPENDABOT_SEVERITY
 DEPENDABOT_SEVERITY := "critical,high"

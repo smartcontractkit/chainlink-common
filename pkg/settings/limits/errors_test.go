@@ -31,15 +31,18 @@ func TestLimitError_As(t *testing.T) {
 	for _, err := range cases {
 		t.Run(err.Error(), func(t *testing.T) {
 			t.Parallel()
-			var limitErr LimitError
-			require.True(t, errors.As(err, &limitErr))
-			require.True(t, errors.As(fmt.Errorf("wrapped: %w", err), &limitErr))
-		})
+		limitErr, ok := errors.AsType[LimitError](err)
+		require.True(t, ok)
+		_ = limitErr
+		_, ok = errors.AsType[LimitError](fmt.Errorf("wrapped: %w", err))
+		require.True(t, ok)
+	})
 	}
 
-	var limitErr LimitError
-	require.False(t, errors.As(errors.New("other"), &limitErr))
-	require.False(t, errors.As(ErrQueueEmpty, &limitErr))
+	_, ok := errors.AsType[LimitError](errors.New("other"))
+	require.False(t, ok)
+	_, ok = errors.AsType[LimitError](ErrQueueEmpty)
+	require.False(t, ok)
 }
 
 func TestErrorRateLimited(t *testing.T) {

@@ -88,8 +88,8 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		inner := mocks.NewMockExecutionHelper(t) // no expectations: inner must not be called
 		h := host.NewRestrictedExecutionHelper(inner, restrictions)
 		_, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "blocked@1.0.0", Method: "Bar"})
-		var capErr caperrors.Error
-		require.True(t, errors.As(err, &capErr))
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		assert.Contains(t, capErr.Error(), "denied by user pre-hook restrictions")
 		assert.Equal(t, caperrors.LimitExceeded, capErr.Code())
 	})
@@ -440,8 +440,8 @@ func TestRequirementSelectingModule_ConfidentialHTTPWithRestrictions(t *testing.
 		req := confidentialHTTPRequest(t, "confhttp@1.0.0", "Call",
 			&confidentialhttp.SecretIdentifier{Key: "blocked-secret", Namespace: "ns"})
 		_, err := h.CallCapability(t.Context(), req)
-		var capErr caperrors.Error
-		require.True(t, errors.As(err, &capErr))
+		capErr, ok := errors.AsType[caperrors.Error](err)
+		require.True(t, ok)
 		assert.Contains(t, capErr.Error(), "denied by user pre-hook restrictions")
 		assert.Equal(t, caperrors.LimitExceeded, capErr.Code())
 	})

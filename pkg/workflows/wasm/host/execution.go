@@ -62,8 +62,7 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 		if err != nil {
 			errString := err.Error()
 
-			var caperror caperrors.Error
-			if errors.As(err, &caperror) {
+			if caperror, ok := errors.AsType[caperrors.Error](err); ok {
 				errString = caperror.SerializeToString()
 			}
 			resp = &sdkpb.CapabilityResponse{

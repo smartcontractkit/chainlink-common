@@ -61,8 +61,8 @@ modgraph: gomods
 	./modgraph > go.md
 
 .PHONY: gofix
-gofix: ## Run go fix across all packages
-	go fix ./...
+gofix: gomods ## Run go fix across all packages
+	gomods -s proto_vendor -go fix ./...
 
 .PHONY: dependabot
 ifndef DEPENDABOT_SEVERITY

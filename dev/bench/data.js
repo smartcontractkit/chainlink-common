@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784880441675,
+  "lastUpdate": 1784904018256,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55800,6 +55800,66 @@ window.BENCHMARK_DATA = {
             "value": 141843,
             "unit": "ns/op",
             "extra": "8258 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "45996a1bcb7268f56c956fbc751163e7c6e50b51",
+          "message": "chipingress: add ErrorCodeFor and sentinel errors for partial delivery metrics (#2274)\n\nAdd batch.ErrorCodeFor to classify send/queue errors into bounded error_code strings.\\nExport ErrMessageBufferFull and ErrClientShutdown sentinels.\\nHandle synthetic ErrCodeResultsMismatch (-1) explicitly as 'results_mismatch'.",
+          "timestamp": "2026-07-24T14:28:14Z",
+          "tree_id": "bcab67943a3acb5a291ed4e27e99d5a5e04f27dc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/45996a1bcb7268f56c956fbc751163e7c6e50b51"
+        },
+        "date": 1784904015270,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 623,
+            "unit": "ns/op",
+            "extra": "1758153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93349,
+            "unit": "ns/op",
+            "extra": "12972 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 408.8,
+            "unit": "ns/op",
+            "extra": "2920240 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91909,
+            "unit": "ns/op",
+            "extra": "13018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26678,
+            "unit": "ns/op",
+            "extra": "45037 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140427,
+            "unit": "ns/op",
+            "extra": "8292 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784904018256,
+  "lastUpdate": 1784907687912,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55860,6 +55860,66 @@ window.BENCHMARK_DATA = {
             "value": 140427,
             "unit": "ns/op",
             "extra": "8292 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8dc00b1980b1a988b24e910abf5aaff0bbdf0c18",
+          "message": "beholder: handle partial-delivery errors via metric and log suppression (#2266)\n\n* beholder: remove partial delivery WARN log, keep metric only\n\n* beholder: use ErrorCodeFor instead of ClassifyDropFailure\n\n* chipingress: drop DropFailure, add ErrorCodeFor\n\n* chipingress: return error type alongside code from ErrorCodeFor\n\nAvoids beholder having to re-derive the error category from the bounded\ncode string.\n\n* beholder: consume simplified ErrorCodeFor, drop errorTypeFromCode\n\nErrorCodeFor now returns the error type directly, so beholder no longer\nneeds to re-derive it by string-matching the bounded error code (which\nmislabeled the synthetic results-mismatch code as rpc_error).\n\n* chipingress: merge drop_failure.go into client.go, return only ErrorCode\n\nErrorType was inferable from ErrorCode and added no information the\ncaller couldn't derive itself; drop it so there's a single bounded\nvalue to reason about.\n\n* beholder: drop error_type, use errors.As to decide log suppression\n\nErrorCodeFor now returns only the bounded error code. Whether a drop is\na per-event PublishError (suppressed from logs) is now decided directly\nvia errors.As on the original error instead of string-matching a\nderived category.\n\n* beholder: add client_name to events_dropped metric\n\nCopilot review feedback: preserve the client_name attribute on chip_ingress.events_dropped when adding error_code, so existing dashboards/alerts keep working.\n\n* bump pkg/chipingress to main pseudo-version from #2274\n\nUpdates the root go.mod/go.sum to use the merged main commit of the chipingress submodule.\\nThis resolves the dependency validation failure that required chipingress pseudo-versions to exist on main.",
+          "timestamp": "2026-07-24T15:28:04Z",
+          "tree_id": "9f3896476c27db94f5155ce23086505476dd19cc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8dc00b1980b1a988b24e910abf5aaff0bbdf0c18"
+        },
+        "date": 1784907685432,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 751.3,
+            "unit": "ns/op",
+            "extra": "1624952 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93044,
+            "unit": "ns/op",
+            "extra": "12764 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 557.2,
+            "unit": "ns/op",
+            "extra": "1838494 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 77480,
+            "unit": "ns/op",
+            "extra": "15350 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29202,
+            "unit": "ns/op",
+            "extra": "40975 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 127835,
+            "unit": "ns/op",
+            "extra": "9184 times\n4 procs"
           }
         ]
       }

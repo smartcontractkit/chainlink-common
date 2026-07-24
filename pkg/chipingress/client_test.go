@@ -3,6 +3,7 @@ package chipingress
 import (
 	"context"
 	"fmt"
+	"net"
 	"testing"
 	"time"
 
@@ -165,6 +166,89 @@ func TestNewEvent_IdempotencyKey(t *testing.T) {
 		_, present := ext[IdempotencyKeyAttr]
 		assert.False(t, present, "absent idempotency key must not appear as an extension")
 	})
+}
+
+func Test_sanitizeExtensionName(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "snake_case", in: "chain_id", want: "chainid"},
+		{name: "dotted", in: "k8s.pod.name", want: "k8spodname"},
+		{name: "already valid", in: "chainid", want: "chainid"},
+		{name: "upper case is lowered", in: "ChainID", want: "chainid"},
+		{name: "empty", in: "", want: ""},
+		{name: "all invalid characters", in: "---...", want: ""},
+		{name: "mixed valid and invalid", in: "Service-Name.1", want: "servicename1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, sanitizeExtensionName(tt.in))
+		})
+	}
+}
+
+func TestNewEventWithOpts_WithResourceAttributeExtensions(t *testing.T) {
+	payload := []byte("body")
+
+	t.Run("sanitized keys/values land on the event", func(t *testing.T) {
+		attrs := map[string]string{"chain_id": "1", "k8s.pod.name": "pod-abc"}
+		event, err := NewEventWithOpts("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		ext := event.Extensions()
+		assert.Equal(t, "1", ext["chainid"])
+		assert.Equal(t, "pod-abc", ext["k8spodname"])
+	})
+
+	t.Run("empty sanitized name is dropped", func(t *testing.T) {
+		attrs := map[string]string{"---": "value"}
+		event, err := NewEventWithOpts("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		assert.Len(t, event.Extensions(), 1) // only the always-set recordedtime extension
+	})
+
+	t.Run("reserved name is skipped", func(t *testing.T) {
+		attrs := map[string]string{IdempotencyKeyAttr: "should-not-override", "subject": "should-not-override"}
+		event, err := NewEventWithOpts("domain", "entity", payload, map[string]any{IdempotencyKeyAttr: "real-key"}, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		ext := event.Extensions()
+		assert.Equal(t, "real-key", ext[IdempotencyKeyAttr])
+		assert.Empty(t, event.Subject())
+	})
+
+	t.Run("duplicate sanitized names resolve deterministically to sorted-first key", func(t *testing.T) {
+		attrs := map[string]string{"service.name": "from-dotted", "service_name": "from-snake"}
+		event, err := NewEventWithOpts("domain", "entity", payload, nil, WithResourceAttributeExtensions(attrs))
+		require.NoError(t, err)
+		// sorted order: "service.name" < "service_name" ('.' < '_' in ASCII), so the dotted key wins.
+		assert.Equal(t, "from-dotted", event.Extensions()["servicename"])
+	})
+
+	t.Run("omitting all opts is a no-op", func(t *testing.T) {
+		event, err := NewEventWithOpts("domain", "entity", payload, nil)
+		require.NoError(t, err)
+		assert.Len(t, event.Extensions(), 1) // only the always-set recordedtime extension
+	})
+}
+
+// TestNewEvent_UnchangedSignature is a backward-compatibility guard: NewEvent's exported
+// signature must stay exactly as it was before EventOpt/NewEventWithOpts were introduced, and
+// must remain equivalent to calling NewEventWithOpts with no opts.
+func TestNewEvent_UnchangedSignature(t *testing.T) {
+	payload := []byte("body")
+	attributes := map[string]any{"subject": "example-subject"}
+
+	viaNewEvent, err := NewEvent("domain", "entity", payload, attributes)
+	require.NoError(t, err)
+
+	viaNewEventWithOpts, err := NewEventWithOpts("domain", "entity", payload, attributes)
+	require.NoError(t, err)
+
+	assert.Equal(t, viaNewEventWithOpts.Subject(), viaNewEvent.Subject())
+	assert.Equal(t, viaNewEventWithOpts.Extensions()["recordedtime"].(ce.Timestamp).Truncate(time.Second),
+		viaNewEvent.Extensions()["recordedtime"].(ce.Timestamp).Truncate(time.Second))
+	assert.Equal(t, viaNewEventWithOpts.Data(), viaNewEvent.Data())
 }
 
 func TestEventToProto(t *testing.T) {
@@ -597,6 +681,19 @@ func TestOptions(t *testing.T) {
 		assert.Equal(t, mockProvider, config.headerProvider)
 	})
 
+	t.Run("WithResourceAttributeHeaders", func(t *testing.T) {
+		config := defaultCfg
+		WithResourceAttributeHeaders(map[string]string{
+			"Chain-ID": "1",
+			"id":       "skipped", // reserved extension name
+			"chain_id": "2",       // duplicate sanitized key, first wins
+		})(&config)
+		assert.NotNil(t, config.headerProvider)
+		headers, err := config.headerProvider.Headers(t.Context())
+		require.NoError(t, err)
+		assert.Equal(t, map[string]string{"chainid": "1"}, headers)
+	})
+
 	t.Run("WithBasicAuth", func(t *testing.T) {
 		config := defaultCfg
 		WithBasicAuth("user", "pass")(&config)
@@ -666,6 +763,49 @@ type mockHeaderProvider struct {
 
 func (m *mockHeaderProvider) Headers(ctx context.Context) (map[string]string, error) {
 	return m.headers, nil
+}
+
+// capturingServer is a minimal ChipIngressServer that records the incoming gRPC metadata
+// of the last request it handles.
+type capturingServer struct {
+	pb.UnimplementedChipIngressServer
+	lastMD metadata.MD
+}
+
+func (s *capturingServer) Ping(ctx context.Context, _ *pb.EmptyRequest) (*pb.PingResponse, error) {
+	s.lastMD, _ = metadata.FromIncomingContext(ctx)
+	return &pb.PingResponse{}, nil
+}
+
+// TestClient_ChainedHeaderProviders is a regression test for the fix that switched from
+// grpc.WithUnaryInterceptor (last-one-wins) to grpc.WithChainUnaryInterceptor: when both
+// WithHeaderProvider and WithNOPLookup are configured, both providers' headers must reach
+// the server, not just the one registered last.
+func TestClient_ChainedHeaderProviders(t *testing.T) {
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer lis.Close()
+
+	srv := gp.NewServer()
+	capture := &capturingServer{}
+	pb.RegisterChipIngressServer(srv, capture)
+	go func() { _ = srv.Serve(lis) }()
+	defer srv.Stop()
+
+	client, err := NewClient(lis.Addr().String(),
+		WithInsecureConnection(),
+		WithHeaderProvider(&mockHeaderProvider{headers: map[string]string{"x-resource-attr": "chain-1"}}),
+		WithNOPLookup(),
+	)
+	require.NoError(t, err)
+	defer client.Close() //nolint:errcheck
+
+	_, err = client.Ping(t.Context(), &EmptyRequest{})
+	require.NoError(t, err)
+
+	require.NotNil(t, capture.lastMD)
+	assert.Equal(t, []string{"chain-1"}, capture.lastMD.Get("x-resource-attr"))
+	assert.Equal(t, []string{"true"}, capture.lastMD.Get("x-include-nop-info"))
 }
 
 func TestWithTLS(t *testing.T) {

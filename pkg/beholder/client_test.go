@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -947,7 +948,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
 			ChipIngressInsecureConnection:  true,
 			ChipIngressBatchEmitterEnabled: true,
-			ChipIngressLogger:              newTestLogger(t),
+			ChipIngressLogger:              logger.Test(t),
 			ChipIngressBufferSize:          10,
 			ChipIngressMaxBatchSize:        5,
 			ChipIngressSendInterval:        50 * time.Millisecond,

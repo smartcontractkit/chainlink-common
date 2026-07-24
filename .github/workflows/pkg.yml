@@ -96,6 +96,26 @@ jobs:
           path: |
             ./race.*
 
+  check-gofix:
+    runs-on: ubuntu-latest
+    # Non-required while we evaluate it; failure won't block merges.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          only-modules: "true"
+
+      - name: Ensure "make gofix" has been run
+        run: |
+          make gofix
+          git add --all
+          git diff --minimal --cached --exit-code
+
   check-tidy:
     runs-on: ubuntu-latest
     steps:

@@ -122,6 +122,50 @@ func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 	})
 }
 
+func TestChipIngressBatchEmitterService_ResourceAttributes(t *testing.T) {
+	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
+
+	var mu sync.Mutex
+	var receivedBatch *chipingress.CloudEventBatch
+	clientMock.
+		On("PublishBatch", mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) {
+			mu.Lock()
+			defer mu.Unlock()
+			receivedBatch = args.Get(1).(*chipingress.CloudEventBatch)
+		}).
+		Return(nil, nil)
+
+	cfg := newTestConfig()
+	cfg.ChipIngressSendInterval = 50 * time.Millisecond
+	cfg.ResourceAttributes = []attribute.KeyValue{attribute.String("chain_id", "1")}
+
+	emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, newTestLogger(t))
+	require.NoError(t, err)
+	require.NoError(t, emitter.Start(t.Context()))
+
+	err = emitter.Emit(t.Context(), []byte("test-payload"),
+		beholder.AttrKeyDomain, "my-domain",
+		beholder.AttrKeyEntity, "my-entity",
+	)
+	require.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return receivedBatch != nil
+	}, 2*time.Second, 10*time.Millisecond)
+
+	require.NoError(t, emitter.Close())
+
+	mu.Lock()
+	defer mu.Unlock()
+	require.Len(t, receivedBatch.Events, 1)
+	require.NotNil(t, receivedBatch.Events[0].Attributes["chainid"])
+	assert.Equal(t, "1", receivedBatch.Events[0].Attributes["chainid"].GetCeString())
+}
+
 func TestChipIngressBatchEmitterService_CloudEventFormat(t *testing.T) {
 	clientMock := mocks.NewClient(t)
 	clientMock.EXPECT().Close().Return(nil).Maybe()

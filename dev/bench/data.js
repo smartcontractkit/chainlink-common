@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784730361962,
+  "lastUpdate": 1784880441675,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -55740,6 +55740,66 @@ window.BENCHMARK_DATA = {
             "value": 141853,
             "unit": "ns/op",
             "extra": "8739 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9a95ebea00ffadd54e5f1d26841aff8aad7716b1",
+          "message": "feat(beholder): reduce PerWorkflow histogram buckets 16→8 (#2226)\n\n* Limit Beholder metric cardinality\n\n* Drop event ID from stopped-resending metrics\n\n* Fix cardinality-limit rollout defeat and view-shadowing bugs\n\nAsCmdEnv always emitted CL_TELEMETRY_METRIC_CARDINALITY_LIMIT, so\ncallers that don't set the field explicitly forced 0 and disabled the\n10000 default in EnvConfig.parse. Only emit the env var when non-zero.\n\nmergeMetricViews prepended the default cardinality-limiting views\n(including a catch-all \"*\" view) before caller-supplied MetricViews.\nSince the OTel SDK dedupes views by stream identity and keeps the\nfirst match, this silently shadowed caller customizations such as\nhistogram buckets set via WithOtelViews. Append defaults after caller\nviews instead.\n\n* docs(beholder): clarify metric view merge order and SDK dedup semantics\n\nCorrect the metricviews package/DefaultViews and mergeMetricViews comments\nto describe the actual OTel SDK behavior: an instrument may match multiple\nviews, and dedup is by resolved stream identity (name/description/unit/kind)\nkeeping the first in registration order — not \"first matching view for the\ninstrument\". Explains why caller views precede defaults and why attribute\nfilters do not compose.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* feat(beholder): reduce PerWorkflow histogram buckets 16→8\n\nAdd DefaultViews aggregation overrides for *.PerWorkflow.* histograms\nemitted by pkg/settings/limits. Uses 7 explicit boundaries (8 Prometheus\nbuckets) per unit class: bytes (By), seconds (s), and dimensionless counts.\n\nCRE Limits-Workflow dashboards query histogram_quantile(1, ...) on these\nmetrics, so coarser buckets preserve max usage vs limit panels while\nhalving le cardinality on the dominant series families.\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\n\n* Fix attribute-filter shadowing and gas bucket overflow in PerWorkflow views\n\nThe bucket-boundary views for *.PerWorkflow.* histograms claimed the OTel\nstream identity ahead of the global deny-filter view, so the SDK's\nfirst-match-wins dedup silently dropped the deny filter for those metrics.\nAttach globalHighCardinalityDeny directly to each bucket-override Stream\nmask so it travels with the aggregation override.\n\nAlso add a {gas}-unit-specific view: PerWorkflow gas limit histograms\n(ChainWrite defaults up to 50_000_000) were falling into the unit-less\ncount-boundaries view (max 1e5), collapsing nearly all observations into\nthe +Inf bucket.\n\n* Minor fixes\n\n---------\n\nCo-authored-by: Cursor <cursoragent@cursor.com>\nCo-authored-by: Thomas Kaliakos <thomas.kaliakos@smartcontract.com>",
+          "timestamp": "2026-07-24T07:55:37Z",
+          "tree_id": "e3f35309bef3cc90f965789595f460db11344aae",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9a95ebea00ffadd54e5f1d26841aff8aad7716b1"
+        },
+        "date": 1784880438792,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 666.5,
+            "unit": "ns/op",
+            "extra": "1505224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94530,
+            "unit": "ns/op",
+            "extra": "12586 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.3,
+            "unit": "ns/op",
+            "extra": "2832238 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94546,
+            "unit": "ns/op",
+            "extra": "12699 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26700,
+            "unit": "ns/op",
+            "extra": "44920 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141843,
+            "unit": "ns/op",
+            "extra": "8258 times\n4 procs"
           }
         ]
       }

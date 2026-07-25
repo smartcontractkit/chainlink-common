@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/pkg/monitoring
 
-go 1.26.2
+go 1.26.5
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.3.0

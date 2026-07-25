@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Validate protos version
         uses: smartcontractkit/.github/actions/validate-protos-version@e5a68c3ae58d138e4e7d1d2bbc7918e2b51d7161 #v1.0.0

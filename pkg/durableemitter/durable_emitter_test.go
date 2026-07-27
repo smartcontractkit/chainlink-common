@@ -1554,3 +1554,102 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL t
 	st.TTLBudget = eventTTL - st.OldestPendingAge
 	return st, nil
 }
+
+// slowBatchStore wraps MemDurableEventStore and adds a configurable delay to
+// InsertBatch to simulate Postgres INSERT latency.
+type slowBatchStore struct {
+	*MemDurableEventStore
+	insertDelay time.Duration
+}
+
+func (s *slowBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+	select {
+	case <-time.After(s.insertDelay):
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
+}
+
+// TestGlobalEmit_BlockingBehavior demonstrates the root cause of CRE-5665:
+// when DurableEmitterEnabled defaults to true (v2.56+), every GlobalEmit call
+// blocks on the insert coalescer's flush interval + DB insert latency. When
+// the emitter is not initialized (v2.54/v2.55 default false), GlobalEmit is
+// an instant no-op.
+//
+// The test simulates a workflow execution that emits 5 telemetry events
+// (e.g. capability started, user metric, capability finished, execution
+// finished, metering report) and compares the total wall-clock time in both
+// modes.
+func TestGlobalEmit_BlockingBehavior(t *testing.T) {
+	const numEmissions = 5
+	const flushInterval = 100 * time.Millisecond // matches v2.56 application.go config
+	const insertDelay = 5 * time.Millisecond      // simulated Postgres INSERT latency
+
+	// --- Phase 1: Durable emitter NOT initialized (v2.54/v2.55 behavior) ---
+	// GlobalEmit returns ErrNotInitialized immediately — zero blocking.
+	prevEmitter := globalEmitter.Load()
+	globalEmitter.Store(nil)
+	t.Cleanup(func() { globalEmitter.Store(prevEmitter) })
+
+	ctx := t.Context()
+	start := time.Now()
+	for i := 0; i < numEmissions; i++ {
+		err := GlobalEmit(ctx, []byte("metric-event"), "source", "platform", "type", "test")
+		require.ErrorIs(t, err, ErrNotInitialized, "GlobalEmit must return ErrNotInitialized when no emitter is set")
+	}
+	disabledDuration := time.Since(start)
+	t.Logf("Durable emitter DISABLED: %d emissions took %v (no-op, instant)", numEmissions, disabledDuration)
+	require.Less(t, disabledDuration, 10*time.Millisecond,
+		"with durable emitter disabled, %d emissions must complete in under 10ms", numEmissions)
+
+	// --- Phase 2: Durable emitter initialized (v2.56+ behavior) ---
+	// GlobalEmit calls DurableEmitter.Emit which blocks on the insert coalescer.
+	// Each call blocks for at least flushInterval (the coalescer waits that long
+	// to collect a batch before flushing) plus the simulated insert latency.
+	store := &slowBatchStore{
+		MemDurableEventStore: NewMemDurableEventStore(),
+		insertDelay:          insertDelay,
+	}
+	be := newTestBatchEmitter()
+	cfg := Config{
+		InsertBatchSize:          500, // matches v2.56 application.go config
+		InsertBatchWorkers:       1,
+		InsertBatchFlushInterval: flushInterval,
+		DeleteBatchSize:          100,
+		DeleteBatchWorkers:       1,
+		DisablePruning:           true,
+		PublishTimeout:           5 * time.Second,
+		EventTTL:                 1 * time.Hour,
+	}
+	em, err := NewDurableEmitter(store, be, false, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+
+	globalEmitter.Store(em)
+
+	start = time.Now()
+	for i := 0; i < numEmissions; i++ {
+		err := GlobalEmit(ctx, []byte("metric-event"), "source", "platform", "type", "test")
+		require.NoError(t, err, "GlobalEmit must succeed when emitter is initialized")
+	}
+	enabledDuration := time.Since(start)
+	t.Logf("Durable emitter ENABLED:  %d emissions took %v (blocked on insert coalescer)", numEmissions, enabledDuration)
+
+	// Each emission blocks for at least flushInterval because the batch (size 500)
+	// never fills up with a single concurrent caller — the coalescer always waits
+	// the full linger period before flushing. With 5 sequential emissions that's
+	// at least 5 * flushInterval = 500ms.
+	minExpected := time.Duration(numEmissions) * flushInterval
+	require.GreaterOrEqual(t, enabledDuration, minExpected,
+		"with durable emitter enabled, %d sequential emissions must take at least %v (each blocks on flush interval)",
+		numEmissions, minExpected)
+
+	// The enabled path must be dramatically slower than the disabled path.
+	// This is the regression: the same workflow takes 50x+ longer just because
+	// the durable emitter default flipped from false to true.
+	ratio := float64(enabledDuration) / float64(disabledDuration)
+	t.Logf("Regression ratio: %.0fx slower with durable emitter enabled", ratio)
+	require.Greater(t, ratio, 50.0,
+		"enabled path must be at least 50x slower than disabled path")
+}

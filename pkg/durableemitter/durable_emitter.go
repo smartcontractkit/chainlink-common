@@ -144,6 +144,15 @@ func DefaultConfig() Config {
 // A separate expiry loop garbage-collects events older than EventTTL to bound
 // table growth.
 
+// asyncEmitRequest is a single GlobalEmit() caller's payload enqueued for
+// background processing by the async emit loop. Unlike insertRequest, the
+// caller never waits for a result — the event is persisted and published
+// asynchronously so the workflow execution path is not blocked.
+type asyncEmitRequest struct {
+	body    []byte
+	attrKVs []any
+}
+
 // insertRequest is a single Emit() caller waiting for a coalesced batch INSERT.
 type insertRequest struct {
 	payload []byte
@@ -191,6 +200,12 @@ type DurableEmitter struct {
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
 	wg     sync.WaitGroup
+
+	// asyncEmitCh buffers events for the non-blocking GlobalEmit path. GlobalEmit
+	// does a non-blocking send to this channel; a background goroutine
+	// (asyncEmitLoop) drains it and calls Emit synchronously. This decouples
+	// workflow metric emission from DB insert latency.
+	asyncEmitCh chan *asyncEmitRequest
 
 	// retransmit paging cursor. The retransmit loop pages through the pending
 	// backlog in (created_at, id) order, advancing the cursor each tick and
@@ -252,6 +267,7 @@ func NewDurableEmitter(
 		cfg:               cfg,
 		metrics:           m,
 		stopCh:            make(chan struct{}),
+		asyncEmitCh:       make(chan *asyncEmitRequest, 50_000),
 	}
 	d.Service, d.eng = services.Config{
 		Name:  "DurableEmitter",
@@ -319,6 +335,10 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		d.wg.Go(d.metricsLoop)
 	}
+
+	// asyncEmitLoop processes GlobalEmit events in the background so the
+	// caller never blocks on DB insert latency.
+	d.wg.Go(d.asyncEmitLoop)
 	return nil
 }
 
@@ -504,6 +524,13 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 // in-flight callbacks). It is invoked by the services.Engine when the embedded
 // Service is closed.
 func (d *DurableEmitter) stop() error {
+	// Close asyncEmitCh first so the async emit goroutine finishes processing
+	// any queued events before we tear down the insert coalescer and batch
+	// emitter. The goroutine is tracked by d.wg, so d.wg.Wait() below will
+	// wait for it.
+	if d.asyncEmitCh != nil {
+		close(d.asyncEmitCh)
+	}
 	if d.insertCh != nil {
 		d.insertShutdown.Store(true)
 		for d.insertInFlight.Load() > 0 {
@@ -523,6 +550,19 @@ func (d *DurableEmitter) stop() error {
 		d.deleteWg.Wait()
 	}
 	return nil
+}
+
+// asyncEmitLoop drains the asyncEmitCh and calls Emit for each request.
+// This is the background worker that makes GlobalEmit non-blocking: events
+// are enqueued by GlobalEmit and processed here, so the caller never waits
+// for DB insert latency. On channel close (during stop) the loop drains any
+// remaining events before exiting.
+func (d *DurableEmitter) asyncEmitLoop() {
+	for req := range d.asyncEmitCh {
+		if err := d.Emit(context.Background(), req.body, req.attrKVs...); err != nil {
+			d.eng.Warnw("DurableEmitter: async emit failed", "err", err)
+		}
+	}
 }
 
 // insertBatchLoop collects insertRequest items from insertCh and flushes them

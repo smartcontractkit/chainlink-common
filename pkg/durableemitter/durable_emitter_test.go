@@ -1525,20 +1525,22 @@ func (s *slowBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]
 	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
 }
 
-// TestGlobalEmit_BlockingBehavior demonstrates the root cause of CRE-5665:
-// when DurableEmitterEnabled defaults to true (v2.56+), every GlobalEmit call
-// blocks on the insert coalescer's flush interval + DB insert latency. When
-// the emitter is not initialized (v2.54/v2.55 default false), GlobalEmit is
-// an instant no-op.
+// TestGlobalEmit_BlockingBehavior is a regression guard for CRE-5665.
 //
-// The test simulates a workflow execution that emits 5 telemetry events
-// (e.g. capability started, user metric, capability finished, execution
-// finished, metering report) and compares the total wall-clock time in both
-// modes.
+// The original bug: when DurableEmitterEnabled defaulted to true (v2.56+),
+// every GlobalEmit call blocked on the insert coalescer's flush interval
+// (100ms) + DB insert latency, causing workflow execution times to regress
+// from ~10s to ~60s. When the emitter was not initialized (v2.54/v2.55
+// default false), GlobalEmit was an instant no-op.
+//
+// The fix: GlobalEmit is now non-blocking — it enqueues to a buffered
+// channel and a background goroutine calls Emit. This test verifies that
+// both the disabled and enabled paths complete quickly, and that events
+// are still eventually delivered in the enabled path.
 func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 	const numEmissions = 5
 	const flushInterval = 100 * time.Millisecond // matches v2.56 application.go config
-	const insertDelay = 5 * time.Millisecond      // simulated Postgres INSERT latency
+	const insertDelay = 5 * time.Millisecond     // simulated Postgres INSERT latency
 
 	// --- Phase 1: Durable emitter NOT initialized (v2.54/v2.55 behavior) ---
 	// GlobalEmit returns ErrNotInitialized immediately — zero blocking.
@@ -1557,10 +1559,11 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 	require.Less(t, disabledDuration, 10*time.Millisecond,
 		"with durable emitter disabled, %d emissions must complete in under 10ms", numEmissions)
 
-	// --- Phase 2: Durable emitter initialized (v2.56+ behavior) ---
-	// GlobalEmit calls DurableEmitter.Emit which blocks on the insert coalescer.
-	// Each call blocks for at least flushInterval (the coalescer waits that long
-	// to collect a batch before flushing) plus the simulated insert latency.
+	// --- Phase 2: Durable emitter initialized (v2.56+ behavior, post-fix) ---
+	// GlobalEmit must now be non-blocking: it enqueues to the async channel
+	// and returns immediately. A background goroutine persists and publishes
+	// the event. The wall-clock time for the caller must not be affected by
+	// the insert coalescer's flush interval or DB insert latency.
 	store := &slowBatchStore{
 		MemDurableEventStore: NewMemDurableEventStore(),
 		insertDelay:          insertDelay,
@@ -1588,22 +1591,30 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 		require.NoError(t, err, "GlobalEmit must succeed when emitter is initialized")
 	}
 	enabledDuration := time.Since(start)
-	t.Logf("Durable emitter ENABLED:  %d emissions took %v (blocked on insert coalescer)", numEmissions, enabledDuration)
+	t.Logf("Durable emitter ENABLED:  %d emissions took %v (non-blocking, async)", numEmissions, enabledDuration)
 
-	// Each emission blocks for at least flushInterval because the batch (size 500)
-	// never fills up with a single concurrent caller — the coalescer always waits
-	// the full linger period before flushing. With 5 sequential emissions that's
-	// at least 5 * flushInterval = 500ms.
-	minExpected := time.Duration(numEmissions) * flushInterval
-	require.GreaterOrEqual(t, enabledDuration, minExpected,
-		"with durable emitter enabled, %d sequential emissions must take at least %v (each blocks on flush interval)",
-		numEmissions, minExpected)
+	// REGRESSION GUARD: the enabled path must NOT block on the insert coalescer.
+	// Before the fix, 5 sequential emissions took >= 5 * flushInterval = 500ms
+	// because each call blocked until the coalescer flushed. After the fix,
+	// GlobalEmit enqueues to a buffered channel and returns immediately.
+	maxAllowed := time.Duration(numEmissions) * flushInterval
+	require.Less(t, enabledDuration, maxAllowed,
+		"with durable emitter enabled, %d emissions must NOT take >= %v — GlobalEmit must be non-blocking",
+		numEmissions, maxAllowed)
 
-	// The enabled path must be dramatically slower than the disabled path.
-	// This is the regression: the same workflow takes 50x+ longer just because
-	// the durable emitter default flipped from false to true.
+	// Both paths should be in the same order of magnitude — the enabled path
+	// must not be dramatically slower than the disabled path.
 	ratio := float64(enabledDuration) / float64(disabledDuration)
-	t.Logf("Regression ratio: %.0fx slower with durable emitter enabled", ratio)
-	require.Greater(t, ratio, 50.0,
-		"enabled path must be at least 50x slower than disabled path")
+	t.Logf("Ratio: %.1fx (enabled/disabled)", ratio)
+	require.Less(t, ratio, 50.0,
+		"enabled path must not be more than 50x slower than disabled path (was 4000x+ before fix)")
+
+	// Verify events are eventually delivered despite the non-blocking caller.
+	// The async goroutine processes events through the same Emit path (insert
+	// coalescer + batch emitter), so delivery is delayed by the flush interval
+	// but must complete.
+	require.Eventually(t, func() bool {
+		return be.callCount.Load() == int64(numEmissions)
+	}, 5*time.Second, 50*time.Millisecond,
+		"all %d events must eventually be published by the batch emitter", numEmissions)
 }

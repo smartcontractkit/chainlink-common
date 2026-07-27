@@ -1049,7 +1049,8 @@ func ConvertGetMultipleAccountsReplyFromProto(p *GetMultipleAccountsWithOptsRepl
 		val = append(val, acc)
 	}
 	return &solana.GetMultipleAccountsReply{
-		Value: val,
+		Value:      val,
+		RPCContext: ConvertRPCContextFromProto(p.RpcContext),
 	}, nil
 }
 
@@ -1063,7 +1064,8 @@ func ConvertGetMultipleAccountsReplyToProto(r *solana.GetMultipleAccountsReply) 
 	}
 
 	return &GetMultipleAccountsWithOptsReply{
-		Value: val,
+		Value:      val,
+		RpcContext: ConvertRPCContextToProto(r.RPCContext),
 	}
 }
 

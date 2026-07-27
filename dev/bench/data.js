@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785162597376,
+  "lastUpdate": 1785166736490,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -56100,6 +56100,66 @@ window.BENCHMARK_DATA = {
             "value": 113860,
             "unit": "ns/op",
             "extra": "9934 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "992a2cd2ec360f49f2253f753b209ef5b5784ff2",
+          "message": "Add resource attribute support to ChipIngress client (#2267)\n\n* Add resource attribute support to ChipIngress client\n\nPropagate node resource attributes via gRPC metadata headers and sanitized\nCloudEvent extensions.\n\n* Unexport SanitizeExtensionName per review feedback\n\n* Extract shared sanitizeResourceAttributeKeys helper per review feedback\n\n* Add WithResourceAttributeHeaders convenience Opt per review feedback\n\n* Remove go.mod changes from PR #2267",
+          "timestamp": "2026-07-27T15:26:57Z",
+          "tree_id": "710ad0daca8744d7283aa112d0dcceed6049b67d",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/992a2cd2ec360f49f2253f753b209ef5b5784ff2"
+        },
+        "date": 1785166733997,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.3,
+            "unit": "ns/op",
+            "extra": "3382078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94984,
+            "unit": "ns/op",
+            "extra": "12556 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 395.1,
+            "unit": "ns/op",
+            "extra": "3030585 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95552,
+            "unit": "ns/op",
+            "extra": "12628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26619,
+            "unit": "ns/op",
+            "extra": "45134 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 144804,
+            "unit": "ns/op",
+            "extra": "8103 times\n4 procs"
           }
         ]
       }

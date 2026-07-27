@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"sort"
+	"slices"
 	"sync"
 	"testing"
 
@@ -102,7 +102,7 @@ func TestKeystore_CreateDeleteReadKeys(t *testing.T) {
 			}(),
 			expectedKeys: func() []key {
 				var expectedKeys []key
-				sort.Slice(keystore.AllKeyTypes, func(i, j int) bool { return keystore.AllKeyTypes[i] < keystore.AllKeyTypes[j] })
+				slices.Sort(keystore.AllKeyTypes)
 				for _, keyType := range keystore.AllKeyTypes {
 					expectedKeys = append(expectedKeys, key{name: fmt.Sprintf("test-key-%s", keyType), keyType: keyType, metadata: []byte{}})
 				}
@@ -176,11 +176,10 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(numWriters + numReaders)
 
-	for w := 0; w < numWriters; w++ {
-		w := w
+	for w := range numWriters {
 		go func() {
 			defer wg.Done()
-			for i := 0; i < keysPerWriter; i++ {
+			for i := range keysPerWriter {
 				name := fmt.Sprintf("k-%d-%d", w, i)
 				_, err := ks.CreateKeys(ctx, keystore.CreateKeysRequest{
 					Keys: []keystore.CreateKeyRequest{
@@ -192,10 +191,10 @@ func TestKeystore_ConcurrentCreateAndRead(t *testing.T) {
 		}()
 	}
 
-	for r := 0; r < numReaders; r++ {
+	for range numReaders {
 		go func() {
 			defer wg.Done()
-			for i := 0; i < readsPerReader; i++ {
+			for range readsPerReader {
 				_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
 				require.NoError(t, err)
 			}

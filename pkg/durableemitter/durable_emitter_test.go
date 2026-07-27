@@ -16,6 +16,7 @@ import (
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -840,6 +841,47 @@ func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase 
 	return total
 }
 
+func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics, name, clientName string) {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			var count int
+			check := func(attrs attribute.Set) {
+				count++
+				assert.True(t, hasMetricStringAttr(attrs, "client_name", clientName),
+					"metric %s missing client_name=%q", name, clientName)
+			}
+			switch data := m.Data.(type) {
+			case metricdata.Sum[int64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			case metricdata.Histogram[float64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			default:
+				t.Fatalf("metric %s has unsupported type %T", name, m.Data)
+			}
+			require.NotZero(t, count, "metric %s has no datapoints", name)
+			return
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+}
+
+func hasMetricStringAttr(set attribute.Set, key, want string) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsString() == want
+		}
+	}
+	return false
+}
+
 func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	meter, reader := newTestMeter(t)
 
@@ -889,6 +931,10 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "retransmit"))
 	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
+
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", batch.ClientNameDurableEmitter)
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.

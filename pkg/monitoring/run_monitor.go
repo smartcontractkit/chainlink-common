@@ -55,7 +55,6 @@ func runMonitor(
 	}
 	// Run poller goroutines.
 	for _, poller := range pollers {
-		poller := poller
 		subs.Go(func() {
 			poller.Run(ctx)
 		})

@@ -14,8 +14,8 @@ type Schema interface {
 	ID() int
 	Version() int
 	Subject() string
-	Encode(interface{}) ([]byte, error)
-	Decode([]byte) (interface{}, error)
+	Encode(any) ([]byte, error)
+	Decode([]byte) (any, error)
 }
 
 type wrapSchema struct {
@@ -34,7 +34,7 @@ func (w wrapSchema) Subject() string {
 	return w.subject
 }
 
-func (w wrapSchema) Encode(value interface{}) ([]byte, error) {
+func (w wrapSchema) Encode(value any) ([]byte, error) {
 	payload, err := w.Schema.Codec().BinaryFromNative(nil, value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode value in avro: %w", err)
@@ -49,7 +49,7 @@ func (w wrapSchema) Encode(value interface{}) ([]byte, error) {
 	return bytes, nil
 }
 
-func (w wrapSchema) Decode(buf []byte) (interface{}, error) {
+func (w wrapSchema) Decode(buf []byte) (any, error) {
 	if buf[0] != 0 {
 		return nil, fmt.Errorf("magic byte not 0, instead is %d", buf[0])
 	}

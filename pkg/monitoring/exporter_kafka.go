@@ -65,7 +65,7 @@ type kafkaExporter struct {
 	pipelines []Pipeline
 }
 
-func (k *kafkaExporter) Export(_ context.Context, data interface{}) {
+func (k *kafkaExporter) Export(_ context.Context, data any) {
 	envelope, isEnvelope := data.(Envelope)
 	if !isEnvelope {
 		return
@@ -75,7 +75,6 @@ func (k *kafkaExporter) Export(_ context.Context, data interface{}) {
 	var subs utils.Subprocesses
 	defer subs.Wait()
 	for _, pipeline := range k.pipelines {
-		pipeline := pipeline
 		subs.Go(func() {
 			envelopeMapping, err := pipeline.Mapper(envelope, k.chainConfig, k.feedConfig)
 			if err != nil {

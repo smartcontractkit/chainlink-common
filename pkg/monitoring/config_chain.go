@@ -14,5 +14,5 @@ type ChainConfig interface {
 	GetPollInterval() time.Duration
 	// Useful for serializing to avro.
 	// Check the latest version of the transmission schema to see what the exact return format should be.
-	ToMapping() map[string]interface{}
+	ToMapping() map[string]any
 }

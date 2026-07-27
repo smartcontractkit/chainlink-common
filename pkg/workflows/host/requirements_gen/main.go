@@ -29,7 +29,6 @@ func main() {
 
 	var fields []fieldInfo
 	for f := range requirementsType.Fields() {
-		f := f
 		if !f.IsExported() {
 			continue
 		}

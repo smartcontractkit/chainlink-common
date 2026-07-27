@@ -33,32 +33,28 @@ func GetGlobalEmitter() *DurableEmitter {
 }
 
 // GlobalEmit emits an event via the global DurableEmitter.
-//
-// This function is non-blocking: it enqueues the event to the emitter's
-// async channel and returns immediately. A background goroutine persists
-// and publishes the event. If the async channel is full (backpressure),
-// the event is dropped (fail-open) — the beholder emitter already delivered
-// it in real-time, and the durable emitter's value is persistence for
-// retransmit, not inline delivery.
 func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	d := globalEmitter.Load()
 	if d == nil {
 		return ErrNotInitialized
 	}
-	req := &asyncEmitRequest{body: body, attrKVs: attrKVs, enqueuedAt: time.Now()}
-	select {
-	case d.asyncEmitCh <- req:
-		return nil
-	default:
-		// Channel full — fail open. The event was already emitted via the
-		// beholder emitter; dropping the durable copy is preferable to
-		// blocking the workflow execution path.
-		if d.metrics != nil {
-			d.metrics.asyncDropped.Add(ctx, 1)
-		}
-		d.eng.Warnw("DurableEmitter: async emit channel full, dropping durable copy (fail-open)")
-		return nil
+	if err := d.Emit(ctx, body, attrKVs...); err != nil {
+		return fmt.Errorf("%w: %w", ErrEmitFailed, err)
 	}
+	return nil
+}
+
+// GlobalEmitAsync emits an event via the global DurableEmitter without blocking
+// the caller: the emit runs in a background goroutine and any error is ignored.
+// It is a no-op when the emitter is not initialized. Use on hot paths where the
+// real-time beholder emit already delivered the event and durability is
+// best-effort.
+func GlobalEmitAsync(ctx context.Context, body []byte, attrKVs ...any) {
+	d := globalEmitter.Load()
+	if d == nil {
+		return
+	}
+	d.EmitAsync(ctx, body, attrKVs...)
 }
 
 // SetupConfig holds all configuration required to create and start a

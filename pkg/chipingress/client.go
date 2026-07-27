@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -112,14 +113,22 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))
 	}
-	// Add headers as a unary interceptor, use for non-auth headers
+	// Add headers as unary interceptors, use for non-auth headers.
+	// WithChainUnaryInterceptor is used (rather than WithUnaryInterceptor) so that
+	// headerProvider and nopInfoHeaderProvider compose instead of the second call
+	// silently overriding the first (grpc.WithUnaryInterceptor is last-one-wins).
+	var unaryInterceptors []grpc.UnaryClientInterceptor
 	if cfg.headerProvider != nil {
-		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.headerProvider)))
+		unaryInterceptors = append(unaryInterceptors, newHeaderInterceptor(cfg.headerProvider))
 		// NOTE: not supporting streaming interceptors
 	}
 
 	if cfg.nopInfoHeaderProvider != nil {
-		grpcOpts = append(grpcOpts, grpc.WithUnaryInterceptor(newHeaderInterceptor(cfg.nopInfoHeaderProvider)))
+		unaryInterceptors = append(unaryInterceptors, newHeaderInterceptor(cfg.nopInfoHeaderProvider))
+	}
+
+	if len(unaryInterceptors) > 0 {
+		grpcOpts = append(grpcOpts, grpc.WithChainUnaryInterceptor(unaryInterceptors...))
 	}
 
 	conn, err := grpc.NewClient(address, grpcOpts...)
@@ -206,6 +215,13 @@ func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *clientConfig) { c.headerProvider = provider }
 }
 
+// WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes
+// as sanitized gRPC metadata headers. It combines SanitizeMetadataHeaders with
+// NewStaticHeaderProvider so the safe, validated path is used by default.
+func WithResourceAttributeHeaders(attrs map[string]string) Opt {
+	return WithHeaderProvider(NewStaticHeaderProvider(SanitizeMetadataHeaders(attrs)))
+}
+
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).
 func WithInsecureConnection() Opt {
 	return func(config *clientConfig) {
@@ -267,9 +283,42 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	}
 }
 
+// EventOpt configures a CloudEvent after its well-known attributes have been set by NewEvent.
+type EventOpt func(*ce.Event)
+
+// sanitizeExtensionName lower-cases name and strips every rune outside [a-z0-9], the character
+// set the CloudEvents spec requires for extension attribute names.
+func sanitizeExtensionName(name string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(name) {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// WithResourceAttributeExtensions returns an EventOpt that sets a CloudEvent extension for each
+// entry in attrs, sanitizing keys via sanitizeExtensionName so they satisfy the CloudEvents
+// extension-name character set. Entries that sanitize to an empty string, or that collide with a
+// reserved extension name (see reservedExtensionNames), are skipped. Keys are applied in sorted
+// order so that if two distinct keys sanitize to the same name, the result is deterministic.
+func WithResourceAttributeExtensions(attrs map[string]string) EventOpt {
+	return func(event *ce.Event) {
+		for _, pair := range sanitizeResourceAttributeKeys(attrs, nil) {
+			event.SetExtension(pair.name, attrs[pair.key])
+		}
+	}
+}
+
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
 func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
+	return NewEventWithOpts(domain, entity, payload, attributes)
+}
 
+// NewEventWithOpts creates a new CloudEvent like NewEvent, additionally applying opts (e.g.
+// WithResourceAttributeExtensions) to the event before its data is set.
+func NewEventWithOpts(domain, entity string, payload []byte, attributes map[string]any, opts ...EventOpt) (CloudEvent, error) {
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)
@@ -301,6 +350,10 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	}
 	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
 		event.SetExtension(IdempotencyKeyAttr, val)
+	}
+
+	for _, opt := range opts {
+		opt(&event)
 	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)

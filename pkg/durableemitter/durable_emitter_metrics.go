@@ -79,6 +79,24 @@ type durableEmitterMetrics struct {
 	// deleteCoalescerFill reports the delete-coalescer channel fill ratio
 	// (len/cap). Only meaningful when DeleteBatchSize > 0; otherwise 0.
 	deleteCoalescerFill metric.Float64Gauge
+	// asyncQueueDepth reports the current number of events waiting in the
+	// async emit channel (GlobalEmit → asyncEmitLoop). A rising value means
+	// the background loop is not keeping up with incoming GlobalEmit calls.
+	asyncQueueDepth metric.Int64Gauge
+	// asyncQueueFill reports the fill ratio (len/cap) of the async emit
+	// channel. Saturating toward 1.0 indicates the async loop is a bottleneck
+	// and events may be dropped (fail-open) on the next GlobalEmit call.
+	asyncQueueFill metric.Float64Gauge
+	// asyncEmitDuration measures the wall time from when GlobalEmit enqueues
+	// a request to when asyncEmitLoop finishes calling Emit for it. This
+	// captures the real end-to-end latency that was previously blocking the
+	// workflow caller.
+	asyncEmitDuration metric.Float64Histogram
+	// asyncDropped counts events that were dropped because the async emit
+	// channel was full (fail-open in GlobalEmit). Non-zero means the durable
+	// emitter is overwhelmed — events were still delivered via the real-time
+	// beholder emitter, but the durable copy was lost.
+	asyncDropped metric.Int64Counter
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -291,6 +309,35 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 		"durable_emitter.delete_coalescer.queue_fill_ratio",
 		metric.WithUnit("1"),
 		metric.WithDescription("Delete-coalescer channel fill ratio (len/cap); 0 when delete coalescing is disabled"),
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncQueueDepth, err = meter.Int64Gauge(
+		"durable_emitter.async_queue.depth",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Number of events waiting in the async emit channel (GlobalEmit → asyncEmitLoop). Rising values indicate the background loop is not keeping up."),
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncQueueFill, err = meter.Float64Gauge(
+		"durable_emitter.async_queue.fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Async emit channel fill ratio (len/cap). Saturating toward 1.0 means events may be dropped (fail-open) on the next GlobalEmit call."),
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncEmitDuration, err = meter.Float64Histogram(
+		"durable_emitter.async_emit.duration",
+		metric.WithUnit("s"),
+		metric.WithDescription("Wall time from GlobalEmit enqueue to asyncEmitLoop Emit completion. This is the end-to-end latency that was previously blocking the workflow caller (CRE-5665)."),
+		durationBuckets,
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncDropped, err = meter.Int64Counter(
+		"durable_emitter.async_queue.dropped",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events dropped because the async emit channel was full (fail-open). The real-time beholder emitter already delivered them; only the durable copy was lost."),
 	); err != nil {
 		return nil, err
 	}

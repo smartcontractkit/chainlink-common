@@ -14,9 +14,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+)
+
+var (
+	ErrMessageBufferFull = errors.New("message buffer is full")
+	ErrClientShutdown    = errors.New("client is shutdown")
 )
 
 type messageWithCallback struct {
@@ -50,6 +57,40 @@ const (
 	ErrCodeDomainMisconfiguration = chipingress.PublishErrorCode(4)  // PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION
 	ErrCodeResultsMismatch        = chipingress.PublishErrorCode(-1) // client-side synthetic code
 )
+
+// ErrorCodeFor returns a bounded error code string for a batch send/queue
+// error, suitable for use as a metric dimension.
+func ErrorCodeFor(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	var pubErr *PublishError
+	if errors.As(err, &pubErr) {
+		if pubErr.Code == ErrCodeResultsMismatch {
+			return "results_mismatch"
+		}
+		return pubErr.Code.String()
+	}
+
+	if errors.Is(err, ErrMessageBufferFull) {
+		return ErrMessageBufferFull.Error()
+	}
+	if errors.Is(err, ErrClientShutdown) {
+		return ErrClientShutdown.Error()
+	}
+	if st, ok := status.FromError(err); ok {
+		return st.Code().String()
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return codes.DeadlineExceeded.String()
+	}
+	if errors.Is(err, context.Canceled) {
+		return codes.Canceled.String()
+	}
+
+	return "client_error"
+}
 
 // Client is a batching client that accumulates messages and sends them in batches.
 type Client struct {
@@ -242,7 +283,7 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	// Check shutdown first to avoid race with buffer send
 	select {
 	case <-b.stopCh:
-		return errors.New("client is shutdown")
+		return ErrClientShutdown
 	default:
 	}
 
@@ -276,7 +317,7 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	case b.messageBuffer <- msg:
 		return nil
 	default:
-		return errors.New("message buffer is full")
+		return ErrMessageBufferFull
 	}
 }
 

@@ -45,13 +45,18 @@ func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	if d == nil {
 		return ErrNotInitialized
 	}
+	req := &asyncEmitRequest{body: body, attrKVs: attrKVs, enqueuedAt: time.Now()}
 	select {
-	case d.asyncEmitCh <- &asyncEmitRequest{body: body, attrKVs: attrKVs}:
+	case d.asyncEmitCh <- req:
 		return nil
 	default:
 		// Channel full — fail open. The event was already emitted via the
 		// beholder emitter; dropping the durable copy is preferable to
 		// blocking the workflow execution path.
+		if d.metrics != nil {
+			d.metrics.asyncDropped.Add(ctx, 1)
+		}
+		d.eng.Warnw("DurableEmitter: async emit channel full, dropping durable copy (fail-open)")
 		return nil
 	}
 }

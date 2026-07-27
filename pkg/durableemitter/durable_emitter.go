@@ -149,9 +149,12 @@ func DefaultConfig() Config {
 // background processing by the async emit loop. Unlike insertRequest, the
 // caller never waits for a result — the event is persisted and published
 // asynchronously so the workflow execution path is not blocked.
+// enqueuedAt is set at enqueue time so asyncEmitLoop can record the
+// end-to-end async emit duration.
 type asyncEmitRequest struct {
-	body    []byte
-	attrKVs []any
+	body       []byte
+	attrKVs    []any
+	enqueuedAt time.Time
 }
 
 // insertRequest is a single Emit() caller waiting for a coalesced batch INSERT.
@@ -560,6 +563,9 @@ func (d *DurableEmitter) stop() error {
 // remaining events before exiting.
 func (d *DurableEmitter) asyncEmitLoop() {
 	for req := range d.asyncEmitCh {
+		if d.metrics != nil {
+			d.metrics.asyncEmitDuration.Record(context.Background(), time.Since(req.enqueuedAt).Seconds())
+		}
 		if err := d.Emit(context.Background(), req.body, req.attrKVs...); err != nil {
 			d.eng.Warnw("DurableEmitter: async emit failed", "err", err)
 		}
@@ -854,6 +860,13 @@ func (d *DurableEmitter) metricsLoop() {
 				}
 			} else {
 				d.metrics.deleteCoalescerFill.Record(ctx, 0)
+			}
+			if d.asyncEmitCh != nil {
+				if c := cap(d.asyncEmitCh); c > 0 {
+					depth := int64(len(d.asyncEmitCh))
+					d.metrics.asyncQueueDepth.Record(ctx, depth)
+					d.metrics.asyncQueueFill.Record(ctx, float64(depth)/float64(c))
+				}
 			}
 			d.metrics.pollProcessGauges(ctx)
 		}

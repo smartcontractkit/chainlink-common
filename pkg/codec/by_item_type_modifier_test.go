@@ -17,10 +17,10 @@ func TestByTypeModifier(t *testing.T) {
 	mod, err := codec.NewByItemTypeModifier(map[string]codec.Modifier{anyitemType: modifierCodecChainMod})
 	require.NoError(t, err)
 	t.Run("Uses modifier for the type", func(t *testing.T) {
-		offChainType, err := mod.RetypeToOffChain(reflect.TypeOf(&modifierCodecChainType{}), anyitemType)
+		offChainType, err := mod.RetypeToOffChain(reflect.TypeFor[*modifierCodecChainType](), anyitemType)
 		require.NoError(t, err)
 
-		expectedType, err := modifierCodecChainMod.RetypeToOffChain(reflect.TypeOf(&modifierCodecChainType{}), anyitemType)
+		expectedType, err := modifierCodecChainMod.RetypeToOffChain(reflect.TypeFor[*modifierCodecChainType](), anyitemType)
 		require.NoError(t, err)
 		assert.Equal(t, expectedType, offChainType)
 
@@ -37,13 +37,13 @@ func TestByTypeModifier(t *testing.T) {
 	})
 
 	t.Run("Returns error if modifier isn't found", func(t *testing.T) {
-		_, err := mod.RetypeToOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
+		_, err := mod.RetypeToOffChain(reflect.TypeFor[*modifierCodecOffChainType](), "different")
 		assert.ErrorIs(t, err, types.ErrInvalidType)
 
 		_, err = mod.TransformToOnChain(&modifierCodecChainType{}, "different")
 		assert.ErrorIs(t, err, types.ErrInvalidType)
 
-		_, err = mod.TransformToOffChain(reflect.TypeOf(&modifierCodecOffChainType{}), "different")
+		_, err = mod.TransformToOffChain(reflect.TypeFor[*modifierCodecOffChainType](), "different")
 		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 }

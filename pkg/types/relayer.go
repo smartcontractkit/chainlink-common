@@ -199,6 +199,9 @@ type EVMService interface {
 	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
 	GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error)
 
+	// LPSkipToBlock skips log poller to the given block number
+	LPSkipToBlock(ctx context.Context, blockNumber int64) error
+
 	// GetFiltersNames returns all registered filters' names for later pruning
 	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
 	GetFiltersNames(ctx context.Context) ([]string, error)
@@ -539,6 +542,10 @@ func (ues *UnimplementedEVMService) GetLatestLPBlock(ctx context.Context) (*evm.
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }
 
+func (ues *UnimplementedEVMService) LPSkipToBlock(ctx context.Context, blockNumber int64) error {
+	return status.Errorf(codes.Unimplemented, "method LPSkipToBlock not implemented")
+}
+
 func (ues *UnimplementedEVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
@@ -681,6 +688,10 @@ func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stel
 
 func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stellar.GetLatestLedgerResponse, error) {
 	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
+}
+
+func (u *UnimplementedStellarService) GetLedgers(_ context.Context, _ stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error) {
+	return stellar.GetLedgersResponse{}, status.Errorf(codes.Unimplemented, "method GetLedgers not implemented")
 }
 
 func (u *UnimplementedStellarService) SubmitTransaction(_ context.Context, _ stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {

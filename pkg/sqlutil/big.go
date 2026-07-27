@@ -113,7 +113,7 @@ func (b Big) Value() (driver.Value, error) {
 }
 
 // Scan reads the database value and returns an instance.
-func (b *Big) Scan(value interface{}) error {
+func (b *Big) Scan(value any) error {
 	switch v := value.(type) {
 	case string:
 		decoded, ok := b.setString(v, 10)

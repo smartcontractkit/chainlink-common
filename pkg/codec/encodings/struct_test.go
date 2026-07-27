@@ -39,7 +39,7 @@ func TestStructCodec(t *testing.T) {
 
 	structCodec, createErr := encodings.NewStructCodec([]encodings.NamedTypeCodec{
 		// use a pointer for one field to make sure it's not converted to a pointer to a pointer
-		{Name: "Foo", Codec: &testutils.TestTypeCodec{Value: toPointer(int32(1)), Bytes: []byte{0x01}}},
+		{Name: "Foo", Codec: &testutils.TestTypeCodec{Value: new(int32(1)), Bytes: []byte{0x01}}},
 		{Name: "Bar", Codec: &testutils.TestTypeCodec{Value: uint64(2), Bytes: []byte{0x02}}},
 		{Name: "Baz", Codec: &testutils.TestTypeCodec{Value: "foo", Bytes: []byte("foo")}},
 	})
@@ -57,9 +57,9 @@ func TestStructCodec(t *testing.T) {
 			Bar *uint64
 			Baz *string
 		}{
-			Foo: toPointer(int32(1)),
-			Bar: toPointer(uint64(2)),
-			Baz: toPointer("foo"),
+			Foo: new(int32(1)),
+			Bar: new(uint64(2)),
+			Baz: new("foo"),
 		}, nil)
 		require.NoError(t, err)
 		require.Equal(t, []byte{0x01, 0x02, 'f', 'o', 'o'}, encoded)
@@ -71,9 +71,9 @@ func TestStructCodec(t *testing.T) {
 			Bar *uint64
 			Baz *string
 		}{
-			Foo: toPointer(int32(1)),
-			Bar: toPointer(uint64(2)),
-			Baz: toPointer("foo"),
+			Foo: new(int32(1)),
+			Bar: new(uint64(2)),
+			Baz: new("foo"),
 		}, []byte{0x03})
 		require.NoError(t, err)
 		require.Equal(t, []byte{0x03, 0x01, 0x02, 'f', 'o', 'o'}, encoded)
@@ -85,15 +85,15 @@ func TestStructCodec(t *testing.T) {
 			Bar *uint64
 			Baz *int
 		}{
-			Foo: toPointer(int32(1)),
-			Bar: toPointer(uint64(2)),
-			Baz: toPointer(3),
+			Foo: new(int32(1)),
+			Bar: new(uint64(2)),
+			Baz: new(3),
 		}, nil)
 		require.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Encode returns an error fields return an error", func(t *testing.T) {
-		_, err := structCodecWithErr.Encode(&struct{ Foo *int }{Foo: toPointer(1)}, nil)
+		_, err := structCodecWithErr.Encode(&struct{ Foo *int }{Foo: new(1)}, nil)
 		assert.Equal(t, errCodec.Err, err)
 	})
 
@@ -106,9 +106,9 @@ func TestStructCodec(t *testing.T) {
 			Bar *uint64
 			Baz *string
 		}{
-			Foo: toPointer(int32(1)),
-			Bar: toPointer(uint64(2)),
-			Baz: toPointer("foo"),
+			Foo: new(int32(1)),
+			Bar: new(uint64(2)),
+			Baz: new("foo"),
 		}, decoded)
 	})
 
@@ -121,9 +121,9 @@ func TestStructCodec(t *testing.T) {
 			Bar *uint64
 			Baz *string
 		}{
-			Foo: toPointer(int32(1)),
-			Bar: toPointer(uint64(2)),
-			Baz: toPointer("foo"),
+			Foo: new(int32(1)),
+			Bar: new(uint64(2)),
+			Baz: new("foo"),
 		}, decoded)
 	})
 
@@ -140,9 +140,9 @@ func TestStructCodec(t *testing.T) {
 	t.Run("GetType returns a type with elements in order", func(t *testing.T) {
 		tpe := structCodec.GetType()
 		expectedType := reflect.PointerTo(reflect.StructOf([]reflect.StructField{
-			{Name: "Foo", Type: reflect.PointerTo(reflect.TypeOf(int32(0)))},
-			{Name: "Bar", Type: reflect.PointerTo(reflect.TypeOf(uint64(0)))},
-			{Name: "Baz", Type: reflect.PointerTo(reflect.TypeOf(""))},
+			{Name: "Foo", Type: reflect.PointerTo(reflect.TypeFor[int32]())},
+			{Name: "Bar", Type: reflect.PointerTo(reflect.TypeFor[uint64]())},
+			{Name: "Baz", Type: reflect.PointerTo(reflect.TypeFor[string]())},
 		}))
 		require.Equal(t, expectedType, tpe)
 	})
@@ -188,10 +188,11 @@ func TestStructCodec(t *testing.T) {
 		tc, err := fc.FieldCodec("Bar")
 
 		require.NoError(t, err)
-		assert.Equal(t, reflect.PointerTo(reflect.TypeOf(uint64(0))), tc.GetType())
+		assert.Equal(t, reflect.PointerTo(reflect.TypeFor[uint64]()), tc.GetType())
 	})
 }
 
+//go:fix inline
 func toPointer[T any](t T) *T {
-	return &t
+	return new(t)
 }

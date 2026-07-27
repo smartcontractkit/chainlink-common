@@ -144,7 +144,7 @@ func TestModifierCodec(t *testing.T) {
 	t.Run("CreateContractType returns modified type", func(t *testing.T) {
 		actual, err = mod.(types.TypeProvider).CreateType(anyItemType, anyForEncoding)
 		require.NoError(t, err)
-		assert.Equal(t, reflect.TypeOf(&modifierCodecOffChainType{}), reflect.TypeOf(actual))
+		assert.Equal(t, reflect.TypeFor[*modifierCodecOffChainType](), reflect.TypeOf(actual))
 	})
 
 	t.Run("Create type returns errors from type provides", func(t *testing.T) {
@@ -303,12 +303,12 @@ type testModifier struct{}
 
 func (testModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (reflect.Type, error) {
 	switch onChainType {
-	case reflect.TypeOf(&modifierCodecChainType{}):
-		return reflect.TypeOf(&modifierCodecOffChainType{}), nil
-	case reflect.TypeOf(&[]modifierCodecChainType{}):
-		return reflect.TypeOf(&[]modifierCodecOffChainType{}), nil
-	case reflect.TypeOf([]modifierCodecChainType{}):
-		return reflect.TypeOf([]modifierCodecOffChainType{}), nil
+	case reflect.TypeFor[*modifierCodecChainType]():
+		return reflect.TypeFor[*modifierCodecOffChainType](), nil
+	case reflect.TypeFor[*[]modifierCodecChainType]():
+		return reflect.TypeFor[*[]modifierCodecOffChainType](), nil
+	case reflect.TypeFor[[]modifierCodecChainType]():
+		return reflect.TypeFor[[]modifierCodecOffChainType](), nil
 	default:
 		return nil, types.ErrInvalidType
 	}

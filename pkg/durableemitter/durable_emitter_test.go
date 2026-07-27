@@ -16,6 +16,7 @@ import (
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -72,11 +73,9 @@ func (b *testBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb func
 
 	b.callCount.Add(1)
 	if cb != nil {
-		b.wg.Add(1)
-		go func() {
-			defer b.wg.Done()
+		b.wg.Go(func() {
 			cb(err)
-		}()
+		})
 	}
 	return nil
 }
@@ -210,7 +209,7 @@ func TestDurableEmitter_MarkCoalescingBatchesIds(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 25
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(ctx, []byte("coalesce-me"), testEmitAttrs()...))
 	}
 
@@ -247,7 +246,7 @@ func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
 	require.NoError(t, em.Start(t.Context()))
 
 	const n = 5
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(t.Context(), []byte("buffer-me"), testEmitAttrs()...))
 	}
 
@@ -279,7 +278,7 @@ func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 3
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(ctx, []byte("inline"), testEmitAttrs()...))
 	}
 	require.Eventually(t, func() bool {
@@ -299,8 +298,8 @@ func TestDurableEmitter_HooksBatchPublishPath(t *testing.T) {
 	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
-		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchPublish: func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchDelete:  func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -320,8 +319,8 @@ func TestDurableEmitter_HooksPublishFailureSkipsMarkHook(t *testing.T) {
 	var pubCalls, markCalls atomic.Int32
 	cfg := DefaultConfig()
 	cfg.Hooks = &Hooks{
-		OnBatchPublish:       func(time.Duration, int, error) { pubCalls.Add(1) },
-		OnBatchDelete: func(time.Duration, int) { markCalls.Add(1) },
+		OnBatchPublish: func(time.Duration, int, error) { pubCalls.Add(1) },
+		OnBatchDelete:  func(time.Duration, int) { markCalls.Add(1) },
 	}
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
@@ -560,9 +559,7 @@ func (b *selectiveBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb
 	}
 	poison := event.GetType() == b.poisonType
 	if cb != nil {
-		b.wg.Add(1)
-		go func() {
-			defer b.wg.Done()
+		b.wg.Go(func() {
 			if poison {
 				b.poisonFails.Add(1)
 				cb(errors.New("poison: permanent delivery failure"))
@@ -570,7 +567,7 @@ func (b *selectiveBatchEmitter) QueueMessage(event *chipingress.CloudEventPb, cb
 			}
 			b.goodDelivered.Add(1)
 			cb(nil)
-		}()
+		})
 	}
 	return nil
 }
@@ -601,11 +598,11 @@ func TestDurableEmitter_RetransmitCursorSkipsPoison(t *testing.T) {
 	)
 
 	// Insert poison first so it is the oldest (head of the queue), then good.
-	for i := 0; i < numPoison; i++ {
+	for range numPoison {
 		_, err := store.Insert(ctx, makeCloudEventPayload(t, poisonType, "poison-body"))
 		require.NoError(t, err)
 	}
-	for i := 0; i < numGood; i++ {
+	for range numGood {
 		_, err := store.Insert(ctx, makeCloudEventPayload(t, goodType, "good-body"))
 		require.NoError(t, err)
 	}
@@ -668,7 +665,7 @@ func TestListPendingCursorPaging(t *testing.T) {
 		cursorID int64
 		seen     []int64
 	)
-	for i := 0; i < n+2; i++ { // bounded: at most ceil(n/limit)+1 pages
+	for range n + 2 { // bounded: at most ceil(n/limit)+1 pages
 		page, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit)
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(page), limit)
@@ -713,7 +710,7 @@ func TestDurableEmitter_MultipleEvents(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 50
-	for i := 0; i < n; i++ {
+	for range n {
 		err := em.Emit(ctx, []byte("event"), testEmitAttrs()...)
 		require.NoError(t, err)
 	}
@@ -789,6 +786,35 @@ func TestDurableEmitter_MetricsRegistersEmitSuccess(t *testing.T) {
 	assert.True(t, found, "expected durable_emitter.emit.success in exported metrics")
 }
 
+func TestDurableEmitter_MetricsRegistersQueueTTLBudget(t *testing.T) {
+	meter, reader := newTestMeter(t)
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = time.Hour
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
+
+	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), meter)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	require.Eventually(t, func() bool {
+		var rm metricdata.ResourceMetrics
+		require.NoError(t, reader.Collect(ctx, &rm))
+		for _, sm := range rm.ScopeMetrics {
+			for _, m := range sm.Metrics {
+				if m.Name == "durable_emitter.queue.ttl_budget_seconds" {
+					_, ok := m.Data.(metricdata.Gauge[int64])
+					return ok
+				}
+			}
+		}
+		return false
+	}, 2*time.Second, 10*time.Millisecond, "expected durable_emitter.queue.ttl_budget_seconds Int64 gauge in exported metrics")
+}
+
 func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase string) int64 {
 	t.Helper()
 	var total int64
@@ -813,6 +839,47 @@ func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase 
 		}
 	}
 	return total
+}
+
+func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics, name, clientName string) {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			var count int
+			check := func(attrs attribute.Set) {
+				count++
+				assert.True(t, hasMetricStringAttr(attrs, "client_name", clientName),
+					"metric %s missing client_name=%q", name, clientName)
+			}
+			switch data := m.Data.(type) {
+			case metricdata.Sum[int64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			case metricdata.Histogram[float64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			default:
+				t.Fatalf("metric %s has unsupported type %T", name, m.Data)
+			}
+			require.NotZero(t, count, "metric %s has no datapoints", name)
+			return
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+}
+
+func hasMetricStringAttr(set attribute.Set, key, want string) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsString() == want
+		}
+	}
+	return false
 }
 
 func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
@@ -864,6 +931,10 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "retransmit"))
 	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
+
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", batch.ClientNameDurableEmitter)
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.
@@ -1057,8 +1128,7 @@ func TestIntegration_ServerDown_EventsSurvive(t *testing.T) {
 	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), nil)
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	require.NoError(t, em.Start(ctx))
 
 	// Stop the gRPC server entirely.
@@ -1110,7 +1180,7 @@ func TestIntegration_HighThroughput(t *testing.T) {
 	ctx := t.Context()
 
 	const n = 500
-	for i := 0; i < n; i++ {
+	for range n {
 		require.NoError(t, em.Emit(ctx, []byte("event"), emitAttrs()...))
 	}
 
@@ -1160,7 +1230,7 @@ func TestIntegration_RetransmitEnqueuesBatchWorkers(t *testing.T) {
 	servicetest.Run(t, em)
 	ctx := t.Context()
 
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		require.NoError(t, em.Emit(ctx, []byte("retry-me"), emitAttrs()...))
 	}
 
@@ -1460,12 +1530,13 @@ func (m *MemDurableEventStore) Len() int {
 }
 
 // ObserveDurableQueue implements DurableQueueObserver.
-func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL time.Duration) (DurableQueueStats, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	now := time.Now()
 	var st DurableQueueStats
 	st.TotalRows = int64(len(m.events))
+	st.TTLBudget = eventTTL
 	if len(m.events) == 0 {
 		return st, nil
 	}
@@ -1478,14 +1549,8 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL, 
 			oldest = e.CreatedAt
 			first = false
 		}
-		age := now.Sub(e.CreatedAt)
-		if eventTTL > 0 && nearExpiryLead > 0 && nearExpiryLead < eventTTL {
-			threshold := eventTTL - nearExpiryLead
-			if age >= threshold && age < eventTTL {
-				st.NearTTLCount++
-			}
-		}
 	}
 	st.OldestPendingAge = now.Sub(oldest)
+	st.TTLBudget = eventTTL - st.OldestPendingAge
 	return st, nil
 }

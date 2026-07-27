@@ -12,6 +12,7 @@ service CapabilitiesRegistry {
   rpc NodeByPeerID(NodeRequest) returns (NodeReply) {}
   rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
   rpc DONsForCapability (DONForCapabilityRequest) returns (DONForCapabilityReply) {}
+  rpc DONByID (DONByIDRequest) returns (DONByIDReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
   rpc GetExecutable (GetExecutableRequest) returns (GetExecutableReply) {}
@@ -125,4 +126,12 @@ message DONWithNodes {
 
 message DONForCapabilityReply {
   repeated DONWithNodes dons = 1;
+}
+
+message DONByIDRequest {
+  uint32 donID = 1;
+}
+
+message DONByIDReply {
+  DON don = 1;
 }

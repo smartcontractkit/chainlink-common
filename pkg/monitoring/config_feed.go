@@ -27,5 +27,5 @@ type FeedConfig interface {
 	// etc. - into prometheus-friendly float64s.
 	GetMultiply() *big.Int
 	// ToMapping() is useful when encoding kafka messages.
-	ToMapping() map[string]interface{}
+	ToMapping() map[string]any
 }

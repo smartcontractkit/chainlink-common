@@ -193,7 +193,7 @@ func TestBig_Scan(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		input interface{}
+		input any
 		want  *Big
 	}{
 		{"zero string", "0", New(big.NewInt(0))},
@@ -232,7 +232,7 @@ func TestBig_ScanErrors(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		input interface{}
+		input any
 	}{
 		{"zero integer", 0},
 		{"one integer", 1},

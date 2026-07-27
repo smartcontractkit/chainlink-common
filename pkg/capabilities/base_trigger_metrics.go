@@ -98,11 +98,10 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 	}, nil
 }
 
-func (m *BaseTriggerBeholderMetrics) attrs(triggerID, eventID string) []attribute.KeyValue {
+func (m *BaseTriggerBeholderMetrics) attrs(triggerID string) []attribute.KeyValue {
 	return []attribute.KeyValue{
 		attribute.String("capability_id", m.capabilityID),
 		attribute.String("trigger_id", triggerID),
-		attribute.String("event_id", eventID),
 	}
 }
 
@@ -118,15 +117,15 @@ func (m *BaseTriggerBeholderMetrics) DecActiveTriggers() {
 	)
 }
 
-func (m *BaseTriggerBeholderMetrics) IncRetry(triggerID, eventID string) {
+func (m *BaseTriggerBeholderMetrics) IncRetry(triggerID string) {
 	m.retryCount.Add(context.Background(), 1,
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+		metric.WithAttributes(m.attrs(triggerID)...),
 	)
 }
 
-func (m *BaseTriggerBeholderMetrics) IncAck(triggerID, eventID string) {
+func (m *BaseTriggerBeholderMetrics) IncAck(triggerID string) {
 	m.ackCount.Add(context.Background(), 1,
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+		metric.WithAttributes(m.attrs(triggerID)...),
 	)
 }
 
@@ -148,12 +147,12 @@ func (m *BaseTriggerBeholderMetrics) IncAckMemoryOutcome(outcome string) {
 	)
 }
 
-func (m *BaseTriggerBeholderMetrics) ObserveTimeToAck(triggerID, eventID string, d time.Duration, attempts int) {
+func (m *BaseTriggerBeholderMetrics) ObserveTimeToAck(triggerID string, d time.Duration, attempts int) {
 	m.timeToAckMs.Record(context.Background(), d.Milliseconds(),
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+		metric.WithAttributes(m.attrs(triggerID)...),
 	)
 	m.ackAttempts.Record(context.Background(), int64(attempts),
-		metric.WithAttributes(m.attrs(triggerID, eventID)...),
+		metric.WithAttributes(m.attrs(triggerID)...),
 	)
 }
 
@@ -181,12 +180,11 @@ func (m *BaseTriggerBeholderMetrics) AddPendingEvents(delta int64) {
 	)
 }
 
-func (m *BaseTriggerBeholderMetrics) IncStoppedResending(triggerID, eventID string, attempts int) {
+func (m *BaseTriggerBeholderMetrics) IncStoppedResending(triggerID string, attempts int) {
 	m.stoppedResendingTimestamp.Record(context.Background(), time.Now().Unix(),
 		metric.WithAttributes(
 			attribute.String("capability_id", m.capabilityID),
 			attribute.String("trigger_id", triggerID),
-			attribute.String("event_id", eventID),
 			attribute.Int("attempts", attempts),
 		),
 	)
@@ -198,12 +196,12 @@ var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
 
 func (noopBaseTriggerMetrics) IncActiveTriggers()                                  {}
 func (noopBaseTriggerMetrics) DecActiveTriggers()                                  {}
-func (noopBaseTriggerMetrics) IncRetry(string, string)                             {}
-func (noopBaseTriggerMetrics) IncAck(string, string)                               {}
-func (noopBaseTriggerMetrics) ObserveTimeToAck(string, string, time.Duration, int) {}
-func (noopBaseTriggerMetrics) IncInboxMissing(string)                              {}
-func (noopBaseTriggerMetrics) IncInboxFull(string)                                 {}
-func (noopBaseTriggerMetrics) IncAckError(string)                                  {}
-func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                          {}
-func (noopBaseTriggerMetrics) AddPendingEvents(int64)                              {}
-func (noopBaseTriggerMetrics) IncStoppedResending(string, string, int)             {}
+func (noopBaseTriggerMetrics) IncRetry(string)                             {}
+func (noopBaseTriggerMetrics) IncAck(string)                               {}
+func (noopBaseTriggerMetrics) ObserveTimeToAck(string, time.Duration, int) {}
+func (noopBaseTriggerMetrics) IncInboxMissing(string)                      {}
+func (noopBaseTriggerMetrics) IncInboxFull(string)                         {}
+func (noopBaseTriggerMetrics) IncAckError(string)                          {}
+func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                  {}
+func (noopBaseTriggerMetrics) AddPendingEvents(int64)                      {}
+func (noopBaseTriggerMetrics) IncStoppedResending(string, int)             {}

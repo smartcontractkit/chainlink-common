@@ -38,7 +38,7 @@ func TestArray(t *testing.T) {
 	})
 
 	t.Run("GetType returns Array of underlying type", func(t *testing.T) {
-		assert.Equal(t, testArray.GetType(), reflect.ArrayOf(numElements, reflect.TypeOf(anyValue)))
+		assert.Equal(t, testArray.GetType(), reflect.ArrayOf(numElements, reflect.TypeFor[int]()))
 	})
 
 	t.Run("Encode prefixes encoded Array with length and encodes elements", func(t *testing.T) {

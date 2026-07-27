@@ -29,6 +29,10 @@ func (sc *stellarClient) GetLatestLedger(ctx context.Context, in *emptypb.Empty,
 	return sc.client.GetLatestLedger(appendRelayID(ctx, sc.relayID), in, opts...)
 }
 
+func (sc *stellarClient) GetLedgers(ctx context.Context, in *stelpb.GetLedgersRequest, opts ...grpc.CallOption) (*stelpb.GetLedgersResponse, error) {
+	return sc.client.GetLedgers(appendRelayID(ctx, sc.relayID), in, opts...)
+}
+
 func (sc *stellarClient) SimulateTransaction(ctx context.Context, in *stelpb.SimulateTransactionRequest, opts ...grpc.CallOption) (*stelpb.SimulateTransactionResponse, error) {
 	return sc.client.SimulateTransaction(appendRelayID(ctx, sc.relayID), in, opts...)
 }
@@ -89,6 +93,26 @@ func (ss *stellarServer) GetLatestLedger(ctx context.Context, _ *emptypb.Empty) 
 	pResp, err := stelpb.ConvertGetLatestLedgerResponseToProto(dResp)
 	if err != nil {
 		return nil, fmt.Errorf("invalid GetLatestLedger response: %w", err)
+	}
+	return pResp, nil
+}
+
+func (ss *stellarServer) GetLedgers(ctx context.Context, req *stelpb.GetLedgersRequest) (*stelpb.GetLedgersResponse, error) {
+	svc, err := ss.parent.getStellarService(ctx)
+	if err != nil {
+		return nil, err
+	}
+	dReq, err := stelpb.ConvertGetLedgersRequestFromProto(req)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLedgers request: %w", err)
+	}
+	dResp, err := svc.GetLedgers(ctx, dReq)
+	if err != nil {
+		return nil, net.WrapRPCErr(err)
+	}
+	pResp, err := stelpb.ConvertGetLedgersResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetLedgers response: %w", err)
 	}
 	return pResp, nil
 }

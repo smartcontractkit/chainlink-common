@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -697,6 +697,7 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
 		module:              m,
 		executor:            helper,
@@ -1163,8 +1164,16 @@ func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
 
 func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
 	memory := wasmMemoryAccessor(caller)
-	if int32(len(memory)) < ptr+size {
+	if ptr < 0 || size < 0 || int64(ptr) > int64(len(memory)) {
+		return -1
+	}
+
+	// widen to int64 so a guest-supplied ptr/size near math.MaxInt32 cannot
+	// overflow the bounds check and drive size negative below.
+	if int64(ptr)+int64(size) > int64(len(memory)) {
 		size = int32(len(memory)) - ptr
+	}
+	if int(size) < len(src) {
 		src = src[:size]
 	}
 
@@ -1175,7 +1184,7 @@ func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int3
 
 // write copies the given src byte slice into the memory at the given pointer and max size.
 func write(memory, src []byte, ptr, maxSize int32) int64 {
-	if ptr < 0 {
+	if ptr < 0 || maxSize < 0 {
 		return -1
 	}
 
@@ -1183,7 +1192,9 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 		return -1
 	}
 
-	if int32(len(memory)) < ptr+maxSize {
+	// widen to int64 so a guest-supplied ptr near math.MaxInt32 cannot overflow
+	// the bounds check into a negative value and bypass it.
+	if int64(ptr)+int64(maxSize) > int64(len(memory)) {
 		return -1
 	}
 	buffer := memory[ptr : ptr+int32(len(src))]

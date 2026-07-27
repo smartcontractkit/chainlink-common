@@ -139,6 +139,156 @@ func TestConvertGetLatestLedgerResponseFromProto_Nil(t *testing.T) {
 	require.EqualError(t, err, "get latest ledger response is nil")
 }
 
+func TestConvertGetLedgersRequest_RoundTrip(t *testing.T) {
+	domain := stellartypes.GetLedgersRequest{
+		Pagination: &stellartypes.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
+	}
+
+	proto, err := conv.ConvertGetLedgersRequestToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, uint32(0), proto.GetStartLedger())
+	require.Equal(t, "cur-1", proto.GetPagination().GetCursor())
+	require.Equal(t, uint32(5), proto.GetPagination().GetLimit())
+
+	got, err := conv.ConvertGetLedgersRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetLedgersRequest_RejectsStartLedgerAndCursorTogether(t *testing.T) {
+	domain := stellartypes.GetLedgersRequest{
+		StartLedger: 987654,
+		Pagination:  &stellartypes.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
+	}
+
+	_, err := conv.ConvertGetLedgersRequestToProto(domain)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "mutually exclusive")
+
+	_, err = conv.ConvertGetLedgersRequestFromProto(&conv.GetLedgersRequest{
+		StartLedger: 987654,
+		Pagination:  &conv.LedgerPaginationOptions{Cursor: "cur-1", Limit: 5},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "mutually exclusive")
+}
+
+func TestConvertGetLedgersRequest_RejectsNeitherStartLedgerNorCursor(t *testing.T) {
+	_, err := conv.ConvertGetLedgersRequestToProto(stellartypes.GetLedgersRequest{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "startLedger is required")
+
+	_, err = conv.ConvertGetLedgersRequestFromProto(&conv.GetLedgersRequest{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "startLedger is required")
+}
+
+func TestConvertGetLedgersRequest_RoundTrip_NoPagination(t *testing.T) {
+	domain := stellartypes.GetLedgersRequest{StartLedger: 42}
+
+	proto, err := conv.ConvertGetLedgersRequestToProto(domain)
+	require.NoError(t, err)
+	require.Nil(t, proto.GetPagination())
+
+	got, err := conv.ConvertGetLedgersRequestFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetLedgersRequestFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetLedgersRequestFromProto(nil)
+	require.EqualError(t, err, "get ledgers request is nil")
+}
+
+func TestConvertGetLedgersResponse_RoundTrip(t *testing.T) {
+	var b [32]byte
+	for i := range b {
+		b[i] = 0xCD
+	}
+	hash := b
+	domain := stellartypes.GetLedgersResponse{
+		Ledgers: []stellartypes.LedgerInfo{
+			{
+				Hash:              hex.EncodeToString(hash[:]),
+				Sequence:          1234567,
+				LedgerCloseTime:   1_700_000_000,
+				LedgerHeaderXDR:   base64.StdEncoding.EncodeToString([]byte("header-xdr")),
+				LedgerMetadataXDR: base64.StdEncoding.EncodeToString([]byte("meta-xdr")),
+			},
+			{
+				Hash:              hex.EncodeToString(hash[:]),
+				Sequence:          1234568,
+				LedgerCloseTime:   1_700_000_005,
+				LedgerHeaderXDR:   base64.StdEncoding.EncodeToString([]byte("header-xdr-2")),
+				LedgerMetadataXDR: base64.StdEncoding.EncodeToString([]byte("meta-xdr-2")),
+			},
+		},
+		LatestLedger:          1234570,
+		LatestLedgerCloseTime: 1_700_000_010,
+		OldestLedger:          1000000,
+		OldestLedgerCloseTime: 1_600_000_000,
+		Cursor:                "next-cursor",
+	}
+
+	proto, err := conv.ConvertGetLedgersResponseToProto(domain)
+	require.NoError(t, err)
+
+	got, err := conv.ConvertGetLedgersResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetLedgersResponse_RoundTrip_NoLedgers(t *testing.T) {
+	domain := stellartypes.GetLedgersResponse{
+		Ledgers:      []stellartypes.LedgerInfo{},
+		LatestLedger: 55,
+		OldestLedger: 1,
+		Cursor:       "cur",
+	}
+
+	proto, err := conv.ConvertGetLedgersResponseToProto(domain)
+	require.NoError(t, err)
+
+	got, err := conv.ConvertGetLedgersResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetLedgersResponseFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertGetLedgersResponseFromProto(nil)
+	require.EqualError(t, err, "get ledgers response is nil")
+}
+
+func TestConvertLedgerInfoFromProto_Nil(t *testing.T) {
+	_, err := conv.ConvertLedgerInfoFromProto(nil)
+	require.EqualError(t, err, "ledger info is nil")
+}
+
+func TestConvertLedgerInfoToProto_InvalidFields(t *testing.T) {
+	cases := []struct {
+		name    string
+		in      stellartypes.LedgerInfo
+		wantErr string
+	}{
+		{"invalid hash", stellartypes.LedgerInfo{Hash: "not-hex!"}, "invalid hex hash"},
+		{"invalid header xdr", stellartypes.LedgerInfo{LedgerHeaderXDR: "!!!bad!!!"}, "invalid ledger header xdr"},
+		{"invalid metadata xdr", stellartypes.LedgerInfo{LedgerMetadataXDR: "!!!bad!!!"}, "invalid ledger metadata xdr"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := conv.ConvertLedgerInfoToProto(tc.in)
+			require.ErrorContains(t, err, tc.wantErr)
+		})
+	}
+}
+
+func TestConvertGetLedgersResponseToProto_BadLedger(t *testing.T) {
+	_, err := conv.ConvertGetLedgersResponseToProto(stellartypes.GetLedgersResponse{
+		Ledgers: []stellartypes.LedgerInfo{{Hash: "not-hex!"}},
+	})
+	require.ErrorContains(t, err, "ledgers[0]")
+}
+
 func TestConvertSimulateTransactionRequest_RoundTrip(t *testing.T) {
 	boolVal := true
 	u32 := uint32(77)

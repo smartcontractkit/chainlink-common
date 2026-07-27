@@ -31,60 +31,60 @@ func TestMapping(t *testing.T) {
 		deserialized, _, err := transmissionCodec.NativeFromBinary(serialized)
 		require.NoError(t, err)
 
-		transmission, ok := deserialized.(map[string]interface{})
+		transmission, ok := deserialized.(map[string]any)
 		require.True(t, ok)
-		require.Equal(t, transmission["block_number"], uint64ToBeBytes(envelope.BlockNumber))
-		require.Equal(t, transmission["block_number_uint64"], map[string]interface{}{
+		require.Equal(t, uint64ToBeBytes(envelope.BlockNumber), transmission["block_number"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.transmission_block_number": uint64ToBigRat(envelope.BlockNumber),
-		})
+		}, transmission["block_number_uint64"])
 
-		answer, ok := transmission["answer"].(map[string]interface{})
+		answer, ok := transmission["answer"].(map[string]any)
 		require.True(t, ok)
-		require.Equal(t, answer["data"], envelope.LatestAnswer.Bytes())
-		require.Equal(t, answer["data_uint256"], map[string]interface{}{
+		require.Equal(t, envelope.LatestAnswer.Bytes(), answer["data"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.transmission_data": bigIntToBigRat(envelope.LatestAnswer),
-		})
-		require.Equal(t, answer["timestamp"].(int64), envelope.LatestTimestamp.Unix())
+		}, answer["data_uint256"])
+		require.Equal(t, envelope.LatestTimestamp.Unix(), answer["timestamp"].(int64))
 
-		configDigest, ok := answer["config_digest"].(map[string]interface{})
+		configDigest, ok := answer["config_digest"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, configDigest["string"].(string), base64.StdEncoding.EncodeToString(envelope.ConfigDigest[:]))
 
-		epoch, ok := answer["epoch"].(map[string]interface{})
+		epoch, ok := answer["epoch"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, epoch["long"].(int64), int64(envelope.Epoch))
 
-		round, ok := answer["round"].(map[string]interface{})
+		round, ok := answer["round"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, round["int"].(int32), int32(envelope.Round))
 
-		chainConfigUnion, ok := transmission["chain_config"].(map[string]interface{})
+		chainConfigUnion, ok := transmission["chain_config"].(map[string]any)
 		require.True(t, ok)
-		decodedChainConfig, ok := chainConfigUnion["link.chain.ocr2.chain_config"].(map[string]interface{})
+		decodedChainConfig, ok := chainConfigUnion["link.chain.ocr2.chain_config"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, decodedChainConfig["network_name"], chainConfig.GetNetworkName())
 		require.Equal(t, decodedChainConfig["network_id"], chainConfig.GetNetworkID())
 		require.Equal(t, decodedChainConfig["chain_id"], chainConfig.GetChainID())
 
 		// Deprecated in favour of chain_config
-		solanaChainConfig, ok := transmission["solana_chain_config"].(map[string]interface{})
+		solanaChainConfig, ok := transmission["solana_chain_config"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, solanaChainConfig["network_name"], "")
 		require.Equal(t, solanaChainConfig["network_id"], "")
 		require.Equal(t, solanaChainConfig["chain_id"], "")
 
-		decodedFeedConfig, ok := transmission["feed_config"].(map[string]interface{})
+		decodedFeedConfig, ok := transmission["feed_config"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, decodedFeedConfig, feedConfig.ToMapping())
 
-		linkBalanceUnion, ok := transmission["link_balance"].(map[string]interface{})
+		linkBalanceUnion, ok := transmission["link_balance"].(map[string]any)
 		require.True(t, ok)
 		linkBalance, ok := linkBalanceUnion["bytes"].([]byte)
 		require.True(t, ok)
 		require.Equal(t, linkBalance, envelope.LinkBalance.Bytes())
-		require.Equal(t, transmission["link_balance_uint256"], map[string]interface{}{
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.transmission_link_balance": bigIntToBigRat(envelope.LinkBalance),
-		})
+		}, transmission["link_balance_uint256"])
 	})
 
 	t.Run("MakeSimplifiedConfigSetMapping", func(t *testing.T) {
@@ -97,7 +97,7 @@ func TestMapping(t *testing.T) {
 		deserialized, _, err := configSetSimplifiedCodec.NativeFromBinary(serialized)
 		require.NoError(t, err)
 
-		configSetSimplified, ok := deserialized.(map[string]interface{})
+		configSetSimplified, ok := deserialized.(map[string]any)
 		require.True(t, ok)
 
 		oracles, err := createConfigSetSimplifiedOracles(offchainConfig.OffchainPublicKeys, offchainConfig.PeerIds, config.Transmitters)
@@ -118,24 +118,24 @@ func TestMapping(t *testing.T) {
 		require.Equal(t, configSetSimplified["oracles"], string(oracles))
 		require.Equal(t, configSetSimplified["feed_state_account"], feedConfig.GetContractAddress())
 
-		require.Equal(t, configSetSimplified["block_number_uint64"], map[string]interface{}{
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.config_block_number": uint64ToBigRat(envelope.BlockNumber),
-		})
-		require.Equal(t, configSetSimplified["delta_progress_uint64"], map[string]interface{}{
+		}, configSetSimplified["block_number_uint64"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.config_delta_progress": uint64ToBigRat(offchainConfig.DeltaProgressNanoseconds),
-		})
-		require.Equal(t, configSetSimplified["delta_resend_uint64"], map[string]interface{}{
+		}, configSetSimplified["delta_progress_uint64"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.config_delta_resend": uint64ToBigRat(offchainConfig.DeltaResendNanoseconds),
-		})
-		require.Equal(t, configSetSimplified["delta_round_uint64"], map[string]interface{}{
+		}, configSetSimplified["delta_resend_uint64"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.config_delta_round": uint64ToBigRat(offchainConfig.DeltaRoundNanoseconds),
-		})
-		require.Equal(t, configSetSimplified["delta_grace_uint64"], map[string]interface{}{
+		}, configSetSimplified["delta_round_uint64"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.config_delta_grace": uint64ToBigRat(offchainConfig.DeltaGraceNanoseconds),
-		})
-		require.Equal(t, configSetSimplified["delta_stage_uint64"], map[string]interface{}{
+		}, configSetSimplified["delta_grace_uint64"])
+		require.Equal(t, map[string]any{
 			"link.chain.ocr2.config_delta_stage": uint64ToBigRat(offchainConfig.DeltaStageNanoseconds),
-		})
+		}, configSetSimplified["delta_stage_uint64"])
 	})
 
 	t.Run("MakeSimplifiedConfigSetMapping works for an empty envelope", func(t *testing.T) {
@@ -155,7 +155,7 @@ func TestMapping(t *testing.T) {
 
 // Helpers
 
-func jsonMarshalToString(t *testing.T, i interface{}) string {
+func jsonMarshalToString(t *testing.T, i any) string {
 	s, err := json.Marshal(i)
 	require.NoError(t, err)
 	return string(s)

@@ -192,6 +192,63 @@ func (_c *StellarService_GetLedgerEntries_Call) RunAndReturn(run func(context.Co
 	return _c
 }
 
+// GetLedgers provides a mock function with given fields: ctx, req
+func (_m *StellarService) GetLedgers(ctx context.Context, req stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error) {
+	ret := _m.Called(ctx, req)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLedgers")
+	}
+
+	var r0 stellar.GetLedgersResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error)); ok {
+		return rf(ctx, req)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, stellar.GetLedgersRequest) stellar.GetLedgersResponse); ok {
+		r0 = rf(ctx, req)
+	} else {
+		r0 = ret.Get(0).(stellar.GetLedgersResponse)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, stellar.GetLedgersRequest) error); ok {
+		r1 = rf(ctx, req)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StellarService_GetLedgers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLedgers'
+type StellarService_GetLedgers_Call struct {
+	*mock.Call
+}
+
+// GetLedgers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req stellar.GetLedgersRequest
+func (_e *StellarService_Expecter) GetLedgers(ctx interface{}, req interface{}) *StellarService_GetLedgers_Call {
+	return &StellarService_GetLedgers_Call{Call: _e.mock.On("GetLedgers", ctx, req)}
+}
+
+func (_c *StellarService_GetLedgers_Call) Run(run func(ctx context.Context, req stellar.GetLedgersRequest)) *StellarService_GetLedgers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(stellar.GetLedgersRequest))
+	})
+	return _c
+}
+
+func (_c *StellarService_GetLedgers_Call) Return(_a0 stellar.GetLedgersResponse, _a1 error) *StellarService_GetLedgers_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StellarService_GetLedgers_Call) RunAndReturn(run func(context.Context, stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error)) *StellarService_GetLedgers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSigningAccount provides a mock function with given fields: ctx
 func (_m *StellarService) GetSigningAccount(ctx context.Context) (stellar.GetSigningAccountResponse, error) {
 	ret := _m.Called(ctx)

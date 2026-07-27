@@ -8,7 +8,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/jonboulle/clockwork"
 )
 
@@ -244,6 +244,11 @@ func writeEvent(slot []byte, userData []byte, errno Errno, eventType int) {
 func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
 	return func(caller *wasmtime.Caller, buf, bufLen int32) int32 {
 		if cfg == nil || cfg.Determinism == nil {
+			return ErrnoInval
+		}
+
+		// bufLen is guest-controlled; a negative value would panic make below.
+		if bufLen < 0 {
 			return ErrnoInval
 		}
 

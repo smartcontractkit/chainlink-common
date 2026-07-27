@@ -15,52 +15,52 @@ import (
 )
 
 // Mapper is an interface for converting Envelopes into data structures that can be encoded in AVRO and sent to Kafka.
-type Mapper func(Envelope, ChainConfig, FeedConfig) (map[string]interface{}, error)
+type Mapper func(Envelope, ChainConfig, FeedConfig) (map[string]any, error)
 
 func MakeTransmissionMapping(
 	envelope Envelope,
 	chainConfig ChainConfig,
 	feedConfig FeedConfig,
-) (map[string]interface{}, error) {
+) (map[string]any, error) {
 	data := []byte{}
 	if envelope.LatestAnswer != nil {
 		data = envelope.LatestAnswer.Bytes()
 	}
-	out := map[string]interface{}{
+	out := map[string]any{
 		"block_number": uint64ToBeBytes(envelope.BlockNumber),
-		"block_number_uint64": map[string]interface{}{
+		"block_number_uint64": map[string]any{
 			"link.chain.ocr2.transmission_block_number": uint64ToBigRat(envelope.BlockNumber),
 		},
-		"answer": map[string]interface{}{
+		"answer": map[string]any{
 			"data": data,
-			"data_uint256": map[string]interface{}{
+			"data_uint256": map[string]any{
 				"link.chain.ocr2.transmission_data": bigIntToBigRat(envelope.LatestAnswer),
 			},
 			"timestamp": envelope.LatestTimestamp.Unix(),
-			"config_digest": map[string]interface{}{
+			"config_digest": map[string]any{
 				"string": base64.StdEncoding.EncodeToString(envelope.ConfigDigest[:]),
 			},
-			"epoch": map[string]interface{}{
+			"epoch": map[string]any{
 				"long": int64(envelope.Epoch),
 			},
-			"round": map[string]interface{}{
+			"round": map[string]any{
 				"int": int32(envelope.Round),
 			},
 		},
-		"chain_config": map[string]interface{}{
+		"chain_config": map[string]any{
 			"link.chain.ocr2.chain_config": chainConfig.ToMapping(),
 		},
 		// Deprecated in favour of chain_config.
-		"solana_chain_config": map[string]interface{}{
+		"solana_chain_config": map[string]any{
 			"network_name": "",
 			"network_id":   "",
 			"chain_id":     "",
 		},
 		"feed_config": feedConfig.ToMapping(),
-		"link_balance": map[string]interface{}{
+		"link_balance": map[string]any{
 			"bytes": envelope.LinkBalance.Bytes(),
 		},
-		"link_balance_uint256": map[string]interface{}{
+		"link_balance_uint256": map[string]any{
 			"link.chain.ocr2.transmission_link_balance": bigIntToBigRat(envelope.LinkBalance),
 		},
 	}
@@ -71,7 +71,7 @@ func MakeConfigSetSimplifiedMapping(
 	envelope Envelope,
 	_ ChainConfig,
 	feedConfig FeedConfig,
-) (map[string]interface{}, error) {
+) (map[string]any, error) {
 	offchainConfig, err := parseOffchainConfig(envelope.ContractConfig.OffchainConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse OffchainConfig blob from the program state: %w", err)
@@ -92,10 +92,10 @@ func MakeConfigSetSimplifiedMapping(
 	if err != nil {
 		return nil, fmt.Errorf("failed to encode oracle set: %w", err)
 	}
-	out := map[string]interface{}{
+	out := map[string]any{
 		"config_digest": base64.StdEncoding.EncodeToString(envelope.ConfigDigest[:]),
 		"block_number":  uint64ToBeBytes(envelope.BlockNumber),
-		"block_number_uint64": map[string]interface{}{
+		"block_number_uint64": map[string]any{
 			"link.chain.ocr2.config_block_number": uint64ToBigRat(envelope.BlockNumber),
 		},
 		"signers":        string(signers),
@@ -106,19 +106,19 @@ func MakeConfigSetSimplifiedMapping(
 		"delta_round":    uint64ToBeBytes(offchainConfig.DeltaRoundNanoseconds),
 		"delta_grace":    uint64ToBeBytes(offchainConfig.DeltaGraceNanoseconds),
 		"delta_stage":    uint64ToBeBytes(offchainConfig.DeltaStageNanoseconds),
-		"delta_progress_uint64": map[string]interface{}{
+		"delta_progress_uint64": map[string]any{
 			"link.chain.ocr2.config_delta_progress": uint64ToBigRat(offchainConfig.DeltaProgressNanoseconds),
 		},
-		"delta_resend_uint64": map[string]interface{}{
+		"delta_resend_uint64": map[string]any{
 			"link.chain.ocr2.config_delta_resend": uint64ToBigRat(offchainConfig.DeltaResendNanoseconds),
 		},
-		"delta_round_uint64": map[string]interface{}{
+		"delta_round_uint64": map[string]any{
 			"link.chain.ocr2.config_delta_round": uint64ToBigRat(offchainConfig.DeltaRoundNanoseconds),
 		},
-		"delta_grace_uint64": map[string]interface{}{
+		"delta_grace_uint64": map[string]any{
 			"link.chain.ocr2.config_delta_grace": uint64ToBigRat(offchainConfig.DeltaGraceNanoseconds),
 		},
-		"delta_stage_uint64": map[string]interface{}{
+		"delta_stage_uint64": map[string]any{
 			"link.chain.ocr2.config_delta_stage": uint64ToBigRat(offchainConfig.DeltaStageNanoseconds),
 		},
 		"r_max":              int64(offchainConfig.RMax),
@@ -169,9 +169,9 @@ func createConfigSetSimplifiedOracles(offchainPublicKeys [][]byte, peerIDs []str
 	if len(offchainPublicKeys) != len(peerIDs) && len(transmitters) != len(peerIDs) {
 		return nil, fmt.Errorf("length missmatch len(offchainPublicKeys)=%d , len(transmitters)=%d, len(peerIDs)=%d", len(offchainPublicKeys), len(transmitters), len(peerIDs))
 	}
-	out := make([]interface{}, len(transmitters))
-	for i := 0; i < len(transmitters); i++ {
-		out[i] = map[string]interface{}{
+	out := make([]any, len(transmitters))
+	for i := range transmitters {
+		out[i] = map[string]any{
 			"transmitter":         transmitters[i],
 			"peer_id":             peerIDs[i],
 			"offchain_public_key": offchainPublicKeys[i],

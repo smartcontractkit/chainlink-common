@@ -58,6 +58,7 @@ var Default = Schema{
 	GatewayVaultManagementEnabled:               Bool(true),
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
+	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
 	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
@@ -69,6 +70,7 @@ var Default = Schema{
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
+	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
@@ -184,6 +186,10 @@ var Default = Schema{
 		VaultCiphertextSizeLimit: Size(2 * config.KByte),
 		VaultSecretsLimit:        Int(100),
 
+		// Default deny: no zone-b workflow owner may read vault secrets unless
+		// explicitly allowlisted via owner.<addr>.PerOwner.VaultZoneBGetSecretsAllowed.
+		VaultZoneBGetSecretsAllowed: Bool(false),
+
 		// Confidential Compute per-workflow-owner request rate. Mirrors the
 		// previous hardcoded WorkflowOwner RPS/burst executor defaults.
 		ConfidentialCompute: ownerConfidentialCompute{
@@ -296,6 +302,9 @@ var Default = Schema{
 		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureHTTPTriggerNewExecutionIDsActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureUseSingleDONTimeProviderPerExecutionActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -312,12 +321,18 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                                     Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit                 Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
-	GatewayVaultManagementEnabled                     Setting[bool]
-	VaultJWTAuthEnabled                               Setting[bool]
-	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
+	GatewayVaultManagementEnabled               Setting[bool]
+	VaultJWTAuthEnabled                         Setting[bool]
+	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
+	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
+	// executable capability server reject any request whose
+	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
+	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
+	// sender DON so it cannot be spoofed by a colluding calling DON.
+	RemoteExecutableWorkflowDONBindingEnabled         Setting[bool]
 	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
@@ -328,6 +343,7 @@ type Schema struct {
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
+	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
 	GatewayHTTPPerNodeRate                            Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
@@ -382,6 +398,12 @@ type Owners struct {
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultSecretsLimit                 Setting[int] `unit:"{secret}"`
 
+	// VaultZoneBGetSecretsAllowed allowlists this owner for vault GetSecrets
+	// reads originating from a zone-b workflow DON. Only consulted when the
+	// global VaultZoneBWorkflowGetSecretsRestrictEnabled gate is open and the
+	// calling DON is in the zone-b family. Defaults to false (deny).
+	VaultZoneBGetSecretsAllowed Setting[bool]
+
 	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
 	ConfidentialCompute ownerConfidentialCompute
 }
@@ -435,6 +457,7 @@ type Workflows struct {
 
 	FeatureMultiTriggerExecutionIDsActiveAt                 Setting[config.Timestamp] // Deprecated
 	FeatureMultiTriggerExecutionIDsActivePeriod             Setting[Range[config.Timestamp]]
+	FeatureHTTPTriggerNewExecutionIDsActivePeriod           Setting[Range[config.Timestamp]]
 	FeatureUseSingleDONTimeProviderPerExecutionActivePeriod Setting[Range[config.Timestamp]]
 	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]

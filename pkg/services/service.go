@@ -221,7 +221,7 @@ type service struct {
 	subs []Service
 }
 
-// Ready implements [HealthReporter.Ready] and overrides and extends [utils.StartStopOnce.Ready()] to include [Config.SubServices]
+// Ready implements [HealthReporter.Ready] and overrides and extends [services.StateMachine.Ready()] to include [Config.SubServices]
 // readiness as well.
 func (s *service) Ready() (err error) {
 	err = s.StateMachine.Ready()

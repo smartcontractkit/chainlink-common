@@ -20,6 +20,8 @@ type ConfigProvider interface {
 
 // Plugin is an alias for PluginProvider, for compatibility.
 // Deprecated
+//
+//go:fix inline
 type Plugin = PluginProvider
 
 // PluginProvider provides common components for any OCR2 plugin.

@@ -11,6 +11,8 @@ import (
 )
 
 // Deprecated: use [*testing.T.Context]
+//
+//go:fix inline
 func Context(t *testing.T) context.Context {
 	return t.Context()
 }

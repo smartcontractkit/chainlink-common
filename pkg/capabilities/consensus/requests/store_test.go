@@ -11,7 +11,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -197,7 +196,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		t.Run(tc.name, func(st *testing.T) {
 			st.Parallel()
 
-			gr := tc.get(tests.Context(st), rid)
+			gr := tc.get(st.Context(), rid)
 			require.NoError(t, err)
 
 			// Mutating the received observations doesn't mutate the store
@@ -206,7 +205,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 			gr.WorkflowExecutionID = "incorrect mutation"
 			assert.Len(t, gr.Observations.Underlying, 3)
 
-			gr2 := tc.get(tests.Context(st), rid)
+			gr2 := tc.get(st.Context(), rid)
 			assert.Equal(t, req, gr2)
 
 			gr.StopCh <- struct{}{}

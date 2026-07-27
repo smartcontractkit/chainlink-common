@@ -23,6 +23,8 @@ type BoundLimiter[N Number] interface {
 }
 
 // Deprecated: use NewUpperBoundLimiter
+//
+//go:fix inline
 func NewBoundLimiter[N Number](bound N) BoundLimiter[N] {
 	return NewUpperBoundLimiter(bound)
 }

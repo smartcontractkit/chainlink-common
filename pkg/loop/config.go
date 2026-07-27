@@ -84,7 +84,8 @@ const (
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
-	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
+	envTelemetryPrometheusBridgeEnabled       = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
@@ -101,6 +102,14 @@ const (
 	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
 
+	envChipIngressBufferSize         = "CL_CHIP_INGRESS_BUFFER_SIZE"
+	envChipIngressMaxBatchSize       = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
+	envChipIngressMaxConcurrentSends = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
+	envChipIngressSendInterval       = "CL_CHIP_INGRESS_SEND_INTERVAL"
+	envChipIngressSendTimeout        = "CL_CHIP_INGRESS_SEND_TIMEOUT"
+	envChipIngressDrainTimeout       = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
+	envChipIngressMaxGRPCRequestSize = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
 )
@@ -114,6 +123,14 @@ type EnvConfig struct {
 	ChipIngressInsecureConnection    bool
 	ChipIngressBatchEmitterEnabled   bool
 	ChipIngressDurableEmitterEnabled bool
+
+	ChipIngressBufferSize         uint
+	ChipIngressMaxBatchSize       uint
+	ChipIngressMaxConcurrentSends int
+	ChipIngressSendInterval       time.Duration
+	ChipIngressSendTimeout        time.Duration
+	ChipIngressDrainTimeout       time.Duration
+	ChipIngressMaxGRPCRequestSize int
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -182,7 +199,10 @@ type EnvConfig struct {
 	// distinguish "no opinion" (child applies its own default) from an
 	// explicit 0, which disables the limit.
 	TelemetryMetricCardinalityLimit   *int
-	TelemetryPrometheusBridgeEnabled  bool
+	// TelemetryMetricViewsDenyAttributes lists attribute keys dropped by the
+	// default global deny view (e.g. event_id). Empty skips Default().
+	TelemetryMetricViewsDenyAttributes []string
+	TelemetryPrometheusBridgeEnabled       bool
 	TelemetryPrometheusBridgePrefixes []string
 	TelemetryLogCompressor            string
 	MeterRecordsEnabled               bool
@@ -299,6 +319,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	if e.TelemetryMetricCardinalityLimit != nil {
 		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
 	}
+	if len(e.TelemetryMetricViewsDenyAttributes) > 0 {
+		add(envTelemetryMetricViewsDenyAttributes, strings.Join(e.TelemetryMetricViewsDenyAttributes, ","))
+	}
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
@@ -315,6 +338,13 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
 	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(e.ChipIngressDurableEmitterEnabled))
+	add(envChipIngressBufferSize, strconv.FormatUint(uint64(e.ChipIngressBufferSize), 10))
+	add(envChipIngressMaxBatchSize, strconv.FormatUint(uint64(e.ChipIngressMaxBatchSize), 10))
+	add(envChipIngressMaxConcurrentSends, strconv.Itoa(e.ChipIngressMaxConcurrentSends))
+	add(envChipIngressSendInterval, e.ChipIngressSendInterval.String())
+	add(envChipIngressSendTimeout, e.ChipIngressSendTimeout.String())
+	add(envChipIngressDrainTimeout, e.ChipIngressDrainTimeout.String())
+	add(envChipIngressMaxGRPCRequestSize, strconv.Itoa(e.ChipIngressMaxGRPCRequestSize))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -552,6 +582,9 @@ func (e *EnvConfig) parse() error {
 			defaultLimit := beholder.DefaultMetricCardinalityLimit
 			e.TelemetryMetricCardinalityLimit = &defaultLimit
 		}
+		if v, ok := os.LookupEnv(envTelemetryMetricViewsDenyAttributes); ok && v != "" {
+			e.TelemetryMetricViewsDenyAttributes = splitCommaTrimmed(v)
+		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)
@@ -571,6 +604,37 @@ func (e *EnvConfig) parse() error {
 		e.ChipIngressDurableEmitterEnabled, err = getBool(envChipIngressDurableEmitterEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
+		}
+		e.ChipIngressBufferSize, err = getUint(envChipIngressBufferSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressBufferSize, err)
+		}
+		e.ChipIngressMaxBatchSize, err = getUint(envChipIngressMaxBatchSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxBatchSize, err)
+		}
+		e.ChipIngressMaxConcurrentSends, err = getInt(envChipIngressMaxConcurrentSends)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxConcurrentSends, err)
+		}
+		e.ChipIngressSendInterval, err = getDuration(envChipIngressSendInterval)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendInterval, err)
+		}
+		e.ChipIngressSendTimeout, err = getDuration(envChipIngressSendTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendTimeout, err)
+		}
+		e.ChipIngressDrainTimeout, err = getDuration(envChipIngressDrainTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressDrainTimeout, err)
+		}
+		e.ChipIngressMaxGRPCRequestSize, err = getInt(envChipIngressMaxGRPCRequestSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxGRPCRequestSize, err)
+		}
+		if e.ChipIngressMaxGRPCRequestSize < 0 {
+			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxGRPCRequestSize, e.ChipIngressMaxGRPCRequestSize)
 		}
 	}
 
@@ -627,6 +691,17 @@ func getValidCollectorTarget() (string, error) {
 	return tracingCollectorTarget, nil
 }
 
+func splitCommaTrimmed(s string) []string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
+
 func getMap(envKeyPrefix string) map[string]string {
 	m := make(map[string]string)
 	for _, env := range os.Environ() {
@@ -678,6 +753,18 @@ func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
 		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
 	return
+}
+
+func getUint(envKey string) (uint, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	u, err := strconv.ParseUint(s, 10, strconv.IntSize)
+	if err != nil {
+		return 0, err
+	}
+	return uint(u), nil
 }
 
 func getInt(envKey string) (int, error) {

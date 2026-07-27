@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"maps"
 	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // CombineJSONFiles reads a set of JSON config files and combines them in to one file. The expected inputs are:
@@ -169,25 +172,40 @@ func (s *jsonSettings) get(key string) (string, error) {
 	return "", nil // no value
 }
 
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
+// NewJSONRegistry with polling & subscriptions
 type jsonGetter struct {
 	settings *jsonSettings
+	lggr     logger.Logger
 }
 
 // NewJSONGetter returns a static Getter backed by the given JSON.
-// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
-// NewJSONRegistry with polling & subscriptions
+// Deprecated: use GetterConfig.NewJSONGetter to include a [logger.Logger]
 func NewJSONGetter(b []byte) (Getter, error) {
+	return GetterConfig{}.NewJSONGetter(b)
+}
+
+// NewJSONGetter returns a static Getter backed by the given JSON.
+func (c GetterConfig) NewJSONGetter(b []byte) (Getter, error) {
+	if c.Logger == nil {
+		c.Logger = logger.Nop()
+	}
 	s, err := newJSONSettings(b)
 	if err != nil {
 		return nil, err
 	}
-	return &jsonGetter{settings: s}, nil
+	return &jsonGetter{settings: s, lggr: c.Logger}, nil
 }
 
 func (j *jsonGetter) GetScoped(ctx context.Context, scope Scope, key string) (value string, err error) {
 	keys, err := scope.rawKeys(ctx, key)
 	if err != nil {
-		return "", fmt.Errorf("failed to get raw keys: %w", err)
+		tme, ok := errors.AsType[tenantMissingError](err)
+		if ok && tme.Scope.IsTenantRequired() {
+			return "", fmt.Errorf("failed to get raw keys: %w", err)
+		} else {
+			j.lggr.Errorf("Settings lookup for "+key+" limited by missing tenant at scope "+tme.Scope.String(), "key", key, "err", err)
+		}
 	}
 	return j.settings.getFirst(keys...)
 }

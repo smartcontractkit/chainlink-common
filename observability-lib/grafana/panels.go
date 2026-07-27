@@ -261,7 +261,7 @@ func setDefaults(options *PanelOptions) {
 		options.Datasource = "Prometheus"
 	}
 	if options.Title == nil {
-		options.Title = Pointer("Panel Title")
+		options.Title = new("Panel Title")
 	}
 	if options.Span == 0 {
 		options.Span = 24
@@ -413,7 +413,7 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 	}
 
 	if options.LineWidth == nil {
-		options.LineWidth = Pointer[float64](1)
+		options.LineWidth = new(float64(1))
 	}
 
 	if options.LegendOptions == nil {
@@ -809,7 +809,7 @@ func NewLogPanel(options *LogPanelOptions) *Panel {
 	setDefaults(options.PanelOptions)
 
 	if options.EnableLogDetails == nil {
-		options.EnableLogDetails = Pointer[bool](true)
+		options.EnableLogDetails = new(true)
 	}
 
 	if options.DedupStrategy == "" {
@@ -1012,7 +1012,7 @@ func NewHistogramPanel(options *HistogramPanelOptions) *Panel {
 	}
 
 	if options.LineWidth == nil {
-		options.LineWidth = Pointer[float64](1)
+		options.LineWidth = new(float64(1))
 	}
 
 	if options.LegendOptions == nil {

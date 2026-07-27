@@ -33,15 +33,32 @@ func GetGlobalEmitter() *DurableEmitter {
 }
 
 // GlobalEmit emits an event via the global DurableEmitter.
+//
+// This function is non-blocking: it enqueues the event to the emitter's
+// async channel and returns immediately. A background goroutine persists
+// and publishes the event. If the async channel is full (backpressure),
+// the event is dropped (fail-open) — the beholder emitter already delivered
+// it in real-time, and the durable emitter's value is persistence for
+// retransmit, not inline delivery.
 func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	d := globalEmitter.Load()
 	if d == nil {
 		return ErrNotInitialized
 	}
-	if err := d.Emit(ctx, body, attrKVs...); err != nil {
-		return fmt.Errorf("%w: %w", ErrEmitFailed, err)
+	req := &asyncEmitRequest{body: body, attrKVs: attrKVs, enqueuedAt: time.Now()}
+	select {
+	case d.asyncEmitCh <- req:
+		return nil
+	default:
+		// Channel full — fail open. The event was already emitted via the
+		// beholder emitter; dropping the durable copy is preferable to
+		// blocking the workflow execution path.
+		if d.metrics != nil {
+			d.metrics.asyncDropped.Add(ctx, 1)
+		}
+		d.eng.Warnw("DurableEmitter: async emit channel full, dropping durable copy (fail-open)")
+		return nil
 	}
-	return nil
 }
 
 // SetupConfig holds all configuration required to create and start a
@@ -114,6 +131,7 @@ func Setup(
 		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
+		chipingressbatch.WithClientName(chipingressbatch.ClientNameDurableEmitter),
 	)
 	if err != nil {
 		_ = batchChipClient.Close()

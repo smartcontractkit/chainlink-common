@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"google.golang.org/protobuf/proto"
 
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"

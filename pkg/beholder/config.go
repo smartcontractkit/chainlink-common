@@ -39,7 +39,19 @@ type Config struct {
 	// OTel Metric
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
-	MetricViews []metric.View
+	MetricViews          []metric.View
+	// MetricViewsDenyAttributes lists attribute keys dropped by the default
+	// global deny view (e.g. event_id). Empty skips the deny-list view; the
+	// PerWorkflow histogram bucket and base-trigger allow-list defaults still
+	// apply regardless (see metricviews.Default).
+	MetricViewsDenyAttributes []string
+	// metricViewsDisabled skips metricviews.Default entirely so metricViews()
+	// returns only the caller's MetricViews. It is a test seam for isolating
+	// behavior (e.g. cardinality limits) from the default bucket/deny views;
+	// production callers control views via MetricViews and
+	// MetricViewsDenyAttributes. Unexported so it is not public API and does
+	// not appear in marshaled Config.
+	metricViewsDisabled bool
 	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
 	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
 	MetricCardinalityLimit int
@@ -54,12 +66,13 @@ type Config struct {
 
 	// Chip Ingress Batch Emitter
 	ChipIngressBatchEmitterEnabled bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
-	ChipIngressBufferSize          uint          // Message buffer size (default 1000)
-	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 500)
-	ChipIngressSendInterval        time.Duration // Flush interval (default 100ms)
-	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 3s)
-	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 10s)
+	ChipIngressBufferSize          uint          // Message buffer size (default 10000)
+	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 1000)
+	ChipIngressSendInterval        time.Duration // Flush interval (default 500ms)
+	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 10s)
+	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 30s)
 	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls (default 10)
+	ChipIngressMaxGRPCRequestSize  int           // Max serialized PublishBatch request size in bytes (default 10 MiB)
 	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
@@ -159,12 +172,13 @@ func DefaultConfig() Config {
 		LogCompressor:         "gzip",
 		// Chip Ingress Batch Emitter
 		ChipIngressBatchEmitterEnabled: false,
-		ChipIngressBufferSize:          1000,
-		ChipIngressMaxBatchSize:        500,
-		ChipIngressSendInterval:        100 * time.Millisecond,
-		ChipIngressSendTimeout:         3 * time.Second,
-		ChipIngressDrainTimeout:        10 * time.Second,
+		ChipIngressBufferSize:          10000,
+		ChipIngressMaxBatchSize:        1000,
+		ChipIngressSendInterval:        500 * time.Millisecond,
+		ChipIngressSendTimeout:         10 * time.Second,
+		ChipIngressDrainTimeout:        30 * time.Second,
 		ChipIngressMaxConcurrentSends:  defaultMaxConcurrentSends,
+		ChipIngressMaxGRPCRequestSize:  10 * 1024 * 1024, // 10 MiB
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

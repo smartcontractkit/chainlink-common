@@ -16,6 +16,7 @@ import (
 	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -840,6 +841,47 @@ func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase 
 	return total
 }
 
+func assertMetricHasChipClientValue(t *testing.T, rm metricdata.ResourceMetrics, name, clientName string) {
+	t.Helper()
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != name {
+				continue
+			}
+			var count int
+			check := func(attrs attribute.Set) {
+				count++
+				assert.True(t, hasMetricStringAttr(attrs, "client_name", clientName),
+					"metric %s missing client_name=%q", name, clientName)
+			}
+			switch data := m.Data.(type) {
+			case metricdata.Sum[int64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			case metricdata.Histogram[float64]:
+				for _, dp := range data.DataPoints {
+					check(dp.Attributes)
+				}
+			default:
+				t.Fatalf("metric %s has unsupported type %T", name, m.Data)
+			}
+			require.NotZero(t, count, "metric %s has no datapoints", name)
+			return
+		}
+	}
+	t.Fatalf("metric %q not found", name)
+}
+
+func hasMetricStringAttr(set attribute.Set, key, want string) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsString() == want
+		}
+	}
+	return false
+}
+
 func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	meter, reader := newTestMeter(t)
 
@@ -889,6 +931,10 @@ func TestDurableEmitter_MetricsPublishBatchEventPhase(t *testing.T) {
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.failure", "retransmit"))
 	assert.GreaterOrEqual(t, counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "retransmit"), int64(1))
 	assert.Equal(t, int64(0), counterSumByPhase(t, rm, "durable_emitter.publish.batch.events.success", "batch"))
+
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.failure", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.batch.events.success", batch.ClientNameDurableEmitter)
+	assertMetricHasChipClientValue(t, rm, "durable_emitter.publish.duration", batch.ClientNameDurableEmitter)
 }
 
 // mockChipServer implements ChipIngressServer with controllable behaviour.
@@ -1507,4 +1553,114 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL t
 	st.OldestPendingAge = now.Sub(oldest)
 	st.TTLBudget = eventTTL - st.OldestPendingAge
 	return st, nil
+}
+
+// slowBatchStore wraps MemDurableEventStore and adds a configurable delay to
+// InsertBatch to simulate Postgres INSERT latency.
+type slowBatchStore struct {
+	*MemDurableEventStore
+	insertDelay time.Duration
+}
+
+func (s *slowBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+	select {
+	case <-time.After(s.insertDelay):
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
+}
+
+// TestGlobalEmit_BlockingBehavior is a regression guard for CRE-5665.
+//
+// The original bug: when DurableEmitterEnabled defaulted to true (v2.56+),
+// every GlobalEmit call blocked on the insert coalescer's flush interval
+// (100ms) + DB insert latency, causing workflow execution times to regress
+// from ~10s to ~60s. When the emitter was not initialized (v2.54/v2.55
+// default false), GlobalEmit was an instant no-op.
+//
+// The fix: GlobalEmit is now non-blocking — it enqueues to a buffered
+// channel and a background goroutine calls Emit. This test verifies that
+// both the disabled and enabled paths complete quickly, and that events
+// are still eventually delivered in the enabled path.
+func TestGlobalEmit_BlockingBehavior(t *testing.T) {
+	const numEmissions = 5
+	const flushInterval = 100 * time.Millisecond // matches v2.56 application.go config
+	const insertDelay = 5 * time.Millisecond     // simulated Postgres INSERT latency
+
+	// --- Phase 1: Durable emitter NOT initialized (v2.54/v2.55 behavior) ---
+	// GlobalEmit returns ErrNotInitialized immediately — zero blocking.
+	prevEmitter := globalEmitter.Load()
+	globalEmitter.Store(nil)
+	t.Cleanup(func() { globalEmitter.Store(prevEmitter) })
+
+	ctx := t.Context()
+	start := time.Now()
+	for i := 0; i < numEmissions; i++ {
+		err := GlobalEmit(ctx, []byte("metric-event"), "source", "platform", "type", "test")
+		require.ErrorIs(t, err, ErrNotInitialized, "GlobalEmit must return ErrNotInitialized when no emitter is set")
+	}
+	disabledDuration := time.Since(start)
+	t.Logf("Durable emitter DISABLED: %d emissions took %v (no-op, instant)", numEmissions, disabledDuration)
+	require.Less(t, disabledDuration, 10*time.Millisecond,
+		"with durable emitter disabled, %d emissions must complete in under 10ms", numEmissions)
+
+	// --- Phase 2: Durable emitter initialized (v2.56+ behavior, post-fix) ---
+	// GlobalEmit must now be non-blocking: it enqueues to the async channel
+	// and returns immediately. A background goroutine persists and publishes
+	// the event. The wall-clock time for the caller must not be affected by
+	// the insert coalescer's flush interval or DB insert latency.
+	store := &slowBatchStore{
+		MemDurableEventStore: NewMemDurableEventStore(),
+		insertDelay:          insertDelay,
+	}
+	be := newTestBatchEmitter()
+	cfg := Config{
+		InsertBatchSize:          500, // matches v2.56 application.go config
+		InsertBatchWorkers:       1,
+		InsertBatchFlushInterval: flushInterval,
+		DeleteBatchSize:          100,
+		DeleteBatchWorkers:       1,
+		DisablePruning:           true,
+		PublishTimeout:           5 * time.Second,
+		EventTTL:                 1 * time.Hour,
+	}
+	em, err := NewDurableEmitter(store, be, false, cfg, logger.Test(t), nil)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+
+	globalEmitter.Store(em)
+
+	start = time.Now()
+	for i := 0; i < numEmissions; i++ {
+		err := GlobalEmit(ctx, []byte("metric-event"), "source", "platform", "type", "test")
+		require.NoError(t, err, "GlobalEmit must succeed when emitter is initialized")
+	}
+	enabledDuration := time.Since(start)
+	t.Logf("Durable emitter ENABLED:  %d emissions took %v (non-blocking, async)", numEmissions, enabledDuration)
+
+	// REGRESSION GUARD: the enabled path must NOT block on the insert coalescer.
+	// Before the fix, 5 sequential emissions took >= 5 * flushInterval = 500ms
+	// because each call blocked until the coalescer flushed. After the fix,
+	// GlobalEmit enqueues to a buffered channel and returns immediately.
+	maxAllowed := time.Duration(numEmissions) * flushInterval
+	require.Less(t, enabledDuration, maxAllowed,
+		"with durable emitter enabled, %d emissions must NOT take >= %v — GlobalEmit must be non-blocking",
+		numEmissions, maxAllowed)
+
+	// Both paths should be in the same order of magnitude — the enabled path
+	// must not be dramatically slower than the disabled path.
+	ratio := float64(enabledDuration) / float64(disabledDuration)
+	t.Logf("Ratio: %.1fx (enabled/disabled)", ratio)
+	require.Less(t, ratio, 50.0,
+		"enabled path must not be more than 50x slower than disabled path (was 4000x+ before fix)")
+
+	// Verify events are eventually delivered despite the non-blocking caller.
+	// The async goroutine processes events through the same Emit path (insert
+	// coalescer + batch emitter), so delivery is delayed by the flush interval
+	// but must complete.
+	require.Eventually(t, func() bool {
+		return be.callCount.Load() == int64(numEmissions)
+	}, 5*time.Second, 50*time.Millisecond,
+		"all %d events must eventually be published by the batch emitter", numEmissions)
 }

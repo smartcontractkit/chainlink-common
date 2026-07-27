@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"

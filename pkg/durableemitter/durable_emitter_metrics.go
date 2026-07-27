@@ -24,7 +24,7 @@ type DurableEmitterMetricsConfig struct {
 	MaxQueuePayloadBytes int64
 }
 
-// publishPhase identifies which delivery path recorded a batch publish metric.
+// publishPhase identifies the delivery path recorded by publish metrics.
 type publishPhase int
 
 const (
@@ -44,6 +44,7 @@ func (p publishPhase) String() string {
 }
 
 type durableEmitterMetrics struct {
+	clientName         string
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -78,6 +79,24 @@ type durableEmitterMetrics struct {
 	// deleteCoalescerFill reports the delete-coalescer channel fill ratio
 	// (len/cap). Only meaningful when DeleteBatchSize > 0; otherwise 0.
 	deleteCoalescerFill metric.Float64Gauge
+	// asyncQueueDepth reports the current number of events waiting in the
+	// async emit channel (GlobalEmit → asyncEmitLoop). A rising value means
+	// the background loop is not keeping up with incoming GlobalEmit calls.
+	asyncQueueDepth metric.Int64Gauge
+	// asyncQueueFill reports the fill ratio (len/cap) of the async emit
+	// channel. Saturating toward 1.0 indicates the async loop is a bottleneck
+	// and events may be dropped (fail-open) on the next GlobalEmit call.
+	asyncQueueFill metric.Float64Gauge
+	// asyncEmitDuration measures the wall time from when GlobalEmit enqueues
+	// a request to when asyncEmitLoop finishes calling Emit for it. This
+	// captures the real end-to-end latency that was previously blocking the
+	// workflow caller.
+	asyncEmitDuration metric.Float64Histogram
+	// asyncDropped counts events that were dropped because the async emit
+	// channel was full (fail-open in GlobalEmit). Non-zero means the durable
+	// emitter is overwhelmed — events were still delivered via the real-time
+	// beholder emitter, but the durable copy was lost.
+	asyncDropped metric.Int64Counter
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -92,11 +111,13 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
 // supplied meter. The caller is responsible for the meter's scope (the
 // instrument prefix below acts as the metric namespace).
-func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error) {
+func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEmitterMetrics, error) {
 	if meter == nil {
 		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
 	}
-	m := &durableEmitterMetrics{}
+	m := &durableEmitterMetrics{
+		clientName: clientName,
+	}
 	var err error
 	if m.emitSuccess, err = meter.Int64Counter(
 		"durable_emitter.emit.success",
@@ -145,7 +166,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit}, error={true,false}, client_name"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -291,6 +312,35 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
+	if m.asyncQueueDepth, err = meter.Int64Gauge(
+		"durable_emitter.async_queue.depth",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Number of events waiting in the async emit channel (GlobalEmit → asyncEmitLoop). Rising values indicate the background loop is not keeping up."),
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncQueueFill, err = meter.Float64Gauge(
+		"durable_emitter.async_queue.fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Async emit channel fill ratio (len/cap). Saturating toward 1.0 means events may be dropped (fail-open) on the next GlobalEmit call."),
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncEmitDuration, err = meter.Float64Histogram(
+		"durable_emitter.async_emit.duration",
+		metric.WithUnit("s"),
+		metric.WithDescription("Wall time from GlobalEmit enqueue to asyncEmitLoop Emit completion. This is the end-to-end latency that was previously blocking the workflow caller (CRE-5665)."),
+		durationBuckets,
+	); err != nil {
+		return nil, err
+	}
+	if m.asyncDropped, err = meter.Int64Counter(
+		"durable_emitter.async_queue.dropped",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events dropped because the async emit channel was full (fail-open). The real-time beholder emitter already delivered them; only the durable copy was lost."),
+	); err != nil {
+		return nil, err
+	}
 	return m, nil
 }
 
@@ -343,6 +393,7 @@ func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.
 		metric.WithAttributes(
 			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
+			attribute.String("client_name", m.clientName),
 		),
 	)
 }
@@ -351,7 +402,10 @@ func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, pha
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(attribute.String("phase", phase.String()))
+	attrs := metric.WithAttributes(
+		attribute.String("phase", phase.String()),
+		attribute.String("client_name", m.clientName),
+	)
 	if err != nil {
 		m.publishBatchEvErr.Add(ctx, 1, attrs)
 	} else {

@@ -697,6 +697,7 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
 		module:              m,
 		executor:            helper,

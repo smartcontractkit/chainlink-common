@@ -35,7 +35,7 @@ func PrintPolicyTree(policy alerting.NotificationPolicy, depth int) {
 	}
 
 	for _, notificationPolicy := range policy.Routes {
-		for i := 0; i < depth; i++ {
+		for range depth {
 			fmt.Print("--")
 		}
 		fmt.Printf("| Matchers %s | Receiver: %s\n", *notificationPolicy.ObjectMatchers, *notificationPolicy.Receiver)

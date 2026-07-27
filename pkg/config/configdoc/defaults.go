@@ -81,7 +81,6 @@ func nilToZero(val reflect.Value) {
 			return // skip values unmarshaled from strings
 		}
 		for _, f := range val.Fields() {
-			f := f
 			nilToZero(f)
 		}
 		return

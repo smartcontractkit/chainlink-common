@@ -551,7 +551,7 @@ func TestEventsToBatch(t *testing.T) {
 		const numEvents = 100
 		events := make([]CloudEvent, numEvents)
 
-		for i := 0; i < numEvents; i++ {
+		for i := range numEvents {
 			event, err := NewEvent(
 				fmt.Sprintf("domain-%d", i),
 				fmt.Sprintf("type-%d", i),
@@ -635,7 +635,7 @@ func TestHeaderInterceptor(t *testing.T) {
 
 	// Create a mock invoker that captures the context
 	var capturedCtx context.Context
-	mockInvoker := func(ctx context.Context, method string, req, reply interface{}, cc *gp.ClientConn, opts ...gp.CallOption) error {
+	mockInvoker := func(ctx context.Context, method string, req, reply any, cc *gp.ClientConn, opts ...gp.CallOption) error {
 		capturedCtx = ctx
 		return nil
 	}

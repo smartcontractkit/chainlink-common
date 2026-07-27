@@ -250,7 +250,7 @@ func WithNOPLookup() Opt {
 
 // newHeaderInterceptor creates a unary interceptor that adds headers from a HeaderProvider
 func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
-	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		// Add dynamic headers from provider if available
 		if provider != nil {
 

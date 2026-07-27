@@ -36,10 +36,10 @@ type fakeRddSource struct {
 	minFeeds, maxFeeds uint8
 }
 
-func (f *fakeRddSource) Fetch(_ context.Context) (interface{}, error) {
+func (f *fakeRddSource) Fetch(_ context.Context) (any, error) {
 	numFeeds := int(f.minFeeds) + rand.Intn(int(f.maxFeeds-f.minFeeds))
 	feeds := make([]FeedConfig, numFeeds)
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		feeds[i] = generateFeedConfig()
 	}
 	return feeds, nil
@@ -68,15 +68,15 @@ func (f *fakeTxResultsSourceFactory) NewSource(_ ChainConfig, _ FeedConfig) (Sou
 type fakeEnvelopeSource struct{}
 type fakeTxResultsSource struct{}
 
-func (f *fakeEnvelopeSource) Fetch(ctx context.Context) (interface{}, error) {
+func (f *fakeEnvelopeSource) Fetch(ctx context.Context) (any, error) {
 	return generateEnvelope(ctx)
 }
-func (f *fakeTxResultsSource) Fetch(ctx context.Context) (interface{}, error) {
+func (f *fakeTxResultsSource) Fetch(ctx context.Context) (any, error) {
 	return generateTxResults(), nil
 }
 
 type fakeRandomDataSourceFactory struct {
-	updates chan interface{}
+	updates chan any
 }
 
 var _ SourceFactory = (*fakeRandomDataSourceFactory)(nil)
@@ -93,7 +93,7 @@ type fakeSource struct {
 	factory *fakeRandomDataSourceFactory
 }
 
-func (f *fakeSource) Fetch(ctx context.Context) (interface{}, error) {
+func (f *fakeSource) Fetch(ctx context.Context) (any, error) {
 	select {
 	case update := <-f.factory.updates:
 		return update, nil
@@ -106,7 +106,7 @@ type fakeSourceWithWait struct {
 	waitOnRead time.Duration
 }
 
-func (f *fakeSourceWithWait) Fetch(ctx context.Context) (interface{}, error) {
+func (f *fakeSourceWithWait) Fetch(ctx context.Context) (any, error) {
 	select {
 	case <-time.After(f.waitOnRead):
 		return 1, nil
@@ -116,7 +116,7 @@ func (f *fakeSourceWithWait) Fetch(ctx context.Context) (interface{}, error) {
 }
 
 type fakeSourceFactoryWithError struct {
-	updates     chan interface{}
+	updates     chan any
 	errors      chan error
 	returnError bool
 }
@@ -136,11 +136,11 @@ func (f *fakeSourceFactoryWithError) GetType() string {
 }
 
 type fakeSourceWithError struct {
-	updates chan interface{}
+	updates chan any
 	errors  chan error
 }
 
-func (f *fakeSourceWithError) Fetch(ctx context.Context) (interface{}, error) {
+func (f *fakeSourceWithError) Fetch(ctx context.Context) (any, error) {
 	select {
 	case update := <-f.updates:
 		return update, nil
@@ -152,11 +152,11 @@ func (f *fakeSourceWithError) Fetch(ctx context.Context) (interface{}, error) {
 }
 
 type fakeSourceWithPanic struct {
-	updates chan interface{}
+	updates chan any
 	panics  chan error
 }
 
-func (f *fakeSourceWithPanic) Fetch(ctx context.Context) (interface{}, error) {
+func (f *fakeSourceWithPanic) Fetch(ctx context.Context) (any, error) {
 	select {
 	case update := <-f.updates:
 		return update, nil
@@ -170,7 +170,7 @@ func (f *fakeSourceWithPanic) Fetch(ctx context.Context) (interface{}, error) {
 // Exporters
 
 type fakeExporterFactory struct {
-	data        chan interface{}
+	data        chan any
 	returnError bool
 }
 
@@ -184,10 +184,10 @@ func (f *fakeExporterFactory) NewExporter(_ ExporterParams) (Exporter, error) {
 }
 
 type fakeExporter struct {
-	data chan interface{}
+	data chan any
 }
 
-func (f *fakeExporter) Export(ctx context.Context, data interface{}) {
+func (f *fakeExporter) Export(ctx context.Context, data any) {
 	select {
 	case f.data <- data:
 	case <-ctx.Done():
@@ -248,8 +248,8 @@ func (f fakeFeedConfig) GetContractAddress() string {
 }
 func (f fakeFeedConfig) GetContractAddressBytes() []byte { return f.ContractAddress }
 func (f fakeFeedConfig) GetMultiply() *big.Int           { return f.Multiply }
-func (f fakeFeedConfig) ToMapping() map[string]interface{} {
-	return map[string]interface{}{
+func (f fakeFeedConfig) ToMapping() map[string]any {
+	return map[string]any{
 		"feed_name":               f.Name,
 		"feed_path":               f.Path,
 		"symbol":                  f.Symbol,
@@ -257,7 +257,7 @@ func (f fakeFeedConfig) ToMapping() map[string]interface{} {
 		"contract_type":           f.ContractType,
 		"contract_status":         f.ContractStatus,
 		"contract_address":        f.ContractAddress,
-		"contract_address_string": map[string]interface{}{"string": f.ContractAddressEncoded},
+		"contract_address_string": map[string]any{"string": f.ContractAddressEncoded},
 		// These are solana specific but are kept here for backwards compatibility in Avro.
 		"transmissions_account": []byte{},
 		"state_account":         []byte{},
@@ -365,16 +365,16 @@ func generateOffchainConfig(numOracles int) (
 		return nil, nil, nil, err
 	}
 	schedule := []uint32{}
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		schedule = append(schedule, 1)
 	}
 	offchainPublicKeys := [][]byte{}
-	for i := 0; i < numOracles; i++ {
+	for range numOracles {
 		randArr := generate32ByteArr()
 		offchainPublicKeys = append(offchainPublicKeys, randArr[:])
 	}
 	peerIDs := []string{}
-	for i := 0; i < numOracles; i++ {
+	for i := range numOracles {
 		peerIDs = append(peerIDs, fmt.Sprintf("peer#%d", i))
 	}
 	config := &pb.OffchainConfigProto{
@@ -419,7 +419,7 @@ func generateContractConfig(ctx context.Context, n int) (
 ) {
 	signers := make([]types.OnchainPublicKey, n)
 	transmitters := make([]types.Account, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		randArr := generate32ByteArr()
 		signers[i] = types.OnchainPublicKey(randArr[:])
 		transmitters[i] = types.Account(hexEncode([]byte{
@@ -511,8 +511,8 @@ func (f fakeChainConfig) GetChainID() string             { return f.ChainID }
 func (f fakeChainConfig) GetReadTimeout() time.Duration  { return f.ReadTimeout }
 func (f fakeChainConfig) GetPollInterval() time.Duration { return f.PollInterval }
 
-func (f fakeChainConfig) ToMapping() map[string]interface{} {
-	return map[string]interface{}{
+func (f fakeChainConfig) ToMapping() map[string]any {
+	return map[string]any{
 		"network_name": f.NetworkName,
 		"network_id":   f.NetworkID,
 		"chain_id":     f.ChainID,
@@ -607,11 +607,11 @@ func (f fakeSchema) Subject() string {
 	return f.subject
 }
 
-func (f fakeSchema) Encode(value interface{}) ([]byte, error) {
+func (f fakeSchema) Encode(value any) ([]byte, error) {
 	return f.codec.BinaryFromNative(nil, value)
 }
 
-func (f fakeSchema) Decode(buf []byte) (interface{}, error) {
+func (f fakeSchema) Decode(buf []byte) (any, error) {
 	value, _, err := f.codec.NativeFromBinary(buf)
 	return value, err
 }
@@ -620,7 +620,7 @@ func (f fakeSchema) Decode(buf []byte) (interface{}, error) {
 
 type fakePoller struct {
 	numUpdates int
-	ch         chan interface{}
+	ch         chan any
 }
 
 func (f *fakePoller) Run(ctx context.Context) {
@@ -635,7 +635,7 @@ func (f *fakePoller) Run(ctx context.Context) {
 	}
 }
 
-func (f *fakePoller) Updates() <-chan interface{} {
+func (f *fakePoller) Updates() <-chan any {
 	return f.ch
 }
 

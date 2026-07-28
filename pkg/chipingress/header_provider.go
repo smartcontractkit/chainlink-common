@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -111,6 +113,13 @@ func newStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderP
 // NewStaticHeaderProvider returns a HeaderProvider that always returns the given headers,
 // for use with WithHeaderProvider to attach fixed, non-auth gRPC metadata (e.g. resource
 // attributes) to every request.
+//
+// This is for the non-auth interceptor path only. It reports RequireTransportSecurity() == false,
+// which WithHeaderProvider never consults — the HeaderProvider interface declares only Headers,
+// and grpc asks only credentials.PerRPCCredentials about transport security. Do not pass the
+// result to WithTokenAuth: that path takes its TLS requirement from the client config
+// (!c.insecureConnection), not from the provider, so the false here would be silently ignored
+// rather than honoured. Use NewHeaderProvider for auth headers.
 func NewStaticHeaderProvider(headers map[string]string) HeaderProvider {
 	return newStaticHeaderProvider(headers, false)
 }
@@ -132,27 +141,78 @@ func SanitizeMetadataValue(val string) string {
 	return string(out)
 }
 
-// SanitizeMetadataHeaders sanitizes a map of resource-attribute headers for use as outgoing
-// gRPC metadata (e.g. via NewStaticHeaderProvider). Keys are sanitized with
-// sanitizeExtensionName — the same strict [a-z0-9] charset used for CloudEvent extensions —
-// which is a subset of grpc's allowed metadata-key charset, so a sanitized key can never trip
-// grpc's key validation or the reserved "-bin" suffix, and produces the same key stem as the
-// corresponding CE extension (differing only by the CloudEvents Kafka binding's "ce_" prefix
-// once on the wire). Values are sanitized via SanitizeMetadataValue, since grpc-go fails the
-// whole RPC on a non-printable value. Entries that sanitize to an empty key, or that collide
-// with a reserved extension name (see reservedExtensionNames) or a gRPC-reserved header name
-// (see reservedMetadataKeys), are skipped. Keys are applied in sorted order so duplicate
-// sanitized keys resolve deterministically (first in sorted order wins), matching
-// WithResourceAttributeExtensions' collision handling.
+// sanitizeMetadataKey normalizes a resource-attribute key into a valid outgoing gRPC metadata
+// key, without the ResourceHeaderPrefix that SanitizeMetadataHeaders adds. grpc-go accepts keys
+// matching [0-9a-z-_.] (see internal/metadata.ValidateKey), so the key's structure is preserved:
+// "csa_public_key" stays "csa_public_key" and "service.name" stays "service.name", which is what
+// lets chip-ingress emit the forwarded header verbatim.
 //
-// Note: unlike the CloudEvents Kafka binding, gRPC metadata keys are NOT prefixed with "ce_" —
-// that prefix is a CloudEvents-binding concept, not a metadata one, and reusing it here would
-// collide with the CE binding's own "ce_<name>" Kafka header if the server ever forwards gRPC
-// metadata verbatim onto Kafka.
+// The rules are: lower-case (grpc requires it), keep '.', '-' and '_', replace every other
+// character with '_', and return "" for a key with no [a-z0-9] character left, since a key of
+// pure separators carries no information. A trailing "-bin" is rewritten to "_bin" because grpc
+// treats a "-bin" suffix as declaring a base64-encoded binary value and would try to decode it.
+func sanitizeMetadataKey(key string) string {
+	var b strings.Builder
+	b.Grow(len(key))
+
+	hasAlnum := false
+	for _, r := range strings.ToLower(key) {
+		switch {
+		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'):
+			hasAlnum = true
+			b.WriteRune(r)
+		case r == '.' || r == '-' || r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteByte('_')
+		}
+	}
+	if !hasAlnum {
+		return ""
+	}
+
+	out := b.String()
+	if suffix := "-bin"; strings.HasSuffix(out, suffix) {
+		out = strings.TrimSuffix(out, suffix) + "_bin"
+	}
+	return out
+}
+
+// SanitizeMetadataHeaders sanitizes a map of resource attributes for use as outgoing gRPC metadata
+// (e.g. via NewStaticHeaderProvider). Every emitted key is ResourceHeaderPrefix followed by a key
+// normalized to grpc's charset, so service.name becomes resource_service.name and csa_public_key
+// becomes resource_csa_public_key. Chip-ingress forwards keys carrying that prefix onto every Kafka
+// record a request produces, emitting them unchanged. Values go through SanitizeMetadataValue,
+// because grpc-go fails the whole RPC — auth header included — on a single non-printable value.
+//
+// The prefix is what makes this safe without a deny-list. The header interceptor appends to outgoing
+// metadata rather than replacing it, so an attribute landing on an existing header name would send
+// two values under one key — an attribute named X-Beholder-Node-Auth-Token would have broken
+// authentication that way. Because every emitted key is prefixed, no attribute can reach a reserved
+// gRPC key: that one becomes resource_x-beholder-node-auth-token, which collides with nothing, and
+// the same holds for authorization, te, content-type, the grpc- prefix and pseudo-headers.
+//
+// Entries whose key normalizes to "" are skipped, since a bare prefix carries no information. If two
+// keys normalize to the same name the first in lexicographic order of the original keys wins, so the
+// result is deterministic.
 func SanitizeMetadataHeaders(in map[string]string) map[string]string {
+	keys := make([]string, 0, len(in))
+	for k := range in {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys) // deterministic: first in sorted order wins a normalized-name collision
+
 	out := make(map[string]string, len(in))
-	for _, pair := range sanitizeResourceAttributeKeys(in, reservedMetadataKeys) {
-		out[pair.name] = SanitizeMetadataValue(in[pair.key])
+	for _, k := range keys {
+		name := sanitizeMetadataKey(k)
+		if name == "" {
+			continue
+		}
+		name = ResourceHeaderPrefix + name
+		if _, dup := out[name]; dup {
+			continue
+		}
+		out[name] = SanitizeMetadataValue(in[k])
 	}
 	return out
 }

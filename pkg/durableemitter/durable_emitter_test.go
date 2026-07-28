@@ -1580,7 +1580,7 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 	// Per-emit block ceiling for the sync path: comfortably above
 	// linger+insert+jitter, but well below the old 500ms default so a regression
 	// there is caught.
-	const maxBlockPerEmit = 200 * time.Millisecond
+	const maxBlockPerEmit = flushInterval * 2
 
 	ctx := t.Context()
 

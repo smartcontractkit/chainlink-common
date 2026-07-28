@@ -290,6 +290,8 @@ func (n noCloseEmitter) Close() error { return nil }
 
 // Returns a new Client with the same configuration but with a different package name
 // Deprecated: Use ForName
+//
+//go:fix inline
 func (c Client) ForPackage(name string) Client {
 	return c.ForName(name)
 }

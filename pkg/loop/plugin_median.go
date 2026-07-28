@@ -15,9 +15,13 @@ import (
 const PluginMedianName = "median"
 
 // Deprecated
+//
+//go:fix inline
 type PluginMedian = core.PluginMedian
 
 // Deprecated
+//
+//go:fix inline
 type ErrorLog = core.ErrorLog
 
 func PluginMedianHandshakeConfig() plugin.HandshakeConfig {
@@ -28,6 +32,8 @@ func PluginMedianHandshakeConfig() plugin.HandshakeConfig {
 }
 
 // Deprecated
+//
+//go:fix inline
 type ReportingPluginFactory = types.ReportingPluginFactory
 
 type GRPCPluginMedian struct {

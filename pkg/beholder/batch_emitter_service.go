@@ -22,8 +22,7 @@ type ChipIngressBatchEmitterService struct {
 	services.Service
 	eng *services.Engine
 
-	batchClient   *batch.Client
-	resourceAttrs map[string]string
+	batchClient *batch.Client
 
 	metricAttrsCache sync.Map // map[string]otelmetric.MeasurementOption
 	metrics          batchEmitterMetrics
@@ -92,9 +91,8 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	}
 
 	e := &ChipIngressBatchEmitterService{
-		batchClient:   batchClient,
-		resourceAttrs: resourceAttributesToStringMap(cfg.ResourceAttributes),
-		metrics:       metrics,
+		batchClient: batchClient,
+		metrics:     metrics,
 	}
 
 	e.Service, e.eng = services.Config{
@@ -145,7 +143,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 
 		attributes := newAttributes(attrKVs...)
 
-		event, err := chipingress.NewEventWithOpts(domain, entity, body, attributes, chipingress.WithResourceAttributeExtensions(e.resourceAttrs))
+		event, err := chipingress.NewEvent(domain, entity, body, attributes)
 		if err != nil {
 			return fmt.Errorf("failed to create CloudEvent: %w", err)
 		}

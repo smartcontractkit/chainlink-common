@@ -203,6 +203,12 @@ func TestConvertGetProgramAccountsReplyToProto_WithAccounts(t *testing.T) {
 	assert.Equal(t, domainPKBytes(0x22), ka0.Account.Owner)
 	assert.True(t, ka0.Account.Executable)
 	assert.Equal(t, uint64(128), ka0.Account.Space)
+	require.NotNil(t, ka0.Account.Data)
+	assert.Equal(t, solcap.EncodingType_ENCODING_TYPE_BASE64, ka0.Account.Data.Encoding)
+	_, isRaw := ka0.Account.Data.GetBody().(*solcap.DataBytesOrJSON_Raw)
+	assert.True(t, isRaw)
+	assert.Equal(t, []byte{0xCA, 0xFE}, ka0.Account.Data.GetRaw())
+	assert.Nil(t, ka0.Account.Data.GetJson())
 
 	// second entry — nil account is valid
 	ka1 := got.Value[1]
@@ -241,4 +247,131 @@ func TestConvertGetProgramAccountsReplyToProto_InvalidAccountEncoding(t *testing
 	_, err := solcap.ConvertGetProgramAccountsReplyToProto(reply)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "value[0]")
+}
+
+func TestConvertGetProgramAccountsReplyToProto_DataVariantByEncoding(t *testing.T) {
+	tests := []struct {
+		name        string
+		encoding    typesolana.EncodingType
+		raw         []byte
+		jsonPayload []byte
+		expectedEnc solcap.EncodingType
+		expectRaw   bool
+	}{
+		{
+			name:        "base64 uses raw variant",
+			encoding:    typesolana.EncodingBase64,
+			raw:         []byte{0x01, 0x02, 0x03},
+			expectedEnc: solcap.EncodingType_ENCODING_TYPE_BASE64,
+			expectRaw:   true,
+		},
+		{
+			name:        "base58 uses raw variant",
+			encoding:    typesolana.EncodingBase58,
+			raw:         []byte{0x04, 0x05},
+			expectedEnc: solcap.EncodingType_ENCODING_TYPE_BASE58,
+			expectRaw:   true,
+		},
+		{
+			name:        "json uses json variant",
+			encoding:    typesolana.EncodingJSON,
+			jsonPayload: []byte(`{"k":"v"}`),
+			expectedEnc: solcap.EncodingType_ENCODING_TYPE_JSON,
+			expectRaw:   false,
+		},
+		{
+			name:        "json parsed uses json variant",
+			encoding:    typesolana.EncodingJSONParsed,
+			jsonPayload: []byte(`{"parsed":true}`),
+			expectedEnc: solcap.EncodingType_ENCODING_TYPE_JSON_PARSED,
+			expectRaw:   false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			reply := &typesolana.GetProgramAccountsReply{
+				Value: []*typesolana.KeyedAccount{{
+					Pubkey: domainPK(0x90),
+					Account: &typesolana.Account{
+						Data: &typesolana.DataBytesOrJSON{
+							RawDataEncoding: tc.encoding,
+							AsDecodedBinary: tc.raw,
+							AsJSON:          tc.jsonPayload,
+						},
+					},
+				}},
+			}
+
+			got, err := solcap.ConvertGetProgramAccountsReplyToProto(reply)
+			require.NoError(t, err)
+			require.Len(t, got.Value, 1)
+			require.NotNil(t, got.Value[0].Account)
+			require.NotNil(t, got.Value[0].Account.Data)
+
+			data := got.Value[0].Account.Data
+			assert.Equal(t, tc.expectedEnc, data.Encoding)
+			if tc.expectRaw {
+				_, isRaw := data.GetBody().(*solcap.DataBytesOrJSON_Raw)
+				assert.True(t, isRaw)
+				assert.Equal(t, tc.raw, data.GetRaw())
+				assert.Nil(t, data.GetJson())
+				return
+			}
+
+			_, isJSON := data.GetBody().(*solcap.DataBytesOrJSON_Json)
+			assert.True(t, isJSON)
+			assert.Equal(t, tc.jsonPayload, data.GetJson())
+			assert.Nil(t, data.GetRaw())
+		})
+	}
+}
+
+func TestConvertGetProgramAccountsReplyToProto_DataVariantRejectsInconsistentFields(t *testing.T) {
+	tests := []struct {
+		name        string
+		data        *typesolana.DataBytesOrJSON
+		errContains string
+	}{
+		{
+			name: "base64 rejects json field",
+			data: &typesolana.DataBytesOrJSON{
+				RawDataEncoding: typesolana.EncodingBase64,
+				AsDecodedBinary: []byte{0x01},
+				AsJSON:          []byte(`{"not":"allowed"}`),
+			},
+			errContains: "inconsistent data for raw encoding",
+		},
+		{
+			name: "json rejects decoded binary field",
+			data: &typesolana.DataBytesOrJSON{
+				RawDataEncoding: typesolana.EncodingJSON,
+				AsDecodedBinary: []byte{0x02},
+				AsJSON:          []byte(`{"ok":true}`),
+			},
+			errContains: "inconsistent data for json encoding",
+		},
+		{
+			name: "json parsed requires json payload",
+			data: &typesolana.DataBytesOrJSON{
+				RawDataEncoding: typesolana.EncodingJSONParsed,
+			},
+			errContains: "json payload is nil",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			reply := &typesolana.GetProgramAccountsReply{
+				Value: []*typesolana.KeyedAccount{{
+					Pubkey:  domainPK(0x91),
+					Account: &typesolana.Account{Data: tc.data},
+				}},
+			}
+
+			_, err := solcap.ConvertGetProgramAccountsReplyToProto(reply)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.errContains)
+		})
+	}
 }

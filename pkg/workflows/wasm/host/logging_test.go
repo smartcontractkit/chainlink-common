@@ -28,7 +28,7 @@ func TestLogRawMessage_PanicAndFatalLevelsDoNotCrashHost(t *testing.T) {
 			entries := logs.All()
 			require.Len(t, entries, 1)
 			require.Equal(t, zapcore.ErrorLevel, entries[0].Level)
-			require.Equal(t, "boom", entries[0].Message)
+			require.Equal(t, "["+level+"] boom", entries[0].Message)
 		})
 	}
 }

@@ -761,6 +761,10 @@ func ConvertGetSignatureStatusesReplyToProto(r *typesolana.GetSignatureStatusesR
 	}
 	out := &GetSignatureStatusesReply{Results: make([]*GetSignatureStatusesResult, 0, len(r.Results))}
 	for i := range r.Results {
+		if r.Results[i] == nil {
+			out.Results = append(out.Results, nil)
+			continue
+		}
 		status, err := convertConfirmationStatusTypeToProto(r.Results[i].ConfirmationStatus)
 		if err != nil {
 			return nil, fmt.Errorf("results[%d].confirmation_status: %w", i, err)

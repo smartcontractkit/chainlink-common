@@ -573,7 +573,7 @@ type GetSignatureStatusesResult struct {
 }
 
 type GetSignatureStatusesReply struct {
-	Results []GetSignatureStatusesResult
+	Results []*GetSignatureStatusesResult
 }
 
 // represents solana-go rpc.RPCFilterMemcmp

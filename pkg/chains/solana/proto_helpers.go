@@ -1266,9 +1266,13 @@ func ConvertGetSignatureStatusesReplyFromProto(p *GetSignatureStatusesReply) *so
 	if p == nil {
 		return nil
 	}
-	out := &solana.GetSignatureStatusesReply{Results: make([]solana.GetSignatureStatusesResult, 0, len(p.Results))}
+	out := &solana.GetSignatureStatusesReply{Results: make([]*solana.GetSignatureStatusesResult, 0, len(p.Results))}
 	for _, r := range p.Results {
-		out.Results = append(out.Results, solana.GetSignatureStatusesResult{
+		if r == nil {
+			out.Results = append(out.Results, nil)
+			continue
+		}
+		out.Results = append(out.Results, &solana.GetSignatureStatusesResult{
 			Slot:               r.Slot,
 			Confirmations:      r.Confirmations,
 			Err:                r.Err,
@@ -1284,6 +1288,9 @@ func ConvertGetSignatureStatusesReplyToProto(r *solana.GetSignatureStatusesReply
 	}
 	out := &GetSignatureStatusesReply{Results: make([]*GetSignatureStatusesResult, 0, len(r.Results))}
 	for i := range r.Results {
+		if r.Results[i] == nil {
+			out.Results = append(out.Results, nil)
+		}
 		var conf uint64
 		if r.Results[i].Confirmations != nil {
 			conf = *r.Results[i].Confirmations

@@ -12,6 +12,7 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -110,6 +111,13 @@ type ModuleConfig struct {
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
+
+	// guestStdoutFile and guestStderrFile are the paths the WASM guest's stdout/stderr are
+	// redirected to. They always default to os.DevNull so the guest can never write to the
+	// host's own stdout/stderr; unexported so callers outside this package can't override
+	// that. Tests in this package may set them directly to a temp file to inspect guest output.
+	guestStdoutFile string
+	guestStderrFile string
 }
 
 type ModuleBase = host.ModuleBase
@@ -203,6 +211,14 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.PrehookTimeout == nil {
 		modCfg.PrehookTimeout = &defaultPrehookTimeout
+	}
+
+	if modCfg.guestStdoutFile == "" {
+		modCfg.guestStdoutFile = os.DevNull
+	}
+
+	if modCfg.guestStderrFile == "" {
+		modCfg.guestStderrFile = os.DevNull
 	}
 
 	if modCfg.MinMemoryMBs == 0 {
@@ -655,7 +671,12 @@ func runWasm[I, O proto.Message](
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
-	wasi.InheritStdout()
+	if err := wasi.SetStdoutFile(m.cfg.guestStdoutFile); err != nil {
+		return o, fmt.Errorf("error setting guest stdout file: %w", err)
+	}
+	if err := wasi.SetStderrFile(m.cfg.guestStderrFile); err != nil {
+		return o, fmt.Errorf("error setting guest stderr file: %w", err)
+	}
 	defer wasi.Close()
 
 	wasi.SetArgv([]string{"wasi", reqstr})
@@ -1013,44 +1034,58 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			return
 		}
 
-		var raw map[string]any
-		innerErr = json.Unmarshal(b, &raw)
+		innerErr = logRawMessage(logger, b)
 		if innerErr != nil {
+			logger.Errorf("error calling log: %s", innerErr)
 			return
 		}
-
-		level := raw["level"]
-		delete(raw, "level")
-
-		msg := raw["msg"].(string)
-		delete(raw, "msg")
-		delete(raw, "ts")
-
-		var args []any
-		for k, v := range raw {
-			args = append(args, k, v)
-		}
-
-		reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
-		sanitizedMsg := reg.ReplaceAllString(msg, "*")
-
-		switch level {
-		case "debug":
-			logger.Debugw(sanitizedMsg, args...)
-		case "info":
-			logger.Infow(sanitizedMsg, args...)
-		case "warn":
-			logger.Warnw(sanitizedMsg, args...)
-		case "error":
-			logger.Errorw(sanitizedMsg, args...)
-		case "panic":
-			logger.Panicw(sanitizedMsg, args...)
-		case "fatal":
-			logger.Fatalw(sanitizedMsg, args...)
-		default:
-			logger.Infow(sanitizedMsg, args...)
-		}
 	}
+}
+
+// logRawMessage decodes a JSON-encoded log message received from the WASM guest and
+// logs it at the appropriate level.
+func logRawMessage(logger logger.Logger, b []byte) error {
+	var raw map[string]any
+	innerErr := json.Unmarshal(b, &raw)
+	if innerErr != nil {
+		return innerErr
+	}
+
+	level := raw["level"]
+	delete(raw, "level")
+
+	msg, ok := raw["msg"].(string)
+	if !ok {
+		return fmt.Errorf("could not coerce msg to string, got %T", raw["msg"])
+	}
+	delete(raw, "msg")
+	delete(raw, "ts")
+
+	var args []any
+	for k, v := range raw {
+		args = append(args, k, v)
+	}
+
+	reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
+	sanitizedMsg := reg.ReplaceAllString(msg, "*")
+
+	switch level {
+	case "debug":
+		logger.Debugw(sanitizedMsg, args...)
+	case "info":
+		logger.Infow(sanitizedMsg, args...)
+	case "warn":
+		logger.Warnw(sanitizedMsg, args...)
+	case "error":
+		logger.Errorw(sanitizedMsg, args...)
+	case "panic", "fatal":
+		// The guest should never be able to panic/exit the host
+		logger.Errorw(sanitizedMsg, args...)
+	default:
+		logger.Infow(sanitizedMsg, args...)
+	}
+
+	return nil
 }
 
 type unimplementedMessageEmitter struct{}

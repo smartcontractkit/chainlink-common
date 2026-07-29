@@ -4,6 +4,8 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -28,6 +30,8 @@ const (
 	loggingLimitsBinaryLocation = loggingLimitsBinaryCmd + "/testmodule.wasm"
 	metricLimitsBinaryCmd       = "test/metric_limits/cmd"
 	metricLimitsBinaryLocation  = metricLimitsBinaryCmd + "/testmodule.wasm"
+	stdioBinaryCmd              = "test/stdio/cmd"
+	stdioBinaryLocation         = stdioBinaryCmd + "/testmodule.wasm"
 )
 
 func Test_Sleep_Timeout(t *testing.T) {
@@ -237,6 +241,46 @@ func Test_NoDAG_LoggingWithLimits(t *testing.T) {
 	require.Len(t, logs, 2)
 	require.Equal(t, "short log 1", logs[0])
 	require.Equal(t, "short log 3", logs[1])
+}
+
+// The guest's stdout/stderr must never be inherited from the host: a malicious or buggy
+// guest could otherwise write directly to the host's own stdout/stderr. This exercises
+// the guest writing to stdout/stderr directly (not via the log capability) and asserts
+// that output lands in the configured redirect files instead of leaking to the host.
+func Test_NoDAG_GuestStdioIsRedirected(t *testing.T) {
+	t.Parallel()
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	executeRequest := triggerExecuteRequest(t, 0, trigger)
+
+	dir := t.TempDir()
+	stdoutFile := filepath.Join(dir, "stdout")
+	stderrFile := filepath.Join(dir, "stderr")
+
+	cfg := defaultNoDAGModCfg(t)
+	cfg.guestStdoutFile = stdoutFile
+	cfg.guestStderrFile = stderrFile
+
+	binary := createTestBinary(stdioBinaryCmd, stdioBinaryLocation, true, t)
+
+	m, err := NewModule(t.Context(), cfg, binary)
+	require.NoError(t, err)
+
+	_, err = m.Execute(t.Context(), executeRequest, mockExecutionHelper)
+	require.NoError(t, err)
+
+	gotStdout, err := os.ReadFile(stdoutFile)
+	require.NoError(t, err)
+	require.Contains(t, string(gotStdout), "stdout from guest")
+
+	gotStderr, err := os.ReadFile(stderrFile)
+	require.NoError(t, err)
+	require.Contains(t, string(gotStderr), "stderr from guest")
 }
 
 func Test_NoDAG_EmitMetricWithLimits(t *testing.T) {

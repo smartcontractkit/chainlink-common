@@ -124,7 +124,8 @@ func TestCallCapAsync_DuplicateCallbackIdDoesNotLeakLimiterSlot(t *testing.T) {
 	t.Parallel()
 
 	const max = 2
-	stub := &slowCapStub{delay: 0}
+	stub := &blockingCapStub{unblock: make(chan struct{})}
+	defer close(stub.unblock)
 	exec := newTestExec(max, stub)
 
 	ctx := t.Context()

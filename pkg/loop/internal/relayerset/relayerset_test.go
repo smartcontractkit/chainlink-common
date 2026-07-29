@@ -788,7 +788,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				mockSol.EXPECT().
 					GetSignatureStatuses(mock.Anything, req).
 					Return(&soltypes.GetSignatureStatusesReply{
-						Results: []soltypes.GetSignatureStatusesResult{
+						Results: []*soltypes.GetSignatureStatusesResult{
 							{Slot: uint64(expSlot1), Confirmations: &expConf1}, {Slot: expSlot2, Confirmations: &expConf2},
 						},
 					}, nil)

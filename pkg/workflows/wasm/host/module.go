@@ -1034,23 +1034,30 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			return
 		}
 
-		logRawMessage(logger, b)
+		innerErr = logRawMessage(logger, b)
+		if innerErr != nil {
+			logger.Errorf("error calling log: %s", innerErr)
+			return
+		}
 	}
 }
 
 // logRawMessage decodes a JSON-encoded log message received from the WASM guest and
 // logs it at the appropriate level.
-func logRawMessage(logger logger.Logger, b []byte) {
+func logRawMessage(logger logger.Logger, b []byte) error {
 	var raw map[string]any
 	innerErr := json.Unmarshal(b, &raw)
 	if innerErr != nil {
-		return
+		return innerErr
 	}
 
 	level := raw["level"]
 	delete(raw, "level")
 
-	msg := raw["msg"].(string)
+	msg, ok := raw["msg"].(string)
+	if !ok {
+		return fmt.Errorf("could not coerce msg to string, got %T", raw["msg"])
+	}
 	delete(raw, "msg")
 	delete(raw, "ts")
 
@@ -1077,6 +1084,8 @@ func logRawMessage(logger logger.Logger, b []byte) {
 	default:
 		logger.Infow(sanitizedMsg, args...)
 	}
+
+	return nil
 }
 
 type unimplementedMessageEmitter struct{}

@@ -199,6 +199,9 @@ type EVMService interface {
 	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
 	GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error)
 
+	// LPSkipToBlock skips log poller to the given block number
+	LPSkipToBlock(ctx context.Context, blockNumber int64) error
+
 	// GetFiltersNames returns all registered filters' names for later pruning
 	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
 	GetFiltersNames(ctx context.Context) ([]string, error)
@@ -273,6 +276,12 @@ type AptosService interface {
 // fetch ledger entries, get the latest ledger, and submit transactions.
 type StellarService interface {
 	stellar.Client
+
+	// GetSigningAccount returns the default TXM signing account from the relayer keystore.
+	// Used when contract call arguments must include the signing address explicitly
+	// (e.g. Soroban require_auth on an Address parameter); distinct from FromAddress
+	// on SubmitTransactionRequest, which controls transaction-level signing only.
+	GetSigningAccount(ctx context.Context) (stellar.GetSigningAccountResponse, error)
 
 	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.
 	SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)
@@ -533,6 +542,10 @@ func (ues *UnimplementedEVMService) GetLatestLPBlock(ctx context.Context) (*evm.
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
 }
 
+func (ues *UnimplementedEVMService) LPSkipToBlock(ctx context.Context, blockNumber int64) error {
+	return status.Errorf(codes.Unimplemented, "method LPSkipToBlock not implemented")
+}
+
 func (ues *UnimplementedEVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
 }
@@ -652,8 +665,21 @@ var _ StellarService = &UnimplementedStellarService{}
 // don't immediately break downstream packages on dependency bumps.
 type UnimplementedStellarService struct{}
 
-func (u *UnimplementedStellarService) ReadContract(_ context.Context, _ stellar.ReadContractRequest) (stellar.ReadContractResponse, error) {
-	return stellar.ReadContractResponse{}, status.Errorf(codes.Unimplemented, "method ReadContract not implemented")
+func (u *UnimplementedStellarService) SimulateTransaction(_ context.Context, _ stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
+	return stellar.SimulateTransactionResponse{}, status.Errorf(codes.Unimplemented, "method SimulateTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetEvents(_ context.Context, _ stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
+	return stellar.GetEventsResponse{}, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
+
+}
+
+func (u *UnimplementedStellarService) GetTransaction(_ context.Context, _ stellar.GetTransactionRequest) (stellar.GetTransactionResponse, error) {
+	return stellar.GetTransactionResponse{}, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetSigningAccount(_ context.Context) (stellar.GetSigningAccountResponse, error) {
+	return stellar.GetSigningAccountResponse{}, status.Errorf(codes.Unimplemented, "method GetSigningAccount not implemented")
 }
 
 func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stellar.GetLedgerEntriesRequest) (stellar.GetLedgerEntriesResponse, error) {
@@ -662,6 +688,10 @@ func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stel
 
 func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stellar.GetLatestLedgerResponse, error) {
 	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
+}
+
+func (u *UnimplementedStellarService) GetLedgers(_ context.Context, _ stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error) {
+	return stellar.GetLedgersResponse{}, status.Errorf(codes.Unimplemented, "method GetLedgers not implemented")
 }
 
 func (u *UnimplementedStellarService) SubmitTransaction(_ context.Context, _ stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {

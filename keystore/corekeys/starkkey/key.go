@@ -15,16 +15,12 @@ import (
 
 func KeyFor(raw internal.Raw) Key {
 	k := Key{raw: raw}
-	var err error
 
 	priv := new(big.Int).SetBytes(internal.Bytes(raw))
 	k.signFn = func(hash *big.Int) (x, y *big.Int, err error) {
-		return curve.Curve.Sign(hash, priv)
+		return curve.Sign(hash, priv)
 	}
-	k.pub.X, k.pub.Y, err = curve.Curve.PrivateToPoint(priv)
-	if err != nil {
-		panic(err) // key not generated
-	}
+	k.pub.X, k.pub.Y = curve.PrivateKeyToPoint(priv)
 	return k
 }
 

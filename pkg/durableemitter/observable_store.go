@@ -15,21 +15,31 @@ type DurableEvent struct {
 
 // DurableQueueStats is a point-in-time snapshot of the pending queue for metrics.
 type DurableQueueStats struct {
-	Depth            int64
+	// Depth is the number of undelivered (delivered_at IS NULL) rows — the
+	// delivery backlog.
+	Depth int64
+	// TotalRows is the number of rows physically present in the table, including
+	// delivered-but-not-yet-purged rows. This is the authoritative "queue depth"
+	// (actual table count): it is read directly from the DB so it stays correct
+	// regardless of how many writers share the table or which in-memory delta
+	// updates were lost to failed/partial DB operations.
+	TotalRows        int64
 	PayloadBytes     int64
 	OldestPendingAge time.Duration // 0 if the queue is empty
-	// NearTTLCount is the number of rows within nearExpiryLead of EventTTL (still
-	// pending, not yet removed by expiry). Serves as a DLQ-pressure proxy; there is
-	// no separate dead-letter table in the default design.
-	NearTTLCount int64
+	// TTLBudget is the remaining time before the oldest still-pending event hits
+	// EventTTL (i.e. EventTTL - OldestPendingAge). It is the headroom of the event
+	// closest to expiry and serves as a DLQ-pressure proxy; there is no separate
+	// dead-letter table in the default design. It goes negative when the expiry
+	// loop is behind. Equals EventTTL when the queue is empty.
+	TTLBudget time.Duration
 }
 
 // DurableQueueObserver is optionally implemented by DurableEventStore implementations
 // so DurableEmitter can export queue depth and age gauges when metrics are enabled.
 type DurableQueueObserver interface {
-	// ObserveDurableQueue returns live queue statistics. eventTTL and nearExpiryLead
-	// match Config (nearExpiryLead should be << eventTTL).
-	ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error)
+	// ObserveDurableQueue returns live queue statistics. eventTTL matches Config and
+	// is used to derive the remaining TTL budget of the oldest pending event.
+	ObserveDurableQueue(ctx context.Context, eventTTL time.Duration) (DurableQueueStats, error)
 }
 
 // BatchInserter is optionally implemented by DurableEventStore implementations
@@ -47,21 +57,22 @@ type DurableEventStore interface {
 	Insert(ctx context.Context, payload []byte) (int64, error)
 	// Delete physically removes a row (corrupt payloads, policy drops, tests).
 	Delete(ctx context.Context, id int64) error
-	// MarkDelivered records successful delivery to Chip. The row must no longer
-	// appear in ListPending. Postgres implementations typically set delivered_at;
-	// a background PurgeDelivered removes rows later. MemDurableEventStore removes
-	// the row immediately (same as Delete).
-	MarkDelivered(ctx context.Context, id int64) error
-	// MarkDeliveredBatch marks multiple events as delivered in a single operation.
-	// Semantically equivalent to calling MarkDelivered for each id.
-	MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error)
-	// PurgeDelivered deletes up to batchLimit rows already marked delivered.
-	// Implementations that remove rows in MarkDelivered may return 0, nil always.
-	PurgeDelivered(ctx context.Context, batchLimit int) (deleted int64, err error)
-	// ListPending returns events created before the given cutoff, ordered by
-	// creation time ascending, up to limit rows.
-	ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error)
-	// DeleteExpired removes events older than ttl and returns the count deleted.
+	// BatchDelete records successful delivery of multiple events to Chip by
+	// deleting them in a single operation (delete-on-delivery)
+	BatchDelete(ctx context.Context, ids []int64) (int64, error)
+	// ListPending returns undelivered events created before createdBefore,
+	// ordered by (created_at, id) ascending and strictly after the
+	// (afterCreatedAt, afterID) cursor, up to limit rows. Pass a zero cursor
+	// (time.Time{}, 0) to start from the oldest. The retransmit loop pages
+	// through the backlog with this cursor — advancing it each tick and wrapping
+	// to a zero cursor at the end — so a persistently-failing event can't
+	// monopolise the head of the list. Under delete-on-delivery every row still
+	// present is undelivered, so this is the pending backlog.
+	ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error)
+	// DeleteExpired removes any events older than ttl and returns the count
+	// deleted — a time-based garbage collector that also reclaims rows which
+	// failed to delete on delivery (e.g. a DB error in the delivery callback), so
+	// nothing lingers past EventTTL.
 	DeleteExpired(ctx context.Context, ttl time.Duration) (int64, error)
 }
 
@@ -95,30 +106,16 @@ func (s *metricsInstrumentedStore) Delete(ctx context.Context, id int64) error {
 	return err
 }
 
-func (s *metricsInstrumentedStore) MarkDelivered(ctx context.Context, id int64) error {
+func (s *metricsInstrumentedStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
 	t0 := time.Now()
-	err := s.inner.MarkDelivered(ctx, id)
-	s.m.recordStoreOp(ctx, "mark_delivered", time.Since(t0), err)
-	return err
-}
-
-func (s *metricsInstrumentedStore) MarkDeliveredBatch(ctx context.Context, ids []int64) (int64, error) {
-	t0 := time.Now()
-	n, err := s.inner.MarkDeliveredBatch(ctx, ids)
-	s.m.recordStoreOp(ctx, "mark_delivered_batch", time.Since(t0), err)
+	n, err := s.inner.BatchDelete(ctx, ids)
+	s.m.recordStoreOp(ctx, "batch_delete", time.Since(t0), err)
 	return n, err
 }
 
-func (s *metricsInstrumentedStore) PurgeDelivered(ctx context.Context, batchLimit int) (int64, error) {
+func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
 	t0 := time.Now()
-	n, err := s.inner.PurgeDelivered(ctx, batchLimit)
-	s.m.recordStoreOp(ctx, "purge_delivered", time.Since(t0), err)
-	return n, err
-}
-
-func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore time.Time, limit int) ([]DurableEvent, error) {
-	t0 := time.Now()
-	evs, err := s.inner.ListPending(ctx, createdBefore, limit)
+	evs, err := s.inner.ListPending(ctx, createdBefore, afterCreatedAt, afterID, limit)
 	s.m.recordStoreOp(ctx, "list_pending", time.Since(t0), err)
 	return evs, err
 }
@@ -130,12 +127,12 @@ func (s *metricsInstrumentedStore) DeleteExpired(ctx context.Context, ttl time.D
 	return n, err
 }
 
-func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, eventTTL, nearExpiryLead time.Duration) (DurableQueueStats, error) {
+func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, eventTTL time.Duration) (DurableQueueStats, error) {
 	o, ok := s.inner.(DurableQueueObserver)
 	if !ok {
 		return DurableQueueStats{}, errors.New("inner DurableEventStore does not implement DurableQueueObserver")
 	}
-	return o.ObserveDurableQueue(ctx, eventTTL, nearExpiryLead)
+	return o.ObserveDurableQueue(ctx, eventTTL)
 }
 
 func (s *metricsInstrumentedStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {

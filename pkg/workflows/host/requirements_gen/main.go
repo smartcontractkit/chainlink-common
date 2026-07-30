@@ -25,11 +25,10 @@ type templateData struct {
 }
 
 func main() {
-	requirementsType := reflect.TypeOf(sdk.Requirements{})
+	requirementsType := reflect.TypeFor[sdk.Requirements]()
 
 	var fields []fieldInfo
-	for i := 0; i < requirementsType.NumField(); i++ {
-		f := requirementsType.Field(i)
+	for f := range requirementsType.Fields() {
 		if !f.IsExported() {
 			continue
 		}

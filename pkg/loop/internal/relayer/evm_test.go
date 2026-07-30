@@ -340,6 +340,17 @@ func Test_EVMDomainRoundTripThroughGRPC(t *testing.T) {
 		require.Equal(t, expectedNames, actualNames)
 	})
 
+	t.Run("LPSkipToBlock", func(t *testing.T) {
+		skipBlock := blockNum.Int64()
+		evmService.EXPECT().LPSkipToBlock(mock.Anything, mock.Anything).RunAndReturn(func(ctx context.Context, blockNumber int64) error {
+			require.Equal(t, skipBlock, blockNumber)
+			return nil
+		})
+
+		err := client.LPSkipToBlock(ctx, skipBlock)
+		require.NoError(t, err)
+	})
+
 	t.Run("CalculateTransactionFee", func(t *testing.T) {
 		gasInfo := evm.ReceiptGasInfo{
 			GasUsed:           gas,

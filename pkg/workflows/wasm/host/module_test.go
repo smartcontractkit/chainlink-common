@@ -3,11 +3,12 @@ package host
 import (
 	"context"
 	"encoding/binary"
+	"math"
 	"strings"
 	"sync"
 	"testing"
 
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -499,6 +500,26 @@ func Test_write(t *testing.T) {
 		// TODO verify this won't break anything...
 		assert.Equal(t, int64(12), n)
 	})
+
+	t.Run("near-MaxInt32 ptr does not overflow the bounds check", func(t *testing.T) {
+		giveSrc := []byte("12345678")
+		memory := make([]byte, 12)
+		// ptr+maxSize would wrap negative with signed int32 arithmetic.
+		n := write(memory, giveSrc, math.MaxInt32-4, int32(len(giveSrc)))
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("negative maxSize is rejected", func(t *testing.T) {
+		memory := make([]byte, 12)
+		n := write(memory, nil, 0, math.MinInt32)
+		assert.Equal(t, int64(-1), n)
+	})
+
+	t.Run("zero-length write at end of memory is allowed", func(t *testing.T) {
+		memory := make([]byte, 12)
+		n := write(memory, nil, int32(len(memory)), 0)
+		assert.Equal(t, int64(0), n)
+	})
 }
 
 // Test_writeUInt32 tests that a uint32 is written to memory correctly.
@@ -637,6 +658,7 @@ func Test_CallAwaitRace(t *testing.T) {
 	exec := &execution[*wasmpb.ExecutionResult]{
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
+		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
 		ctx:                 t.Context(),
 		executor:            mockExecHelper,

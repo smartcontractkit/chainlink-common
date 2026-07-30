@@ -29,3 +29,14 @@ func TestGetSlot(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestRegressionRandomGetNegativeBufLenDoesNotPanic(t *testing.T) {
+	t.Parallel()
+	randomGet := createRandomGet(&ModuleConfig{Determinism: &DeterminismConfig{Seed: 1}})
+
+	var errno Errno
+	assert.NotPanics(t, func() {
+		errno = randomGet(nil, 0, -1)
+	})
+	assert.Equal(t, ErrnoInval, errno)
+}

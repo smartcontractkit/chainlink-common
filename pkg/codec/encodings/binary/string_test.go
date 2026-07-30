@@ -108,6 +108,6 @@ func TestString(t *testing.T) {
 	})
 
 	t.Run("GetType returns string", func(t *testing.T) {
-		assert.Equal(t, reflect.TypeOf(""), s.GetType())
+		assert.Equal(t, reflect.TypeFor[string](), s.GetType())
 	})
 }

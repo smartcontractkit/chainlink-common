@@ -432,6 +432,8 @@ type WriteReportReply struct {
 	TxHash                          *string                          `protobuf:"bytes,3,opt,name=tx_hash,json=txHash,proto3,oneof" json:"tx_hash,omitempty"`
 	TransactionFee                  *uint64                          `protobuf:"varint,4,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // total fee paid in stroops
 	LedgerSequence                  *uint32                          `protobuf:"varint,5,opt,name=ledger_sequence,json=ledgerSequence,proto3,oneof" json:"ledger_sequence,omitempty"`
+	ErrorMessage                    *string                          `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`        // user-actionable failure reason
+	BlockTimestamp                  *uint64                          `protobuf:"varint,7,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // block timestamp in microseconds
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -501,6 +503,20 @@ func (x *WriteReportReply) GetLedgerSequence() uint32 {
 	return 0
 }
 
+func (x *WriteReportReply) GetErrorMessage() string {
+	if x != nil && x.ErrorMessage != nil {
+		return *x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *WriteReportReply) GetBlockTimestamp() uint64 {
+	if x != nil && x.BlockTimestamp != nil {
+		return *x.BlockTimestamp
+	}
+	return 0
+}
+
 var File_capabilities_blockchain_stellar_v1alpha_client_proto protoreflect.FileDescriptor
 
 const file_capabilities_blockchain_stellar_v1alpha_client_proto_rawDesc = "" +
@@ -527,18 +543,22 @@ const file_capabilities_blockchain_stellar_v1alpha_client_proto_rawDesc = "" +
 	"\x12WriteReportRequest\x12\x1f\n" +
 	"\vcontract_id\x18\x01 \x01(\tR\n" +
 	"contractId\x123\n" +
-	"\x06report\x18\x02 \x01(\v2\x1b.sdk.v1alpha.ReportResponseR\x06report\"\xd4\x03\n" +
+	"\x06report\x18\x02 \x01(\v2\x1b.sdk.v1alpha.ReportResponseR\x06report\"\xd2\x04\n" +
 	"\x10WriteReportReply\x12N\n" +
 	"\ttx_status\x18\x01 \x01(\x0e21.capabilities.blockchain.stellar.v1alpha.TxStatusR\btxStatus\x12\x9a\x01\n" +
 	"\"receiver_contract_execution_status\x18\x02 \x01(\x0e2H.capabilities.blockchain.stellar.v1alpha.ReceiverContractExecutionStatusH\x00R\x1freceiverContractExecutionStatus\x88\x01\x01\x12\x1c\n" +
 	"\atx_hash\x18\x03 \x01(\tH\x01R\x06txHash\x88\x01\x01\x12,\n" +
 	"\x0ftransaction_fee\x18\x04 \x01(\x04H\x02R\x0etransactionFee\x88\x01\x01\x12,\n" +
-	"\x0fledger_sequence\x18\x05 \x01(\rH\x03R\x0eledgerSequence\x88\x01\x01B%\n" +
+	"\x0fledger_sequence\x18\x05 \x01(\rH\x03R\x0eledgerSequence\x88\x01\x01\x12(\n" +
+	"\rerror_message\x18\x06 \x01(\tH\x04R\ferrorMessage\x88\x01\x01\x12,\n" +
+	"\x0fblock_timestamp\x18\a \x01(\x04H\x05R\x0eblockTimestamp\x88\x01\x01B%\n" +
 	"#_receiver_contract_execution_statusB\n" +
 	"\n" +
 	"\b_tx_hashB\x12\n" +
 	"\x10_transaction_feeB\x12\n" +
-	"\x10_ledger_sequence*N\n" +
+	"\x10_ledger_sequenceB\x10\n" +
+	"\x0e_error_messageB\x12\n" +
+	"\x10_block_timestamp*N\n" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x16\n" +
 	"\x12TX_STATUS_REVERTED\x10\x01\x12\x15\n" +

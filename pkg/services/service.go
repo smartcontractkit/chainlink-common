@@ -221,7 +221,7 @@ type service struct {
 	subs []Service
 }
 
-// Ready implements [HealthReporter.Ready] and overrides and extends [utils.StartStopOnce.Ready()] to include [Config.SubServices]
+// Ready implements [HealthReporter.Ready] and overrides and extends [services.StateMachine.Ready()] to include [Config.SubServices]
 // readiness as well.
 func (s *service) Ready() (err error) {
 	err = s.StateMachine.Ready()
@@ -263,8 +263,8 @@ func (s *service) Start(ctx context.Context) error {
 			s.eng.Infof("Starting %d sub-services", len(s.subs))
 			for _, sub := range s.subs {
 				if err := ms.Start(ctx, sub); err != nil {
-					s.eng.Errorw("Failed to start sub-service", "error", err)
-					return fmt.Errorf("failed to start sub-service of %s: %w", s.cfg.Name, err)
+					s.eng.Errorw("Failed to start sub-service", "name", sub.Name(), "error", err)
+					return fmt.Errorf("failed to start sub-service %s of %s: %w", sub.Name(), s.cfg.Name, err)
 				}
 			}
 		}

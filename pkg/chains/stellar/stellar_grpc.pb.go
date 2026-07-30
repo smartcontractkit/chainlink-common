@@ -20,10 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Stellar_GetLedgerEntries_FullMethodName  = "/loop.stellar.Stellar/GetLedgerEntries"
-	Stellar_GetLatestLedger_FullMethodName   = "/loop.stellar.Stellar/GetLatestLedger"
-	Stellar_ReadContract_FullMethodName      = "/loop.stellar.Stellar/ReadContract"
-	Stellar_SubmitTransaction_FullMethodName = "/loop.stellar.Stellar/SubmitTransaction"
+	Stellar_GetLedgerEntries_FullMethodName    = "/loop.stellar.Stellar/GetLedgerEntries"
+	Stellar_GetLatestLedger_FullMethodName     = "/loop.stellar.Stellar/GetLatestLedger"
+	Stellar_GetLedgers_FullMethodName          = "/loop.stellar.Stellar/GetLedgers"
+	Stellar_SimulateTransaction_FullMethodName = "/loop.stellar.Stellar/SimulateTransaction"
+	Stellar_GetEvents_FullMethodName           = "/loop.stellar.Stellar/GetEvents"
+	Stellar_GetTransaction_FullMethodName      = "/loop.stellar.Stellar/GetTransaction"
+	Stellar_GetSigningAccount_FullMethodName   = "/loop.stellar.Stellar/GetSigningAccount"
+	Stellar_SubmitTransaction_FullMethodName   = "/loop.stellar.Stellar/SubmitTransaction"
 )
 
 // StellarClient is the client API for Stellar service.
@@ -32,7 +36,11 @@ const (
 type StellarClient interface {
 	GetLedgerEntries(ctx context.Context, in *GetLedgerEntriesRequest, opts ...grpc.CallOption) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetLatestLedgerResponse, error)
-	ReadContract(ctx context.Context, in *ReadContractRequest, opts ...grpc.CallOption) (*ReadContractResponse, error)
+	GetLedgers(ctx context.Context, in *GetLedgersRequest, opts ...grpc.CallOption) (*GetLedgersResponse, error)
+	SimulateTransaction(ctx context.Context, in *SimulateTransactionRequest, opts ...grpc.CallOption) (*SimulateTransactionResponse, error)
+	GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error)
+	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error)
+	GetSigningAccount(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSigningAccountResponse, error)
 	SubmitTransaction(ctx context.Context, in *SubmitTransactionRequest, opts ...grpc.CallOption) (*SubmitTransactionResponse, error)
 }
 
@@ -64,10 +72,50 @@ func (c *stellarClient) GetLatestLedger(ctx context.Context, in *emptypb.Empty, 
 	return out, nil
 }
 
-func (c *stellarClient) ReadContract(ctx context.Context, in *ReadContractRequest, opts ...grpc.CallOption) (*ReadContractResponse, error) {
+func (c *stellarClient) GetLedgers(ctx context.Context, in *GetLedgersRequest, opts ...grpc.CallOption) (*GetLedgersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReadContractResponse)
-	err := c.cc.Invoke(ctx, Stellar_ReadContract_FullMethodName, in, out, cOpts...)
+	out := new(GetLedgersResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetLedgers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stellarClient) SimulateTransaction(ctx context.Context, in *SimulateTransactionRequest, opts ...grpc.CallOption) (*SimulateTransactionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SimulateTransactionResponse)
+	err := c.cc.Invoke(ctx, Stellar_SimulateTransaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stellarClient) GetEvents(ctx context.Context, in *GetEventsRequest, opts ...grpc.CallOption) (*GetEventsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetEventsResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetEvents_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stellarClient) GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*GetTransactionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTransactionResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetTransaction_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *stellarClient) GetSigningAccount(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetSigningAccountResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSigningAccountResponse)
+	err := c.cc.Invoke(ctx, Stellar_GetSigningAccount_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +138,11 @@ func (c *stellarClient) SubmitTransaction(ctx context.Context, in *SubmitTransac
 type StellarServer interface {
 	GetLedgerEntries(context.Context, *GetLedgerEntriesRequest) (*GetLedgerEntriesResponse, error)
 	GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error)
-	ReadContract(context.Context, *ReadContractRequest) (*ReadContractResponse, error)
+	GetLedgers(context.Context, *GetLedgersRequest) (*GetLedgersResponse, error)
+	SimulateTransaction(context.Context, *SimulateTransactionRequest) (*SimulateTransactionResponse, error)
+	GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error)
+	GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error)
+	GetSigningAccount(context.Context, *emptypb.Empty) (*GetSigningAccountResponse, error)
 	SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error)
 	mustEmbedUnimplementedStellarServer()
 }
@@ -108,8 +160,20 @@ func (UnimplementedStellarServer) GetLedgerEntries(context.Context, *GetLedgerEn
 func (UnimplementedStellarServer) GetLatestLedger(context.Context, *emptypb.Empty) (*GetLatestLedgerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
 }
-func (UnimplementedStellarServer) ReadContract(context.Context, *ReadContractRequest) (*ReadContractResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReadContract not implemented")
+func (UnimplementedStellarServer) GetLedgers(context.Context, *GetLedgersRequest) (*GetLedgersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLedgers not implemented")
+}
+func (UnimplementedStellarServer) SimulateTransaction(context.Context, *SimulateTransactionRequest) (*SimulateTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SimulateTransaction not implemented")
+}
+func (UnimplementedStellarServer) GetEvents(context.Context, *GetEventsRequest) (*GetEventsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
+}
+func (UnimplementedStellarServer) GetTransaction(context.Context, *GetTransactionRequest) (*GetTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
+func (UnimplementedStellarServer) GetSigningAccount(context.Context, *emptypb.Empty) (*GetSigningAccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSigningAccount not implemented")
 }
 func (UnimplementedStellarServer) SubmitTransaction(context.Context, *SubmitTransactionRequest) (*SubmitTransactionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
@@ -171,20 +235,92 @@ func _Stellar_GetLatestLedger_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Stellar_ReadContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadContractRequest)
+func _Stellar_GetLedgers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLedgersRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StellarServer).ReadContract(ctx, in)
+		return srv.(StellarServer).GetLedgers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Stellar_ReadContract_FullMethodName,
+		FullMethod: Stellar_GetLedgers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StellarServer).ReadContract(ctx, req.(*ReadContractRequest))
+		return srv.(StellarServer).GetLedgers(ctx, req.(*GetLedgersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stellar_SimulateTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SimulateTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).SimulateTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_SimulateTransaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).SimulateTransaction(ctx, req.(*SimulateTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stellar_GetEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEventsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetEvents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetEvents(ctx, req.(*GetEventsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stellar_GetTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetTransaction_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetTransaction(ctx, req.(*GetTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stellar_GetSigningAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StellarServer).GetSigningAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Stellar_GetSigningAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StellarServer).GetSigningAccount(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -223,8 +359,24 @@ var Stellar_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Stellar_GetLatestLedger_Handler,
 		},
 		{
-			MethodName: "ReadContract",
-			Handler:    _Stellar_ReadContract_Handler,
+			MethodName: "GetLedgers",
+			Handler:    _Stellar_GetLedgers_Handler,
+		},
+		{
+			MethodName: "SimulateTransaction",
+			Handler:    _Stellar_SimulateTransaction_Handler,
+		},
+		{
+			MethodName: "GetEvents",
+			Handler:    _Stellar_GetEvents_Handler,
+		},
+		{
+			MethodName: "GetTransaction",
+			Handler:    _Stellar_GetTransaction_Handler,
+		},
+		{
+			MethodName: "GetSigningAccount",
+			Handler:    _Stellar_GetSigningAccount_Handler,
 		},
 		{
 			MethodName: "SubmitTransaction",

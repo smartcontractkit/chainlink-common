@@ -1,8 +1,8 @@
 package dontime
 
 import (
-	"context"
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -15,42 +15,39 @@ type Request struct {
 
 	WorkflowExecutionID string
 	SeqNum              int
+
+	expiryTimer *time.Timer
+	respondOnce sync.Once
 }
 
 func (r *Request) ID() string {
 	return r.WorkflowExecutionID
 }
 
-func (r *Request) ExpiryTime() time.Time {
-	return r.ExpiresAt
-}
-
-func (r *Request) SendResponse(_ context.Context, resp Response) {
-	select {
-	case r.CallbackCh <- resp:
-		close(r.CallbackCh)
-	default: // Don't block trying to send
+func (r *Request) stopExpiry() {
+	if r.expiryTimer != nil {
+		r.expiryTimer.Stop()
 	}
 }
 
-func (r *Request) SendTimeout(_ context.Context) {
+func (r *Request) SendResponse(resp Response) {
+	r.respondOnce.Do(func() {
+		r.stopExpiry()
+		select {
+		case r.CallbackCh <- resp:
+		default: // Don't block trying to send
+		}
+		close(r.CallbackCh)
+	})
+}
+
+func (r *Request) SendTimeout() {
 	timeoutResponse := Response{
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		SeqNum:              r.SeqNum,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
 	}
-	r.SendResponse(nil, timeoutResponse)
-}
-
-func (r *Request) Copy() *Request {
-	return &Request{
-		ExpiresAt:           r.ExpiresAt,
-		WorkflowExecutionID: r.WorkflowExecutionID,
-		SeqNum:              r.SeqNum,
-
-		// Intentionally not copied, but are thread-safe.
-		CallbackCh: r.CallbackCh,
-	}
+	r.SendResponse(timeoutResponse)
 }
 
 type Response struct {

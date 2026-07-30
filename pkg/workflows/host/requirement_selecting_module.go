@@ -61,6 +61,7 @@ func NewRequirementSelectingModule(main ModuleAndHandler, additional []ModuleAnd
 
 type triggerInfo struct {
 	moduleIdx    int
+	preHook      bool
 	requirements *sdk.Requirements
 }
 
@@ -102,7 +103,7 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 		for j, m := range r.modules {
 			if CheckRequirements(ctx, m.RequirementsHandler, sub.Requirements) {
 				m.ensureStarted()
-				r.cache.Store(uint64(i), triggerInfo{moduleIdx: j, requirements: sub.Requirements})
+				r.cache.Store(uint64(i), triggerInfo{moduleIdx: j, requirements: sub.Requirements, preHook: sub.PreHook})
 				matched = true
 				break
 			}
@@ -119,13 +120,35 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 	trigger := request.GetTrigger()
 	if val, cached := r.cache.Load(trigger.Id); cached {
 		info := val.(triggerInfo)
+
 		m := r.modules[info.moduleIdx]
+		if info.preHook {
+			prehook := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_PreHook{PreHook: trigger}}
+			preHookResult, err := r.modules[0].Execute(ctx, prehook, handler)
+			if err != nil {
+				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
+			}
+
+			switch preHookResult.Result.(type) {
+			case *sdk.ExecutionResult_Error:
+				return preHookResult, nil
+			}
+
+			restrictions := preHookResult.GetRestrictions()
+
+			handler = NewRestrictedExecutionHelper(handler, restrictions)
+			if rem, ok := m.Module.(RestrictionAwareModule); ok {
+				rem.SetRestrictions(handler.GetWorkflowExecutionID(), restrictions)
+			}
+		}
+
 		if rem, ok := m.Module.(RequirementEnforcingModule); ok && info.requirements != nil {
 			rem.SetRequirements(handler.GetWorkflowExecutionID(), info.requirements)
 		}
 
 		return m.Execute(ctx, request, handler)
 	}
+
 	return nil, errors.New("cannot trigger before gathering subscriptions")
 }
 

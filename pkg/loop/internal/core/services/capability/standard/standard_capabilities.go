@@ -8,9 +8,9 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
@@ -388,9 +388,9 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 		creSettingsConn, err := s.Dial(request.CreSettingsId)
 		if err != nil {
 			s.CloseAll(resources...)
-			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.OrgResolverId, Err: err}
+			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.CreSettingsId, Err: err}
 		}
-		resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "CRESettings"})
+		resources = append(resources, net.Resource{Closer: creSettingsConn, Name: "CRESettings"})
 		creSettings = settings.NewClient(s.Logger, creSettingsConn)
 	}
 

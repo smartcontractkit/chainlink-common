@@ -44,7 +44,7 @@ func TestKafkaExporter(t *testing.T) {
 		go exporter.Export(ctx, envelope)
 
 		var receivedTransmission, receivedConfigSetSimplified producerMessage
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			select {
 			case message := <-producer.sendCh:
 				switch message.topic {
@@ -70,15 +70,15 @@ func TestKafkaExporter(t *testing.T) {
 
 		decodedTransmission, err := transmissionSchema.Decode(receivedTransmission.value)
 		require.NoError(t, err)
-		transmission, ok := decodedTransmission.(map[string]interface{})
+		transmission, ok := decodedTransmission.(map[string]any)
 		require.True(t, ok)
-		answer, ok := transmission["answer"].(map[string]interface{})
+		answer, ok := transmission["answer"].(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, answer["data"], envelope.LatestAnswer.Bytes())
 
 		decodedConfigSetSimplified, err := configSetSimplifiedSchema.Decode(receivedConfigSetSimplified.value)
 		require.NoError(t, err)
-		configSetSimplified, ok := decodedConfigSetSimplified.(map[string]interface{})
+		configSetSimplified, ok := decodedConfigSetSimplified.(map[string]any)
 		require.True(t, ok)
 		require.Equal(t, configSetSimplified["block_number"], uint64ToBeBytes(envelope.BlockNumber))
 	})

@@ -30,7 +30,7 @@ func (Bool) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (Bool) GetType() reflect.Type {
-	return reflect.TypeOf(true)
+	return reflect.TypeFor[bool]()
 }
 
 func (Bool) Size(numItems int) (int, error) {

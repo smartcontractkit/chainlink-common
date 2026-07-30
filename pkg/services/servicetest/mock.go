@@ -9,7 +9,7 @@ import (
 // Mock is implemented by mock generated [services.Service], due to the embedded [mock.Mock].
 type Mock interface {
 	services.Service
-	On(methodName string, arguments ...interface{}) *mock.Call
+	On(methodName string, arguments ...any) *mock.Call
 	String() string
 }
 

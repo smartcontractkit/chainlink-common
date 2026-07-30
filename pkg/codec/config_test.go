@@ -176,7 +176,7 @@ func TestModifiersConfig(t *testing.T) {
 			modifier, err := conf.ToModifier()
 			require.NoError(t, err)
 
-			_, err = modifier.RetypeToOffChain(reflect.TypeOf(testStruct{}), "")
+			_, err = modifier.RetypeToOffChain(reflect.TypeFor[testStruct](), "")
 			require.NoError(t, err)
 
 			onChain := testStruct{

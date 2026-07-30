@@ -18,6 +18,7 @@ import (
 	prombridge "go.opentelemetry.io/contrib/bridges/prometheus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/promutil"
+	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/promhealth"
@@ -68,11 +70,15 @@ func MustNewStartedServer(loggerName string, opts ...ServerOpt) *Server {
 }
 
 // Deprecated: use NewStartedServer(loggerName, WithOtelViews(otelViews))
+//
+//go:fix inline
 func NewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
 	return NewStartedServer(loggerName, WithOtelViews(otelViews))
 }
 
 // Deprecated: use MustNewStartedServer(loggerName, WithOtelViews(otelViews))
+//
+//go:fix inline
 func MustNewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) *Server {
 	return MustNewStartedServer(loggerName, WithOtelViews(otelViews))
 }
@@ -188,8 +194,17 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
 			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
 			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
+			ChipIngressBufferSize:          s.EnvConfig.ChipIngressBufferSize,
+			ChipIngressMaxBatchSize:        s.EnvConfig.ChipIngressMaxBatchSize,
+			ChipIngressMaxConcurrentSends:  s.EnvConfig.ChipIngressMaxConcurrentSends,
+			ChipIngressSendInterval:        s.EnvConfig.ChipIngressSendInterval,
+			ChipIngressSendTimeout:         s.EnvConfig.ChipIngressSendTimeout,
+			ChipIngressDrainTimeout:        s.EnvConfig.ChipIngressDrainTimeout,
+			ChipIngressMaxGRPCRequestSize:  s.EnvConfig.ChipIngressMaxGRPCRequestSize,
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
+			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
+			MetricViewsDenyAttributes:      s.EnvConfig.TelemetryMetricViewsDenyAttributes,
 		}
 
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {
@@ -338,7 +353,9 @@ func (s *Server) start(opts ...ServerOpt) error {
 	}
 
 	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
+	var meter otelmetric.Meter
 	if bc := beholder.GetClient(); bc != nil {
+		meter = bc.Meter
 		s.LimitsFactory.Meter = bc.Meter
 		s.LimitsFactory.Settings = s.cfg.settingsGetter
 	}
@@ -350,6 +367,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 
 		// Rotating auth: signer is injected later via durableemitter.SetGlobalSigner when the host
 		// provides the CSA keystore (see relayer and standard capabilities startup).
+		emitterCfg := durableemitter.DefaultConfig()
+		emitterCfg.Metrics = &durableemitter.DurableEmitterMetricsConfig{}
 		durableCfg := durableemitter.SetupConfig{
 			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
 			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,
@@ -359,6 +378,8 @@ func (s *Server) start(opts ...ServerOpt) error {
 				AuthPublicKeyHex: s.EnvConfig.TelemetryAuthPubKeyHex,
 			},
 			RetransmitEnabled: false, // LOOP plugins do not run the retransmit loop; the host process handles it.
+			EmitterConfig:     &emitterCfg,
+			Meter:             meter,
 		}
 		store := durableemitter.NewPgDurableEventStore(s.DataSource)
 		var err error
@@ -372,6 +393,19 @@ func (s *Server) start(opts ...ServerOpt) error {
 	}
 
 	return nil
+}
+
+// MeteringConfig returns the resourcemanager.Config for this server's EnvConfig,
+// injecting the server's own durable emitter (if durable emission is configured)
+// rather than reaching for durableemitter's process-global. Opt-in: only LOOPs
+// that want metering (e.g. capability producers) need call this; LOOPs that
+// never will (e.g. csa_keystore, relayer) can ignore it entirely.
+func (s *Server) MeteringConfig() resourcemanager.Config {
+	var emitter resourcemanager.Emitter
+	if s.durableEmitter != nil {
+		emitter = s.durableEmitter
+	}
+	return s.EnvConfig.MeteringConfig(emitter)
 }
 
 // MustRegister registers the HealthReporter with services.HealthChecker, or exits upon failure.

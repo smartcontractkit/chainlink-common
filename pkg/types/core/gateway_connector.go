@@ -48,7 +48,7 @@ type GatewayConnectorHandler interface {
 }
 
 var (
-	_ GatewayConnector         = (*UnimplementedGatewayConnector)(nil)
+	_ GatewayConnector      = (*UnimplementedGatewayConnector)(nil)
 	_ MultiGatewayConnector = (*UnimplementedGatewayConnector)(nil)
 )
 

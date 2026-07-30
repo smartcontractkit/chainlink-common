@@ -3,12 +3,15 @@ package settings
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"strings"
 
 	"github.com/pelletier/go-toml"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 const generatedHeader = "# File generated from source files. DO NOT EDIT.\n"
@@ -134,25 +137,40 @@ func (t *tomlSettings) getFirst(keys ...string) (string, error) {
 
 var _ Getter = &tomlGetter{}
 
+// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
+// NewTOMLRegistry with polling & subscriptions
 type tomlGetter struct {
 	settings *tomlSettings
+	lggr     logger.Logger
 }
 
 // NewTOMLGetter returns a static Getter backed by the given TOML.
-// TODO https://smartcontract-it.atlassian.net/browse/CAPPL-775
-// NewTOMLRegistry with polling & subscriptions
+// Deprecated: use GetterConfig.NewTOMLGetter to include a [logger.Logger]
 func NewTOMLGetter(b []byte) (Getter, error) {
+	return GetterConfig{}.NewTOMLGetter(b)
+}
+
+// NewTOMLGetter returns a static Getter backed by the given TOML.
+func (c GetterConfig) NewTOMLGetter(b []byte) (Getter, error) {
+	if c.Logger == nil {
+		c.Logger = logger.Nop()
+	}
 	s, err := newTOMLSettings(b)
 	if err != nil {
 		return nil, err
 	}
-	return &tomlGetter{settings: s}, nil
+	return &tomlGetter{settings: s, lggr: c.Logger}, nil
 }
 
 func (t *tomlGetter) GetScoped(ctx context.Context, scope Scope, key string) (value string, err error) {
 	keys, err := scope.rawKeys(ctx, key)
 	if err != nil {
-		return "", fmt.Errorf("failed to get raw keys: %w", err)
+		tme, ok := errors.AsType[tenantMissingError](err)
+		if ok && tme.Scope.IsTenantRequired() {
+			return "", fmt.Errorf("failed to get raw keys: %w", err)
+		} else {
+			t.lggr.Errorf("Settings lookup for "+key+" limited by missing tenant at scope "+tme.Scope.String(), "key", key, "err", err)
+		}
 	}
 	return t.settings.getFirst(keys...)
 }

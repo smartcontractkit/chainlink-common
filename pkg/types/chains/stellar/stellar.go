@@ -35,15 +35,31 @@ const (
 )
 
 // Client wraps native Stellar RPC calls via the type/chains/stellar domain types.
-// Methods map 1:1 to the Stellar RPC API.
 type Client interface {
 	// GetLedgerEntries fetches ledger entries by XDR key (used for sequence number lookups).
 	GetLedgerEntries(ctx context.Context, req GetLedgerEntriesRequest) (GetLedgerEntriesResponse, error)
 	// GetLatestLedger returns current ledger info (used for timeout detection).
 	GetLatestLedger(ctx context.Context) (GetLatestLedgerResponse, error)
-	// ReadContract simulates a read-only Soroban contract function call.
-	// Each element of req.Args is a domain ScVal value.
-	ReadContract(ctx context.Context, req ReadContractRequest) (ReadContractResponse, error)
+	// GetLedgers returns a paginated range of ledgers starting at a height/cursor.
+	GetLedgers(ctx context.Context, req GetLedgersRequest) (GetLedgersResponse, error)
+	// GetEvents fetches contract events matching the provided ledger range, filters, and pagination.
+	GetEvents(ctx context.Context, req GetEventsRequest) (GetEventsResponse, error)
+	// GetTransaction fetches an on-chain transaction by hash.
+	GetTransaction(ctx context.Context, req GetTransactionRequest) (GetTransactionResponse, error)
+	// SimulateTransaction builds a synthetic single-operation Soroban InvokeContract
+	// transaction and simulates it without submitting it.
+	SimulateTransaction(ctx context.Context, req SimulateTransactionRequest) (SimulateTransactionResponse, error)
+}
+
+// GetSigningAccountResponse is the relayer's default TXM signing account (G... StrKey).
+//
+// Some Soroban contracts (e.g. CRE forwarder report()) take the transmitter as an
+// explicit Address argument checked via require_auth(). That contract argument is
+// separate from the transaction source account (FromAddress) used for signing.
+// Callers that must encode such arguments should query this address from the relayer
+// keystore rather than hard-coding capability config.
+type GetSigningAccountResponse struct {
+	AccountAddress string
 }
 
 // GetLedgerEntriesRequest fetches ledger entries by XDR-encoded keys.
@@ -74,36 +90,106 @@ type GetLedgerEntriesResponse struct {
 	LatestLedger uint32
 }
 
-// ReadContractRequest is the domain representation of a Soroban read-only call.
-type ReadContractRequest struct {
+// SimulateAuthMode controls how Soroban authorization is handled during simulation.
+type SimulateAuthMode string
+
+const (
+	// SimulateAuthModeRecord records required authorization entries.
+	// This is the recommended default when AuthMode is empty.
+	SimulateAuthModeRecord SimulateAuthMode = "record"
+
+	// SimulateAuthModeEnforce enforces authorization entries already present on the invocation.
+	SimulateAuthModeEnforce SimulateAuthMode = "enforce"
+
+	// SimulateAuthModeRecordAllowNonroot records non-root authorization entries where supported.
+	SimulateAuthModeRecordAllowNonroot SimulateAuthMode = "record_allow_nonroot"
+)
+
+// SimulateResourceConfig carries optional resource configuration for simulation.
+type SimulateResourceConfig struct {
+	// InstructionLeeway is the extra instruction budget leeway requested for simulation.
+	InstructionLeeway uint64
+}
+
+// SimulateTransactionRequest is the domain representation of a Soroban contract-call simulation.
+//
+// It builds a synthetic single-operation InvokeContract transaction from ContractID,
+// Function, and Args, then simulates that transaction without submitting it.
+type SimulateTransactionRequest struct {
 	// ContractID is the Stellar contract address in C… StrKey encoding.
 	ContractID string
+
 	// Function is the Soroban function name to call.
 	Function string
+
 	// Args holds one ScVal per contract argument.
 	// An empty slice is valid for zero-argument functions.
 	Args []ScVal
-	// SourceAccount is the G… account to simulate the call as (the invoker).
-	// It is required for contracts whose result depends on the caller, e.g. that
-	// call require_auth or branch on the invoker. Leave empty for source-insensitive reads.
+
+	// SourceAccount is the G… account used as the synthetic transaction and operation source.
+	//
+	// This is not necessarily the same as any Address argument that the contract
+	// authorizes via require_auth. Leave empty to use the service default source.
 	SourceAccount string
+
+	// AuthMode controls authorization behavior during simulation.
+	// Empty means the implementation default, which should be record.
+	AuthMode SimulateAuthMode
+
+	// ResourceConfig optionally customizes simulation resource behavior.
+	ResourceConfig *SimulateResourceConfig
 }
 
-// ReadContractResponse is the domain representation of a Soroban simulation result.
-type ReadContractResponse struct {
-	// Result is a serialized base64 string - return value of the Host Function call.
-	Result string
+// SimulateRestorePreamble carries restore transaction data returned by simulation
+// when archived ledger entries must be restored before the invocation can be submitted.
+type SimulateRestorePreamble struct {
+	// TransactionDataXDR is the base64-encoded SorobanTransactionData for restore.
+	TransactionDataXDR string
+
+	// MinResourceFee is the minimum resource fee for the restore preamble.
+	MinResourceFee int64
+}
+
+// SimulateTransactionResponse is the domain representation of a Soroban simulation result.
+type SimulateTransactionResponse struct {
 	// LedgerSequence is the ledger that was used for the simulation.
 	LedgerSequence uint32
-	// Error is non-empty when the call failed.
+
+	// Success is true when transport succeeded and the simulation itself did not
+	// return a host or contract error.
+	Success bool
+
+	// Error is non-empty when simulation failed at the host or contract layer.
 	Error string
+
+	// ReturnValueXDR is the base64-encoded ScVal return value, when present.
+	// Empty is valid for void/unit-returning contract calls.
+	ReturnValueXDR string
+
+	// RequiredAuthXDR contains base64-encoded SorobanAuthorizationEntry values
+	// returned by simulation, typically when AuthMode is record.
+	RequiredAuthXDR []string
+
+	// EventsXDR contains base64-encoded diagnostic/event XDR values returned by simulation.
+	EventsXDR []string
+
+	// TransactionDataXDR is the base64-encoded SorobanTransactionData returned by simulation.
+	TransactionDataXDR string
+
+	// MinResourceFee is the minimum resource fee returned by simulation.
+	MinResourceFee int64
+
+	// RestorePreamble is set when archived ledger entries must be restored before submission.
+	RestorePreamble *SimulateRestorePreamble
 }
 
 // SubmitTransactionRequest invokes a Soroban contract via the chain's TXM pipeline.
 // The TXM handles simulation, sequence management, signing, fee bumping, and on-chain confirmation;
 // callers only need to supply the logical contract invocation parameters.
 type SubmitTransactionRequest struct {
-	// IdempotencyKey optionally identifies the transaction for deduplication and status look-up.
+	// IdempotencyKey optionally identifies the transaction for TXM deduplication.
+	// Leave empty to let the relayer TXM assign one; the assigned key is returned
+	// as TxIdempotencyKey in SubmitTransactionResponse.
 	IdempotencyKey string
 	// FromAddress is the source/signer account (G… StrKey).
 	// Leave empty to use the TXM's default keystore account.
@@ -140,6 +226,66 @@ type SubmitTransactionResponse struct {
 	ResultXDR string
 	// ResultMetaXDR is the base64-encoded result meta XDR when available.
 	ResultMetaXDR string
+	// Error is non-empty when the transaction was accepted but failed on-chain.
+	Error string
+	// TransactionFee is the total fee charged in stroops (FeeCharged), when available.
+	TransactionFee *uint64
+	// BlockTimestamp is the ledger close time in microseconds, when available.
+	BlockTimestamp *uint64
+}
+
+// LedgerPaginationOptions controls GetLedgers paging. Mirrors the native
+// go-stellar-sdk rpc.LedgerPaginationOptions.
+type LedgerPaginationOptions struct {
+	// Cursor is the paging cursor from a previous GetLedgersResponse.
+	// Mutually exclusive with GetLedgersRequest.StartLedger (native RPC rejects both being set).
+	Cursor string
+	// Limit is the maximum number of ledgers to return.
+	Limit uint32
+}
+
+// GetLedgersRequest fetches a paginated range of ledgers. Mirrors the native
+// go-stellar-sdk rpc.GetLedgersRequest (the XDR format is always base64).
+type GetLedgersRequest struct {
+	// StartLedger is the first ledger sequence to fetch.
+	// Required unless Pagination.Cursor is set. Mutually exclusive with Pagination.Cursor
+	// (native RPC rejects both being set).
+	StartLedger uint32
+	// Pagination optionally sets the cursor and limit.
+	Pagination *LedgerPaginationOptions
+}
+
+// LedgerInfo is a single ledger returned by GetLedgers. Mirrors the native
+// go-stellar-sdk rpc.LedgerInfo (hex hash, base64 XDR blobs).
+type LedgerInfo struct {
+	// Hash is the hex-encoded ledger hash.
+	Hash string
+	// Sequence is the ledger sequence number.
+	Sequence uint32
+	// LedgerCloseTime is the unix timestamp when the ledger closed.
+	LedgerCloseTime int64
+	// LedgerHeaderXDR is the base64-encoded LedgerHeaderHistoryEntry XDR.
+	LedgerHeaderXDR string
+	// LedgerMetadataXDR is the base64-encoded LedgerCloseMeta XDR.
+	LedgerMetadataXDR string
+}
+
+// GetLedgersResponse holds a paginated range of ledgers. Mirrors the native
+// go-stellar-sdk rpc.GetLedgersResponse.
+type GetLedgersResponse struct {
+	// Ledgers holds the returned ledgers (may be fewer than the limit requested).
+	Ledgers []LedgerInfo
+	// LatestLedger is the latest ledger sequence known to the RPC.
+	LatestLedger uint32
+	// LatestLedgerCloseTime is the close time of the latest ledger.
+	LatestLedgerCloseTime int64
+	// OldestLedger is the oldest ledger retained by the RPC.
+	OldestLedger uint32
+	// OldestLedgerCloseTime is the close time of the oldest retained ledger.
+	OldestLedgerCloseTime int64
+	// Cursor is the paging cursor for the next page; pass as Pagination.Cursor
+	// on a subsequent GetLedgersRequest.
+	Cursor string
 }
 
 // GetLatestLedgerResponse holds the current ledger state.
@@ -154,7 +300,7 @@ type GetLatestLedgerResponse struct {
 	LedgerCloseTime int64
 	// LedgerHeaderXDR is the base64-encoded LedgerHeader XDR for the latest ledger.
 	LedgerHeaderXDR string
-	// LedgerMetadataXDR is the base64-encoded LedgerCloseMetaV2 XDR for the latest ledger.
+	// LedgerMetadataXDR is the base64-encoded LedgerCloseMeta XDR for the latest ledger.
 	LedgerMetadataXDR string
 }
 
@@ -329,3 +475,78 @@ const (
 	ScValTypeLedgerKeyContractInstance
 	ScValTypeNonceKey
 )
+
+type EventType int32
+
+const (
+	EventTypeSystem EventType = iota
+	EventTypeContract
+)
+
+type TopicSegment struct {
+	Wildcard *string
+	Value    *ScVal
+}
+
+type TopicFilter struct {
+	Segments []TopicSegment
+}
+
+type EventFilter struct {
+	EventTypes  []EventType
+	ContractIDs []string
+	Topics      []TopicFilter
+}
+
+type PaginationOptions struct {
+	Cursor string
+	Limit  uint32
+}
+
+type GetEventsRequest struct {
+	StartLedger uint32
+	EndLedger   uint32
+
+	Filters    []EventFilter
+	Pagination *PaginationOptions
+}
+
+type EventInfo struct {
+	EventType EventType
+
+	Ledger         uint32
+	LedgerClosedAt string
+
+	ContractID string
+	ID         string
+
+	OperationIndex   uint32
+	TransactionIndex uint32
+	TransactionHash  string
+
+	Topics []ScVal
+	Value  ScVal
+}
+
+type GetEventsResponse struct {
+	Events []EventInfo
+
+	Cursor string
+
+	LatestLedger          uint32
+	OldestLedger          uint32
+	LatestLedgerCloseTime int64
+	OldestLedgerCloseTime int64
+}
+
+// GetTransactionRequest fetches a transaction by hash.
+type GetTransactionRequest struct {
+	TxHash string
+}
+
+// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+type GetTransactionResponse struct {
+	FeeStroops      uint64
+	LedgerSequence  uint32
+	LedgerCloseTime int64 // unix seconds
+}

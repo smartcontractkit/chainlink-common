@@ -109,13 +109,14 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 	if err != nil {
 		return NewNoopClient(), err
 	}
-	meterProvider := sdkmetric.NewMeterProvider(
+	mpOpts := append(cfg.Config.metricOptions(),
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				metricExporter,
 				sdkmetric.WithInterval(100*time.Millisecond), // Default is 10s
 			)),
 	)
+	meterProvider := sdkmetric.NewMeterProvider(mpOpts...)
 	meter := meterProvider.Meter(defaultPackageName)
 
 	// MessageEmitter

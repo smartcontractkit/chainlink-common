@@ -20,6 +20,7 @@ func TestExport(t *testing.T) {
 		{chain: corekeys.StarkNet},
 		{chain: corekeys.Aptos},
 		{chain: corekeys.Tron},
+		{chain: corekeys.Stellar},
 	}
 	for _, tc := range tt {
 		t.Run(string(tc.chain), func(t *testing.T) {

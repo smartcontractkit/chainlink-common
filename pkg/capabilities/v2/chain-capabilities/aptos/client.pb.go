@@ -1332,6 +1332,7 @@ type WriteReportReply struct {
 	TransactionFee                  *uint64                          `protobuf:"varint,3,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"` // gas used in octas
 	ErrorMessage                    *string                          `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
 	ReceiverContractExecutionStatus *ReceiverContractExecutionStatus `protobuf:"varint,5,opt,name=receiver_contract_execution_status,json=receiverContractExecutionStatus,proto3,enum=capabilities.blockchain.aptos.v1alpha.ReceiverContractExecutionStatus,oneof" json:"receiver_contract_execution_status,omitempty"`
+	BlockTimestamp                  *uint64                          `protobuf:"varint,6,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // block timestamp in microseconds
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -1399,6 +1400,13 @@ func (x *WriteReportReply) GetReceiverContractExecutionStatus() ReceiverContract
 		return *x.ReceiverContractExecutionStatus
 	}
 	return ReceiverContractExecutionStatus_RECEIVER_CONTRACT_EXECUTION_STATUS_SUCCESS
+}
+
+func (x *WriteReportReply) GetBlockTimestamp() uint64 {
+	if x != nil && x.BlockTimestamp != nil {
+		return *x.BlockTimestamp
+	}
+	return 0
 }
 
 var File_capabilities_blockchain_aptos_v1alpha_client_proto protoreflect.FileDescriptor
@@ -1482,18 +1490,20 @@ const file_capabilities_blockchain_aptos_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
 	"gas_config\x18\x02 \x01(\v20.capabilities.blockchain.aptos.v1alpha.GasConfigH\x00R\tgasConfig\x88\x01\x01\x123\n" +
 	"\x06report\x18\x03 \x01(\v2\x1b.sdk.v1alpha.ReportResponseR\x06reportB\r\n" +
-	"\v_gas_config\"\xca\x03\n" +
+	"\v_gas_config\"\x8c\x04\n" +
 	"\x10WriteReportReply\x12L\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2/.capabilities.blockchain.aptos.v1alpha.TxStatusR\btxStatus\x12\x1c\n" +
 	"\atx_hash\x18\x02 \x01(\tH\x00R\x06txHash\x88\x01\x01\x12,\n" +
 	"\x0ftransaction_fee\x18\x03 \x01(\x04H\x01R\x0etransactionFee\x88\x01\x01\x12(\n" +
 	"\rerror_message\x18\x04 \x01(\tH\x02R\ferrorMessage\x88\x01\x01\x12\x98\x01\n" +
-	"\"receiver_contract_execution_status\x18\x05 \x01(\x0e2F.capabilities.blockchain.aptos.v1alpha.ReceiverContractExecutionStatusH\x03R\x1freceiverContractExecutionStatus\x88\x01\x01B\n" +
+	"\"receiver_contract_execution_status\x18\x05 \x01(\x0e2F.capabilities.blockchain.aptos.v1alpha.ReceiverContractExecutionStatusH\x03R\x1freceiverContractExecutionStatus\x88\x01\x01\x12,\n" +
+	"\x0fblock_timestamp\x18\x06 \x01(\x04H\x04R\x0eblockTimestamp\x88\x01\x01B\n" +
 	"\n" +
 	"\b_tx_hashB\x12\n" +
 	"\x10_transaction_feeB\x10\n" +
 	"\x0e_error_messageB%\n" +
-	"#_receiver_contract_execution_status*M\n" +
+	"#_receiver_contract_execution_statusB\x12\n" +
+	"\x10_block_timestamp*M\n" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x15\n" +
 	"\x11TX_STATUS_ABORTED\x10\x01\x12\x15\n" +

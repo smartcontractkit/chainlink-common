@@ -20,13 +20,31 @@ import (
 type DurableEmitterMetricsConfig struct {
 	// PollInterval is how often queue and optional process gauges refresh. Zero = 10s.
 	PollInterval time.Duration
-	// NearExpiryLead is the window before EventTTL used for queue.near_ttl (DLQ pressure proxy). Zero = 5m.
-	NearExpiryLead time.Duration
 	// MaxQueuePayloadBytes, if > 0, records capacity_usage_ratio = queue_payload_bytes / max.
 	MaxQueuePayloadBytes int64
 }
 
+// publishPhase identifies the delivery path recorded by publish metrics.
+type publishPhase int
+
+const (
+	publishPhaseBatch publishPhase = iota
+	publishPhaseRetransmit
+)
+
+func (p publishPhase) String() string {
+	switch p {
+	case publishPhaseBatch:
+		return "batch"
+	case publishPhaseRetransmit:
+		return "retransmit"
+	default:
+		return "unknown"
+	}
+}
+
 type durableEmitterMetrics struct {
+	clientName         string
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -43,15 +61,24 @@ type durableEmitterMetrics struct {
 	storeOps           metric.Int64Counter
 	storeOpDuration    metric.Float64Histogram
 	queueDepth         metric.Int64Gauge
-	queueDepthMax      metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
-	queueNearTTL       metric.Int64Gauge
+	queueTTLBudgetSec  metric.Int64Gauge
 	queueCapacityRatio metric.Float64Gauge
 	procHeapInuse      metric.Int64Gauge
 	procHeapSys        metric.Int64Gauge
 	procCPUUser        metric.Float64Gauge
 	procCPUSys         metric.Float64Gauge
+	// batchEnqueueBufferFull counts events that could not be handed to the
+	// batch emitter because its internal queue was full and must be picked up
+	// by the retransmit loop instead. Labels: phase={batch,retransmit}.
+	batchEnqueueBufferFull metric.Int64Counter
+	// insertCoalescerFill reports the write-coalescer channel fill ratio
+	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
+	insertCoalescerFill metric.Float64Gauge
+	// deleteCoalescerFill reports the delete-coalescer channel fill ratio
+	// (len/cap). Only meaningful when DeleteBatchSize > 0; otherwise 0.
+	deleteCoalescerFill metric.Float64Gauge
 }
 
 // durationBuckets provides histogram boundaries (in seconds) tuned for
@@ -66,11 +93,13 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
 // supplied meter. The caller is responsible for the meter's scope (the
 // instrument prefix below acts as the metric namespace).
-func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error) {
+func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEmitterMetrics, error) {
 	if meter == nil {
 		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
 	}
-	m := &durableEmitterMetrics{}
+	m := &durableEmitterMetrics{
+		clientName: clientName,
+	}
 	var err error
 	if m.emitSuccess, err = meter.Int64Counter(
 		"durable_emitter.emit.success",
@@ -89,7 +118,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.emitDuration, err = meter.Float64Histogram(
 		"durable_emitter.emit.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds)"),
+		metric.WithDescription("Emit insert path duration (seconds, fractional; aligns with Prometheus _duration_seconds); labels: error={true,false}"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -119,7 +148,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={immediate,retransmit,best_effort}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit}, error={true,false}, client_name"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -127,28 +156,28 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishBatchOK, err = meter.Int64Counter(
 		"durable_emitter.publish.retransmit.batch.success",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchErr, err = meter.Int64Counter(
 		"durable_emitter.publish.retransmit.batch.failure",
 		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; retransmit uses serial Publish (see retransmit.events.*)"),
+		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchEvOK, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.events.success",
+		"durable_emitter.publish.batch.events.success",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Retransmit Publish RPC successes (one RPC per queued event)"),
+		metric.WithDescription("Batch Publish RPC successes (one count per event in a completed batch); labels: phase={batch,retransmit}"),
 	); err != nil {
 		return nil, err
 	}
 	if m.publishBatchEvErr, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.events.failure",
+		"durable_emitter.publish.batch.events.failure",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Retransmit Publish RPC failures (event stays queued)"),
+		metric.WithDescription("Batch Publish RPC failures (event stays queued); labels: phase={batch,retransmit}"),
 	); err != nil {
 		return nil, err
 	}
@@ -188,13 +217,6 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.queueDepthMax, err = meter.Int64Gauge(
-		"durable_emitter.queue.depth_max",
-		metric.WithUnit("{row}"),
-		metric.WithDescription("High-water mark of pending queue depth since start"),
-	); err != nil {
-		return nil, err
-	}
 	if m.queuePayloadBytes, err = meter.Int64Gauge(
 		"durable_emitter.queue.payload_bytes",
 		metric.WithUnit("By"),
@@ -209,10 +231,10 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.queueNearTTL, err = meter.Int64Gauge(
-		"durable_emitter.queue.near_ttl",
-		metric.WithUnit("{row}"),
-		metric.WithDescription("Rows within near-expiry window of EventTTL (DLQ pressure proxy; no separate DLQ table)"),
+	if m.queueTTLBudgetSec, err = meter.Int64Gauge(
+		"durable_emitter.queue.ttl_budget_seconds",
+		metric.WithUnit("s"),
+		metric.WithDescription("Seconds of TTL headroom for the oldest pending event (EventTTL - oldest age); low/negative → DLQ/expiry pressure. Alert engine decides what 'near' means"),
 	); err != nil {
 		return nil, err
 	}
@@ -251,6 +273,27 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
+	if m.batchEnqueueBufferFull, err = meter.Int64Counter(
+		"durable_emitter.batch_enqueue.buffer_full",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={batch,retransmit}."),
+	); err != nil {
+		return nil, err
+	}
+	if m.insertCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.insert_coalescer.queue_fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Write-coalescer channel fill ratio (len/cap); 0 when write coalescing is disabled"),
+	); err != nil {
+		return nil, err
+	}
+	if m.deleteCoalescerFill, err = meter.Float64Gauge(
+		"durable_emitter.delete_coalescer.queue_fill_ratio",
+		metric.WithUnit("1"),
+		metric.WithDescription("Delete-coalescer channel fill ratio (len/cap); 0 when delete coalescing is disabled"),
+	); err != nil {
+		return nil, err
+	}
 	return m, nil
 }
 
@@ -266,15 +309,12 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 	m.storeOpDuration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("operation", op)))
 }
 
-// pollQueueGauges refreshes DB-derived queue statistics (payload bytes, oldest
-// pending age, near-TTL count). Queue depth itself is tracked atomically by
-// DurableEmitter.incPending/decPending and recorded there.
-func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs DurableQueueObserver, ttl, lead time.Duration, maxBytes int64) {
-	if m == nil || obs == nil {
-		return
-	}
-	st, err := obs.ObserveDurableQueue(ctx, ttl, lead)
-	if err != nil {
+// recordQueueStats records the DB-derived queue statistics (payload bytes,
+// oldest pending age, TTL budget) from an already-observed snapshot. The
+// queue depth gauge itself is recorded separately by DurableEmitter from the
+// same snapshot's authoritative TotalRows count.
+func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st DurableQueueStats, maxBytes int64) {
+	if m == nil {
 		return
 	}
 	m.queuePayloadBytes.Record(ctx, st.PayloadBytes)
@@ -283,20 +323,45 @@ func (m *durableEmitterMetrics) pollQueueGauges(ctx context.Context, obs Durable
 	} else {
 		m.queueOldestAgeSec.Record(ctx, st.OldestPendingAge.Seconds())
 	}
-	m.queueNearTTL.Record(ctx, st.NearTTLCount)
+	m.queueTTLBudgetSec.Record(ctx, int64(st.TTLBudget/time.Second))
 	if maxBytes > 0 {
 		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
 	}
 }
 
-func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase string, err error) {
+func (m *durableEmitterMetrics) recordEmitDuration(ctx context.Context, elapsed time.Duration, err error) {
+	if m == nil {
+		return
+	}
+	m.emitDuration.Record(ctx, elapsed.Seconds(),
+		metric.WithAttributes(attribute.Bool("error", err != nil)),
+	)
+}
+
+func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase publishPhase, err error) {
 	if m == nil {
 		return
 	}
 	m.publishDuration.Record(ctx, elapsed.Seconds(),
 		metric.WithAttributes(
-			attribute.String("phase", phase),
+			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
+			attribute.String("client_name", m.clientName),
 		),
 	)
+}
+
+func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, phase publishPhase, err error) {
+	if m == nil {
+		return
+	}
+	attrs := metric.WithAttributes(
+		attribute.String("phase", phase.String()),
+		attribute.String("client_name", m.clientName),
+	)
+	if err != nil {
+		m.publishBatchEvErr.Add(ctx, 1, attrs)
+	} else {
+		m.publishBatchEvOK.Add(ctx, 1, attrs)
+	}
 }

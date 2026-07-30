@@ -12,13 +12,14 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -41,6 +42,7 @@ const v2ImportPrefix = "version_v2"
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute
+	defaultPrehookTimeout            = 10 * time.Second
 	defaultMinMemoryMBs              = uint64(128)
 	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
@@ -65,6 +67,7 @@ type DeterminismConfig struct {
 type ModuleConfig struct {
 	TickInterval     time.Duration
 	Timeout          *time.Duration
+	PrehookTimeout   *time.Duration
 	MaxMemoryMBs     uint64
 	MinMemoryMBs     uint64
 	MemoryLimiter    limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
@@ -108,6 +111,13 @@ type ModuleConfig struct {
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
+
+	// guestStdoutFile and guestStderrFile are the paths the WASM guest's stdout/stderr are
+	// redirected to. They always default to os.DevNull so the guest can never write to the
+	// host's own stdout/stderr; unexported so callers outside this package can't override
+	// that. Tests in this package may set them directly to a temp file to inspect guest output.
+	guestStdoutFile string
+	guestStderrFile string
 }
 
 type ModuleBase = host.ModuleBase
@@ -197,6 +207,18 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.Timeout == nil {
 		modCfg.Timeout = &defaultTimeout
+	}
+
+	if modCfg.PrehookTimeout == nil {
+		modCfg.PrehookTimeout = &defaultPrehookTimeout
+	}
+
+	if modCfg.guestStdoutFile == "" {
+		modCfg.guestStdoutFile = os.DevNull
+	}
+
+	if modCfg.guestStderrFile == "" {
+		modCfg.guestStderrFile = os.DevNull
 	}
 
 	if modCfg.MinMemoryMBs == 0 {
@@ -575,7 +597,12 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 		r.MaxResponseSize = maxSize
 	}
 
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor)
+	timeout := *m.cfg.Timeout
+	switch req.Request.(type) {
+	case *sdkpb.ExecuteRequest_PreHook:
+		timeout = *m.cfg.PrehookTimeout
+	}
+	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
 }
 
 // Run is deprecated, use execute instead
@@ -601,7 +628,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 		}
 	}
 
-	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil)
+	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil, *m.cfg.Timeout)
 }
 
 func runWasm[I, O proto.Message](
@@ -610,17 +637,19 @@ func runWasm[I, O proto.Message](
 	request I,
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
-	helper ExecutionHelper) (O, error) {
+	helper ExecutionHelper,
+	maxTimeout time.Duration) (O, error) {
 	var o O
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
 	ctxDeadline, hasDeadline := ctx.Deadline()
 	var ctxWithTimeout context.Context
 	var cancel func()
-	if hasDeadline && ctxDeadline.Before(time.Now().Add(*m.cfg.Timeout)) {
+
+	if hasDeadline && ctxDeadline.Before(time.Now().Add(maxTimeout)) {
 		ctxWithTimeout, cancel = context.WithCancel(ctx)
 	} else {
-		ctxWithTimeout, cancel = context.WithTimeout(ctx, *m.cfg.Timeout)
+		ctxWithTimeout, cancel = context.WithTimeout(ctx, maxTimeout)
 	}
 
 	defer cancel()
@@ -642,7 +671,12 @@ func runWasm[I, O proto.Message](
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
-	wasi.InheritStdout()
+	if err := wasi.SetStdoutFile(m.cfg.guestStdoutFile); err != nil {
+		return o, fmt.Errorf("error setting guest stdout file: %w", err)
+	}
+	if err := wasi.SetStderrFile(m.cfg.guestStderrFile); err != nil {
+		return o, fmt.Errorf("error setting guest stderr file: %w", err)
+	}
 	defer wasi.Close()
 
 	wasi.SetArgv([]string{"wasi", reqstr})
@@ -669,7 +703,7 @@ func runWasm[I, O proto.Message](
 		1,  // memories
 	)
 
-	deadline := *m.cfg.Timeout / m.cfg.TickInterval
+	deadline := maxTimeout / m.cfg.TickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()
@@ -684,6 +718,7 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
 		module:              m,
 		executor:            helper,
@@ -731,7 +766,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= *m.cfg.Timeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}
@@ -999,44 +1034,58 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			return
 		}
 
-		var raw map[string]any
-		innerErr = json.Unmarshal(b, &raw)
+		innerErr = logRawMessage(logger, b)
 		if innerErr != nil {
+			logger.Errorf("error calling log: %s", innerErr)
 			return
 		}
-
-		level := raw["level"]
-		delete(raw, "level")
-
-		msg := raw["msg"].(string)
-		delete(raw, "msg")
-		delete(raw, "ts")
-
-		var args []any
-		for k, v := range raw {
-			args = append(args, k, v)
-		}
-
-		reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
-		sanitizedMsg := reg.ReplaceAllString(msg, "*")
-
-		switch level {
-		case "debug":
-			logger.Debugw(sanitizedMsg, args...)
-		case "info":
-			logger.Infow(sanitizedMsg, args...)
-		case "warn":
-			logger.Warnw(sanitizedMsg, args...)
-		case "error":
-			logger.Errorw(sanitizedMsg, args...)
-		case "panic":
-			logger.Panicw(sanitizedMsg, args...)
-		case "fatal":
-			logger.Fatalw(sanitizedMsg, args...)
-		default:
-			logger.Infow(sanitizedMsg, args...)
-		}
 	}
+}
+
+// logRawMessage decodes a JSON-encoded log message received from the WASM guest and
+// logs it at the appropriate level.
+func logRawMessage(logger logger.Logger, b []byte) error {
+	var raw map[string]any
+	innerErr := json.Unmarshal(b, &raw)
+	if innerErr != nil {
+		return innerErr
+	}
+
+	level := raw["level"]
+	delete(raw, "level")
+
+	msg, ok := raw["msg"].(string)
+	if !ok {
+		return fmt.Errorf("could not coerce msg to string, got %T", raw["msg"])
+	}
+	delete(raw, "msg")
+	delete(raw, "ts")
+
+	var args []any
+	for k, v := range raw {
+		args = append(args, k, v)
+	}
+
+	reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
+	sanitizedMsg := reg.ReplaceAllString(msg, "*")
+
+	switch level {
+	case "debug":
+		logger.Debugw(sanitizedMsg, args...)
+	case "info":
+		logger.Infow(sanitizedMsg, args...)
+	case "warn":
+		logger.Warnw(sanitizedMsg, args...)
+	case "error":
+		logger.Errorw(sanitizedMsg, args...)
+	case "panic", "fatal":
+		// The guest should never be able to panic/exit the host
+		logger.Errorw(sanitizedMsg, args...)
+	default:
+		logger.Infow(sanitizedMsg, args...)
+	}
+
+	return nil
 }
 
 type unimplementedMessageEmitter struct{}
@@ -1150,8 +1199,16 @@ func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
 
 func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
 	memory := wasmMemoryAccessor(caller)
-	if int32(len(memory)) < ptr+size {
+	if ptr < 0 || size < 0 || int64(ptr) > int64(len(memory)) {
+		return -1
+	}
+
+	// widen to int64 so a guest-supplied ptr/size near math.MaxInt32 cannot
+	// overflow the bounds check and drive size negative below.
+	if int64(ptr)+int64(size) > int64(len(memory)) {
 		size = int32(len(memory)) - ptr
+	}
+	if int(size) < len(src) {
 		src = src[:size]
 	}
 
@@ -1162,7 +1219,7 @@ func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int3
 
 // write copies the given src byte slice into the memory at the given pointer and max size.
 func write(memory, src []byte, ptr, maxSize int32) int64 {
-	if ptr < 0 {
+	if ptr < 0 || maxSize < 0 {
 		return -1
 	}
 
@@ -1170,7 +1227,9 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 		return -1
 	}
 
-	if int32(len(memory)) < ptr+maxSize {
+	// widen to int64 so a guest-supplied ptr near math.MaxInt32 cannot overflow
+	// the bounds check into a negative value and bypass it.
+	if int64(ptr)+int64(maxSize) > int64(len(memory)) {
 		return -1
 	}
 	buffer := memory[ptr : ptr+int32(len(src))]

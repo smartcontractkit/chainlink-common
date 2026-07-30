@@ -63,12 +63,16 @@ type orgResolver struct {
 
 // NewOrgResolver creates a new org resolver with the specified configuration
 // Deprecated: Use Config.New
+//
+//go:fix inline
 func NewOrgResolver(cfg Config, logger log.Logger) (*orgResolver, error) {
 	return cfg.New(logger)
 }
 
 // NewOrgResolverWithClient creates a new org resolver with an optional injected client (for testing)
 // Deprecated: Use Config.New
+//
+//go:fix inlin
 func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceClient, logger log.Logger) (*orgResolver, error) {
 	cfg.Client = client
 	return cfg.New(logger)

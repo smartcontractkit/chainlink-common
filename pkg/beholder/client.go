@@ -290,6 +290,8 @@ func (n noCloseEmitter) Close() error { return nil }
 
 // Returns a new Client with the same configuration but with a different package name
 // Deprecated: Use ForName
+//
+//go:fix inline
 func (c Client) ForPackage(name string) Client {
 	return c.ForName(name)
 }
@@ -363,10 +365,10 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 		return nil, err
 	}
 
-	// Add custom resource attributes
+	// Add custom resource attributes last so they override detected and default values.
 	resource, err = sdkresource.Merge(
-		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
 		resource,
+		sdkresource.NewSchemaless(cfg.ResourceAttributes...),
 	)
 	if err != nil {
 		return nil, err
@@ -549,11 +551,11 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	for _, p := range cfg.MetricProducers {
 		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))
 	}
-	return sdkmetric.NewMeterProvider(
+	mpOpts := append(cfg.metricOptions(),
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, readerOpts...)),
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithView(cfg.MetricViews...),
-	), nil
+	)
+	return sdkmetric.NewMeterProvider(mpOpts...), nil
 }
 
 // newLoggerOpts creates options for a logger exporter

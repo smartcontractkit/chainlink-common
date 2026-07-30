@@ -67,7 +67,7 @@ func (i *bigInt) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (i *bigInt) GetType() reflect.Type {
-	return reflect.TypeOf((*big.Int)(nil))
+	return reflect.TypeFor[*big.Int]()
 }
 
 func (i *bigInt) Size(_ int) (int, error) {

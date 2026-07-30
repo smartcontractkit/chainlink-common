@@ -2,11 +2,11 @@ package nitro
 
 import (
 	"crypto/ecdsa"
-	"crypto/sha256"
 	"crypto/sha512"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -22,7 +22,8 @@ var (
 	errBadAttestationDocument        = errors.New("bad attestation document")
 	errMandatoryFieldsMissing        = errors.New("attestation document is missing mandatory fields")
 	errBadDigest                     = errors.New("attestation digest is not SHA384")
-	errBadTimestamp                  = errors.New("attestation timestamp is 0")
+	errBadTimestamp                  = errors.New("attestation timestamp is zero or out of range")
+	errStaleAttestation              = errors.New("attestation timestamp is outside the allowed window")
 	errBadPCRs                       = errors.New("attestation pcrs is less than 1 or more than 32")
 	errBadPCRIndex                   = errors.New("attestation pcr index is not in [0, 32)")
 	errBadPCRValue                   = errors.New("attestation pcr value length is invalid")
@@ -32,13 +33,20 @@ var (
 	errBadUserData                   = errors.New("attestation user_data length is invalid")
 	errBadNonce                      = errors.New("attestation nonce length is invalid")
 	errBadCertificatePublicKeyAlgo   = errors.New("attestation certificate public key algorithm is not ECDSA")
+	errUnsupportedLeafCurve          = errors.New("attestation certificate public key curve is not P-384")
 	errBadCertificateSigningAlgo     = errors.New("attestation certificate signature algorithm is not ECDSAWithSHA384")
 	errBadSignature                  = errors.New("attestation signature does not match certificate")
 )
 
+// maxAttestationAge rejects attestations not consumed promptly after issuance. [CL112-10]
+const maxAttestationAge = 5 * time.Minute
+
 type verifyResult struct {
 	document    *attestationDocument
 	signatureOK bool
+	// leafPublicKey is the SPKI (DER) encoding of the end-entity certificate
+	// public key. Populated only when signatureOK is true.
+	leafPublicKey []byte
 }
 
 type attestationDocument struct {
@@ -111,6 +119,16 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 	if currentTime.IsZero() {
 		currentTime = time.Now()
 	}
+
+	// doc.Timestamp is epoch milliseconds; reject if it overflows int64.
+	if doc.Timestamp > math.MaxInt64 {
+		return nil, errBadTimestamp
+	}
+	issued := time.UnixMilli(int64(doc.Timestamp))
+	// Reject both stale and far-future timestamps (absolute skew).
+	if skew := currentTime.Sub(issued); skew > maxAttestationAge || skew < -maxAttestationAge {
+		return nil, errStaleAttestation
+	}
 	if _, err := leafCert.Verify(x509.VerifyOptions{
 		Intermediates: intermediates,
 		Roots:         roots,
@@ -134,12 +152,23 @@ func verifyAttestationDocument(data []byte, roots *x509.CertPool, currentTime ti
 	if !ok {
 		return nil, errBadCertificatePublicKeyAlgo
 	}
+	// Pin the leaf key to P-384 here so an unsupported curve surfaces as a
+	// distinct error rather than a misleading "bad signature" from
+	// hashForCurve's rejection. Mirrors the ES384 alg enforcement. [CL112-12]
+	if pubKey.Curve.Params().Name != "P-384" {
+		return nil, errUnsupportedLeafCurve
+	}
 	signatureOK := verifyECDSASignature(pubKey, sigStructure, sign1.Signature)
 	if !signatureOK {
 		return &verifyResult{document: &doc, signatureOK: false}, errBadSignature
 	}
 
-	return &verifyResult{document: &doc, signatureOK: true}, nil
+	leafPublicKey, err := x509.MarshalPKIXPublicKey(leafCert.PublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("marshal leaf public key: %w", err)
+	}
+
+	return &verifyResult{document: &doc, signatureOK: true, leafPublicKey: leafPublicKey}, nil
 }
 
 func validateProtectedAlgorithm(alg any) error {
@@ -244,21 +273,16 @@ func verifyECDSASignature(publicKey *ecdsa.PublicKey, sigStructure, signature []
 	return ecdsa.Verify(publicKey, hash, r, s)
 }
 
+// hashForCurve returns the SHA-384 digest of sigStructure for P-384 keys, the
+// only curve valid for Nitro attestations. The COSE algorithm is enforced as
+// ES384 (validateProtectedAlgorithm) and AWS's Private CA only issues P-384
+// leaf keys, so any other curve means the declared algorithm and the actual
+// key disagree; reject it rather than silently hashing with a different
+// function. [CL112-12]
 func hashForCurve(publicKey *ecdsa.PublicKey, sigStructure []byte) ([]byte, bool) {
-	switch publicKey.Curve.Params().Name {
-	case "P-224":
-		sum := sha256.Sum224(sigStructure)
-		return sum[:], true
-	case "P-256":
-		sum := sha256.Sum256(sigStructure)
-		return sum[:], true
-	case "P-384":
-		sum := sha512.Sum384(sigStructure)
-		return sum[:], true
-	case "P-521":
-		sum := sha512.Sum512(sigStructure)
-		return sum[:], true
-	default:
+	if publicKey.Curve.Params().Name != "P-384" {
 		return nil, false
 	}
+	sum := sha512.Sum384(sigStructure)
+	return sum[:], true
 }

@@ -7,10 +7,16 @@ import (
 )
 
 // Deprecated: use config.Duration
+//
+//go:fix inline
 type Duration = config.Duration
 
 // Deprecated: use config.NewDuration
-func NewDuration(d time.Duration) (Duration, error) { return config.NewDuration(d) }
+//
+//go:fix inline
+func NewDuration(d time.Duration) (config.Duration, error) { return config.NewDuration(d) }
 
 // Deprecated: use config.MustNewDuration
-func MustNewDuration(d time.Duration) *Duration { return config.MustNewDuration(d) }
+//
+//go:fix inline
+func MustNewDuration(d time.Duration) *config.Duration { return config.MustNewDuration(d) }

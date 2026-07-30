@@ -788,6 +788,53 @@ func (_c *EVMService_HeaderByNumber_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// LPSkipToBlock provides a mock function with given fields: ctx, blockNumber
+func (_m *EVMService) LPSkipToBlock(ctx context.Context, blockNumber int64) error {
+	ret := _m.Called(ctx, blockNumber)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LPSkipToBlock")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, blockNumber)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// EVMService_LPSkipToBlock_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LPSkipToBlock'
+type EVMService_LPSkipToBlock_Call struct {
+	*mock.Call
+}
+
+// LPSkipToBlock is a helper method to define mock.On call
+//   - ctx context.Context
+//   - blockNumber int64
+func (_e *EVMService_Expecter) LPSkipToBlock(ctx interface{}, blockNumber interface{}) *EVMService_LPSkipToBlock_Call {
+	return &EVMService_LPSkipToBlock_Call{Call: _e.mock.On("LPSkipToBlock", ctx, blockNumber)}
+}
+
+func (_c *EVMService_LPSkipToBlock_Call) Run(run func(ctx context.Context, blockNumber int64)) *EVMService_LPSkipToBlock_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *EVMService_LPSkipToBlock_Call) Return(_a0 error) *EVMService_LPSkipToBlock_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *EVMService_LPSkipToBlock_Call) RunAndReturn(run func(context.Context, int64) error) *EVMService_LPSkipToBlock_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // QueryTrackedLogs provides a mock function with given fields: ctx, filterQuery, limitAndSort, confidenceLevel
 func (_m *EVMService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
 	ret := _m.Called(ctx, filterQuery, limitAndSort, confidenceLevel)

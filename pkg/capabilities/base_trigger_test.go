@@ -52,12 +52,13 @@ func TestValidateBaseTriggerRetryInterval(t *testing.T) {
 
 // atomicJSONGetter swaps a whole settings.Getter under a mutex for dynamic-settings tests.
 type atomicJSONGetter struct {
-	mu sync.Mutex
-	g  settings.Getter
+	lggr logger.Logger
+	mu   sync.Mutex
+	g    settings.Getter
 }
 
 func (f *atomicJSONGetter) setJSON(js string) error {
-	g, err := settings.NewJSONGetter([]byte(js))
+	g, err := settings.GetterConfig{Logger: f.lggr}.NewJSONGetter([]byte(js))
 	if err != nil {
 		return err
 	}
@@ -78,12 +79,11 @@ func (f *atomicJSONGetter) GetScoped(ctx context.Context, scope settings.Scope, 
 }
 
 func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	ctx := t.Context()
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
-	getter := &atomicJSONGetter{}
+	getter := &atomicJSONGetter{lggr: logger.Test(t)}
 	require.NoError(t, getter.setJSON(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
@@ -122,14 +122,13 @@ func TestBaseTrigger_CRE_DynamicDisableStopsResend(t *testing.T) {
 }
 
 func TestBaseTrigger_CRE_PerOrgRetransmit(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	baseCtx := t.Context()
 	ctxOrgA := contexts.WithCRE(baseCtx, contexts.CRE{Org: "orgA"})
 	ctxOrgB := contexts.WithCRE(baseCtx, contexts.CRE{Org: "orgB"})
 
 	// Global default: no retransmit. Org orgA overrides PerOrg.BaseTriggerRetransmitEnabled to true.
-	getter, err := settings.NewJSONGetter([]byte(`{
+	getter, err := settings.GetterConfig{Logger: lggr}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 			"BaseTriggerRetryInterval": "20ms",
@@ -192,8 +191,7 @@ func newBase(t *testing.T, store EventStore) *BaseTriggerCapability[*wrapperspb.
 }
 
 func newBaseWithRetransmit(t *testing.T, store EventStore, tRetransmit time.Duration) *BaseTriggerCapability[*wrapperspb.BytesValue] {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	return NewBaseTriggerCapability(store, func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} }, lggr,
 		"testCap", tRetransmit, nil)
 }
@@ -391,19 +389,18 @@ func TestRetransmitDisabled_AckReconcilesStore(t *testing.T) {
 }
 
 func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	ctx := t.Context()
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "20ms",
 			"BaseTriggerMaxRetries": "3"
 		}
 	}`))
+	require.NoError(t, err)
 
 	store := NewMemEventStore()
 	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
@@ -440,19 +437,18 @@ func TestBaseTrigger_MaxRetries_GivesUp(t *testing.T) {
 }
 
 func TestBaseTrigger_MaxRetries_AckBeforeLimit(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	ctx := t.Context()
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "20ms",
 			"BaseTriggerMaxRetries": "100"
 		}
 	}`))
+	require.NoError(t, err)
 
 	store := NewMemEventStore()
 	b, err := NewBaseTriggerCapabilityWithCRESettings(ctx, store,
@@ -764,17 +760,16 @@ func TestBaseTrigger_RedeliveryAfterAck_Skipped(t *testing.T) {
 func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 	store := NewMemEventStore()
 
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "50ms",
 			"BaseTriggerMaxRetries": "1000"
 		}
 	}`))
+	require.NoError(t, err)
 
 	b, err := NewBaseTriggerCapabilityWithCRESettings(context.Background(), store,
 		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
@@ -790,7 +785,7 @@ func TestBaseTrigger_MaxSendsPerTick(t *testing.T) {
 	require.NotNil(t, reg)
 	reg.pending = make(map[string]*PendingEvent)
 	n := defaultMaxSendsPerTick + 30
-	for i := 0; i < n; i++ {
+	for i := range n {
 		eid := fmt.Sprintf("e%d", i)
 		rec := &PendingEvent{
 			TriggerId: "trig",
@@ -822,8 +817,7 @@ drainCap:
 }
 
 func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	ctx := t.Context()
 
 	store := NewMemEventStore()
@@ -848,14 +842,14 @@ func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	}
 	require.NoError(t, store.Insert(ctx, recentRec))
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 			"BaseTriggerRetryInterval": "30s",
 			"BaseTriggerPruneAge": "1h"
 		}
 	}`))
+	require.NoError(t, err)
 
 	b := NewBaseTriggerCapability(store,
 		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
@@ -870,14 +864,12 @@ func TestBaseTrigger_PruneStaleEvents(t *testing.T) {
 	require.Equal(t, "recentEvent", recs[0].EventId)
 }
 
-func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+func TestBaseTrigger_PrunePurgesStaleInMemoryEvents(t *testing.T) {
+	lggr := logger.Test(t)
 	ctx := t.Context()
 
 	store := NewMemEventStore()
 
-	// Old event that IS tracked in memory.
 	oldRec := PendingEvent{
 		TriggerId: "trig",
 		EventId:   "inMemory",
@@ -887,20 +879,19 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 	}
 	require.NoError(t, store.Insert(ctx, oldRec))
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "false"},
 			"BaseTriggerRetryInterval": "30s",
 			"BaseTriggerPruneAge": "1h"
 		}
 	}`))
+	require.NoError(t, err)
 
 	b := NewBaseTriggerCapability(store,
 		func() *wrapperspb.BytesValue { return &wrapperspb.BytesValue{} },
 		lggr, "testCap", 0, getter)
 
-	// Manually put event in memory to simulate it being actively tracked.
 	b.mu.Lock()
 	reg := b.getOrCreateRegLocked("trig")
 	reg.pending["inMemory"] = &oldRec
@@ -910,23 +901,27 @@ func TestBaseTrigger_PruneSkipsInMemoryEvents(t *testing.T) {
 
 	recs, err := store.List(ctx)
 	require.NoError(t, err)
-	require.Len(t, recs, 1, "in-memory event should not be pruned even if old")
+	require.Empty(t, recs, "stale in-memory event should be purged from the store")
+
+	b.mu.Lock()
+	_, stillPending := b.byTrigger["trig"].pending["inMemory"]
+	b.mu.Unlock()
+	require.False(t, stillPending, "stale in-memory event should be removed from memory")
 }
 
 func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 	ctx := t.Context()
 	ctx = contexts.WithCRE(ctx, contexts.CRE{Org: "testorg"})
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval": "50ms",
 			"BaseTriggerMaxRetries": "5"
 		}
 	}`))
+	require.NoError(t, err)
 
 	store := NewMemEventStore()
 
@@ -936,7 +931,7 @@ func TestBaseTrigger_ScanPendingSkipsEventsWithoutInbox(t *testing.T) {
 	require.NoError(t, err)
 
 	// Pre-populate the store with events (simulates restart loading).
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		require.NoError(t, store.Insert(ctx, PendingEvent{
 			TriggerId:  "trig",
 			EventId:    fmt.Sprintf("e%d", i),
@@ -1214,11 +1209,9 @@ drain:
 }
 
 func TestBaseTrigger_ScanPending_TriggerIDTiebreaker(t *testing.T) {
-	lggr, err := logger.New()
-	require.NoError(t, err)
+	lggr := logger.Test(t)
 
-	getter := &atomicJSONGetter{}
-	require.NoError(t, getter.setJSON(`{
+	getter, err := settings.GetterConfig{Logger: logger.Test(t)}.NewJSONGetter([]byte(`{
 		"global": {
 			"PerOrg": {"BaseTriggerRetransmitEnabled": "true"},
 			"BaseTriggerRetryInterval":     "1ms",
@@ -1226,6 +1219,7 @@ func TestBaseTrigger_ScanPending_TriggerIDTiebreaker(t *testing.T) {
 			"BaseTriggerMaxRetries":        "1000"
 		}
 	}`))
+	require.NoError(t, err)
 
 	store := NewMemEventStore()
 	b, err := NewBaseTriggerCapabilityWithCRESettings(context.Background(), store,

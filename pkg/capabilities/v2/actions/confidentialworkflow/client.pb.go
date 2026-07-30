@@ -114,8 +114,11 @@ type WorkflowExecution struct {
 	// the other). Consumers that want the typed message read this; legacy
 	// consumers continue to unmarshal execute_request.
 	SdkExecuteRequest *sdk.ExecuteRequest `protobuf:"bytes,9,opt,name=sdk_execute_request,json=sdkExecuteRequest,proto3" json:"sdk_execute_request,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// restrictions on the capabilities and the secrets.bool
+	// This is sent to avoid overhead when a TEE is not compromised, the DON will verify the restrictions on its end as well.
+	Restrictions  *sdk.Restrictions `protobuf:"bytes,10,opt,name=restrictions,proto3" json:"restrictions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WorkflowExecution) Reset() {
@@ -207,6 +210,13 @@ func (x *WorkflowExecution) GetRequirements() *sdk.Requirements {
 func (x *WorkflowExecution) GetSdkExecuteRequest() *sdk.ExecuteRequest {
 	if x != nil {
 		return x.SdkExecuteRequest
+	}
+	return nil
+}
+
+func (x *WorkflowExecution) GetRestrictions() *sdk.Restrictions {
+	if x != nil {
+		return x.Restrictions
 	}
 	return nil
 }
@@ -390,7 +400,7 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
 	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
 	"\n" +
-	"_namespace\"\xf9\x02\n" +
+	"_namespace\"\xb8\x03\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x1d\n" +
@@ -403,7 +413,9 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\fexecution_id\x18\x06 \x01(\tR\vexecutionId\x12\x15\n" +
 	"\x06org_id\x18\a \x01(\tR\x05orgId\x12=\n" +
 	"\frequirements\x18\b \x01(\v2\x19.sdk.v1alpha.RequirementsR\frequirements\x12K\n" +
-	"\x13sdk_execute_request\x18\t \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x11sdkExecuteRequest\"\x95\x02\n" +
+	"\x13sdk_execute_request\x18\t \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x11sdkExecuteRequest\x12=\n" +
+	"\frestrictions\x18\n" +
+	" \x01(\v2\x19.sdk.v1alpha.RestrictionsR\frestrictions\"\x95\x02\n" +
 	"\x1bConfidentialWorkflowRequest\x12o\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
 	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\x12!\n" +
@@ -439,26 +451,28 @@ var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_goTypes 
 	(*ProvidedTeesResponse)(nil),         // 4: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
 	(*sdk.Requirements)(nil),             // 5: sdk.v1alpha.Requirements
 	(*sdk.ExecuteRequest)(nil),           // 6: sdk.v1alpha.ExecuteRequest
-	(*sdk.ExecutionResult)(nil),          // 7: sdk.v1alpha.ExecutionResult
-	(*sdk.TeeTypeAndRegions)(nil),        // 8: sdk.v1alpha.TeeTypeAndRegions
-	(*emptypb.Empty)(nil),                // 9: google.protobuf.Empty
+	(*sdk.Restrictions)(nil),             // 7: sdk.v1alpha.Restrictions
+	(*sdk.ExecutionResult)(nil),          // 8: sdk.v1alpha.ExecutionResult
+	(*sdk.TeeTypeAndRegions)(nil),        // 9: sdk.v1alpha.TeeTypeAndRegions
+	(*emptypb.Empty)(nil),                // 10: google.protobuf.Empty
 }
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_depIdxs = []int32{
-	5, // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.requirements:type_name -> sdk.v1alpha.Requirements
-	6, // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.sdk_execute_request:type_name -> sdk.v1alpha.ExecuteRequest
-	0, // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
-	1, // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
-	7, // 4: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse.sdk_execution_result:type_name -> sdk.v1alpha.ExecutionResult
-	8, // 5: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse.tee:type_name -> sdk.v1alpha.TeeTypeAndRegions
-	2, // 6: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
-	9, // 7: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:input_type -> google.protobuf.Empty
-	3, // 8: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
-	4, // 9: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	5,  // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.requirements:type_name -> sdk.v1alpha.Requirements
+	6,  // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.sdk_execute_request:type_name -> sdk.v1alpha.ExecuteRequest
+	7,  // 2: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.restrictions:type_name -> sdk.v1alpha.Restrictions
+	0,  // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
+	1,  // 4: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
+	8,  // 5: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse.sdk_execution_result:type_name -> sdk.v1alpha.ExecutionResult
+	9,  // 6: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse.tee:type_name -> sdk.v1alpha.TeeTypeAndRegions
+	2,  // 7: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
+	10, // 8: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:input_type -> google.protobuf.Empty
+	3,  // 9: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
+	4,  // 10: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
+	9,  // [9:11] is the sub-list for method output_type
+	7,  // [7:9] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() }

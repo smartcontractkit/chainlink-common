@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
@@ -82,14 +83,32 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
-	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
+	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
+	envTelemetryPrometheusBridgeEnabled       = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
+	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
+	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
+	envMeterProduct                       = "CL_METER_PRODUCT"
+	envMeterTenant                        = "CL_METER_TENANT"
+	envMeterNumericTenantID               = "CL_METER_NUMERIC_TENANT_ID"
+	envMeterEnvironment                   = "CL_METER_ENVIRONMENT"
+	envMeterZone                          = "CL_METER_ZONE"
+	envMeterNodeID                        = "CL_METER_NODE_ID"
 
 	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
 	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
+
+	envChipIngressBufferSize         = "CL_CHIP_INGRESS_BUFFER_SIZE"
+	envChipIngressMaxBatchSize       = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
+	envChipIngressMaxConcurrentSends = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
+	envChipIngressSendInterval       = "CL_CHIP_INGRESS_SEND_INTERVAL"
+	envChipIngressSendTimeout        = "CL_CHIP_INGRESS_SEND_TIMEOUT"
+	envChipIngressDrainTimeout       = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
+	envChipIngressMaxGRPCRequestSize = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -104,6 +123,14 @@ type EnvConfig struct {
 	ChipIngressInsecureConnection    bool
 	ChipIngressBatchEmitterEnabled   bool
 	ChipIngressDurableEmitterEnabled bool
+
+	ChipIngressBufferSize         uint
+	ChipIngressMaxBatchSize       uint
+	ChipIngressMaxConcurrentSends int
+	ChipIngressSendInterval       time.Duration
+	ChipIngressSendTimeout        time.Duration
+	ChipIngressDrainTimeout       time.Duration
+	ChipIngressMaxGRPCRequestSize int
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -168,9 +195,37 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
-	TelemetryPrometheusBridgeEnabled   bool
-	TelemetryPrometheusBridgePrefixes  []string
-	TelemetryLogCompressor             string
+	// TelemetryMetricCardinalityLimit is nil when unset, so AsCmdEnv can
+	// distinguish "no opinion" (child applies its own default) from an
+	// explicit 0, which disables the limit.
+	TelemetryMetricCardinalityLimit   *int
+	// TelemetryMetricViewsDenyAttributes lists attribute keys dropped by the
+	// default global deny view (e.g. event_id). Empty skips Default().
+	TelemetryMetricViewsDenyAttributes []string
+	TelemetryPrometheusBridgeEnabled       bool
+	TelemetryPrometheusBridgePrefixes []string
+	TelemetryLogCompressor            string
+	MeterRecordsEnabled               bool
+	MeterSnapshotsEnabled             bool
+
+	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /
+	// MeterZone / MeterNodeID are
+	// the static deployment+node identity dimensions used as coarse
+	// metering/billing rollup dimensions. They are resolved once from node
+	// config by the host and delivered to every LOOP plugin over the env, the
+	// same channel as the meter-record toggles above (rather than the
+	// standard-capabilities boundary). Any may be empty if the host did not
+	// provide it.
+	//
+	// MeterNodeID is the node's logical name (e.g. "clp-cre-wf-zone-a-1"),
+	// not the CSA public key; the CSA key rides emitted events separately as the
+	// node_csa_key attribute.
+	MeterProduct         string
+	MeterTenant          string
+	MeterNumericTenantID string
+	MeterEnvironment     string
+	MeterZone            string
+	MeterNodeID          string
 
 	TracingEnabled         bool
 	TracingCollectorTarget string
@@ -261,14 +316,35 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	if e.TelemetryMetricCardinalityLimit != nil {
+		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
+	}
+	if len(e.TelemetryMetricViewsDenyAttributes) > 0 {
+		add(envTelemetryMetricViewsDenyAttributes, strings.Join(e.TelemetryMetricViewsDenyAttributes, ","))
+	}
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
+	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
+	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
+	add(envMeterProduct, e.MeterProduct)
+	add(envMeterTenant, e.MeterTenant)
+	add(envMeterNumericTenantID, e.MeterNumericTenantID)
+	add(envMeterEnvironment, e.MeterEnvironment)
+	add(envMeterZone, e.MeterZone)
+	add(envMeterNodeID, e.MeterNodeID)
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
 	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
 	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(e.ChipIngressDurableEmitterEnabled))
+	add(envChipIngressBufferSize, strconv.FormatUint(uint64(e.ChipIngressBufferSize), 10))
+	add(envChipIngressMaxBatchSize, strconv.FormatUint(uint64(e.ChipIngressMaxBatchSize), 10))
+	add(envChipIngressMaxConcurrentSends, strconv.Itoa(e.ChipIngressMaxConcurrentSends))
+	add(envChipIngressSendInterval, e.ChipIngressSendInterval.String())
+	add(envChipIngressSendTimeout, e.ChipIngressSendTimeout.String())
+	add(envChipIngressDrainTimeout, e.ChipIngressDrainTimeout.String())
+	add(envChipIngressMaxGRPCRequestSize, strconv.Itoa(e.ChipIngressMaxGRPCRequestSize))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -493,6 +569,22 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		if v, ok := os.LookupEnv(envTelemetryMetricCardinalityLimit); ok {
+			limit, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCardinalityLimit, err)
+			}
+			if limit < 0 {
+				return fmt.Errorf("failed to parse %s: value %d must not be negative (0 disables the limit)", envTelemetryMetricCardinalityLimit, limit)
+			}
+			e.TelemetryMetricCardinalityLimit = &limit
+		} else {
+			defaultLimit := beholder.DefaultMetricCardinalityLimit
+			e.TelemetryMetricCardinalityLimit = &defaultLimit
+		}
+		if v, ok := os.LookupEnv(envTelemetryMetricViewsDenyAttributes); ok && v != "" {
+			e.TelemetryMetricViewsDenyAttributes = splitCommaTrimmed(v)
+		}
 		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)
@@ -513,10 +605,57 @@ func (e *EnvConfig) parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
 		}
+		e.ChipIngressBufferSize, err = getUint(envChipIngressBufferSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressBufferSize, err)
+		}
+		e.ChipIngressMaxBatchSize, err = getUint(envChipIngressMaxBatchSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxBatchSize, err)
+		}
+		e.ChipIngressMaxConcurrentSends, err = getInt(envChipIngressMaxConcurrentSends)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxConcurrentSends, err)
+		}
+		e.ChipIngressSendInterval, err = getDuration(envChipIngressSendInterval)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendInterval, err)
+		}
+		e.ChipIngressSendTimeout, err = getDuration(envChipIngressSendTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendTimeout, err)
+		}
+		e.ChipIngressDrainTimeout, err = getDuration(envChipIngressDrainTimeout)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressDrainTimeout, err)
+		}
+		e.ChipIngressMaxGRPCRequestSize, err = getInt(envChipIngressMaxGRPCRequestSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxGRPCRequestSize, err)
+		}
+		if e.ChipIngressMaxGRPCRequestSize < 0 {
+			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxGRPCRequestSize, e.ChipIngressMaxGRPCRequestSize)
+		}
 	}
 
 	e.CRESettings = os.Getenv(envCRESettings)
 	e.CRESettingsDefault = os.Getenv(envCRESettingsDefault)
+
+	e.MeterRecordsEnabled, err = getBool(envMeterRecordsEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterRecordsEnabled, err)
+	}
+	e.MeterSnapshotsEnabled, err = getBool(envMeterSnapshotsEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterSnapshotsEnabled, err)
+	}
+
+	e.MeterProduct = os.Getenv(envMeterProduct)
+	e.MeterTenant = os.Getenv(envMeterTenant)
+	e.MeterNumericTenantID = os.Getenv(envMeterNumericTenantID)
+	e.MeterEnvironment = os.Getenv(envMeterEnvironment)
+	e.MeterZone = os.Getenv(envMeterZone)
+	e.MeterNodeID = os.Getenv(envMeterNodeID)
 
 	return nil
 }
@@ -550,6 +689,17 @@ func getValidCollectorTarget() (string, error) {
 		return "", fmt.Errorf("invalid %s: %w", envTracingCollectorTarget, err)
 	}
 	return tracingCollectorTarget, nil
+}
+
+func splitCommaTrimmed(s string) []string {
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 func getMap(envKeyPrefix string) map[string]string {
@@ -603,6 +753,18 @@ func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
 		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
 	return
+}
+
+func getUint(envKey string) (uint, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	u, err := strconv.ParseUint(s, 10, strconv.IntSize)
+	if err != nil {
+		return 0, err
+	}
+	return uint(u), nil
 }
 
 func getInt(envKey string) (int, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -83,12 +84,29 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
 				envTelemetryLogStreamingEnabled:       "false",
+				envTelemetryMetricViewsDenyAttributes: "event_id",
 				envTelemetryPrometheusBridgeEnabled:   "true",
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
+				envMeterRecordsEnabled:                "true",
+				envMeterSnapshotsEnabled:              "false",
+				envMeterProduct:                       "cre-mainline",
+				envMeterTenant:                        "mainline",
+				envMeterNumericTenantID:               "42",
+				envMeterEnvironment:                   "production",
+				envMeterZone:                          "wf-zone-a",
+				envMeterNodeID:                        "clp-cre-wf-zone-a-1",
 
 				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
 				envChipIngressInsecureConnection:  "true",
 				envChipIngressBatchEmitterEnabled: "false",
+
+				envChipIngressBufferSize:         "1000",
+				envChipIngressMaxBatchSize:       "500",
+				envChipIngressMaxConcurrentSends: "10",
+				envChipIngressSendInterval:       "100ms",
+				envChipIngressSendTimeout:        "3s",
+				envChipIngressDrainTimeout:       "10s",
+				envChipIngressMaxGRPCRequestSize: "10485760",
 
 				envCRESettings:        `{"global":{}}`,
 				envCRESettingsDefault: `{"foo":"bar"}`,
@@ -115,6 +133,15 @@ func TestEnvConfig_parse(t *testing.T) {
 			envVars: map[string]string{
 				envPromPort:       "8080",
 				envTracingEnabled: "invalid_bool",
+			},
+			expectError: true,
+		},
+		{
+			name: "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT negative value rejected",
+			envVars: map[string]string{
+				envPromPort:                        "8080",
+				envTelemetryEnabled:                "true",
+				envTelemetryMetricCardinalityLimit: "-1",
 			},
 			expectError: true,
 		},
@@ -197,13 +224,31 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterExportMaxBatchSize: 100,
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
+	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
+	TelemetryMetricViewsDenyAttributes: []string{"event_id"},
 	TelemetryPrometheusBridgeEnabled:   true,
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
+	MeterRecordsEnabled:                true,
+	MeterSnapshotsEnabled:              false,
+	MeterProduct:                       "cre-mainline",
+	MeterTenant:                        "mainline",
+	MeterNumericTenantID:               "42",
+	MeterEnvironment:                   "production",
+	MeterZone:                          "wf-zone-a",
+	MeterNodeID:                        "clp-cre-wf-zone-a-1",
 
 	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
 	ChipIngressInsecureConnection:    true,
 	ChipIngressBatchEmitterEnabled:   false,
 	ChipIngressDurableEmitterEnabled: false,
+
+	ChipIngressBufferSize:         1000,
+	ChipIngressMaxBatchSize:       500,
+	ChipIngressMaxConcurrentSends: 10,
+	ChipIngressSendInterval:       100 * time.Millisecond,
+	ChipIngressSendTimeout:        3 * time.Second,
+	ChipIngressDrainTimeout:       10 * time.Second,
+	ChipIngressMaxGRPCRequestSize: 10485760,
 
 	CRESettings:        `{"global":{}}`,
 	CRESettingsDefault: `{"foo":"bar"}`,
@@ -262,16 +307,122 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
+	assert.Equal(t, strconv.Itoa(beholder.DefaultMetricCardinalityLimit), got[envTelemetryMetricCardinalityLimit])
+	assert.Equal(t, "event_id", got[envTelemetryMetricViewsDenyAttributes])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
+	assert.Equal(t, "true", got[envMeterRecordsEnabled])
+	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
+	assert.Equal(t, "cre-mainline", got[envMeterProduct])
+	assert.Equal(t, "mainline", got[envMeterTenant])
+	assert.Equal(t, "42", got[envMeterNumericTenantID])
+	assert.Equal(t, "production", got[envMeterEnvironment])
+	assert.Equal(t, "wf-zone-a", got[envMeterZone])
+	assert.Equal(t, "clp-cre-wf-zone-a-1", got[envMeterNodeID])
 
 	// Assert ChipIngress environment variables
 	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
 	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
 	assert.Equal(t, "false", got[envChipIngressBatchEmitterEnabled])
+	assert.Equal(t, "1000", got[envChipIngressBufferSize])
+	assert.Equal(t, "500", got[envChipIngressMaxBatchSize])
+	assert.Equal(t, "10", got[envChipIngressMaxConcurrentSends])
+	assert.Equal(t, "100ms", got[envChipIngressSendInterval])
+	assert.Equal(t, "3s", got[envChipIngressSendTimeout])
+	assert.Equal(t, "10s", got[envChipIngressDrainTimeout])
+	assert.Equal(t, "10485760", got[envChipIngressMaxGRPCRequestSize])
 
 	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
 	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
+}
+
+// TestEnvConfig_MetricCardinalityLimit_RoundTrip verifies that an explicit
+// disable (0) survives a AsCmdEnv -> parse round trip the same way an
+// explicit positive limit does, and that leaving the field unset lets the
+// child apply its own default instead of forcing a value.
+func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("explicit disable propagates as 0", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = new(0)
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 0, *parsed.TelemetryMetricCardinalityLimit)
+	})
+
+	t.Run("explicit positive limit propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = new(500)
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 500, *parsed.TelemetryMetricCardinalityLimit)
+	})
+
+	t.Run("unset falls back to child default", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryMetricCardinalityLimit+"=", "unset limit must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 100000, *parsed.TelemetryMetricCardinalityLimit)
+	})
+}
+
+// TestEnvConfig_MetricViewsDenyAttributes_RoundTrip verifies that a
+// comma-separated denylist survives an AsCmdEnv -> parse round trip.
+func TestEnvConfig_MetricViewsDenyAttributes_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("denylist propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsDenyAttributes = []string{"event_id", "workflow_execution_id"}
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Equal(t, []string{"event_id", "workflow_execution_id"}, parsed.TelemetryMetricViewsDenyAttributes)
+	})
+
+	t.Run("unset leaves denylist nil", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsDenyAttributes = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryMetricViewsDenyAttributes+"=", "unset denylist must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Nil(t, parsed.TelemetryMetricViewsDenyAttributes)
+	})
 }
 
 func TestGetMap(t *testing.T) {

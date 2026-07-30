@@ -2,6 +2,9 @@ package durableemitter
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -10,10 +13,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -56,17 +62,12 @@ type Config struct {
 	// EventTTL is the maximum age of an event before it is expired.
 	EventTTL time.Duration
 	// PublishTimeout is the deadline for DB operations in delivery callbacks
-	// (MarkDeliveredBatch). The actual gRPC publish timeout is configured on
+	// (BatchDelete). The actual gRPC publish timeout is configured on
 	// the BatchEmitter (batch.Client) directly.
 	PublishTimeout time.Duration
-	// PurgeInterval is how often the purge loop runs to batch-delete rows that
-	// were marked delivered (Postgres). Zero defaults to 250ms.
-	PurgeInterval time.Duration
-	// PurgeBatchSize is the maximum rows removed per PurgeDelivered call. Zero defaults to 500.
-	PurgeBatchSize int
-	// DisablePruning disables the background purge (PurgeDelivered) and expiry
-	// (DeleteExpired) loops. Events remain in the DB after delivery. Useful for
-	// post-test analysis of created_at / delivered_at timestamps.
+	// DisablePruning disables the background expiry (DeleteExpired) loop.
+	// Events then remain in the DB even after they age past EventTTL. Useful for
+	// post-test analysis of created_at timestamps.
 	DisablePruning bool
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
@@ -85,6 +86,18 @@ type Config struct {
 	// InsertBatchWorkers is the number of concurrent batch-insert goroutines.
 	// Zero defaults to 4.
 	InsertBatchWorkers int
+	// DeleteBatchSize enables delete coalescing when > 0. Instead of issuing one
+	// DELETE per delivered event from the delivery callback, ids are funneled to
+	// background workers that collapse many ids into a single BatchDelete,
+	// drastically reducing per-event DELETE/connection churn.
+	// Each worker collects up to DeleteBatchSize ids before flushing.
+	DeleteBatchSize int
+	// DeleteBatchFlushInterval is the linger time after the first id arrives in a
+	// coalescing batch before it is flushed. Zero defaults to 100ms.
+	DeleteBatchFlushInterval time.Duration
+	// DeleteBatchWorkers is the number of concurrent batch-delete goroutines.
+	// Zero defaults to 2.
+	DeleteBatchWorkers int
 }
 
 // Hooks records delivery latency to locate pipeline bottlenecks.
@@ -97,20 +110,23 @@ type Hooks struct {
 	// invocation; batchSize is always 1 (one callback per event); err is nil
 	// on success.
 	OnBatchPublish func(elapsed time.Duration, batchSize int, err error)
-	// OnBatchMarkDelivered is called after MarkDeliveredBatch following a successful delivery.
-	OnBatchMarkDelivered func(elapsed time.Duration, count int)
+	// OnBatchDelete is called after BatchDelete following a successful delivery.
+	OnBatchDelete func(elapsed time.Duration, count int)
 }
 
 func DefaultConfig() Config {
 	return Config{
-		RetransmitInterval:  5 * time.Second,
-		RetransmitAfter:     10 * time.Second,
-		RetransmitBatchSize: 100,
-		ExpiryInterval:      1 * time.Minute,
-		EventTTL:            72 * time.Hour,
-		PublishTimeout:      5 * time.Second,
-		PurgeInterval:       250 * time.Millisecond,
-		PurgeBatchSize:      500,
+		RetransmitInterval:       5 * time.Second,
+		RetransmitAfter:          10 * time.Second,
+		RetransmitBatchSize:      100,
+		ExpiryInterval:           1 * time.Minute,
+		EventTTL:                 1 * time.Hour,
+		PublishTimeout:           5 * time.Second,
+		InsertBatchFlushInterval: 50 * time.Millisecond,
+		InsertBatchSize:          100,
+		DeleteBatchSize:          100,
+		DeleteBatchFlushInterval: 500 * time.Millisecond,
+		DeleteBatchWorkers:       2,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
 		Metrics: nil,
@@ -121,10 +137,11 @@ func DefaultConfig() Config {
 //
 // Emit writes to a DurableEventStore then hands the event to the BatchEmitter
 // for async delivery. The delivery callback from BatchEmitter marks the row
-// delivered; the purge loop removes delivered rows from Postgres. When the
-// batch emitter buffer is full or the network is down, a retransmit loop lists
-// stale pending rows and re-enqueues them through the same BatchEmitter (up to
-// RetransmitBatchSize per tick).
+// delivered, which under the Postgres store deletes it outright
+// (delete-on-delivery) rather than tombstoning + purging — this avoids an extra
+// write and index churn per event. When the batch emitter buffer is full or the
+// network is down, a retransmit loop lists stale pending rows and re-enqueues
+// them through the same BatchEmitter (up to RetransmitBatchSize per tick).
 //
 // A separate expiry loop garbage-collects events older than EventTTL to bound
 // table growth.
@@ -146,18 +163,6 @@ type DurableEmitter struct {
 
 	store        DurableEventStore
 	batchEmitter BatchEmitter
-	// fallbackClient, when non-nil, is used for single-event per-RPC retry
-	// whenever the batch emitter reports a delivery failure. Each failed event
-	// is retried individually via Publish (not PublishBatch) in a goroutine.
-	// If the single-event retry also fails the event stays in the DB and the
-	// retransmit loop will eventually deliver it. DurableEmitter owns this
-	// client and closes it during shutdown.
-	fallbackClient chipingress.Client
-	// fallbackWg tracks in-flight single-event fallback goroutines. It is
-	// waited on after batchEmitter.Stop() so that all fallback attempts that
-	// were spawned during the final flush can complete before we close the
-	// fallback client connection.
-	fallbackWg sync.WaitGroup
 	// retransmitEnabled controls whether this instance runs the retransmit and
 	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
 	retransmitEnabled bool
@@ -176,15 +181,26 @@ type DurableEmitter struct {
 	insertShutdown atomic.Bool
 	insertInFlight atomic.Int32
 
-	// pendingCount is an exact, atomic count of rows inserted but not yet
-	// delivered/deleted. Incremented on successful Insert, decremented on
-	// MarkDelivered, Delete, or DeleteExpired. No polling required.
-	pendingCount atomic.Int64
-	pendingMax   atomic.Int64
+	// deleteCh funnels delivered event ids to the delete coalescer. Nil when delete
+	// coalescing is disabled (DeleteBatchSize <= 0). Its only producers are the
+	// delivery callbacks, so it is closed during shutdown only after they have
+	// quiesced (see stop). deleteWg tracks
+	// the deleteBatchLoop workers, which must outlive d.wg so callbacks running
+	// during the batch emitter's final flush can still enqueue deletes.
+	deleteCh chan int64
+	deleteWg sync.WaitGroup
 
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
 	wg     sync.WaitGroup
+
+	// retransmit paging cursor. The retransmit loop pages through the pending
+	// backlog in (created_at, id) order, advancing the cursor each tick and
+	// wrapping to zero at the end, so a persistently-failing ("poison") event
+	// can't monopolise the head of the list and starve everything behind it.
+	// Accessed only from the single retransmit-loop goroutine — no locking.
+	retransmitCursorTs time.Time
+	retransmitCursorID int64
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -200,15 +216,11 @@ var _ interface {
 // pkg/chipingress/batch) responsible for batched gRPC delivery, seqnum
 // stamping, size splitting, and concurrency limiting.
 //
-// fallbackClient, when non-nil, is used to retry individual events via a
-// direct unary Publish RPC whenever the batch emitter reports a delivery
-// failure. This gives a fast second-chance path before the DB-backed
-// retransmit loop kicks in. Pass nil to disable single-event fallback
-// (events are left in the DB and delivered by the retransmit loop).
+// On a batch delivery failure the event is left in the DB and re-delivered by
+// the DB-backed retransmit loop.
 func NewDurableEmitter(
 	store DurableEventStore,
 	batchEmitter BatchEmitter,
-	fallbackClient chipingress.Client,
 	retransmitEnabled bool,
 	cfg Config,
 	lggr logger.Logger,
@@ -229,7 +241,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter)
+		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ClientNameDurableEmitter)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}
@@ -238,7 +250,6 @@ func NewDurableEmitter(
 	d := &DurableEmitter{
 		store:             store,
 		batchEmitter:      batchEmitter,
-		fallbackClient:    fallbackClient,
 		retransmitEnabled: retransmitEnabled,
 		cfg:               cfg,
 		metrics:           m,
@@ -253,16 +264,22 @@ func NewDurableEmitter(
 	if cfg.InsertBatchSize > 0 {
 		if bi, ok := store.(BatchInserter); ok {
 			d.batchInserter = bi
-			chanSize := cfg.InsertBatchSize * 200
-			if chanSize < 10_000 {
-				chanSize = 10_000
-			}
+			chanSize := max(cfg.InsertBatchSize*200, 10_000)
 			d.insertCh = make(chan *insertRequest, chanSize)
 			d.eng.Infow("DurableEmitter: write coalescing enabled",
 				"insertBatchSize", cfg.InsertBatchSize,
 				"insertBatchWorkers", cfg.InsertBatchWorkers,
 				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
 		}
+	}
+
+	if cfg.DeleteBatchSize > 0 {
+		chanSize := max(cfg.DeleteBatchSize*200, 10_000)
+		d.deleteCh = make(chan int64, chanSize)
+		d.eng.Infow("DurableEmitter: delete coalescing enabled",
+			"deleteBatchSize", cfg.DeleteBatchSize,
+			"deleteBatchWorkers", cfg.DeleteBatchWorkers,
+			"deleteBatchFlushInterval", cfg.DeleteBatchFlushInterval)
 	}
 	return d, nil
 }
@@ -283,17 +300,40 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		}
 	}
 
+	if d.deleteCh != nil {
+		deleteWorkers := d.cfg.DeleteBatchWorkers
+		if deleteWorkers <= 0 {
+			deleteWorkers = 2
+		}
+		// deleteWg (not d.wg) so the workers keep draining while the batch
+		// emitter flushes its final callbacks during stop().
+		for i := 0; i < deleteWorkers; i++ {
+			d.deleteWg.Go(d.deleteBatchLoop)
+		}
+	}
+
 	if d.retransmitEnabled {
 		d.wg.Go(d.retransmitLoop)
 		if !d.cfg.DisablePruning {
 			d.wg.Go(d.expiryLoop)
-			d.wg.Go(d.purgeLoop)
 		}
 	}
 	if d.metrics != nil && d.cfg.Metrics != nil {
 		d.wg.Go(d.metricsLoop)
 	}
 	return nil
+}
+
+// EmitAsync runs Emit in a background goroutine and ignores the result, so the
+// caller is never blocked on the DB insert. Use it on hot paths where the
+// durable emitter's value is persistence for retransmit (not inline delivery)
+// and the real-time beholder emit already happened. The passed ctx is detached
+// so the emit is not cancelled when the caller's ctx ends.
+func (d *DurableEmitter) EmitAsync(ctx context.Context, body []byte, attrKVs ...any) {
+	emitCtx := context.WithoutCancel(ctx)
+	go func() {
+		_ = d.Emit(emitCtx, body, attrKVs...)
+	}()
 }
 
 // Emit persists the event then hands it to the BatchEmitter for async delivery.
@@ -313,17 +353,22 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				d.metrics.emitFail.Add(ctx, 1)
 			}
 		}
-		sourceDomain, entityType, err := extractSourceAndType(attrKVs...)
+		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
 		if err != nil {
 			emitFail()
 			return err
 		}
 
-		event, err := chipingress.NewEvent(sourceDomain, entityType, body, parseAttrs(attrKVs...))
+		attrs := parseAttrs(attrKVs...)
+		ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
+
+		event, err := chipingress.NewEvent(sourceDomain, entityType, body, attrs)
 		if err != nil {
 			emitFail()
 			return err
 		}
+
+		event.SetExtension("emitter", "DurableEmitter")
 
 		eventPb, err := chipingress.EventToProto(event)
 		if err != nil {
@@ -376,7 +421,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				h.OnEmitInsert(insElapsed, res.err)
 			}
 			if d.metrics != nil {
-				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				d.metrics.recordEmitDuration(ctx, insElapsed, res.err)
 				if res.err != nil {
 					d.metrics.emitFail.Add(ctx, 1)
 				} else {
@@ -395,7 +440,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				h.OnEmitInsert(insElapsed, err)
 			}
 			if d.metrics != nil {
-				d.metrics.emitDuration.Record(ctx, insElapsed.Seconds())
+				d.metrics.recordEmitDuration(ctx, insElapsed, err)
 				if err != nil {
 					d.metrics.emitFail.Add(ctx, 1)
 				} else {
@@ -407,25 +452,24 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			}
 		}
 
-		d.incPending(1)
-
 		// Hand off to the batch emitter. The callback fires once the batch
-		// containing this event is sent (success or failure). eventPb is
-		// captured in the closure so the fallback path can retry without a
-		// DB round-trip.
+		// containing this event is sent (success or failure).
 		t0Publish := time.Now()
-		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish)); qErr != nil {
+		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch)); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
+			if d.metrics != nil {
+				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
+					metric.WithAttributes(attribute.String("phase", publishPhaseBatch.String())))
+			}
 		}
 		return nil
 	})
 }
 
 // deliveryCallback returns the function passed to BatchEmitter.QueueMessage.
-// On success, it marks the event delivered. On failure, it attempts a
-// single-event fallback via fallbackClient (when configured) in a goroutine
-// before leaving the event in the DB for the retransmit loop.
-func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time) func(error) {
+// On success, it deletes the delivered event. On failure, it leaves the event
+// in the DB for the retransmit loop.
+func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase) func(error) {
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
 
@@ -433,84 +477,39 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			h.OnBatchPublish(publishElapsed, 1, sendErr)
 		}
 
-		cbCtx, cbCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+		cbCtx, cbCancel := d.stopCh.NewCtx()
 		defer cbCancel()
 
 		if d.metrics != nil {
-			d.metrics.recordPublish(cbCtx, publishElapsed, "batch", sendErr)
+			d.metrics.recordPublish(cbCtx, publishElapsed, phase, sendErr)
+			d.metrics.recordPublishBatchEvent(cbCtx, phase, sendErr)
 		}
 
 		if sendErr != nil {
-			if d.metrics != nil {
-				d.metrics.publishBatchEvErr.Add(cbCtx, 1)
-			}
-			// Batch path failed. If a fallback client is configured, retry the
-			// single event directly; otherwise leave in DB for retransmit.
-			d.tryFallback(id, eventPb)
+			d.eng.Warnw("DurableEmitter: failed to deliver event. Relying on retransmit.", "eventID", eventPb.Id, "err", sendErr)
 			return
 		}
 
-		if d.metrics != nil {
-			d.metrics.publishBatchEvOK.Add(cbCtx, 1)
-		}
-
-		tMark := time.Now()
-		marked, markErr := d.store.MarkDeliveredBatch(cbCtx, []int64{id})
-		markElapsed := time.Since(tMark)
-
-		if h := d.cfg.Hooks; h != nil && h.OnBatchMarkDelivered != nil {
-			h.OnBatchMarkDelivered(markElapsed, int(marked))
-		}
-		if markErr != nil {
-			d.eng.Errorw("failed to mark event delivered", "id", id, "error", markErr)
+		// When delete coalescing is enabled the id is handed to the batch-delete
+		// workers (one DELETE for many ids); otherwise delete it inline.
+		if d.enqueueDelete(id) {
 			return
 		}
-		d.decPending(marked)
-		if d.metrics != nil {
-			d.metrics.deliverComplete.Add(cbCtx, marked)
+
+		tDelete := time.Now()
+		deleted, deleteErr := d.store.BatchDelete(cbCtx, []int64{id})
+		deleteElapsed := time.Since(tDelete)
+
+		if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
+			h.OnBatchDelete(deleteElapsed, int(deleted))
 		}
-	}
-}
-
-// tryFallback spawns a goroutine that retries a single event via the direct
-// chipingress.Client.Publish RPC. If fallbackClient is nil this is a no-op
-// and the event is left in the DB for the retransmit loop.
-func (d *DurableEmitter) tryFallback(id int64, eventPb *chipingress.CloudEventPb) {
-	if d.fallbackClient == nil {
-		return
-	}
-	d.fallbackWg.Add(1)
-	go func() {
-		defer d.fallbackWg.Done()
-		d.singleEventFallback(id, eventPb)
-	}()
-}
-
-// singleEventFallback sends a single event directly via the fallback
-// chipingress.Client. On success, it marks the event delivered and decrements
-// the pending counter. On failure, it logs and returns — the event remains in
-// the DB and the retransmit loop will eventually deliver it.
-func (d *DurableEmitter) singleEventFallback(id int64, eventPb *chipingress.CloudEventPb) {
-	pubCtx, pubCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-	defer pubCancel()
-
-	if _, err := d.fallbackClient.Publish(pubCtx, eventPb); err != nil {
-		d.eng.Warnw("DurableEmitter: single-event fallback publish failed, relying on retransmit",
-			"id", id, "error", err)
-		return
-	}
-
-	markCtx, markCancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
-	defer markCancel()
-
-	marked, markErr := d.store.MarkDeliveredBatch(markCtx, []int64{id})
-	if markErr != nil {
-		d.eng.Errorw("DurableEmitter: failed to mark fallback event delivered", "id", id, "error", markErr)
-		return
-	}
-	d.decPending(marked)
-	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(markCtx, marked)
+		if deleteErr != nil {
+			d.eng.Errorw("failed to delete event from persistence", "id", id, "error", deleteErr)
+			return
+		}
+		if d.metrics != nil {
+			d.metrics.deliverComplete.Add(cbCtx, deleted)
+		}
 	}
 }
 
@@ -530,14 +529,12 @@ func (d *DurableEmitter) stop() error {
 	d.wg.Wait()
 	// Stop the batch emitter: flushes remaining queued events, waits for all
 	// in-flight PublishBatch RPCs, and waits for all delivery callbacks.
-	// Delivery callbacks may spawn single-event fallback goroutines tracked by
-	// fallbackWg, so we wait on those next.
 	d.batchEmitter.Stop()
-	d.fallbackWg.Wait()
-	if d.fallbackClient != nil {
-		if err := d.fallbackClient.Close(); err != nil {
-			d.eng.Warnw("DurableEmitter: error closing fallback chip client", "error", err)
-		}
+	// The delivery callbacks (drained by batchEmitter.Stop) are the only producers
+	// of deleteCh, so it is now safe to close it and let the workers flush any buffered deletes.
+	if d.deleteCh != nil {
+		close(d.deleteCh)
+		d.deleteWg.Wait()
 	}
 	return nil
 }
@@ -548,7 +545,7 @@ func (d *DurableEmitter) insertBatchLoop() {
 	batchSize := d.cfg.InsertBatchSize
 	linger := d.cfg.InsertBatchFlushInterval
 	if linger <= 0 {
-		linger = 2 * time.Millisecond
+		linger = 100 * time.Millisecond
 	}
 	batch := make([]*insertRequest, 0, batchSize)
 
@@ -584,6 +581,9 @@ func (d *DurableEmitter) insertBatchLoop() {
 		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
 		cancel()
+		if batchErr == nil {
+			d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
+		}
 		for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
@@ -594,42 +594,80 @@ func (d *DurableEmitter) insertBatchLoop() {
 	}
 }
 
-// PendingDepth returns the current exact pending queue depth (inserted but not
-// yet delivered/deleted). Thread-safe; no DB query required.
-func (d *DurableEmitter) PendingDepth() int64 { return d.pendingCount.Load() }
-
-// PendingMax returns the highest pending queue depth observed since Start.
-func (d *DurableEmitter) PendingMax() int64 { return d.pendingMax.Load() }
-
-func (d *DurableEmitter) incPending(n int64) {
-	cur := d.pendingCount.Add(n)
-	updated := false
-	for {
-		old := d.pendingMax.Load()
-		if cur <= old {
-			break
-		}
-		if d.pendingMax.CompareAndSwap(old, cur) {
-			updated = true
-			break
-		}
+// enqueueDelete hands a delivered event id to the delete coalescer. It returns
+// false when coalescing is disabled so the caller can delete inline.
+// Send is a blocking hand-off; back-pressure here slows the delivery callback
+// rather than dropping a delete.
+func (d *DurableEmitter) enqueueDelete(id int64) bool {
+	if d.deleteCh == nil {
+		return false
 	}
-	if d.metrics != nil {
-		ctx, cancel := d.stopCh.NewCtx()
-		defer cancel()
-		d.metrics.queueDepth.Record(ctx, cur)
-		if updated {
-			d.metrics.queueDepthMax.Record(ctx, cur)
+	d.deleteCh <- id
+	return true
+}
+
+// deleteBatchLoop collects delivered event ids from deleteCh and flushes them as
+// batched BatchDelete DELETEs, collapsing many single-row DELETEs into one and
+// decoupling the delete from the delivery-callback path. On channel close it
+// flushes any partially-collected batch before returning.
+func (d *DurableEmitter) deleteBatchLoop() {
+	batchSize := d.cfg.DeleteBatchSize
+	linger := d.cfg.DeleteBatchFlushInterval
+	if linger <= 0 {
+		linger = 100 * time.Millisecond
+	}
+	batch := make([]int64, 0, batchSize)
+
+	for {
+		batch = batch[:0]
+
+		id, ok := <-d.deleteCh
+		if !ok {
+			return
 		}
+		batch = append(batch, id)
+
+		timer := time.NewTimer(linger)
+	collecting:
+		for len(batch) < batchSize {
+			select {
+			case id, ok := <-d.deleteCh:
+				if !ok {
+					timer.Stop()
+					d.flushDeletes(batch)
+					return
+				}
+				batch = append(batch, id)
+			case <-timer.C:
+				break collecting
+			}
+		}
+		timer.Stop()
+		d.flushDeletes(batch)
 	}
 }
 
-func (d *DurableEmitter) decPending(n int64) {
-	cur := d.pendingCount.Add(-n)
+func (d *DurableEmitter) flushDeletes(ids []int64) {
+	if len(ids) == 0 {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	defer cancel()
+
+	tDelete := time.Now()
+	deleted, err := d.store.BatchDelete(ctx, ids)
+	deleteElapsed := time.Since(tDelete)
+
+	if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
+		h.OnBatchDelete(deleteElapsed, int(deleted))
+	}
+	if err != nil {
+		d.eng.Errorw("failed to batch delete delivered events", "count", len(ids), "error", err)
+		return
+	}
+	d.eng.Debugw("DurableEmitter: coalesced delete flushed", "submitted", len(ids), "deleted", deleted)
 	if d.metrics != nil {
-		ctx, cancel := d.stopCh.NewCtx()
-		defer cancel()
-		d.metrics.queueDepth.Record(ctx, cur)
+		d.metrics.deliverComplete.Add(ctx, deleted)
 	}
 }
 
@@ -652,39 +690,44 @@ func (d *DurableEmitter) retransmitPending() {
 	defer cancel()
 
 	cutoff := time.Now().Add(-d.cfg.RetransmitAfter)
-	pending, err := d.store.ListPending(ctx, cutoff, d.cfg.RetransmitBatchSize)
+	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, d.cfg.RetransmitBatchSize)
 	if err != nil {
 		d.eng.Errorw("failed to list pending events", "error", err)
 		return
 	}
 
-	if obs, ok := d.store.(DurableQueueObserver); ok {
-		st, obsErr := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
-		if obsErr != nil {
-			d.eng.Warnw("DurableEmitter: retransmit scan ObserveDurableQueue failed", "error", obsErr)
-		} else {
-			d.eng.Infow("DurableEmitter: retransmit pending scan",
-				"pending_rows", st.Depth,
-				"pending_payload_bytes", st.PayloadBytes,
-				"oldest_pending_age", st.OldestPendingAge.String(),
-				"near_ttl_rows", st.NearTTLCount,
-				"retransmit_list_batch", len(pending),
-				"retransmit_after", d.cfg.RetransmitAfter.String(),
-				"list_limit", d.cfg.RetransmitBatchSize,
-			)
-		}
+	// Advance the paging cursor. A full page means there may be more rows ahead,
+	// so continue after the last one next tick; a short page means we reached the
+	// end of the currently-eligible set, so wrap back to the oldest. This lets the
+	// loop page through (and past) poison rows instead of re-listing the same head
+	// every tick — a poison row is revisited only once per full sweep.
+	if len(pending) < d.cfg.RetransmitBatchSize {
+		d.retransmitCursorTs = time.Time{}
+		d.retransmitCursorID = 0
+	} else {
+		last := pending[len(pending)-1]
+		d.retransmitCursorTs = last.CreatedAt
+		d.retransmitCursorID = last.ID
 	}
+
+	d.eng.Debugw("DurableEmitter: retransmit pending scan",
+		"retransmit_list_batch", len(pending),
+		"retransmit_after", d.cfg.RetransmitAfter.String(),
+		"list_limit", d.cfg.RetransmitBatchSize,
+		"cursor_ts", d.retransmitCursorTs,
+		"cursor_id", d.retransmitCursorID,
+	)
 
 	if len(pending) == 0 {
 		return
 	}
 
-	d.retransmit(pending)
+	d.retransmit(ctx, pending)
 }
 
 // retransmit re-enqueues pending DB rows through the batch emitter. Each row
-// gets its own delivery callback that marks it delivered on success.
-func (d *DurableEmitter) retransmit(pending []DurableEvent) {
+// gets its own delivery callback that deletes it on success.
+func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent) {
 	var enqueued, skipped int
 
 	for _, pe := range pending {
@@ -701,8 +744,12 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		}
 
 		id := pe.ID
-		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now())); err != nil {
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit)); err != nil {
 			skipped++
+			if d.metrics != nil {
+				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
+					metric.WithAttributes(attribute.String("phase", publishPhaseRetransmit.String())))
+			}
 		} else {
 			enqueued++
 		}
@@ -713,39 +760,6 @@ func (d *DurableEmitter) retransmit(pending []DurableEvent) {
 		"skipped_buffer_full", skipped,
 		"total_pending", len(pending),
 	)
-}
-
-func (d *DurableEmitter) purgeLoop() {
-	interval := d.cfg.PurgeInterval
-	if interval <= 0 {
-		interval = 250 * time.Millisecond
-	}
-	batch := d.cfg.PurgeBatchSize
-	if batch <= 0 {
-		batch = 500
-	}
-
-	ctx, cancel := d.stopCh.NewCtx()
-	defer cancel()
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-d.stopCh:
-			return
-		case <-ticker.C:
-			for {
-				n, err := d.store.PurgeDelivered(ctx, batch)
-				if err != nil {
-					d.eng.Errorw("failed to purge delivered chip durable events", "error", err)
-					break
-				}
-				if n == 0 {
-					break
-				}
-			}
-		}
-	}
 }
 
 func (d *DurableEmitter) expiryLoop() {
@@ -765,7 +779,6 @@ func (d *DurableEmitter) expiryLoop() {
 				continue
 			}
 			if deleted > 0 {
-				d.decPending(deleted)
 				if d.metrics != nil {
 					d.metrics.expiredPurged.Add(ctx, deleted)
 				}
@@ -773,14 +786,6 @@ func (d *DurableEmitter) expiryLoop() {
 			}
 		}
 	}
-}
-
-func (d *DurableEmitter) queueStatsNearExpiryLead() time.Duration {
-	lead := 5 * time.Minute
-	if d.cfg.Metrics != nil && d.cfg.Metrics.NearExpiryLead > 0 {
-		lead = d.cfg.Metrics.NearExpiryLead
-	}
-	return lead
 }
 
 func (d *DurableEmitter) metricsLoop() {
@@ -800,13 +805,52 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			d.metrics.queueDepth.Record(ctx, d.pendingCount.Load())
-			d.metrics.queueDepthMax.Record(ctx, d.pendingMax.Load())
 			if obs, ok := d.store.(DurableQueueObserver); ok {
-				d.metrics.pollQueueGauges(ctx, obs, d.cfg.EventTTL, d.queueStatsNearExpiryLead(), mc.MaxQueuePayloadBytes)
+				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
+				if err != nil {
+					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
+				} else {
+					d.metrics.queueDepth.Record(ctx, st.TotalRows)
+					d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
+				}
 			}
+			if d.insertCh != nil {
+				if c := cap(d.insertCh); c > 0 {
+					d.metrics.insertCoalescerFill.Record(ctx, float64(len(d.insertCh))/float64(c))
+				}
+			} else {
+				d.metrics.insertCoalescerFill.Record(ctx, 0)
+			}
+			if d.deleteCh != nil {
+				if c := cap(d.deleteCh); c > 0 {
+					d.metrics.deleteCoalescerFill.Record(ctx, float64(len(d.deleteCh))/float64(c))
+				}
+			} else {
+				d.metrics.deleteCoalescerFill.Record(ctx, 0)
+			}
+			d.metrics.pollProcessGauges(ctx)
 		}
 	}
+}
+
+// ensureIdempotencyKey sets attrs[IdempotencyKeyAttr] to a deterministic hash
+// of source, type, and body when the caller did not supply a non-empty key.
+func ensureIdempotencyKey(attrs map[string]any, sourceDomain, entityType string, body []byte) {
+	if val, ok := attrs[chipingress.IdempotencyKeyAttr].(string); ok && val != "" {
+		return
+	}
+	attrs[chipingress.IdempotencyKeyAttr] = defaultIdempotencyKey(sourceDomain, entityType, body)
+}
+
+func defaultIdempotencyKey(sourceDomain, entityType string, body []byte) string {
+	h := sha256.New()
+	for _, s := range []string{sourceDomain, entityType} {
+		h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(s))))
+		h.Write([]byte(s))
+	}
+	h.Write(binary.BigEndian.AppendUint32(nil, uint32(len(body))))
+	h.Write(body)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // parseAttrs converts a variadic slice of (key, value) pairs (with optional
@@ -832,22 +876,4 @@ func parseAttrs(attrKVs ...any) map[string]any {
 	return a
 }
 
-// extractSourceAndType returns the CloudEvent source domain and entity type
-// from the supplied attributes. Callers must provide the canonical CloudEvents
-// keys "source" and "type". Both must be non-empty strings.
-func extractSourceAndType(attrKVs ...any) (sourceDomain, entityType string, err error) {
-	attrs := parseAttrs(attrKVs...)
-	if v, ok := attrs["source"].(string); ok {
-		sourceDomain = v
-	}
-	if v, ok := attrs["type"].(string); ok {
-		entityType = v
-	}
-	if sourceDomain == "" {
-		return "", "", errors.New(`"source" not found in provided key/value attributes`)
-	}
-	if entityType == "" {
-		return "", "", errors.New(`"type" not found in provided key/value attributes`)
-	}
-	return sourceDomain, entityType, nil
-}
+

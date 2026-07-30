@@ -45,6 +45,7 @@ var _ KeyBundle = &keyBundle[*cosmosKeyring]{}
 var _ KeyBundle = &keyBundle[*solanaKeyring]{}
 var _ KeyBundle = &keyBundle[*starkkey.OCR2Key]{}
 var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
+var _ KeyBundle = &keyBundle[*keccakEd25519Keyring]{}
 var _ KeyBundle = &keyBundle[*tonKeyring]{}
 var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
 
@@ -70,7 +71,7 @@ func New(chainType corekeys.ChainType) (KeyBundle, error) {
 	case corekeys.Sui:
 		return newKeyBundleRand(corekeys.Sui, newEd25519Keyring)
 	case corekeys.Stellar:
-		return newKeyBundleRand(corekeys.Stellar, newEd25519Keyring)
+		return newKeyBundleRand(corekeys.Stellar, newKeccakEd25519Keyring)
 	}
 	return nil, corekeys.NewErrInvalidChainType(chainType)
 }
@@ -95,7 +96,7 @@ func MustNewInsecure(reader io.Reader, chainType corekeys.ChainType) KeyBundle {
 	case corekeys.Sui:
 		return mustNewKeyBundleInsecure(corekeys.Sui, newEd25519Keyring, reader)
 	case corekeys.Stellar:
-		return mustNewKeyBundleInsecure(corekeys.Stellar, newEd25519Keyring, reader)
+		return mustNewKeyBundleInsecure(corekeys.Stellar, newKeccakEd25519Keyring, reader)
 	}
 	panic(corekeys.NewErrInvalidChainType(chainType))
 }
@@ -139,7 +140,7 @@ func KeyFor(raw internal.Raw) (kb KeyBundle) {
 	case corekeys.Sui:
 		kb = newKeyBundle(new(ed25519Keyring))
 	case corekeys.Stellar:
-		kb = newKeyBundle(new(ed25519Keyring))
+		kb = newKeyBundle(&keccakEd25519Keyring{ed25519Keyring: new(ed25519Keyring)})
 	default:
 		return nil
 	}

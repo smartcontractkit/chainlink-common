@@ -54,7 +54,7 @@ func TestSlice(t *testing.T) {
 	})
 
 	t.Run("GetType returns slice of underlying type", func(t *testing.T) {
-		assert.Equal(t, testSlice.GetType(), reflect.SliceOf(reflect.TypeOf(anyValue)))
+		assert.Equal(t, testSlice.GetType(), reflect.SliceOf(reflect.TypeFor[int]()))
 	})
 
 	t.Run("Encode prefixes encoded slice with length and encodes elements", func(t *testing.T) {

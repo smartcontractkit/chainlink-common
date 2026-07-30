@@ -1,6 +1,7 @@
 package ocr2key
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"errors"
@@ -93,7 +94,10 @@ func (tkr *tonKeyring) VerifyBlob(pubkey ocrtypes.OnchainPublicKey, b, sig []byt
 	if len(pubkey) != ed25519.PublicKeySize {
 		return false
 	}
-	return ed25519consensus.Verify(ed25519.PublicKey(pubkey), b, sig[32:])
+	if !bytes.Equal(pubkey, sig[:ed25519.PublicKeySize]) {
+		return false
+	}
+	return ed25519consensus.Verify(ed25519.PublicKey(pubkey), b, sig[ed25519.PublicKeySize:])
 }
 
 func (tkr *tonKeyring) MaxSignatureLength() int {

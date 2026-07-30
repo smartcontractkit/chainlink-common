@@ -7,10 +7,13 @@ import (
 )
 
 // Deprecated: use beholdertest.Observer
+//
+//go:fix inline
 type BeholderTester = beholdertest.Observer
 
 // Deprecated: use beholdertest.NewObserver
-func Beholder(t *testing.T) BeholderTester {
-	t.Helper()
+//
+//go:fix inline
+func Beholder(t *testing.T) beholdertest.Observer {
 	return beholdertest.NewObserver(t)
 }

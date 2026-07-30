@@ -110,7 +110,7 @@ func TestOrgResolver_Get_TimesOutWhenServiceHangs(t *testing.T) {
 	require.NoError(t, err)
 
 	start := time.Now()
-	_, err = resolver.Get(context.Background(), "0xabcdef1234567890")
+	_, err = resolver.Get(t.Context(), "0xabcdef1234567890")
 	require.ErrorIs(t, err, context.DeadlineExceeded)
 	require.Less(t, time.Since(start), 5*time.Second)
 }
@@ -126,7 +126,7 @@ func TestOrgResolver_Get_DefaultTimeoutApplied(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, defaultRequestTimeout, resolver.requestTimeout)
 
-	orgID, err := resolver.Get(context.Background(), "0xabcdef1234567890")
+	orgID, err := resolver.Get(t.Context(), "0xabcdef1234567890")
 	require.NoError(t, err)
 	require.Equal(t, "org-0xabcdef1234567890", orgID)
 }

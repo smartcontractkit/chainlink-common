@@ -68,8 +68,7 @@ func isNotFoundErr(err error) bool {
 	if strings.HasPrefix(err.Error(), "Subject not found") { // for mock schema registry
 		return true
 	}
-	var srErr srclient.Error
-	if errors.As(err, &srErr) && srErr.Code == 40401 { // for the actual schema registry api.
+	if srErr, ok := errors.AsType[srclient.Error](err); ok && srErr.Code == 40401 { // for the actual schema registry api.
 		return true
 	}
 	return false

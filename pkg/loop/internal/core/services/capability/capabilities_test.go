@@ -689,8 +689,7 @@ func Test_Capabilities(t *testing.T) {
 			capabilities.CapabilityRequest{Config: cmap, Inputs: imap})
 		require.Error(t, err)
 
-		var capErr caperrors.Error
-		ok := errors.As(err, &capErr)
+		capErr, ok := errors.AsType[caperrors.Error](err)
 		require.True(t, ok, "expected caperrors.Error, got %T: %v", err, err)
 		require.Equal(t, caperrors.Unavailable, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())
@@ -738,8 +737,7 @@ func Test_Capabilities(t *testing.T) {
 		}
 		require.Error(t, execErr)
 
-		var capErr caperrors.Error
-		ok := errors.As(execErr, &capErr)
+		capErr, ok := errors.AsType[caperrors.Error](execErr)
 		require.True(t, ok, "expected caperrors.Error, got %T: %v", execErr, execErr)
 		require.Equal(t, caperrors.Unavailable, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())
@@ -776,8 +774,7 @@ func Test_Capabilities(t *testing.T) {
 			capabilities.CapabilityRequest{Config: cmap, Inputs: imap})
 		require.Error(t, err)
 
-		var capErr caperrors.Error
-		ok := errors.As(err, &capErr)
+		capErr, ok := errors.AsType[caperrors.Error](err)
 		require.True(t, ok, "expected caperrors.Error, got %T: %v", err, err)
 		require.Equal(t, caperrors.Internal, capErr.Code())
 		require.Equal(t, caperrors.VisibilityPublic, capErr.Visibility())

@@ -12,10 +12,9 @@ import (
 )
 
 // LimitError is implemented by errors returned when a limit is exceeded.
-// Use [errors.As] to identify limit errors, for example:
+// Use [errors.AsType] to identify limit errors, for example:
 //
-//	var limitErr LimitError
-//	if errors.As(err, &limitErr) { ... }
+//	if limitErr, ok := errors.AsType[LimitError](err); ok { ... }
 type LimitError interface {
 	error
 	limitError()

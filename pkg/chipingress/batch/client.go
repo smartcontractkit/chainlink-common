@@ -65,8 +65,7 @@ func ErrorCodeFor(err error) string {
 		return ""
 	}
 
-	var pubErr *PublishError
-	if errors.As(err, &pubErr) {
+	if pubErr, ok := errors.AsType[*PublishError](err); ok {
 		if pubErr.Code == ErrCodeResultsMismatch {
 			return "results_mismatch"
 		}

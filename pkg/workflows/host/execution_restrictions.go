@@ -6,11 +6,12 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
-	"google.golang.org/protobuf/proto"
 )
 
 type methodKey struct {
@@ -84,7 +85,6 @@ func getSecretsHelper[T proto.Message](
 	request *sdk.GetSecretsRequest,
 	getter func(request *sdk.GetSecretsRequest) ([]T, error),
 	failer func(id, ns string) T) ([]T, error) {
-
 	e.mu.Lock()
 	var allowed []*sdk.SecretRequest
 	responses := make([]T, len(request.Requests))
@@ -294,5 +294,4 @@ func (e *executionRestrictions) GetSecrets(ctx context.Context, request *sdk.Get
 	}
 
 	return getSecretsHelper(e, request, getter, failer)
-
 }

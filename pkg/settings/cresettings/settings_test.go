@@ -261,7 +261,7 @@ func TestGatewayProxyDonIDKeyInit(t *testing.T) {
 	assert.Equal(t, "PerWorkflow.HTTPAction.GatewayProxyDonID", s.GetKey())
 	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
 	assert.NotNil(t, s.Parse)
-	assert.Equal(t, "", s.DefaultValue)
+	assert.Empty(t, s.DefaultValue)
 
 	got, err := s.Parse("don-123")
 	require.NoError(t, err)
@@ -274,7 +274,7 @@ func TestGatewayProxyDonIDGetOrDefault(t *testing.T) {
 
 	got, err := setting.GetOrDefault(ctx, nil)
 	require.NoError(t, err)
-	assert.Equal(t, "", got)
+	assert.Empty(t, got)
 
 	t.Cleanup(reinit)
 	t.Setenv(EnvNameSettings, `{

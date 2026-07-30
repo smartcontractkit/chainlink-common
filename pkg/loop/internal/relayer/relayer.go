@@ -14,12 +14,12 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
-	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	solpb "github.com/smartcontractkit/chainlink-common/pkg/chains/solana"
 	stelpb "github.com/smartcontractkit/chainlink-common/pkg/chains/stellar"
 	tonpb "github.com/smartcontractkit/chainlink-common/pkg/chains/ton"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	ks "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"

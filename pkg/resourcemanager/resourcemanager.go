@@ -73,7 +73,7 @@ import (
 // the CHiP schema registration and the consumer topic name; all must match
 // exactly.
 const (
-	domain             = "cll-meter"
+	domain             = "cll.meter"
 	entity             = "metering.v1.MeterRecord"
 	dataSchema         = "metering.v1.meter_record"
 	snapshotEntity     = "metering.v1.MeterSnapshot"

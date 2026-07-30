@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -352,7 +353,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				d.metrics.emitFail.Add(ctx, 1)
 			}
 		}
-		sourceDomain, entityType, err := extractSourceAndType(attrKVs...)
+		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
 		if err != nil {
 			emitFail()
 			return err
@@ -875,22 +876,4 @@ func parseAttrs(attrKVs ...any) map[string]any {
 	return a
 }
 
-// extractSourceAndType returns the CloudEvent source domain and entity type
-// from the supplied attributes. Callers must provide the canonical CloudEvents
-// keys "source" and "type". Both must be non-empty strings.
-func extractSourceAndType(attrKVs ...any) (sourceDomain, entityType string, err error) {
-	attrs := parseAttrs(attrKVs...)
-	if v, ok := attrs["source"].(string); ok {
-		sourceDomain = v
-	}
-	if v, ok := attrs["type"].(string); ok {
-		entityType = v
-	}
-	if sourceDomain == "" {
-		return "", "", errors.New(`"source" not found in provided key/value attributes`)
-	}
-	if entityType == "" {
-		return "", "", errors.New(`"type" not found in provided key/value attributes`)
-	}
-	return sourceDomain, entityType, nil
-}
+

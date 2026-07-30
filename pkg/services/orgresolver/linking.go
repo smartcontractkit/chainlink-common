@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
@@ -16,6 +17,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	linkingclient "github.com/smartcontractkit/chainlink-protos/linking-service/go/v1"
 )
+
+// defaultRequestTimeout bounds Get(); callers sit in capability hot paths, so a hung connection must not propagate.
+const defaultRequestTimeout = 2 * time.Second
 
 // JWTGenerator interface for JWT token creation
 type JWTGenerator interface {
@@ -35,20 +39,23 @@ type Config struct {
 	WorkflowRegistryChainSelector uint64
 	JWTGenerator                  JWTGenerator
 
+	RequestTimeout time.Duration // bounds each Get() call; zero means defaultRequestTimeout
+
 	Client linkingclient.LinkingServiceClient // optional
 	Meter  metric.Meter                       // optional
 }
 
 // orgResolver makes direct calls to the linking service to resolve organization IDs from workflow owners.
-// This simplified implementation makes a network call for each Get() request.
+// This simplified implementation makes a network call for each Get() request, bounded by requestTimeout.
 type orgResolver struct {
 	workflowRegistryAddress       string
 	workflowRegistryChainSelector uint64
 
-	client       linkingclient.LinkingServiceClient
-	conn         *grpc.ClientConn // nil if client was injected
-	logger       log.SugaredLogger
-	jwtGenerator JWTGenerator
+	client         linkingclient.LinkingServiceClient
+	conn           *grpc.ClientConn // nil if client was injected
+	logger         log.SugaredLogger
+	jwtGenerator   JWTGenerator
+	requestTimeout time.Duration
 
 	passCount metric.Int64Counter
 	failCount metric.Int64Counter
@@ -72,11 +79,17 @@ func NewOrgResolverWithClient(cfg Config, client linkingclient.LinkingServiceCli
 }
 
 func (cfg *Config) New(logger log.Logger) (*orgResolver, error) {
+	requestTimeout := cfg.RequestTimeout
+	if requestTimeout <= 0 {
+		requestTimeout = defaultRequestTimeout
+	}
+
 	resolver := &orgResolver{
 		workflowRegistryAddress:       cfg.WorkflowRegistryAddress,
 		workflowRegistryChainSelector: cfg.WorkflowRegistryChainSelector,
 		logger:                        log.Sugared(logger).Named("OrgResolver"),
 		jwtGenerator:                  cfg.JWTGenerator,
+		requestTimeout:                requestTimeout,
 	}
 
 	if cfg.Client != nil {
@@ -135,6 +148,9 @@ func (o *orgResolver) addJWTAuth(ctx context.Context, req any) (context.Context,
 }
 
 func (o *orgResolver) Get(ctx context.Context, owner string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, o.requestTimeout)
+	defer cancel()
+
 	req := &linkingclient.GetOrganizationFromWorkflowOwnerRequest{
 		WorkflowOwner:           owner,
 		WorkflowRegistryAddress: o.workflowRegistryAddress,

@@ -271,17 +271,36 @@ func convertDataBytesOrJSONToProto(d *typesolana.DataBytesOrJSON) (*DataBytesOrJ
 	if d == nil {
 		return nil, nil
 	}
+	if d.RawDataEncoding == "" {
+		return nil, fmt.Errorf("missing raw data encoding")
+	}
 	enc, err := convertEncodingTypeToProto(d.RawDataEncoding)
 	if err != nil {
 		return nil, fmt.Errorf("encoding: %w", err)
 	}
 	ret := &DataBytesOrJSON{Encoding: enc}
-	if d.AsJSON != nil {
+
+	switch d.RawDataEncoding {
+	case typesolana.EncodingBase58, typesolana.EncodingBase64, typesolana.EncodingBase64Zstd:
+		if d.AsJSON != nil {
+			return nil, fmt.Errorf("inconsistent data for raw encoding %q: json must be nil", d.RawDataEncoding)
+		}
+		ret.Body = &DataBytesOrJSON_Raw{Raw: d.AsDecodedBinary}
+		return ret, nil
+
+	case typesolana.EncodingJSON, typesolana.EncodingJSONParsed:
+		if d.AsDecodedBinary != nil {
+			return nil, fmt.Errorf("inconsistent data for json encoding %q: decoded binary must be nil", d.RawDataEncoding)
+		}
+		if d.AsJSON == nil {
+			return nil, fmt.Errorf("inconsistent data for json encoding %q: json payload is nil", d.RawDataEncoding)
+		}
 		ret.Body = &DataBytesOrJSON_Json{Json: d.AsJSON}
 		return ret, nil
+
+	default:
+		return nil, fmt.Errorf("unknown encoding type: %q", d.RawDataEncoding)
 	}
-	ret.Body = &DataBytesOrJSON_Raw{Raw: d.AsDecodedBinary}
-	return ret, nil
 }
 
 func convertAccountToProto(a *typesolana.Account) (*Account, error) {

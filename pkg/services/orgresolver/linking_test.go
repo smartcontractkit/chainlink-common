@@ -102,7 +102,7 @@ func TestOrgResolver_Get_TimesOutWhenServiceHangs(t *testing.T) {
 	cfg := Config{
 		WorkflowRegistryAddress:       "0x1234567890abcdef",
 		WorkflowRegistryChainSelector: 1,
-		GetTimeout:                    50 * time.Millisecond,
+		RequestTimeout:                50 * time.Millisecond,
 		Client:                        &mockHangingLinkingClient{},
 	}
 
@@ -124,7 +124,7 @@ func TestOrgResolver_Get_DefaultTimeoutApplied(t *testing.T) {
 
 	resolver, err := cfg.New(logger.Test(t))
 	require.NoError(t, err)
-	require.Equal(t, defaultGetTimeout, resolver.getTimeout)
+	require.Equal(t, defaultRequestTimeout, resolver.requestTimeout)
 
 	orgID, err := resolver.Get(context.Background(), "0xabcdef1234567890")
 	require.NoError(t, err)

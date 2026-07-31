@@ -6,6 +6,7 @@ package cresettings
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -22,27 +23,46 @@ const (
 )
 
 func init() { reinit() }
+
+// reinit initializes Default and DefaultGetter from the environment variables
+// EnvNameSettingsDefault and EnvNameSettings, and exits the process on failure.
 func reinit() {
-	if v, ok := os.LookupEnv(EnvNameSettingsDefault); ok {
-		err := json.Unmarshal([]byte(v), &Default)
-		if err != nil {
-			log.Fatalf("failed to initialize defaults: %v", err)
+	defaultsJSON, _ := os.LookupEnv(EnvNameSettingsDefault)
+	settingsJSON, _ := os.LookupEnv(EnvNameSettings)
+	if err := InitWithValues([]byte(defaultsJSON), []byte(settingsJSON)); err != nil {
+		log.Fatalf("failed to initialize cresettings: %v", err)
+	}
+}
+
+// InitWithValues initializes Default and DefaultGetter from raw JSON, and always (re-)initializes
+// the setting keys on Default.
+//
+// defaultsJSON, if non-empty, is unmarshaled over Default and must be shaped like ./defaults.json.
+// It only changes default values - keys and scopes always come from the Schema struct definition.
+//
+// settingsJSON, if non-empty, backs DefaultGetter and must be shaped like
+// ../settings/testdata/config.json. If empty, DefaultGetter is set to nil.
+func InitWithValues(defaultsJSON, settingsJSON json.RawMessage) error {
+	if len(defaultsJSON) > 0 {
+		if err := json.Unmarshal(defaultsJSON, &Default); err != nil {
+			return fmt.Errorf("failed to initialize defaults: %w", err)
 		}
 	}
-	err := InitConfig(&Default)
-	if err != nil {
-		log.Fatalf("failed to initialize keys: %v", err)
+	if err := InitConfig(&Default); err != nil {
+		return fmt.Errorf("failed to initialize keys: %w", err)
 	}
 	Config = Default
 
-	if v, ok := os.LookupEnv(EnvNameSettings); ok {
-		DefaultGetter, err = NewJSONGetter([]byte(v))
+	if len(settingsJSON) > 0 {
+		g, err := (&GetterConfig{}).NewJSONGetter(settingsJSON)
 		if err != nil {
-			log.Fatalf("failed to initialize settings: %v", err)
+			return fmt.Errorf("failed to initialize settings: %w", err)
 		}
+		DefaultGetter = g
 	} else {
 		DefaultGetter = nil
 	}
+	return nil
 }
 
 // DefaultGetter is a default settings getter populated from the env var CL_CRE_SETTINGS if set, otherwise it is nil.

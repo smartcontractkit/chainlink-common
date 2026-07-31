@@ -64,7 +64,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestSchema_Unmarshal(t *testing.T) {
-	cfg := Default
+	cfg := cloneSchema(Default) // deep copy: unmarshal merges into SettingMap.Values rather than replacing it
 	require.NoError(t, json.Unmarshal([]byte(`{
 	"WorkflowLimit": "500",
 	"GatewayUnauthenticatedRequestRateLimit": "200rps:50",
@@ -408,6 +408,8 @@ func TestDefaultGetter_SettingMap(t *testing.T) {
 }
 
 func TestDefaultEnvVars(t *testing.T) {
+	restoreSettings(t) // reinit cannot undo the merged SettingMap values
+
 	// confirm defaults
 	require.Empty(t, Default.PerWorkflow.ChainAllowed.Values["1234"])
 	require.Equal(t, "true", Default.PerWorkflow.ChainAllowed.Values["3379446385462418246"])
@@ -502,4 +504,202 @@ func TestFlowchartComplete(t *testing.T) {
 	for _, k := range keys {
 		assert.Contains(t, readme, k, "missing key %q in README.md", k)
 	}
+}
+
+const (
+	// overrides PerWorkflow.HTTPAction.CallLimit (normally 5) for every scope
+	testDefaultsJSON = `{
+	"PerWorkflow": {
+		"HTTPAction": {
+			"CallLimit": "9"
+		}
+	}
+}`
+	// overrides PerWorkflow.HTTPAction.CallLimit for workflow test-wf-id only
+	testSettingsJSON = `{
+	"workflow": {
+		"test-wf-id": {
+			"PerWorkflow": {
+				"HTTPAction": {
+					"CallLimit": "20"
+				}
+			}
+		}
+	}
+}`
+)
+
+// restoreSettings snapshots the package level Default, Config and DefaultGetter, and restores them
+// when the test ends, since InitWithValues mutates all three in place.
+// reinit alone is not enough: unmarshaling defaults merges into the existing SettingMap.Values maps
+// rather than replacing them, so those must be deep copied.
+func restoreSettings(t *testing.T) {
+	t.Helper()
+	origDefault, origConfig, origGetter := cloneSchema(Default), cloneSchema(Config), DefaultGetter
+	t.Cleanup(func() {
+		Default, Config, DefaultGetter = origDefault, origConfig, origGetter
+	})
+}
+
+// cloneSchema copies s, replacing every map (i.e. SettingMap.Values) with a fresh one so that
+// mutations of the copy cannot be seen through the original.
+func cloneSchema(s Schema) Schema {
+	c := s
+	cloneMaps(reflect.ValueOf(&c).Elem())
+	return c
+}
+
+func cloneMaps(v reflect.Value) {
+	switch v.Kind() {
+	case reflect.Struct:
+		for i := range v.NumField() {
+			cloneMaps(v.Field(i))
+		}
+	case reflect.Map:
+		if v.IsNil() || !v.CanSet() {
+			return
+		}
+		m := reflect.MakeMapWithSize(v.Type(), v.Len())
+		for _, k := range v.MapKeys() {
+			m.SetMapIndex(k, v.MapIndex(k))
+		}
+		v.Set(m)
+	}
+}
+
+func TestInitWithValues(t *testing.T) {
+	// base has no workflow override; override matches the workflow in testSettingsJSON
+	baseCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "other-wf-id"})
+	overrideCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "test-wf-id"})
+
+	t.Run("empty", func(t *testing.T) {
+		restoreSettings(t)
+
+		require.NoError(t, InitWithValues(nil, nil))
+
+		assert.Nil(t, DefaultGetter, "no settings JSON must leave DefaultGetter nil")
+		// keys are always (re-)initialized from the struct definition
+		assert.Equal(t, "PerWorkflow.HTTPAction.CallLimit", Default.PerWorkflow.HTTPAction.CallLimit.GetKey())
+		assert.Equal(t, 5, Default.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
+		// Config is the deprecated alias for Default (compared field-wise: Setting holds a Parse func,
+		// which is never DeepEqual to itself)
+		assert.Equal(t, Default.PerWorkflow.HTTPAction.CallLimit.DefaultValue, Config.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
+		assert.Equal(t, Default.WorkflowLimit.GetKey(), Config.WorkflowLimit.GetKey())
+	})
+
+	t.Run("defaults only", func(t *testing.T) {
+		restoreSettings(t)
+
+		require.NoError(t, InitWithValues([]byte(testDefaultsJSON), nil))
+
+		assert.Nil(t, DefaultGetter)
+		// key survives the unmarshal - only the default value changes
+		assert.Equal(t, "PerWorkflow.HTTPAction.CallLimit", Default.PerWorkflow.HTTPAction.CallLimit.GetKey())
+		assert.Equal(t, 9, Default.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
+		assert.Equal(t, 9, Config.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
+		// unrelated settings keep their compiled in defaults
+		assert.Equal(t, 1000, Default.WorkflowLimit.DefaultValue)
+
+		got, err := Default.PerWorkflow.HTTPAction.CallLimit.GetOrDefault(overrideCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 9, got)
+	})
+
+	t.Run("settings only", func(t *testing.T) {
+		restoreSettings(t)
+
+		require.NoError(t, InitWithValues(nil, []byte(testSettingsJSON)))
+
+		require.NotNil(t, DefaultGetter)
+		limit := Default.PerWorkflow.HTTPAction.CallLimit
+
+		got, err := limit.GetOrDefault(baseCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 5, got, "unscoped lookup must fall back to the compiled in default")
+
+		got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 20, got)
+	})
+
+	t.Run("both", func(t *testing.T) {
+		restoreSettings(t)
+
+		require.NoError(t, InitWithValues([]byte(testDefaultsJSON), []byte(testSettingsJSON)))
+
+		limit := Default.PerWorkflow.HTTPAction.CallLimit
+
+		got, err := limit.GetOrDefault(baseCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 9, got, "defaults JSON applies where there is no scoped override")
+
+		got, err = limit.GetOrDefault(overrideCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 20, got, "scoped override wins over the defaults JSON")
+	})
+
+	t.Run("empty settings clears getter", func(t *testing.T) {
+		restoreSettings(t)
+
+		require.NoError(t, InitWithValues(nil, []byte(testSettingsJSON)))
+		require.NotNil(t, DefaultGetter)
+
+		require.NoError(t, InitWithValues(nil, nil))
+		assert.Nil(t, DefaultGetter)
+	})
+
+	t.Run("invalid defaults", func(t *testing.T) {
+		restoreSettings(t)
+
+		err := InitWithValues([]byte(`not json`), nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to initialize defaults")
+	})
+
+	t.Run("invalid settings leaves getter untouched", func(t *testing.T) {
+		restoreSettings(t)
+
+		require.NoError(t, InitWithValues(nil, []byte(testSettingsJSON)))
+		before := DefaultGetter
+		require.NotNil(t, before)
+
+		err := InitWithValues(nil, []byte(`not json`))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to initialize settings")
+		assert.Same(t, before, DefaultGetter, "a failed InitWithValues must not clobber the previous getter")
+	})
+}
+
+func TestReinit(t *testing.T) {
+	t.Run("no env vars", func(t *testing.T) {
+		restoreSettings(t)
+
+		t.Setenv(EnvNameSettings, "")
+		t.Setenv(EnvNameSettingsDefault, "")
+		os.Unsetenv(EnvNameSettings)
+		os.Unsetenv(EnvNameSettingsDefault)
+		reinit()
+
+		assert.Nil(t, DefaultGetter)
+		assert.Equal(t, 5, Default.PerWorkflow.HTTPAction.CallLimit.DefaultValue)
+	})
+
+	t.Run("both env vars", func(t *testing.T) {
+		restoreSettings(t)
+
+		t.Setenv(EnvNameSettingsDefault, testDefaultsJSON)
+		t.Setenv(EnvNameSettings, testSettingsJSON)
+		reinit()
+
+		overrideCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "test-wf-id"})
+		baseCtx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "owner-id", Workflow: "other-wf-id"})
+
+		got, err := Default.PerWorkflow.HTTPAction.CallLimit.GetOrDefault(baseCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 9, got)
+
+		got, err = Default.PerWorkflow.HTTPAction.CallLimit.GetOrDefault(overrideCtx, DefaultGetter)
+		require.NoError(t, err)
+		assert.Equal(t, 20, got)
+	})
 }

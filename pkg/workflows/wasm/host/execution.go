@@ -358,6 +358,9 @@ func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32
 	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 		return ErrnoInval
 	}
+	if err := e.module.cfg.MaxSubscriptionsLimiter.Check(e.ctx, int(nsubscriptions)); err != nil {
+		return ErrnoInval
+	}
 
 	subs, err := wasmRead(caller, subscriptionptr, nsubscriptions*subscriptionLen)
 	if err != nil {

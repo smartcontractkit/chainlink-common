@@ -82,6 +82,7 @@ var Default = Schema{
 	BaseTriggerMaxRetries:                             Int(20),
 	BaseTriggerPruneAge:                               Duration(24 * time.Hour),
 	BaseTriggerMaxSendsPerTick:                        Int(20),
+	WASMPollOneoffSubscriptionLimit:                   Int(128),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -356,6 +357,12 @@ type Schema struct {
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
+
+	// WASMPollOneoffSubscriptionLimit bounds nsubscriptions in the WASI
+	// poll_oneoff host call. Checked against the Go wasip1 runtime
+	// (https://cs.opensource.google/go/go/+/refs/tags/go1.26.2:src/runtime/netpoll_wasip1.go),
+	// which never needs more than one.
+	WASMPollOneoffSubscriptionLimit Setting[int] `unit:"{subscription}"`
 
 	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit          Setting[config.Size]

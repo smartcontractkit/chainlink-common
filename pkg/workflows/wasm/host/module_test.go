@@ -685,3 +685,49 @@ func Test_CallAwaitRace(t *testing.T) {
 
 	wg.Wait()
 }
+
+// Test_callStart_RecoversHostFunctionPanic reproduces a panic raised by a host
+// function invoked from wasm (as would happen from a bug in e.g.
+// createCallCapFn, exec.log, etc.) and verifies that callStart recovers it
+// into a normal error instead of crashing the process.
+func Test_callStart_RecoversHostFunctionPanic(t *testing.T) {
+	wat := `
+	(module
+	  (import "env" "panic_me" (func $panic_me))
+	  (func (export "_start")
+	    call $panic_me))`
+	wasmBytes, err := wasmtime.Wat2Wasm(wat)
+	require.NoError(t, err)
+
+	engine := wasmtime.NewEngine()
+	mod, err := wasmtime.NewModule(engine, wasmBytes)
+	require.NoError(t, err)
+
+	store := wasmtime.NewStore(engine)
+	linker := wasmtime.NewLinker(engine)
+
+	require.NoError(t, linker.FuncWrap("env", "panic_me", func() {
+		panic("boom")
+	}))
+
+	instance, err := linker.Instantiate(store, mod)
+	require.NoError(t, err)
+
+	metrics := &fakeModuleMetrics{}
+	m := &module{cfg: &ModuleConfig{Logger: logger.Test(t)}, metrics: metrics}
+
+	result, err := callStart(m, instance, store)
+
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, 1, metrics.hostFnPanicRecoveredCount)
+}
+
+type fakeModuleMetrics struct {
+	hostFnPanicRecoveredCount int
+}
+
+func (f *fakeModuleMetrics) IncHostFnPanicRecovered() {
+	f.hostFnPanicRecoveredCount++
+}

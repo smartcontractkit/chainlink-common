@@ -671,7 +671,6 @@ func (u *UnimplementedStellarService) SimulateTransaction(_ context.Context, _ s
 
 func (u *UnimplementedStellarService) GetEvents(_ context.Context, _ stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
 	return stellar.GetEventsResponse{}, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
-
 }
 
 func (u *UnimplementedStellarService) GetTransaction(_ context.Context, _ stellar.GetTransactionRequest) (stellar.GetTransactionResponse, error) {

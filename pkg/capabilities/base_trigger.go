@@ -739,9 +739,7 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 
 		b.mu.Lock()
 		if reg, ok := b.byTrigger[rec.TriggerId]; ok {
-			if _, inMemory := reg.pending[rec.EventId]; inMemory {
-				delete(reg.pending, rec.EventId)
-			}
+			delete(reg.pending, rec.EventId)
 		}
 		b.mu.Unlock()
 

@@ -129,11 +129,7 @@ LIMIT $4`
 
 	out := make([]DurableEvent, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, DurableEvent{
-			ID:        r.ID,
-			Payload:   r.Payload,
-			CreatedAt: r.CreatedAt,
-		})
+		out = append(out, DurableEvent(r))
 	}
 	return out, nil
 }

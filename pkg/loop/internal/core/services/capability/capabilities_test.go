@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"

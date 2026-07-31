@@ -3,7 +3,6 @@ package stellar_test
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -64,7 +63,7 @@ func TestConvertGetLatestLedgerResponseFromProto_EmptyFieldsReturnZeroValues(t *
 
 	domain, err := stellarcap.ConvertGetLatestLedgerResponseFromProto(&stellarcap.GetLatestLedgerResponse{})
 	require.NoError(t, err)
-	require.Equal(t, "", domain.Hash) // hex.EncodeToString(nil) == ""
+	require.Empty(t, domain.Hash) // hex.EncodeToString(nil) == ""
 	require.Equal(t, base64.StdEncoding.EncodeToString(nil), domain.LedgerHeaderXDR)
 }
 
@@ -546,7 +545,7 @@ func TestProtoScVal_ExceedsMaxDepth(t *testing.T) {
 	}
 	_, err := stellarcap.ProtoToScVal(cur)
 	require.Error(t, err)
-	require.True(t, strings.Contains(err.Error(), "nesting exceeds maximum depth"), "unexpected error: %v", err)
+	require.Contains(t, err.Error(), "nesting exceeds maximum depth", "unexpected error: %v", err)
 }
 
 func TestProtoScVal_ExceedsMaxDepth_EmptyStorageContractInstance(t *testing.T) {

@@ -89,7 +89,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		h := host.NewRestrictedExecutionHelper(inner, restrictions)
 		_, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "blocked@1.0.0", Method: "Bar"})
 		var capErr caperrors.Error
-		require.True(t, errors.As(err, &capErr))
+		require.ErrorAs(t, err, &capErr)
 		assert.Contains(t, capErr.Error(), "denied by user pre-hook restrictions")
 		assert.Equal(t, caperrors.LimitExceeded, capErr.Code())
 	})
@@ -441,7 +441,7 @@ func TestRequirementSelectingModule_ConfidentialHTTPWithRestrictions(t *testing.
 			&confidentialhttp.SecretIdentifier{Key: "blocked-secret", Namespace: "ns"})
 		_, err := h.CallCapability(t.Context(), req)
 		var capErr caperrors.Error
-		require.True(t, errors.As(err, &capErr))
+		require.ErrorAs(t, err, &capErr)
 		assert.Contains(t, capErr.Error(), "denied by user pre-hook restrictions")
 		assert.Equal(t, caperrors.LimitExceeded, capErr.Code())
 	})
@@ -954,7 +954,6 @@ func TestRequirementSelectingModule_GetOwner(t *testing.T) {
 
 	owner := h.GetOwner()
 	assert.Equal(t, "owner-123", owner)
-
 }
 
 func TestRequirementSelectingModule_NewCreatesTheRightInterface(t *testing.T) {

@@ -11,7 +11,7 @@ func TestEventID(t *testing.T) {
 	a := EventID("register", "wf-1", "trigger-1")
 	b := EventID("register", "wf-1", "trigger-1")
 	assert.Equal(t, a, b)
-	assert.True(t, len(a) > len("register:"))
+	assert.Greater(t, len(a), len("register:"))
 	assert.Equal(t, "register:", a[:len("register:")])
 
 	// Distinct parts -> distinct id (e.g. re-register with a disambiguator).

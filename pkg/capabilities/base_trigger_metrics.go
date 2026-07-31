@@ -194,8 +194,8 @@ type noopBaseTriggerMetrics struct{}
 
 var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
 
-func (noopBaseTriggerMetrics) IncActiveTriggers()                                  {}
-func (noopBaseTriggerMetrics) DecActiveTriggers()                                  {}
+func (noopBaseTriggerMetrics) IncActiveTriggers()                          {}
+func (noopBaseTriggerMetrics) DecActiveTriggers()                          {}
 func (noopBaseTriggerMetrics) IncRetry(string)                             {}
 func (noopBaseTriggerMetrics) IncAck(string)                               {}
 func (noopBaseTriggerMetrics) ObserveTimeToAck(string, time.Duration, int) {}

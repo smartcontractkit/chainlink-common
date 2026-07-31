@@ -87,6 +87,10 @@ type ModuleConfig struct {
 	MaxResponseSizeBytes         uint64
 	MaxResponseSizeLimiter       limits.BoundLimiter[config.Size] // supersedes MaxResponseSizeBytes if set
 
+	// MaxSubscriptionsLimiter bounds nsubscriptions in the WASI poll_oneoff host
+	// call. Defaults to cresettings.Default.WASMPollOneoffSubscriptionLimit.
+	MaxSubscriptionsLimiter limits.BoundLimiter[int]
+
 	MaxLogLenBytes      uint32
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
@@ -148,7 +152,7 @@ type module struct {
 
 var _ ModuleV1 = (*module)(nil)
 
-type linkFn[T any] func(m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
+type linkFn[T any] func(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
@@ -334,6 +338,13 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
 		}
 	}
+	if modCfg.MaxSubscriptionsLimiter == nil {
+		var err error
+		modCfg.MaxSubscriptionsLimiter, err = limits.MakeUpperBoundLimiter(lf, cresettings.Default.WASMPollOneoffSubscriptionLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make poll_oneoff subscription limiter: %w", err)
+		}
+	}
 
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
@@ -410,7 +421,7 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	}, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -506,8 +517,8 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 	return linker.Instantiate(store, m.module)
 }
 
-func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newDagWasiLinker(m.cfg, m.engine)
+func linkLegacyDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
+	linker, err := newDagWasiLinker(ctx, m.cfg, m.engine)
 	if err != nil {
 		return nil, err
 	}
@@ -726,7 +737,7 @@ func runWasm[I, O proto.Message](
 		nodeSeed:            int64(rand.Uint64()),
 	}
 
-	instance, err := linkWasm(m, store, exec)
+	instance, err := linkWasm(ctxWithTimeout, m, store, exec)
 	if err != nil {
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}

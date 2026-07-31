@@ -79,6 +79,7 @@ flowchart
 
     subgraph host.NewModule
         PerWorkflow.WASMCompressedBinarySizeLimit{{PerWorkflow.WASMCompressedBinarySizeLimit}}:::bound
+        WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
     end
     
     subgraph Engine.init

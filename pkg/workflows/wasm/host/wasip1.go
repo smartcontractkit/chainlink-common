@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"math/rand"
 	"time"
 
@@ -139,11 +140,10 @@ const (
 // It doesn't actually sleep though, and will instead advance our fake clock by the sleep duration.
 func createPollOneoff(ctx context.Context, cfg *ModuleConfig) func(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	return func(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
-		maxSubscriptions, err := cfg.MaxSubscriptionsLimiter.Limit(ctx)
-		if err != nil {
+		if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 			return ErrnoInval
 		}
-		if nsubscriptions <= 0 || nsubscriptions > int32(maxSubscriptions) {
+		if err := cfg.MaxSubscriptionsLimiter.Check(ctx, int(nsubscriptions)); err != nil {
 			return ErrnoInval
 		}
 

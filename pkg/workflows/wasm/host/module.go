@@ -421,7 +421,7 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	}, nil
 }
 
-func linkNoDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err

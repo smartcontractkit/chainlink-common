@@ -2,8 +2,10 @@ package orgresolver
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -274,4 +276,280 @@ func TestOrgResolver_Get_WithoutJWTGenerator(t *testing.T) {
 
 	// Verify that no authorization header was set
 	require.Empty(t, client.receivedAuthHeader)
+}
+
+// mockCacheStore implements the CacheStore interface for testing.
+type mockCacheStore struct {
+	data          map[string]string
+	getErr        error // error to return from GetOrg (overrides data lookup)
+	upsertErr     error // error to return from UpsertOrg
+	getCalls      int
+	upsertCalls   int
+	lastUpsertKey string
+	lastUpsertVal string
+	mu            sync.Mutex
+}
+
+func newMockCacheStore() *mockCacheStore {
+	return &mockCacheStore{data: make(map[string]string)}
+}
+
+func (m *mockCacheStore) GetOrg(_ context.Context, owner string) (string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.getCalls++
+	if m.getErr != nil {
+		return "", m.getErr
+	}
+	orgID, ok := m.data[owner]
+	if !ok {
+		return "", ErrCacheMiss
+	}
+	return orgID, nil
+}
+
+func (m *mockCacheStore) UpsertOrg(_ context.Context, owner, orgID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.upsertCalls++
+	m.lastUpsertKey = owner
+	m.lastUpsertVal = orgID
+	if m.upsertErr != nil {
+		return m.upsertErr
+	}
+	m.data[owner] = orgID
+	return nil
+}
+
+func TestOrgResolver_Cache_HitSkipsLinkingService(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+
+	// Pre-populate the cache with a known mapping.
+	cachedOrgID := "cached-org-123"
+	workflowOwner := "0xabcdef1234567890"
+	cache.data[workflowOwner] = cachedOrgID
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    cache,
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	orgID, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, cachedOrgID, orgID)
+
+	// The linking service client must not be invoked on a cache hit; verify
+	// indirectly by checking that no upsert happened (which only occurs after
+	// a successful remote fetch).
+	require.Equal(t, 1, cache.getCalls)
+	require.Equal(t, 0, cache.upsertCalls)
+}
+
+func TestOrgResolver_Cache_MissFallsBackToLinkingServiceAndStores(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+
+	workflowOwner := "0xabcdef1234567890"
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    cache,
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	orgID, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID)
+
+	// Cache miss should trigger a linking-service fetch, and the result should
+	// be persisted to the cache store.
+	require.Equal(t, 1, cache.getCalls)
+	require.Equal(t, 1, cache.upsertCalls)
+	require.Equal(t, workflowOwner, cache.lastUpsertKey)
+	require.Equal(t, "org-"+workflowOwner, cache.lastUpsertVal)
+	require.Equal(t, "org-"+workflowOwner, cache.data[workflowOwner])
+}
+
+func TestOrgResolver_Cache_HitOnSecondCall(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+
+	workflowOwner := "0xabcdef1234567890"
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    cache,
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	// First call: cache miss -> fetches from linking service and stores.
+	orgID1, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID1)
+	require.Equal(t, 1, cache.upsertCalls)
+
+	// Second call: should hit the cache that was populated on the first call.
+	orgID2, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID2)
+
+	// Only one upsert should have happened (on the first call).
+	require.Equal(t, 1, cache.upsertCalls)
+	require.Equal(t, 2, cache.getCalls)
+}
+
+func TestOrgResolver_Cache_ErrorFallsBackToLinkingService(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+	cache.getErr = errors.New("cache store unavailable")
+
+	workflowOwner := "0xabcdef1234567890"
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    cache,
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	// A cache store error should not prevent resolution; it falls back to the
+	// linking service.
+	orgID, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID)
+
+	require.Equal(t, 1, cache.getCalls)
+	require.Equal(t, 1, cache.upsertCalls)
+}
+
+func TestOrgResolver_Cache_SQLErrNoRowsTreatedAsMiss(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+	cache.getErr = sql.ErrNoRows
+
+	workflowOwner := "0xabcdef1234567890"
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    cache,
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	orgID, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID)
+
+	// sql.ErrNoRows is treated as a miss, so the linking service is consulted
+	// and the result is stored.
+	require.Equal(t, 1, cache.upsertCalls)
+}
+
+func TestOrgResolver_Cache_UpsertErrorDoesNotFailGet(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+	cache.upsertErr = errors.New("cache write failed")
+
+	workflowOwner := "0xabcdef1234567890"
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    cache,
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	// A cache write failure should be logged but must not cause Get to fail.
+	orgID, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID)
+
+	require.Equal(t, 1, cache.upsertCalls)
+	// The data should not have been written due to the upsert error.
+	_, exists := cache.data[workflowOwner]
+	require.False(t, exists)
+}
+
+func TestOrgResolver_Cache_RequiresCacheStoreWhenEnabled(t *testing.T) {
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  true,
+		CacheStore:                    nil, // missing store
+		Client:                        &mockLinkingClient{},
+	}
+
+	_, err := cfg.New(logger.Test(t))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "CacheStore is required when CacheEnabled is true")
+}
+
+func TestOrgResolver_Cache_DisabledDoesNotUseCacheStore(t *testing.T) {
+	ctx := context.Background()
+	client := &mockLinkingClient{}
+	cache := newMockCacheStore()
+
+	workflowOwner := "0xabcdef1234567890"
+
+	cfg := Config{
+		URL:                           "test-url",
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		CacheEnabled:                  false,
+		CacheStore:                    cache, // provided but disabled
+		Client:                        client,
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	orgID, err := resolver.Get(ctx, workflowOwner)
+	require.NoError(t, err)
+	require.Equal(t, "org-"+workflowOwner, orgID)
+
+	// With caching disabled, neither GetOrg nor UpsertOrg should be called.
+	require.Equal(t, 0, cache.getCalls)
+	require.Equal(t, 0, cache.upsertCalls)
 }

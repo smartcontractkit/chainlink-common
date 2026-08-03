@@ -662,7 +662,7 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 // recovers panics that originated from guest calls to the host, and
 // re-panics them in Go.
 // See https://pkg.go.dev/github.com/bytecodealliance/wasmtime-go/v47#Func.Call.
-func callStart(m *module, instance *wasmtime.Instance, store *wasmtime.Store) (result interface{}, err error) {
+func callStart(m *module, instance *wasmtime.Instance, store *wasmtime.Store) (result any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			m.cfg.Logger.Errorw("panic during wasm execution", "panic", r)

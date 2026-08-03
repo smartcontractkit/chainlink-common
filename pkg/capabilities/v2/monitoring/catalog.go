@@ -13,15 +13,15 @@ const (
 	OutcomeSuccess = "success"
 	OutcomeError   = "error"
 
-	LabelOutcome           = "outcome"
-	LabelMethod            = "method"
-	LabelChainFamilyName   = "chain_family_name"
-	LabelChainID           = "chain_id"
-	LabelNetworkName       = "network_name"
-	LabelNetworkNameFull   = "network_name_full"
-	LabelWorkflowDonID     = "workflow_don_id"
-	LabelCapabilityType    = "capability_type"
-	LabelCapabilityID      = "capability_id"
+	LabelOutcome         = "outcome"
+	LabelMethod          = "method"
+	LabelChainFamilyName = "chain_family_name"
+	LabelChainID         = "chain_id"
+	LabelNetworkName     = "network_name"
+	LabelNetworkNameFull = "network_name_full"
+	LabelWorkflowDonID   = "workflow_don_id"
+	LabelCapabilityType  = "capability_type"
+	LabelCapabilityID    = "capability_id"
 )
 
 // ActionLatencyBucketBoundariesMs matches read-action latency buckets.

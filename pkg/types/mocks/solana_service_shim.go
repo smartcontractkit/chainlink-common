@@ -20,7 +20,7 @@ func WrapSolanaService(m *SolanaService) types.SolanaService {
 		return nil
 	}
 	return &SolanaServiceShim{
-		SolanaService:       m,
+		SolanaService:   m,
 		ClientMustEmbed: solana.ClientMustEmbed{},
 	}
 }

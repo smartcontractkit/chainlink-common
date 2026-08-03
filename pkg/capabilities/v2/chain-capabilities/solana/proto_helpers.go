@@ -1,6 +1,7 @@
 package solana
 
 import (
+	"errors"
 	"fmt"
 	"math"
 
@@ -576,7 +577,7 @@ func convertTransactionEnvelopeToProto(e typesolana.TransactionResultEnvelope) (
 			Transaction: &TransactionEnvelope_Raw{Raw: e.AsDecodedBinary.Content},
 		}, nil
 	default:
-		return nil, fmt.Errorf("transaction envelope has no content")
+		return nil, errors.New("transaction envelope has no content")
 	}
 }
 

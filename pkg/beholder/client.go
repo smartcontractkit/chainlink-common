@@ -223,7 +223,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		var chipIngressEmitter Emitter
 		if cfg.ChipIngressBatchEmitterEnabled {
 			if cfg.ChipIngressLogger == nil {
-				return nil, fmt.Errorf("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
+				return nil, errors.New("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
 			}
 			batchEmitterService, err = NewChipIngressBatchEmitterService(chipIngressClient, cfg, cfg.ChipIngressLogger)
 			if err != nil {

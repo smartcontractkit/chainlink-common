@@ -36,7 +36,7 @@ type batchEmitterMetrics struct {
 // NewChipIngressBatchEmitterService creates a batch emitter service backed by the given chipingress client.
 func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitterService, error) {
 	if client == nil {
-		return nil, fmt.Errorf("chip ingress client is nil")
+		return nil, errors.New("chip ingress client is nil")
 	}
 
 	defaults := DefaultConfig()

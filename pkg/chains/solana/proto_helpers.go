@@ -1290,6 +1290,7 @@ func ConvertGetSignatureStatusesReplyToProto(r *solana.GetSignatureStatusesReply
 	for i := range r.Results {
 		if r.Results[i] == nil {
 			out.Results = append(out.Results, nil)
+			continue
 		}
 		var conf uint64
 		if r.Results[i].Confirmations != nil {

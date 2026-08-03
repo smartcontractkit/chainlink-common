@@ -272,17 +272,36 @@ func convertDataBytesOrJSONToProto(d *typesolana.DataBytesOrJSON) (*DataBytesOrJ
 	if d == nil {
 		return nil, nil
 	}
+	if d.RawDataEncoding == "" {
+		return nil, fmt.Errorf("missing raw data encoding")
+	}
 	enc, err := convertEncodingTypeToProto(d.RawDataEncoding)
 	if err != nil {
 		return nil, fmt.Errorf("encoding: %w", err)
 	}
 	ret := &DataBytesOrJSON{Encoding: enc}
-	if d.AsJSON != nil {
+
+	switch d.RawDataEncoding {
+	case typesolana.EncodingBase58, typesolana.EncodingBase64, typesolana.EncodingBase64Zstd:
+		if d.AsJSON != nil {
+			return nil, fmt.Errorf("inconsistent data for raw encoding %q: json must be nil", d.RawDataEncoding)
+		}
+		ret.Body = &DataBytesOrJSON_Raw{Raw: d.AsDecodedBinary}
+		return ret, nil
+
+	case typesolana.EncodingJSON, typesolana.EncodingJSONParsed:
+		if d.AsDecodedBinary != nil {
+			return nil, fmt.Errorf("inconsistent data for json encoding %q: decoded binary must be nil", d.RawDataEncoding)
+		}
+		if d.AsJSON == nil {
+			return nil, fmt.Errorf("inconsistent data for json encoding %q: json payload is nil", d.RawDataEncoding)
+		}
 		ret.Body = &DataBytesOrJSON_Json{Json: d.AsJSON}
 		return ret, nil
+
+	default:
+		return nil, fmt.Errorf("unknown encoding type: %q", d.RawDataEncoding)
 	}
-	ret.Body = &DataBytesOrJSON_Raw{Raw: d.AsDecodedBinary}
-	return ret, nil
 }
 
 func convertAccountToProto(a *typesolana.Account) (*Account, error) {
@@ -762,6 +781,10 @@ func ConvertGetSignatureStatusesReplyToProto(r *typesolana.GetSignatureStatusesR
 	}
 	out := &GetSignatureStatusesReply{Results: make([]*GetSignatureStatusesResult, 0, len(r.Results))}
 	for i := range r.Results {
+		if r.Results[i] == nil {
+			out.Results = append(out.Results, nil)
+			continue
+		}
 		status, err := convertConfirmationStatusTypeToProto(r.Results[i].ConfirmationStatus)
 		if err != nil {
 			return nil, fmt.Errorf("results[%d].confirmation_status: %w", i, err)
@@ -910,6 +933,103 @@ func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest)
 		return nil, fmt.Errorf("sigs: %w", err)
 	}
 	return &typesolana.GetSignatureStatusesRequest{Sigs: sigs}, nil
+}
+
+func convertRPCFilterFromProto(f *RPCFilter) (typesolana.RPCFilter, error) {
+	if f == nil {
+		return typesolana.RPCFilter{}, fmt.Errorf("nil filter")
+	}
+	var memcmp *typesolana.RPCFilterMemcmp
+	if f.Memcmp != nil {
+		memcmp = &typesolana.RPCFilterMemcmp{
+			Offset: f.Memcmp.Offset,
+			Bytes:  f.Memcmp.Bytes,
+		}
+	}
+	return typesolana.RPCFilter{
+		Memcmp:   memcmp,
+		DataSize: f.DataSize,
+	}, nil
+}
+
+func convertRPCFiltersFromProto(filters []*RPCFilter) ([]typesolana.RPCFilter, error) {
+	if len(filters) == 0 {
+		return nil, nil
+	}
+	out := make([]typesolana.RPCFilter, 0, len(filters))
+	for i, f := range filters {
+		filter, err := convertRPCFilterFromProto(f)
+		if err != nil {
+			return nil, fmt.Errorf("filters[%d]: %w", i, err)
+		}
+		out = append(out, filter)
+	}
+	return out, nil
+}
+
+func convertGetProgramAccountsOptsFromProto(p *GetProgramAccountsOpts) (*typesolana.GetProgramAccountsOpts, error) {
+	if p == nil {
+		return nil, nil
+	}
+	enc, err := convertEncodingTypeFromProto(p.Encoding)
+	if err != nil {
+		return nil, fmt.Errorf("encoding: %w", err)
+	}
+	commit, err := convertCommitmentTypeFromProto(p.Commitment)
+	if err != nil {
+		return nil, fmt.Errorf("commitment: %w", err)
+	}
+	filters, err := convertRPCFiltersFromProto(p.Filters)
+	if err != nil {
+		return nil, fmt.Errorf("filters: %w", err)
+	}
+	return &typesolana.GetProgramAccountsOpts{
+		Encoding:   enc,
+		Commitment: commit,
+		DataSlice:  convertDataSliceFromProto(p.DataSlice),
+		Filters:    filters,
+	}, nil
+}
+
+// ConvertGetProgramAccountsRequestFromProto converts GetProgramAccountsRequest to domain type.
+func ConvertGetProgramAccountsRequestFromProto(p *GetProgramAccountsRequest) (*typesolana.GetProgramAccountsRequest, error) {
+	if p == nil {
+		return nil, nil
+	}
+	program, err := chainsolana.ConvertPublicKeyFromProto(p.Program)
+	if err != nil {
+		return nil, fmt.Errorf("program: %w", err)
+	}
+	opts, err := convertGetProgramAccountsOptsFromProto(p.Opts)
+	if err != nil {
+		return nil, fmt.Errorf("opts: %w", err)
+	}
+	return &typesolana.GetProgramAccountsRequest{
+		Program: program,
+		Opts:    opts,
+	}, nil
+}
+
+// ConvertGetProgramAccountsReplyToProto converts GetProgramAccountsReply to proto.
+func ConvertGetProgramAccountsReplyToProto(r *typesolana.GetProgramAccountsReply) (*GetProgramAccountsReply, error) {
+	if r == nil {
+		return nil, nil
+	}
+	accounts := make([]*KeyedAccount, 0, len(r.Value))
+	for i, ka := range r.Value {
+		if ka == nil {
+			continue
+		}
+		acc, err := convertAccountToProto(ka.Account)
+		if err != nil {
+			return nil, fmt.Errorf("value[%d].account: %w", i, err)
+		}
+		accounts = append(accounts, &KeyedAccount{
+			Pubkey:  ka.Pubkey[:],
+			Account: acc,
+		})
+	}
+	return &GetProgramAccountsReply{Value: accounts}, nil
 }
 
 func ptrUint64(v uint64) *uint64 {

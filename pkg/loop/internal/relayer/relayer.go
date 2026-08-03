@@ -472,7 +472,7 @@ func (r *relayerClient) TON() (types.TONService, error) {
 
 func (r *relayerClient) Solana() (types.SolanaService, error) {
 	return &SolClient{
-		r.solClient,
+		grpcClient: r.solClient,
 	}, nil
 }
 

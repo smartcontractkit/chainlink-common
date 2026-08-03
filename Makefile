@@ -1,10 +1,10 @@
 .PHONY: gomods
 gomods: ## Install gomods
-	go install github.com/jmank88/gomods@v0.1.6
+	go install github.com/jmank88/gomods@v0.1.7
 
 .PHONY: gomodtidy
 gomodtidy: gomods
-	gomods -s proto_vendor tidy
+	gomods tidy
 
 .PHONY: docs
 docs:
@@ -33,7 +33,7 @@ rm-builders:
 
 .PHONY: generate
 generate: mockery install-protoc gomods cre-protoc modgraph
-	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -s proto_vendor -go generate -x ./...
+	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
 
 .PHONY: cre-protoc
@@ -57,7 +57,7 @@ lint:
 
 .PHONY: modgraph
 modgraph: gomods
-	go install github.com/jmank88/modgraph@v0.1.0
+	go install github.com/jmank88/modgraph@v0.1.4
 	./modgraph > go.md
 
 .PHONY: dependabot

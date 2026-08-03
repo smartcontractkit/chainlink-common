@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"time"
-	
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/usercode/pkg2"
 )
 

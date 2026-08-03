@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
@@ -686,11 +687,15 @@ func Test_CallAwaitRace(t *testing.T) {
 	wg.Wait()
 }
 
-// Test_callStart_RecoversHostFunctionPanic reproduces a panic raised by a host
-// function invoked from wasm (as would happen from a bug in e.g.
-// createCallCapFn, exec.log, etc.) and verifies that callStart recovers it
-// into a normal error instead of crashing the process.
-func Test_callStart_RecoversHostFunctionPanic(t *testing.T) {
+type fakeModuleMetrics struct {
+	hostFnPanicRecoveredCount int
+}
+
+func (f *fakeModuleMetrics) IncHostFnPanicRecovered() {
+	f.hostFnPanicRecoveredCount++
+}
+
+func Test_Integration_Execute_RecoversHostFunctionPanic(t *testing.T) {
 	wat := `
 	(module
 	  (import "env" "panic_me" (func $panic_me))
@@ -699,35 +704,47 @@ func Test_callStart_RecoversHostFunctionPanic(t *testing.T) {
 	wasmBytes, err := wasmtime.Wat2Wasm(wat)
 	require.NoError(t, err)
 
-	engine := wasmtime.NewEngine()
-	mod, err := wasmtime.NewModule(engine, wasmBytes)
+	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
+	mc := &ModuleConfig{
+		Logger:         lggr,
+		IsUncompressed: true,
+	}
+	m, err := NewModule(t.Context(), mc, wasmBytes)
 	require.NoError(t, err)
 
-	store := wasmtime.NewStore(engine)
-	linker := wasmtime.NewLinker(engine)
+	// Our test binary doesn't import a "version_v2*" function, so force the
+	// module to treat it as a v2/NoDAG workflow, following the same pattern
+	// used elsewhere in this package (e.g. Test_Sleep_Timeout).
+	m.v2ImportName = "test"
 
-	require.NoError(t, linker.FuncWrap("env", "panic_me", func() {
-		panic("boom")
-	}))
-
-	instance, err := linker.Instantiate(store, mod)
-	require.NoError(t, err)
+	m.Start()
+	defer m.Close()
 
 	metrics := &fakeModuleMetrics{}
-	m := &module{cfg: &ModuleConfig{Logger: logger.Test(t)}, metrics: metrics}
+	m.metrics = metrics
 
-	result, err := callStart(m, instance, store)
+	m.linkV2 = func(_ context.Context, mod *module, store *wasmtime.Store, _ *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+		linker := wasmtime.NewLinker(mod.engine)
+		if err := linker.FuncWrap("env", "panic_me", func() {
+			panic("boom")
+		}); err != nil {
+			return nil, err
+		}
+		return linker.Instantiate(store, mod.module)
+	}
+
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("test-execution-id")
+
+	req := &sdkpb.ExecuteRequest{Request: &sdkpb.ExecuteRequest_Trigger{}}
+
+	_, err = m.Execute(t.Context(), req, mockExecutionHelper)
 
 	require.Error(t, err)
-	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "boom")
 	assert.Equal(t, 1, metrics.hostFnPanicRecoveredCount)
-}
 
-type fakeModuleMetrics struct {
-	hostFnPanicRecoveredCount int
-}
-
-func (f *fakeModuleMetrics) IncHostFnPanicRecovered() {
-	f.hostFnPanicRecoveredCount++
+	require.Len(t, logs.AllUntimed(), 1)
+	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
+	assert.Equal(t, "panic during wasm execution", logs.AllUntimed()[0].Message)
 }

@@ -150,6 +150,12 @@ type module struct {
 	stopCh chan struct{}
 
 	v2ImportName string
+
+	// linkV2 wires the host functions the v2/NoDAG guest imports. It defaults
+	// to linkNoDAG; tests may override it to substitute a host function
+	// implementation (e.g. one that panics) without going through a real
+	// compiled wasm binary.
+	linkV2 linkFn[*sdkpb.ExecutionResult]
 }
 
 var _ ModuleV1 = (*module)(nil)
@@ -426,6 +432,7 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 		metrics:      metrics,
 		stopCh:       make(chan struct{}),
 		v2ImportName: v2ImportName,
+		linkV2:       linkNoDAG,
 	}, nil
 }
 
@@ -621,7 +628,7 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	case *sdkpb.ExecuteRequest_PreHook:
 		timeout = *m.cfg.PrehookTimeout
 	}
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
+	return runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
 }
 
 // Run is deprecated, use execute instead
@@ -652,7 +659,8 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 
 // callStart looks up and invokes the wasm module's _start function, but
 // recovers any panic. It's sufficient to just recover here, wasmtime-go
-// already recovers panics that originated from guest calls to the host.
+// recovers panics that originated from guest calls to the host, and
+// re-panics them in Go.
 // See https://pkg.go.dev/github.com/bytecodealliance/wasmtime-go/v47#Func.Call.
 func callStart(m *module, instance *wasmtime.Instance, store *wasmtime.Store) (result interface{}, err error) {
 	defer func() {

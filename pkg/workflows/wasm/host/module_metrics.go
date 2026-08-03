@@ -20,13 +20,15 @@ type moduleMetricsImpl struct {
 var _ moduleMetrics = &moduleMetricsImpl{}
 
 func newModuleMetrics() (moduleMetrics, error) {
-	hostFnPanicRecoveredCount, err := beholder.GetMeter().Int64Counter("platform_wasm_host_panic_recovered")
+	hostFnPanicRecoveredTotal, err := beholder.GetMeter().Int64Counter("platform_wasm_host_panic_recovered_total",
+		metric.WithDescription("the total number of times we've recovered from a wasmtime-go panic"),
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	return &moduleMetricsImpl{
-		hostFnPanicRecoveredCount: hostFnPanicRecoveredCount,
+		hostFnPanicRecoveredCount: hostFnPanicRecoveredTotal,
 	}, nil
 }
 

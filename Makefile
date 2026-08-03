@@ -1,10 +1,10 @@
 .PHONY: gomods
 gomods: ## Install gomods
-	go install github.com/jmank88/gomods@v0.1.6
+	go install github.com/jmank88/gomods@v0.1.7
 
 .PHONY: gomodtidy
 gomodtidy: gomods
-	gomods -s proto_vendor tidy
+	gomods tidy
 
 .PHONY: docs
 docs:
@@ -33,7 +33,7 @@ rm-builders:
 
 .PHONY: generate
 generate: mockery install-protoc gomods cre-protoc modgraph
-	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -s proto_vendor -go generate -x ./...
+	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -go generate -x ./...
 	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
 
 .PHONY: cre-protoc
@@ -57,9 +57,28 @@ lint:
 
 .PHONY: modgraph
 modgraph: gomods
-	go install github.com/jmank88/modgraph@v0.1.0
+	go install github.com/jmank88/modgraph@v0.1.4
 	./modgraph > go.md
 
 .PHONY: dependabot
 dependabot:
 	echo "Deprecated: manually trigger the CI workflow instead"
+
+define semver_major
+	awk -F/ '{print $$3}' \
+	   | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$$' \
+	   | sort -V \
+	   | tail -n 1
+endef
+
+.PHONY: wasmtime-bump
+wasmtime-bump:
+	export WASMTIME_VERSION=$(shell git ls-remote --tags --refs https://github.com/bytecodealliance/wasmtime-go | $(call semver_major)); \
+  	echo $$WASMTIME_VERSION; \
+  	export WASMTIME_MAJOR_VERSION=$$(echo $$WASMTIME_VERSION | sed 's/^v//' | cut -d. -f1); \
+  	echo $$WASMTIME_MAJOR_VERSION; \
+  	export WASMTIME_MAJOR_VERSION_CURRENT=$(go list -m -json google.golang.org/protobuf | jq -r .Version | $(call semver_major)); \
+  	echo $$WASMTIME_MAJOR_VERSION_CURRENT; \
+	@ [ "$$WASMTIME_MAJOR_VERSION" != "$$WASMTIME_MAJOR_VERSION_CURRENT"] && \
+	gofmt -w -r '"github.com/bytecodealliance/wasmtime-go/v$$WASMTIME_MAJOR_VERSION_CURRENT" -> "github.com/bytecodealliance/wasmtime-go/v$$WASMTIME_MAJOR_VERSION"' .; \
+	go get github.com/bytecodealliance/wasmtime-go/v$$WASMTIME_MAJOR_VERSION@$$WASMTIME_VERSION;

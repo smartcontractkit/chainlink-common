@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785769564733,
+  "lastUpdate": 1785774178102,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -56880,6 +56880,66 @@ window.BENCHMARK_DATA = {
             "value": 117912,
             "unit": "ns/op",
             "extra": "9524 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "vladimiramnell@gmail.com",
+            "name": "Vladimir",
+            "username": "Unheilbar"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "985f5a5a03d94760c9cfa0ba6898a06e6ab5ab19",
+          "message": "[Solana capability] Reads + Trigger changes batch (#2117)\n\n* add field to mark requests as external for solana service (#2066)\n\n* add field to mark requests as external for solana service\n\n* fix format\n\n* update comments\n\n---------\n\nCo-authored-by: Silas Lenihan <32529249+silaslenihan@users.noreply.github.com>\n\n* bump protos\n\n* make tidy\n\n* Plex 2406/pipe get program accounts (#2126)\n\n* pipe get program accounts\n\n* add nil check test cases\n\n* add mustEmbedUnimplementedClient\n\n* handle nil filters\n\n* fix tests\n\n* run generate\n\n* fix mocks\n\n* add proto conversions for GetProgramAccounts (#2128)\n\n* wire slot to GetBalanceReply (#2141)\n\n* wire slot to GetBalanceReply\n\n* add slot for GetFeeForMessageReply\n\n* PLEX-2935/generalize monitoring (#2132)\n\n* initial implementation of generalized monitoring applied to solana server\n\n* generate protos from parent directory\n\n* kvs renamed\n\n* cleanup monitoring\n\n* simplify metrics\n\n* []any -> KeyValue\n\n* UpperCase logs\n\n* Add Solana limit settings (#2186)\n\n* fix proto converters solana (#2278)\n\n* make GetSignatureStatusesReply entries optional (#2289)\n\n* make GetSignatureStatusesReply entries optional\n\n* fix capability proto converter\n\n* fix typecheck\n\n* Sol service/fix acc data conversion (#2291)\n\n* make GetSignatureStatusesReply entries optional\n\n* fix capability proto converter\n\n* fix typecheck\n\n* reject inconsisten fields for data bytes converters\n\n* fix panic on sol proto converter\n\n---------\n\nCo-authored-by: Silas Lenihan <32529249+silaslenihan@users.noreply.github.com>",
+          "timestamp": "2026-08-03T16:10:28Z",
+          "tree_id": "693d2f10a9b3522d0162e27b1756cf711b766ed5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/985f5a5a03d94760c9cfa0ba6898a06e6ab5ab19"
+        },
+        "date": 1785774175402,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 507.4,
+            "unit": "ns/op",
+            "extra": "2006575 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78316,
+            "unit": "ns/op",
+            "extra": "15280 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 386,
+            "unit": "ns/op",
+            "extra": "3111334 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79125,
+            "unit": "ns/op",
+            "extra": "15187 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29508,
+            "unit": "ns/op",
+            "extra": "40905 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 129167,
+            "unit": "ns/op",
+            "extra": "9105 times\n4 procs"
           }
         ]
       }

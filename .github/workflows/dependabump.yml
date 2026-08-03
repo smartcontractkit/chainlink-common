@@ -20,4 +20,4 @@ jobs:
       SLACK_TOKEN: ${{ secrets.DEPENDABUMP_SLACK_API_KEY }}
       SLACK_CHANNEL_ID: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID }}
     with:
-      post-bump-command: make wasmtime-bump && make gomodtidy
+      post-bump-command: ./script/wasmtime-bump.sh && make gomodtidy

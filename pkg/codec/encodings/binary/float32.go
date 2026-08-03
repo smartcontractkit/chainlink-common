@@ -28,7 +28,7 @@ func (f *Float32) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (f *Float32) GetType() reflect.Type {
-	return reflect.TypeOf(float32(0))
+	return reflect.TypeFor[float32]()
 }
 
 func (f *Float32) Size(_ int) (int, error) {

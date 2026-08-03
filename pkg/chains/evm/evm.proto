@@ -25,6 +25,7 @@ service EVM{
   rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply);
   rpc GetForwarderForEOA(GetForwarderForEOARequest) returns (GetForwarderForEOAReply);
   rpc GetLatestLPBlock(google.protobuf.Empty) returns (GetLatestLPBlockReply);
+  rpc LPSkipToBlock(LPSkipToBlockRequest) returns (google.protobuf.Empty);
 }
 
 // represents simplified evm-style CallMsg
@@ -372,4 +373,8 @@ message GetForwarderForEOAReply {
 
 message GetFiltersNamesReply {
   repeated string items = 1;
+}
+
+message LPSkipToBlockRequest {
+  int64 block_number = 1; // block number to skip to
 }

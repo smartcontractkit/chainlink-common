@@ -28,7 +28,7 @@ func TestEmpty(t *testing.T) {
 	})
 
 	t.Run("GetType returns empty struct", func(t *testing.T) {
-		assert.Equal(t, reflect.TypeOf(struct{}{}), encodings.Empty{}.GetType())
+		assert.Equal(t, reflect.TypeFor[struct{}](), encodings.Empty{}.GetType())
 	})
 
 	t.Run("Size returns 0", func(t *testing.T) {

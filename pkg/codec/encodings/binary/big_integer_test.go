@@ -76,7 +76,7 @@ func TestBigInteger(t *testing.T) {
 	})
 
 	t.Run("GetType returns *big.Int", func(t *testing.T) {
-		assert.Equal(t, reflect.TypeOf(&big.Int{}), signed.GetType())
+		assert.Equal(t, reflect.TypeFor[*big.Int](), signed.GetType())
 	})
 
 	t.Run("Size returns the number of bytes", func(t *testing.T) {

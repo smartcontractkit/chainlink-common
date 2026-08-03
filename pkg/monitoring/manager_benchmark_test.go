@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -38,8 +37,7 @@ func BenchmarkManager(b *testing.B) {
 	var subs utils.Subprocesses
 	defer subs.Wait()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := b.Context()
 
 	cfg := config.Config{}
 	cfg.Feeds.URL = "http://some-fake-url-just-to-trigger-rdd-polling.com"
@@ -52,7 +50,7 @@ func BenchmarkManager(b *testing.B) {
 
 	producer := fakeProducer{make(chan producerMessage), make(chan struct{})}
 	defer func() { assert.NoError(b, producer.Close()) }()
-	factory := &fakeRandomDataSourceFactory{make(chan interface{})}
+	factory := &fakeRandomDataSourceFactory{make(chan any)}
 
 	prometheusExporterFactory := NewPrometheusExporterFactory(
 		newNullLogger(),

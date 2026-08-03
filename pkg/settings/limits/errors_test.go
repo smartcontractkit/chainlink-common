@@ -32,14 +32,14 @@ func TestLimitError_As(t *testing.T) {
 		t.Run(err.Error(), func(t *testing.T) {
 			t.Parallel()
 			var limitErr LimitError
-			require.True(t, errors.As(err, &limitErr))
-			require.True(t, errors.As(fmt.Errorf("wrapped: %w", err), &limitErr))
+			require.ErrorAs(t, err, &limitErr)
+			require.ErrorAs(t, fmt.Errorf("wrapped: %w", err), &limitErr)
 		})
 	}
 
 	var limitErr LimitError
-	require.False(t, errors.As(errors.New("other"), &limitErr))
-	require.False(t, errors.As(ErrQueueEmpty, &limitErr))
+	require.NotErrorAs(t, errors.New("other"), &limitErr)
+	require.NotErrorAs(t, ErrQueueEmpty, &limitErr)
 }
 
 func TestErrorRateLimited(t *testing.T) {

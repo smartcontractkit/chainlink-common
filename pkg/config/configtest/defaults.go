@@ -10,6 +10,8 @@ import (
 // Fields without defaults will set to zero values.
 // Arrays of tables are ignored.
 // Deprecated: use configdoc.DefaultsOnly
+//
+//go:fix inline
 func DocDefaultsOnly(r io.Reader, cfg any, decode func(io.Reader, any) error) error {
 	return configdoc.DefaultsOnly(r, cfg, decode)
 }

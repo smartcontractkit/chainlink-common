@@ -12,13 +12,14 @@ import (
 	"io"
 	"math"
 	"math/rand"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v28"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -86,6 +87,10 @@ type ModuleConfig struct {
 	MaxResponseSizeBytes         uint64
 	MaxResponseSizeLimiter       limits.BoundLimiter[config.Size] // supersedes MaxResponseSizeBytes if set
 
+	// MaxSubscriptionsLimiter bounds nsubscriptions in the WASI poll_oneoff host
+	// call. Defaults to cresettings.Default.WASMPollOneoffSubscriptionLimit.
+	MaxSubscriptionsLimiter limits.BoundLimiter[int]
+
 	MaxLogLenBytes      uint32
 	MaxLogCountDONMode  uint32
 	MaxLogCountNodeMode uint32
@@ -110,6 +115,13 @@ type ModuleConfig struct {
 	// If Determinism is set, the module will override the random_get function in the WASI API with
 	// the provided seed to ensure deterministic behavior.
 	Determinism *DeterminismConfig
+
+	// guestStdoutFile and guestStderrFile are the paths the WASM guest's stdout/stderr are
+	// redirected to. They always default to os.DevNull so the guest can never write to the
+	// host's own stdout/stderr; unexported so callers outside this package can't override
+	// that. Tests in this package may set them directly to a temp file to inspect guest output.
+	guestStdoutFile string
+	guestStderrFile string
 }
 
 type ModuleBase = host.ModuleBase
@@ -140,7 +152,7 @@ type module struct {
 
 var _ ModuleV1 = (*module)(nil)
 
-type linkFn[T any] func(m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
+type linkFn[T any] func(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
@@ -203,6 +215,14 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.PrehookTimeout == nil {
 		modCfg.PrehookTimeout = &defaultPrehookTimeout
+	}
+
+	if modCfg.guestStdoutFile == "" {
+		modCfg.guestStdoutFile = os.DevNull
+	}
+
+	if modCfg.guestStderrFile == "" {
+		modCfg.guestStderrFile = os.DevNull
 	}
 
 	if modCfg.MinMemoryMBs == 0 {
@@ -318,6 +338,13 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
 		}
 	}
+	if modCfg.MaxSubscriptionsLimiter == nil {
+		var err error
+		modCfg.MaxSubscriptionsLimiter, err = limits.MakeUpperBoundLimiter(lf, cresettings.Default.WASMPollOneoffSubscriptionLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make poll_oneoff subscription limiter: %w", err)
+		}
+	}
 
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
@@ -394,7 +421,7 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 	}, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -490,8 +517,8 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 	return linker.Instantiate(store, m.module)
 }
 
-func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newDagWasiLinker(m.cfg, m.engine)
+func linkLegacyDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
+	linker, err := newDagWasiLinker(ctx, m.cfg, m.engine)
 	if err != nil {
 		return nil, err
 	}
@@ -655,7 +682,12 @@ func runWasm[I, O proto.Message](
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
-	wasi.InheritStdout()
+	if err := wasi.SetStdoutFile(m.cfg.guestStdoutFile); err != nil {
+		return o, fmt.Errorf("error setting guest stdout file: %w", err)
+	}
+	if err := wasi.SetStderrFile(m.cfg.guestStderrFile); err != nil {
+		return o, fmt.Errorf("error setting guest stderr file: %w", err)
+	}
 	defer wasi.Close()
 
 	wasi.SetArgv([]string{"wasi", reqstr})
@@ -697,6 +729,7 @@ func runWasm[I, O proto.Message](
 		ctx:                 ctxWithTimeout,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
+		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
 		module:              m,
 		executor:            helper,
@@ -704,7 +737,7 @@ func runWasm[I, O proto.Message](
 		nodeSeed:            int64(rand.Uint64()),
 	}
 
-	instance, err := linkWasm(m, store, exec)
+	instance, err := linkWasm(ctxWithTimeout, m, store, exec)
 	if err != nil {
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
@@ -1012,44 +1045,58 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 			return
 		}
 
-		var raw map[string]any
-		innerErr = json.Unmarshal(b, &raw)
+		innerErr = logRawMessage(logger, b)
 		if innerErr != nil {
+			logger.Errorf("error calling log: %s", innerErr)
 			return
 		}
-
-		level := raw["level"]
-		delete(raw, "level")
-
-		msg := raw["msg"].(string)
-		delete(raw, "msg")
-		delete(raw, "ts")
-
-		var args []any
-		for k, v := range raw {
-			args = append(args, k, v)
-		}
-
-		reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
-		sanitizedMsg := reg.ReplaceAllString(msg, "*")
-
-		switch level {
-		case "debug":
-			logger.Debugw(sanitizedMsg, args...)
-		case "info":
-			logger.Infow(sanitizedMsg, args...)
-		case "warn":
-			logger.Warnw(sanitizedMsg, args...)
-		case "error":
-			logger.Errorw(sanitizedMsg, args...)
-		case "panic":
-			logger.Panicw(sanitizedMsg, args...)
-		case "fatal":
-			logger.Fatalw(sanitizedMsg, args...)
-		default:
-			logger.Infow(sanitizedMsg, args...)
-		}
 	}
+}
+
+// logRawMessage decodes a JSON-encoded log message received from the WASM guest and
+// logs it at the appropriate level.
+func logRawMessage(logger logger.Logger, b []byte) error {
+	var raw map[string]any
+	innerErr := json.Unmarshal(b, &raw)
+	if innerErr != nil {
+		return innerErr
+	}
+
+	level := raw["level"]
+	delete(raw, "level")
+
+	msg, ok := raw["msg"].(string)
+	if !ok {
+		return fmt.Errorf("could not coerce msg to string, got %T", raw["msg"])
+	}
+	delete(raw, "msg")
+	delete(raw, "ts")
+
+	var args []any
+	for k, v := range raw {
+		args = append(args, k, v)
+	}
+
+	reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
+	sanitizedMsg := reg.ReplaceAllString(msg, "*")
+
+	switch level {
+	case "debug":
+		logger.Debugw(sanitizedMsg, args...)
+	case "info":
+		logger.Infow(sanitizedMsg, args...)
+	case "warn":
+		logger.Warnw(sanitizedMsg, args...)
+	case "error":
+		logger.Errorw(sanitizedMsg, args...)
+	case "panic", "fatal":
+		// The guest should never be able to panic/exit the host
+		logger.Errorw(sanitizedMsg, args...)
+	default:
+		logger.Infow(sanitizedMsg, args...)
+	}
+
+	return nil
 }
 
 type unimplementedMessageEmitter struct{}
@@ -1163,8 +1210,16 @@ func writeUInt32(memory []byte, ptr int32, val uint32) int64 {
 
 func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int32) int64 {
 	memory := wasmMemoryAccessor(caller)
-	if int32(len(memory)) < ptr+size {
+	if ptr < 0 || size < 0 || int64(ptr) > int64(len(memory)) {
+		return -1
+	}
+
+	// widen to int64 so a guest-supplied ptr/size near math.MaxInt32 cannot
+	// overflow the bounds check and drive size negative below.
+	if int64(ptr)+int64(size) > int64(len(memory)) {
 		size = int32(len(memory)) - ptr
+	}
+	if int(size) < len(src) {
 		src = src[:size]
 	}
 
@@ -1175,7 +1230,7 @@ func truncateWasmWrite(caller *wasmtime.Caller, src []byte, ptr int32, size int3
 
 // write copies the given src byte slice into the memory at the given pointer and max size.
 func write(memory, src []byte, ptr, maxSize int32) int64 {
-	if ptr < 0 {
+	if ptr < 0 || maxSize < 0 {
 		return -1
 	}
 
@@ -1183,7 +1238,9 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 		return -1
 	}
 
-	if int32(len(memory)) < ptr+maxSize {
+	// widen to int64 so a guest-supplied ptr near math.MaxInt32 cannot overflow
+	// the bounds check into a negative value and bypass it.
+	if int64(ptr)+int64(maxSize) > int64(len(memory)) {
 		return -1
 	}
 	buffer := memory[ptr : ptr+int32(len(src))]

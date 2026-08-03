@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	_ core.GatewayConnector         = (*GatewayConnectorClient)(nil)
+	_ core.GatewayConnector      = (*GatewayConnectorClient)(nil)
 	_ core.MultiGatewayConnector = (*GatewayConnectorClient)(nil)
 )
 

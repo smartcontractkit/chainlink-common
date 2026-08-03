@@ -31,7 +31,7 @@ func (l *lazyModule) ensureStarted() {
 	if l.started || l.closed {
 		return
 	}
-	l.Module.Start()
+	l.Start()
 	l.started = true
 }
 
@@ -43,7 +43,7 @@ func (l *lazyModule) ensureClosed() {
 	}
 	l.closed = true
 	if l.started {
-		l.Module.Close()
+		l.Close()
 	}
 }
 

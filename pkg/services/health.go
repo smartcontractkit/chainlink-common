@@ -240,9 +240,7 @@ func (c *HealthChecker) Register(service HealthReporter) error {
 
 	c.stateMu.Lock()
 	c.ready[name] = ready
-	for n, err := range report {
-		c.healthy[n] = err
-	}
+	maps.Copy(c.healthy, report)
 	c.stateMu.Unlock()
 
 	return nil

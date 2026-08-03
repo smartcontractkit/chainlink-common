@@ -103,6 +103,14 @@ func (cr *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, cap
 	return donsWithNodes, nil
 }
 
+func (cr *capabilitiesRegistryClient) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+	res, err := cr.grpc.DONByID(ctx, &pb.DONByIDRequest{DonID: donID})
+	if err != nil {
+		return capabilities.DON{}, err
+	}
+	return toDON(res.Don), nil
+}
+
 func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
 	var pid *p2ptypes.PeerID
 	if len(nodeReply.PeerID) > 0 {
@@ -235,6 +243,7 @@ func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *
 	remoteExecutableConfig.RequestTimeout = prtc.RequestTimeout.AsDuration()
 	remoteExecutableConfig.ServerMaxParallelRequests = prtc.ServerMaxParallelRequests
 	remoteExecutableConfig.RequestHasherType = capabilities.RequestHasherType(prtc.RequestHasherType)
+	remoteExecutableConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
 	return remoteExecutableConfig
 }
 
@@ -451,6 +460,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				RequestTimeout:                durationpb.New(cc.RemoteExecutableConfig.RequestTimeout),
 				ServerMaxParallelRequests:     cc.RemoteExecutableConfig.ServerMaxParallelRequests,
 				RequestHasherType:             capabilitiespb.RequestHasherType(cc.RemoteExecutableConfig.RequestHasherType),
+				MinResponsesToAggregate:       cc.RemoteExecutableConfig.MinResponsesToAggregate,
 			},
 		}
 	}
@@ -485,6 +495,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 						RequestTimeout:                durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
 						ServerMaxParallelRequests:     mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
 						RequestHasherType:             capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
+						MinResponsesToAggregate:       mConfig.RemoteExecutableConfig.MinResponsesToAggregate,
 					},
 				}
 			}
@@ -588,6 +599,14 @@ func (c *capabilitiesRegistryServer) DONsForCapability(ctx context.Context, req 
 	return &pb.DONForCapabilityReply{
 		Dons: donWithNodes,
 	}, nil
+}
+
+func (c *capabilitiesRegistryServer) DONByID(ctx context.Context, req *pb.DONByIDRequest) (*pb.DONByIDReply, error) {
+	don, err := c.impl.DONByID(ctx, req.DonID)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DONByIDReply{Don: toPbDON(don)}, nil
 }
 
 func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *pb.NodeReply {

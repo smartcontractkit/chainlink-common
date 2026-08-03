@@ -9,6 +9,7 @@ package loop.stellar;
 service Stellar {
   rpc GetLedgerEntries(GetLedgerEntriesRequest) returns (GetLedgerEntriesResponse);
   rpc GetLatestLedger(google.protobuf.Empty) returns (GetLatestLedgerResponse);
+  rpc GetLedgers(GetLedgersRequest) returns (GetLedgersResponse);
   rpc SimulateTransaction(SimulateTransactionRequest) returns (SimulateTransactionResponse);
   rpc GetEvents(GetEventsRequest) returns (GetEventsResponse);
   rpc GetTransaction(GetTransactionRequest) returns (GetTransactionResponse);
@@ -227,10 +228,46 @@ message SubmitTransactionResponse {
 
 // GetLatestLedgerResponse holds current ledger state.
 message GetLatestLedgerResponse {
-  bytes  hash = 1;              // 32-byte raw ledger hash
+  bytes  hash = 1;              // Raw 32-byte ledger hash
   uint32 protocol_version = 2;
   uint32 sequence = 3;
   int64  ledger_close_time = 4;
-  bytes  ledger_header_xdr = 5;   // LedgerHeader binary XDR
-  bytes  ledger_metadata_xdr = 6; // LedgerCloseMetaV2 binary XDR
+  bytes  ledger_header_xdr = 5;   // XDR encoding of LedgerHeader
+  bytes  ledger_metadata_xdr = 6; // XDR encoding of LedgerCloseMeta
+}
+
+// LedgerPaginationOptions controls GetLedgers paging.
+message LedgerPaginationOptions {
+  // Paging cursor from a previous GetLedgersResponse. Mutually exclusive with
+  // GetLedgersRequest.start_ledger (native RPC rejects both being set).
+  string cursor = 1;
+  uint32 limit = 2;
+}
+
+// GetLedgersRequest fetches a paginated range of ledgers.
+message GetLedgersRequest {
+  // Starting ledger sequence. Required unless pagination.cursor is set.
+  // Mutually exclusive with pagination.cursor (native RPC rejects both being set).
+  uint32 start_ledger = 1;
+  LedgerPaginationOptions pagination = 2;
+}
+
+// LedgerInfo is a single ledger returned by GetLedgers.
+message LedgerInfo {
+  bytes  hash = 1;                // Raw 32-byte ledger hash
+  uint32 sequence = 2;
+  int64  ledger_close_time = 3;
+  bytes  ledger_header_xdr = 4;   // Binary XDR encoding of LedgerHeaderHistoryEntry
+  bytes  ledger_metadata_xdr = 5; // Binary XDR encoding of LedgerCloseMeta
+}
+
+// GetLedgersResponse holds a paginated range of ledgers.
+message GetLedgersResponse {
+  repeated LedgerInfo ledgers = 1;
+  uint32 latest_ledger = 2;
+  int64  latest_ledger_close_time = 3;
+  uint32 oldest_ledger = 4;
+  int64  oldest_ledger_close_time = 5;
+  // Cursor for the next page; pass as pagination.cursor on a subsequent request.
+  string cursor = 6;
 }

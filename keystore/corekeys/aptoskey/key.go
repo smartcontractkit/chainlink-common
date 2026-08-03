@@ -4,10 +4,9 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	crypto_rand "crypto/rand"
+	"crypto/sha3"
 	"fmt"
 	"io"
-
-	"golang.org/x/crypto/sha3"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )

@@ -63,11 +63,11 @@ func TestAddressBytesToString(t *testing.T) {
 		T [][20]byte
 	}
 
-	concretest := reflect.TypeOf(&concreteStruct{})
-	concreteLargest := reflect.TypeOf(&concreteStructWithLargeAddress{})
-	pointertst := reflect.TypeOf(&pointerStruct{})
-	arrayst := reflect.TypeOf(&arrayStruct{})
-	slicest := reflect.TypeOf(&sliceStruct{})
+	concretest := reflect.TypeFor[*concreteStruct]()
+	concreteLargest := reflect.TypeFor[*concreteStructWithLargeAddress]()
+	pointertst := reflect.TypeFor[*pointerStruct]()
+	arrayst := reflect.TypeFor[*arrayStruct]()
+	slicest := reflect.TypeFor[*sliceStruct]()
 
 	type Bytes20AddressType [20]byte
 
@@ -80,8 +80,8 @@ func TestAddressBytesToString(t *testing.T) {
 		A string
 		T *Bytes20AddressType
 	}
-	oit := reflect.TypeOf(&otherIntegerType{})
-	oitpt := reflect.TypeOf(&pointerOtherIntegerType{})
+	oit := reflect.TypeFor[*otherIntegerType]()
+	oitpt := reflect.TypeFor[*pointerOtherIntegerType]()
 
 	testAddrBytes := [20]byte{}
 	testAddrStr := "0x" + hex.EncodeToString(testAddrBytes[:])
@@ -108,7 +108,7 @@ func TestAddressBytesToString(t *testing.T) {
 				require.Equal(t, 2, convertedType.NumField())
 				assert.Equal(t, test.tp.Elem().Field(0), convertedType.Field(0))
 				assert.Equal(t, test.tp.Elem().Field(1).Name, convertedType.Field(1).Name)
-				assert.Equal(t, reflect.TypeOf(""), convertedType.Field(1).Type)
+				assert.Equal(t, reflect.TypeFor[string](), convertedType.Field(1).Type)
 			})
 		}
 	})
@@ -123,7 +123,7 @@ func TestAddressBytesToString(t *testing.T) {
 
 		require.Equal(t, 2, convertedType.NumField())
 		assert.Equal(t, arrayst.Elem().Field(0), convertedType.Field(0))
-		assert.Equal(t, reflect.TypeOf([2]string{}), convertedType.Field(1).Type)
+		assert.Equal(t, reflect.TypeFor[[2]string](), convertedType.Field(1).Type)
 	})
 
 	t.Run("RetypeToOffChain converts slices of fixed length bytes to slices of string", func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestAddressBytesToString(t *testing.T) {
 
 		require.Equal(t, 2, convertedType.NumField())
 		assert.Equal(t, slicest.Elem().Field(0), convertedType.Field(0))
-		assert.Equal(t, reflect.TypeOf([]string{}), convertedType.Field(1).Type)
+		assert.Equal(t, reflect.TypeFor[[]string](), convertedType.Field(1).Type)
 	})
 
 	t.Run("TransformToOnChain converts string to bytes", func(t *testing.T) {
@@ -330,13 +330,11 @@ func TestAddressBytesToString(t *testing.T) {
 	t.Run("Unsupported field type returns error", func(t *testing.T) {
 		converter := codec.NewAddressBytesToStringModifier([]string{"T"}, mockModifier)
 
-		unsupportedStruct := struct {
-			A string
-			T int // Unsupported type
-		}{}
-
 		// We expect RetypeToOffChain to return an error because 'T' is not a supported type.
-		_, err := converter.RetypeToOffChain(reflect.TypeOf(&unsupportedStruct), "")
+		_, err := converter.RetypeToOffChain(reflect.TypeFor[*struct {
+			A string
+			T int
+		}](), "")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot convert bytes for field T")
 	})
@@ -356,7 +354,7 @@ func ExampleNewPathTraverseAddressBytesToStringModifier() {
 	mod := codec.NewPathTraverseAddressBytesToStringModifier([]string{"B.X"}, encoder, true)
 
 	// call RetypeToOffChain first with empty itemType to set base types
-	offChainType, _ := mod.RetypeToOffChain(reflect.TypeOf(&onChain{}), "")
+	offChainType, _ := mod.RetypeToOffChain(reflect.TypeFor[*onChain](), "")
 
 	fmt.Println("offChainType:")
 	fmt.Println(offChainType)

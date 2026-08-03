@@ -25,6 +25,8 @@ func PluginRelayerHandshakeConfig() plugin.HandshakeConfig {
 }
 
 // Deprecated
+//
+//go:fix inline
 type Keystore = core.Keystore
 
 type Relayer = looptypes.Relayer

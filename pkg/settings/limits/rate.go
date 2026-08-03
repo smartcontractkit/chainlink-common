@@ -435,7 +435,7 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 	if tenant == "" {
 		if !s.scope.IsTenantRequired() {
 			kvs := contexts.CREValue(ctx).LoggerKVs()
-			s.lggr.Warnw("Unable to apply scoped rate limit due to missing tenant: failing open", append([]any{"scope", s.scope}, kvs...)...)
+			s.lggr.Errorw("Unable to apply scoped rate limit due to missing tenant: failing open", append([]any{"scope", s.scope}, kvs...)...)
 			return UnlimitedRateLimiter(), s.wg.Done, nil
 		}
 		s.wg.Done()

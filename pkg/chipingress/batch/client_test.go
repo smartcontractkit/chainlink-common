@@ -3,7 +3,7 @@ package batch
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -1399,10 +1401,10 @@ func TestSeqnum(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(numGoroutines)
 
-		for g := 0; g < numGoroutines; g++ {
+		for g := range numGoroutines {
 			go func(goroutineID int) {
 				defer wg.Done()
-				for i := 0; i < eventsPerGoroutine; i++ {
+				for i := range eventsPerGoroutine {
 					event := &chipingress.CloudEventPb{
 						Id:     strconv.Itoa(goroutineID*eventsPerGoroutine + i),
 						Source: "concurrent-domain",
@@ -1426,7 +1428,7 @@ func TestSeqnum(t *testing.T) {
 
 		// Collect all seqnums
 		seqnums := make([]uint64, 0, totalEvents)
-		for i := 0; i < totalEvents; i++ {
+		for range totalEvents {
 			msg := <-client.messageBuffer
 			seqAttr := msg.event.Attributes["seqnum"]
 			require.NotNil(t, seqAttr)
@@ -1436,7 +1438,7 @@ func TestSeqnum(t *testing.T) {
 		}
 
 		// Sort and verify all unique and in range [1, totalEvents]
-		sort.Slice(seqnums, func(i, j int) bool { return seqnums[i] < seqnums[j] })
+		slices.Sort(seqnums)
 
 		expectedSeq := uint64(1)
 		for i, seq := range seqnums {
@@ -1564,6 +1566,185 @@ func TestBatchClient_Metrics(t *testing.T) {
 		failureLatency := mustFloat64HistogramPointWithAttr(t, latencyHist, "status", "failure")
 		assert.GreaterOrEqual(t, failureLatency.Count, uint64(1))
 	})
+}
+
+func TestBatchClient_ClientNameMetricAttribute(t *testing.T) {
+	const clientName = "test_client"
+
+	batchMetricNames := []string{
+		"chip_ingress.batch.send_requests_total",
+		"chip_ingress.batch.request_size_messages",
+		"chip_ingress.batch.request_size_bytes",
+		"chip_ingress.batch.request_latency_ms",
+		"chip_ingress.batch.config.info",
+		"chip_ingress.batch.batch_splits_total",
+		"chip_ingress.batch.results_mismatch_total",
+	}
+
+	t.Run("with WithClientName sets client_name on all batch metrics", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		events := []*chipingress.CloudEventPb{
+			largeTestEvent("chip-client-1"),
+			largeTestEvent("chip-client-2"),
+			largeTestEvent("chip-client-3"),
+		}
+		msgs2 := []*messageWithCallback{{event: events[0]}, {event: events[1]}}
+		_, maxRequestSize := newBatchRequest(msgs2, false)
+
+		mockClient := mocks.NewClient(t)
+		done := make(chan struct{})
+		var mu sync.Mutex
+		var publishCount int
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(_ mock.Arguments) {
+				mu.Lock()
+				publishCount++
+				if publishCount == 2 {
+					close(done)
+				}
+				mu.Unlock()
+			})
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithClientName(clientName),
+			WithBatchSize(1),
+			WithBatchInterval(time.Second),
+			WithMessageBuffer(10),
+			WithMaxGRPCRequestSize(minMaxGRPCRequestSize),
+		)
+		require.NoError(t, err)
+		client.maxGRPCRequestSize = maxRequestSize
+		client.effectiveMaxRequestSize = maxRequestSize
+		client.metrics.recordConfig(t.Context(), client)
+
+		messages := make([]*messageWithCallback, 0, len(events))
+		for _, event := range events {
+			messages = append(messages, &messageWithCallback{event: event})
+		}
+		client.sendBatch(t.Context(), messages)
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for split batches")
+		}
+
+		client.completeBatchCallbacksFromResults(
+			[]*messageWithCallback{
+				{event: &chipingress.CloudEventPb{Id: "m1", Source: "s", Type: "t"}},
+				{event: &chipingress.CloudEventPb{Id: "m2", Source: "s", Type: "t"}},
+			},
+			[]*chipingress.PublishResult{{EventId: "m1"}},
+		)
+		client.completeBatchCallbacksFromResults(
+			[]*messageWithCallback{
+				{event: &chipingress.CloudEventPb{Id: "m1", Source: "s", Type: "t"}},
+			},
+			[]*chipingress.PublishResult{{EventId: "wrong-id"}},
+		)
+
+		rm := collectResourceMetrics(t, reader)
+		for _, name := range batchMetricNames {
+			metric := mustMetric(t, rm, name)
+			assertMetricHasClientName(t, metric, clientName)
+		}
+	})
+
+	t.Run("without WithClientName omits client_name", func(t *testing.T) {
+		reader, restore := useTestMeterProvider(t)
+		defer restore()
+
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		done := make(chan struct{})
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{}, nil).
+			Run(func(_ mock.Arguments) { close(done) }).
+			Once()
+
+		client, err := NewBatchClient(
+			mockClient,
+			WithBatchSize(1),
+			WithBatchInterval(time.Second),
+			WithMessageBuffer(10),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		require.NoError(t, client.QueueMessage(&chipingress.CloudEventPb{
+			Id: "no-chip-client", Source: "platform", Type: "Test",
+		}, nil))
+
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for PublishBatch")
+		}
+		client.Stop()
+
+		rm := collectResourceMetrics(t, reader)
+		for _, sm := range rm.ScopeMetrics {
+			for _, metric := range sm.Metrics {
+				if !strings.HasPrefix(metric.Name, "chip_ingress.batch.") {
+					continue
+				}
+				assertMetricOmitsClientName(t, metric)
+			}
+		}
+	})
+}
+
+func assertMetricHasClientName(t *testing.T, metric metricdata.Metrics, clientName string) {
+	t.Helper()
+	forEachMetricAttrSet(t, metric, func(attrs attribute.Set) {
+		assert.True(t, hasStringAttr(attrs, "client_name", clientName),
+			"metric %s missing client_name=%q", metric.Name, clientName)
+	})
+}
+
+func assertMetricOmitsClientName(t *testing.T, metric metricdata.Metrics) {
+	t.Helper()
+	forEachMetricAttrSet(t, metric, func(attrs attribute.Set) {
+		for _, kv := range attrs.ToSlice() {
+			assert.NotEqual(t, "client_name", string(kv.Key), "metric %s should not have client_name", metric.Name)
+		}
+	})
+}
+
+func forEachMetricAttrSet(t *testing.T, metric metricdata.Metrics, fn func(attribute.Set)) {
+	t.Helper()
+	var count int
+	record := func(attrs attribute.Set) {
+		count++
+		fn(attrs)
+	}
+	switch data := metric.Data.(type) {
+	case metricdata.Sum[int64]:
+		for _, dp := range data.DataPoints {
+			record(dp.Attributes)
+		}
+	case metricdata.Histogram[int64]:
+		for _, dp := range data.DataPoints {
+			record(dp.Attributes)
+		}
+	case metricdata.Histogram[float64]:
+		for _, dp := range data.DataPoints {
+			record(dp.Attributes)
+		}
+	case metricdata.Gauge[int64]:
+		for _, dp := range data.DataPoints {
+			record(dp.Attributes)
+		}
+	default:
+		t.Fatalf("metric %s has unsupported type %T", metric.Name, metric.Data)
+	}
+	require.NotZero(t, count, "metric %s has no datapoints", metric.Name)
 }
 
 func TestSplitMessagesByRequestSize(t *testing.T) {
@@ -2166,4 +2347,72 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		require.Error(t, err3)
 		assert.EqualError(t, err3, "kafka unavailable")
 	})
+}
+
+func TestErrorCodeFor(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		err  error
+		want string
+	}{
+		{
+			name: "partial delivery publish error",
+			err:  &PublishError{Code: chipingress.PublishErrorCode(1), Reason: "schema not found"},
+			want: chipingress.PublishErrorCode(1).String(),
+		},
+		{
+			name: "results mismatch",
+			err:  &PublishError{Code: ErrCodeResultsMismatch, Reason: "server returned 1 results for 2 events"},
+			want: "results_mismatch",
+		},
+		{
+			name: "deadline exceeded status",
+			err:  status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
+			want: codes.DeadlineExceeded.String(),
+		},
+		{
+			name: "deadline exceeded context",
+			err:  context.DeadlineExceeded,
+			want: codes.DeadlineExceeded.String(),
+		},
+		{
+			name: "unavailable gateway 502",
+			err:  status.Error(codes.Unavailable, `unexpected HTTP status code received from server: 502 (Bad Gateway)`),
+			want: codes.Unavailable.String(),
+		},
+		{
+			name: "internal publish failure",
+			err:  status.Error(codes.Internal, "failed to publish events"),
+			want: codes.Internal.String(),
+		},
+		{
+			name: "buffer full",
+			err:  ErrMessageBufferFull,
+			want: ErrMessageBufferFull.Error(),
+		},
+		{
+			name: "client shutdown",
+			err:  ErrClientShutdown,
+			want: ErrClientShutdown.Error(),
+		},
+		{
+			name: "unknown error",
+			err:  errors.New("something else"),
+			want: "client_error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tt.want, ErrorCodeFor(tt.err))
+		})
+	}
+}
+
+func TestErrorCodeFor_nil(t *testing.T) {
+	t.Parallel()
+	require.Empty(t, ErrorCodeFor(nil))
 }

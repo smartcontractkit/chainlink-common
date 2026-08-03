@@ -144,10 +144,18 @@ type module struct {
 
 	cfg *ModuleConfig
 
+	metrics moduleMetrics
+
 	wg     sync.WaitGroup
 	stopCh chan struct{}
 
 	v2ImportName string
+
+	// linkV2 wires the host functions the v2/NoDAG guest imports. It defaults
+	// to linkNoDAG; tests may override it to substitute a host function
+	// implementation (e.g. one that panics) without going through a real
+	// compiled wasm binary.
+	linkV2 linkFn[*sdkpb.ExecutionResult]
 }
 
 var _ ModuleV1 = (*module)(nil)
@@ -378,10 +386,15 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		return nil, fmt.Errorf("failed to check decompressed binary size limit: %w", err)
 	}
 
-	return newModule(modCfg, binary)
+	metrics, err := newModuleMetrics()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create module metrics: %w", err)
+	}
+
+	return newModule(modCfg, binary, metrics)
 }
 
-func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
 	if modCfg.InitialFuel > 0 {
@@ -416,8 +429,10 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 		module:       mod,
 		wconfig:      cfg,
 		cfg:          modCfg,
+		metrics:      metrics,
 		stopCh:       make(chan struct{}),
 		v2ImportName: v2ImportName,
+		linkV2:       linkNoDAG,
 	}, nil
 }
 
@@ -613,7 +628,7 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	case *sdkpb.ExecuteRequest_PreHook:
 		timeout = *m.cfg.PrehookTimeout
 	}
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
+	return runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
 }
 
 // Run is deprecated, use execute instead
@@ -640,6 +655,28 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 	}
 
 	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil, *m.cfg.Timeout)
+}
+
+// callStart looks up and invokes the wasm module's _start function, but
+// recovers any panic. It's sufficient to just recover here, wasmtime-go
+// recovers panics that originated from guest calls to the host, and
+// re-panics them in Go.
+// See https://pkg.go.dev/github.com/bytecodealliance/wasmtime-go/v47#Func.Call.
+func callStart(m *module, instance *wasmtime.Instance, store *wasmtime.Store) (result interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			m.cfg.Logger.Errorw("panic during wasm execution", "panic", r)
+			m.metrics.IncHostFnPanicRecovered()
+			err = fmt.Errorf("panic during wasm execution: %v", r)
+		}
+	}()
+
+	start := instance.GetFunc(store, "_start")
+	if start == nil {
+		return nil, errors.New("could not get start function")
+	}
+
+	return start.Call(store)
 }
 
 func runWasm[I, O proto.Message](
@@ -742,13 +779,8 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
 
-	start := instance.GetFunc(store, "_start")
-	if start == nil {
-		return o, errors.New("could not get start function")
-	}
-
 	startTime := time.Now()
-	_, err = start.Call(store)
+	_, err = callStart(m, instance, store)
 	executionDuration := time.Since(startTime)
 
 	// The error codes below are only returned by the v1 legacy DAG workflow.

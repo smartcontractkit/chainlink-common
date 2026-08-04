@@ -84,6 +84,7 @@ type noopActionMetrics struct{}
 // NoopActionMetrics is a no-op ActionMetrics implementation for tests.
 func NoopActionMetrics() ActionMetrics { return noopActionMetrics{} }
 
-func (noopActionMetrics) OnSuccess(context.Context, string, time.Time, time.Time, ...attribute.KeyValue) {}
+func (noopActionMetrics) OnSuccess(context.Context, string, time.Time, time.Time, ...attribute.KeyValue) {
+}
 func (noopActionMetrics) OnError(context.Context, string, time.Time, time.Time, bool, ...attribute.KeyValue) {
 }

@@ -273,7 +273,7 @@ func convertDataBytesOrJSONToProto(d *typesolana.DataBytesOrJSON) (*DataBytesOrJ
 		return nil, nil
 	}
 	if d.RawDataEncoding == "" {
-		return nil, fmt.Errorf("missing raw data encoding")
+		return nil, errors.New("missing raw data encoding")
 	}
 	enc, err := convertEncodingTypeToProto(d.RawDataEncoding)
 	if err != nil {
@@ -937,7 +937,7 @@ func ConvertGetSignatureStatusesRequestFromProto(p *GetSignatureStatusesRequest)
 
 func convertRPCFilterFromProto(f *RPCFilter) (typesolana.RPCFilter, error) {
 	if f == nil {
-		return typesolana.RPCFilter{}, fmt.Errorf("nil filter")
+		return typesolana.RPCFilter{}, errors.New("nil filter")
 	}
 	var memcmp *typesolana.RPCFilterMemcmp
 	if f.Memcmp != nil {

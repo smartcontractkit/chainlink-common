@@ -1610,7 +1610,7 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 	t.Run("not initialized returns ErrNotInitialized without blocking", func(t *testing.T) {
 		globalEmitter.Store(nil)
 		start := time.Now()
-		for i := 0; i < numEmissions; i++ {
+		for range numEmissions {
 			require.ErrorIs(t, GlobalEmit(ctx, []byte("metric-event"), testEmitAttrs()...), ErrNotInitialized,
 				"GlobalEmit must return ErrNotInitialized when no emitter is set")
 		}
@@ -1622,7 +1622,7 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 		be := newInitializedEmitter(t)
 
 		var total time.Duration
-		for i := 0; i < numEmissions; i++ {
+		for i := range numEmissions {
 			emitStart := time.Now()
 			require.NoError(t, GlobalEmit(ctx, []byte("metric-event"), testEmitAttrs()...),
 				"GlobalEmit must succeed when emitter is initialized")
@@ -1644,7 +1644,7 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 		be := newInitializedEmitter(t)
 
 		start := time.Now()
-		for i := 0; i < numEmissions; i++ {
+		for range numEmissions {
 			GlobalEmitAsync(ctx, []byte("metric-event"), testEmitAttrs()...)
 		}
 		// The async path hands off to a goroutine, so the caller must not scale

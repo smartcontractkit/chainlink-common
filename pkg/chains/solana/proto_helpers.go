@@ -360,7 +360,7 @@ func ConvertGetAccountInfoOptsToProto(o *solana.GetAccountInfoOpts) *GetAccountI
 
 func ConvertGetAccountInfoRequestFromProto(p *GetAccountInfoWithOptsRequest) (solana.GetAccountInfoRequest, error) {
 	if p == nil {
-		return solana.GetAccountInfoRequest{}, fmt.Errorf("nil GetAccountInfoWithOptsRequest")
+		return solana.GetAccountInfoRequest{}, errors.New("nil GetAccountInfoWithOptsRequest")
 	}
 	addr, err := ConvertPublicKeyFromProto(p.GetAccount())
 	if err != nil {
@@ -1101,7 +1101,7 @@ func ConvertRPCFilterFromProto(p *RPCFilter) solana.RPCFilter {
 
 func ConvertRPCFilterToProto(f solana.RPCFilter) (*RPCFilter, error) {
 	if f.Memcmp == nil && f.DataSize == 0 {
-		return nil, fmt.Errorf("empty RPC filter: must set memcmp or dataSize")
+		return nil, errors.New("empty RPC filter: must set memcmp or dataSize")
 	}
 	return &RPCFilter{
 		Memcmp:   ConvertRPCFilterMemcmpToProto(f.Memcmp),
@@ -1193,7 +1193,7 @@ func ConvertKeyedAccountToProto(k *solana.KeyedAccount) *KeyedAccount {
 
 func ConvertGetProgramAccountsRequestFromProto(p *GetProgramAccountsRequest) (solana.GetProgramAccountsRequest, error) {
 	if p == nil {
-		return solana.GetProgramAccountsRequest{}, fmt.Errorf("nil GetProgramAccountsRequest")
+		return solana.GetProgramAccountsRequest{}, errors.New("nil GetProgramAccountsRequest")
 	}
 	program, err := ConvertPublicKeyFromProto(p.GetProgram())
 	if err != nil {

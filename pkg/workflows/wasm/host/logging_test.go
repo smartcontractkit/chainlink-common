@@ -22,7 +22,7 @@ func TestLogRawMessage_PanicAndFatalLevelsDoNotCrashHost(t *testing.T) {
 
 			lggr, logs := logger.TestObserved(t, zapcore.DebugLevel)
 			require.NotPanics(t, func() {
-				require.NoError(t, logRawMessage(lggr, []byte(fmt.Sprintf(`{"level":%q,"msg":"boom"}`, level))))
+				require.NoError(t, logRawMessage(lggr, fmt.Appendf(nil, `{"level":%q,"msg":"boom"}`, level)))
 			})
 
 			entries := logs.All()

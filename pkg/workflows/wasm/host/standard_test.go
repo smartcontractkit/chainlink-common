@@ -685,7 +685,7 @@ func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	return makeTestModuleByName(t, testPath, testName, cfg, true)
 }
 
-// nolint:unused This function makes it easy to add tests that will become required later, but are optional now.
+// nolint:unused // This function makes it easy to add tests that will become required later, but are optional now.
 func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
 	return makeTestModuleByName(t, testPath, testName, cfg, false)

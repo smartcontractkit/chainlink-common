@@ -54,7 +54,7 @@ RetryBackoff = '2s'
 SecretsCacheEnabled = 'false'
 EnclaveRequestTimeout = '30s'
 PublicKeyRequestTimeout = '5s'
-ConfidentialRelayHandlerTimeout = '60s'
+ConfidentialRelayHandlerTimeout = '1m0s'
 InsecureSkipTLSVerify = 'false'
 EnclaveRefreshInterval = '10s'
 

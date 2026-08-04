@@ -306,12 +306,22 @@ flowchart
         end
     end
 
+    subgraph HandleGatewayMessage[EnclaveRelayHandler.HandleGatewayMessage]
+%%      enclave → gateway → relay DON node. The server side of the exchange the
+%%      executor's ConfidentialCompute.EnclaveRequestTimeout bounds, so it is a
+%%      separate entry point rather than part of the executor subgraph above.
+        ConfidentialCompute.ConfidentialRelayHandlerTimeout>ConfidentialCompute.ConfidentialRelayHandlerTimeout]:::time
+    end
+
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault
 
 %%  DON nodes → gateway is a separate entry point, not connected to the trigger/execution chain above
     HandleNodeMessage
+
+%%  enclave → gateway → relay DON node is likewise its own entry point
+    HandleGatewayMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

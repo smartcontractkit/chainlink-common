@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785854138895,
+  "lastUpdate": 1785854710482,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -57180,6 +57180,66 @@ window.BENCHMARK_DATA = {
             "value": 139959,
             "unit": "ns/op",
             "extra": "8620 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7afc975a81d81c0f40ad8dfce9eb6c4a5edb68a4",
+          "message": "Make TEE tests required in CRE standard tests (#2307)\n\n* Make TEE tests required in CRE standard tests\n\n* Nest unused comment\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-04T14:33:01Z",
+          "tree_id": "29342b29595cc0fcdb3cee198ffc503d0da04aa9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7afc975a81d81c0f40ad8dfce9eb6c4a5edb68a4"
+        },
+        "date": 1785854708230,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 672.7,
+            "unit": "ns/op",
+            "extra": "1508062 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91769,
+            "unit": "ns/op",
+            "extra": "13030 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 405.6,
+            "unit": "ns/op",
+            "extra": "2953228 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91996,
+            "unit": "ns/op",
+            "extra": "13005 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26665,
+            "unit": "ns/op",
+            "extra": "45037 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139295,
+            "unit": "ns/op",
+            "extra": "8413 times\n4 procs"
           }
         ]
       }

@@ -3,6 +3,7 @@ package host_test
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -251,7 +252,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		req := &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"}
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
-				MaxTotalCalls: -1,
+				MaxTotalCalls: math.MaxUint32,
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 				Restrictions: []*sdk.CapabilityRestriction{
 					{Restriction: &sdk.CapabilityRestriction_Method{
@@ -271,7 +272,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 				Restrictions: []*sdk.CapabilityRestriction{
 					{Restriction: &sdk.CapabilityRestriction_Method{
-						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: -1},
+						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: math.MaxUint32},
 					}},
 				},
 			},
@@ -306,7 +307,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 				Restrictions: []*sdk.CapabilityRestriction{
 					{Restriction: &sdk.CapabilityRestriction_Method{
-						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: -1},
+						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: math.MaxUint32},
 					}},
 					{Restriction: &sdk.CapabilityRestriction_Method{
 						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: 3},
@@ -338,7 +339,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 	t.Run("closed with no methods denies all", func(t *testing.T) {
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
-				MaxTotalCalls: -1,
+				MaxTotalCalls: math.MaxUint32,
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 			},
 		}, &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"})
@@ -659,7 +660,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 		}
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
-				MaxSecrets: -1,
+				MaxSecrets: math.MaxUint32,
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_ExactSecret{
 						ExactSecret: &sdk.Secret{Id: "db-password", Namespace: "infra"},
@@ -680,7 +681,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_PrefixedSecret{
 						PrefixedSecret: &sdk.SecretPrefixRestriction{
-							Prefix: "db-", Namespace: "infra", MaxSecrets: -1,
+							Prefix: "db-", Namespace: "infra", MaxSecrets: math.MaxUint32,
 						},
 					}},
 				},
@@ -711,7 +712,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 		req := &sdk.SecretRequest{Id: "db-password", Namespace: "infra"}
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
-				MaxSecrets: -1,
+				MaxSecrets: math.MaxUint32,
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_ExactSecret{
 						ExactSecret: &sdk.Secret{Id: "db-password", Namespace: "infra"},
@@ -768,7 +769,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 	t.Run("multiple overlapping prefixes all decrement on match", func(t *testing.T) {
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
-				MaxSecrets: -1,
+				MaxSecrets: math.MaxUint32,
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_PrefixedSecret{
 						PrefixedSecret: &sdk.SecretPrefixRestriction{
@@ -813,7 +814,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 			}).Once()
 
 		h := host.NewRestrictedExecutionHelper(inner, &sdk.Restrictions{Secrets: &sdk.SecretsRestritions{
-			MaxSecrets:   -1,
+			MaxSecrets:   math.MaxUint32,
 			Restrictions: []*sdk.SecretRestriction{{Restriction: &sdk.SecretRestriction_ExactSecret{ExactSecret: secret}}},
 		}})
 
@@ -851,7 +852,7 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 
 	t.Run("blocked secret returns error response without calling inner", func(t *testing.T) {
 		inner, h := newHelper(t)
-		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetOwner().Return("ownermath.MaxUint32")
 
 		resp, err := h.GetRawSecrets(t.Context(), &sdk.GetSecretsRequest{
 			Requests: []*sdk.SecretRequest{{Id: "blocked-secret", Namespace: "ns"}},
@@ -861,12 +862,12 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 		assert.Contains(t, resp[0].GetError(), "denied by user pre-hook restrictions")
 		assert.Equal(t, "blocked-secret", resp[0].GetId().GetKey())
 		assert.Equal(t, "ns", resp[0].GetId().GetNamespace())
-		assert.Equal(t, "owner-1", resp[0].GetId().GetOwner())
+		assert.Equal(t, "ownermath.MaxUint32", resp[0].GetId().GetOwner())
 	})
 
 	t.Run("allows permitted secret", func(t *testing.T) {
 		inner, h := newHelper(t)
-		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetOwner().Return("ownermath.MaxUint32")
 		inner.EXPECT().GetRawSecrets(matches.AnyContext, mock.MatchedBy(func(r *sdk.GetSecretsRequest) bool {
 			return len(r.Requests) == 1 && r.Requests[0].Id == "allowed-secret"
 		}), mock.Anything).Return([]*vault.SecretResponse{{}}, nil)
@@ -880,7 +881,7 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 
 	t.Run("mixed batch: blocked gets error response, allowed goes to inner", func(t *testing.T) {
 		inner, h := newHelper(t)
-		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetOwner().Return("ownermath.MaxUint32")
 		inner.EXPECT().GetRawSecrets(matches.AnyContext, mock.MatchedBy(func(r *sdk.GetSecretsRequest) bool {
 			return len(r.Requests) == 1 && r.Requests[0].Id == "allowed-secret"
 		}), mock.Anything).Return([]*vault.SecretResponse{{}}, nil)
@@ -897,7 +898,7 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 
 	t.Run("delegates the encryption key fetcher to inner", func(t *testing.T) {
 		inner, h := newHelper(t)
-		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetOwner().Return("ownermath.MaxUint32")
 		var gotFetcher host.EncryptionKeyFetcher
 		inner.EXPECT().GetRawSecrets(matches.AnyContext, mock.Anything, mock.Anything).
 			RunAndReturn(func(_ context.Context, _ *sdk.GetSecretsRequest, f host.EncryptionKeyFetcher) ([]*vault.SecretResponse, error) {
@@ -914,7 +915,7 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 
 	t.Run("all blocked does not call inner", func(t *testing.T) {
 		inner, h := newHelper(t)
-		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetOwner().Return("ownermath.MaxUint32")
 
 		resp, err := h.GetRawSecrets(t.Context(), &sdk.GetSecretsRequest{
 			Requests: []*sdk.SecretRequest{
@@ -930,7 +931,7 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 
 	t.Run("inner error is propagated", func(t *testing.T) {
 		inner, h := newHelper(t)
-		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetOwner().Return("ownermath.MaxUint32")
 		inner.EXPECT().GetRawSecrets(matches.AnyContext, mock.Anything, mock.Anything).Return(nil, errors.New("boom"))
 
 		resp, err := h.GetRawSecrets(t.Context(), &sdk.GetSecretsRequest{
@@ -949,11 +950,11 @@ func TestRequirementSelectingModule_GetOwner(t *testing.T) {
 	}
 
 	inner := mocks.NewMockExecutionHelperWithRawSecrets(t)
-	inner.EXPECT().GetOwner().Return("owner-123")
+	inner.EXPECT().GetOwner().Return("ownermath.MaxUint3223")
 	h := host.NewRestrictedExecutionHelper(inner, restrictions).(host.ExecutionHelperWithRawSecrets)
 
 	owner := h.GetOwner()
-	assert.Equal(t, "owner-123", owner)
+	assert.Equal(t, "ownermath.MaxUint3223", owner)
 }
 
 func TestRequirementSelectingModule_NewCreatesTheRightInterface(t *testing.T) {

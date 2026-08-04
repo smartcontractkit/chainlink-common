@@ -143,14 +143,15 @@ var Default = Schema{
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
 	ConfidentialCompute: confidentialCompute{
-		GlobalRate:              Rate(rate.Limit(1000), 1000),
-		MaxRetries:              Int(3),
-		RetryBackoff:            Duration(2 * time.Second),
-		SecretsCacheEnabled:     Bool(false),
-		EnclaveRequestTimeout:   Duration(30 * time.Second),
-		PublicKeyRequestTimeout: Duration(5 * time.Second),
-		InsecureSkipTLSVerify:   Bool(false),
-		EnclaveRefreshInterval:  Duration(10 * time.Second),
+		GlobalRate:                      Rate(rate.Limit(1000), 1000),
+		MaxRetries:                      Int(3),
+		RetryBackoff:                    Duration(2 * time.Second),
+		SecretsCacheEnabled:             Bool(false),
+		EnclaveRequestTimeout:           Duration(30 * time.Second),
+		PublicKeyRequestTimeout:         Duration(5 * time.Second),
+		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
+		InsecureSkipTLSVerify:           Bool(false),
+		EnclaveRefreshInterval:          Duration(10 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -546,6 +547,17 @@ type confidentialCompute struct {
 	SecretsCacheEnabled     Setting[bool]
 	EnclaveRequestTimeout   Setting[time.Duration]
 	PublicKeyRequestTimeout Setting[time.Duration]
+
+	// ConfidentialRelayHandlerTimeout bounds how long a relay-DON node may spend
+	// serving one confidential relay request from the gateway: attestation
+	// validation, the DON authorization checks, and the vault or capability call
+	// it proxies.
+	//
+	// This is the server side of the exchange EnclaveRequestTimeout bounds on the
+	// client side, so it should not exceed that value. The enclave derives its
+	// gateway HTTP timeout from EnclaveRequestTimeout, so a node still working
+	// past that point can only produce a response nobody is waiting for.
+	ConfidentialRelayHandlerTimeout Setting[time.Duration]
 
 	InsecureSkipTLSVerify  Setting[bool]
 	EnclaveRefreshInterval Setting[time.Duration]

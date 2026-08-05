@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/pb";
+
+package creregistry;
+
+import "google/protobuf/empty.proto";
+import "capabilities/pb/capabilities.proto";
+import "capabilities/pb/registry.proto";
+
+// CapabilitiesRegistry is a plain-gRPC shim for
+// [github.com/smartcontractkit/chainlink-common/pkg/types/core.CapabilitiesRegistry].
+//
+// It differs from the go-plugin variant in
+// chainlink-common/pkg/loop/internal/pb/capabilities_registry.proto in one
+// respect: capability handles are addressed by gRPC target, not by a
+// hashicorp/go-plugin broker connection ID. That removes the dependency on a
+// plugin.GRPCBroker, so this service works over an ordinary grpc.Server and an
+// ordinary grpc.ClientConn.
+//
+// Handle ownership:
+//   - A capability process serves capabilities.BaseCapability (plus Executable
+//     and/or TriggerExecutable) on its own address and passes that address as
+//     AddRequest.callback_url. The registry dials it; the registry is never
+//     dialed back, so no reverse connection is needed.
+//   - Remote capabilities are never registered over this API. The registry's
+//     own launcher constructs remote shims from on-chain DON membership and
+//     serves them at the registry's own address.
+//
+// Message reuse: capability type and capability configuration are the existing
+// public definitions from capabilities/pb. Only the DON and node records are
+// declared here, because their sole existing definition lives in an internal
+// package (pkg/loop/internal/pb) and so cannot be imported.
+service CapabilitiesRegistry {
+  // Metadata. Derived from the on-chain CapabilitiesRegistry contract.
+  rpc LocalNode (google.protobuf.Empty) returns (NodeReply) {}
+  rpc NodeByPeerID (NodeRequest) returns (NodeReply) {}
+  rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
+  rpc DONsForCapability (DONsForCapabilityRequest) returns (DONsForCapabilityReply) {}
+  rpc DONByID (DONByIDRequest) returns (DONByIDReply) {}
+
+  // Handles. Replies carry a gRPC target the caller dials directly.
+  rpc Get (GetRequest) returns (CapabilityHandle) {}
+  rpc GetTrigger (GetRequest) returns (CapabilityHandle) {}
+  rpc GetExecutable (GetRequest) returns (CapabilityHandle) {}
+  rpc List (google.protobuf.Empty) returns (ListReply) {}
+  rpc Add (AddRequest) returns (google.protobuf.Empty) {}
+  rpc Remove (RemoveRequest) returns (google.protobuf.Empty) {}
+}
+
+// CapabilityHandle addresses one capability by the gRPC endpoint serving it.
+//
+// callback_url is a grpc.NewClient target (e.g. "127.0.0.1:50055",
+// "dns:///caps.svc:9090"). For a capability hosted by another process it is that
+// process's address; for a remote-DON shim it is the registry's own address.
+//
+// type is the capability's own type, which also determines which services are
+// served at callback_url: TRIGGER serves TriggerExecutable, ACTION/TARGET/
+// CONSENSUS serve Executable, COMBINED serves both, and BaseCapability is always
+// served.
+message CapabilityHandle {
+  string capability_id = 1;
+  capabilities.CapabilityType type = 2;
+  string callback_url = 3;
+}
+
+message GetRequest {
+  string capability_id = 1;
+}
+
+message ListReply {
+  repeated CapabilityHandle handles = 1;
+}
+
+// AddRequest registers a capability the caller already serves at callback_url.
+//
+// The registry dials callback_url to build its own client, so the address must
+// be reachable from the registry process for as long as the capability is
+// registered. Callers migrating off go-plugin substitute their LOOP's gRPC
+// address here in place of the old broker connection ID.
+message AddRequest {
+  string capability_id = 1;
+  capabilities.CapabilityType type = 2;
+  string callback_url = 3;
+}
+
+message RemoveRequest {
+  string capability_id = 1;
+}
+
+message NodeRequest {
+  bytes peer_id = 1; // [32]byte
+}
+
+// DON mirrors [github.com/smartcontractkit/chainlink-common/pkg/capabilities.DON].
+message DON {
+  uint32 id = 1;
+  string name = 2;
+  repeated bytes members = 3; // [n][32]byte
+  uint32 f = 4;               // uint8
+  uint32 config_version = 5;
+  repeated string families = 6;
+  bytes config = 7;
+  bool is_public = 8;
+  bool accepts_workflows = 9;
+}
+
+// NodeReply mirrors [github.com/smartcontractkit/chainlink-common/pkg/capabilities.Node].
+message NodeReply {
+  bytes peer_id = 1; // [32]byte
+  DON workflow_don = 2;
+  repeated DON capability_dons = 3;
+  uint32 node_operator_id = 4;
+  bytes signer = 5;                // [32]byte
+  bytes encryption_public_key = 6; // [32]byte
+}
+
+message ConfigForCapabilityRequest {
+  string capability_id = 1;
+  uint32 don_id = 2;
+}
+
+message ConfigForCapabilityReply {
+  loop.CapabilityConfig capability_config = 1;
+}
+
+message DONsForCapabilityRequest {
+  string capability_id = 1;
+}
+
+message DONWithNodes {
+  DON don = 1;
+  repeated NodeReply nodes = 2;
+}
+
+message DONsForCapabilityReply {
+  repeated DONWithNodes dons = 1;
+}
+
+message DONByIDRequest {
+  uint32 don_id = 1;
+}
+
+message DONByIDReply {
+  DON don = 1;
+}

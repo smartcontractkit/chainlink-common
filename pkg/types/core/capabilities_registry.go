@@ -26,13 +26,51 @@ type CapabilitiesRegistryMetadata interface {
 	DONByID(ctx context.Context, donID uint32) (capabilities.DON, error)
 }
 
-type CapabilitiesRegistryBase interface {
+// ReadOnlyBase is the half of the registry that resolves capabilities.
+//
+// It is separate from registration because how a capability is registered depends
+// on where it lives, while resolving one never does. A registry that holds
+// capability values registers them by value; a registry that holds addresses
+// registers them by address. Both resolve identically, so callers that only look
+// capabilities up should depend on this and stay indifferent to which they have.
+type ReadOnlyBase interface {
 	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
 	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
 	GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error)
 	List(ctx context.Context) ([]capabilities.BaseCapability, error)
+}
+
+// CapabilitiesRegistryBase is a registry that holds capability values in the
+// caller's own process.
+type CapabilitiesRegistryBase interface {
+	ReadOnlyBase
+
+	// Add registers a capability the caller holds. Only meaningful for a registry
+	// in the same process, since a value cannot be handed across one.
 	Add(ctx context.Context, c capabilities.BaseCapability) error
 	Remove(ctx context.Context, ID string) error
+}
+
+// AddressableRegistryBase is a registry that holds the addresses capabilities are
+// served at rather than the capabilities themselves.
+//
+// It dials what it is told about, so registration names an address instead of
+// passing a value. That is the only difference from CapabilitiesRegistryBase;
+// resolution is the shared ReadOnlyBase.
+type AddressableRegistryBase interface {
+	ReadOnlyBase
+
+	// AddAt registers a capability of type capType already served at addr, which
+	// must be a grpc.NewClient target reachable from the registry.
+	AddAt(ctx context.Context, ID string, capType capabilities.CapabilityType, addr string) error
+	Remove(ctx context.Context, ID string) error
+}
+
+// AddressableCapabilitiesRegistry is the address-based counterpart of
+// CapabilitiesRegistry.
+type AddressableCapabilitiesRegistry interface {
+	AddressableRegistryBase
+	CapabilitiesRegistryMetadata
 }
 
 var _ CapabilitiesRegistry = UnimplementedCapabilitiesRegistry{}

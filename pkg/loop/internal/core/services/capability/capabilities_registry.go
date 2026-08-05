@@ -19,7 +19,6 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
@@ -146,126 +145,9 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
-	mc, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
-	if err != nil {
-		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
-	}
-
-	var remoteTriggerConfig *capabilities.RemoteTriggerConfig
-	var remoteTargetConfig *capabilities.RemoteTargetConfig
-	var remoteExecutableConfig *capabilities.RemoteExecutableConfig
-
-	switch res.CapabilityConfig.RemoteConfig.(type) {
-	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
-		remoteTriggerConfig = decodeRemoteTriggerConfig(res.CapabilityConfig.GetRemoteTriggerConfig())
-	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
-		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
-		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
-		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
-	case *capabilitiespb.CapabilityConfig_RemoteExecutableConfig:
-		remoteExecutableConfig = decodeRemoteExecutableConfig(res.CapabilityConfig.GetRemoteExecutableConfig())
-	}
-
-	var methodConfig map[string]capabilities.CapabilityMethodConfig
-	if res.CapabilityConfig.MethodConfigs != nil {
-		methodConfig = make(map[string]capabilities.CapabilityMethodConfig, len(res.CapabilityConfig.MethodConfigs))
-		for mName, mConfig := range res.CapabilityConfig.MethodConfigs {
-			newCapCfg := capabilities.CapabilityMethodConfig{}
-			switch mConfig.RemoteConfig.(type) {
-			case *capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig:
-				newCapCfg.RemoteTriggerConfig = decodeRemoteTriggerConfig(mConfig.GetRemoteTriggerConfig())
-			case *capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig:
-				newCapCfg.RemoteExecutableConfig = decodeRemoteExecutableConfig(mConfig.GetRemoteExecutableConfig())
-			}
-			if mConfig.AggregatorConfig != nil {
-				newCapCfg.AggregatorConfig = &capabilities.AggregatorConfig{AggregatorType: capabilities.AggregatorType(mConfig.AggregatorConfig.AggregatorType)}
-			}
-			methodConfig[mName] = newCapCfg
-		}
-	}
-
-	var ocr3Configs map[string]ocrtypes.ContractConfig
-	if res.CapabilityConfig.Ocr3Configs != nil {
-		ocr3Configs = make(map[string]ocrtypes.ContractConfig, len(res.CapabilityConfig.Ocr3Configs))
-		for key, pbCfg := range res.CapabilityConfig.Ocr3Configs {
-			ocr3Configs[key] = decodeOcr3Config(pbCfg)
-		}
-	}
-
-	var oracleFactoryConfigs map[string]values.Map
-	if res.CapabilityConfig.OracleFactoryConfigs != nil {
-		oracleFactoryConfigs = make(map[string]values.Map, len(res.CapabilityConfig.OracleFactoryConfigs))
-		for key, pbMap := range res.CapabilityConfig.OracleFactoryConfigs {
-			m, err := values.FromMapValueProto(pbMap)
-			if err != nil {
-				return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode oracle factory config for key %s: %w", key, err)
-			}
-			if m != nil {
-				oracleFactoryConfigs[key] = *m
-			}
-		}
-	}
-
-	specConfig, err := values.FromMapValueProto(res.CapabilityConfig.SpecConfig)
-	if err != nil {
-		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode spec config: %w", err)
-	}
-
-	return capabilities.CapabilityConfiguration{
-		DefaultConfig:          mc,
-		RemoteTriggerConfig:    remoteTriggerConfig,
-		RemoteTargetConfig:     remoteTargetConfig,
-		RemoteExecutableConfig: remoteExecutableConfig,
-		CapabilityMethodConfig: methodConfig,
-		LocalOnly:              res.CapabilityConfig.LocalOnly,
-		Ocr3Configs:            ocr3Configs,
-		OracleFactoryConfigs:   oracleFactoryConfigs,
-		SpecConfig:             specConfig,
-	}, nil
-}
-
-func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabilities.RemoteTriggerConfig {
-	remoteTriggerConfig := &capabilities.RemoteTriggerConfig{}
-	remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
-	remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
-	remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-	remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
-	remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
-	remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
-	return remoteTriggerConfig
-}
-
-func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *capabilities.RemoteExecutableConfig {
-	remoteExecutableConfig := &capabilities.RemoteExecutableConfig{}
-	remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
-	remoteExecutableConfig.TransmissionSchedule = capabilities.TransmissionSchedule(prtc.TransmissionSchedule)
-	remoteExecutableConfig.DeltaStage = prtc.DeltaStage.AsDuration()
-	remoteExecutableConfig.RequestTimeout = prtc.RequestTimeout.AsDuration()
-	remoteExecutableConfig.ServerMaxParallelRequests = prtc.ServerMaxParallelRequests
-	remoteExecutableConfig.RequestHasherType = capabilities.RequestHasherType(prtc.RequestHasherType)
-	remoteExecutableConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-	return remoteExecutableConfig
-}
-
-func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig {
-	signers := make([]ocrtypes.OnchainPublicKey, len(pbCfg.Signers))
-	for i, s := range pbCfg.Signers {
-		signers[i] = ocrtypes.OnchainPublicKey(s)
-	}
-	transmitters := make([]ocrtypes.Account, len(pbCfg.Transmitters))
-	for i, t := range pbCfg.Transmitters {
-		transmitters[i] = ocrtypes.Account(hex.EncodeToString(t))
-	}
-	return ocrtypes.ContractConfig{
-		ConfigCount:           pbCfg.ConfigCount,
-		Signers:               signers,
-		Transmitters:          transmitters,
-		F:                     uint8(pbCfg.F),
-		OnchainConfig:         pbCfg.OnchainConfig,
-		OffchainConfigVersion: pbCfg.OffchainConfigVersion,
-		OffchainConfig:        pbCfg.OffchainConfig,
-		// NOTE: ConfigDigest will be appended later by ContractConfigTracker.
-	}
+	// Decoding lives in capabilitiespb so this transport and the plain-gRPC
+	// registry share one decoder; see CapabilityConfigFromProto.
+	return capabilitiespb.CapabilityConfigFromProto(res.CapabilityConfig)
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -743,8 +625,7 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
 
-	err = c.impl.Add(ctx, client)
-	if err != nil {
+	if err := c.impl.Add(ctx, client); err != nil {
 		return &emptypb.Empty{}, err
 	}
 	return &emptypb.Empty{}, nil

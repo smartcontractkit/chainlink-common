@@ -508,3 +508,34 @@ func TriggerResponseFromProto(resp *TriggerResponse) (capabilities.TriggerRespon
 		Err:   err,
 	}, nil
 }
+
+func InfoReplyToInfo(resp *CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
+	var ct capabilities.CapabilityType
+	switch resp.CapabilityType {
+	case CapabilityTypeTrigger:
+		ct = capabilities.CapabilityTypeTrigger
+	case CapabilityTypeAction:
+		ct = capabilities.CapabilityTypeAction
+	case CapabilityTypeConsensus:
+		ct = capabilities.CapabilityTypeConsensus
+	case CapabilityTypeTarget:
+		ct = capabilities.CapabilityTypeTarget
+	case CapabilityTypeCombined:
+		ct = capabilities.CapabilityTypeCombined
+	case CapabilityTypeUnknown:
+		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
+	}
+
+	types := make([]capabilities.CapabilitySpendType, len(resp.SpendTypes))
+	for idx, sType := range resp.SpendTypes {
+		types[idx] = capabilities.CapabilitySpendType(sType)
+	}
+
+	return capabilities.CapabilityInfo{
+		ID:             resp.Id,
+		CapabilityType: ct,
+		Description:    resp.Description,
+		IsLocal:        resp.IsLocal,
+		SpendTypes:     types,
+	}, nil
+}

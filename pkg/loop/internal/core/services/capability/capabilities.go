@@ -156,38 +156,7 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 		return capabilities.CapabilityInfo{}, err
 	}
 
-	return InfoReplyToInfo(reply)
-}
-
-func InfoReplyToInfo(resp *pb.CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
-	var ct capabilities.CapabilityType
-	switch resp.CapabilityType {
-	case pb.CapabilityTypeTrigger:
-		ct = capabilities.CapabilityTypeTrigger
-	case pb.CapabilityTypeAction:
-		ct = capabilities.CapabilityTypeAction
-	case pb.CapabilityTypeConsensus:
-		ct = capabilities.CapabilityTypeConsensus
-	case pb.CapabilityTypeTarget:
-		ct = capabilities.CapabilityTypeTarget
-	case pb.CapabilityTypeCombined:
-		ct = capabilities.CapabilityTypeCombined
-	case pb.CapabilityTypeUnknown:
-		return capabilities.CapabilityInfo{}, fmt.Errorf("invalid capability type: %s", ct)
-	}
-
-	types := make([]capabilities.CapabilitySpendType, len(resp.SpendTypes))
-	for idx, sType := range resp.SpendTypes {
-		types[idx] = capabilities.CapabilitySpendType(sType)
-	}
-
-	return capabilities.CapabilityInfo{
-		ID:             resp.Id,
-		CapabilityType: ct,
-		Description:    resp.Description,
-		IsLocal:        resp.IsLocal,
-		SpendTypes:     types,
-	}, nil
+	return pb.InfoReplyToInfo(reply)
 }
 
 type triggerExecutableServer struct {

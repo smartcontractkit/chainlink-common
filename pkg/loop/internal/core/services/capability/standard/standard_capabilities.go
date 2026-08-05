@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	cappb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
@@ -248,7 +249,7 @@ func (c *StandardCapabilitiesClient) Infos(ctx context.Context) ([]capabilities.
 
 	var infos []capabilities.CapabilityInfo
 	for _, infoResponse := range infosResponse.Infos {
-		info, err := capability.InfoReplyToInfo(infoResponse)
+		info, err := cappb.InfoReplyToInfo(infoResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert capability info: %w", err)
 		}

@@ -27,7 +27,7 @@ type secretKey struct {
 type prefixRestriction struct {
 	prefix    string
 	namespace string
-	maxCalls  int32
+	maxCalls  uint32
 }
 
 // TODO refactor to instead be injected INTO the hepler
@@ -39,11 +39,11 @@ type executionRestrictions struct {
 
 	hasCaps       bool
 	capType       sdk.CapabilityRestrictionType
-	maxTotalCalls int32
-	methods       map[methodKey]int32
+	maxTotalCalls uint32
+	methods       map[methodKey]uint32
 
 	hasSecrets    bool
-	maxSecrets    int32
+	maxSecrets    uint32
 	exactSecrets  map[secretKey]bool
 	prefixSecrets []prefixRestriction
 }
@@ -130,7 +130,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 		er.hasCaps = true
 		er.capType = caps.Type
 		er.maxTotalCalls = caps.MaxTotalCalls
-		er.methods = make(map[methodKey]int32)
+		er.methods = make(map[methodKey]uint32)
 		for _, cr := range caps.Restrictions {
 			m, ok := cr.Restriction.(*sdk.CapabilityRestriction_Method)
 			if !ok || m.Method == nil {
@@ -139,7 +139,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 			mr := m.Method
 			key := methodKey{id: mr.Id, method: mr.Method}
 			existing, found := er.methods[key]
-			if !found || (mr.MaxCalls >= 0 && (existing < 0 || mr.MaxCalls < existing)) {
+			if !found || mr.MaxCalls < existing {
 				er.methods[key] = mr.MaxCalls
 			}
 		}

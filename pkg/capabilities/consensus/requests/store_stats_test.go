@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 )
 
@@ -23,9 +22,9 @@ func TestOCR3Store_Stats(t *testing.T) {
 	// Create a new store with stats collector
 
 	statsCollector := &testStatsCollector{}
-	s := requests.NewStoreWithStatsCollector[*ocr3.ReportRequest](statsCollector)
+	s := requests.NewStoreWithStatsCollector[*testReportRequest](statsCollector)
 	rid := uuid.New().String()
-	req := &ocr3.ReportRequest{
+	req := &testReportRequest{
 		WorkflowExecutionID: rid,
 	}
 

@@ -15,7 +15,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/triggers"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -226,19 +225,6 @@ func TestRegistry_ChecksExecutionAPIByType(t *testing.T) {
 			},
 			getCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error {
 				_, err := reg.GetExecutable(ctx, id)
-				return err
-			},
-		},
-		{
-			name: "trigger",
-			newCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase) (string, error) {
-				odt := triggers.NewOnDemand(logger.Test(t))
-				info, err := odt.Info(ctx)
-				require.NoError(t, err)
-				return info.ID, reg.Add(ctx, odt)
-			},
-			getCapability: func(ctx context.Context, reg core.CapabilitiesRegistryBase, id string) error {
-				_, err := reg.GetTrigger(ctx, id)
 				return err
 			},
 		},

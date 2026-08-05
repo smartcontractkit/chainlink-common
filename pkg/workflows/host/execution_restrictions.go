@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
@@ -13,6 +14,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
+
+// unlimited is the sentinel value for restriction counters that should never be
+// decremented to zero.
+const unlimited = math.MaxUint32
 
 type methodKey struct {
 	id     string
@@ -27,7 +32,7 @@ type secretKey struct {
 type prefixRestriction struct {
 	prefix    string
 	namespace string
-	maxCalls  int32
+	maxCalls  uint32
 }
 
 // TODO refactor to instead be injected INTO the hepler
@@ -39,11 +44,11 @@ type executionRestrictions struct {
 
 	hasCaps       bool
 	capType       sdk.CapabilityRestrictionType
-	maxTotalCalls int32
-	methods       map[methodKey]int32
+	maxTotalCalls uint32
+	methods       map[methodKey]uint32
 
 	hasSecrets    bool
-	maxSecrets    int32
+	maxSecrets    uint32
 	exactSecrets  map[secretKey]bool
 	prefixSecrets []prefixRestriction
 }
@@ -130,7 +135,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 		er.hasCaps = true
 		er.capType = caps.Type
 		er.maxTotalCalls = caps.MaxTotalCalls
-		er.methods = make(map[methodKey]int32)
+		er.methods = make(map[methodKey]uint32)
 		for _, cr := range caps.Restrictions {
 			m, ok := cr.Restriction.(*sdk.CapabilityRestriction_Method)
 			if !ok || m.Method == nil {
@@ -139,7 +144,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 			mr := m.Method
 			key := methodKey{id: mr.Id, method: mr.Method}
 			existing, found := er.methods[key]
-			if !found || (mr.MaxCalls >= 0 && (existing < 0 || mr.MaxCalls < existing)) {
+			if !found || (mr.MaxCalls != unlimited && (existing == unlimited || mr.MaxCalls < existing)) {
 				er.methods[key] = mr.MaxCalls
 			}
 		}
@@ -209,7 +214,7 @@ func (e *executionRestrictions) reserveCapabilityCall(request *sdk.CapabilityReq
 		if e.capType == sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED {
 			return false
 		}
-		if e.maxTotalCalls > 0 {
+		if e.maxTotalCalls != unlimited && e.maxTotalCalls > 0 {
 			e.maxTotalCalls--
 		}
 		return true
@@ -219,10 +224,10 @@ func (e *executionRestrictions) reserveCapabilityCall(request *sdk.CapabilityReq
 		return false
 	}
 
-	if remaining > 0 {
+	if remaining != unlimited && remaining > 0 {
 		e.methods[key] = remaining - 1
 	}
-	if e.maxTotalCalls > 0 {
+	if e.maxTotalCalls != unlimited && e.maxTotalCalls > 0 {
 		e.maxTotalCalls--
 	}
 	return true
@@ -256,11 +261,11 @@ func (e *executionRestrictions) reserveSecret(request *sdk.SecretRequest) bool {
 	}
 
 	for _, p := range matchedPrefixes {
-		if p.maxCalls > 0 {
+		if p.maxCalls != unlimited && p.maxCalls > 0 {
 			p.maxCalls--
 		}
 	}
-	if e.maxSecrets > 0 {
+	if e.maxSecrets != unlimited && e.maxSecrets > 0 {
 		e.maxSecrets--
 	}
 	return true

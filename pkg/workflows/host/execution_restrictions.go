@@ -3,7 +3,6 @@ package host
 import (
 	"context"
 	"fmt"
-	"math"
 	"strings"
 	"sync"
 
@@ -14,10 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
-
-// unlimited is the sentinel value for restriction counters that should never be
-// decremented to zero.
-const unlimited = math.MaxUint32
 
 type methodKey struct {
 	id     string
@@ -144,7 +139,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 			mr := m.Method
 			key := methodKey{id: mr.Id, method: mr.Method}
 			existing, found := er.methods[key]
-			if !found || (mr.MaxCalls != unlimited && (existing == unlimited || mr.MaxCalls < existing)) {
+			if !found || mr.MaxCalls < existing {
 				er.methods[key] = mr.MaxCalls
 			}
 		}
@@ -214,7 +209,7 @@ func (e *executionRestrictions) reserveCapabilityCall(request *sdk.CapabilityReq
 		if e.capType == sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED {
 			return false
 		}
-		if e.maxTotalCalls != unlimited && e.maxTotalCalls > 0 {
+		if e.maxTotalCalls > 0 {
 			e.maxTotalCalls--
 		}
 		return true
@@ -224,10 +219,10 @@ func (e *executionRestrictions) reserveCapabilityCall(request *sdk.CapabilityReq
 		return false
 	}
 
-	if remaining != unlimited && remaining > 0 {
+	if remaining > 0 {
 		e.methods[key] = remaining - 1
 	}
-	if e.maxTotalCalls != unlimited && e.maxTotalCalls > 0 {
+	if e.maxTotalCalls > 0 {
 		e.maxTotalCalls--
 	}
 	return true
@@ -261,11 +256,11 @@ func (e *executionRestrictions) reserveSecret(request *sdk.SecretRequest) bool {
 	}
 
 	for _, p := range matchedPrefixes {
-		if p.maxCalls != unlimited && p.maxCalls > 0 {
+		if p.maxCalls > 0 {
 			p.maxCalls--
 		}
 	}
-	if e.maxSecrets != unlimited && e.maxSecrets > 0 {
+	if e.maxSecrets > 0 {
 		e.maxSecrets--
 	}
 	return true

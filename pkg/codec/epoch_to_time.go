@@ -91,13 +91,13 @@ func convertInt64InTypeToTime(t reflect.Type, field string) (reflect.Type, error
 	converter := func(t reflect.Type) reflect.Type { return t }
 	for {
 		if t.ConvertibleTo(i64Type) {
-			return converter(reflect.TypeOf(&time.Time{})), nil
+			return converter(reflect.TypeFor[*time.Time]()), nil
 		}
 
 		switch t.Kind() {
 		case reflect.Pointer:
-			if t.ConvertibleTo(reflect.TypeOf(&big.Int{})) {
-				return converter(reflect.TypeOf(&time.Time{})), nil
+			if t.ConvertibleTo(reflect.TypeFor[*big.Int]()) {
+				return converter(reflect.TypeFor[*time.Time]()), nil
 			}
 		case reflect.Slice, reflect.Array:
 			tmp := converter

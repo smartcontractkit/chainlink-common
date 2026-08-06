@@ -664,6 +664,12 @@ type RemoteExecutableConfig struct {
 	RequestTimeout            time.Duration
 	ServerMaxParallelRequests uint32
 	RequestHasherType         RequestHasherType
+
+	// MinResponsesToAggregate is the minimum number of capability DON nodes that must
+	// return identical responses before the workflow DON accepts the read result.
+	// 0 defaults to F+1 of the remote DON.
+	// Must satisfy F+1 <= MinResponsesToAggregate <= N when non-zero.
+	MinResponsesToAggregate uint32
 }
 
 // NOTE: consider splitting this config into values stored in Registry (KS-118)

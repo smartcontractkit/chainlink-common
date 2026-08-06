@@ -14,8 +14,7 @@ func (nr *NoopRuntime) Fetch(sdk.FetchRequest) (sdk.FetchResponse, error) {
 }
 
 func (nr *NoopRuntime) Logger() logger.Logger {
-	l, _ := logger.New()
-	return l
+	return logger.Nop()
 }
 
 func (nr *NoopRuntime) Emitter() sdk.MessageEmitter {

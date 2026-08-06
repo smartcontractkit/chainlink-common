@@ -218,7 +218,7 @@ func (b *rangeLimiter[N]) get(ctx context.Context) (tenant string, bound setting
 		if tenant == "" {
 			if !b.scope.IsTenantRequired() {
 				kvs := contexts.CREValue(ctx).LoggerKVs()
-				b.lggr.Warnw("Unable to get scoped bounds limit due to missing tenant: failing open", append([]any{"scope", b.scope}, kvs...)...)
+				b.lggr.Errorw("Unable to get scoped bounds limit due to missing tenant: failing open", append([]any{"scope", b.scope}, kvs...)...)
 				return
 			}
 			err = fmt.Errorf("unable to get scoped bounds limit due to missing tenant for scope: %s", b.scope)

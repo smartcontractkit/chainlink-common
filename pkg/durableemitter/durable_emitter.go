@@ -17,7 +17,9 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
@@ -120,7 +122,7 @@ func DefaultConfig() Config {
 		ExpiryInterval:           1 * time.Minute,
 		EventTTL:                 1 * time.Hour,
 		PublishTimeout:           5 * time.Second,
-		InsertBatchFlushInterval: 500 * time.Millisecond,
+		InsertBatchFlushInterval: 50 * time.Millisecond,
 		InsertBatchSize:          100,
 		DeleteBatchSize:          100,
 		DeleteBatchFlushInterval: 500 * time.Millisecond,
@@ -239,7 +241,7 @@ func NewDurableEmitter(
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter)
+		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ClientNameDurableEmitter)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}
@@ -262,10 +264,7 @@ func NewDurableEmitter(
 	if cfg.InsertBatchSize > 0 {
 		if bi, ok := store.(BatchInserter); ok {
 			d.batchInserter = bi
-			chanSize := cfg.InsertBatchSize * 200
-			if chanSize < 10_000 {
-				chanSize = 10_000
-			}
+			chanSize := max(cfg.InsertBatchSize*200, 10_000)
 			d.insertCh = make(chan *insertRequest, chanSize)
 			d.eng.Infow("DurableEmitter: write coalescing enabled",
 				"insertBatchSize", cfg.InsertBatchSize,
@@ -275,10 +274,7 @@ func NewDurableEmitter(
 	}
 
 	if cfg.DeleteBatchSize > 0 {
-		chanSize := cfg.DeleteBatchSize * 200
-		if chanSize < 10_000 {
-			chanSize = 10_000
-		}
+		chanSize := max(cfg.DeleteBatchSize*200, 10_000)
 		d.deleteCh = make(chan int64, chanSize)
 		d.eng.Infow("DurableEmitter: delete coalescing enabled",
 			"deleteBatchSize", cfg.DeleteBatchSize,
@@ -328,6 +324,18 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 	return nil
 }
 
+// EmitAsync runs Emit in a background goroutine and ignores the result, so the
+// caller is never blocked on the DB insert. Use it on hot paths where the
+// durable emitter's value is persistence for retransmit (not inline delivery)
+// and the real-time beholder emit already happened. The passed ctx is detached
+// so the emit is not cancelled when the caller's ctx ends.
+func (d *DurableEmitter) EmitAsync(ctx context.Context, body []byte, attrKVs ...any) {
+	emitCtx := context.WithoutCancel(ctx)
+	go func() {
+		_ = d.Emit(emitCtx, body, attrKVs...)
+	}()
+}
+
 // Emit persists the event then hands it to the BatchEmitter for async delivery.
 // Returns nil once the insert is accepted (or the coalesced insert path
 // completes successfully). Returns an error when the service is not in the
@@ -345,7 +353,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				d.metrics.emitFail.Add(ctx, 1)
 			}
 		}
-		sourceDomain, entityType, err := extractSourceAndType(attrKVs...)
+		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
 		if err != nil {
 			emitFail()
 			return err
@@ -780,19 +788,11 @@ func (d *DurableEmitter) expiryLoop() {
 	}
 }
 
-func (d *DurableEmitter) queueStatsNearExpiryLead() time.Duration {
-	lead := 5 * time.Minute
-	if d.cfg.Metrics != nil && d.cfg.Metrics.NearExpiryLead > 0 {
-		lead = d.cfg.Metrics.NearExpiryLead
-	}
-	return lead
-}
-
 func (d *DurableEmitter) metricsLoop() {
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
 	if poll <= 0 {
-		poll = 500 * time.Millisecond
+		poll = 10 * time.Second
 	}
 
 	ctx, cancel := d.stopCh.NewCtx()
@@ -806,7 +806,7 @@ func (d *DurableEmitter) metricsLoop() {
 			return
 		case <-ticker.C:
 			if obs, ok := d.store.(DurableQueueObserver); ok {
-				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL, d.queueStatsNearExpiryLead())
+				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
 				if err != nil {
 					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
 				} else {
@@ -874,24 +874,4 @@ func parseAttrs(attrKVs ...any) map[string]any {
 		}
 	}
 	return a
-}
-
-// extractSourceAndType returns the CloudEvent source domain and entity type
-// from the supplied attributes. Callers must provide the canonical CloudEvents
-// keys "source" and "type". Both must be non-empty strings.
-func extractSourceAndType(attrKVs ...any) (sourceDomain, entityType string, err error) {
-	attrs := parseAttrs(attrKVs...)
-	if v, ok := attrs["source"].(string); ok {
-		sourceDomain = v
-	}
-	if v, ok := attrs["type"].(string); ok {
-		entityType = v
-	}
-	if sourceDomain == "" {
-		return "", "", errors.New(`"source" not found in provided key/value attributes`)
-	}
-	if entityType == "" {
-		return "", "", errors.New(`"type" not found in provided key/value attributes`)
-	}
-	return sourceDomain, entityType, nil
 }

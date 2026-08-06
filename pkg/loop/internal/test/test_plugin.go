@@ -10,8 +10,6 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/require"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type HelperProcessCommand struct {
@@ -46,7 +44,7 @@ func (h HelperProcessCommand) New() *exec.Cmd {
 }
 
 func PluginTest[TB testing.TB, I any](tb TB, name string, p plugin.Plugin, testFn func(TB, I)) {
-	ctx, cancel := context.WithCancel(tests.Context(tb))
+	ctx, cancel := context.WithCancel(tb.Context())
 	defer cancel()
 
 	ch := make(chan *plugin.ReattachConfig, 1)

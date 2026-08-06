@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -15,10 +14,10 @@ import (
 
 func makeDynamicMessage(t *testing.T, pkg, msgName string) protoreflect.ProtoMessage {
 	fdProto := &descriptorpb.FileDescriptorProto{
-		Name:    proto.String("test.proto"),
-		Package: proto.String(pkg),
+		Name:    new("test.proto"),
+		Package: new(pkg),
 		MessageType: []*descriptorpb.DescriptorProto{{
-			Name: proto.String(msgName),
+			Name: new(msgName),
 		}},
 	}
 

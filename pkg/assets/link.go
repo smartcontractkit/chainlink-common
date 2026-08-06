@@ -123,8 +123,8 @@ func (l *Link) UnmarshalJSON(data []byte) error {
 // UnmarshalText implements the encoding.TextUnmarshaler interface.
 func (l *Link) UnmarshalText(text []byte) error {
 	s := string(text)
-	if strings.HasSuffix(s, "link") {
-		s = strings.TrimSuffix(s, "link")
+	if before, ok := strings.CutSuffix(s, "link"); ok {
+		s = before
 		s = strings.TrimSuffix(s, " ")
 		d, err := decimal.NewFromString(s)
 		if err != nil {
@@ -138,8 +138,8 @@ func (l *Link) UnmarshalText(text []byte) error {
 		l.Set((*Link)(d.Rat().Num()))
 		return nil
 	}
-	if strings.HasSuffix(s, "juels") {
-		s = strings.TrimSuffix(s, "juels")
+	if before, ok := strings.CutSuffix(s, "juels"); ok {
+		s = before
 		s = strings.TrimSuffix(s, " ")
 	}
 	if _, ok := l.SetString(s, 10); !ok {

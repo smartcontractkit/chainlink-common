@@ -3,7 +3,6 @@ package stellar_test
 import (
 	"encoding/base64"
 	"encoding/hex"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -64,7 +63,7 @@ func TestConvertGetLatestLedgerResponseFromProto_EmptyFieldsReturnZeroValues(t *
 
 	domain, err := stellarcap.ConvertGetLatestLedgerResponseFromProto(&stellarcap.GetLatestLedgerResponse{})
 	require.NoError(t, err)
-	require.Equal(t, "", domain.Hash) // hex.EncodeToString(nil) == ""
+	require.Empty(t, domain.Hash) // hex.EncodeToString(nil) == ""
 	require.Equal(t, base64.StdEncoding.EncodeToString(nil), domain.LedgerHeaderXDR)
 }
 
@@ -482,7 +481,7 @@ func TestScVal_ExceedsMaxDepth(t *testing.T) {
 	// Build a domain ScVal nested 66 levels deep and confirm ScValToProto rejects it.
 	u := uint32(0)
 	cur := &stellartypes.ScVal{Type: stellartypes.ScValTypeU32, U32: &u}
-	for i := 0; i < 66; i++ {
+	for range 66 {
 		cur = &stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{cur}}}
 	}
 	_, err := stellarcap.ScValToProto(*cur)
@@ -501,7 +500,7 @@ func TestScVal_ExceedsMaxDepth_EmptyStorageContractInstance(t *testing.T) {
 		},
 	}
 	cur := leaf
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		cur = &stellartypes.ScVal{Type: stellartypes.ScValTypeVec, Vec: &stellartypes.ScVec{Values: []*stellartypes.ScVal{cur}}}
 	}
 	_, err := stellarcap.ScValToProto(*cur)
@@ -541,12 +540,12 @@ func TestProtoScVal_ExceedsMaxDepth(t *testing.T) {
 	// Build a proto ScVal nested 66 levels deep and confirm ProtoToScVal rejects it.
 	u := uint32(0)
 	cur := &scval.ScVal{Value: &scval.ScVal_U32{U32: u}}
-	for i := 0; i < 66; i++ {
+	for range 66 {
 		cur = &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: []*scval.ScVal{cur}}}}
 	}
 	_, err := stellarcap.ProtoToScVal(cur)
 	require.Error(t, err)
-	require.True(t, strings.Contains(err.Error(), "nesting exceeds maximum depth"), "unexpected error: %v", err)
+	require.Contains(t, err.Error(), "nesting exceeds maximum depth", "unexpected error: %v", err)
 }
 
 func TestProtoScVal_ExceedsMaxDepth_EmptyStorageContractInstance(t *testing.T) {
@@ -554,7 +553,7 @@ func TestProtoScVal_ExceedsMaxDepth_EmptyStorageContractInstance(t *testing.T) {
 		Executable: &scval.ContractExecutable{Type: &scval.ContractExecutable_StellarAsset{StellarAsset: true}},
 	}}}
 	cur := leaf
-	for i := 0; i < 64; i++ {
+	for range 64 {
 		cur = &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: []*scval.ScVal{cur}}}}
 	}
 	_, err := stellarcap.ProtoToScVal(cur)

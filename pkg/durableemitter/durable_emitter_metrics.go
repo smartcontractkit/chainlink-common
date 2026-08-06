@@ -2,7 +2,7 @@ package durableemitter
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -20,13 +20,11 @@ import (
 type DurableEmitterMetricsConfig struct {
 	// PollInterval is how often queue and optional process gauges refresh. Zero = 10s.
 	PollInterval time.Duration
-	// NearExpiryLead is the window before EventTTL used for queue.near_ttl (DLQ pressure proxy). Zero = 5m.
-	NearExpiryLead time.Duration
 	// MaxQueuePayloadBytes, if > 0, records capacity_usage_ratio = queue_payload_bytes / max.
 	MaxQueuePayloadBytes int64
 }
 
-// publishPhase identifies which delivery path recorded a batch publish metric.
+// publishPhase identifies the delivery path recorded by publish metrics.
 type publishPhase int
 
 const (
@@ -46,6 +44,7 @@ func (p publishPhase) String() string {
 }
 
 type durableEmitterMetrics struct {
+	clientName         string
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -64,7 +63,7 @@ type durableEmitterMetrics struct {
 	queueDepth         metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
-	queueNearTTL       metric.Int64Gauge
+	queueTTLBudgetSec  metric.Int64Gauge
 	queueCapacityRatio metric.Float64Gauge
 	procHeapInuse      metric.Int64Gauge
 	procHeapSys        metric.Int64Gauge
@@ -94,11 +93,13 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
 // supplied meter. The caller is responsible for the meter's scope (the
 // instrument prefix below acts as the metric namespace).
-func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error) {
+func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEmitterMetrics, error) {
 	if meter == nil {
-		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
+		return nil, errors.New("durable emitter metrics: meter is nil")
 	}
-	m := &durableEmitterMetrics{}
+	m := &durableEmitterMetrics{
+		clientName: clientName,
+	}
 	var err error
 	if m.emitSuccess, err = meter.Int64Counter(
 		"durable_emitter.emit.success",
@@ -147,7 +148,7 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
-		metric.WithDescription("Chip Ingress Publish RPC duration (seconds); labels: phase={batch,retransmit}, error={true,false}"),
+		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit}, error={true,false}, client_name"),
 		durationBuckets,
 	); err != nil {
 		return nil, err
@@ -230,10 +231,10 @@ func newDurableEmitterMetrics(meter metric.Meter) (*durableEmitterMetrics, error
 	); err != nil {
 		return nil, err
 	}
-	if m.queueNearTTL, err = meter.Int64Gauge(
-		"durable_emitter.queue.near_ttl",
-		metric.WithUnit("{row}"),
-		metric.WithDescription("Rows within near-expiry window of EventTTL (DLQ pressure proxy; no separate DLQ table)"),
+	if m.queueTTLBudgetSec, err = meter.Int64Gauge(
+		"durable_emitter.queue.ttl_budget_seconds",
+		metric.WithUnit("s"),
+		metric.WithDescription("Seconds of TTL headroom for the oldest pending event (EventTTL - oldest age); low/negative → DLQ/expiry pressure. Alert engine decides what 'near' means"),
 	); err != nil {
 		return nil, err
 	}
@@ -309,7 +310,7 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 }
 
 // recordQueueStats records the DB-derived queue statistics (payload bytes,
-// oldest pending age, near-TTL count) from an already-observed snapshot. The
+// oldest pending age, TTL budget) from an already-observed snapshot. The
 // queue depth gauge itself is recorded separately by DurableEmitter from the
 // same snapshot's authoritative TotalRows count.
 func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st DurableQueueStats, maxBytes int64) {
@@ -322,7 +323,7 @@ func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st Durable
 	} else {
 		m.queueOldestAgeSec.Record(ctx, st.OldestPendingAge.Seconds())
 	}
-	m.queueNearTTL.Record(ctx, st.NearTTLCount)
+	m.queueTTLBudgetSec.Record(ctx, int64(st.TTLBudget/time.Second))
 	if maxBytes > 0 {
 		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
 	}
@@ -345,6 +346,7 @@ func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.
 		metric.WithAttributes(
 			attribute.String("phase", phase.String()),
 			attribute.Bool("error", err != nil),
+			attribute.String("client_name", m.clientName),
 		),
 	)
 }
@@ -353,7 +355,10 @@ func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, pha
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(attribute.String("phase", phase.String()))
+	attrs := metric.WithAttributes(
+		attribute.String("phase", phase.String()),
+		attribute.String("client_name", m.clientName),
+	)
 	if err != nil {
 		m.publishBatchEvErr.Add(ctx, 1, attrs)
 	} else {

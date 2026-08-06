@@ -27,7 +27,7 @@ func TestHardCoder(t *testing.T) {
 		D int32
 	}
 
-	var onChainType = reflect.TypeOf(testStruct{})
+	var onChainType = reflect.TypeFor[testStruct]()
 
 	hardCoder, err := codec.NewHardCoder(map[string]any{"A": "Foo", "C": []int32{2, 3}}, map[string]any{"Z": "Bar", "Q": []struct {
 		A int
@@ -95,10 +95,10 @@ func TestHardCoder(t *testing.T) {
 
 		a, ok := offChainType.FieldByName("A")
 		require.True(t, ok)
-		assert.Equal(t, reflect.TypeOf(int64(0)), a.Type)
+		assert.Equal(t, reflect.TypeFor[int64](), a.Type)
 
 		extra := offChainType.Field(onChainType.NumField())
-		assert.Equal(t, reflect.StructField{Name: "Q", Type: reflect.TypeOf([]int32{})}, cleanStructField(extra))
+		assert.Equal(t, reflect.StructField{Name: "Q", Type: reflect.TypeFor[[]int32]()}, cleanStructField(extra))
 	})
 
 	t.Run("RetypeToOffChain returns error is existing field type is changed and not hard coded both ways", func(t *testing.T) {
@@ -357,7 +357,7 @@ func TestHardCoder(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		offChainType, err := nestedHardCoder.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		offChainType, err := nestedHardCoder.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(offChainType))
@@ -474,7 +474,7 @@ func TestHardCoder(t *testing.T) {
 		require.NoError(t, err)
 
 		var a string
-		_, err = hardCoder.RetypeToOffChain(reflect.TypeOf(a), "")
+		_, err = hardCoder.RetypeToOffChain(reflect.TypeFor[string](), "")
 		require.NoError(t, err)
 
 		offChain, err := hardCoder.TransformToOffChain(a, "")
@@ -504,10 +504,10 @@ func TestHardCoder(t *testing.T) {
 		}, true)
 		require.NoError(t, err)
 
-		offChainType, err := nestedHardCoder.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		offChainType, err := nestedHardCoder.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
-		_, err = nestedHardCoder.RetypeToOffChain(reflect.TypeOf(""), "B.A")
+		_, err = nestedHardCoder.RetypeToOffChain(reflect.TypeFor[string](), "B.A")
 		require.NoError(t, err)
 
 		iInput := reflect.Indirect(reflect.New(offChainType))
@@ -569,7 +569,7 @@ func assertBasicHardCodedType(t *testing.T, onChainType, offChainType reflect.Ty
 		q = &fn2
 	}
 	require.NotNil(t, z)
-	assert.Equal(t, reflect.TypeOf("string"), z.Type)
+	assert.Equal(t, reflect.TypeFor[string](), z.Type)
 	require.NotNil(t, q)
 	require.Equal(t, reflect.Slice, q.Type.Kind())
 	qe := q.Type.Elem()
@@ -577,10 +577,10 @@ func assertBasicHardCodedType(t *testing.T, onChainType, offChainType reflect.Ty
 	assert.Equal(t, 2, qe.NumField())
 	a, ok := qe.FieldByName("A")
 	require.True(t, ok)
-	assert.Equal(t, reflect.TypeOf(0), a.Type)
+	assert.Equal(t, reflect.TypeFor[int](), a.Type)
 	b, ok := qe.FieldByName("B")
 	require.True(t, ok)
-	assert.Equal(t, reflect.TypeOf("string"), b.Type)
+	assert.Equal(t, reflect.TypeFor[string](), b.Type)
 }
 
 func cleanStructField(field reflect.StructField) reflect.StructField {

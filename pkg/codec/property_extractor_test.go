@@ -33,7 +33,7 @@ func TestPropertyExtractor(t *testing.T) {
 		C testStruct3
 	}
 
-	onChainType := reflect.TypeOf(nestedTestStruct{})
+	onChainType := reflect.TypeFor[nestedTestStruct]()
 
 	extractor := codec.NewPropertyExtractor("A")
 	invalidExtractor := codec.NewPropertyExtractor("A.B")
@@ -42,31 +42,29 @@ func TestPropertyExtractor(t *testing.T) {
 	nestedExtractorFieldUnderSlice := codec.NewPropertyExtractor("C.E.D")
 
 	t.Run("RetypeToOffChain sets the type for offchain to the onchain property", func(t *testing.T) {
-		offChainType, err := extractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		offChainType, err := extractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
-		require.Equal(t, reflect.TypeOf(""), offChainType)
+		require.Equal(t, reflect.TypeFor[string](), offChainType)
 	})
 
 	t.Run("RetypeToOffChain sets the type for offchain to the onchain property for extracting fields nested under slices", func(t *testing.T) {
-		offChainType, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		offChainType, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
-		require.Equal(t, reflect.TypeOf([][16]uint8{}), offChainType)
+		require.Equal(t, reflect.TypeFor[[][16]uint8](), offChainType)
 	})
 
 	t.Run("RetypeToOffChain works on pointers", func(t *testing.T) {
-		offChainType, err := extractor.RetypeToOffChain(reflect.TypeOf(&nestedTestStruct{}), "")
+		offChainType, err := extractor.RetypeToOffChain(reflect.TypeFor[*nestedTestStruct](), "")
 		require.NoError(t, err)
 
-		str := ""
-
-		require.Equal(t, reflect.TypeOf(&str), offChainType)
+		require.Equal(t, reflect.TypeFor[*string](), offChainType)
 	})
 
 	t.Run("RetypeToOffChain works on slices", func(t *testing.T) {
-		offChainType, err := extractor.RetypeToOffChain(reflect.TypeOf([]nestedTestStruct{}), "")
+		offChainType, err := extractor.RetypeToOffChain(reflect.TypeFor[[]nestedTestStruct](), "")
 		require.NoError(t, err)
 
-		require.Equal(t, reflect.TypeOf([]string{}), offChainType)
+		require.Equal(t, reflect.TypeFor[[]string](), offChainType)
 	})
 
 	t.Run("RetypeToOffChain works on arrays", func(t *testing.T) {
@@ -79,12 +77,12 @@ func TestPropertyExtractor(t *testing.T) {
 	})
 
 	t.Run("RetypeToOffChain returns error for missing field", func(t *testing.T) {
-		_, err := invalidExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err := invalidExtractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.Error(t, err)
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on structs", func(t *testing.T) {
-		_, err := extractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err := extractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		onChainValue := nestedTestStruct{
@@ -114,7 +112,7 @@ func TestPropertyExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on nested structs", func(t *testing.T) {
-		_, err := nestedExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err := nestedExtractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		onChainValue := nestedTestStruct{
@@ -144,7 +142,7 @@ func TestPropertyExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on nested fields under slices", func(t *testing.T) {
-		_, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		onChainValue := nestedTestStruct{
@@ -168,7 +166,7 @@ func TestPropertyExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOffChain works on filed that is an uninitialised slice", func(t *testing.T) {
-		_, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err := nestedExtractorFieldUnderSlice.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		onChainValue := nestedTestStruct{
@@ -186,7 +184,7 @@ func TestPropertyExtractor(t *testing.T) {
 		require.Equal(t, [][16]uint8{}, offChainValue)
 
 		uninitialisedSliceExtractor := codec.NewPropertyExtractor("C.E")
-		_, err = uninitialisedSliceExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err = uninitialisedSliceExtractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		// can't be transformed back to on-chain, its completely lossy
@@ -195,7 +193,7 @@ func TestPropertyExtractor(t *testing.T) {
 		require.Equal(t, []testStruct2{}, offChainValue)
 
 		uninitialisedSliceExtractor = codec.NewPropertyExtractor("C.E.F")
-		_, err = uninitialisedSliceExtractor.RetypeToOffChain(reflect.TypeOf(nestedTestStruct{}), "")
+		_, err = uninitialisedSliceExtractor.RetypeToOffChain(reflect.TypeFor[nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		// can't be transformed back to on-chain, its completely lossy
@@ -237,7 +235,7 @@ func TestPropertyExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on slices", func(t *testing.T) {
-		_, err := nestedExtractor.RetypeToOffChain(reflect.TypeOf([]nestedTestStruct{}), "")
+		_, err := nestedExtractor.RetypeToOffChain(reflect.TypeFor[[]nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		input := []nestedTestStruct{
@@ -263,7 +261,7 @@ func TestPropertyExtractor(t *testing.T) {
 	})
 
 	t.Run("TransformToOnChain and TransformToOffChain works on slices of slices", func(t *testing.T) {
-		_, err := nestedExtractor.RetypeToOffChain(reflect.TypeOf([][]nestedTestStruct{}), "")
+		_, err := nestedExtractor.RetypeToOffChain(reflect.TypeFor[[][]nestedTestStruct](), "")
 		require.NoError(t, err)
 
 		input := [][]nestedTestStruct{

@@ -26,7 +26,7 @@ type Config struct {
 	EmitterMaxQueueSize       int
 	// EmitterBatchProcessor controls custom-message export mode:
 	// true = batched async export; false = immediate per-record export.
-	EmitterBatchProcessor     bool
+	EmitterBatchProcessor bool
 
 	// OTel Trace
 	TraceSampleRatio  float64
@@ -40,6 +40,21 @@ type Config struct {
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View
+	// MetricViewsDenyAttributes lists attribute keys dropped by the default
+	// global deny view (e.g. event_id). Empty skips the deny-list view; the
+	// PerWorkflow histogram bucket and base-trigger allow-list defaults still
+	// apply regardless (see metricviews.Default).
+	MetricViewsDenyAttributes []string
+	// metricViewsDisabled skips metricviews.Default entirely so metricViews()
+	// returns only the caller's MetricViews. It is a test seam for isolating
+	// behavior (e.g. cardinality limits) from the default bucket/deny views;
+	// production callers control views via MetricViews and
+	// MetricViewsDenyAttributes. Unexported so it is not public API and does
+	// not appear in marshaled Config.
+	metricViewsDisabled bool
+	// MetricCardinalityLimit sets the SDK per-instrument attribute-set limit (0 = disabled).
+	// DefaultConfig uses DefaultMetricCardinalityLimit as a production safety valve for high-cardinality workloads.
+	MetricCardinalityLimit int
 	// MetricCompressor sets the gRPC compressor for metrics. Valid values: "gzip" (default), "none".
 	MetricCompressor string
 	MetricProducers  []metric.Producer // For example, a prometheus bridge
@@ -51,12 +66,13 @@ type Config struct {
 
 	// Chip Ingress Batch Emitter
 	ChipIngressBatchEmitterEnabled bool          // When true, use batch emitter; when false (default), use legacy per-event emitter
-	ChipIngressBufferSize          uint          // Message buffer size (default 1000)
-	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 500)
-	ChipIngressSendInterval        time.Duration // Flush interval (default 100ms)
-	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 3s)
-	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 10s)
+	ChipIngressBufferSize          uint          // Message buffer size (default 10000)
+	ChipIngressMaxBatchSize        uint          // Max events per PublishBatch call (default 1000)
+	ChipIngressSendInterval        time.Duration // Flush interval (default 500ms)
+	ChipIngressSendTimeout         time.Duration // Timeout per PublishBatch call (default 10s)
+	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 30s)
 	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls (default 10)
+	ChipIngressMaxGRPCRequestSize  int           // Max serialized PublishBatch request size in bytes (default 10 MiB)
 	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
@@ -108,6 +124,9 @@ var defaultRetryConfig = RetryConfig{
 const (
 	defaultPackageName        = "beholder"
 	defaultMaxConcurrentSends = 10
+
+	// DefaultMetricCardinalityLimit is the production safety valve for high-cardinality workloads.
+	DefaultMetricCardinalityLimit = 100000
 )
 
 var defaultOtelAttributes = []attribute.KeyValue{
@@ -127,7 +146,7 @@ func DefaultConfig() Config {
 		EmitterExportInterval:     1 * time.Second,
 		EmitterMaxQueueSize:       2048,
 		// Keep batched export enabled by default for throughput.
-		EmitterBatchProcessor:     true,
+		EmitterBatchProcessor: true,
 		// OTel message log exporter retry config
 		LogRetryConfig: defaultRetryConfig.Copy(),
 		// Trace
@@ -137,8 +156,9 @@ func DefaultConfig() Config {
 		// OTel trace exporter retry config
 		TraceRetryConfig: defaultRetryConfig.Copy(),
 		// Metric
-		MetricReaderInterval: 1 * time.Second,
-		MetricCompressor:     "gzip",
+		MetricReaderInterval:   1 * time.Second,
+		MetricCompressor:       "gzip",
+		MetricCardinalityLimit: DefaultMetricCardinalityLimit,
 		// OTel metric exporter retry config
 		MetricRetryConfig: defaultRetryConfig.Copy(),
 		// Log
@@ -148,16 +168,17 @@ func DefaultConfig() Config {
 		LogMaxQueueSize:       2048,
 		LogBatchProcessor:     true,
 		LogStreamingEnabled:   true, // Enable logs streaming by default
-		LogLevel:      zapcore.InfoLevel,
-		LogCompressor: "gzip",
+		LogLevel:              zapcore.InfoLevel,
+		LogCompressor:         "gzip",
 		// Chip Ingress Batch Emitter
 		ChipIngressBatchEmitterEnabled: false,
-		ChipIngressBufferSize:          1000,
-		ChipIngressMaxBatchSize:        500,
-		ChipIngressSendInterval:        100 * time.Millisecond,
-		ChipIngressSendTimeout:         3 * time.Second,
-		ChipIngressDrainTimeout:        10 * time.Second,
+		ChipIngressBufferSize:          10000,
+		ChipIngressMaxBatchSize:        1000,
+		ChipIngressSendInterval:        500 * time.Millisecond,
+		ChipIngressSendTimeout:         10 * time.Second,
+		ChipIngressDrainTimeout:        30 * time.Second,
 		ChipIngressMaxConcurrentSends:  defaultMaxConcurrentSends,
+		ChipIngressMaxGRPCRequestSize:  10 * 1024 * 1024, // 10 MiB
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}
@@ -173,6 +194,7 @@ func TestDefaultConfig() Config {
 	config.LogRetryConfig.MaxElapsedTime = 0    // Retry is disabled
 	config.TraceRetryConfig.MaxElapsedTime = 0  // Retry is disabled
 	config.MetricRetryConfig.MaxElapsedTime = 0 // Retry is disabled
+	config.MetricCardinalityLimit = 0           // Disable overflow aggregation in unit tests
 	// Auth disabled for testing (TTL=0 means static auth mode)
 	config.AuthHeadersTTL = 0
 	return config
@@ -186,6 +208,7 @@ func TestDefaultConfigHTTPClient() Config {
 	config.LogBatchProcessor = false
 	config.OtelExporterGRPCEndpoint = ""
 	config.OtelExporterHTTPEndpoint = "localhost:4318"
+	config.MetricCardinalityLimit = 0
 	// Auth disabled for testing (TTL=0 means static auth mode)
 	config.AuthHeadersTTL = 0
 	return config

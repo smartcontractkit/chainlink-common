@@ -83,11 +83,11 @@ func verifyHardCodeKeys(values map[string]any) error {
 	seen := map[string]bool{}
 	for _, k := range subkeysLast(values) {
 		parts := strings.Split(k, ".")
-		on := ""
+		var on strings.Builder
 		for _, part := range parts {
-			on += part
-			if seen[on] {
-				return fmt.Errorf("%w: key %s and %s cannot both be present", types.ErrInvalidConfig, on, k)
+			on.WriteString(part)
+			if seen[on.String()] {
+				return fmt.Errorf("%w: key %s and %s cannot both be present", types.ErrInvalidConfig, on.String(), k)
 			}
 		}
 		seen[k] = true

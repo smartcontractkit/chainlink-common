@@ -303,6 +303,11 @@ func (e *EVMClient) GetLatestLPBlock(ctx context.Context) (*evmtypes.LPBlock, er
 	}, nil
 }
 
+func (e *EVMClient) LPSkipToBlock(ctx context.Context, blockNumber int64) error {
+	_, err := e.grpcClient.LPSkipToBlock(ctx, &evmpb.LPSkipToBlockRequest{BlockNumber: blockNumber})
+	return net.WrapRPCErr(err)
+}
+
 type evmServer struct {
 	evmpb.UnimplementedEVMServer
 
@@ -568,6 +573,13 @@ func (e *evmServer) GetLatestLPBlock(ctx context.Context, _ *emptypb.Empty) (*ev
 			BlockTimestamp:       b.BlockTimestamp,
 		},
 	}, nil
+}
+
+func (e *evmServer) LPSkipToBlock(ctx context.Context, request *evmpb.LPSkipToBlockRequest) (*emptypb.Empty, error) {
+	if err := e.impl.LPSkipToBlock(ctx, request.GetBlockNumber()); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }
 
 func (e *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {

@@ -50,6 +50,12 @@ flowchart
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
+        VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
+        PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate
+    end
+
+    subgraph executableServer[remote executable capability server.OnMessage]
+        RemoteExecutableWorkflowDONBindingEnabled[/RemoteExecutableWorkflowDONBindingEnabled\]:::gate
     end
 
     subgraph HandleNodeMessage[gatewayHandler.HandleNodeMessage]
@@ -73,6 +79,7 @@ flowchart
 
     subgraph host.NewModule
         PerWorkflow.WASMCompressedBinarySizeLimit{{PerWorkflow.WASMCompressedBinarySizeLimit}}:::bound
+        WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
     end
     
     subgraph Engine.init
@@ -158,6 +165,7 @@ flowchart
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
         PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
+        PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod[/PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod\]:::gate
         PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod[/PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
@@ -208,6 +216,10 @@ flowchart
             PerWorkflow.ChainRead.CallLimit{{CallLimit}}:::bound
             PerWorkflow.ChainRead.LogQueryBlockLimit{{LogQueryBlockLimit}}:::bound
             PerWorkflow.ChainRead.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            subgraph SolanaRead
+                PerWorkflow.ChainRead.Solana.BatchItemLimit{{BatchItemLimit}}:::bound
+                PerWorkflow.ChainRead.Solana.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            end
         end
         subgraph PerWorkflow.Consensus
             PerWorkflow.Consensus.ObservationSizeLimit{{ObservationSizeLimit}}:::bound
@@ -294,12 +306,22 @@ flowchart
         end
     end
 
+    subgraph HandleGatewayMessage[EnclaveRelayHandler.HandleGatewayMessage]
+%%      enclave → gateway → relay DON node. The server side of the exchange the
+%%      executor's ConfidentialCompute.EnclaveRequestTimeout bounds, so it is a
+%%      separate entry point rather than part of the executor subgraph above.
+        ConfidentialCompute.ConfidentialRelayHandlerTimeout>ConfidentialCompute.ConfidentialRelayHandlerTimeout]:::time
+    end
+
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault
 
 %%  DON nodes → gateway is a separate entry point, not connected to the trigger/execution chain above
     HandleNodeMessage
+
+%%  enclave → gateway → relay DON node is likewise its own entry point
+    HandleGatewayMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

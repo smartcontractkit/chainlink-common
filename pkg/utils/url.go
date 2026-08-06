@@ -3,10 +3,16 @@ package utils
 import "github.com/smartcontractkit/chainlink-common/pkg/config"
 
 // Deprecated: use config.URL
+//
+//go:fix inline
 type URL = config.URL
 
 // Deprecated: use config.ParseURL
-func ParseURL(s string) (*URL, error) { return config.ParseURL(s) }
+//
+//go:fix inline
+func ParseURL(s string) (*config.URL, error) { return config.ParseURL(s) }
 
 // Deprecated: use config.MustParseURL
-func MustParseURL(s string) *URL { return config.MustParseURL(s) }
+//
+//go:fix inline
+func MustParseURL(s string) *config.URL { return config.MustParseURL(s) }

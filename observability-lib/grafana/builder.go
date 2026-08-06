@@ -168,13 +168,24 @@ func (b *Builder) nextAutoPanelID() (uint32, error) {
 	}
 }
 
+// preReserveStableIDs scans all entries and reserves all StableID values before
+// any auto-IDs are assigned. This ensures auto-ID assignment naturally skips
+// reserved IDs regardless of panel ordering in Build().
+func (b *Builder) preReserveStableIDs() error {
+	for _, e := range b.entries {
+		if e.panel != nil && e.panel.stableID > 0 {
+			if err := b.reservePanelID(e.panel.stableID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // panelID returns a pinned StableID when set; otherwise the next auto-increment ID.
-// Auto-increment skips IDs already reserved by StableID panels in this build.
+// StableIDs are pre-reserved before auto-ID assignment begins (see preReserveStableIDs).
 func (b *Builder) panelID(panel *Panel) (uint32, error) {
 	if panel != nil && panel.stableID > 0 {
-		if err := b.reservePanelID(panel.stableID); err != nil {
-			return 0, err
-		}
 		return panel.stableID, nil
 	}
 	return b.nextAutoPanelID()
@@ -217,6 +228,11 @@ func (b *Builder) Build() (*Observability, error) {
 	}
 
 	if b.dashboardBuilder != nil {
+		// Pre-reserve all StableID values so auto-ID assignment skips them regardless of entry ordering.
+		if err := b.preReserveStableIDs(); err != nil {
+			return nil, err
+		}
+
 		// First pass: attach panels to their row builders (needed before WithRow snapshots them)
 		for _, e := range b.entries {
 			if e.kind == entryPanelToRow {

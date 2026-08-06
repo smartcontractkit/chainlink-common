@@ -7,7 +7,7 @@ import (
 // PanelIDByTitle returns the panel ID for a dashboard panel matched by title.
 // It searches top-level panels and panels nested inside row containers; row
 // container panels themselves are not matched.
-func PanelIDByTitle(db *dashboard.Dashboard, title string) (uint32, bool) {
+func PanelIDByTitle(db *dashboard.Dashboard, title string) (uint32, bool) { //nolint:staticcheck // Uses v1 Dashboard intentionally; v2 migration is tracked separately
 	if db == nil || title == "" {
 		return 0, false
 	}
@@ -24,7 +24,7 @@ func PanelIDByTitle(db *dashboard.Dashboard, title string) (uint32, bool) {
 	return found, ok
 }
 
-func foreachPanel(db *dashboard.Dashboard, fn func(panel *dashboard.Panel) bool) {
+func foreachPanel(db *dashboard.Dashboard, fn func(panel *dashboard.Panel) bool) { //nolint:staticcheck // Uses v1 Dashboard intentionally; v2 migration is tracked separately
 	for i := range db.Panels {
 		if !applyToOrRowPanel(&db.Panels[i], fn) {
 			return

@@ -15,7 +15,8 @@ func TestValidateAttestation_Attestor(t *testing.T) {
 	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
-	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
+	userData, err := teeattestation.DomainHash("testtag", []byte(`{"key":"value"}`))
+	require.NoError(t, err)
 	doc, err := fa.CreateAttestation(userData)
 	require.NoError(t, err)
 
@@ -50,11 +51,13 @@ func TestValidateAttestation_WrongUserData(t *testing.T) {
 	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
-	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
+	userData, err := teeattestation.DomainHash("testtag", []byte(`{"key":"value"}`))
+	require.NoError(t, err)
 	doc, err := fa.CreateAttestation(userData)
 	require.NoError(t, err)
 
-	wrongData := teeattestation.DomainHash("wrong-tag", []byte(`{"key":"value"}`))
+	wrongData, err := teeattestation.DomainHash("wrongtag", []byte(`{"key":"value"}`))
+	require.NoError(t, err)
 	err = ValidateAttestationWithRoots(doc, wrongData, fa.TrustedPCRsJSON(), fa.CARootsPEM())
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "expected user data")
@@ -64,7 +67,7 @@ func TestValidateAttestation_WrongPCRs(t *testing.T) {
 	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
-	userData := []byte("test-data")
+	userData := []byte("testdata")
 	doc, err := fa.CreateAttestation(userData)
 	require.NoError(t, err)
 
@@ -78,7 +81,8 @@ func TestValidateAndParse_SurfacesIdentityFields(t *testing.T) {
 	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
-	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
+	userData, err := teeattestation.DomainHash("testtag", []byte(`{"key":"value"}`))
+	require.NoError(t, err)
 	nonce := []byte("request-id-as-nonce")
 	identityKey := []byte("enclave-long-lived-identity-pubkey")
 
@@ -109,7 +113,8 @@ func TestValidateAndParse_FailsOnWrongUserData(t *testing.T) {
 	fa, err := nitrofake.NewAttestor()
 	require.NoError(t, err)
 
-	userData := teeattestation.DomainHash("test-tag", []byte(`{"key":"value"}`))
+	userData, err := teeattestation.DomainHash("testtag", []byte(`{"key":"value"}`))
+	require.NoError(t, err)
 	doc, err := fa.CreateAttestation(userData, nitrofake.WithNonce([]byte("n")))
 	require.NoError(t, err)
 

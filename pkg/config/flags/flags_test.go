@@ -1,0 +1,1173 @@
+package flags
+
+import (
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/config/configdoc"
+)
+
+// newRoot returns a root command wired for testing: its own viper, a --config flag, and
+// silenced output. Global state (the viper singleton and the load-config-once guard) is
+// restored on cleanup so tests can't leak keys or a consumed once into each other.
+func newRoot(t *testing.T) *cobra.Command {
+	t.Helper()
+
+	oldViper := viper.GetViper()
+	viper.Reset()
+	t.Cleanup(func() { *viper.GetViper() = *oldViper })
+
+	oldOnce, oldErr := configFileOnce, configFileErr
+	configFileOnce, configFileErr = new(sync.Once), nil
+	t.Cleanup(func() { configFileOnce, configFileErr = oldOnce, oldErr })
+
+	cmd := &cobra.Command{Use: "app", RunE: func(*cobra.Command, []string) error { return nil }}
+	cmd.PersistentFlags().String("config", "", "path to config file")
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	return cmd
+}
+
+// run registers target on a fresh root command and executes it with args, returning the error
+// from the decode/validate step (nil if the config was accepted).
+func run(t *testing.T, target any, args ...string) error {
+	t.Helper()
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, target, DefaultTOMLOptions("TEST")))
+	root.SetArgs(args)
+	return root.Execute()
+}
+
+// writeConfig writes a TOML config file and returns its path, for passing via --config.
+func writeConfig(t *testing.T, contents string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "config.toml")
+	require.NoError(t, os.WriteFile(path, []byte(contents), 0o600))
+	return path
+}
+
+func TestRequiredLeaf(t *testing.T) {
+	type cfg struct {
+		Name string `toml:"name" validate:"required"`
+	}
+
+	t.Run("missing", func(t *testing.T) {
+		var c cfg
+		require.ErrorContains(t, run(t, &c), "'required'")
+	})
+
+	t.Run("provided", func(t *testing.T) {
+		var c cfg
+		require.NoError(t, run(t, &c, "--name", "x"))
+		assert.Equal(t, "x", c.Name)
+	})
+}
+
+func TestNestedStructDecodes(t *testing.T) {
+	type inner struct {
+		Host string `toml:"host"`
+	}
+	type cfg struct {
+		Chain inner `toml:"chain"`
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c, "--chain.host", "example.com"))
+	assert.Equal(t, "example.com", c.Chain.Host)
+}
+
+func TestSquashedStructDecodes(t *testing.T) {
+	type inner struct {
+		Host string `toml:"host"`
+	}
+	type cfg struct {
+		// DefaultTOMLOptions names the squash option "inline", matching TOML's inline table.
+		Inner inner `toml:",inline"`
+	}
+
+	// Squashed fields contribute no key segment, so the flag is --host, not --inner.host.
+	var c cfg
+	require.NoError(t, run(t, &c, "--host", "example.com"))
+	assert.Equal(t, "example.com", c.Inner.Host)
+}
+
+func TestSquashOptionIsConfigurable(t *testing.T) {
+	type inner struct {
+		Host string `toml:"host"`
+	}
+	type cfg struct {
+		Inner inner `toml:",squash"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+	opts.DecoderConfig.SquashTagOption = "squash"
+
+	root := newRoot(t)
+	var c cfg
+	require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+	root.SetArgs([]string{"--host", "example.com"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "example.com", c.Inner.Host)
+}
+
+// Exported so the embedded field itself is exported (an embedded unexported type is an
+// unexported field, which the walker skips).
+type EmbeddedInner struct {
+	Host string `toml:"host" mapstructure:"host"`
+}
+
+func TestEmbeddedStructIsSquashedWhenDecoderSquashes(t *testing.T) {
+	type cfg struct {
+		EmbeddedInner // no tag; DefaultTOMLOptions sets DecoderConfig.Squash
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c, "--host", "example.com"))
+	assert.Equal(t, "example.com", c.Host)
+}
+
+func TestEmbeddedStructIsNestedWhenDecoderDoesNot(t *testing.T) {
+	type cfg struct {
+		EmbeddedInner
+	}
+
+	// Squash off: mapstructure treats the embedded struct as a field named after its type,
+	// so the flag must be namespaced to match, not flattened to --host.
+	opts := DefaultTOMLOptions("TEST")
+	opts.DecoderConfig.Squash = false
+
+	root := newRoot(t)
+	var c cfg
+	require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+	root.SetArgs([]string{"--embeddedinner.host", "example.com"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "example.com", c.Host)
+}
+
+func TestNamedEmbeddedStructIsRejectedWhenSquashing(t *testing.T) {
+	type cfg struct {
+		// The name is a lie under squashing: these fields flatten into the parent, but
+		// encoding/json would nest them under "inner".
+		EmbeddedInner `toml:"inner"`
+	}
+
+	err := RegisterCommandFlags(newRoot(t), &cfg{}, DefaultTOMLOptions("TEST"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "must not be named")
+}
+
+func TestNamedEmbeddedStructIsAllowedWhenNotSquashing(t *testing.T) {
+	type cfg struct {
+		EmbeddedInner `toml:"inner"`
+	}
+
+	// Squash off, so the name is honoured rather than ignored - and agrees with json.
+	opts := DefaultTOMLOptions("TEST")
+	opts.DecoderConfig.Squash = false
+
+	root := newRoot(t)
+	var c cfg
+	require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+	root.SetArgs([]string{"--inner.host", "example.com"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "example.com", c.Host)
+}
+
+func TestUnnamedEmbeddedStructMayCarryTagOptions(t *testing.T) {
+	type cfg struct {
+		// Options without a name are fine: nothing is being contradicted.
+		EmbeddedInner `toml:",inline"`
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c, "--host", "example.com"))
+	assert.Equal(t, "example.com", c.Host)
+}
+
+func TestTagNameIsConfigurable(t *testing.T) {
+	type cfg struct {
+		Host string `mapstructure:"host"`
+	}
+
+	// The zero Options falls back to mapstructure's own tag name and squash option.
+	root := newRoot(t)
+	var c cfg
+	require.NoError(t, RegisterCommandFlags(root, &c, Options{Prefixes: []string{"TEST"}}))
+
+	root.SetArgs([]string{"--host", "example.com"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "example.com", c.Host)
+}
+
+func TestOptionalNestedStructStaysNil(t *testing.T) {
+	type inner struct {
+		Host string `toml:"host" validate:"required"`
+	}
+	type cfg struct {
+		// Nothing under it was supplied, so it must stay nil rather than being allocated
+		// with defaults - otherwise its inner `required` would fire for an absent section.
+		Inner *inner `toml:"inner"`
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c))
+	assert.Nil(t, c.Inner)
+}
+
+func TestOptionalNestedStructAllocatedWhenSet(t *testing.T) {
+	type inner struct {
+		Host string `toml:"host" validate:"required"`
+	}
+	type cfg struct {
+		Inner *inner `toml:"inner"`
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c, "--inner.host", "example.com"))
+	require.NotNil(t, c.Inner)
+	assert.Equal(t, "example.com", c.Inner.Host)
+}
+
+// The exactly-one-of shape: two mutually exclusive nested sections, each required when the
+// other is absent. Pointers make "absent" representable, which is what stops the unselected
+// section's own `required` fields from being reported.
+type modeB struct {
+	X int32 `toml:"x" validate:"required"`
+	Z int32 `toml:"z" validate:"required"`
+	W int32 `toml:"w"` // deliberately not required
+}
+
+type modeC struct {
+	Y int32 `toml:"y"`
+	Q int32 `toml:"q" validate:"required"`
+}
+
+type modesCfg struct {
+	B *modeB `toml:"b" validate:"required_without=C,excluded_with=C"`
+	C *modeC `toml:"c" validate:"required_without=B,excluded_with=B"`
+}
+
+func TestExclusiveModes_NeitherSet(t *testing.T) {
+	var c modesCfg
+	err := run(t, &c)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "'required_without'")
+}
+
+func TestExclusiveModes_OnlyBSet(t *testing.T) {
+	var c modesCfg
+	// C is absent, so none of C's own required fields should be reported.
+	require.NoError(t, run(t, &c, "--b.x", "1", "--b.z", "2"))
+	require.NotNil(t, c.B)
+	assert.Nil(t, c.C)
+	assert.Equal(t, int32(1), c.B.X)
+}
+
+func TestExclusiveModes_OnlyCSet(t *testing.T) {
+	var c modesCfg
+	require.NoError(t, run(t, &c, "--c.q", "5"))
+	require.NotNil(t, c.C)
+	assert.Nil(t, c.B)
+}
+
+func TestExclusiveModes_BothSetIsRejected(t *testing.T) {
+	var c modesCfg
+	err := run(t, &c, "--b.x", "1", "--b.z", "2", "--c.q", "5")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "'excluded_with'")
+}
+
+func TestExclusiveModes_PartialSectionReportsItsOwnRequired(t *testing.T) {
+	var c modesCfg
+	// B is present but incomplete: its missing required field is what should be reported.
+	err := run(t, &c, "--b.x", "1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "'Z'")
+}
+
+func TestExclusiveModes_OnlyNonRequiredFieldSet(t *testing.T) {
+	var c modesCfg
+	// Setting only W allocates B, so B's unset required fields are reported.
+	err := run(t, &c, "--b.w", "9")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "'X'")
+	assert.Contains(t, err.Error(), "'Z'")
+}
+
+func TestValueStructWithCrossFieldRuleIsRejected(t *testing.T) {
+	type inner struct {
+		Host string `toml:"host" validate:"required"`
+	}
+	type other struct {
+		Addr string `toml:"addr"`
+	}
+	type cfg struct {
+		// Not a pointer, so it can never be absent - registration should refuse it rather
+		// than silently mis-validating at run time.
+		A inner `toml:"a" validate:"excluded_with=B"`
+		B other `toml:"b"`
+	}
+
+	cmd := &cobra.Command{Use: "app"}
+	err := RegisterCommandFlags(cmd, &cfg{}, DefaultTOMLOptions())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "requires a pointer field")
+}
+
+func TestExcludedWithoutLeaf(t *testing.T) {
+	type cfg struct {
+		URL    string `toml:"url"`
+		RealDB bool   `toml:"real-db" validate:"excluded_without=URL"`
+	}
+
+	t.Run("set without its dependency", func(t *testing.T) {
+		var c cfg
+		require.ErrorContains(t, run(t, &c, "--real-db"), "'excluded_without'")
+	})
+
+	t.Run("set with its dependency", func(t *testing.T) {
+		var c cfg
+		require.NoError(t, run(t, &c, "--url", "postgres://x", "--real-db"))
+	})
+}
+
+func TestRequiredWithLeaf(t *testing.T) {
+	type cfg struct {
+		Enable bool   `toml:"enable"`
+		Token  string `toml:"token" validate:"required_with=Enable"`
+	}
+
+	t.Run("dependency set, field missing", func(t *testing.T) {
+		var c cfg
+		require.ErrorContains(t, run(t, &c, "--enable"), "'required_with'")
+	})
+
+	t.Run("dependency unset", func(t *testing.T) {
+		var c cfg
+		require.NoError(t, run(t, &c))
+	})
+}
+
+// --- precedence: flag > env > config file > compiled-in default ---
+
+type precedenceCfg struct {
+	Value string `toml:"value"`
+}
+
+func newPrecedenceCfg() *precedenceCfg { return &precedenceCfg{Value: "from-default"} }
+
+func TestPrecedence_DefaultWhenNothingSet(t *testing.T) {
+	c := newPrecedenceCfg()
+	require.NoError(t, run(t, c))
+	assert.Equal(t, "from-default", c.Value)
+}
+
+func TestPrecedence_ConfigFileBeatsDefault(t *testing.T) {
+	path := writeConfig(t, "value = 'from-file'\n")
+
+	c := newPrecedenceCfg()
+	require.NoError(t, run(t, c, "--config", path))
+	assert.Equal(t, "from-file", c.Value)
+}
+
+func TestPrecedence_EnvBeatsConfigFile(t *testing.T) {
+	path := writeConfig(t, "value = 'from-file'\n")
+	t.Setenv("TEST_VALUE", "from-env")
+
+	c := newPrecedenceCfg()
+	require.NoError(t, run(t, c, "--config", path))
+	assert.Equal(t, "from-env", c.Value)
+}
+
+func TestPrecedence_FlagBeatsEnv(t *testing.T) {
+	path := writeConfig(t, "value = 'from-file'\n")
+	t.Setenv("TEST_VALUE", "from-env")
+
+	c := newPrecedenceCfg()
+	require.NoError(t, run(t, c, "--config", path, "--value", "from-flag"))
+	assert.Equal(t, "from-flag", c.Value)
+}
+
+func TestEnvPrefixesTriedInOrder(t *testing.T) {
+	type cfg struct {
+		Value string `toml:"value"`
+	}
+
+	root := newRoot(t)
+	var c cfg
+	require.NoError(t, RegisterCommandFlags(root, &c, DefaultTOMLOptions("FIRST", "SECOND")))
+
+	// Both are bound; the earlier prefix wins.
+	t.Setenv("FIRST_VALUE", "first")
+	t.Setenv("SECOND_VALUE", "second")
+
+	root.SetArgs(nil)
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "first", c.Value)
+}
+
+// --- subcommands ---
+
+// newSubcommand registers rootTarget on a root and subTarget under namespace on a child
+// command, returning both so a test can execute the child.
+func newSubcommand(t *testing.T, rootTarget, subTarget any, namespace string) *cobra.Command {
+	t.Helper()
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, rootTarget, DefaultTOMLOptions("TEST")))
+
+	sub := &cobra.Command{Use: namespace, RunE: func(*cobra.Command, []string) error { return nil }}
+	require.NoError(t, RegisterSubcommandFlags(sub, namespace, subTarget, DefaultTOMLOptions()))
+	root.AddCommand(sub)
+	return root
+}
+
+func TestSubcommand_FlagIsNotNamespaced(t *testing.T) {
+	type rootCfg struct {
+		Host string `toml:"host"`
+	}
+	type subCfg struct {
+		Retries int `toml:"retries"`
+	}
+
+	var r rootCfg
+	var s subCfg
+	root := newSubcommand(t, &r, &s, "sub")
+
+	// The viper key is "sub.retries", but the flag stays --retries.
+	root.SetArgs([]string{"sub", "--retries", "9"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, 9, s.Retries)
+}
+
+func TestSubcommand_EnvIsNamespaced(t *testing.T) {
+	type rootCfg struct {
+		Host string `toml:"host"`
+	}
+	type subCfg struct {
+		Retries int `toml:"retries"`
+	}
+
+	var r rootCfg
+	var s subCfg
+	root := newSubcommand(t, &r, &s, "sub")
+
+	// Namespace appears in the env var (and the root's prefix is inherited).
+	t.Setenv("TEST_SUB_RETRIES", "11")
+
+	root.SetArgs([]string{"sub"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, 11, s.Retries)
+}
+
+func TestSubcommand_ConfigFileUsesNamespacedTable(t *testing.T) {
+	type rootCfg struct {
+		Host string `toml:"host"`
+	}
+	type subCfg struct {
+		Retries int `toml:"retries"`
+	}
+
+	var r rootCfg
+	var s subCfg
+	root := newSubcommand(t, &r, &s, "sub")
+	path := writeConfig(t, "host = 'example.com'\n\n[sub]\nretries = 4\n")
+
+	root.SetArgs([]string{"sub", "--config", path})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, 4, s.Retries)
+	assert.Equal(t, "example.com", r.Host, "root config decodes too when a subcommand runs")
+}
+
+func TestSubcommand_RootValidationStillApplies(t *testing.T) {
+	type rootCfg struct {
+		Host string `toml:"host" validate:"required"`
+	}
+	type subCfg struct {
+		Retries int `toml:"retries"`
+	}
+
+	var r rootCfg
+	var s subCfg
+	root := newSubcommand(t, &r, &s, "sub")
+
+	root.SetArgs([]string{"sub"})
+	require.ErrorContains(t, root.Execute(), "'required'")
+}
+
+// --- hook chaining ---
+
+func TestCallersPreRunESeesDecodedConfig(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host"`
+	}
+
+	root := newRoot(t)
+	var c cfg
+	var seen string
+	root.PreRunE = func(*cobra.Command, []string) error {
+		seen = c.Host // must already be populated
+		return nil
+	}
+	require.NoError(t, RegisterCommandFlags(root, &c, DefaultTOMLOptions("TEST")))
+
+	root.SetArgs([]string{"--host", "example.com"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "example.com", seen)
+}
+
+func TestCallersPersistentPreRunEStillRuns(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host"`
+	}
+
+	root := newRoot(t)
+	var c cfg
+	called := false
+	root.PersistentPreRunE = func(*cobra.Command, []string) error {
+		called = true
+		return nil
+	}
+	require.NoError(t, RegisterCommandFlags(root, &c, DefaultTOMLOptions("TEST")))
+
+	root.SetArgs(nil)
+	require.NoError(t, root.Execute())
+	assert.True(t, called)
+}
+
+// --- several independent targets on one command ---
+
+func TestMultipleTargetsDecodeIndependently(t *testing.T) {
+	type dbCfg struct {
+		URL string `toml:"db-url" validate:"required"`
+	}
+	type evmCfg struct {
+		ChainID string `toml:"evm-chain-id" validate:"required"`
+	}
+
+	root := newRoot(t)
+	var db dbCfg
+	var evm evmCfg
+	require.NoError(t, RegisterCommandFlags(root, &db, DefaultTOMLOptions("TEST")))
+	require.NoError(t, RegisterCommandFlags(root, &evm, DefaultTOMLOptions("TEST")))
+
+	root.SetArgs([]string{"--db-url", "postgres://x", "--evm-chain-id", "1"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "postgres://x", db.URL)
+	assert.Equal(t, "1", evm.ChainID)
+}
+
+func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
+	type dbCfg struct {
+		URL string `toml:"db-url" validate:"required"`
+	}
+	type evmCfg struct {
+		ChainID string `toml:"evm-chain-id" validate:"required"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &dbCfg{}, DefaultTOMLOptions("TEST")))
+	require.NoError(t, RegisterCommandFlags(root, &evmCfg{}, DefaultTOMLOptions("TEST")))
+
+	root.SetArgs(nil)
+	err := root.Execute()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "'URL'")
+	assert.Contains(t, err.Error(), "'ChainID'", "one target's failure must not hide the other's")
+}
+
+// --- profiles ---
+
+type profileChain struct {
+	ID  uint32 `toml:"id"`
+	RPC string `toml:"rpc"`
+}
+
+type profileCfg struct {
+	Chain profileChain `toml:"chain"`
+}
+
+// runWithProfile registers c plus a profile map keyed on Chain.ID, then executes with args.
+func runWithProfile(t *testing.T, c *profileCfg, args ...string) error {
+	t.Helper()
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, c, DefaultTOMLOptions("TEST")))
+	require.NoError(t, RegisterProfile(root, "Chain.ID", map[uint32]profileCfg{
+		1:   {Chain: profileChain{RPC: "https://one"}},
+		137: {Chain: profileChain{RPC: "https://one-thirty-seven"}},
+	}, DefaultTOMLOptions("TEST")))
+	root.SetArgs(args)
+	return root.Execute()
+}
+
+func TestProfileFillsDefaultsForSelectedKey(t *testing.T) {
+	c := &profileCfg{Chain: profileChain{ID: 1}}
+	require.NoError(t, runWithProfile(t, c))
+	assert.Equal(t, "https://one", c.Chain.RPC)
+}
+
+func TestProfileFollowsSelector(t *testing.T) {
+	c := &profileCfg{Chain: profileChain{ID: 1}}
+	require.NoError(t, runWithProfile(t, c, "--chain.id", "137"))
+	assert.Equal(t, uint32(137), c.Chain.ID)
+	assert.Equal(t, "https://one-thirty-seven", c.Chain.RPC)
+}
+
+func TestProfileDoesNotOverrideExplicitValue(t *testing.T) {
+	c := &profileCfg{Chain: profileChain{ID: 1}}
+	require.NoError(t, runWithProfile(t, c, "--chain.rpc", "https://mine"))
+	assert.Equal(t, "https://mine", c.Chain.RPC)
+}
+
+func TestProfileUnknownSelectorAppliesNothing(t *testing.T) {
+	c := &profileCfg{Chain: profileChain{ID: 1}}
+	require.NoError(t, runWithProfile(t, c, "--chain.id", "999"))
+	assert.Empty(t, c.Chain.RPC, "no matching profile means no defaults, not an error")
+}
+
+func TestProfileRequiresARegisteredTargetOfItsType(t *testing.T) {
+	root := newRoot(t)
+	err := RegisterProfile(root, "Chain.ID", map[uint32]profileCfg{1: {}}, DefaultTOMLOptions())
+	require.ErrorContains(t, err, "no registered target")
+}
+
+// --- slices ---
+
+func TestStringSliceFromRepeatedFlag(t *testing.T) {
+	type cfg struct {
+		URLs []string `toml:"url"`
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c, "--url", "a", "--url", "b"))
+	assert.Equal(t, []string{"a", "b"}, c.URLs)
+}
+
+func TestStringSliceFromCommaSeparatedEnv(t *testing.T) {
+	type cfg struct {
+		URLs []string `toml:"url"`
+	}
+
+	t.Setenv("TEST_URL", "a,b")
+
+	var c cfg
+	require.NoError(t, run(t, &c))
+	assert.Equal(t, []string{"a", "b"}, c.URLs)
+}
+
+// --- config.Duration ---
+
+func TestConfigDurationDecodes(t *testing.T) {
+	type cfg struct {
+		Timeout config.Duration `toml:"timeout"`
+	}
+
+	c := cfg{Timeout: *config.MustNewDuration(5 * time.Second)}
+	require.NoError(t, run(t, &c, "--timeout", "45s"))
+	assert.Equal(t, 45*time.Second, c.Timeout.Duration())
+}
+
+func TestConfigDurationRejectsNegative(t *testing.T) {
+	type cfg struct {
+		Timeout config.Duration `toml:"timeout"`
+	}
+
+	// pflag accepts -5s as a duration; config.Duration is what refuses it.
+	t.Setenv("TEST_TIMEOUT", "-5s")
+
+	var c cfg
+	require.ErrorContains(t, run(t, &c), "negative")
+}
+
+// --- generated docs ---
+
+func TestDocsMarksDefaultsAndRequiredFields(t *testing.T) {
+	type cfg struct {
+		Host    string `toml:"host" usage:"the host" validate:"required" example:"'example.com'"`
+		Retries int    `toml:"retries" usage:"how many times to retry"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{Retries: 3}, DefaultTOMLOptions("TEST")))
+
+	doc, err := GenerateDocs(root)
+	require.NoError(t, err)
+	// A required field has no real default, so it's documented by example.
+	assert.Contains(t, doc, "host = 'example.com' # Example")
+	assert.Contains(t, doc, "retries = 3 # Default")
+}
+
+func TestDocsPutsNestedStructUsageInItsTableHeader(t *testing.T) {
+	type chain struct {
+		Host string `toml:"host" usage:"the host"`
+	}
+	type cfg struct {
+		Chain chain `toml:"chain" usage:"which chain to talk to"`
+	}
+
+	toml, err := structToDocs(&cfg{}, "", DefaultTOMLOptions())
+	require.NoError(t, err)
+
+	// The struct's description sits in its table's header, above the fields.
+	assert.Contains(t, toml, "# which chain to talk to\n[chain]\n")
+}
+
+func TestDocsFoldsSquashedStructUsageIntoEnclosingHeader(t *testing.T) {
+	type shared struct {
+		Host string `toml:"host" usage:"the host"`
+	}
+	type chain struct {
+		Shared shared `toml:",inline" usage:"settings shared by every chain"`
+		Name   string `toml:"name" usage:"chain name"`
+	}
+	type cfg struct {
+		Chain chain `toml:"chain" usage:"which chain to talk to"`
+	}
+
+	toml, err := structToDocs(&cfg{}, "", DefaultTOMLOptions())
+	require.NoError(t, err)
+
+	// A squashed struct gets no table of its own, so its description joins the header of the
+	// table it was flattened into, after that table's own description.
+	assert.Contains(t, toml, "# which chain to talk to\n# settings shared by every chain\n[chain]\n")
+	// Its fields still belong to that table, un-prefixed.
+	assert.Contains(t, toml, "host = ")
+	assert.NotContains(t, toml, "[chain.shared]")
+}
+
+func TestDocsKeepsTopLevelSquashedStructUsage(t *testing.T) {
+	type shared struct {
+		Host string `toml:"host" usage:"the host"`
+	}
+	type cfg struct {
+		Shared shared `toml:",inline" usage:"settings shared by everything"`
+	}
+
+	toml, err := structToDocs(&cfg{}, "", DefaultTOMLOptions())
+	require.NoError(t, err)
+
+	// No enclosing table at the top level, so it survives as standalone prose: a comment
+	// block ended by a blank line, which is what keeps it off the next field's description.
+	assert.True(t, strings.HasPrefix(toml, "# settings shared by everything\n\n"), toml)
+
+	// And it still renders, rather than tripping configdoc's description checks.
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+	doc, err := GenerateDocs(root)
+	require.NoError(t, err)
+	assert.Contains(t, doc, "settings shared by everything")
+}
+
+func TestNamespaceRootsKeysFlagsAndEnv(t *testing.T) {
+	type cfg struct {
+		URL string `toml:"url"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+	opts.Namespace = "database"
+
+	t.Run("flag", func(t *testing.T) {
+		root := newRoot(t)
+		var c cfg
+		require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+		root.SetArgs([]string{"--database.url", "postgres://x"})
+		require.NoError(t, root.Execute())
+		assert.Equal(t, "postgres://x", c.URL)
+	})
+
+	t.Run("env", func(t *testing.T) {
+		t.Setenv("TEST_DATABASE_URL", "postgres://env")
+
+		root := newRoot(t)
+		var c cfg
+		require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+		root.SetArgs(nil)
+		require.NoError(t, root.Execute())
+		assert.Equal(t, "postgres://env", c.URL)
+	})
+
+	t.Run("config file", func(t *testing.T) {
+		path := writeConfig(t, "[database]\nurl = 'postgres://file'\n")
+
+		root := newRoot(t)
+		var c cfg
+		require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+		root.SetArgs([]string{"--config", path})
+		require.NoError(t, root.Execute())
+		assert.Equal(t, "postgres://file", c.URL)
+	})
+}
+
+func TestNamespaceSeparatesSameNamedFields(t *testing.T) {
+	type dbCfg struct {
+		URL string `toml:"url"`
+	}
+	type evmCfg struct {
+		URL string `toml:"url"`
+	}
+
+	dbOpts := DefaultTOMLOptions("TEST")
+	dbOpts.Namespace = "database"
+	evmOpts := DefaultTOMLOptions("TEST")
+	evmOpts.Namespace = "evm"
+
+	root := newRoot(t)
+	var db dbCfg
+	var evm evmCfg
+	require.NoError(t, RegisterCommandFlags(root, &db, dbOpts))
+	// Same field name, different namespace: no flag collision, and each keeps its own value.
+	require.NoError(t, RegisterCommandFlags(root, &evm, evmOpts))
+
+	root.SetArgs([]string{"--database.url", "postgres://x", "--evm.url", "https://y"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "postgres://x", db.URL)
+	assert.Equal(t, "https://y", evm.URL)
+}
+
+func TestNamespaceGroupsDocsUnderOneTable(t *testing.T) {
+	type cfg struct {
+		URL string `toml:"url" usage:"database url"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+	opts.Namespace = "database"
+
+	toml, err := structToDocs(&cfg{}, opts.Namespace, opts)
+	require.NoError(t, err)
+	assert.Contains(t, toml, "[database]")
+	assert.Contains(t, toml, "url = ")
+}
+
+func TestFlagDocsNoExampleOmitsFromExampleButKeepsDocs(t *testing.T) {
+	type cfg struct {
+		URL    string `toml:"url" usage:"database url"`
+		RealDB bool   `toml:"real-db" usage:"use a real database in fake mode" flagdocs:"noexample"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+
+	example, err := exampleDoc(&cfg{}, "", opts)
+	require.NoError(t, err)
+	assert.NotContains(t, example, "real-db", "the example must not carry it")
+	assert.Contains(t, example, "url = ")
+
+	docs, err := structToDocs(&cfg{}, "", opts)
+	require.NoError(t, err)
+	// Still documented, but marked so it is kept out of its table's code block too - every
+	// example in the document then describes the same working configuration.
+	assert.Contains(t, docs, "real-db = false "+configdoc.FieldDocsOnly)
+}
+
+func TestDocsOnlyFieldIsAbsentFromItsTableCodeBlock(t *testing.T) {
+	type inner struct {
+		URL    string `toml:"url" usage:"database url"`
+		RealDB bool   `toml:"real-db" usage:"use a real database in fake mode" flagdocs:"noexample"`
+	}
+	type cfg struct {
+		Database inner `toml:"database"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+
+	doc, err := GenerateDocs(root)
+	require.NoError(t, err)
+
+	// The table's own code block lists only what an example would contain...
+	section := doc[strings.Index(doc, "## database"):]
+	block := section[:strings.Index(section, "###")]
+	assert.Contains(t, block, "url = ")
+	assert.NotContains(t, block, "real-db")
+
+	// ...while the field still gets its own entry further down.
+	assert.Contains(t, doc, "### real-db")
+}
+
+func TestFlagDocsExampleOverridesTheValueShown(t *testing.T) {
+	type cfg struct {
+		Workers int `toml:"workers" usage:"how many workers" flagdocs:"example=8"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+
+	example, err := exampleDoc(&cfg{Workers: 1}, "", opts)
+	require.NoError(t, err)
+	assert.Contains(t, example, "workers = 8", "the example shows the override")
+
+	docs, err := structToDocs(&cfg{Workers: 1}, "", opts)
+	require.NoError(t, err)
+	assert.Contains(t, docs, "workers = 1 # Default", "the docs still show the real default")
+}
+
+func TestExampleShowsOnlyTheFirstOfMutuallyExclusiveFields(t *testing.T) {
+	type cfg struct {
+		Listen []string `toml:"listen-addresses" usage:"listen here" validate:"required_without=Proxy,excluded_with=Proxy"`
+		Proxy  string   `toml:"proxy-address" usage:"or proxy there" validate:"excluded_with=Listen"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+
+	example, err := exampleDoc(&cfg{}, "", opts)
+	require.NoError(t, err)
+	// Listing both would be a config that fails its own validation, so the example commits
+	// to the first.
+	assert.Contains(t, example, "listen-addresses = ")
+	assert.NotContains(t, example, "proxy-address = ")
+
+	// Both are still documented; only the example has to choose.
+	docs, err := structToDocs(&cfg{}, "", opts)
+	require.NoError(t, err)
+	assert.Contains(t, docs, "listen-addresses = ")
+	assert.Contains(t, docs, "proxy-address = ")
+}
+
+func TestExampleShowsOnlyTheFirstOfMutuallyExclusiveSections(t *testing.T) {
+	var c modesCfg
+
+	example, err := exampleDoc(&c, "", DefaultTOMLOptions("TEST"))
+	require.NoError(t, err)
+	assert.Contains(t, example, "[b]")
+	assert.NotContains(t, example, "[c]", "the whole excluded section is dropped, not just its fields")
+}
+
+func TestDocsTreatsExampleTagAsHavingNoDefault(t *testing.T) {
+	type cfg struct {
+		// Required by a rule this struct can't express, so it says so with an example.
+		URL string `toml:"url" usage:"database url" example:"'postgres://localhost/db'"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+
+	doc, err := GenerateDocs(root)
+	require.NoError(t, err)
+	assert.Contains(t, doc, "url = 'postgres://localhost/db' # Example")
+}
+
+func TestDocsExplainsCrossFieldRulesUsingConfigKeys(t *testing.T) {
+	type cfg struct {
+		URL    string `toml:"database-url" usage:"database url"`
+		RealDB bool   `toml:"real-db" usage:"use a real db" validate:"excluded_without=URL"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+
+	doc, err := GenerateDocs(root)
+	require.NoError(t, err)
+	// Named by config key ("database-url"), not Go field name ("URL").
+	assert.Contains(t, doc, "must not be set unless database-url is set")
+}
+
+func TestDocsCoversSubcommands(t *testing.T) {
+	type rootCfg struct {
+		Host string `toml:"host" usage:"the host"`
+	}
+	type subCfg struct {
+		Retries int `toml:"retries" usage:"how many times to retry"`
+	}
+
+	root := newSubcommand(t, &rootCfg{}, &subCfg{Retries: 3}, "sub")
+
+	doc, err := GenerateDocs(root)
+	require.NoError(t, err)
+	assert.Contains(t, doc, "Global Configuration")
+	assert.Contains(t, doc, "Command: app sub")
+	assert.Contains(t, doc, "retries = 3 # Default", "subcommand fields are documented too")
+}
+
+// spyFormat is configdoc.TOML with the value syntax changed, to prove the document really is
+// assembled and rendered through Options.Format rather than hard-coded TOML.
+type spyFormat struct {
+	configdoc.TOML
+}
+
+func (f spyFormat) Field(key, value, marker string) string {
+	if marker == "" {
+		return key + ": " + value
+	}
+	return key + ": " + value + " " + marker
+}
+
+// A format's two sides have to agree: whatever Field writes, ParseLine has to read back.
+func (f spyFormat) ParseLine(line string) configdoc.Line {
+	l := f.TOML.ParseLine(line)
+	if l.Kind == configdoc.LineField {
+		l.Text = strings.TrimSuffix(l.Text, ":")
+	}
+	return l
+}
+
+func TestDocsAssemblesWithFormatFromOptions(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host" usage:"the host"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+	opts.Format = spyFormat{}
+
+	toml, err := structToDocs(&cfg{Host: "example.com"}, "", opts)
+	require.NoError(t, err)
+	// The format's Field syntax is used, not TOML's "key = value".
+	assert.Contains(t, toml, "host: 'example.com' # Default")
+}
+
+func TestDocsCommandUsesFormatFromOptions(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host" usage:"the host"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+	opts.Format = spyFormat{}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, opts))
+
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	// The format must reach the auto-added docs command too, not just GenerateDocs.
+	root.SetArgs([]string{"docs"})
+	require.NoError(t, root.Execute())
+
+	written, err := os.ReadFile(filepath.Join(dir, docsOutputPath))
+	require.NoError(t, err)
+	assert.Contains(t, string(written), "host: ")
+}
+
+func TestBuiltinCommandsSkipValidation(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host" validate:"required"`
+	}
+
+	// Reading the help that explains a required setting must not require that setting. docs
+	// is included because it is the same kind of command - it describes the config rather
+	// than consuming it - even though it opts out by its own route.
+	for _, args := range [][]string{
+		{"help"},
+		{"help", "docs"},
+		{"docs"},
+		{"completion", "bash"},
+		{"__complete", ""},
+	} {
+		t.Run(strings.Join(args, " "), func(t *testing.T) {
+			t.Chdir(t.TempDir()) // docs writes a file
+
+			root := newRoot(t)
+			require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+
+			root.SetArgs(args)
+			require.NoError(t, root.Execute())
+		})
+	}
+}
+
+func TestIsBuiltinCommandCoversCobrasOwnCommands(t *testing.T) {
+	// Callers chaining their own PersistentPreRunE need this to guard checks the library
+	// can't see; a chained check that misses one of these rejects `help` on a machine with no
+	// configuration, which is exactly what the skip exists to prevent.
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &struct{}{}, DefaultTOMLOptions("TEST")))
+	root.InitDefaultHelpCmd()
+	root.InitDefaultCompletionCmd()
+
+	byName := map[string]*cobra.Command{}
+	for _, c := range root.Commands() {
+		byName[c.Name()] = c
+	}
+
+	for _, name := range []string{"help", "completion", "docs"} {
+		sub, ok := byName[name]
+		require.True(t, ok, "expected a %q command", name)
+		if name == "docs" {
+			// docs is ours: it opts out via its own PersistentPreRunE, not this check.
+			assert.False(t, IsBuiltinCommand(sub))
+			continue
+		}
+		assert.True(t, IsBuiltinCommand(sub), name)
+	}
+
+	assert.False(t, IsBuiltinCommand(root), "the root command itself runs the program")
+}
+
+func TestNonBuiltinCommandStillValidates(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host" validate:"required"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+
+	root.SetArgs(nil)
+	require.ErrorContains(t, root.Execute(), "'required'")
+}
+
+func TestDocsCommandIsAddedOnce(t *testing.T) {
+	type aCfg struct {
+		A string `toml:"a"`
+	}
+	type bCfg struct {
+		B string `toml:"b"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &aCfg{}, DefaultTOMLOptions("TEST")))
+	require.NoError(t, RegisterCommandFlags(root, &bCfg{}, DefaultTOMLOptions("TEST")))
+
+	var docsCmds int
+	for _, c := range root.Commands() {
+		if c.Name() == "docs" {
+			docsCmds++
+		}
+	}
+	assert.Equal(t, 1, docsCmds)
+}
+
+func TestDocsCommandSkipsValidation(t *testing.T) {
+	type cfg struct {
+		Host string `toml:"host" validate:"required"`
+	}
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, &cfg{}, DefaultTOMLOptions("TEST")))
+
+	// Writing docs must not require a valid config.
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	root.SetArgs([]string{"docs"})
+	require.NoError(t, root.Execute())
+	assert.FileExists(t, filepath.Join(dir, docsOutputPath))
+}
+
+func TestUnsetFieldKeepsCallerDefault(t *testing.T) {
+	type cfg struct {
+		Retries int    `toml:"retries"`
+		Host    string `toml:"host"`
+	}
+
+	c := cfg{Retries: 3, Host: "default-host"}
+	require.NoError(t, run(t, &c, "--host", "override"))
+	assert.Equal(t, 3, c.Retries, "untouched field should keep its compiled-in default")
+	assert.Equal(t, "override", c.Host)
+}

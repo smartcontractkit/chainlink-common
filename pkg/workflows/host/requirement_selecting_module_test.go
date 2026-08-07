@@ -237,7 +237,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot find a runner that can satisfy the requirements")
+		assert.ErrorIs(t, err, ErrRunnerUnavailable)
 	})
 
 	t.Run("subscribe skips non-matching and selects later additional", func(t *testing.T) {
@@ -542,6 +542,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		_, err := m.Execute(t.Context(), subscribeRequest(), nil)
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot find a runner")
+		assert.NotErrorIs(t, err, ErrRunnerUnavailable)
 	})
 }
 

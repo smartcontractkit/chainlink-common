@@ -64,6 +64,7 @@ flowchart
         GatewayHTTPPerNodeRate[\GatewayHTTPPerNodeRate/]:::rate
         GatewayConfidentialRelayGlobalRate[\GatewayConfidentialRelayGlobalRate/]:::rate
         GatewayConfidentialRelayPerNodeRate[\GatewayConfidentialRelayPerNodeRate/]:::rate
+        GatewayConfidentialRelayUserRate[\GatewayConfidentialRelayUserRate/]:::rate
         GatewayHTTPActionMtlsRequestRate[\GatewayHTTPActionMtlsRequestRate/]:::rate
         GatewayHTTPActionMtlsConcurrencyLimit([GatewayHTTPActionMtlsConcurrencyLimit]):::resource
     end

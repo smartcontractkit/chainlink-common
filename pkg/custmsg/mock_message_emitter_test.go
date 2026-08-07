@@ -224,6 +224,44 @@ func (_c *mockMessageEmitter_WithMapLabels_Call) RunAndReturn(run func(map[strin
 	return _c
 }
 
+func (_m *mockMessageEmitter) WithType(_a0 string) MessageEmitter {
+	ret := _m.Called(_a0)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithType")
+	}
+
+	var r0 MessageEmitter
+	if rf, ok := ret.Get(0).(func(string) MessageEmitter); ok {
+		r0 = rf(_a0)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(MessageEmitter)
+		}
+	}
+
+	return r0
+}
+
+func (_m *mockMessageEmitter) WithLabelsAndType(_a0 map[string]string, _a1 string) MessageEmitter {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithLabelsAndType")
+	}
+
+	var r0 MessageEmitter
+	if rf, ok := ret.Get(0).(func(map[string]string, string) MessageEmitter); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(MessageEmitter)
+		}
+	}
+
+	return r0
+}
+
 // newMockMessageEmitter creates a new instance of mockMessageEmitter. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func newMockMessageEmitter(t interface {

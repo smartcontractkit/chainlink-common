@@ -152,6 +152,7 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 
 	sortedRequests := sortedRequests(p.store.GetRequests())
 	requests := map[string]int64{} // Maps executionID --> seqNum
+	removedCount := 0
 	for _, req := range sortedRequests {
 		// Validate request sequence number
 		numObservedDonTimes := 0
@@ -170,6 +171,7 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 				Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than the number of observed don times %d",
 					req.SeqNum, req.WorkflowExecutionID, numObservedDonTimes),
 			})
+			removedCount += 1
 			continue
 		}
 
@@ -179,11 +181,12 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 		}
 	}
 
-	overflowCount := len(sortedRequests) - len(requests)
+	overflowCount := len(sortedRequests) - len(requests) - removedCount
 	p.lggr.Debugw("Observation batch processed",
 		"inputRequests", len(sortedRequests),
 		"batchSize", p.batchSize,
 		"includedRequests", len(requests),
+		"removedRequests", removedCount,
 		"overflowRequests", overflowCount,
 	)
 	if overflowCount > 0 {

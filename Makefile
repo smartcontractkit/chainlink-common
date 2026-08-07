@@ -60,6 +60,10 @@ modgraph: gomods
 	go install github.com/jmank88/modgraph@v0.1.4
 	./modgraph > go.md
 
+.PHONY: gofix
+gofix: gomods ## Run go fix across all packages
+	gomods -s proto_vendor -go fix ./...
+
 .PHONY: dependabot
 dependabot:
 	echo "Deprecated: manually trigger the CI workflow instead"

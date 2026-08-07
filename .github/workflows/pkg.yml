@@ -96,6 +96,73 @@ jobs:
           path: |
             ./race.*
 
+  check-gofix:
+    runs-on: ubuntu-latest
+    # Non-required while we evaluate it; failure won't block merges.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Detect changed modules
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          # "root" is the catch-all: any .go file outside the nested modules
+          # listed below, including locations not yet enumerated here (e.g.
+          # a new top-level package).
+          filters: |
+            root:
+              - '**/*.go'
+              - '!keystore/**'
+              - '!observability-lib/**'
+              - '!pkg/values/**'
+              - '!pkg/chipingress/**'
+              - '!pkg/monitoring/**'
+              - '!pkg/workflows/sdk/v2/pb/**'
+            keystore:
+              - 'keystore/**/*.go'
+            observability-lib:
+              - 'observability-lib/**/*.go'
+            pkg-values:
+              - 'pkg/values/**/*.go'
+            pkg-chipingress:
+              - 'pkg/chipingress/**/*.go'
+            pkg-monitoring:
+              - 'pkg/monitoring/**/*.go'
+            pkg-workflows-sdk-v2-pb:
+              - 'pkg/workflows/sdk/v2/pb/**/*.go'
+
+      - name: Set up Go
+        if: steps.filter.outputs.root == 'true' || steps.filter.outputs.keystore == 'true' || steps.filter.outputs.observability-lib == 'true' || steps.filter.outputs.pkg-values == 'true' || steps.filter.outputs.pkg-chipingress == 'true' || steps.filter.outputs.pkg-monitoring == 'true' || steps.filter.outputs.pkg-workflows-sdk-v2-pb == 'true'
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          only-modules: "true"
+
+      - name: Ensure "go fix" has been run on changed modules
+        if: steps.filter.outputs.root == 'true' || steps.filter.outputs.keystore == 'true' || steps.filter.outputs.observability-lib == 'true' || steps.filter.outputs.pkg-values == 'true' || steps.filter.outputs.pkg-chipingress == 'true' || steps.filter.outputs.pkg-monitoring == 'true' || steps.filter.outputs.pkg-workflows-sdk-v2-pb == 'true'
+        env:
+          ROOT_CHANGED: ${{ steps.filter.outputs.root }}
+          KEYSTORE_CHANGED: ${{ steps.filter.outputs.keystore }}
+          OBSERVABILITY_LIB_CHANGED: ${{ steps.filter.outputs.observability-lib }}
+          PKG_VALUES_CHANGED: ${{ steps.filter.outputs.pkg-values }}
+          PKG_CHIPINGRESS_CHANGED: ${{ steps.filter.outputs.pkg-chipingress }}
+          PKG_MONITORING_CHANGED: ${{ steps.filter.outputs.pkg-monitoring }}
+          PKG_WORKFLOWS_SDK_V2_PB_CHANGED: ${{ steps.filter.outputs.pkg-workflows-sdk-v2-pb }}
+        run: |
+          [[ "$ROOT_CHANGED" == "true" ]] && { (cd . && go fix ./...) || exit 1; } || true
+          [[ "$KEYSTORE_CHANGED" == "true" ]] && { (cd keystore && go fix ./...) || exit 1; } || true
+          [[ "$OBSERVABILITY_LIB_CHANGED" == "true" ]] && { (cd observability-lib && go fix ./...) || exit 1; } || true
+          [[ "$PKG_VALUES_CHANGED" == "true" ]] && { (cd pkg/values && go fix ./...) || exit 1; } || true
+          [[ "$PKG_CHIPINGRESS_CHANGED" == "true" ]] && { (cd pkg/chipingress && go fix ./...) || exit 1; } || true
+          [[ "$PKG_MONITORING_CHANGED" == "true" ]] && { (cd pkg/monitoring && go fix ./...) || exit 1; } || true
+          [[ "$PKG_WORKFLOWS_SDK_V2_PB_CHANGED" == "true" ]] && { (cd pkg/workflows/sdk/v2/pb && go fix ./...) || exit 1; } || true
+          git add --all
+          git diff --minimal --cached --exit-code
+
   check-tidy:
     runs-on: ubuntu-latest
     steps:

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786388664607,
+  "lastUpdate": 1786388901171,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -57840,6 +57840,66 @@ window.BENCHMARK_DATA = {
             "value": 129527,
             "unit": "ns/op",
             "extra": "9207 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74b886ae36a1ca160616d60a1ae3a385e83c50bf",
+          "message": "Add prometheus balance emission to generic bal monitor (#2319)\n\n* Add prometheus balance emission to generic bal monitor\n\n* run generate\n\n* lint",
+          "timestamp": "2026-08-10T18:56:17Z",
+          "tree_id": "00f56f3f30718b68eb5c89b12270d98488c74665",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/74b886ae36a1ca160616d60a1ae3a385e83c50bf"
+        },
+        "date": 1786388898299,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.2,
+            "unit": "ns/op",
+            "extra": "3340856 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92238,
+            "unit": "ns/op",
+            "extra": "12990 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400.6,
+            "unit": "ns/op",
+            "extra": "2979985 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92996,
+            "unit": "ns/op",
+            "extra": "12895 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 27185,
+            "unit": "ns/op",
+            "extra": "43065 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139561,
+            "unit": "ns/op",
+            "extra": "8354 times\n4 procs"
           }
         ]
       }

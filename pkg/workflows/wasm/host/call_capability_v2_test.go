@@ -2,6 +2,7 @@ package host
 
 import (
 	"context"
+	"math"
 	"testing"
 
 	"github.com/bytecodealliance/wasmtime-go/v47"
@@ -106,29 +107,24 @@ func instantiateCallCapModule(t *testing.T, wat string, exec *execution[*sdkpb.E
 	wasmBytes, err := wasmtime.Wat2Wasm(wat)
 	require.NoError(t, err)
 
-	engine := wasmtime.NewEngine()
-	mod, err := wasmtime.NewModule(engine, wasmBytes)
+	// Use NewModule to detect the call_capability param count, matching
+	// the production code path. The WAT must include a version_v2 import
+	// so NewModule treats it as a NoDAG module.
+	mc := defaultNoDAGModCfg(t)
+	mc.Logger = lggr
+	m, err := NewModule(t.Context(), mc, wasmBytes)
 	require.NoError(t, err)
 
-	// Detect the call_capability param count from the module's imports,
-	// matching what NewModule does in production.
-	callCapParams := 0
-	for _, modImport := range mod.Imports() {
-		name := modImport.Name()
-		if modImport.Module() == "env" && name != nil && *name == "call_capability" {
-			if ft := modImport.Type().FuncType(); ft != nil {
-				callCapParams = len(ft.Params())
-			}
-		}
-	}
+	hostFn := createCallCapFn(lggr, exec, m.callCapParams)
 
-	hostFn := createCallCapFn(lggr, exec, callCapParams)
-
-	store := wasmtime.NewStore(engine)
-	linker := wasmtime.NewLinker(engine)
+	store := wasmtime.NewStore(m.engine)
+	// NewModule enables epoch interruption; set a generous deadline so the
+	// test doesn't hit an interrupt when calling the exported function.
+	store.SetEpochDeadline(math.MaxUint64)
+	linker := wasmtime.NewLinker(m.engine)
 	require.NoError(t, linker.FuncWrap("env", "call_capability", hostFn))
 
-	inst, err := linker.Instantiate(store, mod)
+	inst, err := linker.Instantiate(store, m.module)
 	require.NoError(t, err)
 
 	mem := inst.GetExport(store, "memory").Memory()

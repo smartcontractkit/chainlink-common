@@ -151,6 +151,11 @@ type module struct {
 
 	v2ImportName string
 
+	// callCapParams records the number of parameters the guest's
+	// call_capability import declares. 2 = legacy V1 (no response buffer),
+	// 4 = V2 (with response buffer). 0 = not imported (e.g. legacy DAG).
+	callCapParams int
+
 	// linkV2 wires the host functions the v2/NoDAG guest imports. It defaults
 	// to linkNoDAG; tests may override it to substitute a host function
 	// implementation (e.g. one that panics) without going through a real
@@ -414,25 +419,33 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 	}
 
 	v2ImportName := ""
+	callCapParams := 0
 	for _, modImport := range mod.Imports() {
 		name := modImport.Name()
-		if modImport.Module() == "env" && name != nil && strings.HasPrefix(*name, v2ImportPrefix) {
-			v2ImportName = *name
-			break
+		if modImport.Module() == "env" && name != nil {
+			if strings.HasPrefix(*name, v2ImportPrefix) {
+				v2ImportName = *name
+			}
+			if *name == "call_capability" {
+				if ft := modImport.Type().FuncType(); ft != nil {
+					callCapParams = len(ft.Params())
+				}
+			}
 		}
 	}
 
 	modCfg.SdkLabeler(v2ImportName)
 
 	return &module{
-		engine:       engine,
-		module:       mod,
-		wconfig:      cfg,
-		cfg:          modCfg,
-		metrics:      metrics,
-		stopCh:       make(chan struct{}),
-		v2ImportName: v2ImportName,
-		linkV2:       linkNoDAG,
+		engine:        engine,
+		module:        mod,
+		wconfig:       cfg,
+		cfg:           modCfg,
+		metrics:       metrics,
+		stopCh:        make(chan struct{}),
+		v2ImportName:  v2ImportName,
+		callCapParams: callCapParams,
+		linkV2:        linkNoDAG,
 	}, nil
 }
 

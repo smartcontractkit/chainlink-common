@@ -333,9 +333,15 @@ func TestCreateCallCapFnV2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
-// --- V1 host function tests (verify unchanged behavior) ---
+// --- V1 host function tests (verify backward-compatible behavior) ---
 
-func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
+// TestCreateCallCapFnV1_CallCapAsyncErrorWritesToRequestBuffer verifies that
+// V1 (legacy 2-param) writes errors to the request buffer — the same buffer
+// is used for both request and response. This matches the existing behavior
+// for wasmRead and proto.Unmarshal errors, and now also applies to callCapAsync
+// errors (previously bare -1). The error detail is present but in the wrong
+// buffer; V2 fixes this by using a dedicated response buffer.
+func TestCreateCallCapFnV1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 
 	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
@@ -373,11 +379,19 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
 	require.NoError(t, err)
 
 	resultI64 := result.(int64)
-	// V1 returns bare -1 with no error detail in the response buffer — this
-	// is the existing behavior that V2 fixes. The error (context canceled +
-	// resource limited) is logged but not surfaced to the guest.
-	assert.Equal(t, int64(-1), resultI64,
-		"V1 should return bare -1 on callCapAsync error (existing behavior)")
+	// V1 writes the error to the request buffer (same buffer for both) and
+	// returns a negative value. This is the known limitation that V2 fixes
+	// by using a dedicated response buffer.
+	assert.Less(t, resultI64, int64(0),
+		"V1 should return negative on callCapAsync error")
+
+	// The error string is written to the request buffer (offset 0), but
+	// truncated to fit the request buffer size. Check for the prefix that
+	// survives truncation.
+	bytesWritten := int(-resultI64)
+	reqData := memRead(t, mem, store, reqOffset, int32(bytesWritten))
+	assert.Contains(t, string(reqData), "error calling",
+		"V1 writes error to request buffer (same buffer for both)")
 
 	// Verify error was logged.
 	require.Len(t, logs.AllUntimed(), 1)

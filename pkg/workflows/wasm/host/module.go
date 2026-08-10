@@ -703,7 +703,8 @@ func runWasm[I, O proto.Message](
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
 	helper ExecutionHelper,
-	maxTimeout time.Duration) (O, error) {
+	maxTimeout time.Duration,
+) (O, error) {
 	var o O
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
@@ -846,7 +847,8 @@ func containsCode(err error, code int) bool {
 func createSendResponseFn[T proto.Message](
 	logger logger.Logger,
 	exec *execution[T],
-	newT func() T) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	newT func() T,
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
@@ -1296,73 +1298,65 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 	return int64(copy(buffer, src))
 }
 
+// callCapability is the core host function for call_capability. It reads a
+// CapabilityRequest from the request buffer, dispatches it asynchronously via
+// callCapAsync, and writes any synchronous error string to the response buffer.
+// The return value protocol: >= 0 is success (the async response comes later
+// via await_capabilities), < 0 means the error string is in
+// responseBuffer[:-returnValue].
+func callCapability(
+	caller *wasmtime.Caller,
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult],
+	ptr, ptrlen, responseBuffer, maxResponseLen int32,
+) int64 {
+	b, innerErr := wasmRead(caller, ptr, ptrlen)
+	if innerErr != nil {
+		errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
+		logger.Error(errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	req := &sdkpb.CapabilityRequest{}
+	innerErr = proto.Unmarshal(b, req)
+	if innerErr != nil {
+		errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
+		logger.Errorf("%s", errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	if err := exec.callCapAsync(exec.ctx, req); err != nil {
+		errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
+		logger.Error(errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	return 0
+}
+
 // createCallCapFnV1 is the legacy 2-param host function for call_capability.
-// It preserves the existing behavior: errors during wasmRead or proto.Unmarshal
-// are written to the request buffer (a known limitation), and callCapAsync
-// errors return bare -1 with no error detail. This function exists for backward
-// compatibility with WASM modules compiled against older SDKs that declare a
-// 2-param call_capability import.
+// It passes the request buffer as the response buffer, matching the existing
+// behavior where error strings are written to the request buffer. This
+// function exists for backward compatibility with WASM modules compiled
+// against older SDKs that declare a 2-param call_capability import.
 func createCallCapFnV1(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
-		b, innerErr := wasmRead(caller, ptr, ptrlen)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
-			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		req := &sdkpb.CapabilityRequest{}
-		innerErr = proto.Unmarshal(b, req)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
-			logger.Errorf("%s", errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		if err := exec.callCapAsync(exec.ctx, req); err != nil {
-			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
-			logger.Error(errStr)
-			return -1
-		}
-
-		return 0
+		return callCapability(caller, logger, exec, ptr, ptrlen, ptr, ptrlen)
 	}
 }
 
 // createCallCapFnV2 is the new 4-param host function for call_capability.
-// It accepts a response buffer and writes error strings to it instead of the
-// request buffer. The return value protocol matches the existing pattern used
-// by getSecrets and awaitCapabilities: >= 0 is success (the async response
-// comes later via await_capabilities), < 0 means the error string is in
-// responseBuffer[:-returnValue].
+// It accepts a dedicated response buffer and writes error strings to it
+// instead of the request buffer.
 func createCallCapFnV2(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
-		b, innerErr := wasmRead(caller, ptr, ptrlen)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
-			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
-		}
-
-		req := &sdkpb.CapabilityRequest{}
-		innerErr = proto.Unmarshal(b, req)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
-			logger.Errorf("%s", errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
-		}
-
-		if err := exec.callCapAsync(exec.ctx, req); err != nil {
-			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
-			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
-		}
-
-		return 0
+		return callCapability(caller, logger, exec, ptr, ptrlen, responseBuffer, maxResponseLen)
 	}
 }
 
@@ -1423,7 +1417,8 @@ func createAwaitCapsFn(
 
 func createGetSecretsFn(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, innerErr := wasmRead(caller, req, requestLen)
 		if innerErr != nil {

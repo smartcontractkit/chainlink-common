@@ -216,8 +216,17 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	respData := memRead(t, mem, store, respOffset, int32(bytesWritten))
 
 	errStr := string(respData)
-	assert.Contains(t, errStr, "callCapAsync",
-		"V2 should write detailed error to response buffer")
+	// The error chain is: callCapAsync wraps the limiter error which wraps
+	// context.Canceled and ErrorResourceLimited. The full string is:
+	// "error calling callCapAsync: context error (context canceled) after
+	// waiting <duration> for limit: resource limited: cannot use 1, already
+	// using 0/0"
+	assert.Contains(t, errStr, "error calling callCapAsync",
+		"V2 should wrap the error with callCapAsync context")
+	assert.Contains(t, errStr, "context canceled",
+		"V2 should surface the context cancellation error")
+	assert.Contains(t, errStr, "resource limited",
+		"V2 should surface the resource limit error")
 
 	// Verify the error was logged.
 	require.Len(t, logs.AllUntimed(), 1)
@@ -368,6 +377,9 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
 	require.NoError(t, err)
 
 	resultI64 := result.(int64)
+	// V1 returns bare -1 with no error detail in the response buffer — this
+	// is the existing behavior that V2 fixes. The error (context canceled +
+	// resource limited) is logged but not surfaced to the guest.
 	assert.Equal(t, int64(-1), resultI64,
 		"V1 should return bare -1 on callCapAsync error (existing behavior)")
 

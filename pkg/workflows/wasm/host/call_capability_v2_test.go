@@ -19,10 +19,6 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
-// callCapabilityV2ParamCount is the number of params the V2 call_capability
-// import declares (req, reqLen, responseBuffer, maxResponseLen).
-const callCapabilityV2ParamCount = 4
-
 // callCapabilityV1ParamCount is the number of params the legacy V1
 // call_capability import declares (req, reqLen).
 const callCapabilityV1ParamCount = 2

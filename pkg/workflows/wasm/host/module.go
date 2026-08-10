@@ -39,6 +39,10 @@ import (
 
 const v2ImportPrefix = "version_v2"
 
+// callCapabilityV2ParamCount is the number of params the V2 call_capability
+// import declares (req, reqLen, responseBuffer, maxResponseLen).
+const callCapabilityV2ParamCount = 4
+
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute

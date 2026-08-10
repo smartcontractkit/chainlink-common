@@ -118,8 +118,10 @@ func instantiateCallCapModule(t *testing.T, wat string, exec *execution[*sdkpb.E
 	hostFn := createCallCapFn(lggr, exec, m.callCapParams)
 
 	store := wasmtime.NewStore(m.engine)
-	// NewModule enables epoch interruption; set a generous deadline so the
-	// test doesn't hit an interrupt when calling the exported function.
+	// NewModule enables wasmtime epoch interruption (SetEpochInterruption(true))
+	// for timeout enforcement. In production, Execute sets the epoch deadline
+	// based on the configured timeout. Here we set it to MaxUint64 so the
+	// epoch never fires during the test, effectively disabling interruption.
 	store.SetEpochDeadline(math.MaxUint64)
 	linker := wasmtime.NewLinker(m.engine)
 	require.NoError(t, linker.FuncWrap("env", "call_capability", hostFn))
@@ -133,6 +135,9 @@ func instantiateCallCapModule(t *testing.T, wat string, exec *execution[*sdkpb.E
 
 // --- Signature detection tests ---
 
+// TestNewModule_DetectsCallCapabilityParamCount_V2 verifies that NewModule
+// correctly detects a 4-param call_capability import and stores it on the
+// module struct for use by createCallCapFn dispatch.
 func TestNewModule_DetectsCallCapabilityParamCount_V2(t *testing.T) {
 	wasmBytes, err := wasmtime.Wat2Wasm(watCallCapV2)
 	require.NoError(t, err)
@@ -146,6 +151,8 @@ func TestNewModule_DetectsCallCapabilityParamCount_V2(t *testing.T) {
 		"module should detect 4-param call_capability import")
 }
 
+// TestNewModule_DetectsCallCapabilityParamCount_V1 verifies that NewModule
+// correctly detects a 2-param (legacy) call_capability import.
 func TestNewModule_DetectsCallCapabilityParamCount_V1(t *testing.T) {
 	wasmBytes, err := wasmtime.Wat2Wasm(watCallCapV1)
 	require.NoError(t, err)
@@ -159,6 +166,9 @@ func TestNewModule_DetectsCallCapabilityParamCount_V1(t *testing.T) {
 		"module should detect 2-param call_capability import")
 }
 
+// TestNewModule_DetectsCallCapabilityParamCount_NoImport verifies that
+// NewModule defaults callCapParams to 0 when the module does not import
+// call_capability at all (e.g. a legacy DAG module).
 func TestNewModule_DetectsCallCapabilityParamCount_NoImport(t *testing.T) {
 	wat := `
 	(module
@@ -180,6 +190,10 @@ func TestNewModule_DetectsCallCapabilityParamCount_NoImport(t *testing.T) {
 
 // --- Host function tests (V2: 4-param import → response buffer) ---
 
+// TestCallCapability_V2_CallCapAsyncErrorWritesToResponseBuffer verifies that
+// when callCapAsync fails (e.g. semaphore rejection), the V2 host function
+// writes the detailed error string to the dedicated response buffer and
+// returns a negative value, instead of returning bare -1.
 func TestCallCapability_V2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 
@@ -251,6 +265,8 @@ func TestCallCapability_V2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
+// TestCallCapability_V2_SuccessReturnsZero verifies that on a successful
+// call, V2 returns 0 and does not write anything to the response buffer.
 func TestCallCapability_V2_SuccessReturnsZero(t *testing.T) {
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
@@ -298,6 +314,9 @@ func TestCallCapability_V2_SuccessReturnsZero(t *testing.T) {
 		"V2 should not write to response buffer on success")
 }
 
+// TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer verifies
+// that when proto.Unmarshal fails on the request, V2 writes the error to the
+// response buffer and does not corrupt the request buffer (the known V1 bug).
 func TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
@@ -354,10 +373,8 @@ func TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 
 // TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer verifies that
 // V1 (legacy 2-param) writes errors to the request buffer — the same buffer
-// is used for both request and response. This matches the existing behavior
-// for wasmRead and proto.Unmarshal errors, and now also applies to callCapAsync
-// errors (previously bare -1). The error detail is present but in the wrong
-// buffer; V2 fixes this by using a dedicated response buffer.
+// is used for both request and response. This is the known limitation that
+// V2 fixes by using a dedicated response buffer.
 func TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 
@@ -415,6 +432,8 @@ func TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) 
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
+// TestCallCapability_V1_SuccessReturnsZero verifies that V1 returns 0 on a
+// successful call, matching the existing behavior.
 func TestCallCapability_V1_SuccessReturnsZero(t *testing.T) {
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
@@ -454,6 +473,10 @@ func TestCallCapability_V1_SuccessReturnsZero(t *testing.T) {
 
 // --- Dynamic linking tests ---
 
+// TestLinkNoDAG_RegistersV2For4ParamImport verifies that linkNoDAG registers
+// the V2 (4-param) host function when the module's call_capability import
+// declares 4 params. If the wrong signature were registered, wasmtime would
+// reject the import at instantiation time.
 func TestLinkNoDAG_RegistersV2For4ParamImport(t *testing.T) {
 	wasmBytes, err := wasmtime.Wat2Wasm(watCallCapV2)
 	require.NoError(t, err)
@@ -481,6 +504,9 @@ func TestLinkNoDAG_RegistersV2For4ParamImport(t *testing.T) {
 	require.NoError(t, err, "V2 module should link successfully with V2 host function")
 }
 
+// TestLinkNoDAG_RegistersV1For2ParamImport verifies that linkNoDAG registers
+// the V1 (2-param) host function when the module's call_capability import
+// declares 2 params, maintaining backward compatibility with legacy SDKs.
 func TestLinkNoDAG_RegistersV1For2ParamImport(t *testing.T) {
 	wasmBytes, err := wasmtime.Wat2Wasm(watCallCapV1)
 	require.NoError(t, err)

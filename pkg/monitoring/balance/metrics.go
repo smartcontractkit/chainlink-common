@@ -19,7 +19,7 @@ import (
 var (
 	nodeBalanceOnce sync.Once
 	nodeBalanceVec  *prometheus.GaugeVec
-	nodeBalanceErr  error
+	errNodeBalance  error
 )
 
 func nodeBalanceGauge() (*prometheus.GaugeVec, error) {
@@ -39,9 +39,9 @@ func nodeBalanceGauge() (*prometheus.GaugeVec, error) {
 				return
 			}
 		}
-		nodeBalanceErr = fmt.Errorf("failed to register node_balance gauge: %w", err)
+		errNodeBalance = fmt.Errorf("failed to register node_balance gauge: %w", err)
 	})
-	return nodeBalanceVec, nodeBalanceErr
+	return nodeBalanceVec, errNodeBalance
 }
 
 // GaugeAccBalance defines a new gauge metric for account balance

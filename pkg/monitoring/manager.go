@@ -76,7 +76,6 @@ func (m *managerImpl) Run(ctx context.Context, managed ...ManagedFunc) {
 				localSubs = &utils.Subprocesses{}
 				m.log.Infow("starting managed funcs", "count", len(managed))
 				for i := range managed {
-					i := i // copy i to prevent race
 					localSubs.Go(func() {
 						managed[i](ctx, updatedData)
 					})

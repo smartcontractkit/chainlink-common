@@ -85,7 +85,7 @@ const (
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
 	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
 	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
-	envTelemetryPrometheusBridgeEnabled       = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
@@ -198,15 +198,15 @@ type EnvConfig struct {
 	// TelemetryMetricCardinalityLimit is nil when unset, so AsCmdEnv can
 	// distinguish "no opinion" (child applies its own default) from an
 	// explicit 0, which disables the limit.
-	TelemetryMetricCardinalityLimit   *int
+	TelemetryMetricCardinalityLimit *int
 	// TelemetryMetricViewsDenyAttributes lists attribute keys dropped by the
 	// default global deny view (e.g. event_id). Empty skips Default().
 	TelemetryMetricViewsDenyAttributes []string
-	TelemetryPrometheusBridgeEnabled       bool
-	TelemetryPrometheusBridgePrefixes []string
-	TelemetryLogCompressor            string
-	MeterRecordsEnabled               bool
-	MeterSnapshotsEnabled             bool
+	TelemetryPrometheusBridgeEnabled   bool
+	TelemetryPrometheusBridgePrefixes  []string
+	TelemetryLogCompressor             string
+	MeterRecordsEnabled                bool
+	MeterSnapshotsEnabled              bool
 
 	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /
 	// MeterZone / MeterNodeID are

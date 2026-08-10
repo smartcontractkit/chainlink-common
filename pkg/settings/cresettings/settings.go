@@ -85,6 +85,7 @@ var Default = Schema{
 	BaseTriggerMaxRetries:                             Int(20),
 	BaseTriggerPruneAge:                               Duration(24 * time.Hour),
 	BaseTriggerMaxSendsPerTick:                        Int(20),
+	WASMPollOneoffSubscriptionLimit:                   Int(128),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -145,14 +146,15 @@ var Default = Schema{
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
 	ConfidentialCompute: confidentialCompute{
-		GlobalRate:              Rate(rate.Limit(1000), 1000),
-		MaxRetries:              Int(3),
-		RetryBackoff:            Duration(2 * time.Second),
-		SecretsCacheEnabled:     Bool(false),
-		EnclaveRequestTimeout:   Duration(30 * time.Second),
-		PublicKeyRequestTimeout: Duration(5 * time.Second),
-		InsecureSkipTLSVerify:   Bool(false),
-		EnclaveRefreshInterval:  Duration(10 * time.Second),
+		GlobalRate:                      Rate(rate.Limit(1000), 1000),
+		MaxRetries:                      Int(3),
+		RetryBackoff:                    Duration(2 * time.Second),
+		SecretsCacheEnabled:             Bool(false),
+		EnclaveRequestTimeout:           Duration(30 * time.Second),
+		PublicKeyRequestTimeout:         Duration(5 * time.Second),
+		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
+		InsecureSkipTLSVerify:           Bool(false),
+		EnclaveRefreshInterval:          Duration(10 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -272,6 +274,10 @@ var Default = Schema{
 			CallLimit:          Int(15),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
+			Solana: solanaChainRead{
+				BatchItemLimit:   Int(100),
+				PayloadSizeLimit: Size(5 * config.KByte),
+			},
 		},
 		Consensus: consensus{
 			ObservationSizeLimit: Size(100 * config.KByte),
@@ -305,6 +311,9 @@ var Default = Schema{
 		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureHTTPTriggerNewExecutionIDsActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureUseSingleDONTimeProviderPerExecutionActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
@@ -321,18 +330,18 @@ var Default = Schema{
 }
 
 type Schema struct {
-	WorkflowLimit                                     Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit                 Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit                   Setting[config.Size]
-	GatewayVaultManagementEnabled                     Setting[bool]
-	VaultJWTAuthEnabled                               Setting[bool]
-	CentralizedWorkflowOwnerVerificationEnabled       Setting[bool]
+	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
+	GatewayVaultManagementEnabled               Setting[bool]
+	VaultJWTAuthEnabled                         Setting[bool]
+	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
 	// executable capability server reject any request whose
 	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
-	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
+	RemoteExecutableWorkflowDONBindingEnabled         Setting[bool]
 	TenantID                                          Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
@@ -359,6 +368,12 @@ type Schema struct {
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
+
+	// WASMPollOneoffSubscriptionLimit bounds nsubscriptions in the WASI
+	// poll_oneoff host call. Checked against the Go wasip1 runtime
+	// (https://cs.opensource.google/go/go/+/refs/tags/go1.26.2:src/runtime/netpoll_wasip1.go),
+	// which never needs more than one.
+	WASMPollOneoffSubscriptionLimit Setting[int] `unit:"{subscription}"`
 
 	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit          Setting[config.Size]
@@ -460,6 +475,7 @@ type Workflows struct {
 
 	FeatureMultiTriggerExecutionIDsActiveAt                 Setting[config.Timestamp] // Deprecated
 	FeatureMultiTriggerExecutionIDsActivePeriod             Setting[Range[config.Timestamp]]
+	FeatureHTTPTriggerNewExecutionIDsActivePeriod           Setting[Range[config.Timestamp]]
 	FeatureUseSingleDONTimeProviderPerExecutionActivePeriod Setting[Range[config.Timestamp]]
 	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
@@ -503,6 +519,11 @@ type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`
 	LogQueryBlockLimit Setting[uint64] `unit:"{block}"`
 	PayloadSizeLimit   Setting[config.Size]
+	Solana             solanaChainRead
+}
+type solanaChainRead struct {
+	BatchItemLimit   Setting[int] `unit:"{item}"`
+	PayloadSizeLimit Setting[config.Size]
 }
 type httpAction struct {
 	CallLimit         Setting[int] `unit:"{call}"`
@@ -532,6 +553,17 @@ type confidentialCompute struct {
 	SecretsCacheEnabled     Setting[bool]
 	EnclaveRequestTimeout   Setting[time.Duration]
 	PublicKeyRequestTimeout Setting[time.Duration]
+
+	// ConfidentialRelayHandlerTimeout bounds how long a relay-DON node may spend
+	// serving one confidential relay request from the gateway: attestation
+	// validation, the DON authorization checks, and the vault or capability call
+	// it proxies.
+	//
+	// This is the server side of the exchange EnclaveRequestTimeout bounds on the
+	// client side, so it should not exceed that value. The enclave derives its
+	// gateway HTTP timeout from EnclaveRequestTimeout, so a node still working
+	// past that point can only produce a response nobody is waiting for.
+	ConfidentialRelayHandlerTimeout Setting[time.Duration]
 
 	InsecureSkipTLSVerify  Setting[bool]
 	EnclaveRefreshInterval Setting[time.Duration]

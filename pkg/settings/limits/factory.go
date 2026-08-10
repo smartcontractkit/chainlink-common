@@ -25,6 +25,8 @@ type Factory struct {
 }
 
 // Deprecated: use MakeRateLimiter
+//
+//go:fix inline
 func (f Factory) NewRateLimiter(rate settings.Setting[config.Rate]) (RateLimiter, error) {
 	return f.MakeRateLimiter(rate)
 }
@@ -43,6 +45,8 @@ func (f Factory) MakeRateLimiter(rate settings.Setting[config.Rate]) (RateLimite
 }
 
 // Deprecated: use MakeTimeLimiter
+//
+//go:fix inline
 func (f Factory) NewTimeLimiter(timeout settings.Setting[time.Duration]) (TimeLimiter, error) {
 	return f.newTimeLimiter(timeout)
 }
@@ -60,6 +64,8 @@ func (f Factory) MakeTimeLimiter(timeout settings.Setting[time.Duration]) (TimeL
 }
 
 // Deprecated: use MakeResourcePoolLimiter
+//
+//go:fix inline
 func NewResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (ResourcePoolLimiter[N], error) {
 	return MakeResourcePoolLimiter(f, limit)
 }
@@ -78,6 +84,8 @@ func MakeResourcePoolLimiter[N Number](f Factory, limit settings.Setting[N]) (Re
 }
 
 // Deprecated: use MakeUpperBoundLimiter
+//
+//go:fix inline
 func MakeBoundLimiter[N Number](f Factory, bound settings.IsSetting[N]) (BoundLimiter[N], error) {
 	return MakeUpperBoundLimiter(f, bound)
 }

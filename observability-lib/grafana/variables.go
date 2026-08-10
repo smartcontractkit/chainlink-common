@@ -3,7 +3,6 @@ package grafana
 import (
 	"strings"
 
-	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 )
 
@@ -37,43 +36,43 @@ func NewCustomVariable(options *CustomVariableOptions) *dashboard.CustomVariable
 		Hide(options.Hide).
 		Description(options.Description).
 		Current(dashboard.VariableOption{
-			Selected: cog.ToPtr[bool](true),
-			Text:     dashboard.StringOrArrayOfString{String: cog.ToPtr(options.CurrentText)},
-			Value:    dashboard.StringOrArrayOfString{String: cog.ToPtr(options.CurrentValue)},
+			Selected: new(true),
+			Text:     dashboard.StringOrArrayOfString{String: new(options.CurrentText)},
+			Value:    dashboard.StringOrArrayOfString{String: new(options.CurrentValue)},
 		}).
 		Multi(options.Multi).
 		IncludeAll(options.IncludeAll)
 
 	optionsList := []dashboard.VariableOption{
 		{
-			Selected: cog.ToPtr[bool](true),
-			Text:     dashboard.StringOrArrayOfString{String: cog.ToPtr(options.CurrentText)},
-			Value:    dashboard.StringOrArrayOfString{String: cog.ToPtr(options.CurrentValue)},
+			Selected: new(true),
+			Text:     dashboard.StringOrArrayOfString{String: new(options.CurrentText)},
+			Value:    dashboard.StringOrArrayOfString{String: new(options.CurrentValue)},
 		},
 	}
 	for key, value := range options.Values {
 		if key != options.CurrentText {
 			option := dashboard.VariableOption{
-				Text:  dashboard.StringOrArrayOfString{String: cog.ToPtr(key)},
-				Value: dashboard.StringOrArrayOfString{String: cog.ToPtr(value.(string))},
+				Text:  dashboard.StringOrArrayOfString{String: new(key)},
+				Value: dashboard.StringOrArrayOfString{String: new(value.(string))},
 			}
 			optionsList = append(optionsList, option)
 		}
 	}
 	variable.Options(optionsList)
 
-	valuesString := ""
+	var valuesString strings.Builder
 	for key, value := range options.Values {
 		// Escape commas and colons in the value which are reserved characters for values string
 		cleanValue := strings.ReplaceAll(value.(string), ",", "\\,")
 		cleanValue = strings.ReplaceAll(cleanValue, ":", "\\:")
-		valuesString += key
+		valuesString.WriteString(key)
 		if key != cleanValue {
-			valuesString += " : " + cleanValue
+			valuesString.WriteString(" : " + cleanValue)
 		}
-		valuesString += ", "
+		valuesString.WriteString(", ")
 	}
-	variable.Values(dashboard.StringOrMap{String: cog.ToPtr(strings.TrimSuffix(valuesString, ", "))})
+	variable.Values(dashboard.StringOrMap{String: new(strings.TrimSuffix(valuesString.String(), ", "))})
 
 	return variable
 }
@@ -106,7 +105,7 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 		Hide(options.Hide).
 		Datasource(datasourceRef(options.Datasource)).
 		Current(dashboard.VariableOption{
-			Selected: cog.ToPtr[bool](true),
+			Selected: new(true),
 			Text:     dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentText}},
 			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentValue}},
 		}).
@@ -117,7 +116,7 @@ func NewQueryVariable(options *QueryVariableOptions) *dashboard.QueryVariableBui
 		AllValue(options.AllValue)
 
 	if options.Query != "" {
-		variable.Query(dashboard.StringOrMap{String: cog.ToPtr[string](options.Query)})
+		variable.Query(dashboard.StringOrMap{String: new(options.Query)})
 	} else if options.QueryWithType != nil {
 		variable.Query(dashboard.StringOrMap{Map: options.QueryWithType})
 	}
@@ -143,9 +142,9 @@ func NewIntervalVariable(options *IntervalVariableOptions) *dashboard.IntervalVa
 	return dashboard.NewIntervalVariableBuilder(options.Name).
 		Label(options.Label).
 		Description(options.Description).
-		Values(dashboard.StringOrMap{String: cog.ToPtr[string](options.Interval)}).
+		Values(dashboard.StringOrMap{String: new(options.Interval)}).
 		Current(dashboard.VariableOption{
-			Selected: cog.ToPtr[bool](true),
+			Selected: new(true),
 			Text:     dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentText}},
 			Value:    dashboard.StringOrArrayOfString{ArrayOfString: []string{options.CurrentValue}},
 		})

@@ -223,7 +223,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 		var chipIngressEmitter Emitter
 		if cfg.ChipIngressBatchEmitterEnabled {
 			if cfg.ChipIngressLogger == nil {
-				return nil, fmt.Errorf("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
+				return nil, errors.New("ChipIngressLogger is required when ChipIngressBatchEmitterEnabled is true")
 			}
 			batchEmitterService, err = NewChipIngressBatchEmitterService(chipIngressClient, cfg, cfg.ChipIngressLogger)
 			if err != nil {
@@ -290,6 +290,8 @@ func (n noCloseEmitter) Close() error { return nil }
 
 // Returns a new Client with the same configuration but with a different package name
 // Deprecated: Use ForName
+//
+//go:fix inline
 func (c Client) ForPackage(name string) Client {
 	return c.ForName(name)
 }

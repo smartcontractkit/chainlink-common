@@ -44,6 +44,19 @@ func GlobalEmit(ctx context.Context, body []byte, attrKVs ...any) error {
 	return nil
 }
 
+// GlobalEmitAsync emits an event via the global DurableEmitter without blocking
+// the caller: the emit runs in a background goroutine and any error is ignored.
+// It is a no-op when the emitter is not initialized. Use on hot paths where the
+// real-time beholder emit already delivered the event and durability is
+// best-effort.
+func GlobalEmitAsync(ctx context.Context, body []byte, attrKVs ...any) {
+	d := globalEmitter.Load()
+	if d == nil {
+		return
+	}
+	d.EmitAsync(ctx, body, attrKVs...)
+}
+
 // SetupConfig holds all configuration required to create and start a
 // DurableEmitter including its chip ingress transport clients.
 type SetupConfig struct {

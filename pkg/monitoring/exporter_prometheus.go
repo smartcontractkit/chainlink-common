@@ -83,7 +83,7 @@ type prometheusExporter struct {
 	prevMu        sync.Mutex
 }
 
-func (p *prometheusExporter) Export(_ context.Context, data interface{}) {
+func (p *prometheusExporter) Export(_ context.Context, data any) {
 	switch typed := data.(type) {
 	case Envelope:
 		p.exportEnvelope(typed)

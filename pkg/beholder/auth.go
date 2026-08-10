@@ -70,8 +70,10 @@ func NewStaticAuth(headers map[string]string, requireTransportSecurity bool) Aut
 }
 
 // Deprecated: use NewStaticAuth instead
+//
+//go:fix inline
 func NewStaticAuthHeaderProvider(headers map[string]string) chipingress.HeaderProvider {
-	return &staticAuth{headers: headers}
+	return NewStaticAuth(headers, false)
 }
 
 type rotatingAuth struct {

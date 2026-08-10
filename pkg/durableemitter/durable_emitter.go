@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -121,7 +122,7 @@ func DefaultConfig() Config {
 		ExpiryInterval:           1 * time.Minute,
 		EventTTL:                 1 * time.Hour,
 		PublishTimeout:           5 * time.Second,
-		InsertBatchFlushInterval: 500 * time.Millisecond,
+		InsertBatchFlushInterval: 50 * time.Millisecond,
 		InsertBatchSize:          100,
 		DeleteBatchSize:          100,
 		DeleteBatchFlushInterval: 500 * time.Millisecond,
@@ -323,6 +324,18 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 	return nil
 }
 
+// EmitAsync runs Emit in a background goroutine and ignores the result, so the
+// caller is never blocked on the DB insert. Use it on hot paths where the
+// durable emitter's value is persistence for retransmit (not inline delivery)
+// and the real-time beholder emit already happened. The passed ctx is detached
+// so the emit is not cancelled when the caller's ctx ends.
+func (d *DurableEmitter) EmitAsync(ctx context.Context, body []byte, attrKVs ...any) {
+	emitCtx := context.WithoutCancel(ctx)
+	go func() {
+		_ = d.Emit(emitCtx, body, attrKVs...)
+	}()
+}
+
 // Emit persists the event then hands it to the BatchEmitter for async delivery.
 // Returns nil once the insert is accepted (or the coalesced insert path
 // completes successfully). Returns an error when the service is not in the
@@ -340,7 +353,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				d.metrics.emitFail.Add(ctx, 1)
 			}
 		}
-		sourceDomain, entityType, err := extractSourceAndType(attrKVs...)
+		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
 		if err != nil {
 			emitFail()
 			return err
@@ -861,24 +874,4 @@ func parseAttrs(attrKVs ...any) map[string]any {
 		}
 	}
 	return a
-}
-
-// extractSourceAndType returns the CloudEvent source domain and entity type
-// from the supplied attributes. Callers must provide the canonical CloudEvents
-// keys "source" and "type". Both must be non-empty strings.
-func extractSourceAndType(attrKVs ...any) (sourceDomain, entityType string, err error) {
-	attrs := parseAttrs(attrKVs...)
-	if v, ok := attrs["source"].(string); ok {
-		sourceDomain = v
-	}
-	if v, ok := attrs["type"].(string); ok {
-		entityType = v
-	}
-	if sourceDomain == "" {
-		return "", "", errors.New(`"source" not found in provided key/value attributes`)
-	}
-	if entityType == "" {
-		return "", "", errors.New(`"type" not found in provided key/value attributes`)
-	}
-	return sourceDomain, entityType, nil
 }

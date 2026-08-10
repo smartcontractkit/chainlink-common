@@ -140,9 +140,12 @@ type DialectName string
 
 const (
 	// Deprecated: Use DriverPostgres
+	//go:fix inline
 	Postgres DialectName = DriverPostgres
 	// Deprecated: Use DriverTxWrappedPostgres
+	//go:fix inline
 	TransactionWrappedPostgres DialectName = DriverTxWrappedPostgres
 	// Deprecated: Use DriverTxWrappedPostgres DriverInMemoryPostgres
+	//go:fix inline
 	InMemoryPostgres DialectName = DriverInMemoryPostgres
 )

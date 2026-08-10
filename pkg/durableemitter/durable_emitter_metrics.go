@@ -2,7 +2,7 @@ package durableemitter
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -95,7 +95,7 @@ var durationBuckets = metric.WithExplicitBucketBoundaries(
 // instrument prefix below acts as the metric namespace).
 func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEmitterMetrics, error) {
 	if meter == nil {
-		return nil, fmt.Errorf("durable emitter metrics: meter is nil")
+		return nil, errors.New("durable emitter metrics: meter is nil")
 	}
 	m := &durableEmitterMetrics{
 		clientName: clientName,

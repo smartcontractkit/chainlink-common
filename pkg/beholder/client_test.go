@@ -24,6 +24,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -947,7 +948,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
 			ChipIngressInsecureConnection:  true,
 			ChipIngressBatchEmitterEnabled: true,
-			ChipIngressLogger:              newTestLogger(t),
+			ChipIngressLogger:              logger.Test(t),
 			ChipIngressBufferSize:          10,
 			ChipIngressMaxBatchSize:        5,
 			ChipIngressSendInterval:        50 * time.Millisecond,
@@ -963,7 +964,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 		client := newBatchClient(t)
 
 		// Before Start: service is unready and incomplete emit fails validation.
-		assert.ErrorContains(t, client.Service.Ready(), "not started")
+		assert.ErrorContains(t, client.Ready(), "not started")
 		err := client.Emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
 			beholder.AttrKeyEntity, "TestEvent",
@@ -971,8 +972,8 @@ func TestClient_batchEmitterService(t *testing.T) {
 		)
 		assert.ErrorContains(t, err, "BeholderDataSchema")
 
-		require.NoError(t, client.Service.Start(t.Context()))
-		assert.NoError(t, client.Service.Ready())
+		require.NoError(t, client.Start(t.Context()))
+		assert.NoError(t, client.Ready())
 		_ = client.Close()
 	})
 
@@ -982,7 +983,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 	t.Run("emit succeeds before start", func(t *testing.T) {
 		client := newBatchClient(t)
 
-		assert.ErrorContains(t, client.Service.Ready(), "not started")
+		assert.ErrorContains(t, client.Ready(), "not started")
 
 		err := client.Emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
@@ -991,8 +992,8 @@ func TestClient_batchEmitterService(t *testing.T) {
 		)
 		assert.NoError(t, err, "emit must not fail when service is not yet started")
 
-		require.NoError(t, client.Service.Start(t.Context()))
-		assert.NoError(t, client.Service.Ready())
+		require.NoError(t, client.Start(t.Context()))
+		assert.NoError(t, client.Ready())
 		_ = client.Close()
 	})
 

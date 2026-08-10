@@ -3,6 +3,7 @@ package stellar
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
@@ -13,7 +14,7 @@ import (
 // domain type. Hash is returned as lowercase hex; XDR fields are returned as standard base64.
 func ConvertGetLatestLedgerResponseFromProto(p *GetLatestLedgerResponse) (stellarservicetypes.GetLatestLedgerResponse, error) {
 	if p == nil {
-		return stellarservicetypes.GetLatestLedgerResponse{}, fmt.Errorf("getLatestLedgerResponse is nil")
+		return stellarservicetypes.GetLatestLedgerResponse{}, errors.New("getLatestLedgerResponse is nil")
 	}
 
 	return stellarservicetypes.GetLatestLedgerResponse{
@@ -62,22 +63,22 @@ func ScValToProto(sv stellarservicetypes.ScVal) (*scval.ScVal, error) {
 
 func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, error) {
 	if depth > 64 {
-		return nil, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+		return nil, errors.New("scVal nesting exceeds maximum depth of 64")
 	}
 	switch sv.Type {
 	case stellarservicetypes.ScValTypeBool:
 		if sv.Bool == nil {
-			return nil, fmt.Errorf("scvBool: nil")
+			return nil, errors.New("scvBool: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_B{B: *sv.Bool}}, nil
 	case stellarservicetypes.ScValTypeVoid:
 		if sv.Void == nil {
-			return nil, fmt.Errorf("scvVoid: nil")
+			return nil, errors.New("scvVoid: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_VoidVal{VoidVal: &scval.Void{}}}, nil
 	case stellarservicetypes.ScValTypeError:
 		if sv.Error == nil {
-			return nil, fmt.Errorf("scvError: nil")
+			return nil, errors.New("scvError: nil")
 		}
 		pe, err := scErrorToProto(sv.Error)
 		if err != nil {
@@ -86,54 +87,54 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		return &scval.ScVal{Value: &scval.ScVal_Error{Error: pe}}, nil
 	case stellarservicetypes.ScValTypeU32:
 		if sv.U32 == nil {
-			return nil, fmt.Errorf("scvU32: nil")
+			return nil, errors.New("scvU32: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_U32{U32: *sv.U32}}, nil
 	case stellarservicetypes.ScValTypeI32:
 		if sv.I32 == nil {
-			return nil, fmt.Errorf("scvI32: nil")
+			return nil, errors.New("scvI32: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_I32{I32: *sv.I32}}, nil
 	case stellarservicetypes.ScValTypeU64:
 		if sv.U64 == nil {
-			return nil, fmt.Errorf("scvU64: nil")
+			return nil, errors.New("scvU64: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_U64{U64: *sv.U64}}, nil
 	case stellarservicetypes.ScValTypeI64:
 		if sv.I64 == nil {
-			return nil, fmt.Errorf("scvI64: nil")
+			return nil, errors.New("scvI64: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_I64{I64: *sv.I64}}, nil
 	case stellarservicetypes.ScValTypeTimepoint:
 		if sv.Timepoint == nil {
-			return nil, fmt.Errorf("scvTimepoint: nil")
+			return nil, errors.New("scvTimepoint: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Timepoint{Timepoint: *sv.Timepoint}}, nil
 	case stellarservicetypes.ScValTypeDuration:
 		if sv.Duration == nil {
-			return nil, fmt.Errorf("scvDuration: nil")
+			return nil, errors.New("scvDuration: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Duration{Duration: *sv.Duration}}, nil
 	case stellarservicetypes.ScValTypeU128:
 		if sv.U128 == nil {
-			return nil, fmt.Errorf("scvU128: nil")
+			return nil, errors.New("scvU128: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_U128{U128: &scval.UInt128Parts{Hi: sv.U128.Hi, Lo: sv.U128.Lo}}}, nil
 	case stellarservicetypes.ScValTypeI128:
 		if sv.I128 == nil {
-			return nil, fmt.Errorf("scvI128: nil")
+			return nil, errors.New("scvI128: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_I128{I128: &scval.Int128Parts{Hi: sv.I128.Hi, Lo: sv.I128.Lo}}}, nil
 	case stellarservicetypes.ScValTypeU256:
 		if sv.U256 == nil {
-			return nil, fmt.Errorf("scvU256: nil")
+			return nil, errors.New("scvU256: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_U256{U256: &scval.UInt256Parts{
 			HiHi: sv.U256.HiHi, HiLo: sv.U256.HiLo, LoHi: sv.U256.LoHi, LoLo: sv.U256.LoLo,
 		}}}, nil
 	case stellarservicetypes.ScValTypeI256:
 		if sv.I256 == nil {
-			return nil, fmt.Errorf("scvI256: nil")
+			return nil, errors.New("scvI256: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_I256{I256: &scval.Int256Parts{
 			HiHi: sv.I256.HiHi, HiLo: sv.I256.HiLo, LoHi: sv.I256.LoHi, LoLo: sv.I256.LoLo,
@@ -142,17 +143,17 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		return &scval.ScVal{Value: &scval.ScVal_BytesVal{BytesVal: sv.Bytes}}, nil
 	case stellarservicetypes.ScValTypeString:
 		if sv.String == nil {
-			return nil, fmt.Errorf("scvString: nil")
+			return nil, errors.New("scvString: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Str{Str: *sv.String}}, nil
 	case stellarservicetypes.ScValTypeSymbol:
 		if sv.Symbol == nil {
-			return nil, fmt.Errorf("scvSymbol: nil")
+			return nil, errors.New("scvSymbol: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_Sym{Sym: *sv.Symbol}}, nil
 	case stellarservicetypes.ScValTypeVec:
 		if sv.Vec == nil {
-			return nil, fmt.Errorf("scvVec: nil")
+			return nil, errors.New("scvVec: nil")
 		}
 		pVals := make([]*scval.ScVal, len(sv.Vec.Values))
 		for i, elem := range sv.Vec.Values {
@@ -168,7 +169,7 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		return &scval.ScVal{Value: &scval.ScVal_Vec{Vec: &scval.ScVec{Values: pVals}}}, nil
 	case stellarservicetypes.ScValTypeMap:
 		if sv.Map == nil {
-			return nil, fmt.Errorf("scvMap: nil")
+			return nil, errors.New("scvMap: nil")
 		}
 		entries := make([]*scval.ScMapEntry, len(sv.Map.Entries))
 		for i, entry := range sv.Map.Entries {
@@ -191,7 +192,7 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		return &scval.ScVal{Value: &scval.ScVal_Map{Map: &scval.ScMap{Entries: entries}}}, nil
 	case stellarservicetypes.ScValTypeAddress:
 		if sv.Address == nil {
-			return nil, fmt.Errorf("scvAddress: nil")
+			return nil, errors.New("scvAddress: nil")
 		}
 		pa, err := scAddressToProto(sv.Address)
 		if err != nil {
@@ -200,7 +201,7 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		return &scval.ScVal{Value: &scval.ScVal_Address{Address: pa}}, nil
 	case stellarservicetypes.ScValTypeContractInstance:
 		if sv.ContractInstance == nil {
-			return nil, fmt.Errorf("scvContractInstance: nil")
+			return nil, errors.New("scvContractInstance: nil")
 		}
 		pi, err := scContractInstanceToProtoAt(sv.ContractInstance, depth+1)
 		if err != nil {
@@ -209,12 +210,12 @@ func scValToProtoAt(sv stellarservicetypes.ScVal, depth int) (*scval.ScVal, erro
 		return &scval.ScVal{Value: &scval.ScVal_ContractInstance{ContractInstance: pi}}, nil
 	case stellarservicetypes.ScValTypeLedgerKeyContractInstance:
 		if sv.LedgerKeyContractInstance == nil {
-			return nil, fmt.Errorf("scvLedgerKeyContractInstance: nil")
+			return nil, errors.New("scvLedgerKeyContractInstance: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_LedgerKeyContractInstance{LedgerKeyContractInstance: &scval.Void{}}}, nil
 	case stellarservicetypes.ScValTypeNonceKey:
 		if sv.NonceKey == nil {
-			return nil, fmt.Errorf("scvNonceKey: nil")
+			return nil, errors.New("scvNonceKey: nil")
 		}
 		return &scval.ScVal{Value: &scval.ScVal_NonceKey{NonceKey: &scval.ScNonceKey{Nonce: sv.NonceKey.Nonce}}}, nil
 	default:
@@ -226,7 +227,7 @@ func scErrorToProto(e *stellarservicetypes.ScError) (*scval.ScError, error) {
 	pe := &scval.ScError{Type: scval.ScError_Type(e.Type)}
 	if e.Type == stellarservicetypes.ScErrorTypeContract {
 		if e.ContractCode == nil {
-			return nil, fmt.Errorf("scError.contractCode: nil")
+			return nil, errors.New("scError.contractCode: nil")
 		}
 		pe.CodeOrContract = &scval.ScError_ContractCode{ContractCode: *e.ContractCode}
 	} else {
@@ -252,7 +253,7 @@ func scAddressToProto(a *stellarservicetypes.ScAddress) (*scval.ScAddress, error
 		return &scval.ScAddress{Address: &scval.ScAddress_ContractId{ContractId: a.ContractID}}, nil
 	case stellarservicetypes.ScAddressTypeMuxedAccount:
 		if a.MuxedAccount == nil {
-			return nil, fmt.Errorf("scAddress.muxed: nil")
+			return nil, errors.New("scAddress.muxed: nil")
 		}
 		if len(a.MuxedAccount.Ed25519) != 32 {
 			return nil, fmt.Errorf("scAddress.muxed: ed25519 must be 32 bytes, got %d", len(a.MuxedAccount.Ed25519))
@@ -263,7 +264,7 @@ func scAddressToProto(a *stellarservicetypes.ScAddress) (*scval.ScAddress, error
 		}}}, nil
 	case stellarservicetypes.ScAddressTypeClaimableBalanceID:
 		if a.ClaimableBalance == nil {
-			return nil, fmt.Errorf("scAddress.claimableBalance: nil")
+			return nil, errors.New("scAddress.claimableBalance: nil")
 		}
 		if len(a.ClaimableBalance.V0) != 32 {
 			return nil, fmt.Errorf("scAddress.claimableBalance: v0 must be 32 bytes, got %d", len(a.ClaimableBalance.V0))
@@ -283,7 +284,7 @@ func scAddressToProto(a *stellarservicetypes.ScAddress) (*scval.ScAddress, error
 
 func contractExecutableToProto(exec *stellarservicetypes.ContractExecutable) (*scval.ContractExecutable, error) {
 	if exec == nil {
-		return nil, fmt.Errorf("contractExecutable: nil")
+		return nil, errors.New("contractExecutable: nil")
 	}
 	switch exec.Type {
 	case stellarservicetypes.ContractExecutableTypeWasmHash:
@@ -300,7 +301,7 @@ func contractExecutableToProto(exec *stellarservicetypes.ContractExecutable) (*s
 
 func scContractInstanceToProtoAt(inst *stellarservicetypes.ScContractInstance, depth int) (*scval.ScContractInstance, error) {
 	if depth > 64 {
-		return nil, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+		return nil, errors.New("scVal nesting exceeds maximum depth of 64")
 	}
 	pExec, err := contractExecutableToProto(inst.Executable)
 	if err != nil {
@@ -339,10 +340,10 @@ func ProtoToScVal(sv *scval.ScVal) (stellarservicetypes.ScVal, error) {
 
 func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, error) {
 	if depth > 64 {
-		return stellarservicetypes.ScVal{}, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+		return stellarservicetypes.ScVal{}, errors.New("scVal nesting exceeds maximum depth of 64")
 	}
 	if sv == nil {
-		return stellarservicetypes.ScVal{}, fmt.Errorf("proto ScVal is nil")
+		return stellarservicetypes.ScVal{}, errors.New("proto ScVal is nil")
 	}
 	switch v := sv.Value.(type) {
 	case *scval.ScVal_B:
@@ -376,24 +377,24 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeDuration, Duration: &d}, nil
 	case *scval.ScVal_U128:
 		if v.U128 == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvU128: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvU128: nil")
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeU128, U128: &stellarservicetypes.UInt128Parts{Hi: v.U128.Hi, Lo: v.U128.Lo}}, nil
 	case *scval.ScVal_I128:
 		if v.I128 == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvI128: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvI128: nil")
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeI128, I128: &stellarservicetypes.Int128Parts{Hi: v.I128.Hi, Lo: v.I128.Lo}}, nil
 	case *scval.ScVal_U256:
 		if v.U256 == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvU256: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvU256: nil")
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeU256, U256: &stellarservicetypes.UInt256Parts{
 			HiHi: v.U256.HiHi, HiLo: v.U256.HiLo, LoHi: v.U256.LoHi, LoLo: v.U256.LoLo,
 		}}, nil
 	case *scval.ScVal_I256:
 		if v.I256 == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvI256: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvI256: nil")
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeI256, I256: &stellarservicetypes.Int256Parts{
 			HiHi: v.I256.HiHi, HiLo: v.I256.HiLo, LoHi: v.I256.LoHi, LoLo: v.I256.LoLo,
@@ -408,7 +409,7 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeSymbol, Symbol: &s}, nil
 	case *scval.ScVal_Vec:
 		if v.Vec == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvVec: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvVec: nil")
 		}
 		values := make([]*stellarservicetypes.ScVal, len(v.Vec.Values))
 		for i, pv := range v.Vec.Values {
@@ -422,7 +423,7 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeVec, Vec: &stellarservicetypes.ScVec{Values: values}}, nil
 	case *scval.ScVal_Map:
 		if v.Map == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvMap: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvMap: nil")
 		}
 		entries := make([]stellarservicetypes.ScMapEntry, len(v.Map.Entries))
 		for i, pe := range v.Map.Entries {
@@ -457,7 +458,7 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeLedgerKeyContractInstance, LedgerKeyContractInstance: &stellarservicetypes.Void{}}, nil
 	case *scval.ScVal_NonceKey:
 		if v.NonceKey == nil {
-			return stellarservicetypes.ScVal{}, fmt.Errorf("scvNonceKey: nil")
+			return stellarservicetypes.ScVal{}, errors.New("scvNonceKey: nil")
 		}
 		return stellarservicetypes.ScVal{Type: stellarservicetypes.ScValTypeNonceKey, NonceKey: &stellarservicetypes.ScNonceKey{Nonce: v.NonceKey.Nonce}}, nil
 	default:
@@ -467,7 +468,7 @@ func protoToScValAt(sv *scval.ScVal, depth int) (stellarservicetypes.ScVal, erro
 
 func protoToScError(e *scval.ScError) (*stellarservicetypes.ScError, error) {
 	if e == nil {
-		return nil, fmt.Errorf("proto ScError is nil")
+		return nil, errors.New("proto ScError is nil")
 	}
 	de := &stellarservicetypes.ScError{Type: stellarservicetypes.ScErrorType(e.Type)}
 	switch v := e.CodeOrContract.(type) {
@@ -485,7 +486,7 @@ func protoToScError(e *scval.ScError) (*stellarservicetypes.ScError, error) {
 
 func protoToScAddress(a *scval.ScAddress) (*stellarservicetypes.ScAddress, error) {
 	if a == nil {
-		return nil, fmt.Errorf("proto ScAddress is nil")
+		return nil, errors.New("proto ScAddress is nil")
 	}
 	switch v := a.Address.(type) {
 	case *scval.ScAddress_AccountId:
@@ -500,7 +501,7 @@ func protoToScAddress(a *scval.ScAddress) (*stellarservicetypes.ScAddress, error
 		return &stellarservicetypes.ScAddress{Type: stellarservicetypes.ScAddressTypeContractID, ContractID: v.ContractId}, nil
 	case *scval.ScAddress_MuxedAccount:
 		if v.MuxedAccount == nil {
-			return nil, fmt.Errorf("muxedAccount: nil")
+			return nil, errors.New("muxedAccount: nil")
 		}
 		if len(v.MuxedAccount.Ed25519) != 32 {
 			return nil, fmt.Errorf("muxedAccount.ed25519 must be 32 bytes, got %d", len(v.MuxedAccount.Ed25519))
@@ -514,7 +515,7 @@ func protoToScAddress(a *scval.ScAddress) (*stellarservicetypes.ScAddress, error
 		}, nil
 	case *scval.ScAddress_ClaimableBalanceId:
 		if v.ClaimableBalanceId == nil {
-			return nil, fmt.Errorf("claimableBalanceId: nil")
+			return nil, errors.New("claimableBalanceId: nil")
 		}
 		if len(v.ClaimableBalanceId.V0) != 32 {
 			return nil, fmt.Errorf("claimableBalanceId.v0 must be 32 bytes, got %d", len(v.ClaimableBalanceId.V0))
@@ -535,7 +536,7 @@ func protoToScAddress(a *scval.ScAddress) (*stellarservicetypes.ScAddress, error
 
 func protoToContractExecutable(exec *scval.ContractExecutable) (*stellarservicetypes.ContractExecutable, error) {
 	if exec == nil {
-		return nil, fmt.Errorf("proto ContractExecutable is nil")
+		return nil, errors.New("proto ContractExecutable is nil")
 	}
 	switch v := exec.Type.(type) {
 	case *scval.ContractExecutable_WasmHash:
@@ -552,10 +553,10 @@ func protoToContractExecutable(exec *scval.ContractExecutable) (*stellarservicet
 
 func protoToScContractInstanceAt(inst *scval.ScContractInstance, depth int) (*stellarservicetypes.ScContractInstance, error) {
 	if depth > 64 {
-		return nil, fmt.Errorf("scVal nesting exceeds maximum depth of 64")
+		return nil, errors.New("scVal nesting exceeds maximum depth of 64")
 	}
 	if inst == nil {
-		return nil, fmt.Errorf("proto ScContractInstance is nil")
+		return nil, errors.New("proto ScContractInstance is nil")
 	}
 	dExec, err := protoToContractExecutable(inst.Executable)
 	if err != nil {

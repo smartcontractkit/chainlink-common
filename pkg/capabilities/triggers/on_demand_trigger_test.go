@@ -1,7 +1,6 @@
 package triggers
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -84,24 +82,4 @@ func TestOnDemand_(t *testing.T) {
 
 	assert.Len(t, callback, 1)
 	assert.Equal(t, er, <-callback)
-}
-
-func TestOnDemandTrigger_GenerateSchema(t *testing.T) {
-	ts := NewOnDemand(logger.Nop())
-	schema, err := ts.Schema()
-	require.NotNil(t, schema)
-	require.NoError(t, err)
-
-	var shouldUpdate = true
-	fixturePath := "./testdata/fixtures/ondemand/schema.json"
-	if shouldUpdate {
-		err = os.WriteFile(fixturePath, []byte(schema), 0600)
-		require.NoError(t, err)
-		defer os.Remove(fixturePath)
-	}
-
-	fixture, err := os.ReadFile(fixturePath)
-	require.NoError(t, err)
-
-	utils.AssertJSONEqual(t, fixture, []byte(schema))
 }

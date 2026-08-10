@@ -31,6 +31,7 @@
 	"BaseTriggerMaxRetries": "20",
 	"BaseTriggerPruneAge": "24h0m0s",
 	"BaseTriggerMaxSendsPerTick": "20",
+	"WASMPollOneoffSubscriptionLimit": "128",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",
@@ -56,6 +57,7 @@
 		"SecretsCacheEnabled": "false",
 		"EnclaveRequestTimeout": "30s",
 		"PublicKeyRequestTimeout": "5s",
+		"ConfidentialRelayHandlerTimeout": "1m0s",
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
 		"PublicKeyCache": {
@@ -169,7 +171,11 @@
 		"ChainRead": {
 			"CallLimit": "15",
 			"LogQueryBlockLimit": "100",
-			"PayloadSizeLimit": "5kb"
+			"PayloadSizeLimit": "5kb",
+			"Solana": {
+				"BatchItemLimit": "100",
+				"PayloadSizeLimit": "5kb"
+			}
 		},
 		"Consensus": {
 			"ObservationSizeLimit": "100kb",
@@ -200,6 +206,7 @@
 		},
 		"FeatureMultiTriggerExecutionIDsActiveAt": "2100-01-01 00:00:00 +0000 UTC",
 		"FeatureMultiTriggerExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureHTTPTriggerNewExecutionIDsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureUseSingleDONTimeProviderPerExecutionActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureEVMWriteReportL1FeeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",

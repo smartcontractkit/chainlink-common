@@ -1554,3 +1554,108 @@ func (m *MemDurableEventStore) ObserveDurableQueue(_ context.Context, eventTTL t
 	st.TTLBudget = eventTTL - st.OldestPendingAge
 	return st, nil
 }
+
+// slowBatchStore wraps MemDurableEventStore and adds a fixed per-batch INSERT
+// delay so tests can simulate Postgres write latency on the emit path.
+type slowBatchStore struct {
+	*MemDurableEventStore
+	insertDelay time.Duration
+}
+
+func (s *slowBatchStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {
+	time.Sleep(s.insertDelay)
+	return s.MemDurableEventStore.InsertBatch(ctx, payloads)
+}
+
+// TestGlobalEmit_BlockingBehavior guards the caller-blocking behaviour of the
+// global emit paths. Call sites use the synchronous GlobalEmit, whose block time
+// is bounded by the insert linger (InsertBatchFlushInterval); the async
+// GlobalEmitAsync must not block at all. These are regression guards against the
+// insert linger regressing (e.g. back to the old 500ms default) or a hot-path
+// emit starting to block too long.
+func TestGlobalEmit_BlockingBehavior(t *testing.T) {
+	const numEmissions = 5
+	const flushInterval = 50 * time.Millisecond // insert linger (matches DefaultConfig)
+	const insertDelay = 5 * time.Millisecond    // simulated Postgres INSERT latency
+	// Per-emit block ceiling for the sync path: comfortably above
+	// linger+insert+jitter, but well below the old 500ms default so a regression
+	// there is caught.
+	const maxBlockPerEmit = flushInterval * 2
+
+	ctx := t.Context()
+
+	// globalEmitter is process-wide; restore whatever was there after the test.
+	prevEmitter := globalEmitter.Load()
+	t.Cleanup(func() { globalEmitter.Store(prevEmitter) })
+
+	// newInitializedEmitter installs a global DurableEmitter with a 50ms insert
+	// linger and returns its batch emitter (for delivery assertions).
+	newInitializedEmitter := func(t *testing.T) *testBatchEmitter {
+		store := &slowBatchStore{
+			MemDurableEventStore: NewMemDurableEventStore(),
+			insertDelay:          insertDelay,
+		}
+		be := newTestBatchEmitter()
+		cfg := DefaultConfig()
+		cfg.InsertBatchSize = 500
+		cfg.InsertBatchWorkers = 1
+		cfg.InsertBatchFlushInterval = flushInterval
+		cfg.DisablePruning = true
+		em := newTestDurableEmitter(t, store, be, &cfg)
+		servicetest.Run(t, em)
+		globalEmitter.Store(em)
+		return be
+	}
+
+	t.Run("not initialized returns ErrNotInitialized without blocking", func(t *testing.T) {
+		globalEmitter.Store(nil)
+		start := time.Now()
+		for range numEmissions {
+			require.ErrorIs(t, GlobalEmit(ctx, []byte("metric-event"), testEmitAttrs()...), ErrNotInitialized,
+				"GlobalEmit must return ErrNotInitialized when no emitter is set")
+		}
+		require.Less(t, time.Since(start), 10*time.Millisecond,
+			"with no emitter, %d emissions must complete in under 10ms", numEmissions)
+	})
+
+	t.Run("synchronous GlobalEmit block time is bounded by the insert linger", func(t *testing.T) {
+		be := newInitializedEmitter(t)
+
+		var total time.Duration
+		for i := range numEmissions {
+			emitStart := time.Now()
+			require.NoError(t, GlobalEmit(ctx, []byte("metric-event"), testEmitAttrs()...),
+				"GlobalEmit must succeed when emitter is initialized")
+			blocked := time.Since(emitStart)
+			total += blocked
+			require.Less(t, blocked, maxBlockPerEmit,
+				"synchronous GlobalEmit blocked %v (emit %d) — must be under %v with a %v insert linger",
+				blocked, i, maxBlockPerEmit, flushInterval)
+		}
+		t.Logf("synchronous GlobalEmit: %d emits, avg block %v (linger=%v)", numEmissions, total/numEmissions, flushInterval)
+
+		// The synchronous path persists + publishes inline, so events are
+		// delivered by the time the calls return (no background hand-off).
+		require.Equal(t, int64(numEmissions), be.callCount.Load(),
+			"all %d events must be published inline by the synchronous emit path", numEmissions)
+	})
+
+	t.Run("GlobalEmitAsync does not block the caller", func(t *testing.T) {
+		be := newInitializedEmitter(t)
+
+		start := time.Now()
+		for range numEmissions {
+			GlobalEmitAsync(ctx, []byte("metric-event"), testEmitAttrs()...)
+		}
+		// The async path hands off to a goroutine, so the caller must not scale
+		// with numEmissions * linger.
+		require.Less(t, time.Since(start), time.Duration(numEmissions)*flushInterval,
+			"GlobalEmitAsync of %d events must not block on the coalescer", numEmissions)
+
+		// Events must still be delivered eventually via the background goroutine.
+		require.Eventually(t, func() bool {
+			return be.callCount.Load() == int64(numEmissions)
+		}, 5*time.Second, 50*time.Millisecond,
+			"all %d events must eventually be published by the batch emitter", numEmissions)
+	})
+}

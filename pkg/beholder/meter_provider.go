@@ -10,13 +10,15 @@ import (
 //
 // Final order:
 //  1. cfg.MetricViews — caller overrides (e.g. chainlink metricViews() histogram buckets)
-//  2. metricviews.Default() — attribute filters for high-cardinality labels
+//  2. metricviews.Default(cfg.MetricViewsDenyAttributes) — PerWorkflow histogram
+//     bucket overrides, base-trigger attribute allow-lists, and (when configured)
+//     the global deny-list catch-all
 //
 // Caller views must come first: when multiple views match an instrument and
 // resolve to the same output stream (same name/description/unit/kind), the SDK
 // keeps only the first in registration order and drops the rest.
 func (cfg Config) metricViews() []sdkmetric.View {
-	if len(cfg.MetricViewsDenyAttributes) == 0 {
+	if cfg.metricViewsDisabled {
 		return cfg.MetricViews
 	}
 	return append(cfg.MetricViews, metricviews.Default(cfg.MetricViewsDenyAttributes)...)

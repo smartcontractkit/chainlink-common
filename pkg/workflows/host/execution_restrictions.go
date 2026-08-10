@@ -6,11 +6,12 @@ import (
 	"strings"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
-	"google.golang.org/protobuf/proto"
 )
 
 type methodKey struct {
@@ -26,7 +27,7 @@ type secretKey struct {
 type prefixRestriction struct {
 	prefix    string
 	namespace string
-	maxCalls  int32
+	maxCalls  uint32
 }
 
 // TODO refactor to instead be injected INTO the hepler
@@ -38,11 +39,11 @@ type executionRestrictions struct {
 
 	hasCaps       bool
 	capType       sdk.CapabilityRestrictionType
-	maxTotalCalls int32
-	methods       map[methodKey]int32
+	maxTotalCalls uint32
+	methods       map[methodKey]uint32
 
 	hasSecrets    bool
-	maxSecrets    int32
+	maxSecrets    uint32
 	exactSecrets  map[secretKey]bool
 	prefixSecrets []prefixRestriction
 }
@@ -84,7 +85,6 @@ func getSecretsHelper[T proto.Message](
 	request *sdk.GetSecretsRequest,
 	getter func(request *sdk.GetSecretsRequest) ([]T, error),
 	failer func(id, ns string) T) ([]T, error) {
-
 	e.mu.Lock()
 	var allowed []*sdk.SecretRequest
 	responses := make([]T, len(request.Requests))
@@ -130,7 +130,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 		er.hasCaps = true
 		er.capType = caps.Type
 		er.maxTotalCalls = caps.MaxTotalCalls
-		er.methods = make(map[methodKey]int32)
+		er.methods = make(map[methodKey]uint32)
 		for _, cr := range caps.Restrictions {
 			m, ok := cr.Restriction.(*sdk.CapabilityRestriction_Method)
 			if !ok || m.Method == nil {
@@ -139,7 +139,7 @@ func NewRestrictedExecutionHelper(inner ExecutionHelper, r *sdk.Restrictions) Ex
 			mr := m.Method
 			key := methodKey{id: mr.Id, method: mr.Method}
 			existing, found := er.methods[key]
-			if !found || (mr.MaxCalls >= 0 && (existing < 0 || mr.MaxCalls < existing)) {
+			if !found || mr.MaxCalls < existing {
 				er.methods[key] = mr.MaxCalls
 			}
 		}
@@ -294,5 +294,4 @@ func (e *executionRestrictions) GetSecrets(ctx context.Context, request *sdk.Get
 	}
 
 	return getSecretsHelper(e, request, getter, failer)
-
 }

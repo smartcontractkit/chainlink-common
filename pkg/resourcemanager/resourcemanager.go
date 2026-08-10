@@ -73,7 +73,7 @@ import (
 // the CHiP schema registration and the consumer topic name; all must match
 // exactly.
 const (
-	domain             = "cll-meter"
+	domain             = "cll.meter"
 	entity             = "metering.v1.MeterRecord"
 	dataSchema         = "metering.v1.meter_record"
 	snapshotEntity     = "metering.v1.MeterSnapshot"
@@ -317,10 +317,7 @@ func (rm *ResourceManager) emitSnapshots(ctx context.Context, tickTime time.Time
 	}
 	rm.mu.RUnlock()
 
-	timeout := rm.snapshotInterval / 4
-	if timeout < snapshotRegistrantTimeoutFloor {
-		timeout = snapshotRegistrantTimeoutFloor
-	}
+	timeout := max(rm.snapshotInterval/4, snapshotRegistrantTimeoutFloor)
 
 	for _, m := range ms {
 		rm.emitSnapshotWithDeadline(ctx, m, tickTime, timeout)

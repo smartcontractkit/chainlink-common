@@ -37,6 +37,8 @@ type execution[T any] struct {
 	nodeSeed             int64
 	donLogCount          uint32
 	nodeLogCount         uint32
+
+	usedCallbackIDs map[string]bool
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -49,9 +51,17 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 		return err
 	}
 
-	ch := make(chan *sdkpb.CapabilityResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
+
+	normalizedCallbackID := fmt.Sprintf("cap__%d", req.CallbackId)
+	if e.usedCallbackIDs[normalizedCallbackID] {
+		free()
+		return errors.New("duplicate callback id not allowed")
+	}
+	e.usedCallbackIDs[normalizedCallbackID] = true
+
+	ch := make(chan *sdkpb.CapabilityResponse, 1)
 	e.capabilityResponses[req.CallbackId] = ch
 
 	go func() {
@@ -120,9 +130,17 @@ func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecret
 		return err
 	}
 
-	ch := make(chan *secretsResponse, 1)
 	e.lock.Lock()
 	defer e.lock.Unlock()
+
+	normalizedCallbackID := fmt.Sprintf("secret__%d", req.CallbackId)
+	if e.usedCallbackIDs[normalizedCallbackID] {
+		free()
+		return errors.New("duplicate callback id not allowed")
+	}
+	e.usedCallbackIDs[normalizedCallbackID] = true
+
+	ch := make(chan *secretsResponse, 1)
 	e.secretsResponses[req.CallbackId] = ch
 
 	go func() {
@@ -338,6 +356,9 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 // It sleeps based on the largest timeout
 func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
+		return ErrnoInval
+	}
+	if err := e.module.cfg.MaxSubscriptionsLimiter.Check(e.ctx, int(nsubscriptions)); err != nil {
 		return ErrnoInval
 	}
 

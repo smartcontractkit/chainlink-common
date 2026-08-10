@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func BenchmarkKeystore_Sign(b *testing.B) {
@@ -47,7 +46,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			ks := tt.ks()
 			b.Run("in-process", func(b *testing.B) {
-				ctx := tests.Context(b)
+				ctx := b.Context()
 				acct := "0x1234"
 				data := []byte("asdf")
 				for b.Loop() {
@@ -66,7 +65,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 					b.ResetTimer()
 					defer b.StopTimer()
 
-					ctx := tests.Context(b)
+					ctx := b.Context()
 					acct := "0x1234"
 					data := []byte("asdf")
 					for b.Loop() {

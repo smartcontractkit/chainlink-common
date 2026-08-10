@@ -56,11 +56,45 @@ func (s *slowCapStub) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetric) 
 
 var _ ExecutionHelper = (*slowCapStub)(nil)
 
+// blockingCapStub blocks CallCapability until unblock is closed (or ctx is
+// done), letting a test control precisely when an in-flight call completes
+// and releases its limiter slot.
+type blockingCapStub struct {
+	unblock chan struct{}
+}
+
+func (s *blockingCapStub) CallCapability(ctx context.Context, _ *sdkpb.CapabilityRequest) (*sdkpb.CapabilityResponse, error) {
+	select {
+	case <-s.unblock:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	payload, _ := anypb.New(&emptypb.Empty{})
+	return &sdkpb.CapabilityResponse{
+		Response: &sdkpb.CapabilityResponse_Payload{Payload: payload},
+	}, nil
+}
+
+func (s *blockingCapStub) GetSecrets(context.Context, *sdkpb.GetSecretsRequest) ([]*sdkpb.SecretResponse, error) {
+	return nil, nil
+}
+func (s *blockingCapStub) GetWorkflowExecutionID() string { return "test-exec" }
+func (s *blockingCapStub) GetNodeTime() time.Time         { return time.Now() }
+func (s *blockingCapStub) GetDONTime() (time.Time, error) { return time.Now(), nil }
+func (s *blockingCapStub) EmitUserLog(string) error       { return nil }
+func (s *blockingCapStub) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetric) error {
+	return nil
+}
+
+var _ ExecutionHelper = (*blockingCapStub)(nil)
+
 func newTestExec(maxPending int, stub ExecutionHelper) *execution[*sdkpb.ExecutionResult] {
 	return &execution[*sdkpb.ExecutionResult]{
 		ctx:                 context.Background(),
 		capabilityResponses: make(map[int32]<-chan *sdkpb.CapabilityResponse),
 		secretsResponses:    make(map[int32]<-chan *secretsResponse),
+		usedCallbackIDs:     make(map[string]bool),
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter[int](maxPending),
 		executor:            stub,
 	}

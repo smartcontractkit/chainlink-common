@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/stretchr/testify/assert"
@@ -58,6 +59,12 @@ const watCallCapV2NoVersion = `
 	  (import "env" "call_capability" (func $call_capability (param i32 i32 i32 i32) (result i64)))
 	  (memory (export "memory") 1)
 	  (func (export "_start"))
+	  (func (export "call_cap") (param i32 i32 i32 i32) (result i64)
+	    local.get 0
+	    local.get 1
+	    local.get 2
+	    local.get 3
+	    call $call_capability)
 	)`
 
 const watCallCapV1NoVersion = `
@@ -65,6 +72,10 @@ const watCallCapV1NoVersion = `
 	  (import "env" "call_capability" (func $call_capability (param i32 i32) (result i64)))
 	  (memory (export "memory") 1)
 	  (func (export "_start"))
+	  (func (export "call_cap") (param i32 i32) (result i64)
+	    local.get 0
+	    local.get 1
+	    call $call_capability)
 	)`
 
 // --- Memory helpers ---
@@ -159,11 +170,16 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
+	// Use a short-timeout context so the zero-capacity limiter returns an
+	// error quickly instead of blocking forever.
+	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
+	defer cancel()
+
 	exec := &execution[*sdkpb.ExecutionResult]{
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: zeroLimiter,
-		ctx:                 t.Context(),
+		ctx:                 ctx,
 		executor:            mockExecHelper,
 	}
 
@@ -186,7 +202,7 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	respOffset := int32(256)
 	respSize := int32(256)
 
-	callCap := inst.GetExport(store, "call_capability").Func()
+	callCap := inst.GetExport(store, "call_cap").Func()
 	result, err := callCap.Call(store, reqOffset, int32(len(reqBytes)), respOffset, respSize)
 	require.NoError(t, err)
 
@@ -212,9 +228,11 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 func TestCreateCallCapFnV2_SuccessReturnsZero(t *testing.T) {
 	lggr := logger.Test(t)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
+	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
+	// test only checks the synchronous return value, not the async result.
 	mockExecHelper.EXPECT().
 		CallCapability(mock.Anything, mock.Anything).
-		Return(&sdkpb.CapabilityResponse{}, nil)
+		Return(&sdkpb.CapabilityResponse{}, nil).Maybe()
 
 	exec := &execution[*sdkpb.ExecutionResult]{
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
@@ -243,7 +261,7 @@ func TestCreateCallCapFnV2_SuccessReturnsZero(t *testing.T) {
 	sentinel := []byte("SENTINEL_DATA_THAT_SHOULD_NOT_BE_OVERWRITTEN")
 	memWrite(t, mem, store, respOffset, sentinel)
 
-	callCap := inst.GetExport(store, "call_capability").Func()
+	callCap := inst.GetExport(store, "call_cap").Func()
 	result, err := callCap.Call(store, reqOffset, int32(len(reqBytes)), respOffset, int32(256))
 	require.NoError(t, err)
 
@@ -287,7 +305,7 @@ func TestCreateCallCapFnV2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 	respOffset := int32(256)
 	respSize := int32(256)
 
-	callCap := inst.GetExport(store, "call_capability").Func()
+	callCap := inst.GetExport(store, "call_cap").Func()
 	result, err := callCap.Call(store, reqOffset, int32(len(invalidProto)), respOffset, respSize)
 	require.NoError(t, err)
 
@@ -319,11 +337,16 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
 	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
+	// Use a short-timeout context so the zero-capacity limiter returns an
+	// error quickly instead of blocking forever.
+	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
+	defer cancel()
+
 	exec := &execution[*sdkpb.ExecutionResult]{
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: zeroLimiter,
-		ctx:                 t.Context(),
+		ctx:                 ctx,
 		executor:            mockExecHelper,
 	}
 
@@ -341,7 +364,7 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
 	reqOffset := int32(0)
 	memWrite(t, mem, store, reqOffset, reqBytes)
 
-	callCap := inst.GetExport(store, "call_capability").Func()
+	callCap := inst.GetExport(store, "call_cap").Func()
 	result, err := callCap.Call(store, reqOffset, int32(len(reqBytes)))
 	require.NoError(t, err)
 
@@ -357,9 +380,11 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
 func TestCreateCallCapFnV1_SuccessReturnsZero(t *testing.T) {
 	lggr := logger.Test(t)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
+	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
+	// test only checks the synchronous return value, not the async result.
 	mockExecHelper.EXPECT().
 		CallCapability(mock.Anything, mock.Anything).
-		Return(&sdkpb.CapabilityResponse{}, nil)
+		Return(&sdkpb.CapabilityResponse{}, nil).Maybe()
 
 	exec := &execution[*sdkpb.ExecutionResult]{
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
@@ -383,7 +408,7 @@ func TestCreateCallCapFnV1_SuccessReturnsZero(t *testing.T) {
 	reqOffset := int32(0)
 	memWrite(t, mem, store, reqOffset, reqBytes)
 
-	callCap := inst.GetExport(store, "call_capability").Func()
+	callCap := inst.GetExport(store, "call_cap").Func()
 	result, err := callCap.Call(store, reqOffset, int32(len(reqBytes)))
 	require.NoError(t, err)
 
@@ -406,7 +431,6 @@ func TestLinkNoDAG_RegistersV2For4ParamImport(t *testing.T) {
 	// The module should link successfully with the V2 host function.
 	// If the wrong function signature is registered, wasmtime will reject the import.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
-	mockExecHelper.EXPECT().GetWorkflowExecutionID().Return("test-id")
 
 	store := wasmtime.NewStore(m.engine)
 	exec := &execution[*sdkpb.ExecutionResult]{
@@ -433,7 +457,6 @@ func TestLinkNoDAG_RegistersV1For2ParamImport(t *testing.T) {
 
 	// The module should link successfully with the V1 host function.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
-	mockExecHelper.EXPECT().GetWorkflowExecutionID().Return("test-id")
 
 	store := wasmtime.NewStore(m.engine)
 	exec := &execution[*sdkpb.ExecutionResult]{

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786125675012,
+  "lastUpdate": 1786374134448,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -57600,6 +57600,66 @@ window.BENCHMARK_DATA = {
             "value": 146800,
             "unit": "ns/op",
             "extra": "8043 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "russell.stern@smartcontract.com",
+            "name": "Russell Stern",
+            "username": "russell-stern"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "5a75571dd411cc8a117f2bab6f88c7cfc43ed966",
+          "message": "Added include invalid pending queue items for the vault (#2123)\n\n* Added cipherless observation flag for the vault\n\n* Fixed test\n\n* Updated defaults\n\n* Added new flag for relaxed consensus in vault\n\n* Removed extra field\n\n* Remove cipherless observations setting\n\n* Add skip-invalid pending items flag + ObservationError proto\n\n* Renamed feature flag\n\n* Added pending queue stall mechanism\n\n* Ran make generate",
+          "timestamp": "2026-08-10T14:49:35Z",
+          "tree_id": "7517b2c783ef213717a9c8c90d920fd3b6685e13",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5a75571dd411cc8a117f2bab6f88c7cfc43ed966"
+        },
+        "date": 1786374129904,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 371.7,
+            "unit": "ns/op",
+            "extra": "3284754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 76238,
+            "unit": "ns/op",
+            "extra": "15734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.1,
+            "unit": "ns/op",
+            "extra": "2865306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 75587,
+            "unit": "ns/op",
+            "extra": "15702 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24874,
+            "unit": "ns/op",
+            "extra": "48147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 124920,
+            "unit": "ns/op",
+            "extra": "9217 times\n4 procs"
           }
         ]
       }

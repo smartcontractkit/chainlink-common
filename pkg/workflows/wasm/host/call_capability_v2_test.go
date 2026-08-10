@@ -23,11 +23,11 @@ import (
 // call_capability import declares (req, reqLen).
 const callCapabilityV1ParamCount = 2
 
-// --- WAT helpers ---
+// --- WAT modules ---
 
 // watCallCapV2 is a minimal WAT module that imports call_capability with 4
 // params (i32, i32, i32, i32) → i64, plus a version_v2 import so the host
-// treats it as a NoDAG module.
+// treats it as a NoDAG module. Used for signature detection tests via NewModule.
 const watCallCapV2 = `
 	(module
 	  (import "env" "version_v2" (func $version_v2))
@@ -39,7 +39,7 @@ const watCallCapV2 = `
 
 // watCallCapV1 is a minimal WAT module that imports call_capability with 2
 // params (i32, i32) → i64, plus a version_v2 import so the host treats it as
-// a NoDAG module.
+// a NoDAG module. Used for signature detection tests via NewModule.
 const watCallCapV1 = `
 	(module
 	  (import "env" "version_v2" (func $version_v2))
@@ -49,7 +49,11 @@ const watCallCapV1 = `
 	    call $version_v2)
 	)`
 
-const watCallCapV2NoVersion = `
+// watCallCapV2Test is a WAT module with a 4-param call_capability import and
+// an exported call_cap wrapper that forwards all 4 params. Used for host
+// function behavior tests — the WAT controls whether V1 or V2 is created
+// via the import signature, and createCallCapFn dispatches accordingly.
+const watCallCapV2Test = `
 	(module
 	  (import "env" "call_capability" (func $call_capability (param i32 i32 i32 i32) (result i64)))
 	  (memory (export "memory") 1)
@@ -62,7 +66,9 @@ const watCallCapV2NoVersion = `
 	    call $call_capability)
 	)`
 
-const watCallCapV1NoVersion = `
+// watCallCapV1Test is a WAT module with a 2-param call_capability import and
+// an exported call_cap wrapper that forwards both params.
+const watCallCapV1Test = `
 	(module
 	  (import "env" "call_capability" (func $call_capability (param i32 i32) (result i64)))
 	  (memory (export "memory") 1)
@@ -89,7 +95,13 @@ func memRead(t *testing.T, mem *wasmtime.Memory, store *wasmtime.Store, offset, 
 	return out
 }
 
-func instantiateCallCapModule(t *testing.T, wat string, hostFn interface{}) (*wasmtime.Store, *wasmtime.Instance, *wasmtime.Memory) {
+// instantiateCallCapModule compiles a WAT module, uses createCallCapFn to
+// select the V1 or V2 host function based on the module's call_capability
+// import param count, and instantiates the module with that function linked.
+// The WAT module's import signature controls which function is created.
+// The provided logger is passed to createCallCapFn so test observers can
+// capture log output.
+func instantiateCallCapModule(t *testing.T, wat string, exec *execution[*sdkpb.ExecutionResult], lggr logger.Logger) (*wasmtime.Store, *wasmtime.Instance, *wasmtime.Memory) {
 	t.Helper()
 	wasmBytes, err := wasmtime.Wat2Wasm(wat)
 	require.NoError(t, err)
@@ -97,6 +109,20 @@ func instantiateCallCapModule(t *testing.T, wat string, hostFn interface{}) (*wa
 	engine := wasmtime.NewEngine()
 	mod, err := wasmtime.NewModule(engine, wasmBytes)
 	require.NoError(t, err)
+
+	// Detect the call_capability param count from the module's imports,
+	// matching what NewModule does in production.
+	callCapParams := 0
+	for _, modImport := range mod.Imports() {
+		name := modImport.Name()
+		if modImport.Module() == "env" && name != nil && *name == "call_capability" {
+			if ft := modImport.Type().FuncType(); ft != nil {
+				callCapParams = len(ft.Params())
+			}
+		}
+	}
+
+	hostFn := createCallCapFn(lggr, exec, callCapParams)
 
 	store := wasmtime.NewStore(engine)
 	linker := wasmtime.NewLinker(engine)
@@ -156,9 +182,9 @@ func TestNewModule_DetectsCallCapabilityParamCount_NoImport(t *testing.T) {
 		"module without call_capability import should have 0 params")
 }
 
-// --- V2 host function tests ---
+// --- Host function tests (V2: 4-param import → response buffer) ---
 
-func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T) {
+func TestCallCapability_V2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 
 	// Create a limiter with capacity 0 so callCapAsync always fails.
@@ -178,9 +204,9 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 		executor:            mockExecHelper,
 	}
 
-	fn := createCallCapFnV2(lggr, exec)
-
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV2NoVersion, fn)
+	// instantiateCallCapModule uses createCallCapFn internally, dispatching
+	// to V2 because watCallCapV2Test declares a 4-param import.
+	store, inst, mem := instantiateCallCapModule(t, watCallCapV2Test, exec, lggr)
 
 	// Marshal a valid CapabilityRequest so wasmRead and proto.Unmarshal succeed,
 	// forcing the failure to come from callCapAsync.
@@ -229,8 +255,7 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
-func TestCreateCallCapFnV2_SuccessReturnsZero(t *testing.T) {
-	lggr := logger.Test(t)
+func TestCallCapability_V2_SuccessReturnsZero(t *testing.T) {
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
 	// test only checks the synchronous return value, not the async result.
@@ -246,9 +271,7 @@ func TestCreateCallCapFnV2_SuccessReturnsZero(t *testing.T) {
 		executor:            mockExecHelper,
 	}
 
-	fn := createCallCapFnV2(lggr, exec)
-
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV2NoVersion, fn)
+	store, inst, mem := instantiateCallCapModule(t, watCallCapV2Test, exec, logger.Test(t))
 
 	req := &sdkpb.CapabilityRequest{
 		Id:         "test-cap@1.0.0",
@@ -279,7 +302,7 @@ func TestCreateCallCapFnV2_SuccessReturnsZero(t *testing.T) {
 		"V2 should not write to response buffer on success")
 }
 
-func TestCreateCallCapFnV2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.T) {
+func TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
@@ -291,9 +314,7 @@ func TestCreateCallCapFnV2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 		executor:            mockExecHelper,
 	}
 
-	fn := createCallCapFnV2(lggr, exec)
-
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV2NoVersion, fn)
+	store, inst, mem := instantiateCallCapModule(t, watCallCapV2Test, exec, lggr)
 
 	// Write invalid proto data to the request buffer.
 	invalidProto := []byte("this is not a valid protobuf message")
@@ -333,15 +354,15 @@ func TestCreateCallCapFnV2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
-// --- V1 host function tests (verify backward-compatible behavior) ---
+// --- Host function tests (V1: 2-param import → request buffer) ---
 
-// TestCreateCallCapFnV1_CallCapAsyncErrorWritesToRequestBuffer verifies that
+// TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer verifies that
 // V1 (legacy 2-param) writes errors to the request buffer — the same buffer
 // is used for both request and response. This matches the existing behavior
 // for wasmRead and proto.Unmarshal errors, and now also applies to callCapAsync
 // errors (previously bare -1). The error detail is present but in the wrong
 // buffer; V2 fixes this by using a dedicated response buffer.
-func TestCreateCallCapFnV1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) {
+func TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) {
 	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 
 	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
@@ -360,9 +381,9 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) 
 		executor:            mockExecHelper,
 	}
 
-	fn := createCallCapFnV1(lggr, exec)
-
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV1NoVersion, fn)
+	// instantiateCallCapModule uses createCallCapFn internally, dispatching
+	// to V1 because watCallCapV1Test declares a 2-param import.
+	store, inst, mem := instantiateCallCapModule(t, watCallCapV1Test, exec, lggr)
 
 	req := &sdkpb.CapabilityRequest{
 		Id:         "test-cap@1.0.0",
@@ -398,8 +419,7 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) 
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
-func TestCreateCallCapFnV1_SuccessReturnsZero(t *testing.T) {
-	lggr := logger.Test(t)
+func TestCallCapability_V1_SuccessReturnsZero(t *testing.T) {
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
 	// test only checks the synchronous return value, not the async result.
@@ -415,9 +435,7 @@ func TestCreateCallCapFnV1_SuccessReturnsZero(t *testing.T) {
 		executor:            mockExecHelper,
 	}
 
-	fn := createCallCapFnV1(lggr, exec)
-
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV1NoVersion, fn)
+	store, inst, mem := instantiateCallCapModule(t, watCallCapV1Test, exec, logger.Test(t))
 
 	req := &sdkpb.CapabilityRequest{
 		Id:         "test-cap@1.0.0",

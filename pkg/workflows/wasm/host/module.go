@@ -476,7 +476,7 @@ func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execut
 	if err = linker.FuncWrap(
 		"env",
 		"call_capability",
-		createCallCapFnForModule(logger, exec, m),
+		m.callCapFn(logger, exec),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping callcap func: %w", err)
 	}
@@ -1362,10 +1362,10 @@ func createCallCapFnV2(
 	}
 }
 
-// createCallCapFnForModule selects the appropriate call_capability host function
-// based on the param count the guest module's import declares. 4 params = V2
-// (with response buffer), anything else = V1 (legacy, backward compatible).
-func createCallCapFnForModule(logger logger.Logger, exec *execution[*sdkpb.ExecutionResult], m *module) interface{} {
+// callCapFn selects the appropriate call_capability host function based on
+// the param count the guest module's import declares. 4 params = V2 (with
+// response buffer), anything else = V1 (legacy, backward compatible).
+func (m *module) callCapFn(logger logger.Logger, exec *execution[*sdkpb.ExecutionResult]) any {
 	if m.callCapParams == callCapabilityV2ParamCount {
 		return createCallCapFnV2(logger, exec)
 	}

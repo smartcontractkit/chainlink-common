@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786374134448,
+  "lastUpdate": 1786382777372,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -57660,6 +57660,66 @@ window.BENCHMARK_DATA = {
             "value": 124920,
             "unit": "ns/op",
             "extra": "9217 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6fa01d7aaf11b9dd6b5f154cb80dead5bf2709b2",
+          "message": "feat(cre): adds response buffer call cap V2 (#2317)\n\n* test: add unit tests for V2 call_capability response buffer and signature-based dynamic linking (CRE-5897)\n\nAdd TDD tests that validate:\n- Signature detection: NewModule detects 2-param vs 4-param call_capability imports\n- V2 host function: writes errors to response buffer (not request buffer)\n- V2 host function: returns negative with error detail on callCapAsync failure\n- V2 host function: returns 0 on success without touching response buffer\n- V1 host function: preserves existing behavior (bare -1 on callCapAsync error)\n- Dynamic linking: linkNoDAG registers V2 for 4-param imports, V1 for 2-param\n\nTests currently fail (red) because createCallCapFnV2, createCallCapFnV1,\nand callCapParams field do not exist yet.\n\n* feat: detect call_capability import param count in NewModule (CRE-5897)\n\nAdd callCapParams field to the module struct. During NewModule, scan\nthe WASM module's imports for call_capability and record its parameter\ncount via wasmtime's FuncType.Params(). This enables signature-based\ndynamic linking: 2 params = legacy V1, 4 params = V2 with response\nbuffer, 0 = not imported (legacy DAG).\n\n* feat: implement createCallCapFnV2 with response buffer, rename existing to V1, add dynamic linking (CRE-5897)\n\n- createCallCapFnV2: 4-param host function that writes errors to the\n  response buffer instead of the request buffer. callCapAsync errors\n  now return detailed error messages (not bare -1).\n- createCallCapFnV1: renamed from createCallCapFn, preserves existing\n  2-param behavior for backward compatibility.\n- createCallCapFnForModule: branches based on callCapParams (4=V2, else V1).\n- linkNoDAG uses createCallCapFnForModule for dynamic linking.\n- Remove TODO (CAPPL-846) comment.\n- Fix tests: use short-timeout context for zero-capacity limiter tests,\n  use .Maybe() for async CallCapability expectations, remove unnecessary\n  GetWorkflowExecutionID expectations from link tests.\n\nAll 10 unit tests pass.\n\n* refactor: make callCapFn a method on *module and return any (CRE-5897)\n\n- Convert createCallCapFnForModule from a free function to a method on\n  *module, since it only accesses m.callCapParams.\n- Change return type from interface{} to any (Go 1.26).\n\n* refactor: replace timer-based contexts with immediate cancel in callCapAsync error tests (CRE-5897)\n\nUse context.WithCancel + immediate cancel() instead of\ncontext.WithTimeout to trigger the zero-capacity limiter failure.\nThis is deterministic and instant — no timer dependency.\n\n* test: assert exact error chain in callCapAsync error tests (CRE-5897)\n\nReplace vague 'callCapAsync' contains check with precise assertions for\nthe full error chain: 'error calling callCapAsync' wraps 'context\ncanceled' wraps 'resource limited: cannot use 1, already using 0/0'.\nAdd comment on V1 test explaining that bare -1 means no error detail\nis surfaced to the guest.\n\n* fix: move callCapabilityV2ParamCount to module.go (CRE-5897)\n\nThe constant was defined in the test file, making it unavailable in\nnon-test builds. Move it to module.go next to v2ImportPrefix.\ncallCapabilityV1ParamCount stays in the test file since it's only\nused in tests.\n\n* refactor: remove unnecessary context.TODO from test file (CRE-5897)\n\n* refactor: collapse V1/V2 into shared callCapability helper (CRE-5897)\n\nExtract shared callCapability function that both V1 and V2 call. V1\npasses the request buffer as the response buffer (same ptr/len for\nboth), V2 passes a dedicated response buffer. This also improves V1:\ncallCapAsync errors now write to the request buffer instead of\nreturning bare -1, matching the existing wasmRead/proto.Unmarshal\nerror behavior in V1.\n\nUpdate V1 test to verify error is written to request buffer (truncated\nto fit) rather than asserting bare -1.\n\n* refactor: make createCallCapFn a free function matching other create*Fn patterns (CRE-5897)\n\n* refactor: tests use createCallCapFn dispatch with WAT-controlled import signature (CRE-5897)\n\nHost function tests now call createCallCapFn (the dispatching function)\ninstead of createCallCapFnV1/V2 directly. The WAT module's import\nsignature (2-param vs 4-param) controls which V1/V2 function is created,\nmatching the production code path in linkNoDAG. instantiateCallCapModule\ndetects the param count from the module imports and passes it to\ncreateCallCapFn, just as NewModule does.\n\nRename tests from TestCreateCallCapFnV1/V2_* to TestCallCapability_V1/V2_*\nto reflect they test the dispatch path, not the individual functions.\n\n* refactor: tests use createCallCapFn dispatch with WAT-controlled import signature (CRE-5897)\n\nHost function tests now call createCallCapFn (the dispatching function)\ninstead of createCallCapFnV1/V2 directly. instantiateCallCapModule uses\nNewModule to detect callCapParams (no duplicated import scanning logic)\nand reads m.callCapParams directly. The WAT module's import signature\n(2-param vs 4-param) controls which V1/V2 function is created, matching\nthe production code path in linkNoDAG.\n\nRename tests from TestCreateCallCapFnV1/V2_* to TestCallCapability_V1/V2_*\nto reflect they test the dispatch path, not the individual functions.\n\n* docs: add docstrings to all 10 tests and clarify epoch comment (CRE-5897)\n\nAdd a one-line docstring to each test describing what it verifies.\nFix the epoch comment in instantiateCallCapModule to explain that\nNewModule enables wasmtime epoch interruption for timeout enforcement\nand we set MaxUint64 to effectively disable it in tests.",
+          "timestamp": "2026-08-10T17:14:59Z",
+          "tree_id": "70b68d2c7b5da69697246a4e6214346b7de88751",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6fa01d7aaf11b9dd6b5f154cb80dead5bf2709b2"
+        },
+        "date": 1786382774053,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.3,
+            "unit": "ns/op",
+            "extra": "3331609 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 77900,
+            "unit": "ns/op",
+            "extra": "15337 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 381.2,
+            "unit": "ns/op",
+            "extra": "3143691 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78207,
+            "unit": "ns/op",
+            "extra": "15362 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29179,
+            "unit": "ns/op",
+            "extra": "41097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 127442,
+            "unit": "ns/op",
+            "extra": "9129 times\n4 procs"
           }
         ]
       }

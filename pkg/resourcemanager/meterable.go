@@ -13,14 +13,6 @@ import (
 // active resources, in addition to emitting request-time deltas inline via
 // EmitDelta / EmitUsage.
 type Meterable interface {
-	// ResourceIdentity returns the producer's base identity: the coarse
-	// dimensions (product, tenant, numeric_tenant_id, environment, zone, don, service) plus
-	// the service-level resource_pool / resource_pool_id. Per-resource billing
-	// fields (resource_type/resource_id/org_id/value) are carried by
-	// Utilizations on MeterRecord and MeterSnapshot; event_id is stamped by the
-	// ResourceManager at emit time.
-	ResourceIdentity() ResourceIdentity
-
 	// GetUtilization returns the current level of the producer's currently
 	// active resources, one SnapshotEntry per resource. The manager emits one
 	// MeterSnapshot per entry.

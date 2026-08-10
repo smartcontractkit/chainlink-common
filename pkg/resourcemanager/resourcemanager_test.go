@@ -63,8 +63,6 @@ type fakeMeterable struct {
 	entries []SnapshotEntry
 }
 
-func (f *fakeMeterable) ResourceIdentity() ResourceIdentity { return f.identity }
-
 func (f *fakeMeterable) GetUtilization(_ context.Context) []SnapshotEntry {
 	f.mu.Lock()
 	defer f.mu.Unlock()

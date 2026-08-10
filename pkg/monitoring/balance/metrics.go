@@ -4,18 +4,52 @@ package balance
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
 
+// nodeBalance state for the NOP-facing Prometheus mirror.
+var (
+	nodeBalanceOnce sync.Once
+	nodeBalanceVec  *prometheus.GaugeVec
+	nodeBalanceErr  error
+)
+
+func nodeBalanceGauge() (*prometheus.GaugeVec, error) {
+	nodeBalanceOnce.Do(func() {
+		g := prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{Name: "node_balance", Help: "Account balances"},
+			[]string{"account", "chainID", "chainFamily"},
+		)
+		err := prometheus.DefaultRegisterer.Register(g)
+		if err == nil {
+			nodeBalanceVec = g
+			return
+		}
+		if already, ok := errors.AsType[prometheus.AlreadyRegisteredError](err); ok {
+			if existing, ok := already.ExistingCollector.(*prometheus.GaugeVec); ok {
+				nodeBalanceVec = existing
+				return
+			}
+		}
+		nodeBalanceErr = fmt.Errorf("failed to register node_balance gauge: %w", err)
+	})
+	return nodeBalanceVec, nodeBalanceErr
+}
+
 // GaugeAccBalance defines a new gauge metric for account balance
 type GaugeAccBalance struct {
 	// account_balance
 	gauge metric.Float64Gauge
+	// node_balance Prometheus mirror for NOPs
+	promMirror *prometheus.GaugeVec
 }
 
 func NewGaugeAccBalance(unitStr string) (*GaugeAccBalance, error) {
@@ -25,14 +59,23 @@ func NewGaugeAccBalance(unitStr string) (*GaugeAccBalance, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new gauge %s: %+w", name, err)
 	}
-	return &GaugeAccBalance{gauge}, nil
+	promMirror, err := nodeBalanceGauge()
+	if err != nil {
+		return nil, err
+	}
+	return &GaugeAccBalance{gauge: gauge, promMirror: promMirror}, nil
 }
 
 func (g *GaugeAccBalance) Record(ctx context.Context, balance float64, account string, chainInfo ChainInfo) {
 	oAttrs := metric.WithAttributeSet(g.GetAttributes(account, chainInfo))
 	g.gauge.Record(ctx, balance, oAttrs)
 
-	// TODO: consider also recording record in Prom for availability to NOPs
+	// Also record in Prom for availability to NOPs: node_balance is the
+	// cross-chain standard gauge exposed on the node's /metrics endpoint
+	// (the Beholder gauge above only reaches the internal telemetry pipeline).
+	g.promMirror.
+		WithLabelValues(account, chainInfo.ChainID, chainInfo.ChainFamilyName).
+		Set(balance)
 }
 
 func (g *GaugeAccBalance) GetAttributes(account string, chainInfo ChainInfo) attribute.Set {

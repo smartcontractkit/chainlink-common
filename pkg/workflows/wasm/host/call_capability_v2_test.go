@@ -478,6 +478,3 @@ func TestLinkNoDAG_RegistersV1For2ParamImport(t *testing.T) {
 	_, err = m.linkV2(t.Context(), m, store, exec)
 	require.NoError(t, err, "V1 module should link successfully with V1 host function")
 }
-
-// Ensure context import is used.
-var _ = context.TODO

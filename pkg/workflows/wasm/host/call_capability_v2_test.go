@@ -3,7 +3,6 @@ package host
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/stretchr/testify/assert"
@@ -170,10 +169,10 @@ func TestCreateCallCapFnV2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
-	// Use a short-timeout context so the zero-capacity limiter returns an
-	// error quickly instead of blocking forever.
-	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
-	defer cancel()
+	// Use an already-cancelled context so the zero-capacity limiter returns
+	// immediately instead of blocking.
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
 
 	exec := &execution[*sdkpb.ExecutionResult]{
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
@@ -337,10 +336,10 @@ func TestCreateCallCapFnV1_CallCapAsyncErrorReturnsBareMinusOne(t *testing.T) {
 	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
-	// Use a short-timeout context so the zero-capacity limiter returns an
-	// error quickly instead of blocking forever.
-	ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
-	defer cancel()
+	// Use an already-cancelled context so the zero-capacity limiter returns
+	// immediately instead of blocking.
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
 
 	exec := &execution[*sdkpb.ExecutionResult]{
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786386343590,
+  "lastUpdate": 1786388664607,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -57780,6 +57780,66 @@ window.BENCHMARK_DATA = {
             "value": 149222,
             "unit": "ns/op",
             "extra": "8384 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "b7884e4c427a68b1e1dff5d9813ca619ae450093",
+          "message": "feat(vault): add BuildWorkflowGetSecretsRequestID (#2320)\n\nAdd the canonical VaultDON GetSecrets request-ID builder to the shared\nvault capability package so both chainlink and chainlink-confidential-\ncompute can depend on a single definition instead of duplicating the\nformat.\n\nThe ID (WorkflowID::<executionID|subscription>::ReferenceID) is the\nidentifier used by the VaultDON OCR pending queue; keeping one source of\ntruth here lets a GetSecrets request be correlated end-to-end across the\nworkflow engine, the conf-compute executor, and VaultDON.\n\nLogic and tests are moved verbatim from chainlink's\ncore/capabilities/vault/vaultutils.BuildWorkflowGetSecretsRequestID;\nfollow-up PRs will point both repos at this function.\n\nCo-authored-by: Claude Opus 4.8 <noreply@anthropic.com>",
+          "timestamp": "2026-08-10T18:52:32Z",
+          "tree_id": "fcf87993b389b2275de6817bab13b85ee016eaf7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b7884e4c427a68b1e1dff5d9813ca619ae450093"
+        },
+        "date": 1786388661923,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 348.8,
+            "unit": "ns/op",
+            "extra": "3434254 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 80572,
+            "unit": "ns/op",
+            "extra": "14763 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 377.8,
+            "unit": "ns/op",
+            "extra": "3171570 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 81171,
+            "unit": "ns/op",
+            "extra": "14792 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29194,
+            "unit": "ns/op",
+            "extra": "41176 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 129527,
+            "unit": "ns/op",
+            "extra": "9207 times\n4 procs"
           }
         ]
       }

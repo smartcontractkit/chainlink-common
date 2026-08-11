@@ -154,16 +154,22 @@ func exampleDoc(target any, namespace string, opts Options) (string, error) {
 
 	err := walkStruct(target, opts, structVisitor{
 		branch: func(m fieldMeta) (bool, error) {
-			if omitFromExample(m.field) || chosen.excluded(m) {
+			if omitFromExample(m.field) || chosen.excluded(m, opts) {
 				return true, nil
 			}
 			chosen.keep(m)
 
+			// A squashed struct contributes no key of its own, so it gets no table: its fields
+			// belong to the enclosing one. Checked before the namespace is prefixed, or a
+			// squashed struct under a namespace would open an empty "[namespace.]" table.
 			section := m.key()
+			if section == "" {
+				return false, nil
+			}
 			if namespace != "" {
 				section = namespace + "." + section
 			}
-			if section == "" || section == currentSection {
+			if section == currentSection {
 				return false, nil
 			}
 			currentSection = section
@@ -171,7 +177,7 @@ func exampleDoc(target any, namespace string, opts Options) (string, error) {
 			return false, nil
 		},
 		leaf: func(m fieldMeta) error {
-			if omitFromExample(m.field) || chosen.excluded(m) {
+			if omitFromExample(m.field) || chosen.excluded(m, opts) {
 				return nil
 			}
 			chosen.keep(m)
@@ -229,14 +235,19 @@ func structToDocs(target any, namespace string, opts Options) (string, error) {
 
 	err := walkStruct(target, opts, structVisitor{
 		branch: func(m fieldMeta) (bool, error) {
+			// A squashed struct contributes no section of its own, so its description would
+			// have nowhere to go here; it is folded into the enclosing table's header instead
+			// (see squashedUsages), alongside that table's own description. Checked before the
+			// namespace is prefixed, or a squashed struct under a namespace would open an empty
+			// "[namespace.]" table.
 			section := m.key()
+			if section == "" {
+				return false, nil
+			}
 			if namespace != "" {
 				section = namespace + "." + section
 			}
-			// A squashed struct contributes no section of its own, so its description would
-			// have nowhere to go here; it is folded into the enclosing table's header instead
-			// (see squashedUsages), alongside that table's own description.
-			if section == "" || section == currentSection {
+			if section == currentSection {
 				return false, nil
 			}
 			currentSection = section
@@ -324,25 +335,23 @@ func squashedUsages(t reflect.Type, opts Options) []string {
 // shows. An example config has to be one that actually works, and "exactly one of these"
 // cannot be illustrated by listing all of them - so the first one declared wins and the rest
 // are left out. The docs still describe every option; only the example has to choose.
-type exclusiveChoice map[reflect.Type]map[string]bool
+//
+// Fields are recorded by their full config key rather than by the Go struct and field name
+// declaring them, so the rules resolve the same way validator does at runtime: a squashed
+// struct's fields are promoted into its parent's table, and a rule's parameter may be a dotted
+// path reaching down into a nested struct's own table.
+type exclusiveChoice map[string]bool
 
 func newExclusiveChoice() exclusiveChoice { return exclusiveChoice{} }
 
 // keep records that the example shows this field.
 func (c exclusiveChoice) keep(m fieldMeta) {
-	if m.parent == nil {
-		return
-	}
-	if c[m.parent] == nil {
-		c[m.parent] = map[string]bool{}
-	}
-	c[m.parent][m.field.Name] = true
+	c[strings.Join(m.keyPath, ".")] = true
 }
 
 // excluded reports whether a field the example already shows rules this one out.
-func (c exclusiveChoice) excluded(m fieldMeta) bool {
-	shown := c[m.parent]
-	if len(shown) == 0 {
+func (c exclusiveChoice) excluded(m fieldMeta, opts Options) bool {
+	if len(c) == 0 {
 		return false
 	}
 	for _, rule := range strings.Split(m.field.Tag.Get("validate"), ",") {
@@ -350,13 +359,35 @@ func (c exclusiveChoice) excluded(m fieldMeta) bool {
 		if !hasArgs || !strings.HasPrefix(name, "excluded_with") {
 			continue
 		}
-		for _, sibling := range strings.Fields(args) {
-			if shown[sibling] {
+		for _, goPath := range strings.Fields(args) {
+			if key, ok := ruleTargetKey(m, goPath, opts); ok && c[key] {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+// ruleTargetKey resolves a cross-field rule's parameter to the full config key of the field it
+// names, in the same terms keep records: validator resolves the parameter from the struct
+// declaring the rule, so the key is that struct's own key path followed by the resolved path.
+func ruleTargetKey(m fieldMeta, goPath string, opts Options) (string, bool) {
+	keys, ok := siblingKeyPath(m.parent, goPath, opts)
+	if !ok {
+		return "", false
+	}
+
+	// The declaring struct's key path is m's without its own segment - unless m is itself
+	// squashed and so contributed none.
+	prefix := m.keyPath
+	if _, squash := opts.tagKey(m.field); !squash && len(prefix) > 0 {
+		prefix = prefix[:len(prefix)-1]
+	}
+
+	full := make([]string, 0, len(prefix)+len(keys))
+	full = append(full, prefix...)
+	full = append(full, keys...)
+	return strings.Join(full, "."), true
 }
 
 // writeComments emits each line as a comment in f's syntax.
@@ -484,16 +515,43 @@ func constraintNote(m fieldMeta, opts Options) string {
 	return " (" + strings.Join(notes, "; ") + ")"
 }
 
-// siblingKey maps a Go field name within parent to its config key, falling back to the Go name
-// if there's no such field.
-func siblingKey(parent reflect.Type, goName string, opts Options) string {
-	if parent == nil {
-		return goName
+// siblingKey maps a Go field path within parent to its dotted config key, falling back to the Go
+// path if it doesn't resolve.
+func siblingKey(parent reflect.Type, goPath string, opts Options) string {
+	if keys, ok := siblingKeyPath(parent, goPath, opts); ok {
+		return strings.Join(keys, ".")
 	}
-	if f, ok := parent.FieldByName(goName); ok {
-		key, _ := opts.tagKey(f)
-		return key
+	return goPath
+}
+
+// siblingKeyPath resolves a cross-field rule's parameter - a Go field name, or a dotted path into
+// a nested struct ("Mid.Deep.Bar"), the way go-playground/validator resolves it from the struct
+// carrying the rule - into the config keys of the fields along it. A squashed struct contributes
+// no key of its own, matching how its fields are bound.
+func siblingKeyPath(parent reflect.Type, goPath string, opts Options) ([]string, bool) {
+	current := parent
+	var keys []string
+	for _, name := range strings.Split(goPath, ".") {
+		if current == nil || current.Kind() != reflect.Struct {
+			return nil, false
+		}
+		field, ok := current.FieldByName(name)
+		if !ok {
+			return nil, false
+		}
+
+		if key, squash := opts.tagKey(field); !squash {
+			keys = append(keys, key)
+		}
+
+		current = field.Type
+		for current.Kind() == reflect.Pointer {
+			current = current.Elem()
+		}
 	}
-	return goName
+	if len(keys) == 0 {
+		return nil, false
+	}
+	return keys, true
 }
 

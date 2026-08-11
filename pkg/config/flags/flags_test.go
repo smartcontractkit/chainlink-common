@@ -76,6 +76,55 @@ func TestRequiredLeaf(t *testing.T) {
 	})
 }
 
+func TestUntaggedFieldUsesItsGoNameInKebabCase(t *testing.T) {
+	type inner struct {
+		PollInterval config.Duration
+	}
+	type cfg struct {
+		URL              string
+		ChainID          uint32
+		UseRealDBForFake bool
+		Chain            inner
+	}
+
+	// No tags at all: the key, the flag and the env var all come from the field name, so a struct
+	// only carries a tag where its key differs from it.
+	var c cfg
+	require.NoError(t, run(t, &c,
+		"--url", "postgres://x",
+		"--chain-id", "137",
+		"--use-real-db-for-fake",
+		"--chain.poll-interval", "7s",
+	))
+	assert.Equal(t, "postgres://x", c.URL)
+	assert.Equal(t, uint32(137), c.ChainID)
+	assert.True(t, c.UseRealDBForFake)
+	assert.Equal(t, 7*time.Second, c.Chain.PollInterval.Duration())
+}
+
+func TestUntaggedFieldReadsItsEnvVar(t *testing.T) {
+	type cfg struct {
+		FinalityTagEnabled bool
+	}
+
+	t.Setenv("TEST_FINALITY_TAG_ENABLED", "true")
+
+	var c cfg
+	require.NoError(t, run(t, &c))
+	assert.True(t, c.FinalityTagEnabled)
+}
+
+func TestTagWinsOverTheGoName(t *testing.T) {
+	type cfg struct {
+		// The plural field is bound to a singular key, which the field name cannot produce.
+		HTTPURLs []string `toml:"http-url"`
+	}
+
+	var c cfg
+	require.NoError(t, run(t, &c, "--http-url", "https://one"))
+	assert.Equal(t, []string{"https://one"}, c.HTTPURLs)
+}
+
 func TestNestedStructDecodes(t *testing.T) {
 	type inner struct {
 		Host string `toml:"host"`
@@ -154,7 +203,7 @@ func TestEmbeddedStructIsNestedWhenDecoderDoesNot(t *testing.T) {
 	var c cfg
 	require.NoError(t, RegisterCommandFlags(root, &c, opts))
 
-	root.SetArgs([]string{"--embeddedinner.host", "example.com"})
+	root.SetArgs([]string{"--embedded-inner.host", "example.com"})
 	require.NoError(t, root.Execute())
 	assert.Equal(t, "example.com", c.Host)
 }
@@ -198,6 +247,100 @@ func TestUnnamedEmbeddedStructMayCarryTagOptions(t *testing.T) {
 	var c cfg
 	require.NoError(t, run(t, &c, "--host", "example.com"))
 	assert.Equal(t, "example.com", c.Host)
+}
+
+// EmbeddedShared stands in for a config struct owned elsewhere (the package that consumes it),
+// which a binary embeds by pointer to add its own settings alongside without copying it.
+type EmbeddedShared struct {
+	Host string `toml:"host" usage:"remote host"`
+}
+
+func TestEmbeddedPointerStructIsSquashed(t *testing.T) {
+	type cfg struct {
+		*EmbeddedShared `toml:",inline"`
+
+		Mine string `toml:"mine" usage:"this binary's own setting"`
+	}
+
+	// Non-nil, the way a caller supplies the instance the shared defaults were set on.
+	c := cfg{EmbeddedShared: &EmbeddedShared{}}
+	require.NoError(t, run(t, &c, "--host", "example.com", "--mine", "x"))
+	assert.Equal(t, "example.com", c.Host, "the embedded fields flatten into the parent")
+	assert.Equal(t, "x", c.Mine)
+}
+
+func TestEmbeddedPointerStructIsSquashedUnderNamespace(t *testing.T) {
+	type cfg struct {
+		*EmbeddedShared `toml:",inline"`
+
+		Mine string `toml:"mine" usage:"this binary's own setting"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+	opts.Namespace = "remote"
+
+	root := newRoot(t)
+	c := cfg{EmbeddedShared: &EmbeddedShared{}}
+	require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+	root.SetArgs([]string{"--remote.host", "example.com"})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "example.com", c.Host)
+
+	// One table, not an empty "[remote]" plus a "[remote.]" holding the embedded fields.
+	toml, err := structToDocs(&c, opts.Namespace, opts)
+	require.NoError(t, err)
+	assert.Contains(t, toml, "[remote]")
+	assert.NotContains(t, toml, "[remote.]")
+	assert.Contains(t, toml, "host = ")
+	assert.Contains(t, toml, "mine = ")
+}
+
+// A cross-field rule can only name fields of its own struct, so with settings split across an
+// embedded struct the rule has to sit on the outer field - naming a promoted sibling.
+func TestExcludedWithNamesPromotedSibling(t *testing.T) {
+	type cfg struct {
+		*EmbeddedShared `toml:",inline"`
+
+		Proxy string `toml:"proxy" usage:"use a proxy instead of a host" validate:"required_without=Host,excluded_with=Host"`
+	}
+
+	t.Run("neither set", func(t *testing.T) {
+		c := cfg{EmbeddedShared: &EmbeddedShared{}}
+		require.ErrorContains(t, run(t, &c), "'required_without'")
+	})
+
+	t.Run("both set", func(t *testing.T) {
+		c := cfg{EmbeddedShared: &EmbeddedShared{}}
+		require.ErrorContains(t, run(t, &c, "--host", "example.com", "--proxy", "localhost:1"), "'excluded_with'")
+	})
+
+	t.Run("only the promoted one set", func(t *testing.T) {
+		c := cfg{EmbeddedShared: &EmbeddedShared{}}
+		require.NoError(t, run(t, &c, "--host", "example.com"))
+	})
+
+	t.Run("only the outer one set", func(t *testing.T) {
+		c := cfg{EmbeddedShared: &EmbeddedShared{}}
+		require.NoError(t, run(t, &c, "--proxy", "localhost:1"))
+	})
+
+	t.Run("docs name it by its config key", func(t *testing.T) {
+		c := cfg{EmbeddedShared: &EmbeddedShared{}}
+		toml, err := structToDocs(&c, "", DefaultTOMLOptions("TEST"))
+		require.NoError(t, err)
+		assert.Contains(t, toml, "must not be set when host is set")
+	})
+
+	t.Run("example config picks one", func(t *testing.T) {
+		c := cfg{EmbeddedShared: &EmbeddedShared{}}
+		example, err := exampleDoc(&c, "", DefaultTOMLOptions("TEST"))
+		require.NoError(t, err)
+		// The promoted field is declared first and wins, even though the rule ruling the other
+		// one out lives in a different struct.
+		assert.Contains(t, example, "host = ")
+		assert.NotContains(t, example, "proxy = ")
+	})
 }
 
 func TestTagNameIsConfigurable(t *testing.T) {
@@ -590,6 +733,116 @@ func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "'URL'")
 	assert.Contains(t, err.Error(), "'ChainID'", "one target's failure must not hide the other's")
+}
+
+// --- cross-field rules naming a nested field ---
+
+// validator resolves a rule's parameter from the struct carrying the rule, so a parameter may
+// reach *down* into a nested struct ("Mid.Deep.Bar") but never up out of its own struct. These
+// cover the reaching-down form end to end: flag, env, docs and example config.
+
+type deepCfg struct {
+	Bar string `usage:"the deep setting"`
+}
+
+type midCfg struct {
+	Deep deepCfg
+}
+
+type nestedRuleCfg struct {
+	Mid midCfg
+	Val string `usage:"needed alongside the deep setting" validate:"required_with=Mid.Deep.Bar"`
+}
+
+func TestNestedFieldRuleFiresFromFlag(t *testing.T) {
+	var c nestedRuleCfg
+	require.ErrorContains(t, run(t, &c, "--mid.deep.bar", "x"), "'required_with'")
+}
+
+func TestNestedFieldRuleFiresFromEnv(t *testing.T) {
+	t.Setenv("TEST_MID_DEEP_BAR", "x")
+
+	var c nestedRuleCfg
+	require.ErrorContains(t, run(t, &c), "'required_with'")
+}
+
+func TestNestedFieldRuleSatisfied(t *testing.T) {
+	var c nestedRuleCfg
+	require.NoError(t, run(t, &c, "--mid.deep.bar", "x", "--val", "y"))
+	assert.Equal(t, "x", c.Mid.Deep.Bar)
+	assert.Equal(t, "y", c.Val)
+
+	// Trigger absent, so the rule doesn't fire.
+	var d nestedRuleCfg
+	require.NoError(t, run(t, &d))
+}
+
+func TestNestedFieldRuleUnderNamespace(t *testing.T) {
+	opts := DefaultTOMLOptions("TEST")
+	opts.Namespace = "app"
+
+	root := newRoot(t)
+	var c nestedRuleCfg
+	require.NoError(t, RegisterCommandFlags(root, &c, opts))
+
+	root.SetArgs([]string{"--app.mid.deep.bar", "x"})
+	require.ErrorContains(t, root.Execute(), "'required_with'")
+}
+
+// The section form: the rule sits on the outer pointer field, since a rule inside Foo could not
+// name Baz. Whether Foo's own fields are then required is Foo's business.
+type sectionRuleCfg struct {
+	Baz deepCfg
+	Foo *struct {
+		Name string `usage:"foo's name" validate:"required"`
+	} `usage:"the foo section" validate:"required_with=Baz.Bar"`
+}
+
+func TestNestedFieldRuleOnPointerSection(t *testing.T) {
+	t.Run("section missing", func(t *testing.T) {
+		var c sectionRuleCfg
+		require.ErrorContains(t, run(t, &c, "--baz.bar", "x"), "'required_with'")
+	})
+
+	t.Run("section present but incomplete", func(t *testing.T) {
+		var c sectionRuleCfg
+		// Naming any of the section's keys allocates it, and then its own `required` applies.
+		require.ErrorContains(t, run(t, &c, "--baz.bar", "x", "--foo.name", ""), "'required'")
+	})
+
+	t.Run("section complete", func(t *testing.T) {
+		var c sectionRuleCfg
+		require.NoError(t, run(t, &c, "--baz.bar", "x", "--foo.name", "n"))
+		require.NotNil(t, c.Foo)
+		assert.Equal(t, "n", c.Foo.Name)
+	})
+}
+
+func TestNestedFieldRuleIsDocumentedByItsKey(t *testing.T) {
+	toml, err := structToDocs(&nestedRuleCfg{}, "", DefaultTOMLOptions("TEST"))
+	require.NoError(t, err)
+	// The dotted path is reported as the config key it resolves to, not as Go field names.
+	assert.Contains(t, toml, "required when mid.deep.bar is set")
+	assert.NotContains(t, toml, "Mid.Deep.Bar")
+}
+
+func TestNestedFieldExclusiveRuleIsResolvedInTheExample(t *testing.T) {
+	type cfg struct {
+		Mid midCfg
+		Val string `usage:"the alternative to the deep setting" validate:"excluded_with=Mid.Deep.Bar"`
+	}
+
+	opts := DefaultTOMLOptions("TEST")
+
+	example, err := exampleDoc(&cfg{Mid: midCfg{Deep: deepCfg{Bar: "shown"}}}, "", opts)
+	require.NoError(t, err)
+	assert.Contains(t, example, "bar = ")
+	assert.NotContains(t, example, "val = ", "the example must show one of the two, not both")
+
+	// Still documented, with the rule spelled out.
+	toml, err := structToDocs(&cfg{}, "", opts)
+	require.NoError(t, err)
+	assert.Contains(t, toml, "must not be set when mid.deep.bar is set")
 }
 
 // --- profiles ---

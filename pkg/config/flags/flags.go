@@ -150,11 +150,18 @@ func RegisterCommandFlags(cmd *cobra.Command, target any, opts Options) error {
 // env prefixes when opts sets none. It also wires an automatic decode step for target, running
 // before cmd's own PreRunE (if any). See RegisterCommandFlags for the multiple-targets-per-command
 // note.
+//
+// namespace roots the keys and env vars, as it does on a root command, but by default not the flag
+// names: a subcommand's settings are usually namespaced by the subcommand itself, so "sub" gives
+// the key sub.retries and the flag --retries, typed as `sub --retries`. Set opts.Namespace as well
+// to prefix the flags too, for a config namespaced by whatever owns it rather than by the command
+// it happens to hang off - two dependencies registered on one subcommand need that, or their
+// same-named settings would collide in a flag set that neither of them names.
 func RegisterSubcommandFlags(cmd *cobra.Command, namespace string, target any, opts Options) error {
 	meta := getOrCreateMeta(cmd)
 	// With no prefixes of its own, the entry inherits the root command's at decode time, since
 	// cmd usually hasn't been attached to its parent yet (see effectivePrefixes).
-	entry := &targetEntry{namespace: namespace, prefixes: opts.Prefixes, target: target, opts: opts}
+	entry := &targetEntry{namespace: namespace, flagPrefix: opts.Namespace, prefixes: opts.Prefixes, target: target, opts: opts}
 	meta.entries = append(meta.entries, entry)
 
 	if err := registerStructFlagsInternal(cmd, entry, true); err != nil {

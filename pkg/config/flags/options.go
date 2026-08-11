@@ -125,5 +125,21 @@ func (o Options) format() configdoc.Format {
 func (o Options) decoderConfigFor(target any) *mapstructure.DecoderConfig {
 	dc := o.DecoderConfig
 	dc.Result = target
+	if dc.MatchName == nil {
+		dc.MatchName = matchKeyToFieldName
+	}
 	return &dc
+}
+
+// matchKeyToFieldName matches a config key against a field name (or tag) ignoring case and word
+// separators, so an untagged field is reached by the key it was bound under: tagKey names it
+// "finality-tag-enabled", and mapstructure's own case-insensitive comparison would not see that
+// as FinalityTagEnabled. Only consulted after mapstructure's exact lookup fails, so an explicit
+// tag still matches itself.
+func matchKeyToFieldName(mapKey, fieldName string) bool {
+	return strings.EqualFold(stripSeparators(mapKey), stripSeparators(fieldName))
+}
+
+func stripSeparators(s string) string {
+	return strings.NewReplacer("-", "", "_", "").Replace(s)
 }

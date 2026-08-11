@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 // fieldMeta describes one field discovered while walking a config struct. Shared by the
@@ -42,17 +44,18 @@ var textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem(
 // tagKey returns field's config key and whether it is squashed (contributing its own fields to
 // the parent rather than a nested table), per the configured tag name and squash option - e.g.
 // `toml:"key,inline"` with Options.DecoderConfig.TagName "toml" and SquashTagOption "inline".
-// Falls back to the lowercased Go field name when the field carries no usable tag.
+// Falls back to the Go field name in kebab-case when the field carries no usable tag, so a
+// struct only needs a tag where its key differs from its field name.
 func (o Options) tagKey(field reflect.StructField) (key string, squash bool) {
 	tag := field.Tag.Get(o.tagName())
 	if tag == "" || tag == "-" {
-		tag = strings.ToLower(field.Name)
+		tag = strcase.ToKebab(field.Name)
 	}
 
 	parts := strings.Split(tag, ",")
 	key = parts[0]
 	if key == "" {
-		key = strings.ToLower(field.Name)
+		key = strcase.ToKebab(field.Name)
 	}
 	for _, p := range parts[1:] {
 		if p == o.squashOption() {

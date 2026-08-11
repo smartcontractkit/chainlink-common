@@ -1,0 +1,145 @@
+package flags
+
+import (
+	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/go-viper/mapstructure/v2"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config/configdoc"
+)
+
+// Options configures how a target struct is bound, decoded, and documented. Use
+// DefaultTOMLOptions for the standard `toml`-tagged setup; the zero value works too, falling
+// back to mapstructure's own defaults.
+type Options struct {
+	// Namespace roots every key of the registered struct under it, so a dependency's
+	// settings sit together (e.g. Namespace "database" gives the key database.url, the flag
+	// --database.url and the env var PREFIX_DATABASE_URL). Empty leaves the struct at the top
+	// level. Independent structs sharing one command should each take a namespace, both to
+	// group their settings and to keep same-named fields from colliding.
+	Namespace string
+
+	// Prefixes are the env var prefixes a key is bound under, tried in order - e.g. "CRE"
+	// and "CL" bind chain.id to CRE_CHAIN_ID then CL_CHAIN_ID. Subcommands inherit the root
+	// command's prefixes when they specify none.
+	Prefixes []string
+
+	// DecoderConfig controls how resolved values are decoded into the target. TagName,
+	// SquashTagOption and Squash also determine the config key (and therefore the flag name)
+	// of each field, so the flags, env vars, docs, and decoding all follow from this one
+	// setting and cannot disagree. Result is filled in per target and must be left unset.
+	DecoderConfig mapstructure.DecoderConfig
+
+	// Format is the configuration file syntax the docs are written in: it renders the
+	// comments, tables, fields and value literals that the generated document is assembled
+	// from, and then renders the document itself. Defaults to configdoc.TOML.
+	Format configdoc.Format
+}
+
+// DefaultTOMLOptions meant to be used with github.com/pelletier/go-toml/v2, used by default by viper for toml
+// returns Options for structs tagged `toml:"key"`, with `,inline` marking a
+// squashed (flattened) struct and embedded structs squashed automatically, decoded leniently
+// enough for the string-typed values that env vars and pflag hand back, and documented with
+// configdoc.Generate.
+func DefaultTOMLOptions(prefixes ...string) Options {
+	return Options{
+		Prefixes: prefixes,
+		DecoderConfig: mapstructure.DecoderConfig{
+			TagName:         "toml",
+			SquashTagOption: "inline",
+			// Embedded structs are flattened into the parent rather than becoming a table
+			// named after their type.
+			Squash: true,
+			// Env vars are always strings, and pflag hands back several types (uint64,
+			// duration, ...) as strings too, so the decoder has to coerce rather than
+			// demand exact types. Mirrors viper's own defaultDecoderConfig.
+			WeaklyTypedInput: true,
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToTimeDurationHookFunc(),
+				// An env var arrives as a single string even when the field is a slice, so
+				// split it the way pflag splits a comma-separated StringSlice flag.
+				mapstructure.StringToSliceHookFunc(","),
+				mapstructure.TextUnmarshallerHookFunc(),
+			),
+		},
+		Format: configdoc.TOML{},
+	}
+}
+
+// tagName is the struct tag holding config keys, defaulting to mapstructure's own.
+func (o Options) tagName() string {
+	if o.DecoderConfig.TagName == "" {
+		return "mapstructure"
+	}
+	return o.DecoderConfig.TagName
+}
+
+// squashOption is the tag option marking a squashed struct, defaulting to mapstructure's own.
+func (o Options) squashOption() string {
+	if o.DecoderConfig.SquashTagOption == "" {
+		return "squash"
+	}
+	return o.DecoderConfig.SquashTagOption
+}
+
+// checkEmbeddedIsUnnamed rejects a name on an embedded struct that the decoder will squash.
+//
+// With squashing on, `toml:"foo"` on an embedded struct is dead text: mapstructure flattens the
+// fields into the parent and the name is never used, so the config key, the flag, and the docs
+// all ignore it. Other encoders do not agree - encoding/json would nest the same struct under
+// "foo" - so the one struct would describe two different layouts depending on who read it.
+// Rejecting the name up front keeps the tag honest; drop it to squash, or make the field named
+// (non-embedded) to nest.
+func (o Options) checkEmbeddedIsUnnamed(m fieldMeta) error {
+	if !o.DecoderConfig.Squash || !m.field.Anonymous || m.field.Type.Kind() != reflect.Struct {
+		return nil
+	}
+	if !o.hasExplicitName(m.field) {
+		return nil
+	}
+	return fmt.Errorf("%s: embedded struct %s must not be named by its %q tag while DecoderConfig.Squash is set; it is squashed into the parent, so the name is silently ignored here but would nest the struct under other encoders",
+		m.field.Name, m.elemType.Name(), o.tagName())
+}
+
+// hasExplicitName reports whether field's tag names it, as opposed to carrying only options
+// (`toml:",inline"`) or no tag at all.
+func (o Options) hasExplicitName(field reflect.StructField) bool {
+	tag := field.Tag.Get(o.tagName())
+	if tag == "" || tag == "-" {
+		return false
+	}
+	return strings.Split(tag, ",")[0] != ""
+}
+
+// format is Format, or configdoc.TOML if unset.
+func (o Options) format() configdoc.Format {
+	if o.Format == nil {
+		return configdoc.TOML{}
+	}
+	return o.Format
+}
+
+// decoderConfigFor returns a copy of o.DecoderConfig aimed at target.
+func (o Options) decoderConfigFor(target any) *mapstructure.DecoderConfig {
+	dc := o.DecoderConfig
+	dc.Result = target
+	if dc.MatchName == nil {
+		dc.MatchName = matchKeyToFieldName
+	}
+	return &dc
+}
+
+// matchKeyToFieldName matches a config key against a field name (or tag) ignoring case and word
+// separators, so an untagged field is reached by the key it was bound under: tagKey names it
+// "finality-tag-enabled", and mapstructure's own case-insensitive comparison would not see that
+// as FinalityTagEnabled. Only consulted after mapstructure's exact lookup fails, so an explicit
+// tag still matches itself.
+func matchKeyToFieldName(mapKey, fieldName string) bool {
+	return strings.EqualFold(stripSeparators(mapKey), stripSeparators(fieldName))
+}
+
+func stripSeparators(s string) string {
+	return strings.NewReplacer("-", "", "_", "").Replace(s)
+}

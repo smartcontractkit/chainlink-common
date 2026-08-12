@@ -383,7 +383,9 @@ func hashPackageFiles(repoRoot string, pkg listPackage, digests *[]fileDigest) e
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() {
+		_ = root.Close()
+	}()
 
 	names := make([]string, 0, len(pkg.GoFiles)+len(pkg.EmbedFiles))
 	names = append(names, pkg.GoFiles...)
@@ -491,7 +493,9 @@ func buildBinary(ctx context.Context, pkgDir string, cfg Config) ([]byte, error)
 	if err != nil {
 		return nil, fmt.Errorf("create temp dir: %w", err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	buildCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()

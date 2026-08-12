@@ -86,6 +86,11 @@ func Compile(ctx context.Context, cfg Config) ([]byte, error) {
 		return nil, fmt.Errorf("resolve package dir symlinks: %w", err)
 	}
 
+	// Per-package mutex serializes concurrent Compile calls for the same package directory.
+	// We use sync.Mutex rather than sync.OnceValues because:
+	// 1. sync.OnceValues permanently memoizes errors (transient build failures cannot be retried).
+	// 2. sync.OnceValues prevents cache invalidation if source code edits occur during process lifetime.
+	// 3. Content-addressed disk cache (.wasm-cache/) handles cross-process persistence and fast hit reads without pinning byte slices in heap memory.
 	mu := buildLock(absPkgDir)
 	mu.Lock()
 	defer mu.Unlock()

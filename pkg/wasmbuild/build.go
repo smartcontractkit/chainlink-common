@@ -86,7 +86,7 @@ func Build(ctx context.Context, cfg Config) ([]byte, error) {
 		return nil, fmt.Errorf("resolve package dir symlinks: %w", err)
 	}
 
-	cacheKey := fmt.Sprintf("%s:%t", absPkgDir, cfg.Compress)
+	cacheKey := binaryCacheKey(absPkgDir, cfg)
 	if cached, ok := loadBinaryCache(cacheKey); ok {
 		return cached, nil
 	}
@@ -114,6 +114,10 @@ var (
 	buildLocks       sync.Map
 )
 
+func binaryCacheKey(absPkgDir string, cfg Config) string {
+	return fmt.Sprintf("%s|%s|%s|%s|%t", absPkgDir, cfg.GOOS, cfg.GOARCH, strings.Join(cfg.BuildFlags, "\x00"), cfg.Compress)
+}
+
 func loadBinaryCache(cacheKey string) ([]byte, bool) {
 	v, ok := binaryCache.Load(cacheKey)
 	if !ok {
@@ -138,10 +142,6 @@ func buildLock(key string) *sync.Mutex {
 	mu := &sync.Mutex{}
 	actual, _ := buildLocks.LoadOrStore(key, mu)
 	return actual.(*sync.Mutex)
-}
-
-func clearFingerprintCache() {
-	fingerprintCache.Clear()
 }
 
 func discoverRepoRoot() (string, error) {
@@ -265,8 +265,12 @@ func buildAndCacheBinary(ctx context.Context, absPkgDir, repoRoot, pkgRel, cache
 	return compressed, nil
 }
 
+func fingerprintCacheKey(absPkgDir string, cfg Config) string {
+	return fmt.Sprintf("%s|%s|%s|%s", absPkgDir, cfg.GOOS, cfg.GOARCH, strings.Join(cfg.BuildFlags, "\x00"))
+}
+
 func buildFingerprint(ctx context.Context, absPkgDir, repoRoot string, cfg Config) (string, error) {
-	cacheKey := absPkgDir + cfg.GOOS + cfg.GOARCH
+	cacheKey := fingerprintCacheKey(absPkgDir, cfg)
 	if v, ok := fingerprintCache.Load(cacheKey); ok {
 		return v.(string), nil
 	}
@@ -307,6 +311,13 @@ func computeBuildFingerprint(ctx context.Context, absPkgDir, repoRoot string, cf
 		return "", fmt.Errorf("find module root for %s: %w", absPkgDir, err)
 	}
 
+	goModPath := filepath.Join(moduleRoot, "go.mod")
+	goMod, err := os.ReadFile(goModPath)
+	if err != nil {
+		return "", fmt.Errorf("read go.mod at %s: %w", goModPath, err)
+	}
+	goModDigest := sha256.Sum256(goMod)
+
 	goSumPath := filepath.Join(moduleRoot, "go.sum")
 	goSum, err := os.ReadFile(goSumPath)
 	if err != nil {
@@ -339,7 +350,7 @@ func computeBuildFingerprint(ctx context.Context, absPkgDir, repoRoot string, cf
 	})
 
 	h := sha256.New()
-	if err := writeFingerprint(h, goVersion, cfg.GOOS, cfg.GOARCH, cfg.BuildFlags, goSumDigest, digests); err != nil {
+	if err := writeFingerprint(h, goVersion, cfg.GOOS, cfg.GOARCH, cfg.BuildFlags, goModDigest, goSumDigest, digests); err != nil {
 		return "", err
 	}
 
@@ -391,7 +402,7 @@ func hashPackageFiles(repoRoot string, pkg listPackage, digests *[]fileDigest) e
 	return nil
 }
 
-func writeFingerprint(h io.Writer, goVersion, goos, goarch string, buildFlags []string, goSumDigest [sha256.Size]byte, digests []fileDigest) error {
+func writeFingerprint(h io.Writer, goVersion, goos, goarch string, buildFlags []string, goModDigest, goSumDigest [sha256.Size]byte, digests []fileDigest) error {
 	if _, err := io.WriteString(h, goVersion); err != nil {
 		return fmt.Errorf("hash go version: %w", err)
 	}
@@ -400,6 +411,12 @@ func writeFingerprint(h io.Writer, goVersion, goos, goarch string, buildFlags []
 	}
 	if _, err := io.WriteString(h, strings.Join(buildFlags, " ")); err != nil {
 		return fmt.Errorf("hash build flags: %w", err)
+	}
+	if _, err := io.WriteString(h, "\n"); err != nil {
+		return fmt.Errorf("hash separator: %w", err)
+	}
+	if _, err := h.Write(goModDigest[:]); err != nil {
+		return fmt.Errorf("hash go.mod digest: %w", err)
 	}
 	if _, err := io.WriteString(h, "\n"); err != nil {
 		return fmt.Errorf("hash separator: %w", err)
@@ -431,7 +448,13 @@ func listDeps(ctx context.Context, pkgDir string, cfg Config) ([]listPackage, er
 	listCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	cmd := exec.CommandContext(listCtx, "go", "list", "-deps", "-json", ".") // #nosec
+	args := []string{"list", "-deps", "-json"}
+	if tags := buildTagsFromFlags(cfg.BuildFlags); tags != "" {
+		args = append(args, "-tags", tags)
+	}
+	args = append(args, ".")
+
+	cmd := exec.CommandContext(listCtx, "go", args...) // #nosec
 	cmd.Dir = pkgDir
 	cmd.Env = append(os.Environ(), "GOOS="+cfg.GOOS, "GOARCH="+cfg.GOARCH)
 	var stderr bytes.Buffer
@@ -456,6 +479,18 @@ func listDeps(ctx context.Context, pkgDir string, cfg Config) ([]listPackage, er
 	}
 
 	return pkgs, nil
+}
+
+func buildTagsFromFlags(flags []string) string {
+	for i, f := range flags {
+		if f == "-tags" && i+1 < len(flags) {
+			return flags[i+1]
+		}
+		if strings.HasPrefix(f, "-tags=") {
+			return strings.TrimPrefix(f, "-tags=")
+		}
+	}
+	return ""
 }
 
 func goEnv(ctx context.Context, key string) (string, error) {

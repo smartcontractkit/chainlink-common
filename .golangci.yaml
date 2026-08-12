@@ -1,0 +1,43 @@
+version: "2"
+run:
+  allow-parallel-runners: true
+linters:
+  enable:
+    - containedctx
+    - copyloopvar
+    - depguard
+    - errname
+    - errorlint
+    - exhaustive
+    - fatcontext
+    - gocritic
+    - gosec
+    - loggercheck
+    - mirror
+    - misspell
+    - modernize
+    - noctx
+    - nolintlint
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - revive
+    - rowserrcheck
+    - spancheck
+    - sqlclosecheck
+    - testifylint
+    - unconvert
+    - whitespace
+formatters:
+  enable:
+    - gci
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - default
+        - prefix(github.com/smartcontractkit/)
+        - prefix(github.com/smartcontractkit/chainlink-common/)
+  exclusions:
+    generated: lax

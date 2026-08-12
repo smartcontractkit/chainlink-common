@@ -162,8 +162,6 @@ func TestComputeBuildFingerprintInvalidatesOnSourceEdit(t *testing.T) {
 	base, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
 
-	clearFingerprintCache()
-
 	require.NoError(t, os.WriteFile(goFile, []byte("package main\n\nvar X = 1\n"), 0o600))
 	afterEdit, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
@@ -187,8 +185,6 @@ func TestComputeBuildFingerprintInvalidatesOnGoSumEdit(t *testing.T) {
 	base, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
 
-	clearFingerprintCache()
-
 	require.NoError(t, os.WriteFile(goSumPath, []byte("example.com/dep v1.0.0 h1:def=\n"), 0o600))
 	afterEdit, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
@@ -202,11 +198,11 @@ func TestWriteFingerprintIncludesPlatform(t *testing.T) {
 	goSumDigest := sha256.Sum256([]byte("gosum"))
 
 	h1 := sha256.New()
-	require.NoError(t, writeFingerprint(h1, "go1.26.5", "wasip1", "wasm", defaultBuildFlags, goSumDigest, digests))
+	require.NoError(t, writeFingerprint(h1, "go1.26.5", "wasip1", "wasm", defaultBuildFlags, sha256.Sum256([]byte("gomod")), goSumDigest, digests))
 	fp1 := hex.EncodeToString(h1.Sum(nil)[:16])
 
 	h2 := sha256.New()
-	require.NoError(t, writeFingerprint(h2, "go1.26.5", "linux", "amd64", defaultBuildFlags, goSumDigest, digests))
+	require.NoError(t, writeFingerprint(h2, "go1.26.5", "linux", "amd64", defaultBuildFlags, sha256.Sum256([]byte("gomod")), goSumDigest, digests))
 	fp2 := hex.EncodeToString(h2.Sum(nil)[:16])
 
 	assert.NotEqual(t, fp1, fp2, "different GOOS/GOARCH must produce different fingerprints")
@@ -218,7 +214,7 @@ func fingerprintFiles(t *testing.T, repoRoot string, pkg listPackage) string {
 	require.NoError(t, hashPackageFiles(repoRoot, pkg, &digests))
 	sort.Slice(digests, func(i, j int) bool { return digests[i].path < digests[j].path })
 	h := sha256.New()
-	require.NoError(t, writeFingerprint(h, "go1.26.5", "wasip1", "wasm", defaultBuildFlags, sha256.Sum256([]byte("gosum")), digests))
+	require.NoError(t, writeFingerprint(h, "go1.26.5", "wasip1", "wasm", defaultBuildFlags, sha256.Sum256([]byte("gomod")), sha256.Sum256([]byte("gosum")), digests))
 	return hex.EncodeToString(h.Sum(nil)[:16])
 }
 
@@ -265,4 +261,67 @@ func TestFingerprintStableWhenUnchanged(t *testing.T) {
 	first := fingerprintFiles(t, repoRoot, pkg)
 	second := fingerprintFiles(t, repoRoot, pkg)
 	assert.Equal(t, first, second)
+}
+
+func TestBinaryCacheKeySeparatesConfigs(t *testing.T) {
+	t.Parallel()
+
+	pkgDir := "/fake/pkg"
+	base := Config{GOOS: "wasip1", GOARCH: "wasm", BuildFlags: defaultBuildFlags, Compress: false}
+
+	storeBinaryCache(binaryCacheKey(pkgDir, base), []byte("wasm-binary"))
+
+	linuxCfg := base
+	linuxCfg.GOOS = "linux"
+	_, ok := loadBinaryCache(binaryCacheKey(pkgDir, linuxCfg))
+	assert.False(t, ok, "different GOOS must not collide in binary cache")
+
+	armCfg := base
+	armCfg.GOARCH = "arm"
+	_, ok = loadBinaryCache(binaryCacheKey(pkgDir, armCfg))
+	assert.False(t, ok, "different GOARCH must not collide in binary cache")
+
+	flagsCfg := base
+	flagsCfg.BuildFlags = []string{"-tags", "foo"}
+	_, ok = loadBinaryCache(binaryCacheKey(pkgDir, flagsCfg))
+	assert.False(t, ok, "different BuildFlags must not collide in binary cache")
+}
+
+func TestFingerprintCacheKeySeparatesByBuildFlags(t *testing.T) {
+	t.Parallel()
+
+	pkgDir := "/fake/pkg"
+	base := Config{GOOS: "wasip1", GOARCH: "wasm", BuildFlags: defaultBuildFlags}
+	other := base
+	other.BuildFlags = []string{"-tags", "foo"}
+
+	key1 := fingerprintCacheKey(pkgDir, base)
+	key2 := fingerprintCacheKey(pkgDir, other)
+
+	assert.NotEqual(t, key1, key2, "different BuildFlags must produce different fingerprint cache keys")
+}
+
+func TestComputeBuildFingerprintInvalidatesOnGoModEdit(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "pkg")
+	require.NoError(t, os.MkdirAll(pkgDir, 0o755))
+
+	goModPath := filepath.Join(repoRoot, "go.mod")
+	require.NoError(t, os.WriteFile(goModPath, []byte("module example.com/test\n\ngo 1.23\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(repoRoot, "go.sum"), []byte("example.com/dep v1.0.0 h1:abc=\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(pkgDir, "main.go"), []byte("package main\n"), 0o600))
+
+	cfg := Config{GOOS: "wasip1", GOARCH: "wasm", BuildFlags: defaultBuildFlags}
+	ctx := t.Context()
+
+	base, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
+	require.NoError(t, err)
+
+	require.NoError(t, os.WriteFile(goModPath, []byte("module example.com/test/v2\n\ngo 1.23\n"), 0o600))
+	afterEdit, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
+	require.NoError(t, err)
+
+	assert.NotEqual(t, base, afterEdit, "go.mod edit must bust the fingerprint")
 }

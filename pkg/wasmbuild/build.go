@@ -86,54 +86,19 @@ func Build(ctx context.Context, cfg Config) ([]byte, error) {
 		return nil, fmt.Errorf("resolve package dir symlinks: %w", err)
 	}
 
-	cacheKey := binaryCacheKey(absPkgDir, cfg)
-	if cached, ok := loadBinaryCache(cacheKey); ok {
-		return cached, nil
-	}
-
 	mu := buildLock(absPkgDir)
 	mu.Lock()
 	defer mu.Unlock()
 
-	if cached, ok := loadBinaryCache(cacheKey); ok {
-		return cached, nil
-	}
-
-	binary, err := getOrBuildBinary(ctx, absPkgDir, repoRoot, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	storeBinaryCache(cacheKey, binary)
-	return binary, nil
+	return getOrBuildBinary(ctx, absPkgDir, repoRoot, cfg)
 }
 
 var (
-	binaryCache      sync.Map
 	fingerprintCache sync.Map
 	buildLocks       sync.Map
+	fileHashCache    sync.Map
+	cacheDirsCreated sync.Map
 )
-
-func binaryCacheKey(absPkgDir string, cfg Config) string {
-	return fmt.Sprintf("%s|%s|%s|%s|%t", absPkgDir, cfg.GOOS, cfg.GOARCH, strings.Join(cfg.BuildFlags, "\x00"), cfg.Compress)
-}
-
-func loadBinaryCache(cacheKey string) ([]byte, bool) {
-	v, ok := binaryCache.Load(cacheKey)
-	if !ok {
-		return nil, false
-	}
-	cached := v.([]byte)
-	res := make([]byte, len(cached))
-	copy(res, cached)
-	return res, true
-}
-
-func storeBinaryCache(cacheKey string, binary []byte) {
-	cp := make([]byte, len(binary))
-	copy(cp, binary)
-	binaryCache.Store(cacheKey, cp)
-}
 
 func buildLock(key string) *sync.Mutex {
 	if v, ok := buildLocks.Load(key); ok {
@@ -220,6 +185,49 @@ func readCacheFile(cachePath string) ([]byte, error) {
 	return os.ReadFile(cachePath)
 }
 
+func ensureCacheDir(repoRoot string) (string, error) {
+	cacheDir := filepath.Join(repoRoot, defaultCacheDirName)
+	if _, ok := cacheDirsCreated.Load(cacheDir); ok {
+		return cacheDir, nil
+	}
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		return "", err
+	}
+	cacheDirsCreated.Store(cacheDir, true)
+	return cacheDir, nil
+}
+
+// Prune removes .wasm-cache/ entries older than maxAge. Returns the count of
+// files removed. A non-existent cache directory is a no-op (returns 0, nil).
+func Prune(repoRoot string, maxAge time.Duration) (int, error) {
+	cacheDir := filepath.Join(repoRoot, defaultCacheDirName)
+	entries, err := os.ReadDir(cacheDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return 0, nil
+		}
+		return 0, fmt.Errorf("read WASM cache dir: %w", err)
+	}
+
+	now := time.Now()
+	removed := 0
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if now.Sub(info.ModTime()) > maxAge {
+			if err := os.Remove(filepath.Join(cacheDir, entry.Name())); err == nil {
+				removed++
+			}
+		}
+	}
+	return removed, nil
+}
+
 func decompressBinary(compressed []byte) ([]byte, error) {
 	var b bytes.Buffer
 	bwr := brotli.NewReader(bytes.NewReader(compressed))
@@ -235,8 +243,8 @@ func buildAndCacheBinary(ctx context.Context, absPkgDir, repoRoot, pkgRel, cache
 		return nil, fmt.Errorf("build WASM for %s: %w", pkgRel, err)
 	}
 
-	cacheDir := filepath.Join(repoRoot, defaultCacheDirName)
-	if err = os.MkdirAll(cacheDir, 0o755); err != nil {
+	cacheDir, err := ensureCacheDir(repoRoot)
+	if err != nil {
 		return nil, fmt.Errorf("create WASM cache dir: %w", err)
 	}
 
@@ -385,18 +393,31 @@ func hashPackageFiles(repoRoot string, pkg listPackage, digests *[]fileDigest) e
 	names = append(names, pkg.EmbedFiles...)
 
 	for _, name := range names {
+		absPath := filepath.Join(pkg.Dir, filepath.FromSlash(name))
+		rel, err := filepath.Rel(repoRoot, absPath)
+		if err != nil {
+			return err
+		}
+		relSlash := filepath.ToSlash(rel)
+
+		if cached, ok := fileHashCache.Load(absPath); ok {
+			*digests = append(*digests, fileDigest{
+				path: relSlash,
+				hash: cached.(string),
+			})
+			continue
+		}
+
 		data, err := root.ReadFile(name)
 		if err != nil {
 			return err
 		}
 		sum := sha256.Sum256(data)
-		rel, err := filepath.Rel(repoRoot, filepath.Join(pkg.Dir, filepath.FromSlash(name)))
-		if err != nil {
-			return err
-		}
+		hexHash := hex.EncodeToString(sum[:])
+		fileHashCache.Store(absPath, hexHash)
 		*digests = append(*digests, fileDigest{
-			path: filepath.ToSlash(rel),
-			hash: hex.EncodeToString(sum[:]),
+			path: relSlash,
+			hash: hexHash,
 		})
 	}
 	return nil
@@ -409,7 +430,7 @@ func writeFingerprint(h io.Writer, goVersion, goos, goarch string, buildFlags []
 	if _, err := fmt.Fprintf(h, "\n%s\n%s\n", goos, goarch); err != nil {
 		return fmt.Errorf("hash platform: %w", err)
 	}
-	if _, err := io.WriteString(h, strings.Join(buildFlags, " ")); err != nil {
+	if _, err := io.WriteString(h, strings.Join(buildFlags, "\x00")); err != nil {
 		return fmt.Errorf("hash build flags: %w", err)
 	}
 	if _, err := io.WriteString(h, "\n"); err != nil {
@@ -456,7 +477,7 @@ func listDeps(ctx context.Context, pkgDir string, cfg Config) ([]listPackage, er
 
 	cmd := exec.CommandContext(listCtx, "go", args...) // #nosec
 	cmd.Dir = pkgDir
-	cmd.Env = append(os.Environ(), "GOOS="+cfg.GOOS, "GOARCH="+cfg.GOARCH)
+	cmd.Env = append(os.Environ(), "GOOS="+cfg.GOOS, "GOARCH="+cfg.GOARCH, "CGO_ENABLED=0")
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
@@ -545,4 +566,11 @@ func buildBinary(ctx context.Context, pkgDir string, cfg Config) ([]byte, error)
 	}
 
 	return b.Bytes(), nil
+}
+
+func clearCaches() {
+	fingerprintCache.Range(func(k, _ any) bool { fingerprintCache.Delete(k); return true })
+	fileHashCache.Range(func(k, _ any) bool { fileHashCache.Delete(k); return true })
+	buildLocks.Range(func(k, _ any) bool { buildLocks.Delete(k); return true })
+	cacheDirsCreated.Range(func(k, _ any) bool { cacheDirsCreated.Delete(k); return true })
 }

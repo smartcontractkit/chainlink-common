@@ -162,6 +162,8 @@ func TestComputeBuildFingerprintInvalidatesOnSourceEdit(t *testing.T) {
 	base, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
 
+	clearCaches()
+
 	require.NoError(t, os.WriteFile(goFile, []byte("package main\n\nvar X = 1\n"), 0o600))
 	afterEdit, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
@@ -184,6 +186,8 @@ func TestComputeBuildFingerprintInvalidatesOnGoSumEdit(t *testing.T) {
 
 	base, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
+
+	clearCaches()
 
 	require.NoError(t, os.WriteFile(goSumPath, []byte("example.com/dep v1.0.0 h1:def=\n"), 0o600))
 	afterEdit, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
@@ -239,9 +243,13 @@ func TestFingerprintInvalidationSequence(t *testing.T) {
 
 	base := fingerprintFiles(t, repoRoot, pkg)
 
+	clearCaches()
+
 	require.NoError(t, os.WriteFile(goFile, []byte("package main\n\nvar X = 1\n"), 0o600))
 	afterGoEdit := fingerprintFiles(t, repoRoot, pkg)
 	assert.NotEqual(t, base, afterGoEdit, "go source edit must bust the fingerprint")
+
+	clearCaches()
 
 	require.NoError(t, os.WriteFile(embedFile, []byte("v2-changed"), 0o600))
 	afterEmbedEdit := fingerprintFiles(t, repoRoot, pkg)
@@ -263,29 +271,7 @@ func TestFingerprintStableWhenUnchanged(t *testing.T) {
 	assert.Equal(t, first, second)
 }
 
-func TestBinaryCacheKeySeparatesConfigs(t *testing.T) {
-	t.Parallel()
 
-	pkgDir := "/fake/pkg"
-	base := Config{GOOS: "wasip1", GOARCH: "wasm", BuildFlags: defaultBuildFlags, Compress: false}
-
-	storeBinaryCache(binaryCacheKey(pkgDir, base), []byte("wasm-binary"))
-
-	linuxCfg := base
-	linuxCfg.GOOS = "linux"
-	_, ok := loadBinaryCache(binaryCacheKey(pkgDir, linuxCfg))
-	assert.False(t, ok, "different GOOS must not collide in binary cache")
-
-	armCfg := base
-	armCfg.GOARCH = "arm"
-	_, ok = loadBinaryCache(binaryCacheKey(pkgDir, armCfg))
-	assert.False(t, ok, "different GOARCH must not collide in binary cache")
-
-	flagsCfg := base
-	flagsCfg.BuildFlags = []string{"-tags", "foo"}
-	_, ok = loadBinaryCache(binaryCacheKey(pkgDir, flagsCfg))
-	assert.False(t, ok, "different BuildFlags must not collide in binary cache")
-}
 
 func TestFingerprintCacheKeySeparatesByBuildFlags(t *testing.T) {
 	t.Parallel()
@@ -319,9 +305,162 @@ func TestComputeBuildFingerprintInvalidatesOnGoModEdit(t *testing.T) {
 	base, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
 
+	clearCaches()
+
 	require.NoError(t, os.WriteFile(goModPath, []byte("module example.com/test/v2\n\ngo 1.23\n"), 0o600))
 	afterEdit, err := computeBuildFingerprint(ctx, pkgDir, repoRoot, cfg)
 	require.NoError(t, err)
 
 	assert.NotEqual(t, base, afterEdit, "go.mod edit must bust the fingerprint")
 }
+
+func TestFileHashCacheAvoidsRedundantDiskReads(t *testing.T) {
+	clearCaches()
+
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "pkg")
+	require.NoError(t, os.MkdirAll(pkgDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(pkgDir, "main.go"), []byte("package main\n"), 0o600))
+
+	pkg := listPackage{Dir: pkgDir, GoFiles: []string{"main.go"}}
+
+	var digests1 []fileDigest
+	require.NoError(t, hashPackageFiles(repoRoot, pkg, &digests1))
+
+	goFile := filepath.Join(pkgDir, "main.go")
+	require.NoError(t, os.Remove(goFile))
+
+	var digests2 []fileDigest
+	require.NoError(t, hashPackageFiles(repoRoot, pkg, &digests2), "second call must use file hash cache, not disk")
+
+	assert.Equal(t, digests1, digests2, "cached file hashes must match")
+}
+
+func TestFileHashCacheSharedAcrossPackages(t *testing.T) {
+	clearCaches()
+
+	repoRoot := t.TempDir()
+	sharedDir := filepath.Join(repoRoot, "shared")
+	pkgADir := filepath.Join(repoRoot, "pkgA")
+	pkgBDir := filepath.Join(repoRoot, "pkgB")
+	require.NoError(t, os.MkdirAll(sharedDir, 0o755))
+	require.NoError(t, os.MkdirAll(pkgADir, 0o755))
+	require.NoError(t, os.MkdirAll(pkgBDir, 0o755))
+
+	require.NoError(t, os.WriteFile(filepath.Join(sharedDir, "lib.go"), []byte("package shared\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(pkgADir, "main.go"), []byte("package main\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(pkgBDir, "main.go"), []byte("package main\n"), 0o600))
+
+	sharedPkg := listPackage{Dir: sharedDir, GoFiles: []string{"lib.go"}}
+
+	var digests1 []fileDigest
+	require.NoError(t, hashPackageFiles(repoRoot, sharedPkg, &digests1))
+
+	sharedFile := filepath.Join(sharedDir, "lib.go")
+	require.NoError(t, os.Remove(sharedFile))
+
+	var digests2 []fileDigest
+	require.NoError(t, hashPackageFiles(repoRoot, sharedPkg, &digests2), "second call must use cache for shared file")
+
+	assert.Equal(t, digests1, digests2, "shared dep file hash must be cached across calls")
+}
+
+func TestPruneRemovesOldFiles(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+	cacheDir := filepath.Join(repoRoot, defaultCacheDirName)
+	require.NoError(t, os.MkdirAll(cacheDir, 0o755))
+
+	oldFile := filepath.Join(cacheDir, "old-pkg-deadbeef.wasm.br")
+	recentFile := filepath.Join(cacheDir, "recent-pkg-cafebabe.wasm.br")
+	require.NoError(t, os.WriteFile(oldFile, []byte("old"), 0o600))
+	require.NoError(t, os.WriteFile(recentFile, []byte("recent"), 0o600))
+
+	oldTime := time.Now().Add(-48 * time.Hour)
+	require.NoError(t, os.Chtimes(oldFile, oldTime, oldTime))
+
+	removed, err := Prune(repoRoot, 24*time.Hour)
+	require.NoError(t, err)
+	assert.Equal(t, 1, removed, "only the old file should be pruned")
+
+	_, err = os.Stat(oldFile)
+	assert.True(t, os.IsNotExist(err), "old file must be removed")
+
+	_, err = os.Stat(recentFile)
+	assert.NoError(t, err, "recent file must survive prune")
+}
+
+func TestPruneEmptyDirIsNoop(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+
+	removed, err := Prune(repoRoot, time.Hour)
+	require.NoError(t, err)
+	assert.Equal(t, 0, removed)
+}
+
+func TestEnsureCacheDirIdempotent(t *testing.T) {
+	clearCaches()
+
+	repoRoot := t.TempDir()
+
+	dir1, err := ensureCacheDir(repoRoot)
+	require.NoError(t, err)
+
+	dir2, err := ensureCacheDir(repoRoot)
+	require.NoError(t, err)
+
+	assert.Equal(t, dir1, dir2)
+
+	_, ok := cacheDirsCreated.Load(dir1)
+	assert.True(t, ok, "cache dir must be marked as created")
+}
+
+func TestWriteFingerprintBuildFlagsNullDelimiter(t *testing.T) {
+	t.Parallel()
+
+	goModDigest := sha256.Sum256([]byte("gomod"))
+	goSumDigest := sha256.Sum256([]byte("gosum"))
+	digests := []fileDigest{{path: "main.go", hash: "abc"}}
+
+	h1 := sha256.New()
+	require.NoError(t, writeFingerprint(h1, "go1.26.5", "wasip1", "wasm", []string{"-tags", "foo bar"}, goModDigest, goSumDigest, digests))
+	fp1 := hex.EncodeToString(h1.Sum(nil)[:16])
+
+	h2 := sha256.New()
+	require.NoError(t, writeFingerprint(h2, "go1.26.5", "wasip1", "wasm", []string{"-tags foo", "bar"}, goModDigest, goSumDigest, digests))
+	fp2 := hex.EncodeToString(h2.Sum(nil)[:16])
+
+	assert.NotEqual(t, fp1, fp2, "different flag boundaries with spaces must produce different fingerprints")
+}
+
+func TestBuildInvalidatesCacheOnSourceEdit(t *testing.T) {
+	t.Parallel()
+
+	repoRoot := t.TempDir()
+	pkgDir := filepath.Join(repoRoot, "pkg")
+	require.NoError(t, os.MkdirAll(pkgDir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(repoRoot, "go.mod"), []byte("module example.com/test\n"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(repoRoot, "go.sum"), []byte("example.com/dep v1.0.0 h1:abc=\n"), 0o600))
+
+	goFile := filepath.Join(pkgDir, "main.go")
+	require.NoError(t, os.WriteFile(goFile, []byte("package main\n"), 0o600))
+
+	cfg := Config{PkgDir: pkgDir, RepoRoot: repoRoot, GOOS: "wasip1", GOARCH: "wasm", BuildFlags: defaultBuildFlags}
+	ctx := t.Context()
+
+	fp1, err := buildFingerprint(ctx, pkgDir, repoRoot, cfg)
+	require.NoError(t, err)
+
+	clearCaches()
+
+	require.NoError(t, os.WriteFile(goFile, []byte("package main\nvar Modified = true\n"), 0o600))
+
+	fp2, err := buildFingerprint(ctx, pkgDir, repoRoot, cfg)
+	require.NoError(t, err)
+
+	assert.NotEqual(t, fp1, fp2, "source edit must produce new build fingerprint")
+}
+

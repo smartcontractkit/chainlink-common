@@ -5,12 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,19 +16,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config/configdoc"
 )
 
-// newRoot returns a root command wired for testing: its own viper, a --config flag, and
-// silenced output. Global state (the viper singleton and the load-config-once guard) is
-// restored on cleanup so tests can't leak keys or a consumed once into each other.
+// newRoot returns a root command wired for testing: a --config flag and silenced output. Each
+// command gets its own Viper instance (see commandMetaData.v), created fresh the first time it's
+// registered, so tests can't leak keys or a consumed config-file-load guard into each other the
+// way a single process-global viper would.
 func newRoot(t *testing.T) *cobra.Command {
 	t.Helper()
-
-	oldViper := viper.GetViper()
-	viper.Reset()
-	t.Cleanup(func() { *viper.GetViper() = *oldViper })
-
-	oldOnce, oldErr := configFileOnce, configFileErr
-	configFileOnce, configFileErr = new(sync.Once), nil
-	t.Cleanup(func() { configFileOnce, configFileErr = oldOnce, oldErr })
 
 	cmd := &cobra.Command{Use: "app", RunE: func(*cobra.Command, []string) error { return nil }}
 	cmd.PersistentFlags().String("config", "", "path to config file")
@@ -46,6 +37,17 @@ func run(t *testing.T, target any, args ...string) error {
 
 	root := newRoot(t)
 	require.NoError(t, RegisterCommandFlags(root, target, DefaultTOMLOptions("TEST")))
+	root.SetArgs(args)
+	return root.Execute()
+}
+
+// runWithOptions is like run, but lets the caller supply Options directly instead of always
+// going through DefaultTOMLOptions - for exercising decoding under bare/custom Options.
+func runWithOptions(t *testing.T, target any, opts Options, args ...string) error {
+	t.Helper()
+
+	root := newRoot(t)
+	require.NoError(t, RegisterCommandFlags(root, target, opts))
 	root.SetArgs(args)
 	return root.Execute()
 }
@@ -947,6 +949,100 @@ func TestConfigDurationRejectsNegative(t *testing.T) {
 
 	var c cfg
 	require.ErrorContains(t, run(t, &c), "negative")
+}
+
+// --- string coercion applies to every Options, not just DefaultTOMLOptions ---
+
+// upperString is a minimal encoding.TextUnmarshaler, standing in for any caller-defined type
+// with its own text decoding - distinct from config.Duration, which the rest of the suite
+// already covers.
+type upperString string
+
+func (u *upperString) UnmarshalText(text []byte) error {
+	*u = upperString(strings.ToUpper(string(text)))
+	return nil
+}
+
+// coercionCfg exercises every field kind bindLeafFlag special-cases: plain string, an int and a
+// uint kind, bool, time.Duration, config.Duration (a TextUnmarshaler struct), a string slice, and
+// a caller-defined TextUnmarshaler.
+type coercionCfg struct {
+	Str     string
+	Count   int
+	Limit   uint
+	Enabled bool
+	Timeout time.Duration
+	Retry   config.Duration
+	Tags    []string
+	Label   upperString
+}
+
+func assertCoercionCfg(t *testing.T, c *coercionCfg) {
+	t.Helper()
+	assert.Equal(t, "hello", c.Str)
+	assert.Equal(t, 42, c.Count)
+	assert.Equal(t, uint(7), c.Limit)
+	assert.True(t, c.Enabled)
+	assert.Equal(t, 45*time.Second, c.Timeout)
+	assert.Equal(t, 5*time.Second, c.Retry.Duration())
+	assert.Equal(t, []string{"a", "b"}, c.Tags)
+	assert.Equal(t, upperString("SHOUT"), c.Label)
+}
+
+func TestCoercion_EveryFieldKindFromEnv_WithBareOptions(t *testing.T) {
+	t.Setenv("TEST_STR", "hello")
+	t.Setenv("TEST_COUNT", "42")
+	t.Setenv("TEST_LIMIT", "7")
+	t.Setenv("TEST_ENABLED", "true")
+	t.Setenv("TEST_TIMEOUT", "45s")
+	t.Setenv("TEST_RETRY", "5s")
+	t.Setenv("TEST_TAGS", "a,b")
+	t.Setenv("TEST_LABEL", "shout")
+
+	var c coercionCfg
+	require.NoError(t, runWithOptions(t, &c, Options{Prefixes: []string{"TEST"}}))
+	assertCoercionCfg(t, &c)
+}
+
+func TestCoercion_EveryFieldKindFromFlag_WithBareOptions(t *testing.T) {
+	var c coercionCfg
+	require.NoError(t, runWithOptions(t, &c, Options{Prefixes: []string{"TEST"}},
+		"--str", "hello",
+		"--count", "42",
+		"--limit", "7",
+		"--enabled",
+		"--timeout", "45s",
+		"--retry", "5s",
+		"--tags", "a",
+		"--tags", "b",
+		"--label", "shout",
+	))
+	assertCoercionCfg(t, &c)
+}
+
+func TestCoercion_EveryFieldKindFromConfigFile_WithBareOptions(t *testing.T) {
+	path := writeConfig(t, `
+str = "hello"
+count = 42
+limit = 7
+enabled = true
+timeout = "45s"
+retry = "5s"
+tags = ["a", "b"]
+label = "shout"
+`)
+
+	var c coercionCfg
+	require.NoError(t, runWithOptions(t, &c, Options{Prefixes: []string{"TEST"}}, "--config", path))
+	assertCoercionCfg(t, &c)
+}
+
+func TestCoercion_InvalidValueStillErrors_WithBareOptions(t *testing.T) {
+	t.Setenv("TEST_COUNT", "not-a-number")
+
+	var c coercionCfg
+	err := runWithOptions(t, &c, Options{Prefixes: []string{"TEST"}})
+	require.ErrorContains(t, err, "Count")
 }
 
 // --- generated docs ---

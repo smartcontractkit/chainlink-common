@@ -33,7 +33,7 @@ var configDurationType = reflect.TypeOf(config.Duration{})
 // decoded target, after config file/flags/env/profile defaulting has all been applied.
 var validate = sync.OnceValue(func() *validator.Validate { return validator.New() })
 
-type profileApplier func(cmd *cobra.Command, target any) error
+type profileApplier func(cmd *cobra.Command, target any, v *viper.Viper) error
 
 // targetEntry is one struct registered against a command via RegisterCommandFlags or
 // RegisterSubcommandFlags. A single command can have multiple entries - e.g. several
@@ -70,6 +70,13 @@ type leafKey struct {
 type commandMetaData struct {
 	entries []*targetEntry
 
+	// v is this command's own Viper instance. Each command (root or subcommand) gets one, so
+	// two entries on different commands can reuse the same key/flag/env name (e.g. "foo" on
+	// both a "foo" and a "bar" subcommand) without one's SetDefault/BindPFlag/BindEnv call
+	// clobbering the other's - a single process-global viper.Viper cannot make that guarantee,
+	// since its keyspace is flat and shared across every command in the tree.
+	v *viper.Viper
+
 	// docFormat is the syntax documentation for this command's whole tree is written in,
 	// taken from the Options of the registration that added the docs command (see
 	// addDocsCommand).
@@ -79,6 +86,11 @@ type commandMetaData struct {
 	// every time RegisterCommandFlags/RegisterSubcommandFlags is called again for this command;
 	// the single wired hook always decodes every entry (see decodeAndApplyProfiles).
 	hookWired bool
+
+	// configFileOnce/configFileErr guard this command's one config-file load - see
+	// loadConfigFileOnce.
+	configFileOnce sync.Once
+	configFileErr  error
 }
 
 var (
@@ -92,7 +104,7 @@ func getOrCreateMeta(cmd *cobra.Command) *commandMetaData {
 
 	meta, exists := cmdRegistry[cmd]
 	if !exists {
-		meta = &commandMetaData{}
+		meta = &commandMetaData{v: viper.New()}
 		cmdRegistry[cmd] = meta
 	}
 	return meta
@@ -137,7 +149,7 @@ func RegisterCommandFlags(cmd *cobra.Command, target any, opts Options) error {
 	}
 	meta.entries = append(meta.entries, entry)
 
-	if err := registerStructFlagsInternal(cmd, entry, false); err != nil {
+	if err := registerStructFlagsInternal(cmd, entry, false, meta.v); err != nil {
 		return err
 	}
 
@@ -164,7 +176,7 @@ func RegisterSubcommandFlags(cmd *cobra.Command, namespace string, target any, o
 	entry := &targetEntry{namespace: namespace, flagPrefix: opts.Namespace, prefixes: opts.Prefixes, target: target, opts: opts}
 	meta.entries = append(meta.entries, entry)
 
-	if err := registerStructFlagsInternal(cmd, entry, true); err != nil {
+	if err := registerStructFlagsInternal(cmd, entry, true, meta.v); err != nil {
 		return err
 	}
 
@@ -201,9 +213,10 @@ func (e *targetEntry) effectivePrefixes(cmd *cobra.Command) []string {
 	return prefixes
 }
 
-// bindEnv binds each of the entry's keys to its PREFIX_UPPER_SNAKE env vars. Called at decode
-// time for the same reason effectivePrefixes is resolved there.
-func (e *targetEntry) bindEnv(prefixes []string) {
+// bindEnv binds each of the entry's keys to its PREFIX_UPPER_SNAKE env vars, on v (this entry's
+// command's own Viper instance - see commandMetaData.v). Called at decode time for the same
+// reason effectivePrefixes is resolved there.
+func (e *targetEntry) bindEnv(v *viper.Viper, prefixes []string) {
 	if len(prefixes) == 0 {
 		return
 	}
@@ -213,7 +226,7 @@ func (e *targetEntry) bindEnv(prefixes []string) {
 		for _, prefix := range prefixes {
 			bindArgs = append(bindArgs, strings.TrimSuffix(strings.ToUpper(prefix), "_")+"_"+envSuffix)
 		}
-		_ = viper.BindEnv(bindArgs...)
+		_ = v.BindEnv(bindArgs...)
 	}
 }
 
@@ -274,10 +287,8 @@ func decodeAndApplyProfiles(cmd *cobra.Command, meta *commandMetaData) error {
 		return nil
 	}
 
-	// Load into the (global) viper before reading any key. cmd here is the command actually
-	// being executed, not the one this hook was registered on, so it can't be used to tell
-	// "am I the root" - hence loading once per process rather than only on the root's pass.
-	if err := loadConfigFileOnce(cmd); err != nil {
+	// Load into this command's own viper before reading any key - see commandMetaData.v.
+	if err := meta.loadConfigFileOnce(cmd); err != nil {
 		return err
 	}
 
@@ -289,16 +300,16 @@ func decodeAndApplyProfiles(cmd *cobra.Command, meta *commandMetaData) error {
 
 		// Resolve prefixes and bind env vars now that the command tree is fully assembled.
 		entry.prefixes = entry.effectivePrefixes(cmd)
-		entry.bindEnv(entry.prefixes)
+		entry.bindEnv(meta.v, entry.prefixes)
 
-		if err := decodeEntry(cmd, entry); err != nil {
+		if err := decodeEntry(cmd, entry, meta.v); err != nil {
 			errs = append(errs, err)
 			continue
 		}
 
 		var applierErr error
 		for _, applier := range entry.profiles {
-			if err := applier(cmd, entry.target); err != nil {
+			if err := applier(cmd, entry.target, meta.v); err != nil {
 				applierErr = err
 				break
 			}
@@ -332,13 +343,13 @@ func decodeAndApplyProfiles(cmd *cobra.Command, meta *commandMetaData) error {
 // included. Fields nobody set keep whatever the caller's struct was constructed with, which is
 // what makes an optional nested *struct stay nil when nothing under it was provided - decoding
 // its defaults would allocate it and defeat `required_without`/`excluded_with` on that field.
-func decodeEntry(cmd *cobra.Command, entry *targetEntry) error {
+func decodeEntry(cmd *cobra.Command, entry *targetEntry, v *viper.Viper) error {
 	settings := map[string]any{}
 	for _, k := range entry.keys {
-		if !isExplicitlySet(cmd, k.flagName, k.viperKey, entry.prefixes) {
+		if !isExplicitlySet(cmd, k.flagName, k.viperKey, entry.prefixes, v) {
 			continue
 		}
-		val := viper.Get(k.viperKey)
+		val := v.Get(k.viperKey)
 		if val == nil {
 			continue
 		}
@@ -365,16 +376,12 @@ func setPath(m map[string]any, path []string, val any) {
 	m[path[len(path)-1]] = val
 }
 
-var (
-	configFileOnce = new(sync.Once)
-	configFileErr  error
-)
-
-// loadConfigFileOnce reads the config file into viper the first time it's called, since viper
-// is process-global and several commands' decode hooks can run in one execution.
-func loadConfigFileOnce(cmd *cobra.Command) error {
-	configFileOnce.Do(func() { configFileErr = loadConfigFile(cmd) })
-	return configFileErr
+// loadConfigFileOnce reads the config file into meta's own viper the first time it's called for
+// this command - each command's decode hook can run at most once per execution, but this guards
+// against a command whose entries span more than one registration call.
+func (meta *commandMetaData) loadConfigFileOnce(cmd *cobra.Command) error {
+	meta.configFileOnce.Do(func() { meta.configFileErr = loadConfigFile(cmd, meta.v) })
+	return meta.configFileErr
 }
 
 // IsBuiltinCommand reports whether cmd is one of cobra's generated commands (help, completion,
@@ -394,22 +401,22 @@ func IsBuiltinCommand(cmd *cobra.Command) bool {
 	return false
 }
 
-func loadConfigFile(cmd *cobra.Command) error {
+func loadConfigFile(cmd *cobra.Command, v *viper.Viper) error {
 	configFile, _ := cmd.Flags().GetString("config")
 
 	if configFile != "" {
-		viper.SetConfigFile(configFile)
-		if err := viper.ReadInConfig(); err != nil {
+		v.SetConfigFile(configFile)
+		if err := v.ReadInConfig(); err != nil {
 			return fmt.Errorf("failed to read specified config file %q: %w", configFile, err)
 		}
 		return nil
 	}
 
-	viper.AddConfigPath(".")
-	viper.SetConfigName("config")
-	viper.SetConfigType("toml")
+	v.AddConfigPath(".")
+	v.SetConfigName("config")
+	v.SetConfigType("toml")
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err := v.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return fmt.Errorf("failed to parse config file: %w", err)
 		}
@@ -446,7 +453,7 @@ func RegisterProfile[T any, K comparable](
 		return err
 	}
 
-	applier := func(cmd *cobra.Command, target any) error {
+	applier := func(cmd *cobra.Command, target any, v *viper.Viper) error {
 		vTarget := reflect.ValueOf(target)
 		if vTarget.Kind() == reflect.Pointer {
 			vTarget = vTarget.Elem()
@@ -475,7 +482,7 @@ func RegisterProfile[T any, K comparable](
 		leafField := targetScope.FieldByName(leafName)
 		selectedValue := reflect.ValueOf(leafField.Interface())
 
-		applyProfileDefaults(cmd, entry, opts, prefix, targetScope, profileScope)
+		applyProfileDefaults(cmd, entry, opts, prefix, targetScope, profileScope, v)
 
 		leafField.Set(selectedValue)
 		return nil
@@ -625,14 +632,14 @@ func scopePrefix(t reflect.Type, path []string, opts Options) string {
 	return strings.Join(parts, ".")
 }
 
-func applyProfileDefaults(cmd *cobra.Command, entry *targetEntry, opts Options, prefix string, tVal, pVal reflect.Value) {
+func applyProfileDefaults(cmd *cobra.Command, entry *targetEntry, opts Options, prefix string, tVal, pVal reflect.Value, v *viper.Viper) {
 	if pVal.Kind() == reflect.Pointer {
 		pVal = pVal.Elem()
 	}
-	copyDefaultsRecursive(cmd, entry, opts, prefix, tVal, pVal)
+	copyDefaultsRecursive(cmd, entry, opts, prefix, tVal, pVal, v)
 }
 
-func copyDefaultsRecursive(cmd *cobra.Command, entry *targetEntry, opts Options, prefix string, tVal, pVal reflect.Value) {
+func copyDefaultsRecursive(cmd *cobra.Command, entry *targetEntry, opts Options, prefix string, tVal, pVal reflect.Value, v *viper.Viper) {
 	namespace, prefixes := entry.namespace, entry.prefixes
 	tType := tVal.Type()
 	for i := 0; i < tType.NumField(); i++ {
@@ -669,11 +676,11 @@ func copyDefaultsRecursive(cmd *cobra.Command, entry *targetEntry, opts Options,
 		}
 
 		if targetField.Kind() == reflect.Struct {
-			copyDefaultsRecursive(cmd, entry, opts, relKey, targetField, profileField)
+			copyDefaultsRecursive(cmd, entry, opts, relKey, targetField, profileField, v)
 			continue
 		}
 
-			if !isExplicitlySet(cmd, flagNameFromViperKey(relKey), viperKey, prefixes) {
+		if !isExplicitlySet(cmd, flagNameFromViperKey(relKey), viperKey, prefixes, v) {
 			targetField.Set(profileField)
 		}
 	}
@@ -683,12 +690,12 @@ func copyDefaultsRecursive(cmd *cobra.Command, entry *targetEntry, opts Options,
 // registered code default: a changed CLI flag, a config file entry, or a bound env var.
 // flagName is passed separately because a namespaced entry's flag ("timeout") does not match
 // its viper key ("foo.timeout").
-func isExplicitlySet(cmd *cobra.Command, flagName, viperKey string, prefixes []string) bool {
+func isExplicitlySet(cmd *cobra.Command, flagName, viperKey string, prefixes []string, v *viper.Viper) bool {
 	if f := cmd.Flags().Lookup(flagName); f != nil && f.Changed {
 		return true
 	}
 
-	if viper.InConfig(viperKey) {
+	if v.InConfig(viperKey) {
 		return true
 	}
 
@@ -736,7 +743,7 @@ func enableProfileHelp[T any, K comparable](cmd *cobra.Command, selectorPath []s
 	})
 }
 
-func registerStructFlagsInternal(cmd *cobra.Command, entry *targetEntry, isSubcommand bool) error {
+func registerStructFlagsInternal(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, v *viper.Viper) error {
 	if entry.target == nil {
 		return fmt.Errorf("target cannot be nil")
 	}
@@ -749,7 +756,7 @@ func registerStructFlagsInternal(cmd *cobra.Command, entry *targetEntry, isSubco
 			return false, entry.opts.checkEmbeddedIsUnnamed(m)
 		},
 		leaf: func(m fieldMeta) error {
-			bindLeafFlag(cmd, entry, isSubcommand, m)
+			bindLeafFlag(cmd, entry, isSubcommand, m, v)
 			return nil
 		},
 	})
@@ -772,7 +779,7 @@ func checkExclusiveStructIsPointer(m fieldMeta) error {
 		m.key(), strings.Join(rules, "/"), m.elemType.Name(), m.elemType.Name())
 }
 
-func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m fieldMeta) {
+func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m fieldMeta, v *viper.Viper) {
 	namespace := entry.namespace
 
 	relKey := m.key()
@@ -802,24 +809,24 @@ func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m f
 		// default) reaches the decoder as a string and goes through UnmarshalText. Handing
 		// mapstructure the config.Duration struct instead would decode struct-to-struct and
 		// silently drop the value, since its only field is unexported.
-		viper.SetDefault(viperKey, d.String())
+		v.SetDefault(viperKey, d.String())
 		flags.Duration(flagName, d.Duration(), usageMsg)
 	case m.isTextUnmarshaler:
 		text := fmt.Sprintf("%v", defaultVal)
-		viper.SetDefault(viperKey, text)
+		v.SetDefault(viperKey, text)
 		flags.String(flagName, text, usageMsg)
 	case m.elemType == durationType:
-		viper.SetDefault(viperKey, defaultVal)
+		v.SetDefault(viperKey, defaultVal)
 		flags.Duration(flagName, time.Duration(m.elem.Int()), usageMsg)
 	case m.elemType.Kind() == reflect.Slice && m.elemType.Elem().Kind() == reflect.String:
 		var def []string
 		if !m.elem.IsNil() {
 			def = m.elem.Interface().([]string)
 		}
-		viper.SetDefault(viperKey, def)
+		v.SetDefault(viperKey, def)
 		flags.StringSlice(flagName, def, usageMsg)
 	default:
-		viper.SetDefault(viperKey, defaultVal)
+		v.SetDefault(viperKey, defaultVal)
 		switch m.elemType.Kind() {
 		case reflect.String:
 			flags.String(flagName, m.elem.String(), usageMsg)
@@ -834,6 +841,6 @@ func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m f
 		}
 	}
 
-	_ = viper.BindPFlag(viperKey, flags.Lookup(flagName))
+	_ = v.BindPFlag(viperKey, flags.Lookup(flagName))
 	// Env vars are bound later, by entry.bindEnv at decode time - see effectivePrefixes.
 }

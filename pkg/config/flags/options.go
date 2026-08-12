@@ -30,6 +30,11 @@ type Options struct {
 	// SquashTagOption and Squash also determine the config key (and therefore the flag name)
 	// of each field, so the flags, env vars, docs, and decoding all follow from this one
 	// setting and cannot disagree. Result is filled in per target and must be left unset.
+	//
+	// WeaklyTypedInput and DecodeHook are always overridden by decoderConfigFor, whatever is
+	// set here - env vars arrive as plain strings and pflag hands back several types (uint64,
+	// duration, ...) as strings too, so every registration needs the same string->typed
+	// coercion to decode at all; there's no valid registration that wants it off.
 	DecoderConfig mapstructure.DecoderConfig
 
 	// Format is the configuration file syntax the docs are written in: it renders the
@@ -40,9 +45,9 @@ type Options struct {
 
 // DefaultTOMLOptions meant to be used with github.com/pelletier/go-toml/v2, used by default by viper for toml
 // returns Options for structs tagged `toml:"key"`, with `,inline` marking a
-// squashed (flattened) struct and embedded structs squashed automatically, decoded leniently
-// enough for the string-typed values that env vars and pflag hand back, and documented with
-// configdoc.Generate.
+// squashed (flattened) struct and embedded structs squashed automatically, and documented with
+// configdoc.Generate. String->typed coercion (weak typing plus the duration/slice/TextUnmarshaler
+// decode hooks) applies to every Options value, not just this one - see decoderConfigFor.
 func DefaultTOMLOptions(prefixes ...string) Options {
 	return Options{
 		Prefixes: prefixes,
@@ -52,17 +57,6 @@ func DefaultTOMLOptions(prefixes ...string) Options {
 			// Embedded structs are flattened into the parent rather than becoming a table
 			// named after their type.
 			Squash: true,
-			// Env vars are always strings, and pflag hands back several types (uint64,
-			// duration, ...) as strings too, so the decoder has to coerce rather than
-			// demand exact types. Mirrors viper's own defaultDecoderConfig.
-			WeaklyTypedInput: true,
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToTimeDurationHookFunc(),
-				// An env var arrives as a single string even when the field is a slice, so
-				// split it the way pflag splits a comma-separated StringSlice flag.
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.TextUnmarshallerHookFunc(),
-			),
 		},
 		Format: configdoc.TOML{},
 	}
@@ -121,13 +115,33 @@ func (o Options) format() configdoc.Format {
 	return o.Format
 }
 
-// decoderConfigFor returns a copy of o.DecoderConfig aimed at target.
+// stringCoercionHooks decode the string-typed values that env vars always are (and that pflag
+// hands back for several flag kinds too - duration, string slice) into their target's actual
+// type: "5s" into a time.Duration/config.Duration, "a,b" into a []string the way pflag's own
+// comma-separated StringSlice parsing would, and any TextUnmarshaler from its string form.
+var stringCoercionHooks = mapstructure.ComposeDecodeHookFunc(
+	mapstructure.StringToTimeDurationHookFunc(),
+	mapstructure.StringToSliceHookFunc(","),
+	mapstructure.TextUnmarshallerHookFunc(),
+)
+
+// decoderConfigFor returns a copy of o.DecoderConfig aimed at target, with weak-typed string
+// coercion forced on regardless of what o.DecoderConfig set - see the field doc on
+// Options.DecoderConfig for why this isn't a per-Options choice.
 func (o Options) decoderConfigFor(target any) *mapstructure.DecoderConfig {
 	dc := o.DecoderConfig
 	dc.Result = target
 	if dc.MatchName == nil {
 		dc.MatchName = matchKeyToFieldName
 	}
+
+	dc.WeaklyTypedInput = true
+	if dc.DecodeHook != nil {
+		dc.DecodeHook = mapstructure.ComposeDecodeHookFunc(stringCoercionHooks, dc.DecodeHook)
+	} else {
+		dc.DecodeHook = stringCoercionHooks
+	}
+
 	return &dc
 }
 

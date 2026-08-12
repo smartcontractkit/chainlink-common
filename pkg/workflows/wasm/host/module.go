@@ -39,6 +39,10 @@ import (
 
 const v2ImportPrefix = "version_v2"
 
+// callCapabilityV2ParamCount is the number of params the V2 call_capability
+// import declares (req, reqLen, responseBuffer, maxResponseLen).
+const callCapabilityV2ParamCount = 4
+
 var (
 	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute
@@ -150,6 +154,11 @@ type module struct {
 	stopCh chan struct{}
 
 	v2ImportName string
+
+	// callCapParams records the number of parameters the guest's
+	// call_capability import declares. 2 = legacy V1 (no response buffer),
+	// 4 = V2 (with response buffer). 0 = not imported (e.g. legacy DAG).
+	callCapParams int
 
 	// linkV2 wires the host functions the v2/NoDAG guest imports. It defaults
 	// to linkNoDAG; tests may override it to substitute a host function
@@ -414,25 +423,33 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 	}
 
 	v2ImportName := ""
+	callCapParams := 0
 	for _, modImport := range mod.Imports() {
 		name := modImport.Name()
-		if modImport.Module() == "env" && name != nil && strings.HasPrefix(*name, v2ImportPrefix) {
-			v2ImportName = *name
-			break
+		if modImport.Module() == "env" && name != nil {
+			if strings.HasPrefix(*name, v2ImportPrefix) {
+				v2ImportName = *name
+			}
+			if *name == "call_capability" {
+				if ft := modImport.Type().FuncType(); ft != nil {
+					callCapParams = len(ft.Params())
+				}
+			}
 		}
 	}
 
 	modCfg.SdkLabeler(v2ImportName)
 
 	return &module{
-		engine:       engine,
-		module:       mod,
-		wconfig:      cfg,
-		cfg:          modCfg,
-		metrics:      metrics,
-		stopCh:       make(chan struct{}),
-		v2ImportName: v2ImportName,
-		linkV2:       linkNoDAG,
+		engine:        engine,
+		module:        mod,
+		wconfig:       cfg,
+		cfg:           modCfg,
+		metrics:       metrics,
+		stopCh:        make(chan struct{}),
+		v2ImportName:  v2ImportName,
+		callCapParams: callCapParams,
+		linkV2:        linkNoDAG,
 	}, nil
 }
 
@@ -463,7 +480,7 @@ func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execut
 	if err = linker.FuncWrap(
 		"env",
 		"call_capability",
-		createCallCapFn(logger, exec),
+		createCallCapFn(logger, exec, m.callCapParams),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping callcap func: %w", err)
 	}
@@ -686,7 +703,8 @@ func runWasm[I, O proto.Message](
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
 	helper ExecutionHelper,
-	maxTimeout time.Duration) (O, error) {
+	maxTimeout time.Duration,
+) (O, error) {
 	var o O
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
@@ -829,7 +847,8 @@ func containsCode(err error, code int) bool {
 func createSendResponseFn[T proto.Message](
 	logger logger.Logger,
 	exec *execution[T],
-	newT func() T) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	newT func() T,
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
@@ -1279,34 +1298,76 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 	return int64(copy(buffer, src))
 }
 
-func createCallCapFn(
+// callCapability is the core host function for call_capability. It reads a
+// CapabilityRequest from the request buffer, dispatches it asynchronously via
+// callCapAsync, and writes any synchronous error string to the response buffer.
+// The return value protocol: >= 0 is success (the async response comes later
+// via await_capabilities), < 0 means the error string is in
+// responseBuffer[:-returnValue].
+func callCapability(
+	caller *wasmtime.Caller,
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
-	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
-		b, innerErr := wasmRead(caller, ptr, ptrlen)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
-			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		req := &sdkpb.CapabilityRequest{}
-		innerErr = proto.Unmarshal(b, req)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
-			logger.Errorf("%s", errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		if err := exec.callCapAsync(exec.ctx, req); err != nil {
-			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
-			logger.Error(errStr)
-			// TODO (CAPPL-846): write error to the response buffer, not the request buffer
-			return -1
-		}
-
-		return 0
+	exec *execution[*sdkpb.ExecutionResult],
+	ptr, ptrlen, responseBuffer, maxResponseLen int32,
+) int64 {
+	b, innerErr := wasmRead(caller, ptr, ptrlen)
+	if innerErr != nil {
+		errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
+		logger.Error(errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 	}
+
+	req := &sdkpb.CapabilityRequest{}
+	innerErr = proto.Unmarshal(b, req)
+	if innerErr != nil {
+		errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
+		logger.Errorf("%s", errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	if err := exec.callCapAsync(exec.ctx, req); err != nil {
+		errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
+		logger.Error(errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	return 0
+}
+
+// createCallCapFnV1 is the legacy 2-param host function for call_capability.
+// It passes the request buffer as the response buffer, matching the existing
+// behavior where error strings are written to the request buffer. This
+// function exists for backward compatibility with WASM modules compiled
+// against older SDKs that declare a 2-param call_capability import.
+func createCallCapFnV1(
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+		return callCapability(caller, logger, exec, ptr, ptrlen, ptr, ptrlen)
+	}
+}
+
+// createCallCapFnV2 is the new 4-param host function for call_capability.
+// It accepts a dedicated response buffer and writes error strings to it
+// instead of the request buffer.
+func createCallCapFnV2(
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
+		return callCapability(caller, logger, exec, ptr, ptrlen, responseBuffer, maxResponseLen)
+	}
+}
+
+// createCallCapFn selects the appropriate call_capability host function
+// based on the param count the guest module's import declares. 4 params = V2
+// (with response buffer), anything else = V1 (legacy, backward compatible).
+func createCallCapFn(logger logger.Logger, exec *execution[*sdkpb.ExecutionResult], callCapParams int) any {
+	if callCapParams == callCapabilityV2ParamCount {
+		return createCallCapFnV2(logger, exec)
+	}
+	return createCallCapFnV1(logger, exec)
 }
 
 func createAwaitCapsFn(
@@ -1356,7 +1417,8 @@ func createAwaitCapsFn(
 
 func createGetSecretsFn(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, innerErr := wasmRead(caller, req, requestLen)
 		if innerErr != nil {

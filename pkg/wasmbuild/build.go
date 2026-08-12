@@ -109,23 +109,17 @@ func Build(ctx context.Context, cfg Config) ([]byte, error) {
 }
 
 var (
-	binaryCache   = make(map[string][]byte)
-	binaryCacheMu sync.RWMutex
-
-	fingerprintCache   = make(map[string]string)
-	fingerprintCacheMu sync.RWMutex
-
-	buildLocksMu sync.Mutex
-	buildLocks   = make(map[string]*sync.Mutex)
+	binaryCache      sync.Map
+	fingerprintCache sync.Map
+	buildLocks       sync.Map
 )
 
 func loadBinaryCache(cacheKey string) ([]byte, bool) {
-	binaryCacheMu.RLock()
-	defer binaryCacheMu.RUnlock()
-	cached, ok := binaryCache[cacheKey]
+	v, ok := binaryCache.Load(cacheKey)
 	if !ok {
 		return nil, false
 	}
+	cached := v.([]byte)
 	res := make([]byte, len(cached))
 	copy(res, cached)
 	return res, true
@@ -134,26 +128,20 @@ func loadBinaryCache(cacheKey string) ([]byte, bool) {
 func storeBinaryCache(cacheKey string, binary []byte) {
 	cp := make([]byte, len(binary))
 	copy(cp, binary)
-	binaryCacheMu.Lock()
-	binaryCache[cacheKey] = cp
-	binaryCacheMu.Unlock()
+	binaryCache.Store(cacheKey, cp)
 }
 
 func buildLock(key string) *sync.Mutex {
-	buildLocksMu.Lock()
-	defer buildLocksMu.Unlock()
-	mu, ok := buildLocks[key]
-	if !ok {
-		mu = &sync.Mutex{}
-		buildLocks[key] = mu
+	if v, ok := buildLocks.Load(key); ok {
+		return v.(*sync.Mutex)
 	}
-	return mu
+	mu := &sync.Mutex{}
+	actual, _ := buildLocks.LoadOrStore(key, mu)
+	return actual.(*sync.Mutex)
 }
 
 func clearFingerprintCache() {
-	fingerprintCacheMu.Lock()
-	fingerprintCache = make(map[string]string)
-	fingerprintCacheMu.Unlock()
+	fingerprintCache.Clear()
 }
 
 func discoverRepoRoot() (string, error) {
@@ -279,23 +267,17 @@ func buildAndCacheBinary(ctx context.Context, absPkgDir, repoRoot, pkgRel, cache
 
 func buildFingerprint(ctx context.Context, absPkgDir, repoRoot string, cfg Config) (string, error) {
 	cacheKey := absPkgDir + cfg.GOOS + cfg.GOARCH
-	fingerprintCacheMu.RLock()
-	if fp, ok := fingerprintCache[cacheKey]; ok {
-		fingerprintCacheMu.RUnlock()
-		return fp, nil
+	if v, ok := fingerprintCache.Load(cacheKey); ok {
+		return v.(string), nil
 	}
-	fingerprintCacheMu.RUnlock()
 
 	fp, err := computeBuildFingerprint(ctx, absPkgDir, repoRoot, cfg)
 	if err != nil {
 		return "", err
 	}
 
-	fingerprintCacheMu.Lock()
-	fingerprintCache[cacheKey] = fp
-	fingerprintCacheMu.Unlock()
-
-	return fp, nil
+	actual, _ := fingerprintCache.LoadOrStore(cacheKey, fp)
+	return actual.(string), nil
 }
 
 type listPackage struct {

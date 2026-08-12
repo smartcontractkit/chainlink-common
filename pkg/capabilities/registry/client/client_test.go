@@ -1,4 +1,7 @@
-package client
+// Package client_test, not client: server now dials capabilities through this package's Wrap to
+// back Add with a real value, so an internal test here (package client) importing server would
+// cycle back to client.
+package client_test
 
 import (
 	"context"
@@ -16,6 +19,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/client"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/registrytest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/server"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -26,21 +30,29 @@ import (
 // listener. Only the on-chain metadata read is substituted, since a test cannot
 // run a chain; everything else the client talks to is production code.
 
-func newRegistry(t *testing.T) *server.Registry {
+// newRegistry builds the registry under test. Add now dials whatever address it is given to
+// resolve a real value, so the registry needs the same capability dial options the client tests
+// pass it - book, when the test serves fakes through one; otherwise, just credentials, since
+// Add's dial-out is a production requirement, not conditional on what the test's own client does.
+func newRegistry(t *testing.T, book *registrytest.AddrBook) *server.Registry {
 	t.Helper()
-	return server.New(logger.Test(t))
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
+	if book != nil {
+		opts = append(opts, book.DialOption())
+	}
+	return server.New(logger.Test(t), opts...)
 }
 
 // newClient serves reg and returns a client for it, with capability dials
 // resolved through book when one is given.
-func newClient(t *testing.T, reg *server.Registry, book *registrytest.AddrBook) *Client {
+func newClient(t *testing.T, reg *server.Registry, book *registrytest.AddrBook) *client.Client {
 	t.Helper()
 
 	var opts []grpc.DialOption
 	if book != nil {
 		opts = append(opts, book.DialOption(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
-	return New(logger.Test(t), registrytest.Serve(t, reg), opts...)
+	return client.New(logger.Test(t), registrytest.Serve(t, reg), opts...)
 }
 
 // serveCapabilityAt registers impl in book under name and returns its address.
@@ -49,7 +61,7 @@ func serveCapabilityAt(t *testing.T, book *registrytest.AddrBook, name string,
 	t.Helper()
 
 	srv := grpc.NewServer()
-	require.NoError(t, RegisterCapability(logger.Test(t), srv, impl, capType))
+	require.NoError(t, client.RegisterCapability(logger.Test(t), srv, impl, capType))
 	return book.Serve(t, name, srv)
 }
 
@@ -57,6 +69,93 @@ func peer(b byte) ragetypes.PeerID {
 	var p ragetypes.PeerID
 	p[0] = b
 	return p
+}
+
+// fakeExecutable and fakeTrigger are local copies of client's own capability_test.go doubles: that
+// file stays an internal test (package client) since it does not need server, and its unexported
+// types are not reachable from here, an external test package.
+
+type fakeExecutable struct {
+	info capabilities.CapabilityInfo
+
+	executeErr error
+	response   capabilities.CapabilityResponse
+
+	registeredTo   []capabilities.RegistrationMetadata
+	unregisteredTo []capabilities.RegistrationMetadata
+	lastRequest    capabilities.CapabilityRequest
+}
+
+func (f *fakeExecutable) Info(context.Context) (capabilities.CapabilityInfo, error) {
+	return f.info, nil
+}
+
+func (f *fakeExecutable) Execute(_ context.Context, req capabilities.CapabilityRequest) (capabilities.CapabilityResponse, error) {
+	f.lastRequest = req
+	if f.executeErr != nil {
+		return capabilities.CapabilityResponse{}, f.executeErr
+	}
+	return f.response, nil
+}
+
+func (f *fakeExecutable) RegisterToWorkflow(_ context.Context, req capabilities.RegisterToWorkflowRequest) error {
+	f.registeredTo = append(f.registeredTo, req.Metadata)
+	return nil
+}
+
+func (f *fakeExecutable) UnregisterFromWorkflow(_ context.Context, req capabilities.UnregisterFromWorkflowRequest) error {
+	f.unregisteredTo = append(f.unregisteredTo, req.Metadata)
+	return nil
+}
+
+type fakeTrigger struct {
+	info capabilities.CapabilityInfo
+
+	registerErr error
+	events      []capabilities.TriggerResponse
+
+	unregistered chan capabilities.TriggerRegistrationRequest
+	acked        chan [3]string
+}
+
+func newFakeTrigger(info capabilities.CapabilityInfo) *fakeTrigger {
+	return &fakeTrigger{
+		info:         info,
+		unregistered: make(chan capabilities.TriggerRegistrationRequest, 4),
+		acked:        make(chan [3]string, 4),
+	}
+}
+
+func (f *fakeTrigger) Info(context.Context) (capabilities.CapabilityInfo, error) {
+	return f.info, nil
+}
+
+func (f *fakeTrigger) RegisterTrigger(_ context.Context, _ capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
+	if f.registerErr != nil {
+		return nil, f.registerErr
+	}
+	ch := make(chan capabilities.TriggerResponse, len(f.events))
+	for _, e := range f.events {
+		ch <- e
+	}
+	close(ch)
+	return ch, nil
+}
+
+func (f *fakeTrigger) UnregisterTrigger(_ context.Context, req capabilities.TriggerRegistrationRequest) error {
+	select {
+	case f.unregistered <- req:
+	default:
+	}
+	return nil
+}
+
+func (f *fakeTrigger) AckEvent(_ context.Context, triggerID, eventID, method string) error {
+	select {
+	case f.acked <- [3]string{triggerID, eventID, method}:
+	default:
+	}
+	return nil
 }
 
 // --- registration ---
@@ -74,15 +173,23 @@ func TestAddAt_CarriesCapabilityTypeVerbatim(t *testing.T) {
 		capabilities.CapabilityTypeCombined,
 	} {
 		t.Run(string(capType), func(t *testing.T) {
-			reg := newRegistry(t)
-			c := newClient(t, reg, nil)
+			book := registrytest.NewAddrBook()
+			info := capabilities.MustNewCapabilityInfo("c@1.0.0", capType, "c")
+			impl := &fakeCombined{
+				fakeExecutable: &fakeExecutable{info: info},
+				fakeTrigger:    newFakeTrigger(info),
+			}
+			addr := serveCapabilityAt(t, book, "c", impl, capType)
 
-			require.NoError(t, c.AddAt(ctx, "c@1.0.0", capType, "addr:1"))
+			reg := newRegistry(t, book)
+			c := newClient(t, reg, book)
+
+			require.NoError(t, c.AddAt(ctx, "c@1.0.0", capType, addr))
 
 			got, err := reg.Get(ctx, "c@1.0.0")
 			require.NoError(t, err)
 			assert.Equal(t, capType, got.Type)
-			assert.Equal(t, "addr:1", got.URL)
+			assert.Equal(t, addr, got.URL)
 		})
 	}
 }
@@ -90,7 +197,7 @@ func TestAddAt_CarriesCapabilityTypeVerbatim(t *testing.T) {
 func TestAddAt_RejectsUnknownType(t *testing.T) {
 	ctx := context.Background()
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, nil)
 	c := newClient(t, reg, nil)
 
 	// Without a type the registry cannot know which services live at the address.
@@ -101,7 +208,7 @@ func TestAddAt_RejectsUnknownType(t *testing.T) {
 func TestAddAt_RejectsEmptyAddress(t *testing.T) {
 	ctx := context.Background()
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, nil)
 	c := newClient(t, reg, nil)
 
 	require.Error(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, ""))
@@ -111,10 +218,16 @@ func TestAddAt_RejectsEmptyAddress(t *testing.T) {
 func TestClient_Remove(t *testing.T) {
 	ctx := context.Background()
 
-	reg := newRegistry(t)
-	c := newClient(t, reg, nil)
+	book := registrytest.NewAddrBook()
+	impl := &fakeExecutable{
+		info: capabilities.MustNewCapabilityInfo("act@1.0.0", capabilities.CapabilityTypeAction, "act"),
+	}
+	addr := serveCapabilityAt(t, book, "cap-a", impl, capabilities.CapabilityTypeAction)
 
-	require.NoError(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, "addr:1"))
+	reg := newRegistry(t, book)
+	c := newClient(t, reg, book)
+
+	require.NoError(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, addr))
 	require.NoError(t, c.Remove(ctx, "act@1.0.0"))
 
 	_, err := reg.Get(ctx, "act@1.0.0")
@@ -139,7 +252,7 @@ func TestClient_GetExecutableDialsHandleAddress(t *testing.T) {
 	}
 	addr := serveCapabilityAt(t, book, "cap-a", impl, capabilities.CapabilityTypeAction)
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, book)
 	c := newClient(t, reg, book)
 	require.NoError(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, addr))
 
@@ -160,9 +273,11 @@ func TestClient_ReusesConnectionPerAddress(t *testing.T) {
 	}
 	addr := serveCapabilityAt(t, book, "cap-a", impl, capabilities.CapabilityTypeAction)
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, book)
 	c := newClient(t, reg, book)
 	require.NoError(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, addr))
+	// Add itself dials once, server-side, to resolve the handle into a real value.
+	dialsBeforeLookups := book.DialCount("cap-a")
 
 	// GetExecutable is on the per-invocation path for workflow steps, so a fresh
 	// dial per call would add a handshake to every capability call.
@@ -173,7 +288,7 @@ func TestClient_ReusesConnectionPerAddress(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	assert.Equal(t, 1, book.DialCount("cap-a"), "expected one transport dial across repeated lookups")
+	assert.Equal(t, dialsBeforeLookups+1, book.DialCount("cap-a"), "expected one transport dial across repeated lookups")
 }
 
 func TestClient_GetTriggerRejectsExecutableOnlyCapability(t *testing.T) {
@@ -185,7 +300,7 @@ func TestClient_GetTriggerRejectsExecutableOnlyCapability(t *testing.T) {
 	}
 	addr := serveCapabilityAt(t, book, "cap-a", impl, capabilities.CapabilityTypeAction)
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, book)
 	c := newClient(t, reg, book)
 	require.NoError(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, addr))
 
@@ -206,7 +321,7 @@ func TestClient_CombinedCapabilityServesBothSurfaces(t *testing.T) {
 	}
 	addr := serveCapabilityAt(t, book, "cap-b", impl, capabilities.CapabilityTypeCombined)
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, book)
 	c := newClient(t, reg, book)
 	require.NoError(t, c.AddAt(ctx, "both@1.0.0", capabilities.CapabilityTypeCombined, addr))
 
@@ -219,7 +334,7 @@ func TestClient_CombinedCapabilityServesBothSurfaces(t *testing.T) {
 func TestClient_GetUnknownCapability(t *testing.T) {
 	ctx := context.Background()
 
-	c := newClient(t, newRegistry(t), nil)
+	c := newClient(t, newRegistry(t, nil), nil)
 
 	_, err := c.Get(ctx, "nope@1.0.0")
 	require.Error(t, err)
@@ -235,7 +350,7 @@ func TestClient_List(t *testing.T) {
 	}
 	addr := serveCapabilityAt(t, book, "cap-good", impl, capabilities.CapabilityTypeAction)
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, book)
 	c := newClient(t, reg, book)
 	require.NoError(t, c.AddAt(ctx, "good@1.0.0", capabilities.CapabilityTypeAction, addr))
 
@@ -260,7 +375,7 @@ func TestClient_MissingCredentialsFailsRatherThanFallingBackToInsecure(t *testin
 	// No capability dial options, so no transport credentials. gRPC must refuse the
 	// dial: defaulting to insecure would silently make every capability call
 	// unauthenticated and unencrypted for a caller that forgot to say.
-	reg := newRegistry(t)
+	reg := newRegistry(t, book)
 	c := newClient(t, reg, nil)
 	require.NoError(t, c.AddAt(ctx, "act@1.0.0", capabilities.CapabilityTypeAction, addr))
 
@@ -290,7 +405,7 @@ func TestClient_LocalNodeAndNodeByPeerID(t *testing.T) {
 		CapabilityDONs: []capabilities.DON{{ID: 2, Name: "cap", F: 2, ConfigVersion: 5}},
 	}
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, nil)
 	reg.SetMetadata(&registrytest.Metadata{
 		Node:  &node,
 		Nodes: map[ragetypes.PeerID]capabilities.Node{self: node},
@@ -325,7 +440,7 @@ func TestClient_MetadataBeforeFirstSync(t *testing.T) {
 
 	// Metadata is a live read: before the registry has a source there is no answer
 	// to cache or fabricate, and the caller has to see that.
-	c := newClient(t, newRegistry(t), nil)
+	c := newClient(t, newRegistry(t, nil), nil)
 
 	_, err := c.LocalNode(ctx)
 	require.Error(t, err)
@@ -347,7 +462,7 @@ func TestClient_ConfigForCapability(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, nil)
 	reg.SetMetadata(&registrytest.Metadata{
 		Configs: map[string][]byte{"vault@1.0.0": wire},
 	})
@@ -362,7 +477,7 @@ func TestClient_ConfigForCapability(t *testing.T) {
 func TestClient_ConfigForCapabilityRejectsGarbageBytes(t *testing.T) {
 	ctx := context.Background()
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, nil)
 	reg.SetMetadata(&registrytest.Metadata{
 		Configs: map[string][]byte{"vault@1.0.0": []byte("not a proto")},
 	})
@@ -383,7 +498,7 @@ func TestClient_DONsForCapabilityAndDONByID(t *testing.T) {
 		Families: []string{"zone-b"},
 	}
 
-	reg := newRegistry(t)
+	reg := newRegistry(t, nil)
 	reg.SetMetadata(&registrytest.Metadata{
 		DONsForCap: map[string][]capabilities.DONWithNodes{
 			"act@1.0.0": {{DON: don, Nodes: []capabilities.Node{{PeerID: &member}}}},
@@ -429,7 +544,7 @@ func TestCapabilityTypeConvertersRoundTrip(t *testing.T) {
 }
 
 func TestDONFromProto_Nil(t *testing.T) {
-	assert.Equal(t, capabilities.DON{}, DONFromProto(nil))
+	assert.Equal(t, capabilities.DON{}, client.DONFromProto(nil))
 }
 
 // fakeCombined serves both the executable and trigger surfaces.

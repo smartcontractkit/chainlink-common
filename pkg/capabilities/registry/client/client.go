@@ -86,29 +86,43 @@ func (c *Client) wrap(h *registrypb.CapabilityHandle) (capabilities.BaseCapabili
 		return nil, capType, err
 	}
 
+	wrapped, err := Wrap(c.lggr, conn, capType)
+	if err != nil {
+		return nil, capType, fmt.Errorf("capability %s: %w", h.GetCapabilityId(), err)
+	}
+	return wrapped, capType, nil
+}
+
+// Wrap builds the capability surface capType promises, served over conn.
+//
+// Exported so a registry holding a Handle (an ID, a type and a callback address) can dial that
+// address itself and get back a real capabilities.BaseCapability, the same way this Client does for
+// its own callers - server.Registry uses this to back Add with an actual value instead of only the
+// address.
+func Wrap(lggr logger.Logger, conn grpc.ClientConnInterface, capType capabilities.CapabilityType) (capabilities.BaseCapability, error) {
 	base := newBaseCapabilityClient(conn)
 	// Mirrors RegisterCapability on the serving side: same type, same services.
 	switch capType {
 	case capabilities.CapabilityTypeTrigger:
 		return &triggerCapabilityClient{
 			baseCapabilityClient:    base,
-			triggerExecutableClient: newTriggerExecutableClient(c.lggr, conn),
-		}, capType, nil
+			triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
+		}, nil
 	case capabilities.CapabilityTypeAction,
 		capabilities.CapabilityTypeTarget,
 		capabilities.CapabilityTypeConsensus:
 		return &executableCapabilityClient{
 			baseCapabilityClient: base,
 			executableClient:     newExecutableClient(conn),
-		}, capType, nil
+		}, nil
 	case capabilities.CapabilityTypeCombined:
 		return &combinedCapabilityClient{
 			baseCapabilityClient:    base,
 			executableClient:        newExecutableClient(conn),
-			triggerExecutableClient: newTriggerExecutableClient(c.lggr, conn),
-		}, capType, nil
+			triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
+		}, nil
 	default:
-		return nil, capType, fmt.Errorf("capability %s has no usable capability type (%s)", h.GetCapabilityId(), capType)
+		return nil, fmt.Errorf("no usable capability type (%s)", capType)
 	}
 }
 

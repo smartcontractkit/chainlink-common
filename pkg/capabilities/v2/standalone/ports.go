@@ -27,20 +27,3 @@ func OffsetPort(hostPort string, delta int) (string, error) {
 	}
 	return net.JoinHostPort(host, strconv.Itoa(port+delta)), nil
 }
-
-// OffsetPorts applies OffsetPort to every address, returning a new slice. A nil or empty slice
-// returns nil, so an unset setting stays unset.
-func OffsetPorts(hostPorts []string, delta int) ([]string, error) {
-	if len(hostPorts) == 0 {
-		return nil, nil
-	}
-	out := make([]string, len(hostPorts))
-	for i, hostPort := range hostPorts {
-		offset, err := OffsetPort(hostPort, delta)
-		if err != nil {
-			return nil, err
-		}
-		out[i] = offset
-	}
-	return out, nil
-}

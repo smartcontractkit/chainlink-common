@@ -8,10 +8,15 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"google.golang.org/grpc"
+
 	ragetypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/client"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 // Handle is a registered capability: its ID, which capability services it
@@ -31,10 +36,13 @@ type Handle struct {
 //
 // It composes two independent sources:
 //
-//   - Handles, registered at runtime over Add by the processes that host the
-//     capabilities. This is the moral equivalent of chainlink's base registry
-//     (chainlink-common/pkg/capabilities/registry), reduced to a URL map because
-//     crecore never holds a capability in-process.
+//   - Handles, registered at runtime over Add by the processes that host the capabilities. Add
+//     dials the handle's address itself and wraps it into a real capabilities.BaseCapability (the
+//     same conversion registry/client does for its own callers), then adds that to local, chainlink's
+//     ordinary in-process base registry. Add is a drop-in replacement for the in-process
+//     Add(BaseCapability) core uses without a proxy: a capability registered this way is just as real
+//     and callable as one added directly, whether the caller asking for it is in this process or
+//     another one reached the normal way, over the gRPC service Get/GetTrigger/GetExecutable wrap.
 //   - Metadata, supplied by a MetadataSource the owner installs. Read-only from
 //     here; whoever provides it decides how it is refreshed.
 //
@@ -47,16 +55,32 @@ type Registry struct {
 	// (with an error) before a source exists.
 	metadata atomic.Value // MetadataSource
 
+	// local holds the real, callable value Add resolves a Handle to. Anything in this process that
+	// wants to call a capability - locally added, or reached only by dialing a Handle's address -
+	// goes through this, not through handles below.
+	local core.CapabilitiesRegistryBase
+
+	// dialOpts are applied when dialing a Handle's address to resolve it into local.
+	dialOpts []grpc.DialOption
+
 	mu      sync.RWMutex
 	handles map[string]Handle
+	conns   map[string]*grpc.ClientConn // by URL; closed and dropped on Remove
 }
 
-func New(lggr logger.Logger) *Registry {
+func New(lggr logger.Logger, dialOpts ...grpc.DialOption) *Registry {
 	return &Registry{
-		lggr:    logger.Named(lggr, "CapabilitiesRegistry"),
-		handles: map[string]Handle{},
+		lggr:     logger.Named(lggr, "CapabilitiesRegistry"),
+		local:    registry.NewBaseRegistry(lggr),
+		dialOpts: dialOpts,
+		handles:  map[string]Handle{},
+		conns:    map[string]*grpc.ClientConn{},
 	}
 }
+
+// Local is the real, in-process registry Add resolves Handles into: whatever in this process wants
+// to actually call a capability - rather than tell some other process where to find it - uses this.
+func (r *Registry) Local() core.CapabilitiesRegistryBase { return r.local }
 
 // MetadataSource is the registry's view of on-chain state.
 //
@@ -103,7 +127,7 @@ func (r *Registry) current() (MetadataSource, error) {
 // a capability ID is settled on chain, and a caller that wants the stricter rule
 // has the liveness information locally — see how core gates replacement on
 // connection state in chainlink-common's baseRegistry.
-func (r *Registry) Add(_ context.Context, h Handle) error {
+func (r *Registry) Add(ctx context.Context, h Handle) error {
 	if h.ID == "" {
 		return errors.New("capability ID is required")
 	}
@@ -114,24 +138,53 @@ func (r *Registry) Add(_ context.Context, h Handle) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	if prev, ok := r.handles[h.ID]; ok && prev.URL == h.URL && prev.Type == h.Type {
+		r.lggr.Debugw("capability re-registered at the same address; nothing to do",
+			"capabilityID", h.ID, "url", h.URL)
+		return nil
+	}
+
+	conn, err := grpc.NewClient(h.URL, r.dialOpts...)
+	if err != nil {
+		return fmt.Errorf("failed to dial capability %s at %s: %w", h.ID, h.URL, err)
+	}
+	wrapped, err := client.Wrap(r.lggr, conn, h.Type)
+	if err != nil {
+		_ = conn.Close()
+		return fmt.Errorf("failed to wrap capability %s at %s: %w", h.ID, h.URL, err)
+	}
+
+	// The wrapped value cannot report connection state (it is a plain RPC client, not a
+	// *grpc.ClientConn), so local's own liveness-gated replace never fires - drop the previous
+	// entry explicitly instead so a moved capability is replaced rather than rejected.
+	if prevConn, ok := r.conns[h.ID]; ok {
+		_ = r.local.Remove(ctx, h.ID)
+		_ = prevConn.Close()
+	}
+	if err := r.local.Add(ctx, wrapped); err != nil {
+		_ = conn.Close()
+		return fmt.Errorf("failed to add capability %s to local registry: %w", h.ID, err)
+	}
+	r.conns[h.ID] = conn
+
 	if prev, ok := r.handles[h.ID]; ok {
-		if prev.URL == h.URL && prev.Type == h.Type {
-			r.lggr.Debugw("capability re-registered at the same address; nothing to do",
-				"capabilityID", h.ID, "url", h.URL)
-			return nil
-		}
 		r.lggr.Infow("re-registering capability at a new address",
 			"capabilityID", h.ID, "previousURL", prev.URL, "url", h.URL)
 	}
-
 	r.handles[h.ID] = h
 	r.lggr.Infow("capability registered", "capabilityID", h.ID, "type", h.Type, "url", h.URL)
 	return nil
 }
 
-func (r *Registry) Remove(_ context.Context, id string) error {
+func (r *Registry) Remove(ctx context.Context, id string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
+	if conn, ok := r.conns[id]; ok {
+		_ = r.local.Remove(ctx, id)
+		_ = conn.Close()
+		delete(r.conns, id)
+	}
 
 	if _, ok := r.handles[id]; !ok {
 		return fmt.Errorf("capability %s not found", id)

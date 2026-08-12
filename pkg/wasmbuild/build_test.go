@@ -464,3 +464,5 @@ func TestBuildInvalidatesCacheOnSourceEdit(t *testing.T) {
 	assert.NotEqual(t, fp1, fp2, "source edit must produce new build fingerprint")
 }
 
+
+

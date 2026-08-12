@@ -54,11 +54,11 @@ type Config struct {
 	GOARCH string
 }
 
-// Build compiles the Go package in cfg.PkgDir to a WASM binary and returns it.
+// Compile compiles the Go package in cfg.PkgDir to a WASM binary and returns it.
 // The binary is content-addressed cached in .wasm-cache/ under the repo root.
 // Concurrent calls for the same package are serialized; different packages
 // build in parallel.
-func Build(ctx context.Context, cfg Config) ([]byte, error) {
+func Compile(ctx context.Context, cfg Config) ([]byte, error) {
 	if cfg.GOOS == "" {
 		cfg.GOOS = defaultGOOS
 	}

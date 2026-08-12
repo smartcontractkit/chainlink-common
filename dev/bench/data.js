@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786541094736,
+  "lastUpdate": 1786542495087,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -58020,6 +58020,66 @@ window.BENCHMARK_DATA = {
             "value": 126186,
             "unit": "ns/op",
             "extra": "9177 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cawthornegd@gmail.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "781de482b709a9bf4ce461a34b0de646760edd77",
+          "message": "observability-lib: pin Grafana panel IDs via PanelOptions.StableID (#2241)\n\n* Add stable Grafana panel ID support to observability-lib builder.\n\nPin panel IDs by title after dashboard build so vm-alerts detail_panel_id and viewPanel deep links stay stable across regenerations.\n\n* Assign Grafana panel IDs from PanelOptions.StableID at build time.\n\nPin IDs at panel definition via StableID while keeping title-based\nApplyStablePanelIDs and WithStablePanelIDs as legacy fallbacks.\n\n* Drop title-based panel ID pinning from observability-lib builder.\n\nStable panel IDs are assigned only via PanelOptions.StableID at build\ntime. Remove WithStablePanelIDs, ApplyStablePanelIDs, and related\ntitle-map helpers; keep PanelIDByTitle for deploy-time lookups.\n\n* Simplify StableID assignment; drop within-dashboard duplicate tracking.\n\nEach Builder is single-use per dashboard, and panel IDs need only be\nunique within that dashboard. Use StableID when set, otherwise increment.\n\n* Skip auto-increment panel IDs already reserved by StableID.\n\nTrack assigned panel IDs during build so unpinned panels advance past\nstable ID slots instead of colliding with them.\n\n* Fix observability-lib lint and clarify stable panel ID behavior.\n\nUse strconv.FormatUint in deploy lookup, fix test variable shadowing,\nand document that auto-increment skips StableID reservations.\n\n* Fix goimports formatting in PanelOptions struct.\n\n* ci: re-trigger CodeQL and benchmark workflows\n\n* Reject duplicate panel IDs during dashboard Build().\n\nTrack assigned StableID and auto-increment IDs and return an error when\ntwo panels would share the same Grafana panel ID.\n\n* fix ci checks",
+          "timestamp": "2026-08-12T13:36:11Z",
+          "tree_id": "9c79bad3b96533f3dbe6deac56eabfdff1ae588b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/781de482b709a9bf4ce461a34b0de646760edd77"
+        },
+        "date": 1786542491592,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 378.8,
+            "unit": "ns/op",
+            "extra": "3228072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 79097,
+            "unit": "ns/op",
+            "extra": "15242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.5,
+            "unit": "ns/op",
+            "extra": "2887478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78660,
+            "unit": "ns/op",
+            "extra": "14983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 24887,
+            "unit": "ns/op",
+            "extra": "48291 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 124390,
+            "unit": "ns/op",
+            "extra": "8940 times\n4 procs"
           }
         ]
       }

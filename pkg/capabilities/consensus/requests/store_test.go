@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
@@ -17,9 +16,9 @@ import (
 func TestOCR3Store(t *testing.T) {
 	n := time.Now()
 
-	s := requests.NewStore[*ocr3.ReportRequest]()
+	s := requests.NewStore[*testReportRequest]()
 	rid := uuid.New().String()
-	req := &ocr3.ReportRequest{
+	req := &testReportRequest{
 		WorkflowExecutionID: rid,
 		ExpiresAt:           n.Add(10 * time.Second),
 	}
@@ -61,7 +60,7 @@ func TestOCR3Store(t *testing.T) {
 
 	t.Run("firstN, batchSize larger than queue", func(t *testing.T) {
 		for range 10 {
-			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
+			err := s.Add(&testReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}
 		items, err := s.FirstN(100)
@@ -76,7 +75,7 @@ func TestOCR3Store(t *testing.T) {
 	})
 
 	t.Run("rangeN", func(t *testing.T) {
-		err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
+		err := s.Add(&testReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 		require.NoError(t, err)
 		r, err := s.RangeN(0, 1)
 		assert.NoError(t, err)
@@ -90,7 +89,7 @@ func TestOCR3Store(t *testing.T) {
 
 	t.Run("rangeN, batchSize larger than queue with start offset", func(t *testing.T) {
 		for range 10 {
-			err := s.Add(&ocr3.ReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
+			err := s.Add(&testReportRequest{WorkflowExecutionID: uuid.New().String(), ExpiresAt: n.Add(1 * time.Hour)})
 			require.NoError(t, err)
 		}
 		items, err := s.RangeN(5, 100)
@@ -108,9 +107,9 @@ func TestOCR3Store(t *testing.T) {
 }
 
 func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
-	s := requests.NewStore[*ocr3.ReportRequest]()
+	s := requests.NewStore[*testReportRequest]()
 	rid := uuid.New().String()
-	req := &ocr3.ReportRequest{
+	req := &testReportRequest{
 		WorkflowExecutionID: rid,
 	}
 
@@ -138,15 +137,15 @@ func TestOCR3Store_ManagesStateConsistently(t *testing.T) {
 }
 
 func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
-	s := requests.NewStore[*ocr3.ReportRequest]()
+	s := requests.NewStore[*testReportRequest]()
 	rid := uuid.New().String()
-	cb := make(chan ocr3.ReportResponse, 1)
+	cb := make(chan testReportResponse, 1)
 	stopCh := make(chan struct{}, 1)
 	obs, err := values.NewList(
 		[]any{"hello", 1},
 	)
 	require.NoError(t, err)
-	req := &ocr3.ReportRequest{
+	req := &testReportRequest{
 		WorkflowExecutionID:      rid,
 		WorkflowID:               "wid",
 		WorkflowName:             "name",
@@ -165,17 +164,17 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		get  func(ctx context.Context, rid string) *ocr3.ReportRequest
+		get  func(ctx context.Context, rid string) *testReportRequest
 	}{
 		{
 			name: "get",
-			get: func(ctx context.Context, rid string) *ocr3.ReportRequest {
+			get: func(ctx context.Context, rid string) *testReportRequest {
 				return s.Get(rid)
 			},
 		},
 		{
 			name: "firstN",
-			get: func(ctx context.Context, rid string) *ocr3.ReportRequest {
+			get: func(ctx context.Context, rid string) *testReportRequest {
 				rs, err2 := s.FirstN(1)
 				require.NoError(t, err2)
 				assert.Len(t, rs, 1)
@@ -184,7 +183,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 		},
 		{
 			name: "getByIDs",
-			get: func(ctx context.Context, rid string) *ocr3.ReportRequest {
+			get: func(ctx context.Context, rid string) *testReportRequest {
 				rs := s.GetByIDs([]string{rid})
 				assert.Len(t, rs, 1)
 				return rs[0]
@@ -211,7 +210,7 @@ func TestOCR3Store_ReadRequestsCopy(t *testing.T) {
 			gr.StopCh <- struct{}{}
 			<-stopCh
 
-			gr.CallbackCh <- ocr3.ReportResponse{}
+			gr.CallbackCh <- testReportResponse{}
 			<-cb
 		})
 	}

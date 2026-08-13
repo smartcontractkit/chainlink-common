@@ -1,24 +1,26 @@
-package ocr3
+package requests_test
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
-type ReportRequest struct {
-	Observations            *values.List `mapstructure:"-"`
+// testReportRequest/testReportResponse stand in for a real ConsensusRequest/ConsensusResponse
+// implementation (e.g. ocr3.ReportRequest/ReportResponse) so the generic Store/Handler can be
+// exercised without depending on a specific capability.
+type testReportRequest struct {
+	Observations            *values.List
 	OverriddenEncoderName   string
 	OverriddenEncoderConfig *values.Map
 	ExpiresAt               time.Time
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
-	CallbackCh chan ReportResponse
-	StopCh     services.StopChan
+	CallbackCh chan testReportResponse
+	StopCh     chan struct{}
 
 	WorkflowExecutionID      string
 	WorkflowID               string
@@ -31,15 +33,15 @@ type ReportRequest struct {
 	KeyID string
 }
 
-func (r *ReportRequest) ID() string {
+func (r *testReportRequest) ID() string {
 	return r.WorkflowExecutionID
 }
 
-func (r *ReportRequest) ExpiryTime() time.Time {
+func (r *testReportRequest) ExpiryTime() time.Time {
 	return r.ExpiresAt
 }
 
-func (r *ReportRequest) SendResponse(ctx context.Context, resp ReportResponse) {
+func (r *testReportRequest) SendResponse(ctx context.Context, resp testReportResponse) {
 	select {
 	case <-ctx.Done():
 		return
@@ -48,16 +50,15 @@ func (r *ReportRequest) SendResponse(ctx context.Context, resp ReportResponse) {
 	}
 }
 
-func (r *ReportRequest) SendTimeout(ctx context.Context) {
-	timeoutResponse := ReportResponse{
+func (r *testReportRequest) SendTimeout(ctx context.Context) {
+	r.SendResponse(ctx, testReportResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
-	}
-	r.SendResponse(ctx, timeoutResponse)
+	})
 }
 
-func (r *ReportRequest) Copy() *ReportRequest {
-	return &ReportRequest{
+func (r *testReportRequest) Copy() *testReportRequest {
+	return &testReportRequest{
 		Observations:            r.Observations.CopyList(),
 		OverriddenEncoderConfig: r.OverriddenEncoderConfig.CopyMap(),
 
@@ -79,12 +80,12 @@ func (r *ReportRequest) Copy() *ReportRequest {
 	}
 }
 
-type ReportResponse struct {
+type testReportResponse struct {
 	WorkflowExecutionID string
 	Value               *values.Map
 	Err                 error
 }
 
-func (r ReportResponse) RequestID() string {
+func (r testReportResponse) RequestID() string {
 	return r.WorkflowExecutionID
 }

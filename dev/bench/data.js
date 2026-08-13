@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786542495087,
+  "lastUpdate": 1786636783144,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -58080,6 +58080,66 @@ window.BENCHMARK_DATA = {
             "value": 124390,
             "unit": "ns/op",
             "extra": "8940 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "adam.hamrick@smartcontract.com",
+            "name": "Adam Hamrick",
+            "username": "kalverra"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2fb18e352bf84ae93ffc705e7e7df8a148549b27",
+          "message": "feat(wasm): Adds Smarter, Universal WASM Compilation (#2322)\n\n* feat(wasmbuild): implement WASM build caching\n\nAdd wasmbuild package to bypass redundant go builds by compiling\npackages to brotli-compressed WASM binaries stored in .wasm-cache/.\nCache keys are derived from content-addressed file digests, Go version,\nplatform, and build flags. Includes per-package concurrent build\nserialization.\n\n* lint: fix linting\n\n* fix(wasm): use sync.Map\n\n* fix(wasm): fixes cache retrieval\n\n* perf(wasmbuild): implement WASM cache pruning\n\nReplaces ephemeral in-memory caching to persist builds across CI runner\n restarts, reducing redundant compilations. Adds automatic TTL-based\n directory pruning to prevent disk bloat.\n Fixes fingerprint collisions by using null-byte delimiters\n for build flags and caches file hashes to avoid redundant disk reads.\n\n* refactor: wasmbuild.Build -> wasbuild.Compile\n\n* docs: expain no sync.OnceValues",
+          "timestamp": "2026-08-13T15:46:20Z",
+          "tree_id": "7c5c069a518880eed9c3c23d8ee3e6cca95781a2",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2fb18e352bf84ae93ffc705e7e7df8a148549b27"
+        },
+        "date": 1786636780521,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 780.9,
+            "unit": "ns/op",
+            "extra": "1518307 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92973,
+            "unit": "ns/op",
+            "extra": "12970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 667.4,
+            "unit": "ns/op",
+            "extra": "1566373 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 81811,
+            "unit": "ns/op",
+            "extra": "14451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 29270,
+            "unit": "ns/op",
+            "extra": "41022 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 128929,
+            "unit": "ns/op",
+            "extra": "8751 times\n4 procs"
           }
         ]
       }

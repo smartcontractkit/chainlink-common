@@ -9,25 +9,49 @@ package registry
 
 import (
 	"context"
+	"fmt"
+
+	"google.golang.org/protobuf/proto"
 
 	ragetypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 )
 
 // DonID is a DON's registry ID.
 type DonID uint32
 
-// DON pairs a DON's identity with the raw capability configuration blobs the registry stores for it.
+// DON pairs a DON's identity with the capability configurations the registry stores for it.
 type DON struct {
 	capabilities.DON
-	// CapabilityConfigurations maps capability ID to the wire-encoded
-	// capabilities/pb.CapabilityConfig the registry holds for this DON.
-	//
-	// The bytes are deliberately left undecoded. A process that only serves them has no reason to
-	// interpret them: it hands them over verbatim and the caller unmarshals. That keeps the
-	// config-decoding logic, and its drift against the contract, out of the read path entirely.
-	CapabilityConfigurations map[string][]byte
+	// CapabilityConfigurations maps capability ID to the configuration the registry holds for that
+	// capability on this DON.
+	CapabilityConfigurations map[string]CapabilityConfiguration
+}
+
+// CapabilityConfiguration is what the registry stores for one capability on one DON: a wire-encoded
+// capabilities/pb.CapabilityConfig.
+//
+// The bytes are deliberately left undecoded by the read path. A process that only serves them has
+// no reason to interpret them: it hands them over verbatim and the caller unmarshals. Decoding is
+// therefore offered rather than performed - see Unmarshal.
+type CapabilityConfiguration struct {
+	Config []byte
+}
+
+// Unmarshal decodes the stored bytes into the full capability configuration.
+//
+// This is a method on the contract rather than something each caller writes because the encoding is
+// part of what the contract says these bytes are: pb.CapabilityConfigFromProto is the single
+// decoder for that message, and routing every caller through it is what keeps a snapshot's idea of
+// a config and the wire's from drifting apart.
+func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfiguration, error) {
+	cfg := &pb.CapabilityConfig{}
+	if err := proto.Unmarshal(c.Config, cfg); err != nil {
+		return capabilities.CapabilityConfiguration{}, fmt.Errorf("failed to unmarshal capability configuration: %w", err)
+	}
+	return pb.CapabilityConfigFromProto(cfg)
 }
 
 // NodeInfo is a node's registry record.

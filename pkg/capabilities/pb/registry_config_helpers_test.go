@@ -157,3 +157,33 @@ func TestCapabilityConfigFromProto_OCR3AndOracleFactoryConfigs(t *testing.T) {
 	require.Len(t, got.OracleFactoryConfigs, 1)
 	assert.Equal(t, *oracleCfg, got.OracleFactoryConfigs["__default__"])
 }
+
+// RestrictedConfig is the config only we may set, and it takes precedence over anything a user
+// supplies. Dropping it on decode would silently hand the user's own value that precedence, so it
+// has to survive even though nothing about the message shape forces it to.
+func TestCapabilityConfigFromProto_KeepsRestrictedConfig(t *testing.T) {
+	defaultConfig, err := values.NewMap(map[string]any{"userMayChange": "yes"})
+	require.NoError(t, err)
+	restricted, err := values.NewMap(map[string]any{"onlyWeSetThis": "secret"})
+	require.NoError(t, err)
+
+	got, err := CapabilityConfigFromProto(&CapabilityConfig{
+		DefaultConfig:    values.ProtoMap(defaultConfig),
+		RestrictedConfig: values.ProtoMap(restricted),
+		RestrictedKeys:   []string{"onlyWeSetThis"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, defaultConfig, got.DefaultConfig)
+	assert.Equal(t, restricted, got.RestrictedConfig)
+	assert.Equal(t, []string{"onlyWeSetThis"}, got.RestrictedKeys)
+}
+
+// F is the fault tolerance OCR runs at, so a value that does not fit a uint8 has to be refused
+// rather than truncated into a completely different protocol parameter.
+func TestCapabilityConfigFromProto_RejectsOutOfRangeOCR3F(t *testing.T) {
+	_, err := CapabilityConfigFromProto(&CapabilityConfig{
+		Ocr3Configs: map[string]*OCR3Config{"__default__": {F: 256}},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "exceeds uint8 max")
+}

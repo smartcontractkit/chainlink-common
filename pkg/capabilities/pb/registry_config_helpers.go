@@ -3,6 +3,7 @@ package pb
 import (
 	"encoding/hex"
 	"fmt"
+	"math"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
@@ -25,6 +26,13 @@ func CapabilityConfigFromProto(cfg *CapabilityConfig) (capabilities.CapabilityCo
 	defaultConfig, err := values.FromMapValueProto(cfg.DefaultConfig)
 	if err != nil {
 		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
+	}
+
+	// RestrictedConfig takes precedence over anything a user supplies, so dropping it silently would
+	// hand the user's own value authority it should never have.
+	restrictedConfig, err := values.FromMapValueProto(cfg.RestrictedConfig)
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert restricted config valueproto to map: %w", err)
 	}
 
 	var (
@@ -53,6 +61,10 @@ func CapabilityConfigFromProto(cfg *CapabilityConfig) (capabilities.CapabilityCo
 				decoded.RemoteTriggerConfig = decodeRemoteTriggerConfig(mCfg.GetRemoteTriggerConfig())
 			case *CapabilityMethodConfig_RemoteExecutableConfig:
 				decoded.RemoteExecutableConfig = decodeRemoteExecutableConfig(mCfg.GetRemoteExecutableConfig())
+			default:
+				// Failing loudly beats handing back a method config with no remote settings at all,
+				// which reads as "callable with defaults" rather than "not understood".
+				return capabilities.CapabilityConfiguration{}, fmt.Errorf("unknown method config type for method %s", name)
 			}
 			if mCfg.AggregatorConfig != nil {
 				decoded.AggregatorConfig = &capabilities.AggregatorConfig{
@@ -67,7 +79,11 @@ func CapabilityConfigFromProto(cfg *CapabilityConfig) (capabilities.CapabilityCo
 	if cfg.Ocr3Configs != nil {
 		ocr3Configs = make(map[string]ocrtypes.ContractConfig, len(cfg.Ocr3Configs))
 		for key, pbCfg := range cfg.Ocr3Configs {
-			ocr3Configs[key] = decodeOcr3Config(pbCfg)
+			decodedOcr3, err := decodeOcr3Config(pbCfg)
+			if err != nil {
+				return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode OCR3 config %q: %w", key, err)
+			}
+			ocr3Configs[key] = decodedOcr3
 		}
 	}
 
@@ -93,6 +109,7 @@ func CapabilityConfigFromProto(cfg *CapabilityConfig) (capabilities.CapabilityCo
 	return capabilities.CapabilityConfiguration{
 		DefaultConfig:          defaultConfig,
 		RestrictedKeys:         cfg.RestrictedKeys,
+		RestrictedConfig:       restrictedConfig,
 		RemoteTriggerConfig:    remoteTriggerConfig,
 		RemoteTargetConfig:     remoteTargetConfig,
 		RemoteExecutableConfig: remoteExecutableConfig,
@@ -133,7 +150,7 @@ func decodeRemoteExecutableConfig(prec *RemoteExecutableConfig) *capabilities.Re
 	}
 }
 
-func decodeOcr3Config(pbCfg *OCR3Config) ocrtypes.ContractConfig {
+func decodeOcr3Config(pbCfg *OCR3Config) (ocrtypes.ContractConfig, error) {
 	signers := make([]ocrtypes.OnchainPublicKey, len(pbCfg.Signers))
 	for i, s := range pbCfg.Signers {
 		signers[i] = ocrtypes.OnchainPublicKey(s)
@@ -142,14 +159,19 @@ func decodeOcr3Config(pbCfg *OCR3Config) ocrtypes.ContractConfig {
 	for i, t := range pbCfg.Transmitters {
 		transmitters[i] = ocrtypes.Account(hex.EncodeToString(t))
 	}
+	// F is the fault tolerance the protocol is run at, so a value that does not fit has to be an
+	// error: truncating it would silently run OCR at a completely different F than configured.
+	if pbCfg.F > math.MaxUint8 {
+		return ocrtypes.ContractConfig{}, fmt.Errorf("F value %d exceeds uint8 max", pbCfg.F)
+	}
 	return ocrtypes.ContractConfig{
 		ConfigCount:           pbCfg.ConfigCount,
 		Signers:               signers,
 		Transmitters:          transmitters,
-		F:                     uint8(pbCfg.F),
+		F:                     uint8(pbCfg.F), //#nosec G115 - bounds checked above
 		OnchainConfig:         pbCfg.OnchainConfig,
 		OffchainConfigVersion: pbCfg.OffchainConfigVersion,
 		OffchainConfig:        pbCfg.OffchainConfig,
 		// NOTE: ConfigDigest is appended later by ContractConfigTracker.
-	}
+	}, nil
 }

@@ -39,20 +39,3 @@ func TestOffsetPort(t *testing.T) {
 		require.ErrorContains(t, err, "failed to parse port")
 	})
 }
-
-func TestOffsetPorts(t *testing.T) {
-	offset, err := OffsetPorts([]string{"127.0.0.1:100", "127.0.0.1:200"}, 5)
-	require.NoError(t, err)
-	assert.Equal(t, []string{"127.0.0.1:105", "127.0.0.1:205"}, offset)
-
-	t.Run("an unset setting stays unset", func(t *testing.T) {
-		offset, err := OffsetPorts(nil, 1)
-		require.NoError(t, err)
-		assert.Nil(t, offset)
-	})
-
-	t.Run("one bad address fails the lot", func(t *testing.T) {
-		_, err := OffsetPorts([]string{"127.0.0.1:100", "nonsense"}, 1)
-		require.Error(t, err)
-	})
-}

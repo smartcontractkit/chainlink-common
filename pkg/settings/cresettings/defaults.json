@@ -112,7 +112,7 @@
 		"WASMCompressedBinarySizeLimit": "20mb",
 		"WASMConfigSizeLimit": "50kb",
 		"WASMSecretsSizeLimit": "27kb",
-		"LogLineLimit": "1kb",
+		"LogLineLimit": "10kb",
 		"LogEventLimit": "1000",
 		"UserMetricEnabled": "false",
 		"UserMetricPayloadLimit": "4kb",

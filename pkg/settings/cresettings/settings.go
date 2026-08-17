@@ -219,7 +219,7 @@ var Default = Schema{
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
 		WASMConfigSizeLimit:           Size(50 * config.KByte),
 		WASMSecretsSizeLimit:          Size(27 * config.KByte),
-		LogLineLimit:                  Size(config.KByte),
+		LogLineLimit:                  Size(10 * config.KByte),
 		LogEventLimit:                 Int(1_000),
 		UserMetricEnabled:             Bool(false),
 		UserMetricPayloadLimit:        Size(4 * config.KByte),

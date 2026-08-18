@@ -833,7 +833,7 @@ func (b *BaseTriggerCapability[T]) pruneStaleEvents() {
 		b.observeStoreOp(storeOpDeleteEvent, deleteStart, deleteErr)
 		if deleteErr != nil {
 			b.lggr.Errorw("prune: failed to delete stale event",
-				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId, "err", err)
+				"capabilityID", b.capabilityId, "triggerID", rec.TriggerId, "eventID", rec.EventId, "err", deleteErr)
 		}
 	}
 }

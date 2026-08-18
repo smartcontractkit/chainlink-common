@@ -825,6 +825,21 @@ func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m f
 		}
 		v.SetDefault(viperKey, def)
 		flags.StringSlice(flagName, def, usageMsg)
+	case m.elemType.Kind() == reflect.Map:
+		// Only a map whose keys are text values, and whose values are text values or lists of
+		// them, has a flag form - "k=v;k=v" (see mapflag.go). Anything else, a map of structs
+		// or of maps, can only be written in the config file, and binding a flag for it anyway
+		// would be worse than binding none: the flag's default would be the string "map[]",
+		// which decoding then rejects, and an env var set for that key would break the config
+		// file value too.
+		valType := m.elemType.Elem()
+		if !isTextValueType(m.elemType.Key()) || !isMapValueType(valType) {
+			return
+		}
+		def := textMapOf(m.elem)
+		v.SetDefault(viperKey, def)
+		listValued := valType.Kind() == reflect.Slice || valType.Kind() == reflect.Array
+		flags.Var(newTextMapValue(def, listValued), flagName, usageMsg)
 	default:
 		v.SetDefault(viperKey, defaultVal)
 		switch m.elemType.Kind() {

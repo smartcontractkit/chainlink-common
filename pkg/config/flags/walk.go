@@ -79,6 +79,41 @@ func implementsTextUnmarshaler(t reflect.Type) bool {
 	return t.Implements(textUnmarshalerType) || reflect.PointerTo(t).Implements(textUnmarshalerType)
 }
 
+// isTextValueType reports whether a value of type t can be carried as a single piece of text -
+// a primitive, or a type that unmarshals itself from text (time.Duration, config.Duration, a
+// net.IP, ...). These are exactly the types that survive the round trip through a flag string
+// or an env var, so they're what a map's keys and values must be for the map to bind as one.
+func isTextValueType(t reflect.Type) bool {
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	if implementsTextUnmarshaler(t) {
+		return true
+	}
+	switch t.Kind() {
+	case reflect.String, reflect.Bool,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+		return true
+	default:
+		return false
+	}
+}
+
+// isMapValueType reports whether a map's values can be written on the command line: a single
+// piece of text, or a list of them ("primary=a,b"). A []byte is excluded despite being a list
+// of a primitive - it is text, not a list of numbers, and the two decode differently.
+func isMapValueType(t reflect.Type) bool {
+	if isTextValueType(t) {
+		return true
+	}
+	if k := t.Kind(); k != reflect.Slice && k != reflect.Array {
+		return false
+	}
+	return t.Elem().Kind() != reflect.Uint8 && isTextValueType(t.Elem())
+}
+
 // structVisitor holds the callbacks invoked while walking a struct.
 type structVisitor struct {
 	// leaf is called for every leaf field (scalar, or struct implementing

@@ -121,9 +121,62 @@ func (o Options) format() configdoc.Format {
 // comma-separated StringSlice parsing would, and any TextUnmarshaler from its string form.
 var stringCoercionHooks = mapstructure.ComposeDecodeHookFunc(
 	mapstructure.StringToTimeDurationHookFunc(),
-	mapstructure.StringToSliceHookFunc(","),
+	stringToTextSliceHookFunc(),
+	stringToMapHookFunc(),
 	mapstructure.TextUnmarshallerHookFunc(),
 )
+
+// stringToTextSliceHookFunc splits a comma-separated string into the elements of a list, the
+// way pflag's own StringSlice parses one.
+//
+// mapstructure's StringToSliceHookFunc is not used because it only splits into []string
+// exactly (`t != reflect.SliceOf(f)`), so a []int or a []config.Duration - including one
+// inside a map, which is the whole point of "primary=a,b" - would arrive as a single element
+// holding the unsplit string. The elements stay strings here; the hooks after this one and
+// WeaklyTypedInput convert each to the list's real element type.
+func stringToTextSliceHookFunc() mapstructure.DecodeHookFuncType {
+	return func(from, to reflect.Type, data any) (any, error) {
+		if from.Kind() != reflect.String {
+			return data, nil
+		}
+		if k := to.Kind(); k != reflect.Slice && k != reflect.Array {
+			return data, nil
+		}
+		// A []byte is text rather than a list of numbers - weak typing converts a string
+		// straight into one - and a slice that unmarshals itself from text owns its own form.
+		if to.Elem().Kind() == reflect.Uint8 || implementsTextUnmarshaler(to) || !isTextValueType(to.Elem()) {
+			return data, nil
+		}
+
+		raw := data.(string)
+		if raw == "" {
+			return []string{}, nil
+		}
+		return strings.Split(raw, mapListSep), nil
+	}
+}
+
+// stringToMapHookFunc parses the "k=v;k=v" text form of a map (see mapflag.go) into its
+// entries. Both a flag and an env var deliver a map as one string - viper hands the flag's
+// value straight through, since a map flag deliberately isn't one of the flag types viper
+// parses itself - so this is where every source that isn't a config file becomes a map.
+//
+// The entries stay strings here; the hooks after this one and WeaklyTypedInput convert each to
+// the map's actual key and value types, and StringToSliceHookFunc splits a list value on its
+// commas, so map[string]int, map[string][]string and map[string]config.Duration all arrive
+// filled in just as they would from a config file.
+//
+// Runs before TextUnmarshallerHookFunc but defers to it for a map type that unmarshals itself
+// from text, which owns its own string form.
+func stringToMapHookFunc() mapstructure.DecodeHookFuncType {
+	return func(from, to reflect.Type, data any) (any, error) {
+		if from.Kind() != reflect.String || to.Kind() != reflect.Map || implementsTextUnmarshaler(to) {
+			return data, nil
+		}
+		valKind := to.Elem().Kind()
+		return parseTextMap(data.(string), valKind == reflect.Slice || valKind == reflect.Array)
+	}
+}
 
 // decoderConfigFor returns a copy of o.DecoderConfig aimed at target, with weak-typed string
 // coercion forced on regardless of what o.DecoderConfig set - see the field doc on

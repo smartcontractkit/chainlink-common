@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -99,6 +100,21 @@ func (t TOML) Literal(val any) string {
 			parts[i] = t.Literal(v.Index(i).Interface())
 		}
 		return "[" + strings.Join(parts, ", ") + "]"
+	case reflect.Map:
+		// An inline table, so the value stays on the field's own line the way every other
+		// literal here does - a [table] header would have to be written somewhere else in the
+		// document. Keys are sorted, or the generated document would differ run to run.
+		if v.Len() == 0 {
+			return "{}"
+		}
+		parts := make([]string, 0, v.Len())
+		for _, k := range v.MapKeys() {
+			// A TOML key is itself a string, and Literal quotes one, so the key renders the
+			// same way the value does - 'env' = 'prod'.
+			parts = append(parts, t.Literal(k.Interface())+" = "+t.Literal(v.MapIndex(k).Interface()))
+		}
+		sort.Strings(parts)
+		return "{ " + strings.Join(parts, ", ") + " }"
 	default:
 		return fmt.Sprintf("'%v'", v.Interface())
 	}

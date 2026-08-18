@@ -93,6 +93,12 @@ func TestTOMLLiteral(t *testing.T) {
 		{"int slice", []int{1, 2}, "[1, 2]"},
 		// A duration is an int64 underneath; it must not render as a raw nanosecond count.
 		{"duration", 90 * time.Second, "'1m30s'"},
+		// A map is an inline table, so it stays on the field's own line. Keys are sorted, or
+		// the generated document would differ run to run.
+		{"string map", map[string]string{"b": "2", "a": "1"}, "{ 'a' = '1', 'b' = '2' }"},
+		{"int map", map[string]int{"a": 1}, "{ 'a' = 1 }"},
+		{"duration map", map[string]time.Duration{"a": 90 * time.Second}, "{ 'a' = '1m30s' }"},
+		{"empty map", map[string]string{}, "{}"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want, TOML{}.Literal(tt.val))

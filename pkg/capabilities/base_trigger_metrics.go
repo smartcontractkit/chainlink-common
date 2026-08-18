@@ -23,7 +23,19 @@ type BaseTriggerBeholderMetrics struct {
 	activeRegistrations       metric.Int64UpDownCounter
 	pendingEvents             metric.Int64UpDownCounter
 	stoppedResendingTimestamp metric.Int64Gauge
+	muWaitMs                  metric.Int64Histogram
+	scanPendingLockHeldMs     metric.Int64Histogram
+	preAckedEntries           metric.Int64Gauge
+	storeOpDurationMs         metric.Int64Histogram
 }
+
+// contentionBuckets span sub-millisecond fast paths through multi-minute stalls.
+// The upper bound must stay well above any observed stall: values past the last
+// boundary land in +Inf, where histogram_quantile clamps and silently censors the
+// tail (a p95 pinned exactly at the top bucket means "at least this", not "this").
+var contentionBuckets = metric.WithExplicitBucketBoundaries(
+	1, 5, 10, 25, 50, 100, 250, 500, 1_000, 5_000, 30_000, 120_000,
+)
 
 var _ BaseTriggerMetrics = &BaseTriggerBeholderMetrics{}
 
@@ -82,6 +94,26 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		return nil, err
 	}
 
+	muWaitMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_mu_wait_ms", contentionBuckets)
+	if err != nil {
+		return nil, err
+	}
+
+	scanPendingLockHeldMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_scan_pending_lock_held_ms", contentionBuckets)
+	if err != nil {
+		return nil, err
+	}
+
+	preAckedEntries, err := beholder.GetMeter().Int64Gauge("capabilities_base_trigger_preacked_entries")
+	if err != nil {
+		return nil, err
+	}
+
+	storeOpDurationMs, err := beholder.GetMeter().Int64Histogram("capabilities_base_trigger_store_op_duration_ms", contentionBuckets)
+	if err != nil {
+		return nil, err
+	}
+
 	return &BaseTriggerBeholderMetrics{
 		capabilityID:              capabilityID,
 		retryCount:                retryCount,
@@ -95,6 +127,10 @@ func NewBaseTriggerBeholderMetrics(capabilityID string) (BaseTriggerMetrics, err
 		activeRegistrations:       activeRegistrations,
 		pendingEvents:             pendingEvents,
 		stoppedResendingTimestamp: stoppedResendingTimestamp,
+		muWaitMs:                  muWaitMs,
+		scanPendingLockHeldMs:     scanPendingLockHeldMs,
+		preAckedEntries:           preAckedEntries,
+		storeOpDurationMs:         storeOpDurationMs,
 	}, nil
 }
 
@@ -190,18 +226,53 @@ func (m *BaseTriggerBeholderMetrics) IncStoppedResending(triggerID string, attem
 	)
 }
 
+func (m *BaseTriggerBeholderMetrics) ObserveMuWait(op string, d time.Duration) {
+	m.muWaitMs.Record(context.Background(), d.Milliseconds(),
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("op", op),
+		),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) ObserveScanPendingLockHeld(d time.Duration) {
+	m.scanPendingLockHeldMs.Record(context.Background(), d.Milliseconds(),
+		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) SetPreAckedEntries(n int64) {
+	m.preAckedEntries.Record(context.Background(), n,
+		metric.WithAttributes(attribute.String("capability_id", m.capabilityID)),
+	)
+}
+
+func (m *BaseTriggerBeholderMetrics) ObserveStoreOp(op string, d time.Duration, outcome string) {
+	m.storeOpDurationMs.Record(context.Background(), d.Milliseconds(),
+		metric.WithAttributes(
+			attribute.String("capability_id", m.capabilityID),
+			attribute.String("op", op),
+			attribute.String("outcome", outcome),
+		),
+	)
+}
+
 type noopBaseTriggerMetrics struct{}
 
 var _ BaseTriggerMetrics = &noopBaseTriggerMetrics{}
 
-func (noopBaseTriggerMetrics) IncActiveTriggers()                          {}
-func (noopBaseTriggerMetrics) DecActiveTriggers()                          {}
-func (noopBaseTriggerMetrics) IncRetry(string)                             {}
-func (noopBaseTriggerMetrics) IncAck(string)                               {}
-func (noopBaseTriggerMetrics) ObserveTimeToAck(string, time.Duration, int) {}
-func (noopBaseTriggerMetrics) IncInboxMissing(string)                      {}
-func (noopBaseTriggerMetrics) IncInboxFull(string)                         {}
-func (noopBaseTriggerMetrics) IncAckError(string)                          {}
-func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                  {}
-func (noopBaseTriggerMetrics) AddPendingEvents(int64)                      {}
-func (noopBaseTriggerMetrics) IncStoppedResending(string, int)             {}
+func (noopBaseTriggerMetrics) IncActiveTriggers()                           {}
+func (noopBaseTriggerMetrics) DecActiveTriggers()                           {}
+func (noopBaseTriggerMetrics) IncRetry(string)                              {}
+func (noopBaseTriggerMetrics) IncAck(string)                                {}
+func (noopBaseTriggerMetrics) ObserveTimeToAck(string, time.Duration, int)  {}
+func (noopBaseTriggerMetrics) IncInboxMissing(string)                       {}
+func (noopBaseTriggerMetrics) IncInboxFull(string)                          {}
+func (noopBaseTriggerMetrics) IncAckError(string)                           {}
+func (noopBaseTriggerMetrics) IncAckMemoryOutcome(string)                   {}
+func (noopBaseTriggerMetrics) AddPendingEvents(int64)                       {}
+func (noopBaseTriggerMetrics) IncStoppedResending(string, int)              {}
+func (noopBaseTriggerMetrics) ObserveMuWait(string, time.Duration)          {}
+func (noopBaseTriggerMetrics) ObserveScanPendingLockHeld(time.Duration)     {}
+func (noopBaseTriggerMetrics) SetPreAckedEntries(int64)                     {}
+func (noopBaseTriggerMetrics) ObserveStoreOp(string, time.Duration, string) {}

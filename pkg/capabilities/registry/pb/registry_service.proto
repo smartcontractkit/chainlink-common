@@ -33,6 +33,7 @@ import "capabilities/pb/registry.proto";
 // package (pkg/loop/internal/pb) and so cannot be imported.
 service CapabilitiesRegistry {
   // Metadata. Derived from the on-chain CapabilitiesRegistry contract.
+  rpc OCRConfig (OCRConfigRequest) returns (OCRConfigReply) {}
   rpc LocalNode (google.protobuf.Empty) returns (NodeReply) {}
   rpc NodeByPeerID (NodeRequest) returns (NodeReply) {}
   rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
@@ -46,6 +47,27 @@ service CapabilitiesRegistry {
   rpc List (google.protobuf.Empty) returns (ListReply) {}
   rpc Add (AddRequest) returns (google.protobuf.Empty) {}
   rpc Remove (RemoveRequest) returns (google.protobuf.Empty) {}
+}
+
+// OCRConfigRequest asks for the OCR3 configuration one capability runs under on one DON.
+//
+// key selects the OCR instance when a capability runs more than one; "__default__" is the single
+// instance a capability normally has.
+message OCRConfigRequest {
+  string capability_id = 1;
+  uint32 don_id = 2;
+  string key = 3;
+}
+
+// OCRConfigReply is an OCR3 configuration and the config digest that identifies it.
+//
+// The digest is computed here rather than by the caller. It covers the configuration together with
+// the chain and address the registry was read from - which is what stops a configuration being
+// replayed against another registry - so computing it needs to know which contract this registry
+// is, and that is this process's business rather than something every caller should be told.
+message OCRConfigReply {
+  loop.OCR3Config config = 1;
+  bytes config_digest = 2;
 }
 
 // CapabilityHandle addresses one capability by the gRPC endpoint serving it.

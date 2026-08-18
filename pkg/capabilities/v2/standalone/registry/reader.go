@@ -72,6 +72,19 @@ type Capability struct {
 	CapabilityType capabilities.CapabilityType
 }
 
+// Contract identifies the registry a snapshot was read from: the chain it is on, and its address
+// in the form that chain writes them.
+//
+// It travels with the snapshot because some of what the registry stores cannot be interpreted
+// without it. An OCR3 configuration is stored without its config digest, since the digest covers
+// the configuration together with the chain and address it came from - which is what stops a
+// configuration being replayed against another registry - so whoever computes that digest has to
+// be told both, and only the reader knows them.
+type Contract struct {
+	ChainID uint64
+	Address string
+}
+
 // Snapshot is the registry as one read found it. It says nothing about which node is asking: that
 // is a property of the process, not of the registry, so a Reader needs no identity - only a way to
 // reach wherever the registry is kept.
@@ -79,6 +92,10 @@ type Snapshot struct {
 	DONs         map[DonID]DON
 	Nodes        map[ragetypes.PeerID]NodeInfo
 	Capabilities map[string]Capability
+
+	// Contract is where this snapshot was read from. A Reader that has no contract behind it -
+	// one serving a fixed registry in a test, say - leaves it zero.
+	Contract Contract
 }
 
 // Reader reads the registry as it currently stands, wherever it is kept.

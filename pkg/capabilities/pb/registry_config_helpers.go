@@ -150,6 +150,22 @@ func decodeRemoteExecutableConfig(prec *RemoteExecutableConfig) *capabilities.Re
 	}
 }
 
+// OCR3ConfigFromProto decodes an OCR3 configuration and stamps it with the
+// digest that identifies it.
+//
+// The digest is supplied rather than decoded because the wire form does not
+// carry one: it covers the configuration together with the chain and address
+// the registry was read from, so only whoever read that contract can compute
+// it. See core.OCRConfigRegistry.
+func OCR3ConfigFromProto(pbCfg *OCR3Config, digest ocrtypes.ConfigDigest) (ocrtypes.ContractConfig, error) {
+	cfg, err := decodeOcr3Config(pbCfg)
+	if err != nil {
+		return ocrtypes.ContractConfig{}, err
+	}
+	cfg.ConfigDigest = digest
+	return cfg, nil
+}
+
 func decodeOcr3Config(pbCfg *OCR3Config) (ocrtypes.ContractConfig, error) {
 	signers := make([]ocrtypes.OnchainPublicKey, len(pbCfg.Signers))
 	for i, s := range pbCfg.Signers {

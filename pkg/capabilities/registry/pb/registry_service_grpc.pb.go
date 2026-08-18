@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	CapabilitiesRegistry_OCRConfig_FullMethodName           = "/creregistry.CapabilitiesRegistry/OCRConfig"
 	CapabilitiesRegistry_LocalNode_FullMethodName           = "/creregistry.CapabilitiesRegistry/LocalNode"
 	CapabilitiesRegistry_NodeByPeerID_FullMethodName        = "/creregistry.CapabilitiesRegistry/NodeByPeerID"
 	CapabilitiesRegistry_ConfigForCapability_FullMethodName = "/creregistry.CapabilitiesRegistry/ConfigForCapability"
@@ -62,6 +63,7 @@ const (
 // package (pkg/loop/internal/pb) and so cannot be imported.
 type CapabilitiesRegistryClient interface {
 	// Metadata. Derived from the on-chain CapabilitiesRegistry contract.
+	OCRConfig(ctx context.Context, in *OCRConfigRequest, opts ...grpc.CallOption) (*OCRConfigReply, error)
 	LocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodeReply, error)
 	NodeByPeerID(ctx context.Context, in *NodeRequest, opts ...grpc.CallOption) (*NodeReply, error)
 	ConfigForCapability(ctx context.Context, in *ConfigForCapabilityRequest, opts ...grpc.CallOption) (*ConfigForCapabilityReply, error)
@@ -82,6 +84,16 @@ type capabilitiesRegistryClient struct {
 
 func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface) CapabilitiesRegistryClient {
 	return &capabilitiesRegistryClient{cc}
+}
+
+func (c *capabilitiesRegistryClient) OCRConfig(ctx context.Context, in *OCRConfigRequest, opts ...grpc.CallOption) (*OCRConfigReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(OCRConfigReply)
+	err := c.cc.Invoke(ctx, CapabilitiesRegistry_OCRConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *capabilitiesRegistryClient) LocalNode(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodeReply, error) {
@@ -223,6 +235,7 @@ func (c *capabilitiesRegistryClient) Remove(ctx context.Context, in *RemoveReque
 // package (pkg/loop/internal/pb) and so cannot be imported.
 type CapabilitiesRegistryServer interface {
 	// Metadata. Derived from the on-chain CapabilitiesRegistry contract.
+	OCRConfig(context.Context, *OCRConfigRequest) (*OCRConfigReply, error)
 	LocalNode(context.Context, *emptypb.Empty) (*NodeReply, error)
 	NodeByPeerID(context.Context, *NodeRequest) (*NodeReply, error)
 	ConfigForCapability(context.Context, *ConfigForCapabilityRequest) (*ConfigForCapabilityReply, error)
@@ -245,6 +258,9 @@ type CapabilitiesRegistryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCapabilitiesRegistryServer struct{}
 
+func (UnimplementedCapabilitiesRegistryServer) OCRConfig(context.Context, *OCRConfigRequest) (*OCRConfigReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method OCRConfig not implemented")
+}
 func (UnimplementedCapabilitiesRegistryServer) LocalNode(context.Context, *emptypb.Empty) (*NodeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LocalNode not implemented")
 }
@@ -297,6 +313,24 @@ func RegisterCapabilitiesRegistryServer(s grpc.ServiceRegistrar, srv Capabilitie
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&CapabilitiesRegistry_ServiceDesc, srv)
+}
+
+func _CapabilitiesRegistry_OCRConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(OCRConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CapabilitiesRegistryServer).OCRConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CapabilitiesRegistry_OCRConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CapabilitiesRegistryServer).OCRConfig(ctx, req.(*OCRConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CapabilitiesRegistry_LocalNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -504,6 +538,10 @@ var CapabilitiesRegistry_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "creregistry.CapabilitiesRegistry",
 	HandlerType: (*CapabilitiesRegistryServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "OCRConfig",
+			Handler:    _CapabilitiesRegistry_OCRConfig_Handler,
+		},
 		{
 			MethodName: "LocalNode",
 			Handler:    _CapabilitiesRegistry_LocalNode_Handler,

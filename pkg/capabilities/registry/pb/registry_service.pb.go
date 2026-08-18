@@ -23,6 +23,128 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// OCRConfigRequest asks for the OCR3 configuration one capability runs under on one DON.
+//
+// key selects the OCR instance when a capability runs more than one; "__default__" is the single
+// instance a capability normally has.
+type OCRConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CapabilityId  string                 `protobuf:"bytes,1,opt,name=capability_id,json=capabilityId,proto3" json:"capability_id,omitempty"`
+	DonId         uint32                 `protobuf:"varint,2,opt,name=don_id,json=donId,proto3" json:"don_id,omitempty"`
+	Key           string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OCRConfigRequest) Reset() {
+	*x = OCRConfigRequest{}
+	mi := &file_registry_service_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OCRConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OCRConfigRequest) ProtoMessage() {}
+
+func (x *OCRConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_registry_service_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OCRConfigRequest.ProtoReflect.Descriptor instead.
+func (*OCRConfigRequest) Descriptor() ([]byte, []int) {
+	return file_registry_service_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *OCRConfigRequest) GetCapabilityId() string {
+	if x != nil {
+		return x.CapabilityId
+	}
+	return ""
+}
+
+func (x *OCRConfigRequest) GetDonId() uint32 {
+	if x != nil {
+		return x.DonId
+	}
+	return 0
+}
+
+func (x *OCRConfigRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+// OCRConfigReply is an OCR3 configuration and the config digest that identifies it.
+//
+// The digest is computed here rather than by the caller. It covers the configuration together with
+// the chain and address the registry was read from - which is what stops a configuration being
+// replayed against another registry - so computing it needs to know which contract this registry
+// is, and that is this process's business rather than something every caller should be told.
+type OCRConfigReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Config        *pb.OCR3Config         `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	ConfigDigest  []byte                 `protobuf:"bytes,2,opt,name=config_digest,json=configDigest,proto3" json:"config_digest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OCRConfigReply) Reset() {
+	*x = OCRConfigReply{}
+	mi := &file_registry_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OCRConfigReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OCRConfigReply) ProtoMessage() {}
+
+func (x *OCRConfigReply) ProtoReflect() protoreflect.Message {
+	mi := &file_registry_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OCRConfigReply.ProtoReflect.Descriptor instead.
+func (*OCRConfigReply) Descriptor() ([]byte, []int) {
+	return file_registry_service_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OCRConfigReply) GetConfig() *pb.OCR3Config {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+func (x *OCRConfigReply) GetConfigDigest() []byte {
+	if x != nil {
+		return x.ConfigDigest
+	}
+	return nil
+}
+
 // CapabilityHandle addresses one capability by the gRPC endpoint serving it.
 //
 // callback_url is a grpc.NewClient target (e.g. "127.0.0.1:50055",
@@ -44,7 +166,7 @@ type CapabilityHandle struct {
 
 func (x *CapabilityHandle) Reset() {
 	*x = CapabilityHandle{}
-	mi := &file_registry_service_proto_msgTypes[0]
+	mi := &file_registry_service_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -56,7 +178,7 @@ func (x *CapabilityHandle) String() string {
 func (*CapabilityHandle) ProtoMessage() {}
 
 func (x *CapabilityHandle) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[0]
+	mi := &file_registry_service_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -69,7 +191,7 @@ func (x *CapabilityHandle) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityHandle.ProtoReflect.Descriptor instead.
 func (*CapabilityHandle) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{0}
+	return file_registry_service_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CapabilityHandle) GetCapabilityId() string {
@@ -102,7 +224,7 @@ type GetRequest struct {
 
 func (x *GetRequest) Reset() {
 	*x = GetRequest{}
-	mi := &file_registry_service_proto_msgTypes[1]
+	mi := &file_registry_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -114,7 +236,7 @@ func (x *GetRequest) String() string {
 func (*GetRequest) ProtoMessage() {}
 
 func (x *GetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[1]
+	mi := &file_registry_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -127,7 +249,7 @@ func (x *GetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRequest.ProtoReflect.Descriptor instead.
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{1}
+	return file_registry_service_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetRequest) GetCapabilityId() string {
@@ -146,7 +268,7 @@ type ListReply struct {
 
 func (x *ListReply) Reset() {
 	*x = ListReply{}
-	mi := &file_registry_service_proto_msgTypes[2]
+	mi := &file_registry_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +280,7 @@ func (x *ListReply) String() string {
 func (*ListReply) ProtoMessage() {}
 
 func (x *ListReply) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[2]
+	mi := &file_registry_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +293,7 @@ func (x *ListReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReply.ProtoReflect.Descriptor instead.
 func (*ListReply) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{2}
+	return file_registry_service_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListReply) GetHandles() []*CapabilityHandle {
@@ -198,7 +320,7 @@ type AddRequest struct {
 
 func (x *AddRequest) Reset() {
 	*x = AddRequest{}
-	mi := &file_registry_service_proto_msgTypes[3]
+	mi := &file_registry_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +332,7 @@ func (x *AddRequest) String() string {
 func (*AddRequest) ProtoMessage() {}
 
 func (x *AddRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[3]
+	mi := &file_registry_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +345,7 @@ func (x *AddRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddRequest.ProtoReflect.Descriptor instead.
 func (*AddRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{3}
+	return file_registry_service_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *AddRequest) GetCapabilityId() string {
@@ -256,7 +378,7 @@ type RemoveRequest struct {
 
 func (x *RemoveRequest) Reset() {
 	*x = RemoveRequest{}
-	mi := &file_registry_service_proto_msgTypes[4]
+	mi := &file_registry_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -268,7 +390,7 @@ func (x *RemoveRequest) String() string {
 func (*RemoveRequest) ProtoMessage() {}
 
 func (x *RemoveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[4]
+	mi := &file_registry_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -281,7 +403,7 @@ func (x *RemoveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveRequest.ProtoReflect.Descriptor instead.
 func (*RemoveRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{4}
+	return file_registry_service_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RemoveRequest) GetCapabilityId() string {
@@ -300,7 +422,7 @@ type NodeRequest struct {
 
 func (x *NodeRequest) Reset() {
 	*x = NodeRequest{}
-	mi := &file_registry_service_proto_msgTypes[5]
+	mi := &file_registry_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +434,7 @@ func (x *NodeRequest) String() string {
 func (*NodeRequest) ProtoMessage() {}
 
 func (x *NodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[5]
+	mi := &file_registry_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +447,7 @@ func (x *NodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeRequest.ProtoReflect.Descriptor instead.
 func (*NodeRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{5}
+	return file_registry_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *NodeRequest) GetPeerId() []byte {
@@ -353,7 +475,7 @@ type DON struct {
 
 func (x *DON) Reset() {
 	*x = DON{}
-	mi := &file_registry_service_proto_msgTypes[6]
+	mi := &file_registry_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -365,7 +487,7 @@ func (x *DON) String() string {
 func (*DON) ProtoMessage() {}
 
 func (x *DON) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[6]
+	mi := &file_registry_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -378,7 +500,7 @@ func (x *DON) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DON.ProtoReflect.Descriptor instead.
 func (*DON) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{6}
+	return file_registry_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DON) GetId() uint32 {
@@ -459,7 +581,7 @@ type NodeReply struct {
 
 func (x *NodeReply) Reset() {
 	*x = NodeReply{}
-	mi := &file_registry_service_proto_msgTypes[7]
+	mi := &file_registry_service_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -471,7 +593,7 @@ func (x *NodeReply) String() string {
 func (*NodeReply) ProtoMessage() {}
 
 func (x *NodeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[7]
+	mi := &file_registry_service_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -484,7 +606,7 @@ func (x *NodeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeReply.ProtoReflect.Descriptor instead.
 func (*NodeReply) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{7}
+	return file_registry_service_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *NodeReply) GetPeerId() []byte {
@@ -539,7 +661,7 @@ type ConfigForCapabilityRequest struct {
 
 func (x *ConfigForCapabilityRequest) Reset() {
 	*x = ConfigForCapabilityRequest{}
-	mi := &file_registry_service_proto_msgTypes[8]
+	mi := &file_registry_service_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +673,7 @@ func (x *ConfigForCapabilityRequest) String() string {
 func (*ConfigForCapabilityRequest) ProtoMessage() {}
 
 func (x *ConfigForCapabilityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[8]
+	mi := &file_registry_service_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -564,7 +686,7 @@ func (x *ConfigForCapabilityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigForCapabilityRequest.ProtoReflect.Descriptor instead.
 func (*ConfigForCapabilityRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{8}
+	return file_registry_service_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ConfigForCapabilityRequest) GetCapabilityId() string {
@@ -590,7 +712,7 @@ type ConfigForCapabilityReply struct {
 
 func (x *ConfigForCapabilityReply) Reset() {
 	*x = ConfigForCapabilityReply{}
-	mi := &file_registry_service_proto_msgTypes[9]
+	mi := &file_registry_service_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -602,7 +724,7 @@ func (x *ConfigForCapabilityReply) String() string {
 func (*ConfigForCapabilityReply) ProtoMessage() {}
 
 func (x *ConfigForCapabilityReply) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[9]
+	mi := &file_registry_service_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -615,7 +737,7 @@ func (x *ConfigForCapabilityReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfigForCapabilityReply.ProtoReflect.Descriptor instead.
 func (*ConfigForCapabilityReply) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{9}
+	return file_registry_service_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ConfigForCapabilityReply) GetCapabilityConfig() *pb.CapabilityConfig {
@@ -634,7 +756,7 @@ type DONsForCapabilityRequest struct {
 
 func (x *DONsForCapabilityRequest) Reset() {
 	*x = DONsForCapabilityRequest{}
-	mi := &file_registry_service_proto_msgTypes[10]
+	mi := &file_registry_service_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -646,7 +768,7 @@ func (x *DONsForCapabilityRequest) String() string {
 func (*DONsForCapabilityRequest) ProtoMessage() {}
 
 func (x *DONsForCapabilityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[10]
+	mi := &file_registry_service_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -659,7 +781,7 @@ func (x *DONsForCapabilityRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DONsForCapabilityRequest.ProtoReflect.Descriptor instead.
 func (*DONsForCapabilityRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{10}
+	return file_registry_service_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *DONsForCapabilityRequest) GetCapabilityId() string {
@@ -679,7 +801,7 @@ type DONWithNodes struct {
 
 func (x *DONWithNodes) Reset() {
 	*x = DONWithNodes{}
-	mi := &file_registry_service_proto_msgTypes[11]
+	mi := &file_registry_service_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -691,7 +813,7 @@ func (x *DONWithNodes) String() string {
 func (*DONWithNodes) ProtoMessage() {}
 
 func (x *DONWithNodes) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[11]
+	mi := &file_registry_service_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -704,7 +826,7 @@ func (x *DONWithNodes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DONWithNodes.ProtoReflect.Descriptor instead.
 func (*DONWithNodes) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{11}
+	return file_registry_service_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DONWithNodes) GetDon() *DON {
@@ -730,7 +852,7 @@ type DONsForCapabilityReply struct {
 
 func (x *DONsForCapabilityReply) Reset() {
 	*x = DONsForCapabilityReply{}
-	mi := &file_registry_service_proto_msgTypes[12]
+	mi := &file_registry_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -742,7 +864,7 @@ func (x *DONsForCapabilityReply) String() string {
 func (*DONsForCapabilityReply) ProtoMessage() {}
 
 func (x *DONsForCapabilityReply) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[12]
+	mi := &file_registry_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -755,7 +877,7 @@ func (x *DONsForCapabilityReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DONsForCapabilityReply.ProtoReflect.Descriptor instead.
 func (*DONsForCapabilityReply) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{12}
+	return file_registry_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DONsForCapabilityReply) GetDons() []*DONWithNodes {
@@ -774,7 +896,7 @@ type DONByIDRequest struct {
 
 func (x *DONByIDRequest) Reset() {
 	*x = DONByIDRequest{}
-	mi := &file_registry_service_proto_msgTypes[13]
+	mi := &file_registry_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -786,7 +908,7 @@ func (x *DONByIDRequest) String() string {
 func (*DONByIDRequest) ProtoMessage() {}
 
 func (x *DONByIDRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[13]
+	mi := &file_registry_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -799,7 +921,7 @@ func (x *DONByIDRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DONByIDRequest.ProtoReflect.Descriptor instead.
 func (*DONByIDRequest) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{13}
+	return file_registry_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *DONByIDRequest) GetDonId() uint32 {
@@ -818,7 +940,7 @@ type DONByIDReply struct {
 
 func (x *DONByIDReply) Reset() {
 	*x = DONByIDReply{}
-	mi := &file_registry_service_proto_msgTypes[14]
+	mi := &file_registry_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +952,7 @@ func (x *DONByIDReply) String() string {
 func (*DONByIDReply) ProtoMessage() {}
 
 func (x *DONByIDReply) ProtoReflect() protoreflect.Message {
-	mi := &file_registry_service_proto_msgTypes[14]
+	mi := &file_registry_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +965,7 @@ func (x *DONByIDReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DONByIDReply.ProtoReflect.Descriptor instead.
 func (*DONByIDReply) Descriptor() ([]byte, []int) {
-	return file_registry_service_proto_rawDescGZIP(), []int{14}
+	return file_registry_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DONByIDReply) GetDon() *DON {
@@ -857,7 +979,14 @@ var File_registry_service_proto protoreflect.FileDescriptor
 
 const file_registry_service_proto_rawDesc = "" +
 	"\n" +
-	"\x16registry_service.proto\x12\vcreregistry\x1a\x1bgoogle/protobuf/empty.proto\x1a\"capabilities/pb/capabilities.proto\x1a\x1ecapabilities/pb/registry.proto\"\x8c\x01\n" +
+	"\x16registry_service.proto\x12\vcreregistry\x1a\x1bgoogle/protobuf/empty.proto\x1a\"capabilities/pb/capabilities.proto\x1a\x1ecapabilities/pb/registry.proto\"`\n" +
+	"\x10OCRConfigRequest\x12#\n" +
+	"\rcapability_id\x18\x01 \x01(\tR\fcapabilityId\x12\x15\n" +
+	"\x06don_id\x18\x02 \x01(\rR\x05donId\x12\x10\n" +
+	"\x03key\x18\x03 \x01(\tR\x03key\"_\n" +
+	"\x0eOCRConfigReply\x12(\n" +
+	"\x06config\x18\x01 \x01(\v2\x10.loop.OCR3ConfigR\x06config\x12#\n" +
+	"\rconfig_digest\x18\x02 \x01(\fR\fconfigDigest\"\x8c\x01\n" +
 	"\x10CapabilityHandle\x12#\n" +
 	"\rcapability_id\x18\x01 \x01(\tR\fcapabilityId\x120\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1c.capabilities.CapabilityTypeR\x04type\x12!\n" +
@@ -908,8 +1037,9 @@ const file_registry_service_proto_rawDesc = "" +
 	"\x0eDONByIDRequest\x12\x15\n" +
 	"\x06don_id\x18\x01 \x01(\rR\x05donId\"2\n" +
 	"\fDONByIDReply\x12\"\n" +
-	"\x03don\x18\x01 \x01(\v2\x10.creregistry.DONR\x03don2\xb2\x06\n" +
-	"\x14CapabilitiesRegistry\x12=\n" +
+	"\x03don\x18\x01 \x01(\v2\x10.creregistry.DONR\x03don2\xfd\x06\n" +
+	"\x14CapabilitiesRegistry\x12I\n" +
+	"\tOCRConfig\x12\x1d.creregistry.OCRConfigRequest\x1a\x1b.creregistry.OCRConfigReply\"\x00\x12=\n" +
 	"\tLocalNode\x12\x16.google.protobuf.Empty\x1a\x16.creregistry.NodeReply\"\x00\x12B\n" +
 	"\fNodeByPeerID\x12\x18.creregistry.NodeRequest\x1a\x16.creregistry.NodeReply\"\x00\x12g\n" +
 	"\x13ConfigForCapability\x12'.creregistry.ConfigForCapabilityRequest\x1a%.creregistry.ConfigForCapabilityReply\"\x00\x12a\n" +
@@ -935,65 +1065,71 @@ func file_registry_service_proto_rawDescGZIP() []byte {
 	return file_registry_service_proto_rawDescData
 }
 
-var file_registry_service_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_registry_service_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_registry_service_proto_goTypes = []any{
-	(*CapabilityHandle)(nil),           // 0: creregistry.CapabilityHandle
-	(*GetRequest)(nil),                 // 1: creregistry.GetRequest
-	(*ListReply)(nil),                  // 2: creregistry.ListReply
-	(*AddRequest)(nil),                 // 3: creregistry.AddRequest
-	(*RemoveRequest)(nil),              // 4: creregistry.RemoveRequest
-	(*NodeRequest)(nil),                // 5: creregistry.NodeRequest
-	(*DON)(nil),                        // 6: creregistry.DON
-	(*NodeReply)(nil),                  // 7: creregistry.NodeReply
-	(*ConfigForCapabilityRequest)(nil), // 8: creregistry.ConfigForCapabilityRequest
-	(*ConfigForCapabilityReply)(nil),   // 9: creregistry.ConfigForCapabilityReply
-	(*DONsForCapabilityRequest)(nil),   // 10: creregistry.DONsForCapabilityRequest
-	(*DONWithNodes)(nil),               // 11: creregistry.DONWithNodes
-	(*DONsForCapabilityReply)(nil),     // 12: creregistry.DONsForCapabilityReply
-	(*DONByIDRequest)(nil),             // 13: creregistry.DONByIDRequest
-	(*DONByIDReply)(nil),               // 14: creregistry.DONByIDReply
-	(pb.CapabilityType)(0),             // 15: capabilities.CapabilityType
-	(*pb.CapabilityConfig)(nil),        // 16: loop.CapabilityConfig
-	(*emptypb.Empty)(nil),              // 17: google.protobuf.Empty
+	(*OCRConfigRequest)(nil),           // 0: creregistry.OCRConfigRequest
+	(*OCRConfigReply)(nil),             // 1: creregistry.OCRConfigReply
+	(*CapabilityHandle)(nil),           // 2: creregistry.CapabilityHandle
+	(*GetRequest)(nil),                 // 3: creregistry.GetRequest
+	(*ListReply)(nil),                  // 4: creregistry.ListReply
+	(*AddRequest)(nil),                 // 5: creregistry.AddRequest
+	(*RemoveRequest)(nil),              // 6: creregistry.RemoveRequest
+	(*NodeRequest)(nil),                // 7: creregistry.NodeRequest
+	(*DON)(nil),                        // 8: creregistry.DON
+	(*NodeReply)(nil),                  // 9: creregistry.NodeReply
+	(*ConfigForCapabilityRequest)(nil), // 10: creregistry.ConfigForCapabilityRequest
+	(*ConfigForCapabilityReply)(nil),   // 11: creregistry.ConfigForCapabilityReply
+	(*DONsForCapabilityRequest)(nil),   // 12: creregistry.DONsForCapabilityRequest
+	(*DONWithNodes)(nil),               // 13: creregistry.DONWithNodes
+	(*DONsForCapabilityReply)(nil),     // 14: creregistry.DONsForCapabilityReply
+	(*DONByIDRequest)(nil),             // 15: creregistry.DONByIDRequest
+	(*DONByIDReply)(nil),               // 16: creregistry.DONByIDReply
+	(*pb.OCR3Config)(nil),              // 17: loop.OCR3Config
+	(pb.CapabilityType)(0),             // 18: capabilities.CapabilityType
+	(*pb.CapabilityConfig)(nil),        // 19: loop.CapabilityConfig
+	(*emptypb.Empty)(nil),              // 20: google.protobuf.Empty
 }
 var file_registry_service_proto_depIdxs = []int32{
-	15, // 0: creregistry.CapabilityHandle.type:type_name -> capabilities.CapabilityType
-	0,  // 1: creregistry.ListReply.handles:type_name -> creregistry.CapabilityHandle
-	15, // 2: creregistry.AddRequest.type:type_name -> capabilities.CapabilityType
-	6,  // 3: creregistry.NodeReply.workflow_don:type_name -> creregistry.DON
-	6,  // 4: creregistry.NodeReply.capability_dons:type_name -> creregistry.DON
-	16, // 5: creregistry.ConfigForCapabilityReply.capability_config:type_name -> loop.CapabilityConfig
-	6,  // 6: creregistry.DONWithNodes.don:type_name -> creregistry.DON
-	7,  // 7: creregistry.DONWithNodes.nodes:type_name -> creregistry.NodeReply
-	11, // 8: creregistry.DONsForCapabilityReply.dons:type_name -> creregistry.DONWithNodes
-	6,  // 9: creregistry.DONByIDReply.don:type_name -> creregistry.DON
-	17, // 10: creregistry.CapabilitiesRegistry.LocalNode:input_type -> google.protobuf.Empty
-	5,  // 11: creregistry.CapabilitiesRegistry.NodeByPeerID:input_type -> creregistry.NodeRequest
-	8,  // 12: creregistry.CapabilitiesRegistry.ConfigForCapability:input_type -> creregistry.ConfigForCapabilityRequest
-	10, // 13: creregistry.CapabilitiesRegistry.DONsForCapability:input_type -> creregistry.DONsForCapabilityRequest
-	13, // 14: creregistry.CapabilitiesRegistry.DONByID:input_type -> creregistry.DONByIDRequest
-	1,  // 15: creregistry.CapabilitiesRegistry.Get:input_type -> creregistry.GetRequest
-	1,  // 16: creregistry.CapabilitiesRegistry.GetTrigger:input_type -> creregistry.GetRequest
-	1,  // 17: creregistry.CapabilitiesRegistry.GetExecutable:input_type -> creregistry.GetRequest
-	17, // 18: creregistry.CapabilitiesRegistry.List:input_type -> google.protobuf.Empty
-	3,  // 19: creregistry.CapabilitiesRegistry.Add:input_type -> creregistry.AddRequest
-	4,  // 20: creregistry.CapabilitiesRegistry.Remove:input_type -> creregistry.RemoveRequest
-	7,  // 21: creregistry.CapabilitiesRegistry.LocalNode:output_type -> creregistry.NodeReply
-	7,  // 22: creregistry.CapabilitiesRegistry.NodeByPeerID:output_type -> creregistry.NodeReply
-	9,  // 23: creregistry.CapabilitiesRegistry.ConfigForCapability:output_type -> creregistry.ConfigForCapabilityReply
-	12, // 24: creregistry.CapabilitiesRegistry.DONsForCapability:output_type -> creregistry.DONsForCapabilityReply
-	14, // 25: creregistry.CapabilitiesRegistry.DONByID:output_type -> creregistry.DONByIDReply
-	0,  // 26: creregistry.CapabilitiesRegistry.Get:output_type -> creregistry.CapabilityHandle
-	0,  // 27: creregistry.CapabilitiesRegistry.GetTrigger:output_type -> creregistry.CapabilityHandle
-	0,  // 28: creregistry.CapabilitiesRegistry.GetExecutable:output_type -> creregistry.CapabilityHandle
-	2,  // 29: creregistry.CapabilitiesRegistry.List:output_type -> creregistry.ListReply
-	17, // 30: creregistry.CapabilitiesRegistry.Add:output_type -> google.protobuf.Empty
-	17, // 31: creregistry.CapabilitiesRegistry.Remove:output_type -> google.protobuf.Empty
-	21, // [21:32] is the sub-list for method output_type
-	10, // [10:21] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	17, // 0: creregistry.OCRConfigReply.config:type_name -> loop.OCR3Config
+	18, // 1: creregistry.CapabilityHandle.type:type_name -> capabilities.CapabilityType
+	2,  // 2: creregistry.ListReply.handles:type_name -> creregistry.CapabilityHandle
+	18, // 3: creregistry.AddRequest.type:type_name -> capabilities.CapabilityType
+	8,  // 4: creregistry.NodeReply.workflow_don:type_name -> creregistry.DON
+	8,  // 5: creregistry.NodeReply.capability_dons:type_name -> creregistry.DON
+	19, // 6: creregistry.ConfigForCapabilityReply.capability_config:type_name -> loop.CapabilityConfig
+	8,  // 7: creregistry.DONWithNodes.don:type_name -> creregistry.DON
+	9,  // 8: creregistry.DONWithNodes.nodes:type_name -> creregistry.NodeReply
+	13, // 9: creregistry.DONsForCapabilityReply.dons:type_name -> creregistry.DONWithNodes
+	8,  // 10: creregistry.DONByIDReply.don:type_name -> creregistry.DON
+	0,  // 11: creregistry.CapabilitiesRegistry.OCRConfig:input_type -> creregistry.OCRConfigRequest
+	20, // 12: creregistry.CapabilitiesRegistry.LocalNode:input_type -> google.protobuf.Empty
+	7,  // 13: creregistry.CapabilitiesRegistry.NodeByPeerID:input_type -> creregistry.NodeRequest
+	10, // 14: creregistry.CapabilitiesRegistry.ConfigForCapability:input_type -> creregistry.ConfigForCapabilityRequest
+	12, // 15: creregistry.CapabilitiesRegistry.DONsForCapability:input_type -> creregistry.DONsForCapabilityRequest
+	15, // 16: creregistry.CapabilitiesRegistry.DONByID:input_type -> creregistry.DONByIDRequest
+	3,  // 17: creregistry.CapabilitiesRegistry.Get:input_type -> creregistry.GetRequest
+	3,  // 18: creregistry.CapabilitiesRegistry.GetTrigger:input_type -> creregistry.GetRequest
+	3,  // 19: creregistry.CapabilitiesRegistry.GetExecutable:input_type -> creregistry.GetRequest
+	20, // 20: creregistry.CapabilitiesRegistry.List:input_type -> google.protobuf.Empty
+	5,  // 21: creregistry.CapabilitiesRegistry.Add:input_type -> creregistry.AddRequest
+	6,  // 22: creregistry.CapabilitiesRegistry.Remove:input_type -> creregistry.RemoveRequest
+	1,  // 23: creregistry.CapabilitiesRegistry.OCRConfig:output_type -> creregistry.OCRConfigReply
+	9,  // 24: creregistry.CapabilitiesRegistry.LocalNode:output_type -> creregistry.NodeReply
+	9,  // 25: creregistry.CapabilitiesRegistry.NodeByPeerID:output_type -> creregistry.NodeReply
+	11, // 26: creregistry.CapabilitiesRegistry.ConfigForCapability:output_type -> creregistry.ConfigForCapabilityReply
+	14, // 27: creregistry.CapabilitiesRegistry.DONsForCapability:output_type -> creregistry.DONsForCapabilityReply
+	16, // 28: creregistry.CapabilitiesRegistry.DONByID:output_type -> creregistry.DONByIDReply
+	2,  // 29: creregistry.CapabilitiesRegistry.Get:output_type -> creregistry.CapabilityHandle
+	2,  // 30: creregistry.CapabilitiesRegistry.GetTrigger:output_type -> creregistry.CapabilityHandle
+	2,  // 31: creregistry.CapabilitiesRegistry.GetExecutable:output_type -> creregistry.CapabilityHandle
+	4,  // 32: creregistry.CapabilitiesRegistry.List:output_type -> creregistry.ListReply
+	20, // 33: creregistry.CapabilitiesRegistry.Add:output_type -> google.protobuf.Empty
+	20, // 34: creregistry.CapabilitiesRegistry.Remove:output_type -> google.protobuf.Empty
+	23, // [23:35] is the sub-list for method output_type
+	11, // [11:23] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_registry_service_proto_init() }
@@ -1007,7 +1143,7 @@ func file_registry_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_registry_service_proto_rawDesc), len(file_registry_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

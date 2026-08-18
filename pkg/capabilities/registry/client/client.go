@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	ragetypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -187,6 +188,30 @@ func (c *Client) List(ctx context.Context) ([]capabilities.BaseCapability, error
 		out = append(out, wrapped)
 	}
 	return out, nil
+}
+
+// OCRConfig returns the OCR3 configuration a capability runs under, digest
+// included.
+//
+// The digest is computed by the registry rather than here: it covers the
+// configuration together with the chain and address the registry was read from,
+// which only that process knows. See core.OCRConfigRegistry.
+func (c *Client) OCRConfig(ctx context.Context, capabilityID string, donID uint32, key string) (ocrtypes.ContractConfig, error) {
+	reply, err := c.grpc.OCRConfig(ctx, &registrypb.OCRConfigRequest{
+		CapabilityId: capabilityID,
+		DonId:        donID,
+		Key:          key,
+	})
+	if err != nil {
+		return ocrtypes.ContractConfig{}, fmt.Errorf("failed to read the OCR config of capability %s on DON %d: %w", capabilityID, donID, err)
+	}
+
+	digest, err := ocrtypes.BytesToConfigDigest(reply.GetConfigDigest())
+	if err != nil {
+		return ocrtypes.ContractConfig{}, fmt.Errorf("capability %s on DON %d has an unusable config digest: %w", capabilityID, donID, err)
+	}
+
+	return capabilitiespb.OCR3ConfigFromProto(reply.GetConfig(), digest)
 }
 
 // AddAt registers a capability served at addr.

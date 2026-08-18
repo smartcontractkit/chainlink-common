@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -71,6 +72,27 @@ type AddressableRegistryBase interface {
 type AddressableCapabilitiesRegistry interface {
 	AddressableRegistryBase
 	CapabilitiesRegistryMetadata
+}
+
+// OCRConfigRegistry is a registry that can say which OCR3 configuration a
+// capability runs under.
+//
+// Kept apart from CapabilitiesRegistry rather than added to it: most registries
+// hold capabilities and read no contract, so they have nothing to answer with,
+// and requiring them to say so would break every implementation of an interface
+// that has many.
+//
+// What comes back is complete, digest included. The registry stores an OCR3
+// configuration without its digest, because the digest covers the configuration
+// together with the chain and address it was read from - which is what stops a
+// configuration being replayed against another registry - so only whoever read
+// the contract can compute it. A capability is given the result rather than the
+// contract, since the digest is all its oracle needs.
+type OCRConfigRegistry interface {
+	// OCRConfig returns the configuration of one OCR instance of a capability
+	// on a DON. key selects the instance when a capability runs more than one;
+	// empty means its only one.
+	OCRConfig(ctx context.Context, capabilityID string, donID uint32, key string) (ocrtypes.ContractConfig, error)
 }
 
 var _ CapabilitiesRegistry = UnimplementedCapabilitiesRegistry{}

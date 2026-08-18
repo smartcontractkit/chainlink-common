@@ -5,7 +5,8 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
-import "contract_reader.proto";
+import "google/protobuf/struct.proto";
+import "loop/internal/pb/contract_reader.proto";
 
 service PluginRelayer {
   rpc NewRelayer (NewRelayerRequest) returns (NewRelayerReply) {}
@@ -15,30 +16,11 @@ message NewRelayerRequest {
   string config = 1; // toml (is chain instance config enough?)
   uint32 keystoreID = 2;
   uint32 capabilityRegistryID = 3;
-
-  //TODO prometheus? https://smartcontract-it.atlassian.net/browse/BCF-2075
+  uint32 keystoreCSAID = 4;
 }
 
 message NewRelayerReply {
   uint32 relayerID = 1;
-}
-
-service Keystore {
-  rpc Accounts (google.protobuf.Empty) returns (AccountsReply) {}
-  rpc Sign (SignRequest) returns (SignReply) {}
-}
-
-message AccountsReply {
-  repeated string accounts = 1;
-}
-
-message SignRequest {
-  string account = 1;
-  bytes data = 2;
-}
-
-message SignReply {
-  bytes signedData = 1;
 }
 
 service Relayer {
@@ -46,12 +28,18 @@ service Relayer {
   rpc NewContractReader (NewContractReaderRequest) returns (NewContractReaderReply) {}
   rpc NewConfigProvider (NewConfigProviderRequest) returns (NewConfigProviderReply) {}
   rpc NewPluginProvider (NewPluginProviderRequest) returns (NewPluginProviderReply) {}
+  rpc NewCCIPProvider (NewCCIPProviderRequest) returns (NewCCIPProviderReply) {}
 
   rpc LatestHead (LatestHeadRequest) returns (LatestHeadReply) {}
+  rpc FinalizedHead (FinalizedHeadRequest) returns (FinalizedHeadReply) {}
   rpc GetChainStatus (GetChainStatusRequest) returns (GetChainStatusReply) {}
+  rpc GetChainInfo (GetChainInfoRequest) returns (GetChainInfoReply) {}
+
   rpc ListNodeStatuses (ListNodeStatusesRequest) returns (ListNodeStatusesReply) {}
   rpc Transact (TransactionRequest) returns (google.protobuf.Empty) {}
+  rpc Replay (ReplayRequest) returns (google.protobuf.Empty) {}
 }
+
 
 // RelayArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.RelayArgs].
 message RelayArgs {
@@ -63,10 +51,22 @@ message RelayArgs {
   string providerType = 6;
 }
 
-// RelayArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.PluginArgs].
+// PluginArgs represents [github.com/smartcontractkit/chainlink-common/pkg/types.PluginArgs].
 message PluginArgs {
   string transmitterID = 1;
   bytes pluginConfig = 2;
+}
+
+message CCIPProviderArgs {
+  bytes externalJobID = 1; // [32]byte
+  bytes contractReaderConfig = 2;
+  bytes chainWriterConfig = 3;
+  bytes offRampAddress = 4;
+  // pluginType is actually a uint8 but uint32 is the smallest supported by protobuf
+  uint32 pluginType = 5;
+  map<string, bytes> synced_addresses = 6; // map[contract_name]contract_address
+  string transmitterAddress = 7; // UnknownEncodedAddress
+  uint32 extraDataCodecBundleID = 8; // LOOP service ID for ExtraDataCodecBundle served by core node
 }
 
 // NewContractWriterRequest has request parameters for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewContractWriter].
@@ -110,10 +110,27 @@ message NewConfigProviderReply {
   uint32 configProviderID = 1;
 }
 
+// NewCCIPProviderRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewCCIPProvider].
+message NewCCIPProviderRequest {
+  CCIPProviderArgs ccipProviderArgs = 1;
+}
+
+// NewCCIPProviderReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.NewCCIPProvider].
+message NewCCIPProviderReply {
+  uint32 ccipProviderID = 1;
+}
+
 message LatestHeadRequest {}
 
 // LatestHeadReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.LatestHeadReply].
 message LatestHeadReply {
+  Head head = 1;
+}
+
+message FinalizedHeadRequest {}
+
+// FinalizedHeadReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.FinalizedHead].
+message FinalizedHeadReply {
   Head head = 1;
 }
 
@@ -124,12 +141,26 @@ message GetChainStatusReply {
   ChainStatus chain = 1;
 }
 
+message GetChainInfoRequest {}
+
+// GetChainInfoReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.GetChainInfo].
+message GetChainInfoReply {
+  ChainInfo chain_info = 1;
+}
 
 // ChainStatus represents [github.com/smartcontractkit/chainlink-common/pkg/types.ChainStatus].
 message ChainStatus {
   string id = 1;
   bool enabled = 2;
   string config = 3; // TOML
+}
+
+// ChainInfo represents [github.com/smartcontractkit/chainlink-common/pkg/types.ChainInfo].
+message ChainInfo {
+  string family_name = 1;
+  string chain_id = 2;
+  string network_name = 3;
+  string network_name_full = 4;
 }
 
 // ListNodeStatusesRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.ListNodeStatuses].
@@ -151,6 +182,11 @@ message NodeStatus {
   string name = 2;
   string config = 3; // TOML
   string state = 4;
+}
+
+message ReplayRequest {
+  string fromBlock = 1;
+  google.protobuf.Struct args = 2;
 }
 
 // SendTxRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/loop.Relayer.SendTx].

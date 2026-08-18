@@ -12,9 +12,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/events"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // Length of responses are encoded into 4 byte buffers in little endian.  uint32Size is the size
@@ -28,20 +28,20 @@ type Runtime struct {
 }
 
 type RuntimeConfig struct {
-	MaxFetchResponseSizeBytes int64
-	RequestID                 *string
-	Metadata                  *capabilities.RequestMetadata
+	MaxResponseSizeBytes int64
+	RequestID            *string
+	Metadata             *capabilities.RequestMetadata
 }
 
 const (
-	defaultMaxFetchResponseSizeBytes = 5 * 1024
+	defaultFetchResponseSizeBytes = 5 * 1024 * 1024
 )
 
 func defaultRuntimeConfig(id string, md *capabilities.RequestMetadata) *RuntimeConfig {
 	return &RuntimeConfig{
-		MaxFetchResponseSizeBytes: defaultMaxFetchResponseSizeBytes,
-		RequestID:                 &id,
-		Metadata:                  md,
+		MaxResponseSizeBytes: defaultFetchResponseSizeBytes,
+		RequestID:            &id,
+		Metadata:             md,
 	}
 }
 
@@ -56,29 +56,33 @@ func (r *Runtime) Logger() logger.Logger {
 }
 
 func (r *Runtime) Emitter() sdk.MessageEmitter {
-	return newWasmGuestEmitter(r.emitFn)
+	return newWasmGuestEmitter(r.emitFn, r.logger)
 }
 
 type wasmGuestEmitter struct {
 	base   custmsg.MessageEmitter
 	emitFn func(string, map[string]string) error
 	labels map[string]string
+	logger logger.Logger
 }
 
-func newWasmGuestEmitter(emitFn func(string, map[string]string) error) wasmGuestEmitter {
+func newWasmGuestEmitter(emitFn func(string, map[string]string) error, logger logger.Logger) wasmGuestEmitter {
 	return wasmGuestEmitter{
 		emitFn: emitFn,
 		labels: make(map[string]string),
 		base:   custmsg.NewLabeler(),
+		logger: logger,
 	}
 }
 
-func (w wasmGuestEmitter) Emit(msg string) error {
-	return w.emitFn(msg, w.labels)
+func (w wasmGuestEmitter) Emit(msg string) {
+	if err := w.emitFn(msg, w.labels); err != nil {
+		w.logger.Error(fmt.Sprintf("error emitting message: %v", err))
+	}
 }
 
 func (w wasmGuestEmitter) With(keyValues ...string) sdk.MessageEmitter {
-	newEmitter := newWasmGuestEmitter(w.emitFn)
+	newEmitter := newWasmGuestEmitter(w.emitFn, w.logger)
 	newEmitter.base = w.base.With(keyValues...)
 	newEmitter.labels = newEmitter.base.Labels()
 	return newEmitter
@@ -94,9 +98,12 @@ func createEmitFn(
 	emitFn := func(msg string, labels map[string]string) error {
 		// Prepare the labels to be emitted
 		if sdkConfig.Metadata == nil {
-			return NewEmissionError(fmt.Errorf("metadata is required to emit"))
+			return NewEmissionError(errors.New("metadata is required to emit"))
 		}
 
+		if labels == nil {
+			labels = map[string]string{}
+		}
 		labels, err := toEmitLabels(sdkConfig.Metadata, labels)
 		if err != nil {
 			return NewEmissionError(err)
@@ -119,15 +126,24 @@ func createEmitFn(
 
 		// Prepare the request to be sent to the host memory by allocating space for the
 		// response and response length buffers.
-		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _ := bufferToPointerLen(respBuffer)
+		respBuffer := make([]byte, sdkConfig.MaxResponseSizeBytes)
+		respptr, _, err := bufferToPointerLen(respBuffer)
+		if err != nil {
+			return err
+		}
 
 		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _ := bufferToPointerLen(resplenBuffer)
+		resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+		if err != nil {
+			return err
+		}
 
 		// The request buffer is the wasm memory, get a pointer to the first element and the length
 		// of the protobuf message.
-		reqptr, reqptrlen := bufferToPointerLen(b)
+		reqptr, reqptrlen, err := bufferToPointerLen(b)
+		if err != nil {
+			return err
+		}
 
 		// Emit the message via the method imported from the host
 		errno := emit(respptr, resplenptr, reqptr, reqptrlen)
@@ -137,6 +153,11 @@ func createEmitFn(
 
 		// Attempt to read and handle the response from the host memory
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+
+		if responseSize > uint32(sdkConfig.MaxResponseSizeBytes) {
+			return NewEmissionError(fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxResponseSizeBytes))
+		}
+
 		response := &wasmpb.EmitMessageResponse{}
 		if err := proto.Unmarshal(respBuffer[:responseSize], response); err != nil {
 			l.Errorw("failed to unmarshal emit response", "error", err.Error())
@@ -157,50 +178,69 @@ func createEmitFn(
 // binary.
 func createFetchFn(
 	sdkConfig *RuntimeConfig,
-	l logger.Logger,
+	_ logger.Logger,
 	fetch func(respptr unsafe.Pointer, resplenptr unsafe.Pointer, reqptr unsafe.Pointer, reqptrlen int32) int32,
 ) func(sdk.FetchRequest) (sdk.FetchResponse, error) {
 	fetchFn := func(req sdk.FetchRequest) (sdk.FetchResponse, error) {
+		headers := map[string]any{}
+		for k, v := range req.Headers {
+			headers[k] = v
+		}
 		headerspb, err := values.NewMap(req.Headers)
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to create headers map: %w", err)
 		}
 
 		if sdkConfig.RequestID == nil {
-			return sdk.FetchResponse{}, fmt.Errorf("request ID is required to fetch")
+			return sdk.FetchResponse{}, errors.New("request ID is required to fetch")
 		}
 
 		b, err := proto.Marshal(&wasmpb.FetchRequest{
-			Id:        *sdkConfig.RequestID,
-			Url:       req.URL,
-			Method:    req.Method,
-			Headers:   values.ProtoMap(headerspb),
-			Body:      req.Body,
-			TimeoutMs: req.TimeoutMs,
-
+			Id:         *sdkConfig.RequestID,
+			Url:        req.URL,
+			Method:     req.Method,
+			Headers:    values.ProtoMap(headerspb),
+			Body:       req.Body,
+			TimeoutMs:  req.TimeoutMs,
+			MaxRetries: req.MaxRetries,
 			Metadata: &wasmpb.FetchRequestMetadata{
 				WorkflowId:          sdkConfig.Metadata.WorkflowID,
 				WorkflowName:        sdkConfig.Metadata.WorkflowName,
 				WorkflowOwner:       sdkConfig.Metadata.WorkflowOwner,
 				WorkflowExecutionId: sdkConfig.Metadata.WorkflowExecutionID,
+				DecodedWorkflowName: sdkConfig.Metadata.DecodedWorkflowName,
 			},
 		})
 		if err != nil {
 			return sdk.FetchResponse{}, fmt.Errorf("failed to marshal fetch request: %w", err)
 		}
-		reqptr, reqptrlen := bufferToPointerLen(b)
+		reqptr, reqptrlen, err := bufferToPointerLen(b)
+		if err != nil {
+			return sdk.FetchResponse{}, err
+		}
 
-		respBuffer := make([]byte, sdkConfig.MaxFetchResponseSizeBytes)
-		respptr, _ := bufferToPointerLen(respBuffer)
+		respBuffer := make([]byte, sdkConfig.MaxResponseSizeBytes)
+		respptr, _, err := bufferToPointerLen(respBuffer)
+		if err != nil {
+			return sdk.FetchResponse{}, err
+		}
 
 		resplenBuffer := make([]byte, uint32Size)
-		resplenptr, _ := bufferToPointerLen(resplenBuffer)
+		resplenptr, _, err := bufferToPointerLen(resplenBuffer)
+		if err != nil {
+			return sdk.FetchResponse{}, err
+		}
 
 		errno := fetch(respptr, resplenptr, reqptr, reqptrlen)
 		if errno != 0 {
 			return sdk.FetchResponse{}, fmt.Errorf("fetch failed with errno %d", errno)
 		}
 		responseSize := binary.LittleEndian.Uint32(resplenBuffer)
+
+		if responseSize > uint32(sdkConfig.MaxResponseSizeBytes) {
+			return sdk.FetchResponse{}, fmt.Errorf("response size %d exceeds maximum allowed size %d", responseSize, sdkConfig.MaxResponseSizeBytes)
+		}
+
 		response := &wasmpb.FetchResponse{}
 		err = proto.Unmarshal(respBuffer[:responseSize], response)
 		if err != nil {
@@ -214,13 +254,13 @@ func createFetchFn(
 		}
 
 		fields := response.Headers.GetFields()
-		headersResp := make(map[string]any, len(fields))
+		headersResp := make(map[string]string, len(fields))
 		for k, v := range fields {
-			headersResp[k] = v
+			headersResp[k] = v.GetStringValue()
 		}
 
 		return sdk.FetchResponse{
-			StatusCode: uint8(response.StatusCode),
+			StatusCode: response.StatusCode,
 			Headers:    headersResp,
 			Body:       response.Body,
 		}, nil
@@ -229,22 +269,29 @@ func createFetchFn(
 }
 
 // bufferToPointerLen returns a pointer to the first element of the buffer and the length of the buffer.
-func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32) {
-	return unsafe.Pointer(&buf[0]), int32(len(buf))
+func bufferToPointerLen(buf []byte) (unsafe.Pointer, int32, error) {
+	if len(buf) == 0 {
+		return nil, 0, errors.New("buffer cannot be empty")
+	}
+	return unsafe.Pointer(&buf[0]), int32(len(buf)), nil
 }
 
 // toEmitLabels ensures that the required metadata is present in the labels map
 func toEmitLabels(md *capabilities.RequestMetadata, labels map[string]string) (map[string]string, error) {
 	if md.WorkflowID == "" {
-		return nil, fmt.Errorf("must provide workflow id to emit event")
+		return nil, errors.New("must provide workflow id to emit event")
 	}
 
 	if md.WorkflowName == "" {
-		return nil, fmt.Errorf("must provide workflow name to emit event")
+		return nil, errors.New("must provide workflow name to emit event")
 	}
 
 	if md.WorkflowOwner == "" {
-		return nil, fmt.Errorf("must provide workflow owner to emit event")
+		return nil, errors.New("must provide workflow owner to emit event")
+	}
+
+	if md.WorkflowExecutionID == "" {
+		return nil, errors.New("must provide workflow execution id to emit event")
 	}
 
 	labels[events.LabelWorkflowExecutionID] = md.WorkflowExecutionID

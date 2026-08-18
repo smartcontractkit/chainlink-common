@@ -27,7 +27,7 @@ func TestTriggerUnmarshal(t *testing.T) {
 	rawJSON := `{"BlockNumber":5,"BlockHash":[1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4],"LogTriggerExtension":{"TxHash":[1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4],"Index":99,"BlockHash":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"BlockNumber":0}}`
 
 	// the encoded value above should match the rawjson expected
-	assert.Equal(t, rawJSON, string(encoded), "encoded should match expected")
+	assert.JSONEq(t, rawJSON, string(encoded), "encoded should match expected")
 
 	// the plugin will decode and re-encode the trigger value at least once
 	// before some decoding might happen
@@ -102,7 +102,7 @@ func TestLogIdentifier(t *testing.T) {
 	}
 
 	logIdentifier := input.LogTriggerExtension.LogIdentifier()
-	assert.Equal(t, hex.EncodeToString(logIdentifier), "0102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030400000063")
+	assert.Equal(t, "0102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030401020304010203040102030400000063", hex.EncodeToString(logIdentifier))
 }
 
 func TestTriggerUnmarshal_EmptyExtension(t *testing.T) {
@@ -116,7 +116,7 @@ func TestTriggerUnmarshal_EmptyExtension(t *testing.T) {
 	rawJSON := `{"BlockNumber":5,"BlockHash":[1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4],"LogTriggerExtension":null}`
 
 	// the encoded value above should match the rawjson expected
-	assert.Equal(t, rawJSON, string(encoded), "encoded should match expected")
+	assert.JSONEq(t, rawJSON, string(encoded), "encoded should match expected")
 
 	// the plugin will decode and re-encode the trigger value at least once
 	// before some decoding might happen
@@ -555,16 +555,16 @@ func TestCheckResult_UniqueID(t *testing.T) {
 }
 
 func assertJSONEqual(t *testing.T, expected, actual string) {
-	var expectedMap, actualMap map[string]interface{}
+	var expectedMap, actualMap map[string]any
 	require.NoError(t, json.Unmarshal([]byte(expected), &expectedMap), "expected is invalid json")
 	require.NoError(t, json.Unmarshal([]byte(actual), &actualMap), "actual is invalid json")
 	assert.True(t, reflect.DeepEqual(expectedMap, actualMap), "expected and result json strings do not match")
 }
 
-func assertJSONContainsAllStructFields(t *testing.T, jsonString string, anyStruct interface{}) {
+func assertJSONContainsAllStructFields(t *testing.T, jsonString string, anyStruct any) {
 	// if fields are added to the struct in the future, but omitted from the "pretty" string template, this test will fail
-	var jsonMap map[string]interface{}
-	var structMap map[string]interface{}
+	var jsonMap map[string]any
+	var structMap map[string]any
 	require.NoError(t, json.Unmarshal([]byte(jsonString), &jsonMap), "jsonString is invalid json")
 	structJSON, err := json.Marshal(anyStruct)
 	require.NoError(t, err)
@@ -572,13 +572,13 @@ func assertJSONContainsAllStructFields(t *testing.T, jsonString string, anyStruc
 	assertCongruentKeyStructure(t, structMap, jsonMap)
 }
 
-func assertCongruentKeyStructure(t *testing.T, structMap, jsonMap map[string]interface{}) {
+func assertCongruentKeyStructure(t *testing.T, structMap, jsonMap map[string]any) {
 	// this functions asserts that the two inputs have congruent key shapes, while disregarding
 	// the values
 	for k := range structMap {
-		assert.True(t, jsonMap[k] != nil, "json string does not contain field %s", k)
-		if nested1, ok := structMap[k].(map[string]interface{}); ok {
-			if nested2, ok := jsonMap[k].(map[string]interface{}); ok {
+		assert.NotNil(t, jsonMap[k], "json string does not contain field %s", k)
+		if nested1, ok := structMap[k].(map[string]any); ok {
+			if nested2, ok := jsonMap[k].(map[string]any); ok {
 				assertCongruentKeyStructure(t, nested1, nested2)
 			} else {
 				assert.Fail(t, "maps do not contain the same type for key %s", k)

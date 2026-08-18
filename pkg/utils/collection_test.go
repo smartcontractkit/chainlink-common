@@ -8,7 +8,7 @@ import (
 
 func TestBatchSplit(t *testing.T) {
 	list := []int{}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		list = append(list, i)
 	}
 
@@ -39,15 +39,15 @@ func TestBatchSplit(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			assert.Equal(t, r.num, len(batch)) // check number of batches
+			assert.Len(t, batch, r.num) // check number of batches
 
 			temp := []int{}
-			for i := 0; i < len(batch); i++ {
+			for i := range batch {
 				expectedLen := r.max
 				if i == len(batch)-1 {
 					expectedLen = r.lastLen // expect last batch to be less than max
 				}
-				assert.Equal(t, expectedLen, len(batch[i])) // check length of batch
+				assert.Len(t, batch[i], expectedLen) // check length of batch
 
 				temp = append(temp, batch[i]...)
 			}

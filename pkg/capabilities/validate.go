@@ -8,7 +8,7 @@ import (
 	"github.com/invopop/jsonschema"
 	jsonvalidate "github.com/santhosh-tekuri/jsonschema/v5"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // A Validator can validate the config, inputs, and outputs of a capability.
@@ -97,9 +97,9 @@ func (v *Validator[Config, Inputs, Outputs]) Schema() (string, error) {
 	}
 	ci := combinedWithInputs{}
 
-	var config interface{} = c.Config
-	var inputs interface{} = c.Inputs
-	var outputs interface{} = c.Outputs
+	var config any = c.Config
+	var inputs any = c.Inputs
+	var outputs any = c.Outputs
 	if config == nil {
 		return "", errors.New("config is nil, please provide a config type")
 	}

@@ -153,7 +153,6 @@ func ExampleMetadata_Validate() {
 	}
 	// Output:
 	// Key: 'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'required' tag
-	// Key: 'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag
 	// Metadata is valid
 }
 

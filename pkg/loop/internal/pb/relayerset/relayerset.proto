@@ -5,6 +5,10 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop.relayerset;
 
 import "google/protobuf/empty.proto";
+import "loop/internal/pb/contract_reader.proto";
+import "loop/internal/pb/contract_writer.proto";
+import "loop/internal/pb/relayer.proto";
+import "chains/evm/evm.proto";
 
 message RelayerId {
   string network = 1;
@@ -64,7 +68,7 @@ message NewContractReaderRequest {
 }
 
 message NewContractReaderResponse {
-  uint32 contractReaderId = 1;
+  string contractReaderId = 1;
 }
 
 message NewContractWriterRequest {
@@ -84,6 +88,20 @@ message LatestHeadResponse {
   string height = 1;
   bytes hash = 2;
   uint64 timestamp = 3;
+}
+
+message FinalizedHeadRequest {
+  RelayerId relayerId = 1;
+}
+
+message FinalizedHeadResponse {
+  string height = 1;
+  bytes hash = 2;
+  uint64 timestamp = 3;
+}
+
+message GetChainInfoRequest {
+  RelayerId relayerId = 1;
 }
 
 message RelayerHealthReportResponse {
@@ -107,12 +125,9 @@ service RelayerSet {
   rpc RelayerHealthReport(RelayerId) returns (RelayerHealthReportResponse) {}
   rpc RelayerName(RelayerId) returns (RelayerNameResponse) {}
   rpc RelayerLatestHead(LatestHeadRequest) returns (LatestHeadResponse) {}
+  rpc RelayerFinalizedHead(FinalizedHeadRequest) returns (FinalizedHeadResponse) {}
+  rpc RelayerGetChainInfo(GetChainInfoRequest) returns (GetChainInfoReply) {}
+
+  rpc ContractReaderStart(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc ContractReaderClose(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
-
-
-
-
-
-
-
-

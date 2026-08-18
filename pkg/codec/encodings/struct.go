@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -24,6 +25,8 @@ func NewStructCodec(fields []NamedTypeCodec) (c TopLevelCodec, err error) {
 
 	sfs := make([]reflect.StructField, len(fields))
 	codecFields := make([]TypeCodec, len(fields))
+	lookup := make(map[string]int)
+
 	for i, field := range fields {
 		ft := field.Codec.GetType()
 		if ft.Kind() != reflect.Pointer {
@@ -35,18 +38,22 @@ func NewStructCodec(fields []NamedTypeCodec) (c TopLevelCodec, err error) {
 			Name: field.Name,
 			Type: ft,
 		}
+
 		codecFields[i] = field.Codec
+		lookup[field.Name] = i
 	}
 
 	return &structCodec{
-		fields: codecFields,
-		tpe:    reflect.PointerTo(reflect.StructOf(sfs)),
+		fields:      codecFields,
+		fieldLookup: lookup,
+		tpe:         reflect.PointerTo(reflect.StructOf(sfs)),
 	}, nil
 }
 
 type structCodec struct {
-	fields []TypeCodec
-	tpe    reflect.Type
+	fields      []TypeCodec
+	fieldLookup map[string]int
+	tpe         reflect.Type
 }
 
 func (s *structCodec) Encode(value any, into []byte) ([]byte, error) {
@@ -112,4 +119,35 @@ func (s *structCodec) SizeAtTopLevel(numItems int) (int, error) {
 		size += fieldSize
 	}
 	return size, nil
+}
+
+func (s *structCodec) FieldCodec(itemType string) (TypeCodec, error) {
+	// itemType could recurse into nested structs
+	fieldName, tail := codec.ItemTyper(itemType).Next()
+	if fieldName == "" {
+		return nil, fmt.Errorf("%w: field name required", types.ErrInvalidType)
+	}
+
+	idx, ok := s.fieldLookup[fieldName]
+	if !ok {
+		return nil, fmt.Errorf("%w: cannot find type %s", types.ErrInvalidType, itemType)
+	}
+
+	if idx >= len(s.fields) {
+		return nil, fmt.Errorf("%w: field index out of range for type %s; cannot access field value", types.ErrInvalidType, itemType)
+	}
+
+	fieldCodec := s.fields[idx]
+
+	// if itemType wasn't referencing a nested field
+	if tail == "" {
+		return fieldCodec, nil
+	}
+
+	structType, ok := fieldCodec.(StructTypeCodec)
+	if !ok {
+		return nil, fmt.Errorf("%w: extended path not traversable for type %s", types.ErrInvalidType, itemType)
+	}
+
+	return structType.FieldCodec(tail)
 }

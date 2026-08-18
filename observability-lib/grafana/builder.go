@@ -1,13 +1,33 @@
 package grafana
 
 import (
+	"errors"
+	"fmt"
 	"maps"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
+	"github.com/grafana/grafana-foundation-sdk/go/cog/plugins"
 	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/businessvariable"
+	"github.com/smartcontractkit/chainlink-common/observability-lib/grafana/polystat"
 )
+
+type entryKind int
+
+const (
+	entryRow entryKind = iota
+	entryPanel
+	entryPanelToRow
+)
+
+type buildEntry struct {
+	kind     entryKind
+	rowTitle string
+	panel    *Panel
+}
 
 type Builder struct {
 	dashboardBuilder            *dashboard.DashboardBuilder
@@ -16,20 +36,29 @@ type Builder struct {
 	contactPointsBuilder        []*alerting.ContactPointBuilder
 	notificationPoliciesBuilder []*alerting.NotificationPolicyBuilder
 	panelCounter                uint32
+	usedPanelIDs                map[uint32]struct{}
 	alertsTags                  map[string]string
+	rows                        map[string]*dashboard.RowBuilder
+	entries                     []buildEntry
+	built                       bool
 }
 
 type BuilderOptions struct {
-	Name       string
-	Tags       []string
-	Refresh    string
-	TimeFrom   string
-	TimeTo     string
-	TimeZone   string
-	AlertsTags map[string]string
+	Name         string
+	Tags         []string
+	Refresh      string
+	TimeFrom     string
+	TimeTo       string
+	TimeZone     string
+	GraphTooltip dashboard.DashboardCursorSync
+	AlertsTags   map[string]string
 }
 
 func NewBuilder(options *BuilderOptions) *Builder {
+	plugins.RegisterDefaultPlugins()
+	cog.NewRuntime().RegisterPanelcfgVariant(businessvariable.VariantConfig())
+	cog.NewRuntime().RegisterPanelcfgVariant(polystat.VariantConfig())
+
 	builder := &Builder{}
 
 	if options.Name != "" {
@@ -46,7 +75,9 @@ func NewBuilder(options *BuilderOptions) *Builder {
 		if options.TimeZone == "" {
 			options.TimeZone = common.TimeZoneBrowser
 		}
-		builder.dashboardBuilder.Timezone(options.TimeZone)
+		builder.dashboardBuilder.
+			Timezone(options.TimeZone).
+			Tooltip(options.GraphTooltip)
 	}
 
 	if options.AlertsTags != nil {
@@ -63,7 +94,12 @@ func (b *Builder) AddVars(items ...cog.Builder[dashboard.VariableModel]) {
 }
 
 func (b *Builder) AddRow(title string) {
-	b.dashboardBuilder.WithRow(dashboard.NewRowBuilder(title))
+	row := dashboard.NewRowBuilder(title)
+	if b.rows == nil {
+		b.rows = make(map[string]*dashboard.RowBuilder)
+	}
+	b.rows[title] = row
+	b.entries = append(b.entries, buildEntry{kind: entryRow, rowTitle: title})
 }
 
 func (b *Builder) getPanelCounter() uint32 {
@@ -72,29 +108,19 @@ func (b *Builder) getPanelCounter() uint32 {
 	return res
 }
 
+func (b *Builder) AddPanelToRow(rowTitle string, panel ...*Panel) {
+	for _, item := range panel {
+		b.entries = append(b.entries, buildEntry{kind: entryPanelToRow, rowTitle: rowTitle, panel: item})
+		if len(item.alertBuilders) > 0 {
+			b.AddAlert(item.alertBuilders...)
+		}
+	}
+}
+
 func (b *Builder) AddPanel(panel ...*Panel) {
 	for _, item := range panel {
-		panelID := b.getPanelCounter()
-		if item.statPanelBuilder != nil {
-			item.statPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.statPanelBuilder)
-		} else if item.timeSeriesPanelBuilder != nil {
-			item.timeSeriesPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.timeSeriesPanelBuilder)
-		} else if item.gaugePanelBuilder != nil {
-			item.gaugePanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.gaugePanelBuilder)
-		} else if item.tablePanelBuilder != nil {
-			item.tablePanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.tablePanelBuilder)
-		} else if item.logPanelBuilder != nil {
-			item.logPanelBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.logPanelBuilder)
-		} else if item.heatmapBuilder != nil {
-			item.heatmapBuilder.Id(panelID)
-			b.dashboardBuilder.WithPanel(item.heatmapBuilder)
-		}
-		if item.alertBuilders != nil && len(item.alertBuilders) > 0 {
+		b.entries = append(b.entries, buildEntry{kind: entryPanel, panel: item})
+		if len(item.alertBuilders) > 0 {
 			b.AddAlert(item.alertBuilders...)
 		}
 	}
@@ -116,10 +142,126 @@ func (b *Builder) AddNotificationPolicy(notificationPolicies ...*alerting.Notifi
 	b.notificationPoliciesBuilder = append(b.notificationPoliciesBuilder, notificationPolicies...)
 }
 
+func (b *Builder) reservePanelID(id uint32) error {
+	if b.usedPanelIDs == nil {
+		b.usedPanelIDs = make(map[uint32]struct{})
+	}
+	if _, taken := b.usedPanelIDs[id]; taken {
+		return fmt.Errorf("duplicate panel ID %d", id)
+	}
+	b.usedPanelIDs[id] = struct{}{}
+	return nil
+}
+
+func (b *Builder) nextAutoPanelID() (uint32, error) {
+	for {
+		candidate := b.getPanelCounter()
+		if b.usedPanelIDs != nil {
+			if _, taken := b.usedPanelIDs[candidate]; taken {
+				continue
+			}
+		}
+		if err := b.reservePanelID(candidate); err != nil {
+			return 0, err
+		}
+		return candidate, nil
+	}
+}
+
+// preReserveStableIDs scans all entries and reserves all StableID values before
+// any auto-IDs are assigned. This ensures auto-ID assignment naturally skips
+// reserved IDs regardless of panel ordering in Build().
+func (b *Builder) preReserveStableIDs() error {
+	for _, e := range b.entries {
+		if e.panel != nil && e.panel.stableID > 0 {
+			if err := b.reservePanelID(e.panel.stableID); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// panelID returns a pinned StableID when set; otherwise the next auto-increment ID.
+// StableIDs are pre-reserved before auto-ID assignment begins (see preReserveStableIDs).
+func (b *Builder) panelID(panel *Panel) (uint32, error) {
+	if panel != nil && panel.stableID > 0 {
+		return panel.stableID, nil
+	}
+	return b.nextAutoPanelID()
+}
+
+// addPanelToBuilder assigns an ID and adds the panel to the dashboard builder.
+func (b *Builder) addPanelToBuilder(item *Panel) error {
+	id, err := b.panelID(item)
+	if err != nil {
+		return err
+	}
+	if pb := item.panelBuilder(id); pb != nil {
+		b.dashboardBuilder.WithPanel(pb)
+	}
+	return nil
+}
+
+// addPanelToRow assigns an ID and adds the panel to a row builder.
+func (b *Builder) addPanelToRow(row *dashboard.RowBuilder, item *Panel) error {
+	id, err := b.panelID(item)
+	if err != nil {
+		return err
+	}
+	if pb := item.panelBuilder(id); pb != nil {
+		row.WithPanel(pb)
+	}
+	return nil
+}
+
 func (b *Builder) Build() (*Observability, error) {
+	if b.built {
+		return nil, errors.New("Build() has already been called; create a new Builder for a new build")
+	}
+	b.built = true
+
 	observability := Observability{}
 
+	if b.dashboardBuilder == nil && len(b.entries) > 0 {
+		return nil, errors.New("cannot add rows or panels without a dashboard; set BuilderOptions.Name to create one")
+	}
+
 	if b.dashboardBuilder != nil {
+		// Pre-reserve all StableID values so auto-ID assignment skips them regardless of entry ordering.
+		if err := b.preReserveStableIDs(); err != nil {
+			return nil, err
+		}
+
+		// First pass: attach panels to their row builders (needed before WithRow snapshots them)
+		for _, e := range b.entries {
+			if e.kind == entryPanelToRow {
+				row, ok := b.rows[e.rowTitle]
+				if !ok {
+					return nil, fmt.Errorf("AddPanelToRow references unknown row %q; call AddRow first", e.rowTitle)
+				}
+				if err := b.addPanelToRow(row, e.panel); err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		// Second pass: add rows and top-level panels to the dashboard in order
+		for _, e := range b.entries {
+			switch e.kind {
+			case entryRow:
+				if row, ok := b.rows[e.rowTitle]; ok {
+					b.dashboardBuilder.WithRow(row)
+				}
+			case entryPanel:
+				if err := b.addPanelToBuilder(e.panel); err != nil {
+					return nil, err
+				}
+			default:
+				continue
+			}
+		}
+
 		db, errBuildDashboard := b.dashboardBuilder.Build()
 		if errBuildDashboard != nil {
 			return nil, errBuildDashboard
@@ -135,7 +277,7 @@ func (b *Builder) Build() (*Observability, error) {
 		}
 
 		// Add common tags to alerts
-		if b.alertsTags != nil && len(b.alertsTags) > 0 {
+		if len(b.alertsTags) > 0 {
 			tags := maps.Clone(b.alertsTags)
 			maps.Copy(tags, alert.Labels)
 

@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticTokenData(t *testing.T) {
@@ -48,7 +47,7 @@ func TestTokenDataGRPC(t *testing.T) {
 func roundTripTokenDataTests(t *testing.T, client cciptypes.TokenDataReader) {
 	t.Helper()
 	// test read token data
-	tokenData, err := client.ReadTokenData(tests.Context(t), TokenDataReader.readTokenDataRequest.msg, TokenDataReader.readTokenDataRequest.tokenIndex)
+	tokenData, err := client.ReadTokenData(t.Context(), TokenDataReader.readTokenDataRequest.msg, TokenDataReader.readTokenDataRequest.tokenIndex)
 	require.NoError(t, err)
 	assert.Equal(t, TokenDataReader.readTokenDataResponse, tokenData)
 }
@@ -59,7 +58,7 @@ func setupTokenDataServer(t *testing.T, s *grpc.Server, b *loopnet.BrokerExt) *c
 	return tokenData
 }
 
-func setupTokenDataClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.TokenDataReaderGRPCClient {
+func setupTokenDataClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.TokenDataReaderGRPCClient {
 	return ccip.NewTokenDataReaderGRPCClient(conn)
 }
 

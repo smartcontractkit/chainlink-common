@@ -1,6 +1,6 @@
 .PHONY: gomods
 gomods: ## Install gomods
-	go install github.com/jmank88/gomods@v0.1.3
+	go install github.com/jmank88/gomods@v0.1.7
 
 .PHONY: gomodtidy
 gomodtidy: gomods
@@ -8,18 +8,17 @@ gomodtidy: gomods
 
 .PHONY: docs
 docs:
-	go install golang.org/x/pkgsite/cmd/pkgsite@latest
-	# http://localhost:8080/pkg/github.com/smartcontractkit/chainlink-common/pkg/
-	pkgsite
+	go doc -http
 
 .PHONY: install-protoc
 install-protoc:
-	script/install-protoc.sh 25.1 /
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31; go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0 
+	script/install-protoc.sh 29.3 /
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@`go list -m -json google.golang.org/protobuf | jq -r .Version`
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 
 .PHONY: mockery
 mockery: $(mockery) ## Install mockery.
-	go install github.com/vektra/mockery/v2@v2.43.2
+	go install github.com/vektra/mockery/v2@v2.53.6
 
 .PHONY: rm-mocked
 rm-mocked:
@@ -33,12 +32,20 @@ rm-builders:
 	rm -f ./pkg/workflows/wasm/host/test/cmd/testmodule.wasm
 
 .PHONY: generate
-generate: mockery install-protoc gomods
-	gomods -w go generate -x ./...
-	mockery
+generate: mockery install-protoc gomods cre-protoc modgraph
+	export PATH="$(HOME)/.local/bin:$(HOME)/go/bin:$(PATH)"; gomods -go generate -x ./...
+	find . -type f -name .mockery.yaml -execdir mockery \; ## Execute mockery for all .mockery.yaml files. If this fails, you might have a local mockery installed. Uninstall or update it.
+
+.PHONY: cre-protoc
+cre-protoc:
+	cd pkg/capabilities/v2/protoc && go build -o protoc-gen-cre .
+
 
 .PHONY: lint-workspace lint
-GOLANGCI_LINT_VERSION := 1.62.2
+# If GOLANGCI_LINT_VERSION is not set, extract it from .tool-versions
+ifndef GOLANGCI_LINT_VERSION
+GOLANGCI_LINT_VERSION := $(shell grep '^golangci-lint ' .tool-versions | awk '{print $$2}')
+endif
 GOLANGCI_LINT_COMMON_OPTS := --max-issues-per-linter 0 --max-same-issues 0
 GOLANGCI_LINT_DIRECTORY := ./golangci-lint
 
@@ -47,3 +54,12 @@ lint-workspace:
 
 lint:
 	@./script/lint.sh $(GOLANGCI_LINT_VERSION) "$(GOLANGCI_LINT_COMMON_OPTS)" $(GOLANGCI_LINT_DIRECTORY) "--new-from-rev=origin/main"
+
+.PHONY: modgraph
+modgraph: gomods
+	go install github.com/jmank88/modgraph@v0.1.4
+	./modgraph > go.md
+
+.PHONY: dependabot
+dependabot:
+	echo "Deprecated: manually trigger the CI workflow instead"

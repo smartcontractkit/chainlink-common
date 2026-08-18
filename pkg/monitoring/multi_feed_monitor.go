@@ -3,6 +3,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
@@ -22,6 +23,7 @@ func NewMultiFeedMonitor(
 	exporterFactories []ExporterFactory,
 
 	bufferCapacity uint32,
+	cleanupTimeout time.Duration,
 ) MultiFeedMonitor {
 	return &multiFeedMonitor{
 		chainConfig,
@@ -31,6 +33,7 @@ func NewMultiFeedMonitor(
 		exporterFactories,
 
 		bufferCapacity,
+		cleanupTimeout,
 	}
 }
 
@@ -42,6 +45,7 @@ type multiFeedMonitor struct {
 	exporterFactories []ExporterFactory
 
 	bufferCapacity uint32
+	cleanupTimeout time.Duration
 }
 
 // Run should be executed as a goroutine.
@@ -84,6 +88,7 @@ func (m *multiFeedMonitor) Run(ctx context.Context, data RDDData) {
 				feedConfig,
 				data.Nodes,
 			},
+			m.cleanupTimeout,
 		)
 	}
 }

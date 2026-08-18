@@ -9,14 +9,13 @@ import (
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
-	cciptypes "github.com/smartcontractkit/chainlink-common/pkg/types/ccip"
 )
 
 var TokenDataReader = staticTokenDataReader{
 	staticTokenDataReaderConfig{
 		readTokenDataRequest: readTokenDataRequest{
-			msg: cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta{
-				EVM2EVMMessage: cciptypes.EVM2EVMMessage{
+			msg: ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta{
+				EVM2EVMMessage: ccip.EVM2EVMMessage{
 					SequenceNumber:      1,
 					GasLimit:            big.NewInt(1),
 					Nonce:               1,
@@ -51,8 +50,8 @@ var TokenDataReader = staticTokenDataReader{
 }
 
 type TokenDataReaderEvaluator interface {
-	cciptypes.TokenDataReader
-	testtypes.Evaluator[cciptypes.TokenDataReader]
+	ccip.TokenDataReader
+	testtypes.Evaluator[ccip.TokenDataReader]
 }
 type staticTokenDataReader struct {
 	staticTokenDataReaderConfig
@@ -66,7 +65,7 @@ func (s staticTokenDataReader) Close() error {
 }
 
 // Evaluate implements types_test.Evaluator.
-func (s staticTokenDataReader) Evaluate(ctx context.Context, other cciptypes.TokenDataReader) error {
+func (s staticTokenDataReader) Evaluate(ctx context.Context, other ccip.TokenDataReader) error {
 	got, err := other.ReadTokenData(ctx, s.readTokenDataRequest.msg, s.readTokenDataRequest.tokenIndex)
 	if err != nil {
 		return fmt.Errorf("failed to get other ReadTokenData: %w", err)
@@ -78,7 +77,7 @@ func (s staticTokenDataReader) Evaluate(ctx context.Context, other cciptypes.Tok
 }
 
 // ReadTokenData implements ccip.TokenDataReader.
-func (s staticTokenDataReader) ReadTokenData(ctx context.Context, msg cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta, tokenIndex int) (tokenData []byte, err error) {
+func (s staticTokenDataReader) ReadTokenData(ctx context.Context, msg ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta, tokenIndex int) (tokenData []byte, err error) {
 	if !reflect.DeepEqual(s.readTokenDataRequest.msg, msg) {
 		return nil, fmt.Errorf("unexpected msg: wanted %v got %v", s.readTokenDataRequest.msg, msg)
 	}
@@ -88,7 +87,7 @@ func (s staticTokenDataReader) ReadTokenData(ctx context.Context, msg cciptypes.
 	return s.readTokenDataResponse, nil
 }
 
-var _ cciptypes.TokenDataReader = staticTokenDataReader{}
+var _ ccip.TokenDataReader = staticTokenDataReader{}
 
 type staticTokenDataReaderConfig struct {
 	readTokenDataRequest  readTokenDataRequest
@@ -96,6 +95,6 @@ type staticTokenDataReaderConfig struct {
 }
 
 type readTokenDataRequest struct {
-	msg        cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta
+	msg        ccip.EVM2EVMOnRampCCIPSendRequestedWithMeta
 	tokenIndex int
 }

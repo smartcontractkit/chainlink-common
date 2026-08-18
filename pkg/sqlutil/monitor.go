@@ -45,7 +45,7 @@ func MonitorHook(logAll func() bool) QueryHook {
 }
 
 // sprintQ formats the query with the given args and returns the resulting string.
-func sprintQ(query string, args []interface{}) string {
+func sprintQ(query string, args []any) string {
 	if args == nil {
 		return query
 	}
@@ -71,7 +71,7 @@ func sprintQ(query string, args []interface{}) string {
 			for j := 1; j < len(v); j++ {
 				fmt.Fprintf(&s, ",'\\x%x'", v[j])
 			}
-			pairs = append(pairs, fmt.Sprintf("%s]", s.String()))
+			pairs = append(pairs, s.String()+"]")
 		case string:
 			pairs = append(pairs, fmt.Sprintf("$%d", i+1), fmt.Sprintf("'%s'", v))
 		default:
@@ -88,7 +88,7 @@ type queryLogger struct {
 	lggr logger.SugaredLogger
 
 	query string
-	args  []interface{}
+	args  []any
 
 	str func() string
 }

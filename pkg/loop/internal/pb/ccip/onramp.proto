@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 
 package loop.internal.pb.ccip;
 import "google/protobuf/empty.proto";
-import "models.proto";
+import "loop/internal/pb/ccip/models.proto";
 
 
 // OnRampReader is a gRPC service adapter for the interface

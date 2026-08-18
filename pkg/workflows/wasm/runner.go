@@ -47,9 +47,9 @@ func (r *Runner) Run(factory *sdk.WorkflowSpecFactory) {
 		if err := recover(); err != nil {
 			asErr, ok := err.(error)
 			if ok {
-				r.sendResponse(errorResponse(r.req.Id, asErr))
+				r.sendResponse(errorResponse(req.Id, asErr))
 			} else {
-				r.sendResponse(errorResponse(r.req.Id, fmt.Errorf("caught panic: %+v", err)))
+				r.sendResponse(errorResponse(req.Id, fmt.Errorf("caught panic: %+v", err)))
 			}
 		}
 	}()
@@ -100,7 +100,6 @@ func (r *Runner) ExitWithError(err error) {
 	}
 
 	r.sendResponse(errorResponse(r.req.Id, err))
-	return
 }
 
 func errorResponse(id string, err error) *wasmpb.Response {
@@ -137,7 +136,7 @@ func (r *Runner) parseRequest() (*wasmpb.Request, error) {
 
 	b, err := base64.StdEncoding.DecodeString(request)
 	if err != nil {
-		return nil, fmt.Errorf("invalid request: could not decode request into bytes")
+		return nil, errors.New("invalid request: could not decode request into bytes")
 	}
 
 	req := &wasmpb.Request{}
@@ -184,14 +183,14 @@ func (r *Runner) handleComputeRequest(factory *sdk.WorkflowSpecFactory, id strin
 
 	creq, err := capabilitiespb.CapabilityRequestFromProto(req)
 	if err != nil {
-		return nil, fmt.Errorf("invalid compute request: could not translate proto into capability request")
+		return nil, errors.New("invalid compute request: could not translate proto into capability request")
 	}
 
 	// Extract the config from the request
 	drc := defaultRuntimeConfig(id, &creq.Metadata)
 	if rc := computeReq.GetRuntimeConfig(); rc != nil {
-		if rc.MaxFetchResponseSizeBytes != 0 {
-			drc.MaxFetchResponseSizeBytes = rc.MaxFetchResponseSizeBytes
+		if rc.MaxResponseSizeBytes != 0 {
+			drc.MaxResponseSizeBytes = rc.MaxResponseSizeBytes
 		}
 	}
 

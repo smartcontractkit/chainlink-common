@@ -7,17 +7,26 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/eventstore"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/gateway"
+	keystoreservice "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oraclefactory"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/orgresolver"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
+	gatewayconnectorpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/gatewayconnector"
 	oraclefactorypb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/oraclefactory"
 	relayersetpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
@@ -27,9 +36,7 @@ import (
 
 type StandardCapabilities interface {
 	services.Service
-	Initialise(ctx context.Context, config string, telemetryService core.TelemetryService, store core.KeyValueStore,
-		capabilityRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-		pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error
+	Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error
 	Infos(ctx context.Context) ([]capabilities.CapabilityInfo, error)
 }
 
@@ -39,23 +46,48 @@ type StandardCapabilitiesClient struct {
 	*goplugin.ServiceClient
 	*net.BrokerExt
 
-	resources []net.Resource
+	resources      []net.Resource
+	initializeDeps *core.StandardCapabilitiesDependencies
 }
 
 var _ StandardCapabilities = (*StandardCapabilitiesClient)(nil)
 
-func NewStandardCapabilitiesClient(brokerExt *net.BrokerExt, conn *grpc.ClientConn) *StandardCapabilitiesClient {
+func NewStandardCapabilitiesClient(brokerCfg net.BrokerConfig) *StandardCapabilitiesClient {
+	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "StandardCapabilitiesClient")
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &StandardCapabilitiesClient{
-		PluginClient:               goplugin.NewPluginClient(brokerExt.Broker, brokerExt.BrokerConfig, conn),
-		ServiceClient:              goplugin.NewServiceClient(brokerExt, conn),
-		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(conn),
-		BrokerExt:                  brokerExt,
+		PluginClient:               pc,
+		ServiceClient:              goplugin.NewServiceClient(pc.BrokerExt, pc),
+		StandardCapabilitiesClient: capabilitiespb.NewStandardCapabilitiesClient(pc),
+		BrokerExt:                  pc.BrokerExt,
 	}
 }
 
-func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config string, telemetryService core.TelemetryService,
-	keyValueStore core.KeyValueStore, capabilitiesRegistry core.CapabilitiesRegistry, errorLog core.ErrorLog,
-	pipelineRunner core.PipelineRunnerService, relayerSet core.RelayerSet, oracleFactory core.OracleFactory) error {
+// Reinitialise calls Initialise with cached deps from the previous call, if one was already made.
+func (c *StandardCapabilitiesClient) Reinitialise(ctx context.Context) error {
+	if c.initializeDeps == nil {
+		c.Logger.Debug("No dependencies to re-initialise")
+		return nil
+	}
+	c.CloseAll(c.resources...)
+	c.resources = nil
+	c.Logger.Info("Re-initialising dependencies")
+	return c.Initialise(ctx, *c.initializeDeps)
+}
+
+func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
+	config := dependencies.Config
+	telemetryService := dependencies.TelemetryService
+	keyValueStore := dependencies.Store
+	capabilitiesRegistry := dependencies.CapabilityRegistry
+	errorLog := dependencies.ErrorLog
+	pipelineRunner := dependencies.PipelineRunner
+	relayerSet := dependencies.RelayerSet
+	oracleFactory := dependencies.OracleFactory
+	gatewayConnector := dependencies.GatewayConnector
+	p2pKeystore := dependencies.P2PKeystore
+	orgResolver := dependencies.OrgResolver
+	creSettings := dependencies.CRESettings
 	telemetryID, telemetryRes, err := c.ServeNew("Telemetry", func(s *grpc.Server) {
 		pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 	})
@@ -65,6 +97,15 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	}
 	var resources []net.Resource
 	resources = append(resources, telemetryRes)
+
+	keyStoreID, keyStoreRes, err := c.ServeNew("KeyStore", func(s *grpc.Server) {
+		pb.RegisterKeystoreServer(s, keystoreservice.NewServer(p2pKeystore))
+	})
+	if err != nil {
+		c.CloseAll(resources...)
+		return fmt.Errorf("failed to serve new keyStore: %w", err)
+	}
+	resources = append(resources, keyStoreRes)
 
 	keyValueStoreID, keyValueStoreRes, err := c.ServeNew("KeyValueStore", func(s *grpc.Server) {
 		pb.RegisterKeyValueStoreServer(s, keyvalue.NewServer(keyValueStore))
@@ -106,7 +147,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	resources = append(resources, relayerSetServerRes)
 
 	relayerSetID, relayerSetRes, err := c.ServeNew("RelayerSet", func(s *grpc.Server) {
-		relayersetpb.RegisterRelayerSetServer(s, relayerSetServer)
+		relayersetpb.RegisterRelayerSetServerWithDependants(s, relayerSetServer)
 	})
 	if err != nil {
 		c.CloseAll(resources...)
@@ -126,15 +167,66 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	}
 	resources = append(resources, oracleFactoryRes)
 
+	gatewayConnectorID, gatewayConnectorRes, err := c.ServeNew("GatewayConnector", func(s *grpc.Server) {
+		gatewayconnectorpb.RegisterGatewayConnectorServer(s, gateway.NewGatewayConnectorServer(c.BrokerExt, gatewayConnector))
+	})
+	if err != nil {
+		c.CloseAll(resources...)
+		return fmt.Errorf("failed to serve gateway connector: %w", err)
+	}
+	resources = append(resources, gatewayConnectorRes)
+
+	orgResolverID, orgResolverRes, err := c.ServeNew("OrgResolver", func(s *grpc.Server) {
+		pb.RegisterOrgResolverServer(s, orgresolver.NewServer(orgResolver))
+	})
+	if err != nil {
+		c.CloseAll(resources...)
+		return fmt.Errorf("failed to serve org resolver: %w", err)
+	}
+	resources = append(resources, orgResolverRes)
+
+	var creSettingsID uint32
+	if creSettings != nil {
+		var creSettingsRes net.Resource
+		creSettingsID, creSettingsRes, err = c.ServeNew("CRESettings", func(s *grpc.Server) {
+			capabilitiespb.RegisterSettingsServer(s, settings.NewServer(creSettings))
+		})
+		if err != nil {
+			c.CloseAll(resources...)
+			return fmt.Errorf("failed to serve cre settings: %w", err)
+		}
+		resources = append(resources, creSettingsRes)
+	}
+
+	triggerEventStore := dependencies.TriggerEventStore
+	var triggerEventStoreID uint32
+	if triggerEventStore != nil {
+		var triggerEventStoreRes net.Resource
+		triggerEventStoreID, triggerEventStoreRes, err = c.ServeNew("TriggerEventStore", func(s *grpc.Server) {
+			pb.RegisterEventStoreServer(s, eventstore.NewServer(triggerEventStore))
+		})
+		if err != nil {
+			c.CloseAll(resources...)
+			return fmt.Errorf("failed to serve trigger event store: %w", err)
+		}
+		resources = append(resources, triggerEventStoreRes)
+	}
+
 	_, err = c.StandardCapabilitiesClient.Initialise(ctx, &capabilitiespb.InitialiseRequest{
-		Config:           config,
-		ErrorLogId:       errorLogID,
-		PipelineRunnerId: pipelineRunnerID,
-		TelemetryId:      telemetryID,
-		CapRegistryId:    capabilitiesRegistryID,
-		KeyValueStoreId:  keyValueStoreID,
-		RelayerSetId:     relayerSetID,
-		OracleFactoryId:  oracleFactoryID,
+		Config:              config,
+		ErrorLogId:          errorLogID,
+		PipelineRunnerId:    pipelineRunnerID,
+		TelemetryId:         telemetryID,
+		CapRegistryId:       capabilitiesRegistryID,
+		KeyValueStoreId:     keyValueStoreID,
+		RelayerSetId:        relayerSetID,
+		OracleFactoryId:     oracleFactoryID,
+		GatewayConnectorId:  gatewayConnectorID,
+		KeystoreId:          keyStoreID,
+		OrgResolverId:       orgResolverID,
+		CreSettingsId:       creSettingsID,
+		TriggerEventStoreId: triggerEventStoreID,
+		CapabilityDonId:     dependencies.CapabilityDonID,
 	})
 
 	if err != nil {
@@ -143,6 +235,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, config stri
 	}
 
 	c.resources = resources
+	c.initializeDeps = &dependencies
 
 	return nil
 }
@@ -222,6 +315,18 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: keyValueStoreConn, Name: "KeyValueStoreConn"})
 	keyValueStore := keyvalue.NewClient(keyValueStoreConn)
 
+	keystoreConn, err := s.Dial(request.KeystoreId)
+	if err != nil {
+		s.CloseAll(resources...)
+		return nil, net.ErrConnDial{Name: "Keystore", ID: request.KeystoreId, Err: err}
+	}
+	resources = append(resources, net.Resource{Closer: keystoreConn, Name: "KeystoreConn"})
+	keyStore := keystoreservice.NewClient(keystoreConn)
+
+	// Sets the auth header signing mechanism
+	beholder.GetClient().SetSigner(keyStore)
+	durableemitter.SetGlobalSigner(keyStore)
+
 	capabilitiesRegistryConn, err := s.Dial(request.CapRegistryId)
 	if err != nil {
 		s.CloseAll(resources...)
@@ -262,7 +367,62 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: oracleFactoryConn, Name: "OracleFactory"})
 	oracleFactory := oraclefactory.NewClient(s.Logger, s.BrokerExt, oracleFactoryConn)
 
-	if err = s.impl.Initialise(ctx, request.Config, telemetry, keyValueStore, capabilitiesRegistry, errorLog, pipelineRunner, relayerSet, oracleFactory); err != nil {
+	gatewayConnectorConn, err := s.Dial(request.GatewayConnectorId)
+	if err != nil {
+		s.CloseAll(resources...)
+		return nil, net.ErrConnDial{Name: "GatewayConnector", ID: request.GatewayConnectorId, Err: err}
+	}
+	resources = append(resources, net.Resource{Closer: gatewayConnectorConn, Name: "GatewayConnector"})
+	gatewayConnector := gateway.NewGatewayConnectorClient(gatewayConnectorConn, s.BrokerExt)
+
+	orgResolverConn, err := s.Dial(request.OrgResolverId)
+	if err != nil {
+		s.CloseAll(resources...)
+		return nil, net.ErrConnDial{Name: "OrgResolver", ID: request.OrgResolverId, Err: err}
+	}
+	resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "OrgResolver"})
+	orgResolver := orgresolver.NewClient(s.Logger, orgResolverConn)
+
+	var creSettings core.SettingsBroadcaster
+	if request.CreSettingsId > 0 {
+		creSettingsConn, err := s.Dial(request.CreSettingsId)
+		if err != nil {
+			s.CloseAll(resources...)
+			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.CreSettingsId, Err: err}
+		}
+		resources = append(resources, net.Resource{Closer: creSettingsConn, Name: "CRESettings"})
+		creSettings = settings.NewClient(s.Logger, creSettingsConn)
+	}
+
+	var triggerEventStoreClient capabilities.EventStore
+	if request.TriggerEventStoreId > 0 {
+		triggerEventStoreConn, err := s.Dial(request.TriggerEventStoreId)
+		if err != nil {
+			s.CloseAll(resources...)
+			return nil, net.ErrConnDial{Name: "TriggerEventStore", ID: request.TriggerEventStoreId, Err: err}
+		}
+		resources = append(resources, net.Resource{Closer: triggerEventStoreConn, Name: "TriggerEventStore"})
+		triggerEventStoreClient = eventstore.NewClient(triggerEventStoreConn)
+	}
+
+	dependencies := core.StandardCapabilitiesDependencies{
+		Config:             request.Config,
+		TelemetryService:   telemetry,
+		Store:              keyValueStore,
+		CapabilityRegistry: capabilitiesRegistry,
+		ErrorLog:           errorLog,
+		PipelineRunner:     pipelineRunner,
+		RelayerSet:         relayerSet,
+		OracleFactory:      oracleFactory,
+		GatewayConnector:   gatewayConnector,
+		P2PKeystore:        keyStore,
+		OrgResolver:        orgResolver,
+		CRESettings:        creSettings,
+		TriggerEventStore:  triggerEventStoreClient,
+		CapabilityDonID:    request.CapabilityDonId,
+	}
+
+	if err = s.impl.Initialise(ctx, dependencies); err != nil {
 		s.CloseAll(resources...)
 		return nil, fmt.Errorf("failed to initialise standard capability: %w", err)
 	}

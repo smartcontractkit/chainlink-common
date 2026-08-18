@@ -7,10 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Pointer[T any](d T) *T {
-	return &d
-}
-
 func TestObjectMatchersEqual(t *testing.T) {
 	t.Run("returns true if the two object matchers are equal", func(t *testing.T) {
 		a := alerting.ObjectMatchers{{"team", "=", "chainlink"}}
@@ -51,17 +47,18 @@ func TestObjectMatchersEqual(t *testing.T) {
 
 func TestPolicyExists(t *testing.T) {
 	t.Run("policyExists return true if policy exists", func(t *testing.T) {
-		notificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+		notificationPolicyTree := alerting.NotificationPolicy{
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
+						{"product", "=", "product-a"},
 					},
 					Routes: []alerting.NotificationPolicy{
 						{
-							Receiver: Pointer("pagerduty"),
+							Receiver: new("pagerduty"),
 							ObjectMatchers: &alerting.ObjectMatchers{
 								{"env", "=", "production"},
 							},
@@ -71,28 +68,40 @@ func TestPolicyExists(t *testing.T) {
 			},
 		}
 
-		newNotificationPolicy := alerting.NotificationPolicy{
-			Receiver: Pointer("pagerduty"),
+		productANotificationPolicy := alerting.NotificationPolicy{
+			Receiver: new("slack"),
 			ObjectMatchers: &alerting.ObjectMatchers{
-				{"env", "=", "production"},
+				{"team", "=", "chainlink"},
+				{"product", "=", "product-a"},
 			},
 		}
-		result := policyExist(*notificationPolicyTree, newNotificationPolicy)
-		require.True(t, result)
+
+		productBNotificationPolicy := alerting.NotificationPolicy{
+			Receiver: new("test"),
+			ObjectMatchers: &alerting.ObjectMatchers{
+				{"team", "=", "chainlink"},
+				{"product", "=", "product-b"},
+			},
+		}
+
+		resultA := policyExist(notificationPolicyTree, productANotificationPolicy)
+		resultB := policyExist(notificationPolicyTree, productBNotificationPolicy)
+		require.True(t, resultA)
+		require.False(t, resultB)
 	})
 
 	t.Run("policyExists return false if policy does not exists", func(t *testing.T) {
 		notificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},
 					Routes: []alerting.NotificationPolicy{
 						{
-							Receiver: Pointer("pagerduty"),
+							Receiver: new("pagerduty"),
 							ObjectMatchers: &alerting.ObjectMatchers{
 								{"env", "=", "production"},
 							},
@@ -103,7 +112,7 @@ func TestPolicyExists(t *testing.T) {
 		}
 
 		newNotificationPolicy := alerting.NotificationPolicy{
-			Receiver: Pointer("pagerduty"),
+			Receiver: new("pagerduty"),
 			ObjectMatchers: &alerting.ObjectMatchers{
 				{"key", "=", "value"},
 			},
@@ -114,16 +123,16 @@ func TestPolicyExists(t *testing.T) {
 
 	t.Run("updateInPlace should update notification policy if already exists", func(t *testing.T) {
 		notificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},
 					Routes: []alerting.NotificationPolicy{
 						{
-							Receiver: Pointer("pagerduty"),
+							Receiver: new("pagerduty"),
 							ObjectMatchers: &alerting.ObjectMatchers{
 								{"env", "=", "production"},
 							},
@@ -134,28 +143,28 @@ func TestPolicyExists(t *testing.T) {
 		}
 
 		newNotificationPolicy := alerting.NotificationPolicy{
-			Receiver: Pointer("pagerduty"),
+			Receiver: new("pagerduty"),
 			ObjectMatchers: &alerting.ObjectMatchers{
 				{"env", "=", "production"},
 			},
-			Continue: Pointer(true),
+			Continue: new(true),
 		}
 
 		expectedNotificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},
 					Routes: []alerting.NotificationPolicy{
 						{
-							Receiver: Pointer("pagerduty"),
+							Receiver: new("pagerduty"),
 							ObjectMatchers: &alerting.ObjectMatchers{
 								{"env", "=", "production"},
 							},
-							Continue: Pointer(true),
+							Continue: new(true),
 						},
 					},
 				},
@@ -168,22 +177,22 @@ func TestPolicyExists(t *testing.T) {
 
 	t.Run("deleteInPlace should delete notification policy if exists", func(t *testing.T) {
 		notificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},
 				},
 				{
-					Receiver: Pointer("slack2"),
+					Receiver: new("slack2"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink2"},
 					},
 				},
 				{
-					Receiver: Pointer("slack3"),
+					Receiver: new("slack3"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink3"},
 					},
@@ -192,23 +201,23 @@ func TestPolicyExists(t *testing.T) {
 		}
 
 		newNotificationPolicy := alerting.NotificationPolicy{
-			Receiver: Pointer("slack2"),
+			Receiver: new("slack2"),
 			ObjectMatchers: &alerting.ObjectMatchers{
 				{"team", "=", "chainlink2"},
 			},
 		}
 
 		expectedNotificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},
 				},
 				{
-					Receiver: Pointer("slack3"),
+					Receiver: new("slack3"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink3"},
 					},
@@ -221,16 +230,16 @@ func TestPolicyExists(t *testing.T) {
 
 	t.Run("deleteInPlace should delete notification policy if exists", func(t *testing.T) {
 		notificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},
 					Routes: []alerting.NotificationPolicy{
 						{
-							Receiver: Pointer("pagerduty"),
+							Receiver: new("pagerduty"),
 							ObjectMatchers: &alerting.ObjectMatchers{
 								{"env", "=", "production"},
 							},
@@ -241,17 +250,17 @@ func TestPolicyExists(t *testing.T) {
 		}
 
 		newNotificationPolicy := alerting.NotificationPolicy{
-			Receiver: Pointer("pagerduty"),
+			Receiver: new("pagerduty"),
 			ObjectMatchers: &alerting.ObjectMatchers{
 				{"env", "=", "production"},
 			},
 		}
 
 		expectedNotificationPolicyTree := &alerting.NotificationPolicy{
-			Receiver: Pointer("grafana-default-email"),
+			Receiver: new("grafana-default-email"),
 			Routes: []alerting.NotificationPolicy{
 				{
-					Receiver: Pointer("slack"),
+					Receiver: new("slack"),
 					ObjectMatchers: &alerting.ObjectMatchers{
 						{"team", "=", "chainlink"},
 					},

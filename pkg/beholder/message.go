@@ -3,8 +3,10 @@ package beholder
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
@@ -21,7 +23,7 @@ type Metadata struct {
 	// Schema Registry URI to fetch schema
 	BeholderDomain     string `validate:"required,domain_entity"`
 	BeholderEntity     string `validate:"required,domain_entity"`
-	BeholderDataSchema string `validate:"required,uri"`
+	BeholderDataSchema string `validate:"required"`
 
 	// OPTIONAL FIELDS
 	// The version of the CL node.
@@ -60,9 +62,9 @@ func (m Metadata) Attributes() Attributes {
 		"workflow_owner_address":      m.WorkflowOwnerAddress,
 		"workflow_spec_id":            m.WorkflowSpecID,
 		"workflow_execution_id":       m.WorkflowExecutionID,
-		"beholder_domain":             m.BeholderDomain,
-		"beholder_entity":             m.BeholderEntity,
-		"beholder_data_schema":        m.BeholderDataSchema,
+		AttrKeyDomain:                 m.BeholderDomain,
+		AttrKeyEntity:                 m.BeholderEntity,
+		AttrKeyDataSchema:             m.BeholderDataSchema,
 		"capability_contract_address": m.CapabilityContractAddress,
 		"capability_id":               m.CapabilityID,
 		"capability_version":          m.CapabilityVersion,
@@ -80,9 +82,7 @@ func newAttributes(attrKVs ...any) Attributes {
 	for i := 0; i < l; {
 		switch t := attrKVs[i].(type) {
 		case Attributes:
-			for k, v := range t {
-				a[k] = v
-			}
+			maps.Copy(a, t)
 			i++
 		case string:
 			if i+1 >= l {
@@ -111,9 +111,7 @@ func (e *Message) AddAttributes(attrKVs ...any) {
 	if e.Attrs == nil {
 		e.Attrs = make(map[string]any, len(attrs)/2)
 	}
-	for k, v := range attrs {
-		e.Attrs[k] = v
-	}
+	maps.Copy(e.Attrs, attrs)
 }
 
 func (e *Message) OtelRecord() otellog.Record {
@@ -122,9 +120,7 @@ func (e *Message) OtelRecord() otellog.Record {
 
 func (e *Message) Copy() Message {
 	attrs := make(Attributes, len(e.Attrs))
-	for k, v := range e.Attrs {
-		attrs[k] = v
-	}
+	maps.Copy(attrs, e.Attrs)
 	c := Message{
 		Attrs: attrs,
 	}
@@ -206,11 +202,11 @@ func (m *Metadata) FromAttributes(attrs Attributes) *Metadata {
 			m.WorkflowSpecID = v.(string)
 		case "workflow_execution_id":
 			m.WorkflowExecutionID = v.(string)
-		case "beholder_domain":
+		case AttrKeyDomain:
 			m.BeholderDomain = v.(string)
-		case "beholder_entity":
+		case AttrKeyEntity:
 			m.BeholderEntity = v.(string)
-		case "beholder_data_schema":
+		case AttrKeyDataSchema:
 			m.BeholderDataSchema = v.(string)
 		case "capability_contract_address":
 			m.CapabilityContractAddress = v.(string)
@@ -236,7 +232,9 @@ func NewMetadata(attrs Attributes) *Metadata {
 // validDomainAndEntityRegex allows for alphanumeric characters and ._-
 var validDomainAndEntityRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
-func NewMetadataValidator() (*validator.Validate, error) {
+func NewMetadataValidator() (*validator.Validate, error) { return metadataValidator() }
+
+var metadataValidator = sync.OnceValues(func() (*validator.Validate, error) {
 	validate := validator.New()
 	err := validate.RegisterValidation("domain_entity", func(fl validator.FieldLevel) bool {
 		str, isStr := fl.Field().Interface().(string)
@@ -255,7 +253,7 @@ func NewMetadataValidator() (*validator.Validate, error) {
 		return nil, err
 	}
 	return validate, nil
-}
+})
 
 func (m *Metadata) Validate() error {
 	validate, err := NewMetadataValidator()

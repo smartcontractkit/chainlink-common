@@ -1,0 +1,250 @@
+package gateway
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	jsonrpc "github.com/smartcontractkit/chainlink-common/pkg/jsonrpc2"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/gatewayconnector"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+)
+
+var (
+	_ core.GatewayConnector      = (*GatewayConnectorClient)(nil)
+	_ core.MultiGatewayConnector = (*GatewayConnectorClient)(nil)
+)
+
+type GatewayConnectorClient struct {
+	*net.BrokerExt
+	grpc pb.GatewayConnectorClient
+}
+
+func (c GatewayConnectorClient) AddHandler(ctx context.Context, methods []string, handler core.GatewayConnectorHandler) error {
+	handlerID, err := handler.ID(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get handler info: %w", err)
+	}
+	gatewayConnectorServer := NewGatewayConnectorHandlerServer(handler)
+
+	var cRes net.Resource
+	id, cRes, err := c.ServeNew(handlerID, func(s *grpc.Server) {
+		pb.RegisterGatewayConnectorHandlerServer(s, gatewayConnectorServer)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to serve handler: %s: %w", handlerID, err)
+	}
+
+	_, err = c.grpc.AddHandler(ctx, &pb.AddHandlerRequest{
+		HandlerId: id,
+		Methods:   methods,
+	})
+	if err != nil {
+		cRes.Close()
+		return fmt.Errorf("failed to add handler: %w", err)
+	}
+	return nil
+}
+
+func (c GatewayConnectorClient) RemoveHandler(ctx context.Context, methods []string) error {
+	_, err := c.grpc.RemoveHandler(ctx, &pb.RemoveHandlerRequest{
+		Methods: methods,
+	})
+	return err
+}
+
+func (c GatewayConnectorClient) GatewayIDs(ctx context.Context) ([]string, error) {
+	resp, err := c.grpc.GatewayIDs(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gateway IDs: %w", err)
+	}
+	gatewayIDs := make([]string, len(resp.GatewayIds))
+	copy(gatewayIDs, resp.GatewayIds)
+	return gatewayIDs, nil
+}
+
+func (c GatewayConnectorClient) DonID(ctx context.Context) (string, error) {
+	resp, err := c.grpc.DonID(ctx, &emptypb.Empty{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get DON ID: %w", err)
+	}
+	return resp.DonId, nil
+}
+
+func (c GatewayConnectorClient) GatewayIDsForDon(ctx context.Context, donID string) ([]string, error) {
+	resp, err := c.grpc.GatewayIDsForDon(ctx, &pb.GatewayIDsForDonRequest{DonId: donID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gateway IDs for DON: %w", err)
+	}
+	gatewayIDs := make([]string, len(resp.GatewayIds))
+	copy(gatewayIDs, resp.GatewayIds)
+	return gatewayIDs, nil
+}
+
+func (c GatewayConnectorClient) DonIDForGateway(ctx context.Context, gatewayID string) (string, error) {
+	resp, err := c.grpc.DonIDForGateway(ctx, &pb.GatewayIDRequest{GatewayId: gatewayID})
+	if err != nil {
+		return "", fmt.Errorf("failed to get DON ID for gateway: %w", err)
+	}
+	return resp.DonId, nil
+}
+
+func (c GatewayConnectorClient) PrimaryDonID(ctx context.Context) (string, error) {
+	resp, err := c.grpc.PrimaryDonID(ctx, &emptypb.Empty{})
+	if err != nil {
+		return "", fmt.Errorf("failed to get primary DON ID: %w", err)
+	}
+	return resp.DonId, nil
+}
+
+func (c GatewayConnectorClient) AwaitConnection(ctx context.Context, gatewayID string) error {
+	_, err := c.grpc.AwaitConnection(ctx, &pb.GatewayIDRequest{GatewayId: gatewayID})
+	return err
+}
+
+func (c GatewayConnectorClient) SendToGateway(ctx context.Context, gatewayID string, resp *jsonrpc.Response[json.RawMessage]) error {
+	data, err := json.Marshal(resp)
+	if err != nil {
+		return fmt.Errorf("failed to encode response: %w", err)
+	}
+	_, err = c.grpc.SendToGateway(ctx, &pb.SendMessageRequest{
+		GatewayId: gatewayID,
+		Message:   data,
+	})
+	return err
+}
+
+func (c GatewayConnectorClient) SignMessage(ctx context.Context, msg []byte) ([]byte, error) {
+	signMessageReply, err := c.grpc.SignMessage(ctx, &pb.SignMessageRequest{
+		Message: msg,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign message: %w", err)
+	}
+	return signMessageReply.Signature, nil
+}
+
+func NewGatewayConnectorClient(cc grpc.ClientConnInterface, b *net.BrokerExt) *GatewayConnectorClient {
+	return &GatewayConnectorClient{
+		grpc:      pb.NewGatewayConnectorClient(cc),
+		BrokerExt: b.WithName("GatewayConnectorClient"),
+	}
+}
+
+var _ pb.GatewayConnectorServer = (*GatewayConnectorServer)(nil)
+
+type GatewayConnectorServer struct {
+	pb.UnimplementedGatewayConnectorServer
+	*net.BrokerExt
+	impl core.GatewayConnector
+}
+
+func NewGatewayConnectorServer(b *net.BrokerExt, impl core.GatewayConnector) *GatewayConnectorServer {
+	return &GatewayConnectorServer{
+		BrokerExt: b.WithName("GatewayConnectorServer"),
+		impl:      impl,
+	}
+}
+
+func (s GatewayConnectorServer) AddHandler(ctx context.Context, req *pb.AddHandlerRequest) (*emptypb.Empty, error) {
+	conn, err := s.Dial(req.HandlerId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to dial handler: %d: %w", req.HandlerId, err)
+	}
+	client := NewGatewayConnectorHandlerClient(conn)
+	err = s.getImpl().AddHandler(ctx, req.Methods, client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to add handler: %d: %w", req.HandlerId, err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s GatewayConnectorServer) SendToGateway(ctx context.Context, req *pb.SendMessageRequest) (*emptypb.Empty, error) {
+	var resp jsonrpc.Response[json.RawMessage]
+	err := json.Unmarshal(req.Message, &resp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	if err := s.getImpl().SendToGateway(ctx, req.GatewayId, &resp); err != nil {
+		return nil, fmt.Errorf("failed to send message to gateway: %s: %w", req.GatewayId, err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s GatewayConnectorServer) SignMessage(ctx context.Context, req *pb.SignMessageRequest) (*pb.SignMessageReply, error) {
+	signature, err := s.getImpl().SignMessage(ctx, req.Message)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign message: %w", err)
+	}
+	return &pb.SignMessageReply{
+		Signature: signature,
+	}, nil
+}
+
+func (s GatewayConnectorServer) GatewayIDs(ctx context.Context, _ *emptypb.Empty) (*pb.GatewayIDsReply, error) {
+	gatewayIDs, err := s.getImpl().GatewayIDs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gateway IDs: %w", err)
+	}
+	return &pb.GatewayIDsReply{GatewayIds: gatewayIDs}, nil
+}
+
+func (s GatewayConnectorServer) DonID(ctx context.Context, _ *emptypb.Empty) (*pb.DonIDReply, error) {
+	donID, err := s.getImpl().DonID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DON ID: %w", err)
+	}
+	return &pb.DonIDReply{DonId: donID}, nil
+}
+
+func (s GatewayConnectorServer) GatewayIDsForDon(ctx context.Context, req *pb.GatewayIDsForDonRequest) (*pb.GatewayIDsReply, error) {
+	gatewayIDs, err := s.getMultiImpl().GatewayIDsForDon(ctx, req.GetDonId())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get gateway IDs for DON: %w", err)
+	}
+	return &pb.GatewayIDsReply{GatewayIds: gatewayIDs}, nil
+}
+
+func (s GatewayConnectorServer) DonIDForGateway(ctx context.Context, req *pb.GatewayIDRequest) (*pb.DonIDReply, error) {
+	donID, err := s.getMultiImpl().DonIDForGateway(ctx, req.GetGatewayId())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DON ID for gateway: %w", err)
+	}
+	return &pb.DonIDReply{DonId: donID}, nil
+}
+
+func (s GatewayConnectorServer) PrimaryDonID(ctx context.Context, _ *emptypb.Empty) (*pb.DonIDReply, error) {
+	donID, err := s.getMultiImpl().PrimaryDonID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get primary DON ID: %w", err)
+	}
+	return &pb.DonIDReply{DonId: donID}, nil
+}
+
+func (s GatewayConnectorServer) AwaitConnection(ctx context.Context, req *pb.GatewayIDRequest) (*emptypb.Empty, error) {
+	if err := s.getImpl().AwaitConnection(ctx, req.GatewayId); err != nil {
+		return nil, fmt.Errorf("failed to await connection to gateway: %s: %w", req.GatewayId, err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s GatewayConnectorServer) getImpl() core.GatewayConnector {
+	if s.impl == nil {
+		return &core.UnimplementedGatewayConnector{}
+	}
+	return s.impl
+}
+
+func (s GatewayConnectorServer) getMultiImpl() core.MultiGatewayConnector {
+	if s.impl == nil {
+		return &core.UnimplementedGatewayConnector{}
+	}
+	if m, ok := s.impl.(core.MultiGatewayConnector); ok {
+		return m
+	}
+	return &core.UnimplementedGatewayConnector{}
+}

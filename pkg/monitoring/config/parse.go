@@ -77,13 +77,20 @@ func parseEnvVars(cfg *Config) error {
 		cfg.Feeds.RDDPollInterval = pollInterval
 	}
 	if value, isPresent := os.LookupEnv("FEEDS_IGNORE_IDS"); isPresent {
-		ids := strings.Split(value, ",")
-		for _, id := range ids {
+		ids := strings.SplitSeq(value, ",")
+		for id := range ids {
 			if id == "" {
 				continue
 			}
 			cfg.Feeds.IgnoreIDs = append(cfg.Feeds.IgnoreIDs, strings.TrimSpace(id))
 		}
+	}
+	if value, isPresent := os.LookupEnv("FEEDS_EXPORTER_CLEANUP_TIMEOUT"); isPresent {
+		timeout, err := time.ParseDuration(value)
+		if err != nil {
+			return fmt.Errorf("failed to parse env var FEEDS_EXPORTER_CLEANUP_TIMEOUT, see https://pkg.go.dev/time#ParseDuration: %w", err)
+		}
+		cfg.Feeds.ExporterCleanupTimeout = timeout
 	}
 	if value, isPresent := os.LookupEnv("NODES_URL"); isPresent {
 		cfg.Nodes.URL = value
@@ -102,6 +109,9 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Feeds.RDDPollInterval == 0 {
 		cfg.Feeds.RDDPollInterval = 10 * time.Second
+	}
+	if cfg.Feeds.ExporterCleanupTimeout == 0 {
+		cfg.Feeds.ExporterCleanupTimeout = 1 * time.Second
 	}
 }
 

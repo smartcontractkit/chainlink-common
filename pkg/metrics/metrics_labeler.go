@@ -1,5 +1,7 @@
 package metrics
 
+import "maps"
+
 type Labeler struct {
 	Labels map[string]string
 }
@@ -18,9 +20,7 @@ func (c Labeler) With(keyValues ...string) Labeler {
 	}
 
 	// Copy existing labels from the current agent
-	for k, v := range c.Labels {
-		newCustomMetricsLabeler.Labels[k] = v
-	}
+	maps.Copy(newCustomMetricsLabeler.Labels, c.Labels)
 
 	// Add new key-value pairs
 	for i := 0; i < len(keyValues); i += 2 {

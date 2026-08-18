@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/dontime/pb";
+
+import "google/protobuf/duration.proto";
+
+message Config {
+  // These fields are shadowing the `ReportingPluginLimits` fields.
+  // See: https://github.com/smartcontractkit/libocr/blob/master/offchainreporting2plus/ocr3types/plugin.go#L296
+  uint32 maxQueryLengthBytes = 1;
+  uint32 maxObservationLengthBytes = 2;
+  uint32 maxOutcomeLengthBytes = 3;
+  uint32 maxReportLengthBytes = 4;
+  uint32 maxReportCount = 5;
+
+  uint32 maxBatchSize = 6;
+  int64 minTimeIncrease = 7;
+  google.protobuf.Duration executionRemovalTime = 8;
+}

@@ -28,12 +28,12 @@ type client struct {
 	serviceClient *goplugin.ServiceClient
 }
 
-func NewClient(log logger.Logger, broker *net.BrokerExt, conn grpc.ClientConnInterface) *client {
-	namedBroker := broker.WithName("OracleFactoryClient")
+func NewClient(log logger.Logger, b *net.BrokerExt, conn net.ClientConnInterface) *client {
+	b = b.WithName("OracleFactoryClient")
 	return &client{
 		log:           log,
-		broker:        namedBroker,
-		serviceClient: goplugin.NewServiceClient(namedBroker, conn),
+		broker:        b,
+		serviceClient: goplugin.NewServiceClient(b, conn),
 		grpc:          oraclefactorypb.NewOracleFactoryClient(conn)}
 }
 
@@ -77,6 +77,8 @@ func (c *client) NewOracle(ctx context.Context, oracleArgs core.OracleArgs) (cor
 			ContractTransmitterTransmitTimeout: durationpb.New(oracleArgs.LocalConfig.ContractTransmitterTransmitTimeout),
 			DatabaseTimeout:                    durationpb.New(oracleArgs.LocalConfig.DatabaseTimeout),
 			MinOcr2MaxDurationQuery:            durationpb.New(oracleArgs.LocalConfig.MinOCR2MaxDurationQuery),
+			ContractConfigLoadTimeout:          durationpb.New(oracleArgs.LocalConfig.ContractConfigLoadTimeout),
+			DefaultMaxDurationInitialization:   durationpb.New(oracleArgs.LocalConfig.DefaultMaxDurationInitialization),
 			DevelopmentMode:                    oracleArgs.LocalConfig.DevelopmentMode,
 		},
 		ReportingPluginFactoryServiceId: reportingPluginFactoryServerID,

@@ -50,11 +50,11 @@ func (s staticGasPriceEstimatorCommit) DenoteInUSD(ctx context.Context, p *big.I
 
 // Deviates implements GasPriceEstimatorCommitEvaluator.
 func (s staticGasPriceEstimatorCommit) Deviates(ctx context.Context, p1 *big.Int, p2 *big.Int) (bool, error) {
-	if s.deviatesRequest.p1.Cmp(p1) != 0 {
-		return false, fmt.Errorf("expected p1 %v, got %v", s.deviatesRequest.p1, p1)
+	if s.p1.Cmp(p1) != 0 {
+		return false, fmt.Errorf("expected p1 %v, got %v", s.p1, p1)
 	}
-	if s.deviatesRequest.p2.Cmp(p2) != 0 {
-		return false, fmt.Errorf("expected p2 %v, got %v", s.deviatesRequest.p2, p2)
+	if s.p2.Cmp(p2) != 0 {
+		return false, fmt.Errorf("expected p2 %v, got %v", s.p2, p2)
 	}
 	return s.deviatesResponse, nil
 }
@@ -69,7 +69,7 @@ func (s staticGasPriceEstimatorCommit) Evaluate(ctx context.Context, other ccipt
 		return fmt.Errorf("expected other.GetGasPrice %v, got %v", s.getGasPriceResponse, gotGas)
 	}
 
-	gotMedian, err := other.Median(ctx, s.medianRequest.gasPrices)
+	gotMedian, err := other.Median(ctx, s.gasPrices)
 	if err != nil {
 		return fmt.Errorf("failed to other.Median: %w", err)
 	}
@@ -77,7 +77,7 @@ func (s staticGasPriceEstimatorCommit) Evaluate(ctx context.Context, other ccipt
 		return fmt.Errorf("expected other.Median %v, got %v", s.medianResponse, gotMedian)
 	}
 
-	gotDeviates, err := other.Deviates(ctx, s.deviatesRequest.p1, s.deviatesRequest.p2)
+	gotDeviates, err := other.Deviates(ctx, s.p1, s.p2)
 	if err != nil {
 		return fmt.Errorf("failed to other.Deviates: %w", err)
 	}
@@ -103,12 +103,12 @@ func (s staticGasPriceEstimatorCommit) GetGasPrice(ctx context.Context) (*big.In
 
 // Median implements GasPriceEstimatorCommitEvaluator.
 func (s staticGasPriceEstimatorCommit) Median(ctx context.Context, gasPrices []*big.Int) (*big.Int, error) {
-	if len(gasPrices) != len(s.medianRequest.gasPrices) {
-		return nil, fmt.Errorf("expected gas prices len %d, got %d", len(s.medianRequest.gasPrices), len(gasPrices))
+	if len(gasPrices) != len(s.gasPrices) {
+		return nil, fmt.Errorf("expected gas prices len %d, got %d", len(s.gasPrices), len(gasPrices))
 	}
 	for i, p := range gasPrices {
 		if s.medianRequest.gasPrices[i].Cmp(p) != 0 {
-			return nil, fmt.Errorf("expected gas price %d %v, got %v", i, s.medianRequest.gasPrices[i], p)
+			return nil, fmt.Errorf("expected gas price %d %v, got %v", i, s.gasPrices[i], p)
 		}
 	}
 	return s.medianResponse, nil

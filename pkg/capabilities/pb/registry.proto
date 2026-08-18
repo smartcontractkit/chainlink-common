@@ -4,7 +4,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 package loop;
 
-import "values/pb/values.proto";
+import "values/v1/values.proto";
 import "google/protobuf/duration.proto";
 
 message RemoteTriggerConfig {
@@ -16,6 +16,7 @@ message RemoteTriggerConfig {
   google.protobuf.Duration batchCollectionPeriod = 6;
 }
 
+// deprecated - v1 only
 message RemoteTargetConfig {
   // A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote target
   // when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
@@ -23,22 +24,98 @@ message RemoteTargetConfig {
   repeated string requestHashExcludedAttributes = 1;
 }
 
+enum TransmissionSchedule {
+  AllAtOnce = 0;
+  OneAtATime = 1;
+}
+
+enum RequestHasherType {
+  Simple = 0;
+  WriteReportExcludeSignatures = 1;
+}
+
+enum AggregatorType {
+  Mode = 0;
+  SignedReport = 1;
+}
+
 message RemoteExecutableConfig {
   // A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote executable capability
   // when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
   // that the hash of logically identical requests is consistent.
-  repeated string requestHashExcludedAttributes = 1;
-  google.protobuf.Duration registrationRefresh = 2;
-  google.protobuf.Duration registrationExpiry = 3;
+  repeated string requestHashExcludedAttributes = 1; // deprecated - v1 only
+  reserved 2;  // unused registrationRefresh
+  reserved 3;  // unused registrationExpiry
+
+  TransmissionSchedule transmission_schedule = 4;
+  google.protobuf.Duration delta_stage = 5;
+  google.protobuf.Duration request_timeout = 6;
+  uint32 server_max_parallel_requests = 7;
+  RequestHasherType request_hasher_type = 8;
+
+  // MinResponsesToAggregate is the minimum number of capability DON nodes that must
+  // return identical responses before the workflow DON accepts the read result.
+  // 0 defaults to F+1 of the remote DON
+  // Must satisfy F+1 <= MinResponsesToAggregate <= N when non-zero.
+  uint32 min_responses_to_aggregate = 9;
+}
+
+message AggregatorConfig {
+  AggregatorType aggregator_type = 1;
+}
+
+message CapabilityMethodConfig {
+  oneof remote_config {
+    RemoteTriggerConfig remote_trigger_config = 1;
+    RemoteExecutableConfig remote_executable_config = 2;
+  }
+  AggregatorConfig aggregator_config = 3;
+}
+
+// OCR3Config contains the configuration for an OCR3 instance.
+// This mirrors the libocr ContractConfig struct and is used for storing
+// OCR configuration in the CapabilitiesRegistry contract.
+message OCR3Config {
+  repeated bytes signers = 1;
+  repeated bytes transmitters = 2;
+  uint32 f = 3;
+  bytes onchain_config = 4;
+  uint64 offchain_config_version = 5;
+  bytes offchain_config = 6;
+  // Configuration counter, must be incremented on each config change.
+  // Used for computing config digest.
+  uint64 config_count = 7;
 }
 
 message CapabilityConfig {
-  values.Map default_config = 1;
+  values.v1.Map default_config = 1;
 
   oneof remote_config {
     RemoteTriggerConfig remote_trigger_config = 2;
     RemoteTargetConfig remote_target_config = 3;
     RemoteExecutableConfig remote_executable_config = 4;
   }
+
+  values.v1.Map restricted_config = 5;
+  repeated string restricted_keys = 6;
+
+  // v2 ("NoDAG") capabilities - config for Don2Don framework.
+  map<string, CapabilityMethodConfig> method_configs = 7;
+  // if true, the capability won't be callable via don2don.
+  bool local_only = 8;
+
+  // OCR3 configurations for OCR-based capabilities.
+  // Map key is an OCR instance name:
+  //   - "__default__" for single-instance capabilities
+  //   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
+  // When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
+  map<string, OCR3Config> ocr3_configs = 9;
+
+  // Oracle factory configs for OCR-based capabilities (moved from job specs).
+  // Map key is an OCR instance name (same as above).
+  map<string, values.v1.Map> oracle_factory_configs = 10;
+
+  // Config moved from job specs.
+  values.v1.Map spec_config = 11;
 }
 

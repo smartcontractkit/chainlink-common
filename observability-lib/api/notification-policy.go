@@ -35,7 +35,7 @@ func PrintPolicyTree(policy alerting.NotificationPolicy, depth int) {
 	}
 
 	for _, notificationPolicy := range policy.Routes {
-		for i := 0; i < depth; i++ {
+		for range depth {
 			fmt.Print("--")
 		}
 		fmt.Printf("| Matchers %s | Receiver: %s\n", *notificationPolicy.ObjectMatchers, *notificationPolicy.Receiver)
@@ -55,9 +55,6 @@ func policyExist(parent alerting.NotificationPolicy, newNotificationPolicy alert
 		receiversEqual := reflect.DeepEqual(notificationPolicy.Receiver, newNotificationPolicy.Receiver)
 		if matchersEqual && receiversEqual {
 			return true
-		}
-		if notificationPolicy.Routes != nil {
-			return policyExist(notificationPolicy, newNotificationPolicy)
 		}
 	}
 	return false

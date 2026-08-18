@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func MockCapability[I, O any](id string, fn func(I) (O, error)) *Mock[I, O] {
@@ -132,7 +132,7 @@ type TriggerMock[O any] struct {
 var _ capabilities.TriggerCapability = &TriggerMock[any]{}
 
 func (t *TriggerMock[O]) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	result, err := t.mockBase.fn(struct{}{})
+	result, err := t.fn(struct{}{})
 
 	wrapped, wErr := values.CreateMapFromStruct(result)
 	if wErr != nil {
@@ -157,6 +157,10 @@ func (t *TriggerMock[O]) UnregisterTrigger(ctx context.Context, request capabili
 	return nil
 }
 
+func (t *TriggerMock[O]) AckEvent(ctx context.Context, triggerId string, eventId string, method string) error {
+	return nil
+}
+
 func (t *TriggerMock[O]) GetStep() TriggerResults[O] {
 	step := t.mockBase.GetStep("trigger")
 	return TriggerResults[O]{Output: step.Output, Error: step.Error}
@@ -174,13 +178,13 @@ func MockTarget[I any](id string, fn func(I) error) *TargetMock[I] {
 	}
 }
 
-var _ capabilities.TargetCapability = &TargetMock[any]{}
+var _ capabilities.ExecutableCapability = &TargetMock[any]{}
 
 func (t *TargetMock[I]) GetAllWrites() TargetResults[I] {
 	targetResults := TargetResults[I]{}
-	for ref := range t.mockBase.inputs {
+	for ref := range t.inputs {
 		targetResults.NumRuns++
-		step := t.mockBase.GetStep(ref)
+		step := t.GetStep(ref)
 		targetResults.Inputs = append(targetResults.Inputs, step.Input)
 		if step.Error != nil {
 			targetResults.Errors = append(targetResults.Errors, step.Error)

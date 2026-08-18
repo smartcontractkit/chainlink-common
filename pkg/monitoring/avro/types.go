@@ -34,7 +34,7 @@ var (
 type Opts struct {
 	Doc       string
 	Namespace string
-	Default   interface{}
+	Default   any
 }
 
 type record struct {
@@ -56,10 +56,10 @@ func Record(name string, opts Opts, fields Fields) Schema {
 }
 
 type field struct {
-	Name    string      `json:"name"`
-	Doc     string      `json:"doc,omitempty"`
-	Typ     Schema      `json:"type"`
-	Default interface{} `json:"default,omitempty"`
+	Name    string `json:"name"`
+	Doc     string `json:"doc,omitempty"`
+	Typ     Schema `json:"type"`
+	Default any    `json:"default,omitempty"`
 }
 
 type IField interface {

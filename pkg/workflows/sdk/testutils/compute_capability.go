@@ -14,7 +14,7 @@ type computeCapability struct {
 
 func (c *computeCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
 	info := capabilities.MustNewCapabilityInfo(
-		"custom-compute@1.0.0", capabilities.CapabilityTypeAction, "Custom compute capability",
+		"custom-compute@1.0.0", capabilities.CapabilityTypeAction, "Custom compute capability", "COMPUTE",
 	)
 	info.IsLocal = true
 	return info, nil
@@ -32,4 +32,4 @@ func (c *computeCapability) Execute(ctx context.Context, request capabilities.Ca
 	return c.callback(c.sdk, request)
 }
 
-var _ capabilities.ActionCapability = &computeCapability{}
+var _ capabilities.ExecutableCapability = &computeCapability{}

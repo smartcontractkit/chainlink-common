@@ -45,7 +45,7 @@ func (c *Client) DeleteNotificationTemplate(name string) (DeleteNotificationTemp
 	}
 
 	statusCode := resp.StatusCode()
-	if statusCode != 200 {
+	if statusCode != 204 {
 		return DeleteNotificationTemplateResponse{}, resp, fmt.Errorf("error deleting notification template, received unexpected status code %d: %s", statusCode, resp.String())
 	}
 

@@ -3,6 +3,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
@@ -20,6 +21,7 @@ func runMonitor(
 	sourceTypes []string,
 	exporterFactories []ExporterFactory,
 	exporterParams ExporterParams,
+	cleanupTimeout time.Duration,
 ) {
 	// Create data sources
 	pollers := []Poller{}
@@ -53,16 +55,16 @@ func runMonitor(
 	}
 	// Run poller goroutines.
 	for _, poller := range pollers {
-		poller := poller
 		subs.Go(func() {
 			poller.Run(ctx)
 		})
 	}
 	// Run feed monitor.
-	feedMonitor := NewFeedMonitor(
+	feedMonitor := NewFeedMonitorWithTimeout(
 		logger.With(lgr, "component", "feed-monitor"),
 		pollers,
 		exporters,
+		cleanupTimeout,
 	)
 	subs.Go(func() {
 		feedMonitor.Run(ctx)

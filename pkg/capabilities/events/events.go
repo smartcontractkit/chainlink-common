@@ -193,9 +193,9 @@ func (e *Emitter) Emit(ctx context.Context, msg Message) error {
 	}
 
 	attrs := []any{
-		"beholder_data_schema",
+		beholder.AttrKeyDataSchema,
 		"/capabilities-operational-event/versions/1",
-		"beholder_data_type",
+		beholder.AttrKeyDataType,
 		"custom_message",
 	}
 

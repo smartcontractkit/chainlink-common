@@ -391,7 +391,7 @@ func (s staticOffRamp) Evaluate(ctx context.Context, other ccip.OffRampReader) e
 		return fmt.Errorf("expected cost %v but got %v", GasPriceEstimatorExec.estimateMsgCostUSDResponse, cost)
 	}
 	// Median test case
-	median, err := gasPriceEstimator.Median(ctx, GasPriceEstimatorExec.medianRequest.gasPrices)
+	median, err := gasPriceEstimator.Median(ctx, GasPriceEstimatorExec.gasPrices)
 	if err != nil {
 		return fmt.Errorf("failed to get other median: %w", err)
 	}

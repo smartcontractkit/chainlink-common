@@ -1,14 +1,23 @@
 package pb_test
 
 import (
+	"crypto/rand"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/testing/protocmp"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const (
@@ -20,6 +29,8 @@ const (
 	testError         = "test-error"
 	anyReferenceID    = "anything"
 	testWorkflowOwner = "testowner"
+	testWorkflowName  = "00112233445566778899"
+	testOrgID         = "test-org-id"
 )
 
 func TestCapabilityRequestFromProto(t *testing.T) {
@@ -43,19 +54,33 @@ func TestCapabilityRequestFromProto(t *testing.T) {
 		"aConfigVersion": true,
 	})
 	require.NoError(t, err)
+
+	anyMsg := &anypb.Any{
+		TypeUrl: "example.com/type",
+		Value:   []byte("test-bytes"),
+	}
+
 	pr = pb.CapabilityRequest{
 		Metadata: &pb.RequestMetadata{
 			WorkflowId: "<workflow-id>",
 		},
-		Inputs: values.ProtoMap(inputs),
-		Config: values.ProtoMap(config),
+		Inputs:        values.ProtoMap(inputs),
+		Config:        values.ProtoMap(config),
+		ConfigPayload: anyMsg,
 	}
-	_, err = pb.CapabilityRequestFromProto(&pr)
+	out, err := pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
+	require.True(t, proto.Equal(anyMsg, out.ConfigPayload))
 
 	pr.Metadata.ReferenceId = anyReferenceID
-	_, err = pb.CapabilityRequestFromProto(&pr)
+	out, err = pb.CapabilityRequestFromProto(&pr)
 	require.NoError(t, err)
+	require.Equal(t, anyReferenceID, out.Metadata.ReferenceID)
+
+	pr.Metadata.OrgId = testOrgID
+	out, err = pb.CapabilityRequestFromProto(&pr)
+	require.NoError(t, err)
+	require.Equal(t, testOrgID, out.Metadata.OrgID)
 }
 
 func TestCapabilityResponseFromProto(t *testing.T) {
@@ -68,6 +93,51 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 	resp, err := pb.CapabilityResponseFromProto(&pr)
 	require.NoError(t, err)
 	assert.Equal(t, capabilities.CapabilityResponse{Value: values.EmptyMap()}, resp)
+
+	t.Run("invalid config digest length", func(t *testing.T) {
+		pr := &pb.CapabilityResponse{
+			Value: values.ProtoMap(values.EmptyMap()),
+			Metadata: &pb.ResponseMetadata{
+				CapdonN: 1,
+			},
+			OcrAttestation: &pb.OCRAttestation{
+				ConfigDigest:   []byte("too-short"),
+				SequenceNumber: 0,
+			},
+		}
+		_, err := pb.CapabilityResponseFromProto(pr)
+		require.ErrorContains(t, err, "invalid config digest length")
+	})
+	t.Run("Round-trip", func(t *testing.T) {
+		configDigest := ocrtypes.ConfigDigest{}
+		_, err := rand.Read(configDigest[:])
+		require.NoError(t, err)
+		original := capabilities.CapabilityResponse{
+			Value: values.EmptyMap(),
+			Metadata: capabilities.ResponseMetadata{
+				Metering: []capabilities.MeteringNodeDetail{
+					{
+						Peer2PeerID: "peer_id",
+						SpendUnit:   "spend_unit",
+						SpendValue:  "spend_value",
+					},
+				},
+			},
+			OCRAttestation: &capabilities.OCRAttestation{
+				ConfigDigest:   configDigest,
+				SequenceNumber: 12345,
+				Sigs: []capabilities.AttributedSignature{
+					{Signer: 0, Signature: []byte("sig0bytes")},
+					{Signer: 1, Signature: []byte("sig1bytes")},
+					{Signer: 99, Signature: []byte{}},
+				},
+			},
+		}
+		protoResp := pb.CapabilityResponseToProto(original)
+		roundTripped, err := pb.CapabilityResponseFromProto(protoResp)
+		require.NoError(t, err)
+		require.Empty(t, cmp.Diff(original, roundTripped, protocmp.Transform()), "Expected capability response to be identical after round trip")
+	})
 }
 
 func TestMarshalUnmarshalRequest(t *testing.T) {
@@ -76,10 +146,18 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 			WorkflowID:               "test-workflow-id",
 			WorkflowExecutionID:      testWorkflowID,
 			WorkflowOwner:            "0xaa",
-			WorkflowName:             "test-workflow-name",
+			OrgID:                    testOrgID,
+			WorkflowName:             testWorkflowName,
 			WorkflowDonID:            1,
 			WorkflowDonConfigVersion: 1,
 			ReferenceID:              anyReferenceID,
+			DecodedWorkflowName:      "test-workflow-name",
+			SpendLimits: []capabilities.SpendLimit{
+				{SpendType: "COMPUTE", Limit: "1000"},
+				{SpendType: "GAS_12345", Limit: "1000000"},
+			},
+			WorkflowTag:        "test-workflow-tag",
+			ExecutionTimestamp: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
@@ -87,14 +165,24 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 		Inputs: &values.Map{Underlying: map[string]values.Value{
 			testInputsKey: &values.String{Underlying: testInputsValue},
 		}},
+		ConfigPayload: &anypb.Any{
+			TypeUrl: "example.com/type",
+			Value:   []byte("any-bytes"),
+		},
+		Method:       "call-it",
+		CapabilityId: "test-capability-id",
 	}
+
 	raw, err := pb.MarshalCapabilityRequest(req)
 	require.NoError(t, err)
 
 	unmarshaled, err := pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
-	require.Equal(t, req, unmarshaled)
+	require.Equal(t, req.Metadata, unmarshaled.Metadata)
+	require.Equal(t, req.Config, unmarshaled.Config)
+	require.Equal(t, req.Inputs, unmarshaled.Inputs)
+	require.True(t, proto.Equal(req.ConfigPayload, unmarshaled.ConfigPayload))
 
 	req.Metadata.ReferenceID = anyReferenceID
 	raw, err = pb.MarshalCapabilityRequest(req)
@@ -103,119 +191,123 @@ func TestMarshalUnmarshalRequest(t *testing.T) {
 	unmarshaled, err = pb.UnmarshalCapabilityRequest(raw)
 	require.NoError(t, err)
 
-	require.Equal(t, req, unmarshaled)
+	require.Equal(t, req.Metadata, unmarshaled.Metadata)
+	require.Equal(t, req.Config, unmarshaled.Config)
+	require.Equal(t, req.Inputs, unmarshaled.Inputs)
+	require.True(t, proto.Equal(req.ConfigPayload, unmarshaled.ConfigPayload))
 }
 
-func TestMarshalUnmarshalResponse(t *testing.T) {
-	v, err := values.NewMap(map[string]any{"hello": "world"})
-	require.NoError(t, err)
-	resp := capabilities.CapabilityResponse{
-		Value: v,
-	}
-	raw, err := pb.MarshalCapabilityResponse(resp)
-	require.NoError(t, err)
+func TestTriggerResponseFromProto(t *testing.T) {
+	t.Run("with event outputs", func(t *testing.T) {
+		outMap := &pb.TriggerEvent{
+			Id:          "id",
+			TriggerType: "type",
+			Outputs: values.ProtoMap(&values.Map{
+				Underlying: map[string]values.Value{
+					"a": &values.String{Underlying: "b"},
+				},
+			}),
+		}
+		protoResp := &pb.TriggerResponse{
+			Event: outMap,
+			Error: "",
+		}
+		resp, err := pb.TriggerResponseFromProto(protoResp)
+		require.NoError(t, err)
+		assert.NoError(t, resp.Err)
+		assert.Equal(t, "id", resp.Event.ID)
+		assert.Equal(t, "type", resp.Event.TriggerType)
+		assert.NotNil(t, resp.Event.Outputs)
+		assert.Equal(t, "b", resp.Event.Outputs.Underlying["a"].(*values.String).Underlying)
+	})
 
-	unmarshaled, err := pb.UnmarshalCapabilityResponse(raw)
-	require.NoError(t, err)
+	t.Run("with error only", func(t *testing.T) {
+		protoResp := &pb.TriggerResponse{
+			Error: "something went wrong",
+		}
+		resp, err := pb.TriggerResponseFromProto(protoResp)
+		require.NoError(t, err)
+		assert.Error(t, resp.Err)
+		assert.Equal(t, "something went wrong", resp.Err.Error())
+	})
 
-	require.Equal(t, resp, unmarshaled)
+	t.Run("nil input", func(t *testing.T) {
+		_, err := pb.TriggerResponseFromProto(nil)
+		assert.ErrorContains(t, err, "could not unmarshal nil")
+	})
 }
 
-func TestRegisterToWorkflowRequestToProto(t *testing.T) {
-	req := capabilities.RegisterToWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			WorkflowOwner: testWorkflowOwner,
+func TestMarshalUnmarshalTriggerRegistrationRequest(t *testing.T) {
+	req := capabilities.TriggerRegistrationRequest{
+		TriggerID: "test-trigger-id",
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:               "test-workflow-id",
+			WorkflowExecutionID:      testWorkflowID,
+			WorkflowOwner:            testWorkflowOwner,
+			OrgID:                    testOrgID,
+			WorkflowName:             testWorkflowName,
+			WorkflowDonID:            2,
+			WorkflowDonConfigVersion: 3,
+			ReferenceID:              anyReferenceID,
+			DecodedWorkflowName:      "decoded-workflow-name",
+			SpendLimits: []capabilities.SpendLimit{
+				{SpendType: "GAS", Limit: "5000"},
+			},
+			WorkflowTag:        "workflow-tag",
+			ExecutionTimestamp: time.Date(2025, 6, 15, 12, 0, 0, 0, time.UTC),
 		},
 		Config: &values.Map{Underlying: map[string]values.Value{
 			testConfigKey: &values.String{Underlying: testConfigValue},
 		}},
+		Payload: &anypb.Any{
+			TypeUrl: "example.com/payload",
+			Value:   []byte("payload-bytes"),
+		},
+		Method: "trigger-method",
 	}
-	pr := pb.RegisterToWorkflowRequestToProto(req)
-	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
-	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
 
-	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
+	raw, err := pb.MarshalTriggerRegistrationRequest(req)
+	require.NoError(t, err)
+
+	unmarshaled, err := pb.UnmarshalTriggerRegistrationRequest(raw)
+	require.NoError(t, err)
+
+	require.Equal(t, req.TriggerID, unmarshaled.TriggerID)
+	require.Equal(t, req.Metadata, unmarshaled.Metadata)
+	require.Equal(t, req.Config, unmarshaled.Config)
+	require.True(t, proto.Equal(req.Payload, unmarshaled.Payload))
+	require.Equal(t, req.Method, unmarshaled.Method)
 }
 
-func TestRegisterToWorkflowRequestFromProto(t *testing.T) {
-	configMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-
-	pr := &pb.RegisterToWorkflowRequest{
-		Metadata: &pb.RegistrationMetadata{
-			WorkflowId:    testWorkflowID,
-			ReferenceId:   anyReferenceID,
-			WorkflowOwner: testWorkflowOwner,
+func TestCapabilityRequest_OrgID_ToProto_FromProto(t *testing.T) {
+	req := capabilities.CapabilityRequest{
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:    "wf",
+			WorkflowOwner: "0xaa",
+			OrgID:         testOrgID,
 		},
-		Config: values.ProtoMap(configMap),
 	}
+	protoReq := pb.CapabilityRequestToProto(req)
+	require.Equal(t, testOrgID, protoReq.GetMetadata().GetOrgId())
 
-	req, err := pb.RegisterToWorkflowRequestFromProto(pr)
+	roundTrip, err := pb.CapabilityRequestFromProto(protoReq)
 	require.NoError(t, err)
-
-	expectedMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, capabilities.RegisterToWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			WorkflowOwner: testWorkflowOwner,
-			ReferenceID:   anyReferenceID,
-		},
-		Config: expectedMap,
-	}, req)
+	require.Equal(t, testOrgID, roundTrip.Metadata.OrgID)
 }
 
-func TestUnregisterFromWorkflowRequestToProto(t *testing.T) {
-	req := capabilities.UnregisterFromWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			ReferenceID:   anyReferenceID,
+func TestTriggerRegistrationRequest_OrgID_ToProto_FromProto(t *testing.T) {
+	req := capabilities.TriggerRegistrationRequest{
+		TriggerID: "t1",
+		Metadata: capabilities.RequestMetadata{
+			WorkflowID:    "wf",
 			WorkflowOwner: testWorkflowOwner,
+			OrgID:         testOrgID,
 		},
-		Config: &values.Map{Underlying: map[string]values.Value{
-			testConfigKey: &values.String{Underlying: testConfigValue},
-		}},
 	}
-	pr := pb.UnregisterFromWorkflowRequestToProto(req)
-	assert.Equal(t, testWorkflowID, pr.Metadata.WorkflowId)
-	assert.Equal(t, anyReferenceID, pr.Metadata.ReferenceId)
-	assert.Equal(t, testWorkflowOwner, pr.Metadata.WorkflowOwner)
-	assert.Equal(t, testConfigValue, pr.Config.GetFields()[testConfigKey].GetStringValue())
-}
+	protoReq := pb.TriggerRegistrationRequestToProto(req)
+	require.Equal(t, testOrgID, protoReq.GetMetadata().GetOrgId())
 
-func TestUnregisterFromWorkflowRequestFromProto(t *testing.T) {
-	configMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
+	roundTrip, err := pb.TriggerRegistrationRequestFromProto(protoReq)
 	require.NoError(t, err)
-
-	pr := &pb.UnregisterFromWorkflowRequest{
-		Metadata: &pb.RegistrationMetadata{
-			WorkflowId:    testWorkflowID,
-			WorkflowOwner: testWorkflowOwner,
-			ReferenceId:   anyReferenceID,
-		},
-		Config: values.ProtoMap(configMap),
-	}
-
-	req, err := pb.UnregisterFromWorkflowRequestFromProto(pr)
-	require.NoError(t, err)
-
-	expectedMap, err := values.NewMap(map[string]any{
-		testConfigKey: testConfigValue,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, capabilities.UnregisterFromWorkflowRequest{
-		Metadata: capabilities.RegistrationMetadata{
-			WorkflowID:    testWorkflowID,
-			ReferenceID:   anyReferenceID,
-			WorkflowOwner: testWorkflowOwner,
-		},
-		Config: expectedMap,
-	}, req)
+	require.Equal(t, testOrgID, roundTrip.Metadata.OrgID)
 }

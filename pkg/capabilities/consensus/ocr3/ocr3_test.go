@@ -11,11 +11,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestOCR3_ReportingFactoryAddsCapability(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	cfg := Config{
 		EncoderFactory: mockEncoderFactory,
@@ -38,7 +37,7 @@ func TestOCR3_ReportingFactoryAddsCapability(t *testing.T) {
 }
 
 func TestOCR3_ReportingFactoryIsAService(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	cfg := Config{
 		EncoderFactory: mockEncoderFactory,
@@ -63,7 +62,7 @@ func TestOCR3_ReportingFactoryIsAService(t *testing.T) {
 	require.NoError(t, factory.Start(ctx))
 
 	r.AssertCalled(t, "Add", mock.Anything, o.config.capability)
-	assert.Nil(t, factory.Ready())
+	assert.NoError(t, factory.Ready())
 
 	err = o.Close()
 	require.NoError(t, err)

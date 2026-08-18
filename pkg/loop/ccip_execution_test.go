@@ -20,16 +20,16 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestExecService(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
-	}, cciptest.ExecutionProvider, cciptest.ExecutionProvider, 0, 0, "")
-	hook := exec.PluginService.XXXTestHook()
+	}, cciptest.ExecutionProvider(lggr), cciptest.ExecutionProvider(lggr), 0, 0, "")
+	hook := exec.XXXTestHook()
 	servicetest.Run(t, exec)
 
 	t.Run("control", func(t *testing.T) {
@@ -57,14 +57,15 @@ func TestExecService(t *testing.T) {
 
 func TestExecService_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	exec := loop.NewExecutionService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	exec := loop.NewExecutionService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
 			Command: loop.CCIPExecutionLOOPName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, cciptest.ExecutionProvider, cciptest.ExecutionProvider, 0, 0, "")
+	}, cciptest.ExecutionProvider(lggr), cciptest.ExecutionProvider(lggr), 0, 0, "")
 	servicetest.Run(t, exec)
 
 	reportingplugintest.RunFactory(t, exec)
@@ -111,8 +112,8 @@ func TestExecLOOP(t *testing.T) {
 }
 
 func newExecutionProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPExecProvider, error) {
-	ctx := tests.Context(t)
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
+	ctx := t.Context()
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 

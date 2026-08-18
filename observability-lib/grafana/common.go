@@ -12,5 +12,5 @@ func inc(p *uint32) uint32 {
 }
 
 func Pointer[T any](d T) *T {
-	return &d
+	return new(d)
 }

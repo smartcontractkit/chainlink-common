@@ -1,0 +1,23 @@
+name: Analyze API Changes
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  api-diff:
+    uses: smartcontractkit/.github/.github/workflows/reusable-apidiff-go-analysis.yml@reusable-apidiff-go-analysis/v1
+    with:
+      file-patterns: |
+        **/*.go
+        **/go.mod
+        **/go.sum
+      module-patterns: |
+        **
+      enforce-compatible: ${{ !contains(github.event.pull_request.labels.*.name, 'allow-incompatible') }}

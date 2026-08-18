@@ -11,9 +11,10 @@ import (
 func Test_toEmitLabels(t *testing.T) {
 	t.Run("successfully transforms metadata", func(t *testing.T) {
 		md := &capabilities.RequestMetadata{
-			WorkflowID:    "workflow-id",
-			WorkflowName:  "workflow-name",
-			WorkflowOwner: "workflow-owner",
+			WorkflowID:          "workflow-id",
+			WorkflowName:        "workflow-name",
+			WorkflowOwner:       "workflow-owner",
+			WorkflowExecutionID: "6e2a46e3b6ae611bdb9bcc36ed3f46bb9a30babc3aabdd4eae7f35dd9af0f244",
 		}
 		empty := make(map[string]string, 0)
 
@@ -24,7 +25,7 @@ func Test_toEmitLabels(t *testing.T) {
 			"workflow_id":            "workflow-id",
 			"workflow_name":          "workflow-name",
 			"workflow_owner_address": "workflow-owner",
-			"workflow_execution_id":  "",
+			"workflow_execution_id":  "6e2a46e3b6ae611bdb9bcc36ed3f46bb9a30babc3aabdd4eae7f35dd9af0f244",
 		}, gotLabels)
 	})
 
@@ -62,5 +63,26 @@ func Test_toEmitLabels(t *testing.T) {
 		_, err := toEmitLabels(md, empty)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "workflow owner")
+	})
+
+	t.Run("fails on missing workflow execution id", func(t *testing.T) {
+		md := &capabilities.RequestMetadata{
+			WorkflowID:    "workflow-id",
+			WorkflowName:  "workflow-name",
+			WorkflowOwner: "workflow-owner",
+		}
+		empty := make(map[string]string, 0)
+
+		_, err := toEmitLabels(md, empty)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "workflow execution id")
+	})
+}
+
+func Test_bufferToPointerLen(t *testing.T) {
+	t.Run("fails when no buffer", func(t *testing.T) {
+		_, _, err := bufferToPointerLen([]byte{})
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "buffer cannot be empty")
 	})
 }

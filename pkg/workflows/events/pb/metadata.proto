@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/workflows/events/pb";
+
+package events;
+
+// WorkflowMetadata should be composed into all operational event protos and
+// APIs that consume per-execution operational artifacts from the engine (i.e. Metering Report).
+message WorkflowMetadata {
+  string workflowName = 1;
+  string version = 2;
+  string workflowID = 3;
+  string workflowExecutionID = 4;
+  int32 donID = 5;
+  int32 donF = 6;
+  int32 donN = 7;
+  int32 donQ = 8;
+  string p2pID = 9;
+  string owner = 10;
+}

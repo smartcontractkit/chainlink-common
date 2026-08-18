@@ -9,7 +9,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/aggregators"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func TestDataFeedsAggregator_Aggregate(t *testing.T) {
@@ -26,7 +26,7 @@ func TestDataFeedsAggregator_Aggregate(t *testing.T) {
 	outcome, err := agg.Aggregate(logger.Nop(), nil, observations, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
-	require.Equal(t, "", outcome.EncoderName)
+	require.Empty(t, outcome.EncoderName)
 	require.Nil(t, outcome.EncoderConfig)
 
 	m, err := values.FromMapValueProto(outcome.EncodableOutcome)
@@ -50,7 +50,7 @@ func TestDataFeedsAggregator_Aggregate_OverrideWithKeys(t *testing.T) {
 	outcome, err := agg.Aggregate(logger.Nop(), nil, observations, 1)
 	require.NoError(t, err)
 	require.True(t, outcome.ShouldReport)
-	require.Equal(t, "", outcome.EncoderName)
+	require.Empty(t, outcome.EncoderName)
 	require.Nil(t, outcome.EncoderConfig)
 
 	m, err := values.FromMapValueProto(outcome.EncodableOutcome)

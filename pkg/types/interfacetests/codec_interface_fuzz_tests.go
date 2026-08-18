@@ -4,10 +4,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/smartcontractkit/libocr/commontypes"
 	"github.com/stretchr/testify/require"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/libocr/commontypes"
 )
 
 func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
@@ -59,7 +58,7 @@ func RunCodecInterfaceFuzzTests(f *testing.F, tester CodecInterfaceTester) {
 				},
 			}
 			codec := tester.GetCodec(t)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
 			encoded, err := codec.Encode(ctx, testStruct, TestItemType)
 			require.NoError(t, err)

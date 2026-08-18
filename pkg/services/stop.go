@@ -48,16 +48,3 @@ func (s StopRChan) Ctx(ctx context.Context) (context.Context, context.CancelFunc
 func (s StopRChan) CtxWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
 	return s.CtxCancel(context.WithTimeout(context.Background(), timeout))
 }
-
-// CtxCancel cancels a [context.Context] when StopChan is closed.
-// Returns ctx and cancel unmodified, for convenience.
-func (s StopRChan) CtxCancel(ctx context.Context, cancel context.CancelFunc) (context.Context, context.CancelFunc) {
-	go func() {
-		select {
-		case <-s:
-			cancel()
-		case <-ctx.Done():
-		}
-	}()
-	return ctx, cancel
-}

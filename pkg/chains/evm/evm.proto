@@ -1,0 +1,380 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/chains/evm";
+package loop.evm;
+
+import "google/protobuf/empty.proto";
+import "loop/chain-common/query.proto";
+import "values/v1/values.proto";
+
+service EVM{
+  rpc GetTransactionFee(GetTransactionFeeRequest) returns (GetTransactionFeeReply) {}
+  rpc CallContract(CallContractRequest) returns (CallContractReply);
+  rpc FilterLogs(FilterLogsRequest) returns (FilterLogsReply);
+  rpc BalanceAt(BalanceAtRequest) returns (BalanceAtReply);
+  rpc EstimateGas(EstimateGasRequest) returns (EstimateGasReply);
+  rpc GetTransactionByHash(GetTransactionByHashRequest) returns (GetTransactionByHashReply);
+  rpc GetTransactionReceipt(GetTransactionReceiptRequest) returns (GetTransactionReceiptReply);
+  rpc HeaderByNumber(HeaderByNumberRequest) returns (HeaderByNumberReply);
+  rpc QueryTrackedLogs(QueryTrackedLogsRequest) returns (QueryTrackedLogsReply);
+  rpc GetFiltersNames(google.protobuf.Empty) returns (GetFiltersNamesReply); // TODO PLEX-1465: once code is moved away, remove this GetFiltersNames RPC method
+  rpc RegisterLogTracking(RegisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc UnregisterLogTracking(UnregisterLogTrackingRequest) returns (google.protobuf.Empty);
+  rpc GetTransactionStatus(GetTransactionStatusRequest) returns (GetTransactionStatusReply);
+  rpc SubmitTransaction(SubmitTransactionRequest) returns (SubmitTransactionReply);
+  rpc CalculateTransactionFee(CalculateTransactionFeeRequest) returns (CalculateTransactionFeeReply);
+  rpc GetForwarderForEOA(GetForwarderForEOARequest) returns (GetForwarderForEOAReply);
+  rpc GetLatestLPBlock(google.protobuf.Empty) returns (GetLatestLPBlockReply);
+  rpc LPSkipToBlock(LPSkipToBlockRequest) returns (google.protobuf.Empty);
+}
+
+// represents simplified evm-style CallMsg
+message CallMsg {
+  bytes from = 1; // sender address in evm address [20]byte fix-sized array format
+  bytes to = 2; // contract address in evm address [20]byte fix-sized array format
+  bytes data = 3; // solidity-spec abi encoded bytes
+}
+
+message Topics {
+  repeated bytes topic = 1; // in [32]byte fix-sized array format
+}
+
+// represents evm-style log
+message Log {
+  bytes address = 1; // address of the contract emitted the log in evm address [20]byte fix-sized array format
+  repeated bytes topics = 2; // indexed log fields, in [32]byte fix-sized array format
+  bytes tx_hash = 3; // hash of the transaction containing the log, in [32]byte fix-sized array format
+  bytes block_hash = 4; // hash of the block containing the log, in [32]byte fix-sized array format
+  bytes data = 5; // solidity-spec abi encoded log Data 
+  bytes eventSig = 6; // keccak256 of event signature, in [32]byte fix-sized array format
+  values.v1.BigInt block_number = 7;  // block number containing the log
+  uint32 tx_index = 8;  // index of transaction emmited the log
+  uint32 index = 9;  // index of the Log within the intire block
+  bool removed = 10;  // flag if the log was removed during reorg
+}
+
+// represents evm-style filter query
+message FilterQuery {
+  bytes block_hash = 1; // exact block (cant use from/to), in [32]byte fix-sized array format
+  values.v1.BigInt fromBlock = 2; // start block range
+  values.v1.BigInt toBlock = 3; // end block range
+  repeated bytes addresses = 4; // contract(s) to filter logs from in evm address [20]byte fix-sized array format
+  repeated Topics topics = 5;  // filter log by event signature and indexed args
+}
+
+// represents evm-style transaction
+message Transaction {
+  uint64 nonce = 1; // number of txs sent from sender 
+  uint64 gas = 2; // max gas allowed per execution (in gas units)
+  bytes to = 3; // recipient address in evm address [20]byte fix-sized array format
+  bytes data = 4; // solidity-spec abi encoded input data for function call payload
+  bytes hash = 5; // transaction hash, in [32]byte fix-sized array format
+  values.v1.BigInt value = 6; // amount of eth sent in wei
+  values.v1.BigInt gas_price = 7; // price for a single gas unit in wei
+}
+
+// represents evm-style receipt
+message Receipt {
+  uint64 status = 1; // 1 for success 0 for failure
+  uint64 gas_used = 2; // gas used by this transaction (in gas units)
+  uint64 tx_index = 3; // index of the transaction inside of the block
+  bytes block_hash = 4; // block hash containing the transaction
+  repeated Log logs = 6; // logs emitted by this transaction
+  bytes tx_hash = 7; // hash of the transaction this receipt is for, in [32]byte fix-sized array format
+  values.v1.BigInt effective_gas_price = 8; // actual gas price paid in wei (include after EIP-1559)
+  values.v1.BigInt block_number = 9; // block number containing the transaction
+  bytes contract_address = 10; // address of the contract if this transaction created one in evm address [20]byte fix-sized array format
+  values.v1.BigInt l1_Fee = 11; // layer 1 fee paid by L2 chains
+}
+
+
+// represents filter for polling and caching logs
+message LPFilter {
+  uint64 max_logs_kept = 1; // maximum number of logs to retain ( 0 = unlimited ) 
+  int64 retention_time = 2; // maximum amount of time to retain logs in seconds
+  uint64 logs_per_block = 3; // rate limit ( maximum # of logs per block, 0 = unlimited )
+  string name = 4; // filter name, has to persist for removing filter 
+  repeated bytes addresses = 5; // list of addresses to include in evm address [20]byte fix-sized array format
+  repeated bytes event_sigs = 6; // list of possible signatures (aka topic1), in [32]byte fix-sized array format
+  repeated bytes topic2 = 7; // list of possible values for topic2, in [32]byte fix-sized array format
+  repeated bytes topic3 = 8; // list of possible values for topic3, in [32]byte fix-sized array format
+  repeated bytes topic4 = 9; // list of possible values for topic4, in [32]byte fix-sized array format
+}
+
+message Header {
+  uint64 timestamp = 1; // unix timestamp
+  values.v1.BigInt block_number = 2;
+  bytes hash = 3; // in [32]byte fix-sized array format
+  bytes parent_hash = 4; // in [32]byte fix-sized array format
+}
+
+// represents LogPoller's latest/finalized/safe blocks view
+message LPBlock {
+  bytes hash = 1;
+  int64 latest_block_number = 2;
+  uint64 block_timestamp = 3; // unix timestamp
+  int64 finalized_block_number = 4;
+  int64 safe_block_number = 5;
+}
+
+message Expression {
+ oneof evaluator {
+    Primitive primitive = 1;
+    BooleanExpression boolean_expression = 2;
+  }
+}
+
+message BooleanExpression {
+  loop.chain.common.BooleanOperator boolean_operator = 1;
+  repeated Expression expression = 2;
+}
+
+message And {
+  repeated Expression expr = 1;
+}
+
+message Or {
+  repeated Expression expr = 1;
+}
+
+message HashValueComparator {
+  repeated bytes values = 1; // in [32]byte fix-sized array format
+  loop.chain.common.ComparisonOperator operator = 2;
+}
+
+message EventByWord {
+  uint32 word_index = 1;
+  repeated HashValueComparator  hashed_value_comparers = 2;
+}
+
+message EventByTopic {
+  uint64 topic = 1;
+  repeated HashValueComparator hashed_value_comparers = 2;
+}
+
+// evm-style primitives
+// can be used in combination with general primitives for querying tracked logs
+message Primitive {
+  oneof primitive {
+    loop.chain.common.Primitive general_primitive = 1;
+    bytes contract_address = 2; // in evm address [20]byte fix-sized array format
+    bytes event_sig = 3; // // in [32]byte fix-sized array format
+    EventByWord event_by_word = 4;
+    EventByTopic event_by_topic = 5;
+  }
+}
+
+// ----- Request/Reply Wrappers -----
+// HeaderByNumberRequest - returns block information without full transaction data and uncle headers
+message HeaderByNumberRequest {
+  // block_number - specifies which block to fetch:
+  //   - nil or -2: latest block
+  //   - -3: finalized block
+  //   - -4: safe block
+  //   - positive value: specific block at that height
+  values.v1.BigInt block_number = 2;
+  // confidence_level - determines if additional verification is required (only applicable for positive blockNumber values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if requested is not finalized
+  //   - "Safe": returns error if requested block is not safe
+  loop.chain.common.Confidence confidence_level = 3;
+}
+
+message HeaderByNumberReply {
+  Header header = 1;
+}
+
+// CallContract executes a message call transaction, which is directly executed in the VM
+// of the node, but never mined into the blockchain.
+message CallContractRequest {
+  CallMsg call = 1;
+  // block_number - defines block at which call will be executed:
+  //   - nil or -2: latest block
+  //   - -3: finalized block
+  //   - -4: safe block
+  //   - positive value: specific block at that height
+  values.v1.BigInt block_number = 2;
+  // confidence_level - determines if additional verification is required (only applicable for positive blockNumber values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if call is executed at block that is not safe
+  //   - "Safe": returns error if call is executed at block that is not safe
+  loop.chain.common.Confidence confidence_level = 3;
+  bool is_external = 4; // if true, limits like response size limit may be applied
+}
+
+message CallContractReply {
+  bytes data = 1; // solidity-spec abi encoded bytes
+}
+
+// GetTransactionFeeRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMService.GetTransactionFee].
+message GetTransactionFeeRequest {
+  string transaction_id = 1; // idempotency key used when transaction was submitted
+}
+
+// GetTransactionFeeReply has return arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.EVMService.GetTransactionFee].
+message GetTransactionFeeReply {
+  values.v1.BigInt transaction_fee = 1; // transaction fee is the cost of transaction execution in Wei
+}
+
+message FilterLogsRequest {
+  FilterQuery filter_query = 1;
+  // confidence_level - determines if additional verification is required (only applicable if both filter_query.fromBlock and filter_query.toBlock are positive values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if specified filter_query.toBlock is not finalized
+  //   - "Safe": returns error if specified filter_query.toBlock is not safe
+  loop.chain.common.Confidence confidence_level = 2;
+  bool is_external = 3; // if true, limits like response size limit may be applied
+}
+
+message FilterLogsReply {
+  repeated Log logs = 1;
+}
+
+// number - specifies at which block height to fetch the balance:
+
+//
+// opts.confidence - determines if additional verification is required (only applicable for positive blockNumber values):
+//   - "Unconfirmed" or empty string: no additional verification
+//   - "Finalized": returns error if specified blockNumber is not finalized
+//   - "Safe": returns error if specified blockNumber is not safe
+
+message BalanceAtRequest {
+  bytes account = 1; // in evm address [20]byte fix-sized array format
+  //   - nil or -2: latest block
+  //   - -3: finalized block
+  //   - -4: safe block
+  //   - positive value: specific block at that height
+  values.v1.BigInt block_number = 2;
+  // opts.confidence - determines if additional verification is required (only applicable for positive blockNumber values):
+  //   - "Unconfirmed" or empty string: no additional verification
+  //   - "Finalized": returns error if specified blockNumber is not finalized
+  //   - "Safe": returns error if specified blockNumber is not safe
+  loop.chain.common.Confidence confidence_level = 3;
+}
+
+message BalanceAtReply {
+  values.v1.BigInt balance = 1; // Balance of the account in wei (10^-18 eth)
+}
+
+message EstimateGasRequest {
+  CallMsg msg = 1; // simulates tx execution returns approximate amount of gas units needed 
+}
+
+message EstimateGasReply {
+  uint64 gas = 1; // estimated amount of gas in gas units, needed for tx execution
+}
+
+message GetTransactionByHashRequest {
+  bytes hash = 1; // in [32]byte fix-sized array format
+  bool is_external = 2; // if true, limits like response size limit may be applied
+}
+
+message GetTransactionByHashReply {
+  Transaction transaction = 1;
+}
+
+message GetTransactionReceiptRequest {
+  bytes hash = 1; // in [32]byte fix-sized array format
+  bool is_external = 2; // if true, limits like response size limit may be applied
+} 
+
+message GetTransactionReceiptReply {
+  Receipt receipt = 1;
+}
+
+message RegisterLogTrackingRequest {
+  LPFilter filter = 1;
+}
+
+message UnregisterLogTrackingRequest {
+  string filter_name = 1;
+}
+
+message QueryTrackedLogsRequest {
+  repeated Expression expression = 1;
+  loop.chain.common.LimitAndSort limit_and_sort = 2;
+  loop.chain.common.Confidence confidence_level = 3;
+}
+
+message QueryTrackedLogsReply {
+  repeated Log logs = 1;
+}
+
+message GetLatestLPBlockReply {
+  LPBlock lp_block = 1;
+}
+
+enum TxStatus {
+  TX_FATAL = 0;
+  TX_REVERTED = 1;
+  TX_SUCCESS = 2;
+}
+
+message GasConfig {
+  uint64 gas_limit = 1;
+}
+
+message CalculateTransactionFeeRequest {
+  ReceiptGasInfo gas_info = 1;
+}
+
+// represents evm-style receipt
+message ReceiptGasInfo {
+  uint64 gas_used = 1; // gas used by this transaction (in gas units)
+  values.v1.BigInt effective_gas_price = 2; // actual gas price paid in wei (include after EIP-1559)
+  values.v1.BigInt l1_Fee = 3; // layer 1 fee paid by L2 chains
+}
+
+
+message CalculateTransactionFeeReply {
+  values.v1.BigInt transaction_fee = 1;
+}
+
+message SubmitTransactionRequest {
+  bytes to  = 1;
+  bytes data = 2;
+  optional GasConfig gas_config = 3;
+}
+
+message SubmitTransactionReply {
+  bytes txHash = 1;
+  TxStatus txStatus = 2;
+  string tx_idempotency_key = 3; // idempotency key generated for this transaction
+}
+
+// TransactionStatus is an enum for the status of a transaction.
+// This should always be a 1-1 mapping to: [github.com/smartcontractkit/chainlink-common/pkg/types.TransactionStatus].
+enum TransactionStatus {
+  TRANSACTION_STATUS_UNKNOWN = 0;
+  TRANSACTION_STATUS_PENDING = 1;
+  TRANSACTION_STATUS_UNCONFIRMED = 2;
+  TRANSACTION_STATUS_FINALIZED = 3;
+  TRANSACTION_STATUS_FAILED = 4;
+  TRANSACTION_STATUS_FATAL = 5;
+}
+
+message GetTransactionStatusRequest {
+  string transaction_id = 1;
+}
+
+message GetTransactionStatusReply {
+  TransactionStatus transaction_status = 1;
+}
+
+message GetForwarderForEOARequest {
+  bytes addr = 1; // eoa address in evm address [20]byte fix-sized array format. Required.
+  bytes aggr = 2; // aggregator address in evm address [20]byte fix-sized array format. Can be empty; if set, forwarder is searched among ocr2 aggregators based on the plugin_type.
+  string plugin_type = 3; // type of plugin to be used when searching for a forwarder. Can be empty; suggested values to use - pkg/types.OCR2PluginType.
+}
+
+message GetForwarderForEOAReply {
+  bytes addr = 1; // forwarder address in evm address [20]byte fix-sized array format.
+}
+
+message GetFiltersNamesReply {
+  repeated string items = 1;
+}
+
+message LPSkipToBlockRequest {
+  int64 block_number = 1; // block number to skip to
+}

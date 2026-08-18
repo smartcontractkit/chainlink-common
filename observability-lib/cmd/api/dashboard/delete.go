@@ -8,15 +8,18 @@ import (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete [name]",
+	Use:   "delete [name] [folderUID]",
 	Short: "Delete dashboard by name",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 2 {
+			return errors.New("please provide dashboard name and folder UID")
+		}
+
 		grafanaClient := api.NewClient(
 			cmd.Flag("grafana-url").Value.String(),
 			cmd.Flag("grafana-token").Value.String(),
 		)
-
-		delDashboard, _, err := grafanaClient.GetDashboardByName(args[0])
+		delDashboard, _, err := grafanaClient.GetDashboardByNameFolderUID(args[0], args[1])
 		if err != nil {
 			return err
 		}

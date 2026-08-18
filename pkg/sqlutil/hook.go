@@ -77,7 +77,7 @@ func (w *wrappedDataSource) Rebind(s string) string {
 	return w.db.Rebind(s)
 }
 
-func (w *wrappedDataSource) BindNamed(s string, i interface{}) (string, []any, error) {
+func (w *wrappedDataSource) BindNamed(s string, i any) (string, []any, error) {
 	return w.db.BindNamed(s, i)
 }
 
@@ -119,7 +119,7 @@ func (w *wrappedDataSource) ExecContext(ctx context.Context, query string, args 
 	return
 }
 
-func (w *wrappedDataSource) NamedExecContext(ctx context.Context, query string, arg interface{}) (res sql.Result, err error) {
+func (w *wrappedDataSource) NamedExecContext(ctx context.Context, query string, arg any) (res sql.Result, err error) {
 	err = w.hook(ctx, w.lggr, func(ctx context.Context) (err error) {
 		res, err = w.db.NamedExecContext(ctx, query, arg)
 		return
@@ -143,13 +143,13 @@ func (w *wrappedDataSource) PrepareNamedContext(ctx context.Context, query strin
 	return
 }
 
-func (w *wrappedDataSource) GetContext(ctx context.Context, dest interface{}, query string, args ...any) error {
+func (w *wrappedDataSource) GetContext(ctx context.Context, dest any, query string, args ...any) error {
 	return w.hook(ctx, w.lggr, func(ctx context.Context) error {
 		return w.db.GetContext(ctx, dest, query, args...)
 	}, query, args...)
 }
 
-func (w *wrappedDataSource) SelectContext(ctx context.Context, dest interface{}, query string, args ...any) error {
+func (w *wrappedDataSource) SelectContext(ctx context.Context, dest any, query string, args ...any) error {
 	return w.hook(ctx, w.lggr, func(ctx context.Context) error {
 		return w.db.SelectContext(ctx, dest, query, args...)
 	}, query, args...)

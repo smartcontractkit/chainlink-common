@@ -1,7 +1,6 @@
 package codec_test
 
 import (
-	"errors"
 	"math/big"
 	"reflect"
 	"testing"
@@ -20,38 +19,38 @@ func TestTimeToUnix(t *testing.T) {
 		A string
 		T int64
 	}
-	tst := reflect.TypeOf(&testStruct{})
+	tst := reflect.TypeFor[*testStruct]()
 
 	type testSliceStruct struct{ T []int64 }
-	tsst := reflect.TypeOf(&testSliceStruct{})
+	tsst := reflect.TypeFor[*testSliceStruct]()
 
 	type testArrayStruct struct{ T [2]int64 }
-	tArrSt := reflect.TypeOf(&testArrayStruct{})
+	tArrSt := reflect.TypeFor[*testArrayStruct]()
 
 	type otherIntegerType struct {
 		A string
 		T uint32
 	}
-	oit := reflect.TypeOf(&otherIntegerType{})
+	oit := reflect.TypeFor[*otherIntegerType]()
 
 	type intPointerType struct {
 		A string
 		T *int64
 	}
-	ipt := reflect.TypeOf(&intPointerType{})
+	ipt := reflect.TypeFor[*intPointerType]()
 
 	type bigIntType struct {
 		A string
 		T *big.Int
 	}
-	bit := reflect.TypeOf(&bigIntType{})
+	bit := reflect.TypeFor[*bigIntType]()
 
 	type bigIntAlias big.Int
 	type bigIntAliasType struct {
 		A string
 		T *bigIntAlias
 	}
-	biat := reflect.TypeOf(&bigIntAliasType{})
+	biat := reflect.TypeFor[*bigIntAliasType]()
 
 	type testInvalidStruct struct{ T string }
 
@@ -62,8 +61,8 @@ func TestTimeToUnix(t *testing.T) {
 
 	t.Run("RetypeToOffChain returns error if type is not an integer type", func(t *testing.T) {
 		converter := codec.NewEpochToTimeModifier([]string{"T"})
-		_, err := converter.RetypeToOffChain(reflect.TypeOf(testInvalidStruct{}), "")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		_, err := converter.RetypeToOffChain(reflect.TypeFor[testInvalidStruct](), "")
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("RetypeToOffChain converts integer types", func(t *testing.T) {
@@ -88,7 +87,7 @@ func TestTimeToUnix(t *testing.T) {
 				require.Equal(t, 2, convertedType.NumField())
 				assert.Equal(t, tst.Elem().Field(0), convertedType.Field(0))
 				assert.Equal(t, tst.Elem().Field(1).Name, convertedType.Field(1).Name)
-				assert.Equal(t, reflect.TypeOf(&time.Time{}), convertedType.Field(1).Type)
+				assert.Equal(t, reflect.TypeFor[*time.Time](), convertedType.Field(1).Type)
 			})
 		}
 	})
@@ -103,7 +102,7 @@ func TestTimeToUnix(t *testing.T) {
 
 		require.Equal(t, 1, convertedType.NumField())
 		assert.Equal(t, tsst.Elem().Field(0).Name, convertedType.Field(0).Name)
-		assert.Equal(t, reflect.TypeOf([]*time.Time{}), convertedType.Field(0).Type)
+		assert.Equal(t, reflect.TypeFor[[]*time.Time](), convertedType.Field(0).Type)
 	})
 
 	t.Run("RetypeToOffChain converts arrays", func(t *testing.T) {
@@ -116,7 +115,7 @@ func TestTimeToUnix(t *testing.T) {
 
 		require.Equal(t, 1, convertedType.NumField())
 		assert.Equal(t, tArrSt.Elem().Field(0).Name, convertedType.Field(0).Name)
-		assert.Equal(t, reflect.TypeOf([]*time.Time{}), convertedType.Field(0).Type)
+		assert.Equal(t, reflect.TypeFor[[]*time.Time](), convertedType.Field(0).Type)
 	})
 
 	t.Run("TransformToOnChain converts time to integer types", func(t *testing.T) {

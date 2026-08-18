@@ -4,8 +4,11 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabiliti
 
 package capabilities;
 
-import "values/pb/values.proto";
+import "values/v1/values.proto";
+import "metering/pb/meteringdetail.proto";
+import "google/protobuf/any.proto";
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 service BaseCapability {
   rpc Info (google.protobuf.Empty) returns (CapabilityInfoReply) {}
@@ -17,6 +20,7 @@ enum CapabilityType {
   CAPABILITY_TYPE_ACTION = 2;
   CAPABILITY_TYPE_CONSENSUS = 3;
   CAPABILITY_TYPE_TARGET = 4;
+  CAPABILITY_TYPE_COMBINED = 5;
 }
 
 message CapabilityInfoReply {
@@ -25,6 +29,12 @@ message CapabilityInfoReply {
   string description = 3;
   string version = 4;
   bool isLocal = 5;
+  repeated string spend_types = 6;
+}
+
+message SpendLimit {
+  string spend_type = 1;
+  string limit = 2;
 }
 
 message RequestMetadata {
@@ -32,28 +42,58 @@ message RequestMetadata {
   string workflow_id = 1;
   string workflow_execution_id = 2;
   string workflow_owner = 3;
+  string org_id = 16;
   string workflow_name = 4;
   uint32 workflow_don_id = 6;
   uint32 workflow_don_config_version = 7;
   string reference_id = 8;
+  string decoded_workflow_name = 9;
+  repeated SpendLimit spend_limits = 10;
+  string workflow_tag = 11;
+  string workflow_registry_chain_selector = 12;
+  string workflow_registry_address = 13;
+  string engine_version = 14;
+  google.protobuf.Timestamp execution_timestamp = 15;
 }
 
 message CapabilityRequest {
   RequestMetadata metadata = 1;
-  values.Map config = 2;
-  values.Map inputs = 3;
+  // Used for DAG SDK
+  values.v1.Map config = 2;
+  // Used for DAG SDK
+  values.v1.Map inputs = 3;
+
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  // Used for no DAG SDK
+  google.protobuf.Any configPayload = 5;
+  // Used for no DAG SDK
+  string method = 6;
+  string capabilityId = 7;
 }
 
 message TriggerRegistrationRequest {
   string triggerId = 1;
   RequestMetadata metadata = 2;
-  values.Map config = 3;
+  // Used for DAG SDK
+  values.v1.Map config = 3;
+
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  // Used for no DAG SDK
+  string method = 5;
 }
 
 message TriggerEvent {
+  reserved 5; // Previously used for v1.OCRTriggerEvent
   string triggerType = 1;
   string id = 2;
-  values.Map outputs = 4;
+
+  // Used for DAG SDK
+  values.v1.Map outputs = 4;
+
+  // used for no DAG SDK
+  google.protobuf.Any payload = 6;
 }
 
 message TriggerResponse {
@@ -68,14 +108,53 @@ message TriggerResponseMessage {
   }
 }
 
+message AckEventRequest {
+  string trigger_id = 1; // triggerID is unique per workflow as it contains the workflowID
+  string event_id = 2;
+  string method = 3;
+}
+
+
 service TriggerExecutable {
   rpc RegisterTrigger (TriggerRegistrationRequest) returns (stream TriggerResponseMessage) {}
   rpc UnregisterTrigger (TriggerRegistrationRequest) returns (google.protobuf.Empty) {}
+  rpc AckEvent (AckEventRequest) returns (google.protobuf.Empty) {}
 }
 
 message CapabilityResponse {
-  values.Map value = 1;
+  // Used for DAG SDK
+  values.v1.Map value = 1;
   string error = 2;
+  ResponseMetadata metadata = 3;
+  // Used for no DAG SDK
+  google.protobuf.Any payload = 4;
+  optional OCRAttestation ocr_attestation = 5;
+}
+
+message ResponseMetadata {
+  // MeteringReportNodeDetail is repeated here due to
+  // the identical response aggregation strategy at the Don2Don layer.
+  // We expect identical responses from capabilities, but not identical
+  // metering reports. Since we pass the CapabilityResponse through the
+  // protocol layer to the engine, this field needs to be repeated to
+  // eventually hold all the reports from each capability response node.
+  //
+  // If you are working with this in a capability, you should not emit
+  // more than one metering report per node.
+  repeated metering.MeteringReportNodeDetail metering = 1;
+  // capdon_n represents the total number of nodes in a capability don.
+  uint32 capdon_n = 2;
+}
+
+message OCRAttestation {
+  bytes config_digest = 1;
+  uint64 sequence_number = 2;
+  repeated AttributedSignature signatures = 3;
+}
+
+message AttributedSignature {
+  bytes signature = 1;
+  uint32 signer = 2;
 }
 
 message RegistrationMetadata {
@@ -86,12 +165,12 @@ message RegistrationMetadata {
 
 message RegisterToWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Map config = 2;
+  values.v1.Map config = 2;
 }
 
 message UnregisterFromWorkflowRequest {
   RegistrationMetadata metadata = 1;
-  values.Map config = 2;
+  values.v1.Map config = 2;
 }
 
 service Executable {
@@ -114,8 +193,23 @@ message InitialiseRequest {
   uint32 keyValueStore_id = 6;
   uint32 relayer_set_id = 7;
   uint32 oracle_factory_id = 8;
+  uint32 gateway_connector_id = 9;
+  uint32 keystore_id = 10;
+  uint32 org_resolver_id = 11;
+  uint32 cre_settings_id = 12;
+  uint32 trigger_event_store_id = 13;
+  uint32 capability_don_id = 14;
 }
 
 message CapabilityInfosReply {
   repeated CapabilityInfoReply infos = 1;
+}
+
+service Settings {
+  rpc Subscribe (google.protobuf.Empty) returns (stream SettingsUpdate) {}
+}
+
+message SettingsUpdate {
+  string settings = 1; // default format TOML
+  string hash = 2; // default sha256
 }

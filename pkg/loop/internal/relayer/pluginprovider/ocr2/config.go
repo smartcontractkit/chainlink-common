@@ -4,9 +4,11 @@ import (
 	"context"
 	"math"
 
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -25,7 +27,7 @@ type ConfigProviderClient struct {
 	contractTracker  libocr.ContractConfigTracker
 }
 
-func NewConfigProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ConfigProviderClient {
+func NewConfigProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *ConfigProviderClient {
 	c := &ConfigProviderClient{ServiceClient: goplugin.NewServiceClient(b, cc)}
 	c.offchainDigester = &offchainConfigDigesterClient{b, pb.NewOffchainConfigDigesterClient(cc)}
 	c.contractTracker = &contractConfigTrackerClient{pb.NewContractConfigTrackerClient(cc)}
@@ -236,7 +238,7 @@ func RegisterPluginProviderServices(s *grpc.Server, provider types.PluginProvide
 	}
 
 	if provider.Codec() != nil {
-		pb.RegisterCodecServer(s, contractreader.NewCodecServer(provider.Codec()))
+		codecpb.RegisterCodecServer(s, contractreader.NewCodecServer(provider.Codec()))
 	}
 }
 

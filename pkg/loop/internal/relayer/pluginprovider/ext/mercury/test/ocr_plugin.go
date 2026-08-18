@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	testtypes "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test/types"
 )
@@ -77,7 +78,7 @@ func (s staticMercuryPlugin) Observation(ctx context.Context, timestamp libocr.R
 	if !bytes.Equal(previousReport, s.observationRequest.previousReport) {
 		return nil, fmt.Errorf("expected previous report %x but got %x", s.observationRequest.previousReport, previousReport)
 	}
-	return s.observationResponse.observation, nil
+	return s.observation, nil
 }
 
 func (s staticMercuryPlugin) Report(ctx context.Context, timestamp libocr.ReportTimestamp, previousReport libocr.Report, observations []libocr.AttributedObservation) (bool, libocr.Report, error) {
@@ -87,10 +88,10 @@ func (s staticMercuryPlugin) Report(ctx context.Context, timestamp libocr.Report
 	if !bytes.Equal(s.reportRequest.previousReport, previousReport) {
 		return false, nil, fmt.Errorf("expected previous report %x but got %x", s.reportRequest.previousReport, previousReport)
 	}
-	if !assert.ObjectsAreEqual(s.reportRequest.observations, observations) {
-		return false, nil, fmt.Errorf("expected %v but got %v", s.reportRequest.observations, observations)
+	if !assert.ObjectsAreEqual(s.observations, observations) {
+		return false, nil, fmt.Errorf("expected %v but got %v", s.observations, observations)
 	}
-	return s.reportResponse.shouldReport, s.reportResponse.report, nil
+	return s.shouldReport, s.report, nil
 }
 
 func (s staticMercuryPlugin) Close() error { return nil }
@@ -98,9 +99,9 @@ func (s staticMercuryPlugin) Close() error { return nil }
 func (s staticMercuryPlugin) AssertEqual(ctx context.Context, t *testing.T, other ocr3types.MercuryPlugin) {
 	gotObs, err := other.Observation(ctx, s.observationRequest.reportTimestamp, s.observationRequest.previousReport)
 	require.NoError(t, err)
-	assert.Equal(t, s.observationResponse.observation, gotObs)
-	gotOk, gotReport, err := other.Report(ctx, s.reportRequest.reportTimestamp, s.reportRequest.previousReport, s.reportRequest.observations)
+	assert.Equal(t, s.observation, gotObs)
+	gotOk, gotReport, err := other.Report(ctx, s.reportRequest.reportTimestamp, s.reportRequest.previousReport, s.observations)
 	require.NoError(t, err)
-	assert.Equal(t, s.reportResponse.shouldReport, gotOk)
-	assert.Equal(t, s.reportResponse.report, gotReport)
+	assert.Equal(t, s.shouldReport, gotOk)
+	assert.Equal(t, s.report, gotReport)
 }

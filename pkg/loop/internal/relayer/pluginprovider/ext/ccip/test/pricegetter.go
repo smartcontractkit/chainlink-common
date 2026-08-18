@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"slices"
 
 	"github.com/stretchr/testify/assert"
 
@@ -49,12 +50,9 @@ func (s staticPriceGetter) FilterConfiguredTokens(ctx context.Context, tokens []
 
 	for _, tk := range tokens {
 		found := false
-		for _, addr := range s.config.Addresses {
-			if addr == tk {
-				found = true
-				configured = append(configured, tk)
-				break
-			}
+		if slices.Contains(s.config.Addresses, tk) {
+			found = true
+			configured = append(configured, tk)
 		}
 		if !found {
 			unconfigured = append(unconfigured, tk)

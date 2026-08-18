@@ -208,12 +208,12 @@ type ErrorBuffer struct {
 	// Exceeding the cap results in discarding the oldest error
 	cap int
 
-	mu sync.RWMutex
+	mu sync.Mutex
 }
 
 func (eb *ErrorBuffer) Flush() (err error) {
-	eb.mu.RLock()
-	defer eb.mu.RUnlock()
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
 	err = errors.Join(eb.buffer...)
 	eb.buffer = nil
 	return

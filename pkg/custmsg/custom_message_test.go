@@ -17,10 +17,10 @@ func Test_CustomMessageAgent(t *testing.T) {
 
 func Test_CustomMessageAgent_With(t *testing.T) {
 	cma := NewLabeler().With("key1", "value1")
-	assert.Equal(t, cma.Labels(), map[string]string{"key1": "value1"})
+	assert.Equal(t, map[string]string{"key1": "value1"}, cma.Labels())
 }
 
 func Test_CustomMessageAgent_WithMapLabels(t *testing.T) {
 	cma := NewLabeler().WithMapLabels(map[string]string{"key1": "value1"})
-	assert.Equal(t, cma.Labels(), map[string]string{"key1": "value1"})
+	assert.Equal(t, map[string]string{"key1": "value1"}, cma.Labels())
 }

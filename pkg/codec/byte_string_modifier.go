@@ -1,11 +1,46 @@
 package codec
 
 import (
+	"bytes"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
+
+type ExampleAddressModifier struct{}
+
+func (m *ExampleAddressModifier) EncodeAddress(bts []byte) (string, error) {
+	if len(bts) > 32 {
+		return "", errors.New("upexpected address byte length")
+	}
+
+	normalized := make([]byte, 32)
+
+	// apply byts as big endian
+	copy(normalized[:], bts[:])
+
+	return base64.StdEncoding.EncodeToString(normalized), nil
+}
+
+func (m *ExampleAddressModifier) DecodeAddress(str string) ([]byte, error) {
+	decodedBytes, err := base64.StdEncoding.DecodeString(str)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(decodedBytes) != 32 {
+		return nil, errors.New("unexpected address byte length")
+	}
+
+	return decodedBytes, nil
+}
+
+func (m *ExampleAddressModifier) Length() int {
+	return 32
+}
 
 // AddressModifier defines the interface for encoding, decoding, and handling addresses.
 // This interface allows for chain-specific logic to be injected into the modifier without
@@ -25,7 +60,18 @@ type AddressModifier interface {
 //
 // The fields parameter specifies which fields within a struct should be modified. The AddressModifier
 // is injected into the modifier to handle chain-specific logic during the contractReader relayer configuration.
-func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) Modifier {
+func NewAddressBytesToStringModifier(
+	fields []string,
+	modifier AddressModifier,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, modifier, false)
+}
+
+func NewPathTraverseAddressBytesToStringModifier(
+	fields []string,
+	modifier AddressModifier,
+	enablePathTraverse bool,
+) Modifier {
 	// bool is a placeholder value
 	fieldMap := map[string]bool{}
 	for _, field := range fields {
@@ -35,9 +81,10 @@ func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) 
 	m := &bytesToStringModifier{
 		modifier: modifier,
 		modifierBase: modifierBase[bool]{
-			fields:           fieldMap,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
+			enablePathTraverse: enablePathTraverse,
+			fields:             fieldMap,
+			onToOffChainType:   map[reflect.Type]reflect.Type{},
+			offToOnChainType:   map[reflect.Type]reflect.Type{},
 		},
 	}
 
@@ -54,13 +101,48 @@ func NewAddressBytesToStringModifier(fields []string, modifier AddressModifier) 
 	return m
 }
 
+func NewConstrainedLengthBytesToStringModifier(
+	fields []string,
+	maxLen int,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, &constrainedLengthBytesToStringModifier{maxLen: maxLen}, false)
+}
+
+func NewPathTraverseConstrainedLengthBytesToStringModifier(
+	fields []string,
+	maxLen int,
+	enablePathTraverse bool,
+) Modifier {
+	return NewPathTraverseAddressBytesToStringModifier(fields, &constrainedLengthBytesToStringModifier{maxLen: maxLen}, enablePathTraverse)
+}
+
+type constrainedLengthBytesToStringModifier struct {
+	maxLen int
+}
+
+func (m constrainedLengthBytesToStringModifier) EncodeAddress(bts []byte) (string, error) {
+	return string(bytes.Trim(bts, "\x00")), nil
+}
+
+func (m constrainedLengthBytesToStringModifier) DecodeAddress(str string) ([]byte, error) {
+	output := make([]byte, m.maxLen)
+
+	copy(output, []byte(str)[:])
+
+	return output, nil
+}
+
+func (m constrainedLengthBytesToStringModifier) Length() int {
+	return m.maxLen
+}
+
 type bytesToStringModifier struct {
 	// Injected modifier that contains chain-specific logic
 	modifier AddressModifier
 	modifierBase[bool]
 }
 
-func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (tpe reflect.Type, err error) {
+func (m *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (tpe reflect.Type, err error) {
 	defer func() {
 		// StructOf can panic if the fields are not valid
 		if r := recover(); r != nil {
@@ -70,14 +152,14 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 	}()
 
 	// Attempt to retype using the shared functionality in modifierBase
-	offChainType, err := t.modifierBase.RetypeToOffChain(onChainType, "")
+	offChainType, err := m.modifierBase.RetypeToOffChain(onChainType, "")
 	if err != nil {
 		// Handle additional cases specific to bytesToStringModifier
 		if onChainType.Kind() == reflect.Array {
-			addrType := reflect.ArrayOf(t.modifier.Length(), reflect.TypeOf(byte(0)))
+			addrType := reflect.ArrayOf(m.modifier.Length(), reflect.TypeFor[byte]())
 			// Check for nested byte arrays (e.g., [n][20]byte)
 			if onChainType.Elem() == addrType.Elem() {
-				return reflect.ArrayOf(onChainType.Len(), reflect.TypeOf("")), nil
+				return reflect.ArrayOf(onChainType.Len(), reflect.TypeFor[string]()), nil
 			}
 		}
 	}
@@ -86,16 +168,44 @@ func (t *bytesToStringModifier) RetypeToOffChain(onChainType reflect.Type, _ str
 }
 
 // TransformToOnChain uses the AddressModifier for string-to-address conversion.
-func (t *bytesToStringModifier) TransformToOnChain(offChainValue any, _ string) (any, error) {
-	return transformWithMaps(offChainValue, t.offToOnChainType, t.fields, noop, stringToAddressHookForOnChain(t.modifier))
+func (m *bytesToStringModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
+	offChainValue, itemType, err := m.selectType(offChainValue, m.offChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(offChainValue, m.offToOnChainType, m.fields, noop, stringToAddressHookForOnChain(m.modifier))
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return ValueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 // TransformToOffChain uses the AddressModifier for address-to-string conversion.
-func (t *bytesToStringModifier) TransformToOffChain(onChainValue any, _ string) (any, error) {
-	return transformWithMaps(onChainValue, t.onToOffChainType, t.fields,
-		addressTransformationAction(t.modifier.Length()),
-		addressToStringHookForOffChain(t.modifier),
+func (m *bytesToStringModifier) TransformToOffChain(onChainValue any, itemType string) (any, error) {
+	onChainValue, itemType, err := m.selectType(onChainValue, m.onChainStructType, itemType)
+	if err != nil {
+		return nil, err
+	}
+
+	modified, err := transformWithMaps(onChainValue, m.onToOffChainType, m.fields,
+		addressTransformationAction(m.modifier.Length()),
+		addressToStringHookForOffChain(m.modifier),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if itemType != "" {
+		return ValueForPath(reflect.ValueOf(modified), itemType)
+	}
+
+	return modified, nil
 }
 
 // addressTransformationAction performs conversions over the fields we want to modify.
@@ -110,11 +220,11 @@ func addressTransformationAction(length int) func(extractMap map[string]any, key
 				return fmt.Errorf("invalid value for field %s", fieldName)
 			}
 
-			if rVal.Kind() == reflect.Ptr && !rVal.IsNil() {
+			if rVal.Kind() == reflect.Pointer && !rVal.IsNil() {
 				rVal = reflect.Indirect(rVal)
 			}
 
-			expectedType := reflect.ArrayOf(length, reflect.TypeOf(byte(0)))
+			expectedType := reflect.ArrayOf(length, reflect.TypeFor[byte]())
 			if rVal.Type().ConvertibleTo(expectedType) {
 				if !rVal.CanConvert(expectedType) {
 					return fmt.Errorf("cannot convert type %v to expected type %v for field %s", rVal.Type(), expectedType, fieldName)
@@ -177,17 +287,17 @@ func createStringTypeForBytes(t reflect.Type, field string, length int) (reflect
 	case reflect.Array:
 		// Handle arrays, convert array of bytes to array of strings
 		if t.Elem().Kind() == reflect.Uint8 && t.Len() == length {
-			return reflect.TypeOf(""), nil
+			return reflect.TypeFor[string](), nil
 		} else if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
 			// Handle nested arrays (e.g., [2][20]byte to [2]string)
-			return reflect.ArrayOf(t.Len(), reflect.TypeOf("")), nil
+			return reflect.ArrayOf(t.Len(), reflect.TypeFor[string]()), nil
 		}
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
 	case reflect.Slice:
 		// Handle slices of byte arrays, convert to slice of strings
 		if t.Elem().Kind() == reflect.Array && t.Elem().Len() == length {
-			return reflect.SliceOf(reflect.TypeOf("")), nil
+			return reflect.SliceOf(reflect.TypeFor[string]()), nil
 		}
 		return nil, fmt.Errorf("%w: cannot convert bytes for field %s", types.ErrInvalidType, field)
 
@@ -199,8 +309,8 @@ func createStringTypeForBytes(t reflect.Type, field string, length int) (reflect
 // stringToAddressHookForOnChain converts a string representation of an address back into a byte array for on-chain use.
 func stringToAddressHookForOnChain(modifier AddressModifier) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeOf(byte(0)))
-		strTyp := reflect.TypeOf("")
+		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeFor[byte]())
+		strTyp := reflect.TypeFor[string]()
 
 		// Convert from string to byte array (e.g., string -> [20]byte)
 		if from == strTyp && (to == byteArrTyp || to.ConvertibleTo(byteArrTyp)) {
@@ -229,8 +339,8 @@ func stringToAddressHookForOnChain(modifier AddressModifier) func(from reflect.T
 // addressToStringHookForOffChain converts byte arrays to their string representation for off-chain use.
 func addressToStringHookForOffChain(modifier AddressModifier) func(from reflect.Type, to reflect.Type, data any) (any, error) {
 	return func(from reflect.Type, to reflect.Type, data any) (any, error) {
-		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeOf(byte(0)))
-		strTyp := reflect.TypeOf("")
+		byteArrTyp := reflect.ArrayOf(modifier.Length(), reflect.TypeFor[byte]())
+		strTyp := reflect.TypeFor[string]()
 		rVal := reflect.ValueOf(data)
 
 		if !reflect.ValueOf(data).IsValid() {

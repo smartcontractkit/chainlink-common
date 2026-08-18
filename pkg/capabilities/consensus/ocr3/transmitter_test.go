@@ -2,7 +2,6 @@ package ocr3
 
 import (
 	"encoding/hex"
-	"errors"
 	"testing"
 	"time"
 
@@ -17,26 +16,25 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func TestTransmitter(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
 	wowner := "foo-owner"
 	repID := []byte{0xf0, 0xe0}
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 
 	weid := uuid.New().String()
 
-	cp := newCapability(
+	cp := NewCapability(
 		s,
 		clockwork.NewFakeClock(),
 		10*time.Second,
@@ -105,7 +103,7 @@ func TestTransmitter(t *testing.T) {
 	require.NoError(t, err)
 
 	resp := <-gotCh
-	assert.Nil(t, resp.Err)
+	assert.NoError(t, resp.Err)
 
 	signedReport := pbtypes.SignedReport{}
 	require.NoError(t, resp.Value.UnwrapTo(&signedReport))
@@ -119,13 +117,13 @@ func TestTransmitter(t *testing.T) {
 func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	wid := "consensus-workflow-test-id-1"
 	wowner := "foo-owner"
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 
 	weid := uuid.New().String()
 
-	cp := newCapability(
+	cp := NewCapability(
 		s,
 		clockwork.NewFakeClock(),
 		10*time.Second,
@@ -191,6 +189,6 @@ func TestTransmitter_ShouldReportFalse(t *testing.T) {
 	require.NoError(t, err)
 
 	resp := <-gotCh
-	assert.NotNil(t, resp.Err)
-	assert.True(t, errors.Is(resp.Err, capabilities.ErrStopExecution))
+	assert.Error(t, resp.Err)
+	assert.ErrorIs(t, resp.Err, capabilities.ErrStopExecution)
 }

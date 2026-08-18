@@ -4,8 +4,9 @@ import (
 	"context"
 	"math/big"
 
-	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
+
+	ocr2plus_types "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	mercury_v4_pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/mercury/v4"

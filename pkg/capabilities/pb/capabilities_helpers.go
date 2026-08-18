@@ -3,11 +3,14 @@ package pb
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	meter "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const (
@@ -16,6 +19,12 @@ const (
 	CapabilityTypeAction    = CapabilityType_CAPABILITY_TYPE_ACTION
 	CapabilityTypeConsensus = CapabilityType_CAPABILITY_TYPE_CONSENSUS
 	CapabilityTypeTarget    = CapabilityType_CAPABILITY_TYPE_TARGET
+	CapabilityTypeCombined  = CapabilityType_CAPABILITY_TYPE_COMBINED
+
+	// OCR3ConfigDefaultKey is the default key used in the ocr3_configs map
+	// for single-instance OCR capabilities. Multi-instance capabilities
+	// (e.g., blue/green deployments) use custom keys.
+	OCR3ConfigDefaultKey = "__default__"
 )
 
 func MarshalCapabilityRequest(req capabilities.CapabilityRequest) ([]byte, error) {
@@ -51,24 +60,66 @@ func CapabilityRequestToProto(req capabilities.CapabilityRequest) *CapabilityReq
 	if req.Config != nil {
 		config = req.Config
 	}
+
 	return &CapabilityRequest{
 		Metadata: &RequestMetadata{
 			WorkflowId:               req.Metadata.WorkflowID,
 			WorkflowExecutionId:      req.Metadata.WorkflowExecutionID,
 			WorkflowOwner:            req.Metadata.WorkflowOwner,
+			OrgId:                    req.Metadata.OrgID,
 			WorkflowName:             req.Metadata.WorkflowName,
 			WorkflowDonId:            req.Metadata.WorkflowDonID,
 			WorkflowDonConfigVersion: req.Metadata.WorkflowDonConfigVersion,
 			ReferenceId:              req.Metadata.ReferenceID,
+			DecodedWorkflowName:      req.Metadata.DecodedWorkflowName,
+			SpendLimits:              spendLimitsToProto(req.Metadata.SpendLimits),
+			WorkflowTag:              req.Metadata.WorkflowTag,
+			ExecutionTimestamp:       timeToProto(req.Metadata.ExecutionTimestamp),
 		},
-		Inputs: values.ProtoMap(inputs),
-		Config: values.ProtoMap(config),
+		Inputs:        values.ProtoMap(inputs),
+		Config:        values.ProtoMap(config),
+		Payload:       req.Payload,
+		Method:        req.Method,
+		CapabilityId:  req.CapabilityId,
+		ConfigPayload: req.ConfigPayload,
 	}
 }
 
 func CapabilityResponseToProto(resp capabilities.CapabilityResponse) *CapabilityResponse {
+	metering := make([]*meter.MeteringReportNodeDetail, len(resp.Metadata.Metering))
+	for idx, detail := range resp.Metadata.Metering {
+		metering[idx] = &meter.MeteringReportNodeDetail{
+			Peer_2PeerId: detail.Peer2PeerID,
+			SpendUnit:    detail.SpendUnit,
+			SpendValue:   detail.SpendValue,
+		}
+	}
+
+	var attestation *OCRAttestation
+	if resp.OCRAttestation != nil {
+		respAtt := resp.OCRAttestation
+		attestation = &OCRAttestation{
+			ConfigDigest:   respAtt.ConfigDigest[:],
+			SequenceNumber: respAtt.SequenceNumber,
+		}
+
+		attestation.Signatures = make([]*AttributedSignature, len(respAtt.Sigs))
+		for idx, sig := range respAtt.Sigs {
+			attestation.Signatures[idx] = &AttributedSignature{
+				Signer:    sig.Signer,
+				Signature: sig.Signature,
+			}
+		}
+	}
+
 	return &CapabilityResponse{
 		Value: values.ProtoMap(resp.Value),
+		Metadata: &ResponseMetadata{
+			Metering: metering,
+			CapdonN:  resp.Metadata.CapDON_N,
+		},
+		Payload:        resp.Payload,
+		OcrAttestation: attestation,
 	}
 }
 
@@ -97,13 +148,22 @@ func CapabilityRequestFromProto(pr *CapabilityRequest) (capabilities.CapabilityR
 			WorkflowID:               md.WorkflowId,
 			WorkflowExecutionID:      md.WorkflowExecutionId,
 			WorkflowOwner:            md.WorkflowOwner,
+			OrgID:                    md.OrgId,
 			WorkflowName:             md.WorkflowName,
 			WorkflowDonID:            md.WorkflowDonId,
 			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
 			ReferenceID:              md.ReferenceId,
+			DecodedWorkflowName:      md.DecodedWorkflowName,
+			SpendLimits:              spendLimitsFromProto(md.SpendLimits),
+			WorkflowTag:              md.WorkflowTag,
+			ExecutionTimestamp:       timeFromProto(md.ExecutionTimestamp),
 		},
-		Config: config,
-		Inputs: inputs,
+		Config:        config,
+		Inputs:        inputs,
+		Payload:       pr.Payload,
+		Method:        pr.Method,
+		CapabilityId:  pr.CapabilityId,
+		ConfigPayload: pr.ConfigPayload,
 	}
 	return req, nil
 }
@@ -118,8 +178,47 @@ func CapabilityResponseFromProto(pr *CapabilityResponse) (capabilities.Capabilit
 		return capabilities.CapabilityResponse{}, err
 	}
 
+	var metering []capabilities.MeteringNodeDetail
+	if pr.Metadata != nil {
+		metering = make([]capabilities.MeteringNodeDetail, len(pr.Metadata.Metering))
+
+		for idx, detail := range pr.Metadata.Metering {
+			metering[idx] = capabilities.MeteringNodeDetail{
+				Peer2PeerID: detail.Peer_2PeerId,
+				SpendUnit:   detail.SpendUnit,
+				SpendValue:  detail.SpendValue,
+			}
+		}
+	}
+
+	var attestation *capabilities.OCRAttestation
+	if pr.OcrAttestation != nil {
+		if len(pr.OcrAttestation.ConfigDigest) != 32 {
+			return capabilities.CapabilityResponse{}, fmt.Errorf("invalid config digest length: expected 32 bytes, got %d", len(pr.OcrAttestation.ConfigDigest))
+		}
+
+		attestation = &capabilities.OCRAttestation{
+			ConfigDigest:   [32]byte(pr.OcrAttestation.ConfigDigest),
+			SequenceNumber: pr.OcrAttestation.SequenceNumber,
+			Sigs:           make([]capabilities.AttributedSignature, len(pr.OcrAttestation.Signatures)),
+		}
+
+		for idx, sig := range pr.OcrAttestation.Signatures {
+			attestation.Sigs[idx] = capabilities.AttributedSignature{
+				Signer:    sig.Signer,
+				Signature: sig.Signature,
+			}
+		}
+	}
+
 	resp := capabilities.CapabilityResponse{
 		Value: val,
+		Metadata: capabilities.ResponseMetadata{
+			Metering: metering,
+			CapDON_N: pr.Metadata.GetCapdonN(),
+		},
+		Payload:        pr.Payload,
+		OCRAttestation: attestation,
 	}
 
 	return resp, err
@@ -264,15 +363,51 @@ func TriggerRegistrationRequestToProto(req capabilities.TriggerRegistrationReque
 	return &TriggerRegistrationRequest{
 		TriggerId: req.TriggerID,
 		Metadata: &RequestMetadata{
-			WorkflowId:               md.WorkflowID,
-			WorkflowExecutionId:      md.WorkflowExecutionID,
-			WorkflowOwner:            md.WorkflowOwner,
-			WorkflowName:             md.WorkflowName,
-			WorkflowDonId:            md.WorkflowDonID,
-			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
+			WorkflowId:                    md.WorkflowID,
+			WorkflowExecutionId:           md.WorkflowExecutionID,
+			WorkflowOwner:                 md.WorkflowOwner,
+			OrgId:                         md.OrgID,
+			WorkflowName:                  md.WorkflowName,
+			WorkflowDonId:                 md.WorkflowDonID,
+			WorkflowDonConfigVersion:      md.WorkflowDonConfigVersion,
+			ReferenceId:                   md.ReferenceID,
+			DecodedWorkflowName:           md.DecodedWorkflowName,
+			SpendLimits:                   spendLimitsToProto(md.SpendLimits),
+			WorkflowTag:                   md.WorkflowTag,
+			WorkflowRegistryChainSelector: md.WorkflowRegistryChainSelector,
+			WorkflowRegistryAddress:       md.WorkflowRegistryAddress,
+			EngineVersion:                 md.EngineVersion,
+			ExecutionTimestamp:            timeToProto(md.ExecutionTimestamp),
 		},
-		Config: values.ProtoMap(config),
+		Config:  values.ProtoMap(config),
+		Payload: req.Payload,
+		Method:  req.Method,
 	}
+}
+
+func timeToProto(t time.Time) *timestamppb.Timestamp {
+	if t.IsZero() {
+		return nil
+	}
+	return timestamppb.New(t)
+}
+
+func timeFromProto(ts *timestamppb.Timestamp) time.Time {
+	if ts == nil {
+		return time.Time{}
+	}
+	return ts.AsTime()
+}
+
+func spendLimitsToProto(limits []capabilities.SpendLimit) []*SpendLimit {
+	result := make([]*SpendLimit, len(limits))
+	for i, limit := range limits {
+		result[i] = &SpendLimit{
+			SpendType: string(limit.SpendType),
+			Limit:     limit.Limit,
+		}
+	}
+	return result
 }
 
 func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capabilities.TriggerRegistrationRequest, error) {
@@ -294,15 +429,37 @@ func TriggerRegistrationRequestFromProto(req *TriggerRegistrationRequest) (capab
 	return capabilities.TriggerRegistrationRequest{
 		TriggerID: req.TriggerId,
 		Metadata: capabilities.RequestMetadata{
-			WorkflowID:               md.WorkflowId,
-			WorkflowExecutionID:      md.WorkflowExecutionId,
-			WorkflowOwner:            md.WorkflowOwner,
-			WorkflowName:             md.WorkflowName,
-			WorkflowDonID:            md.WorkflowDonId,
-			WorkflowDonConfigVersion: md.WorkflowDonConfigVersion,
+			WorkflowID:                    md.WorkflowId,
+			WorkflowOwner:                 md.WorkflowOwner,
+			WorkflowExecutionID:           md.WorkflowExecutionId,
+			OrgID:                         md.OrgId,
+			WorkflowName:                  md.WorkflowName,
+			WorkflowDonID:                 md.WorkflowDonId,
+			WorkflowDonConfigVersion:      md.WorkflowDonConfigVersion,
+			ReferenceID:                   md.ReferenceId,
+			DecodedWorkflowName:           md.DecodedWorkflowName,
+			SpendLimits:                   spendLimitsFromProto(md.SpendLimits),
+			WorkflowTag:                   md.WorkflowTag,
+			WorkflowRegistryChainSelector: md.WorkflowRegistryChainSelector,
+			WorkflowRegistryAddress:       md.WorkflowRegistryAddress,
+			EngineVersion:                 md.EngineVersion,
+			ExecutionTimestamp:            timeFromProto(md.ExecutionTimestamp),
 		},
-		Config: config,
+		Config:  config,
+		Payload: req.Payload,
+		Method:  req.Method,
 	}, nil
+}
+
+func spendLimitsFromProto(limits []*SpendLimit) []capabilities.SpendLimit {
+	result := make([]capabilities.SpendLimit, len(limits))
+	for i, limit := range limits {
+		result[i] = capabilities.SpendLimit{
+			SpendType: capabilities.CapabilitySpendType(limit.GetSpendType()),
+			Limit:     limit.GetLimit(),
+		}
+	}
+	return result
 }
 
 func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse {
@@ -310,12 +467,14 @@ func TriggerResponseToProto(resp capabilities.TriggerResponse) *TriggerResponse 
 	if resp.Err != nil {
 		errs = resp.Err.Error()
 	}
+
 	return &TriggerResponse{
 		Error: errs,
 		Event: &TriggerEvent{
 			TriggerType: resp.Event.TriggerType,
 			Id:          resp.Event.ID,
 			Outputs:     values.ProtoMap(resp.Event.Outputs),
+			Payload:     resp.Event.Payload,
 		},
 	}
 }
@@ -336,6 +495,7 @@ func TriggerResponseFromProto(resp *TriggerResponse) (capabilities.TriggerRespon
 			return capabilities.TriggerResponse{}, fmt.Errorf("could not unmarshal event payload: %w", err)
 		}
 		event.Outputs = outputs
+		event.Payload = eventpb.Payload
 	}
 
 	var err error

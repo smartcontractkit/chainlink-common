@@ -3,12 +3,14 @@ package test
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"sync"
 	"testing"
 
-	"github.com/hashicorp/consul/sdk/freeport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/smartcontractkit/freeport"
 
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
@@ -51,7 +53,7 @@ func (v *Broker) Accept(id uint32) (net.Listener, error) {
 	}
 
 	port := freeport.GetOne(v.T)
-	l, err := net.Listen("tcp", "localhost:"+fmt.Sprint(port))
+	l, err := net.Listen("tcp", "localhost:"+strconv.Itoa(port))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +77,6 @@ func (v *Broker) DialWithOptions(id uint32, opts ...grpc.DialOption) (conn *grpc
 		return nil, fmt.Errorf("listener with id %d does not exist", id)
 	}
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
 	return grpc.Dial(l.Addr().String(), opts...) //nolint:staticcheck
 }
 

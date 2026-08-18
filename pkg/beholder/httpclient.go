@@ -15,6 +15,8 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	sdkresource "go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
+	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // Used for testing to override the default exporter
@@ -32,7 +34,9 @@ func newCertFromFile(certFile string) (*x509.CertPool, error) {
 	return cp, nil
 }
 
-func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
+// NewHTTPClient creates a HTTP based beholder Client. Use NewClient to create a client from a Config which will pick
+// the best client type from the Config.
+func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err
@@ -74,11 +78,21 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	// Logger
+
 	var loggerProcessor sdklog.Processor
 	if cfg.LogBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
 		if cfg.LogExportTimeout > 0 {
 			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.LogExportTimeout)) // Default is 30s
+		}
+		if cfg.LogExportMaxBatchSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.LogExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
+		}
+		if cfg.LogExportInterval > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.LogExportInterval)) // Default is 1s
+		}
+		if cfg.LogMaxQueueSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.LogMaxQueueSize)) // Default is 2048
 		}
 		loggerProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
@@ -88,7 +102,7 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		loggerProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
 	}
 	loggerAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "zap_log_message"),
+		attribute.String(AttrKeyDataType, "zap_log_message"),
 	}
 	loggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(loggerAttributes...),
@@ -101,6 +115,12 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 		sdklog.WithResource(loggerResource),
 		sdklog.WithProcessor(loggerProcessor),
 	)
+
+	// If log streaming is disabled, use a noop logger provider
+	if !cfg.LogStreamingEnabled {
+		loggerProvider = BeholderNoopLoggerProvider()
+	}
+
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Tracer
@@ -119,21 +139,32 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 
 	// Message Emitter
 	var messageLogProcessor sdklog.Processor
+	// EmitterBatchProcessor=true uses async batching for custom-message logs;
+	// false uses a simple processor that exports each record immediately.
 	if cfg.EmitterBatchProcessor {
 		batchProcessorOpts := []sdklog.BatchProcessorOption{}
 		if cfg.EmitterExportTimeout > 0 {
 			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportTimeout(cfg.EmitterExportTimeout)) // Default is 30s
 		}
+		if cfg.EmitterExportMaxBatchSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportMaxBatchSize(cfg.EmitterExportMaxBatchSize)) // Default is 512, must be <= maxQueueSize
+		}
+		if cfg.EmitterExportInterval > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithExportInterval(cfg.EmitterExportInterval)) // Default is 1s
+		}
+		if cfg.EmitterMaxQueueSize > 0 {
+			batchProcessorOpts = append(batchProcessorOpts, sdklog.WithMaxQueueSize(cfg.EmitterMaxQueueSize)) // Default is 2048
+		}
 		messageLogProcessor = sdklog.NewBatchProcessor(
 			sharedLogExporter,
-			batchProcessorOpts..., // Default is 30s
+			batchProcessorOpts...,
 		)
 	} else {
 		messageLogProcessor = sdklog.NewSimpleProcessor(sharedLogExporter)
 	}
 
 	messageAttributes := []attribute.KeyValue{
-		attribute.String("beholder_data_type", "custom_message"),
+		attribute.String(AttrKeyDataType, "custom_message"),
 	}
 	messageLoggerResource, err := sdkresource.Merge(
 		sdkresource.NewSchemaless(messageAttributes...),
@@ -154,12 +185,32 @@ func newHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	}
 
 	onClose := func() (err error) {
-		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider} {
+		for _, provider := range []shutdowner{messageLoggerProvider, loggerProvider, tracerProvider, meterProvider} {
 			err = errors.Join(err, provider.Shutdown(context.Background()))
 		}
 		return
 	}
-	return &Client{cfg, logger, tracer, meter, emitter, loggerProvider, tracerProvider, meterProvider, messageLoggerProvider, onClose}, nil
+	// HTTP client doesn't currently support rotating auth, so lazySigner is always nil.
+	c := &Client{
+		Config:                cfg,
+		Logger:                logger,
+		Tracer:                tracer,
+		Meter:                 meter,
+		Emitter:               emitter,
+		Chip:                  nil,
+		LoggerProvider:        loggerProvider,
+		TracerProvider:        tracerProvider,
+		MeterProvider:         meterProvider,
+		MessageLoggerProvider: messageLoggerProvider,
+		lazySigner:            nil,
+		OnClose:               onClose,
+	}
+	lggr := cfg.ChipIngressLogger
+	if lggr == nil {
+		lggr = pkglogger.Nop()
+	}
+	c.initService(lggr, nil)
+	return c, nil
 }
 
 func newHTTPTracerProvider(config Config, resource *sdkresource.Resource, tlsConfig *tls.Config) (*sdktrace.TracerProvider, error) {
@@ -234,14 +285,13 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 		return nil, err
 	}
 
-	mp := sdkmetric.NewMeterProvider(
+	mpOpts := append(config.metricOptions(),
 		sdkmetric.WithReader(
 			sdkmetric.NewPeriodicReader(
 				exporter,
 				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s
 			)),
 		sdkmetric.WithResource(resource),
-		sdkmetric.WithView(config.MetricViews...),
 	)
-	return mp, nil
+	return sdkmetric.NewMeterProvider(mpOpts...), nil
 }

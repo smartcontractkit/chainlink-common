@@ -17,7 +17,10 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 	  {"streamId": 1, "aggregator": "median"},
 	  {"streamId": 2, "aggregator": "mode"}
     ],
-    "opts": null
+    "opts": null,
+    "tombstone": false,
+	"source": 1,
+	"disableNilStreamValues": true
   },
   "1": {
     "reportFormat": "evm_premium_legacy",
@@ -31,7 +34,10 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
       "multiplier": "1000000000000000000",
       "feedId": "0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "baseUSDFee": "0.1"
-    }
+    },
+    "tombstone": false,
+	"source": 2,
+	"disableNilStreamValues": false
   }
 }`
 	var channelDefinitions ChannelDefinitions
@@ -42,8 +48,6 @@ func Test_ChannelDefinitions_Serialization(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.JSONEq(t, inputJSON, string(marshaledJSON))
-
-	assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"median"},{"streamId":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(marshaledJSON))
 }
 
 func Test_ChannelDefinition_Equals(t *testing.T) {
@@ -99,6 +103,53 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 		}
 		assert.False(t, a.Equals(b))
 	})
+	t.Run("different Tombstone", func(t *testing.T) {
+		a := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+		}
+		b := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+			Tombstone:    true,
+		}
+		assert.False(t, a.Equals(b))
+	})
+
+	t.Run("different Source", func(t *testing.T) {
+		a := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+			Source:       1,
+		}
+		b := ChannelDefinition{
+			ReportFormat: ReportFormatJSON,
+			Streams:      []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:         nil,
+			Source:       2,
+		}
+		assert.False(t, a.Equals(b))
+	})
+
+	t.Run("different DisableNilStreamValues", func(t *testing.T) {
+		a := ChannelDefinition{
+			ReportFormat:           ReportFormatJSON,
+			Streams:                []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:                   nil,
+			DisableNilStreamValues: true,
+		}
+		b := ChannelDefinition{
+			ReportFormat:           ReportFormatJSON,
+			Streams:                []Stream{{0, AggregatorMedian}, {1, AggregatorMode}},
+			Opts:                   nil,
+			DisableNilStreamValues: false,
+		}
+		assert.False(t, a.Equals(b))
+	})
+
 	t.Run("equal", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
@@ -157,18 +208,52 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		c := ChannelDefinitions{
 			0: {
-				ReportFormat: ReportFormatJSON,
-				Streams:      []Stream{{1, AggregatorMedian}, {2, AggregatorMode}},
-				Opts:         nil,
+				ReportFormat:           ReportFormatJSON,
+				Streams:                []Stream{{1, AggregatorMedian}, {2, AggregatorMode}},
+				Opts:                   nil,
+				Source:                 1,
+				DisableNilStreamValues: true,
 			},
 			1: {
-				ReportFormat: ReportFormatEVMPremiumLegacy,
-				Streams:      []Stream{{1, AggregatorMedian}, {2, AggregatorMedian}, {3, AggregatorQuote}},
-				Opts:         []byte(`{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}`),
+				ReportFormat:           ReportFormatEVMPremiumLegacy,
+				Streams:                []Stream{{1, AggregatorMedian}, {2, AggregatorMedian}, {3, AggregatorQuote}},
+				Opts:                   []byte(`{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}`),
+				Source:                 2,
+				DisableNilStreamValues: false,
 			},
 		}
 		v, err := c.Value()
 		require.NoError(t, err)
-		assert.Equal(t, `{"0":{"reportFormat":"json","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"mode"}],"opts":null},"1":{"reportFormat":"evm_premium_legacy","streams":[{"streamId":1,"aggregator":"median"},{"streamId":2,"aggregator":"median"},{"streamId":3,"aggregator":"quote"}],"opts":{"baseUSDFee":"0.1","expirationWindow":86400,"feedId":"0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","multiplier":"1000000000000000000"}}}`, string(v.([]byte)))
+		expectedJSON := `{
+  "0": {
+    "reportFormat": "json",
+    "streams": [
+      {"streamId": 1, "aggregator": "median"},
+      {"streamId": 2, "aggregator": "mode"}
+    ],
+    "opts": null,
+    "tombstone": false,
+	"source": 1,
+	"disableNilStreamValues": true
+  },
+  "1": {
+    "reportFormat": "evm_premium_legacy",
+    "streams": [
+      {"streamId": 1, "aggregator": "median"},
+      {"streamId": 2, "aggregator": "median"},
+      {"streamId": 3, "aggregator": "quote"}
+    ],
+    "opts": {
+      "baseUSDFee": "0.1",
+      "expirationWindow": 86400,
+      "feedId": "0x0003aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "multiplier": "1000000000000000000"
+    },
+    "tombstone": false,
+	"source": 2,
+	"disableNilStreamValues": false
+  }
+}`
+		assert.JSONEq(t, expectedJSON, string(v.([]byte)))
 	})
 }

@@ -59,7 +59,7 @@ func (f *stateMachine) run() {
 	}
 }
 
-func ExampleService() {
+func ExampleStateMachine() {
 	lggr, err := Logger()
 	if err != nil {
 		fmt.Println("Failed to create logger:", err)

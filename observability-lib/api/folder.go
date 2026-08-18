@@ -7,7 +7,7 @@ import (
 )
 
 type Folder struct {
-	ID    uint   `json:"id"`
+	ID    int64  `json:"id"` // int64 to handle Grafana returning -1 for some folders (e.g. General folder)
 	UID   string `json:"uid"`
 	Title string `json:"title"`
 }
@@ -26,6 +26,30 @@ func (c *Client) FindOrCreateFolder(name string) (*Folder, error) {
 	}
 
 	return folder, nil
+}
+
+// GetFolderByUID returns a folder by UID.
+func (c *Client) GetFolderByUID(uid string) (*Folder, error) {
+	var folder Folder
+
+	resp, err := c.resty.R().
+		SetHeader("Accept", "application/json").
+		SetResult(&folder).
+		Get("/api/folders/" + uid)
+
+	if err != nil {
+		return nil, fmt.Errorf("error making API request: %w", err)
+	}
+
+	statusCode := resp.StatusCode()
+	if statusCode == 404 {
+		return nil, nil
+	}
+	if statusCode != 200 {
+		return nil, fmt.Errorf("error fetching folder %q, received unexpected status code %d: %s", uid, statusCode, resp.String())
+	}
+
+	return &folder, nil
 }
 
 // GetFolderByTitle Get a folder by title
@@ -52,7 +76,7 @@ func (c *Client) GetFolders() (GetAllFoldersResponse, *resty.Response, error) {
 	resp, err := c.resty.R().
 		SetHeader("Accept", "application/json").
 		SetResult(&grafanaResp).
-		SetQueryParam("limit", "100").
+		SetQueryParam("limit", "1000").
 		Get("/api/folders")
 
 	if err != nil {

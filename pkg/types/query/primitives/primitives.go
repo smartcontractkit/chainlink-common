@@ -1,6 +1,8 @@
 package primitives
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // Visitor should have a per chain per db type implementation that converts primitives to db queries.
 type Visitor interface {
@@ -51,6 +53,18 @@ type ValueComparator struct {
 	Operator ComparisonOperator
 }
 
+// AnyOperator - represents SQL's `ANY (array expression)` operator. Useful to replace multiple comparators joined with OR.
+// i.e. allows to replace `field1 >= v1 OR field1 >= v2 OR field1 >= v3` with `field1 >= ANY(v1, v2, v3)`
+type AnyOperator []any
+
+func Any[T any](slice []T) AnyOperator {
+	result := make([]any, len(slice))
+	for i, v := range slice {
+		result[i] = v
+	}
+	return result
+}
+
 // Comparator is used to filter over values that belong to key data.
 type Comparator struct {
 	Name             string
@@ -76,6 +90,7 @@ type ConfidenceLevel string
 const (
 	Finalized   ConfidenceLevel = "finalized"
 	Unconfirmed ConfidenceLevel = "unconfirmed"
+	Safe        ConfidenceLevel = "safe"
 )
 
 // Confidence is a primitive of KeyFilter that filters search to results that have a certain level of finalization.
@@ -90,6 +105,8 @@ func ConfidenceLevelFromString(value string) (ConfidenceLevel, error) {
 		return Finalized, nil
 	case "unconfirmed":
 		return Unconfirmed, nil
+	case "safe":
+		return Safe, nil
 	default:
 		return "", fmt.Errorf("invalid ConfidenceLevel: %s", value)
 	}

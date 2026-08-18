@@ -10,9 +10,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-// Deprecated: use tests.Context
+// Deprecated: use [*testing.T.Context]
+//
+//go:fix inline
 func Context(t *testing.T) context.Context {
-	return tests.Context(t)
+	return t.Context()
 }
 
 // AssertJSONEqual is a helper function to assert that two JSON objects
@@ -22,7 +24,7 @@ func Context(t *testing.T) context.Context {
 func AssertJSONEqual(t tests.TestingT, x []byte, y []byte) {
 	var TransformJSON = cmp.FilterValues(func(x, y []byte) bool {
 		return json.Valid(x) && json.Valid(y)
-	}, cmp.Transformer("ParseJSON", func(in []byte) (out interface{}) {
+	}, cmp.Transformer("ParseJSON", func(in []byte) (out any) {
 		if err := json.Unmarshal(in, &out); err != nil {
 			panic(err) // should never occur given previous filter to ensure valid JSON
 		}

@@ -5,9 +5,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 // IdenticalConsensus registers a new capability mock with the runner
@@ -56,7 +56,7 @@ type IdenticalConsensusMock[T any] struct {
 	*testutils.Mock[ConsensusInput[T], ocr3cap.SignedReport]
 }
 
-var _ capabilities.ConsensusCapability = &IdenticalConsensusMock[struct{}]{}
+var _ capabilities.ExecutableCapability = &IdenticalConsensusMock[struct{}]{}
 
 func (c *IdenticalConsensusMock[T]) GetStepDecoded(ref string) testutils.StepResults[ConsensusInput[T], T] {
 	step := c.GetStep(ref)

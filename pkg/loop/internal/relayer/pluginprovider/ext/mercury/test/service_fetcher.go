@@ -74,16 +74,16 @@ func (s staticServerFetcher) Evaluate(ctx context.Context, other mercury_types.S
 	return nil
 }
 
-func errMismatch(got, expected interface{}) error {
+func errMismatch(got, expected any) error {
 	return errExpected(expected, got)
 }
 
-func errExpected(expected, got interface{}) error {
+func errExpected(expected, got any) error {
 	return &ErrExpected{expected, got}
 }
 
 type ErrExpected struct {
-	Expected, Got interface{}
+	Expected, Got any
 }
 
 func (e *ErrExpected) Error() string {

@@ -6,7 +6,7 @@ package loop.internal.pb.mercury.v2;
 
 
 // not: the generate.go file in this dir specifies the import path of the relative proto files
-import "relayer.proto";
+import "loop/internal/pb/relayer.proto";
 
 // DataSource is a gRPC adapter for [pkg/types/mercury/v2/DataSource]
 service DataSource {

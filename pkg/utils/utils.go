@@ -11,7 +11,10 @@ import (
 )
 
 // WithJitter adds +/- 10% to a duration.
-// Deprecated: use timeutil.WithJitter
+//
+// Deprecated: Use [timeutil.JitterPct] instead; for example, `timeutil.JitterPct(0.1).Apply(d)`.
+//
+//go:fix inline
 func WithJitter(d time.Duration) time.Duration { return timeutil.JitterPct(0.1).Apply(d) }
 
 // ContextFromChan creates a context that finishes when the provided channel
@@ -42,7 +45,7 @@ func IsZero[C comparable](val C) bool {
 }
 
 // JustError takes a tuple and returns the last entry, the error.
-func JustError(_ interface{}, err error) error {
+func JustError(_ any, err error) error {
 	return err
 }
 

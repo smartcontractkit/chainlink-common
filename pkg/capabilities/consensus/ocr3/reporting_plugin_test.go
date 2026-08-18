@@ -3,7 +3,7 @@ package ocr3
 import (
 	"context"
 	"errors"
-	"sort"
+	"slices"
 	"testing"
 	"time"
 
@@ -17,20 +17,19 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	pbtypes "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	batchSize := 0
-	rp, err := newReportingPlugin(s, nil, batchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, nil, batchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -41,16 +40,16 @@ func TestReportingPlugin_Query_ErrorInQueueCall(t *testing.T) {
 }
 
 func TestReportingPlugin_Query(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
-	rp, err := newReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	s := requests.NewStore[*ReportRequest]()
+	rp, err := NewReportingPlugin(s, nil, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	eid := uuid.New().String()
 	wowner := uuid.New().String()
 
-	err = s.Add(&requests.Request{
+	err = s.Add(&ReportRequest{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
 		WorkflowOwner:       wowner,
@@ -70,7 +69,7 @@ func TestReportingPlugin_Query(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, qry.Ids, 1)
-	assert.Equal(t, qry.Ids[0].WorkflowId, workflowTestID)
+	assert.Equal(t, workflowTestID, qry.Ids[0].WorkflowId)
 	assert.Equal(t, qry.Ids[0].WorkflowExecutionId, eid)
 }
 
@@ -126,20 +125,20 @@ func (e *enc) Encode(ctx context.Context, input values.Map) ([]byte, error) {
 	return proto.Marshal(values.Proto(&input))
 }
 
-func (mc *mockCapability) getAggregator(workflowID string) (pbtypes.Aggregator, error) {
+func (mc *mockCapability) GetAggregator(workflowID string) (pbtypes.Aggregator, error) {
 	return mc.aggregator, nil
 }
 
-func (mc *mockCapability) getEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error) {
+func (mc *mockCapability) GetEncoderByWorkflowID(workflowID string) (pbtypes.Encoder, error) {
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error) {
+func (mc *mockCapability) GetEncoderByName(encoderName string, config *values.Map) (pbtypes.Encoder, error) {
 	require.Equal(mc.t, mc.expectedEncoderName, encoderName)
 	return mc.encoder, nil
 }
 
-func (mc *mockCapability) getRegisteredWorkflowsIDs() []string {
+func (mc *mockCapability) GetRegisteredWorkflowsIDs() []string {
 	workflows := make([]string, 0, len(mc.registeredWorkflows))
 	for wf := range mc.registeredWorkflows {
 		workflows = append(workflows, wf)
@@ -147,14 +146,14 @@ func (mc *mockCapability) getRegisteredWorkflowsIDs() []string {
 	return workflows
 }
 
-func (mc *mockCapability) unregisterWorkflowID(workflowID string) {
+func (mc *mockCapability) UnregisterWorkflowID(workflowID string) {
 	delete(mc.registeredWorkflows, workflowID)
 }
 
 func TestReportingPlugin_Observation(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -163,7 +162,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	o, err := values.NewList([]any{"hello"})
@@ -171,7 +170,7 @@ func TestReportingPlugin_Observation(t *testing.T) {
 
 	eid := uuid.New().String()
 	wowner := uuid.New().String()
-	err = s.Add(&requests.Request{
+	err = s.Add(&ReportRequest{
 		WorkflowID:          workflowTestID,
 		WorkflowExecutionID: eid,
 		WorkflowOwner:       wowner,
@@ -197,21 +196,21 @@ func TestReportingPlugin_Observation(t *testing.T) {
 	assert.Len(t, obspb.Observations, 1)
 	fo := obspb.Observations[0]
 	assert.Equal(t, fo.Id.WorkflowExecutionId, eid)
-	assert.Equal(t, fo.Id.WorkflowId, workflowTestID)
+	assert.Equal(t, workflowTestID, fo.Id.WorkflowId)
 	lvp, err := values.FromListValueProto(fo.Observations)
 	require.NoError(t, err)
 	assert.Equal(t, o, lvp)
 	expected := []string{workflowTestID, workflowTestID2}
 	actual := obspb.RegisteredWorkflowIds
-	sort.Slice(actual, func(i, j int) bool { return actual[i] < actual[j] })
-	sort.Slice(expected, func(i, j int) bool { return expected[i] < expected[j] })
+	slices.Sort(actual)
+	slices.Sort(expected)
 	assert.Equal(t, expected, actual)
 }
 
 func TestReportingPlugin_Observation_NilIds(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -220,7 +219,7 @@ func TestReportingPlugin_Observation_NilIds(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -243,14 +242,14 @@ func TestReportingPlugin_Observation_NilIds(t *testing.T) {
 }
 
 func TestReportingPlugin_Observation_NoResults(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	outcomeCtx := ocr3types.OutcomeContext{
@@ -267,18 +266,18 @@ func TestReportingPlugin_Observation_NoResults(t *testing.T) {
 	err = proto.Unmarshal(obs, obspb)
 	require.NoError(t, err)
 
-	assert.Len(t, obspb.Observations, 0)
+	assert.Empty(t, obspb.Observations)
 }
 
 func TestReportingPlugin_Outcome(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	aggregator := &aggregator{}
 	mcap := &mockCapability{
 		aggregator: aggregator,
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -315,7 +314,7 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
+	outcome, err := rp.Outcome(t.Context(), ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	opb := &pbtypes.Outcome{}
@@ -332,13 +331,13 @@ func TestReportingPlugin_Outcome(t *testing.T) {
 
 func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	aggregator := &erroringAggregator{}
 	mcap := &mockCapability{
 		aggregator: aggregator,
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -390,7 +389,7 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t 
 		},
 	}
 
-	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{}, qb, aos)
+	outcome, err := rp.Outcome(t.Context(), ocr3types.OutcomeContext{}, qb, aos)
 	require.NoError(t, err)
 
 	opb := &pbtypes.Outcome{}
@@ -406,14 +405,14 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherWorkflows(t 
 }
 
 func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -464,14 +463,14 @@ func TestReportingPlugin_Outcome_NilDerefs(t *testing.T) {
 }
 
 func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -532,12 +531,12 @@ func TestReportingPlugin_Outcome_AggregatorErrorDoesntInterruptOtherIDs(t *testi
 
 func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	var sqNr uint64
@@ -566,12 +565,12 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
+	reports, err := rp.Reports(t.Context(), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
 	gotRep := reports[0]
-	assert.Len(t, gotRep.ReportWithInfo.Report, 0)
+	assert.Empty(t, gotRep.ReportWithInfo.Report)
 
 	ib := gotRep.ReportWithInfo.Info
 	info, err := extractReportInfo(ib)
@@ -584,14 +583,14 @@ func TestReportingPlugin_Reports_ShouldReportFalse(t *testing.T) {
 }
 
 func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	var sqNr uint64
@@ -629,14 +628,14 @@ func TestReportingPlugin_Reports_NilDerefs(t *testing.T) {
 func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	lggr := logger.Test(t)
 	dynamicEncoderName := "special_encoder"
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		t:                   t,
 		aggregator:          &aggregator{},
 		encoder:             &enc{},
 		expectedEncoderName: dynamicEncoderName,
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	var sqNr uint64
@@ -672,7 +671,7 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 	}
 	pl, err := proto.Marshal(outcome)
 	require.NoError(t, err)
-	reports, err := rp.Reports(tests.Context(t), sqNr, pl)
+	reports, err := rp.Reports(t.Context(), sqNr, pl)
 	require.NoError(t, err)
 
 	assert.Len(t, reports, 1)
@@ -710,9 +709,9 @@ func TestReportingPlugin_Reports_ShouldReportTrue(t *testing.T) {
 }
 
 func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -721,7 +720,7 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -827,9 +826,9 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 }
 
 func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -838,7 +837,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
@@ -961,7 +960,7 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 
 func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 	lggr := logger.Test(t)
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 	mcap := &mockCapability{
 		aggregator: &aggregator{},
 		encoder:    &enc{},
@@ -970,7 +969,7 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 			workflowTestID2: true,
 		},
 	}
-	rp, err := newReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{F: 1}, defaultOutcomePruningThreshold, lggr)
+	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{F: 1}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
 	wowner := uuid.New().String()
@@ -1096,22 +1095,208 @@ func TestReportPlugin_Outcome_ShouldReturnOverriddenEncoder(t *testing.T) {
 		},
 	}
 
-	outcome, err := rp.Outcome(tests.Context(t), ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
+	outcome, err := rp.Outcome(t.Context(), ocr3types.OutcomeContext{SeqNr: 100}, qb, aos)
 	require.NoError(t, err)
 	opb1 := &pbtypes.Outcome{}
 	err = proto.Unmarshal(outcome, opb1)
 	require.NoError(t, err)
 
-	assert.Equal(t, opb1.Outcomes[workflowTestID].EncoderName, "evm")
+	assert.Equal(t, "evm", opb1.Outcomes[workflowTestID].EncoderName)
 	ec, err := values.FromMapValueProto(opb1.Outcomes[workflowTestID].EncoderConfig)
 	require.NoError(t, err)
 	assert.Equal(t, ec, m)
 
 	// No consensus on outcome 2
-	assert.Equal(t, opb1.Outcomes[workflowTestID2].EncoderName, "")
+	assert.Empty(t, opb1.Outcomes[workflowTestID2].EncoderName)
 	assert.Nil(t, opb1.Outcomes[workflowTestID2].EncoderConfig)
 
 	// Outcome 3 doesn't set the encoder
-	assert.Equal(t, opb1.Outcomes[workflowTestID3].EncoderName, "")
+	assert.Empty(t, opb1.Outcomes[workflowTestID3].EncoderName)
 	assert.Nil(t, opb1.Outcomes[workflowTestID3].EncoderConfig)
+}
+
+func TestDuplicateEliminationLogic(t *testing.T) {
+	// This test specifically addresses the condition `if seenIds[key]` in the Query phase
+	// to verify that duplicate IDs are properly handled and don't affect size calculations
+
+	// Helper function to create a ReportRequest for testing GetIDKey
+	createReportRequest := func(workflowExecutionId, workflowId, reportId string) *ReportRequest {
+		return &ReportRequest{
+			WorkflowExecutionID:      workflowExecutionId,
+			WorkflowID:               workflowId,
+			WorkflowOwner:            "owner",
+			WorkflowName:             "test",
+			WorkflowDonID:            123,
+			WorkflowDonConfigVersion: 456,
+			ReportID:                 reportId,
+			KeyID:                    "key-1",
+		}
+	}
+
+	// Helper function to create a pbtypes.Id from ReportRequest
+	createIdFromRequest := func(rq *ReportRequest) *pbtypes.Id {
+		return &pbtypes.Id{
+			WorkflowExecutionId:      rq.WorkflowExecutionID,
+			WorkflowId:               rq.WorkflowID,
+			WorkflowOwner:            rq.WorkflowOwner,
+			WorkflowName:             rq.WorkflowName,
+			WorkflowDonId:            rq.WorkflowDonID,
+			WorkflowDonConfigVersion: rq.WorkflowDonConfigVersion,
+			ReportId:                 rq.ReportID,
+			KeyId:                    rq.KeyID,
+		}
+	}
+
+	t.Run("duplicate keys are properly detected", func(t *testing.T) {
+		// Create two ReportRequests that should generate the same key
+		rq1 := createReportRequest("exec-1", "workflow-1", "report-1")
+		rq2 := createReportRequest("exec-1", "workflow-1", "report-1") // Same as rq1
+
+		key1 := GetIDKey(rq1)
+		key2 := GetIDKey(rq2)
+
+		if key1 != key2 {
+			t.Errorf("Expected identical keys for identical requests, got %+v != %+v", key1, key2)
+		}
+	})
+
+	t.Run("different keys are properly distinguished", func(t *testing.T) {
+		// Create two ReportRequests that should generate different keys
+		rq1 := createReportRequest("exec-1", "workflow-1", "report-1")
+		rq2 := createReportRequest("exec-2", "workflow-1", "report-1") // Different execution ID
+
+		key1 := GetIDKey(rq1)
+		key2 := GetIDKey(rq2)
+
+		if key1 == key2 {
+			t.Errorf("Expected different keys for different requests, got %+v == %+v", key1, key2)
+		}
+	})
+
+	t.Run("duplicate elimination in query batching simulation", func(t *testing.T) {
+		// Simulate the Query phase logic with duplicates
+		seenIds := make(map[idKey]bool)
+		var ids []*pbtypes.Id
+		var allExecutionIDs []string
+		cachedQuerySize := 0
+		sizeLimit := 1000
+
+		// Create a batch with duplicates
+		batch := []*ReportRequest{
+			createReportRequest("exec-1", "workflow-1", "report-1"),
+			createReportRequest("exec-2", "workflow-1", "report-1"),
+			createReportRequest("exec-1", "workflow-1", "report-1"), // Duplicate of first
+			createReportRequest("exec-3", "workflow-1", "report-1"),
+			createReportRequest("exec-2", "workflow-1", "report-1"), // Duplicate of second
+		}
+
+		// Simulate the logic from reporting_plugin.go Query method
+		for _, rq := range batch {
+			key := GetIDKey(rq)
+			newId := createIdFromRequest(rq)
+
+			// This is the condition we're specifically testing
+			if seenIds[key] {
+				continue // Skip duplicates
+			}
+
+			// Check size limit (this should only be called for non-duplicates)
+			canAdd, newSize := QueryBatchHasCapacity(cachedQuerySize, newId, sizeLimit)
+			if !canAdd {
+				break
+			}
+
+			seenIds[key] = true
+			ids = append(ids, newId)
+			allExecutionIDs = append(allExecutionIDs, rq.WorkflowExecutionID)
+			cachedQuerySize = newSize
+		}
+
+		// Verify results
+		expectedUniqueIds := 3 // exec-1, exec-2, exec-3
+		if len(ids) != expectedUniqueIds {
+			t.Errorf("Expected %d unique IDs, got %d", expectedUniqueIds, len(ids))
+		}
+
+		if len(allExecutionIDs) != expectedUniqueIds {
+			t.Errorf("Expected %d unique execution IDs, got %d", expectedUniqueIds, len(allExecutionIDs))
+		}
+
+		if len(seenIds) != expectedUniqueIds {
+			t.Errorf("Expected %d entries in seenIds map, got %d", expectedUniqueIds, len(seenIds))
+		}
+
+		// Verify that the correct execution IDs are present
+		expectedExecutionIDs := map[string]bool{
+			"exec-1": true,
+			"exec-2": true,
+			"exec-3": true,
+		}
+
+		for _, execID := range allExecutionIDs {
+			if !expectedExecutionIDs[execID] {
+				t.Errorf("Unexpected execution ID in results: %s", execID)
+			}
+			delete(expectedExecutionIDs, execID)
+		}
+
+		if len(expectedExecutionIDs) > 0 {
+			t.Errorf("Missing expected execution IDs: %v", expectedExecutionIDs)
+		}
+
+		// Verify that size calculation was only done for unique items
+		// Calculate expected size manually
+		expectedSize := 0
+		for _, id := range ids {
+			idSize := calculateIdSize(id)
+			if idSize > 0 {
+				tagSize := varintSize(uint64(1<<3 | 2))
+				lengthSize := varintSize(uint64(idSize))
+				expectedSize += tagSize + lengthSize + idSize
+			}
+		}
+
+		if cachedQuerySize != expectedSize {
+			t.Errorf("Expected cached size %d, got %d", expectedSize, cachedQuerySize)
+		}
+	})
+
+	t.Run("seenIds map prevents processing of duplicates", func(t *testing.T) {
+		// Test the exact condition: if seenIds[key] { continue }
+		seenIds := make(map[idKey]bool)
+
+		rq := createReportRequest("exec-1", "workflow-1", "report-1")
+		key := GetIDKey(rq)
+
+		// Initially, key should not be in seenIds
+		if seenIds[key] {
+			t.Error("Key should not be in seenIds initially")
+		}
+
+		// Add key to seenIds
+		seenIds[key] = true
+
+		// Now the condition should be true
+		if !seenIds[key] {
+			t.Error("Key should be in seenIds after adding")
+		}
+
+		// Test with a different key
+		rq2 := createReportRequest("exec-2", "workflow-1", "report-1")
+		key2 := GetIDKey(rq2)
+
+		// This key should not be in seenIds
+		if seenIds[key2] {
+			t.Error("Different key should not be in seenIds")
+		}
+	})
+}
+
+func defaultLimits() *pbtypes.ReportingPluginConfig {
+	return &pbtypes.ReportingPluginConfig{
+		OutcomePruningThreshold:   defaultOutcomePruningThreshold,
+		MaxQueryLengthBytes:       defaultMaxPhaseOutputBytes,
+		MaxObservationLengthBytes: defaultMaxPhaseOutputBytes,
+		MaxOutcomeLengthBytes:     defaultMaxPhaseOutputBytes,
+	}
 }

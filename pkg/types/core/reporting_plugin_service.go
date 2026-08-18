@@ -22,6 +22,7 @@ type ReportingPluginServiceConfig struct {
 // ReportingPluginClient is the client interface to a plugin running
 // as a generic job (job type = GenericPlugin) inside the core node.
 type ReportingPluginClient interface {
+	services.Service
 	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, grpcProvider grpc.ClientConnInterface, pipelineRunner PipelineRunnerService, telemetry TelemetryService, errorLog ErrorLog, keyValueStore KeyValueStore, relayerSet RelayerSet) (types.ReportingPluginFactory, error)
 	NewValidationService(ctx context.Context) (ValidationService, error)
 }
@@ -31,16 +32,19 @@ type ReportingPluginClient interface {
 // with the passthrough provider connection converted to the provider
 // expected by the plugin.
 type ReportingPluginServer[T types.PluginProvider] interface {
+	services.Service
 	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, provider T, pipelineRunner PipelineRunnerService, telemetry TelemetryClient, errorLog ErrorLog, keyValueStore KeyValueStore, relayerSet RelayerSet) (types.ReportingPluginFactory, error)
 	NewValidationService(ctx context.Context) (ValidationService, error)
 }
 
 type OCR3ReportingPluginClient interface {
+	services.Service
 	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, grpcProvider grpc.ClientConnInterface, pipelineRunner PipelineRunnerService, telemetry TelemetryService, errorLog ErrorLog, capRegistry CapabilitiesRegistry, keyValueStore KeyValueStore, relayerSet RelayerSet) (OCR3ReportingPluginFactory, error)
 	NewValidationService(ctx context.Context) (ValidationService, error)
 }
 
 type OCR3ReportingPluginServer[T types.PluginProvider] interface {
+	services.Service
 	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, provider T, pipelineRunner PipelineRunnerService, telemetry TelemetryClient, errorLog ErrorLog, capRegistry CapabilitiesRegistry, keyValueStore KeyValueStore, relayerSet RelayerSet) (OCR3ReportingPluginFactory, error)
 	NewValidationService(ctx context.Context) (ValidationService, error)
 }

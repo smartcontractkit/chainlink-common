@@ -37,16 +37,6 @@ type staticContractReader struct {
 var _ testtypes.Evaluator[types.ContractReader] = staticContractReader{}
 var _ types.ContractReader = staticContractReader{}
 
-func (c staticContractReader) Start(_ context.Context) error { return nil }
-
-func (c staticContractReader) Close() error { return nil }
-
-func (c staticContractReader) Ready() error { panic("unimplemented") }
-
-func (c staticContractReader) Name() string { panic("unimplemented") }
-
-func (c staticContractReader) HealthReport() map[string]error { panic("unimplemented") }
-
 func (c staticContractReader) Bind(_ context.Context, _ []types.BoundContract) error {
 	return nil
 }

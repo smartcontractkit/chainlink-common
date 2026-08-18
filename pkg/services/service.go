@@ -66,13 +66,21 @@ type Engine struct {
 //		defer span.End()
 //	})
 func (e *Engine) Go(fn func(context.Context)) {
-	e.wg.Add(1)
-	go func() {
-		defer e.wg.Done()
-		ctx, cancel := e.StopChan.NewCtx()
+	e.wg.Go(func() {
+		ctx, cancel := e.NewCtx()
 		defer cancel()
 		fn(ctx)
-	}()
+	})
+}
+
+// GoCtx is like Go but passes through ctx.
+// Use context.WithoutCancel if the function should continue running.
+func (e *Engine) GoCtx(ctx context.Context, fn func(context.Context)) {
+	e.wg.Go(func() {
+		ctx, cancel := e.Ctx(ctx)
+		defer cancel()
+		fn(ctx)
+	})
 }
 
 // GoTick is like Go but calls fn for each tick.
@@ -213,7 +221,7 @@ type service struct {
 	subs []Service
 }
 
-// Ready implements [HealthReporter.Ready] and overrides and extends [utils.StartStopOnce.Ready()] to include [Config.SubServices]
+// Ready implements [HealthReporter.Ready] and overrides and extends [services.StateMachine.Ready()] to include [Config.SubServices]
 // readiness as well.
 func (s *service) Ready() (err error) {
 	err = s.StateMachine.Ready()
@@ -241,12 +249,12 @@ func (s *service) HealthReport() map[string]error {
 	return m
 }
 
-func (s *service) Name() string { return s.eng.SugaredLogger.Name() }
+func (s *service) Name() string { return s.eng.Name() }
 
 func (s *service) Start(ctx context.Context) error {
 	return s.StartOnce(s.cfg.Name, func() error {
 		var span trace.Span
-		ctx, span = s.eng.tracer.Start(ctx, "Start")
+		ctx, span := s.eng.tracer.Start(ctx, "Start")
 		defer span.End()
 
 		s.eng.Info("Starting")
@@ -255,8 +263,8 @@ func (s *service) Start(ctx context.Context) error {
 			s.eng.Infof("Starting %d sub-services", len(s.subs))
 			for _, sub := range s.subs {
 				if err := ms.Start(ctx, sub); err != nil {
-					s.eng.Errorw("Failed to start sub-service", "error", err)
-					return fmt.Errorf("failed to start sub-service of %s: %w", s.cfg.Name, err)
+					s.eng.Errorw("Failed to start sub-service", "name", sub.Name(), "error", err)
+					return fmt.Errorf("failed to start sub-service %s of %s: %w", sub.Name(), s.cfg.Name, err)
 				}
 			}
 		}
@@ -291,7 +299,7 @@ func (s *service) Close() error {
 	})
 }
 
-func (s *service) emitHealthErr(err error) { s.StateMachine.SvcErrBuffer.Append(err) }
+func (s *service) emitHealthErr(err error) { s.SvcErrBuffer.Append(err) }
 
 func (s *service) ifStarted(fn func() error) (err error) {
 	if !s.IfStarted(func() { err = fn() }) {

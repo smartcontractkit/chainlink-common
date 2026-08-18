@@ -15,9 +15,13 @@ import (
 const PluginMedianName = "median"
 
 // Deprecated
+//
+//go:fix inline
 type PluginMedian = core.PluginMedian
 
 // Deprecated
+//
+//go:fix inline
 type ErrorLog = core.ErrorLog
 
 func PluginMedianHandshakeConfig() plugin.HandshakeConfig {
@@ -28,6 +32,8 @@ func PluginMedianHandshakeConfig() plugin.HandshakeConfig {
 }
 
 // Deprecated
+//
+//go:fix inline
 type ReportingPluginFactory = types.ReportingPluginFactory
 
 type GRPCPluginMedian struct {
@@ -45,12 +51,11 @@ func (p *GRPCPluginMedian) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Se
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginMedian], updated with the new broker and conn.
-func (p *GRPCPluginMedian) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *GRPCPluginMedian) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = median.NewPluginMedianClient(broker, p.BrokerConfig, conn)
-	} else {
-		p.pluginClient.Refresh(broker, conn)
+		p.pluginClient = median.NewPluginMedianClient(p.BrokerConfig)
 	}
+	p.pluginClient.Refresh(broker, conn)
 
 	return core.PluginMedian(p.pluginClient), nil
 }
@@ -60,5 +65,8 @@ func (p *GRPCPluginMedian) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: PluginMedianHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginMedianName: p},
 	}
-	return ManagedGRPCClientConfig(c, p.BrokerConfig)
+	if p.pluginClient == nil {
+		p.pluginClient = median.NewPluginMedianClient(p.BrokerConfig)
+	}
+	return ManagedGRPCClientConfig(c, p.pluginClient.BrokerConfig)
 }

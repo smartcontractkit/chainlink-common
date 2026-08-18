@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 
@@ -45,6 +46,21 @@ const (
 	// ReportFormatRetirement is a special "capstone" report format to indicate
 	// a retired OCR instance, and handover crucial information to a new one
 	ReportFormatRetirement ReportFormat = 3
+	// ReportFormatEVMABIEncodeUnpacked supports encoding reports with a fixed
+	// schema followed by an arbitrary ABI-encoded payload
+	ReportFormatEVMABIEncodeUnpacked = 4
+	// ReportFormatCapabilityTrigger is a protobuf binary format compatible
+	// with CRE capability triggers
+	ReportFormatCapabilityTrigger = 5
+	// ReportFormatEVMStreamlined is a feeless report format that offers packed
+	// encoding and minimal header overhead for optimal size and gas efficiency
+	ReportFormatEVMStreamlined = 6
+	// ReportFormatEVMABIEncodeUnpackedExpr is like ReportFormatEVMABIEncodeUnpacked
+	// but adds custom expressions to calculate report values from the available streams
+	ReportFormatEVMABIEncodeUnpackedExpr = 7
+	// ReportFormatHistoryBackfill is a meta-format: the channel carries pre-aggregated
+	// historical observations in opts; reports are encoded with the target channel's codec.
+	ReportFormatHistoryBackfill = 8
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -53,6 +69,11 @@ var ReportFormats = []ReportFormat{
 	ReportFormatEVMPremiumLegacy,
 	ReportFormatJSON,
 	ReportFormatRetirement,
+	ReportFormatEVMABIEncodeUnpacked,
+	ReportFormatCapabilityTrigger,
+	ReportFormatEVMStreamlined,
+	ReportFormatEVMABIEncodeUnpackedExpr,
+	ReportFormatHistoryBackfill,
 }
 
 func (rf ReportFormat) String() string {
@@ -63,6 +84,16 @@ func (rf ReportFormat) String() string {
 		return "json"
 	case ReportFormatRetirement:
 		return "retirement"
+	case ReportFormatEVMABIEncodeUnpacked:
+		return "evm_abi_encode_unpacked"
+	case ReportFormatCapabilityTrigger:
+		return "capability_trigger"
+	case ReportFormatEVMStreamlined:
+		return "evm_streamlined"
+	case ReportFormatEVMABIEncodeUnpackedExpr:
+		return "evm_abi_encode_unpacked_expr"
+	case ReportFormatHistoryBackfill:
+		return "history_backfill"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -76,6 +107,16 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatJSON, nil
 	case "retirement":
 		return ReportFormatRetirement, nil
+	case "evm_abi_encode_unpacked":
+		return ReportFormatEVMABIEncodeUnpacked, nil
+	case "capability_trigger":
+		return ReportFormatCapabilityTrigger, nil
+	case "evm_streamlined":
+		return ReportFormatEVMStreamlined, nil
+	case "evm_abi_encode_unpacked_expr":
+		return ReportFormatEVMABIEncodeUnpackedExpr, nil
+	case "history_backfill":
+		return ReportFormatHistoryBackfill, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}
@@ -130,6 +171,9 @@ const (
 	// AggregatorQuote is a special aggregator that is used to aggregate
 	// a list of Bid/Mid/Ask price tuples
 	AggregatorQuote = 3
+	// AggregatorCalculated is a special aggregator used for calculated
+	// streams values in the Outcome for the ReportFormatEVMABIEncodeUnpackedExpr
+	AggregatorCalculated = 4
 
 	_ Aggregator = math.MaxUint32 // reserved
 )
@@ -142,6 +186,8 @@ func (a Aggregator) String() string {
 		return "mode"
 	case AggregatorQuote:
 		return "quote"
+	case AggregatorCalculated:
+		return "calculated"
 	default:
 		return fmt.Sprintf("unknown(%d)", a)
 	}
@@ -159,6 +205,8 @@ func AggregatorFromString(s string) (Aggregator, error) {
 		return AggregatorMode, nil
 	case "quote":
 		return AggregatorQuote, nil
+	case "calculated":
+		return AggregatorCalculated, nil
 	default:
 		return 0, fmt.Errorf("unknown aggregator: %q", s)
 	}
@@ -221,6 +269,11 @@ type ChannelDefinition struct {
 	// Streams is the list of streams to be observed and aggregated
 	// by the protocol.
 	Streams []Stream `json:"streams"`
+	// DisableNilStreamValues controls whether channels with nil stream values
+	// are considered reportable. When true, nil stream values are disabled
+	// (channel not reportable until all values present). When false (default),
+	// nil stream values are allowed and the report codec needs to handle them accordingly.
+	DisableNilStreamValues bool `json:"disableNilStreamValues"`
 	// Opts contains configuration data for use in report generation
 	// for this channel, e.g. feed ID, expiry window, USD base fee etc
 	//
@@ -229,20 +282,43 @@ type ChannelDefinition struct {
 	//
 	// May be nil
 	Opts ChannelOpts `json:"opts"`
+	// Source is the source of the channel definition.
+	// It is set by the LLO channel definitions cache.
+	// The source is the id of the role that added the channel definition (i.e. the channel adder)
+	// 1 is always the ChannelConfigStore owner, greater values are adders.
+	Source uint32 `json:"source"`
+	// Tombstone indicates if the channel definition is an owner tombstone that
+	// should be removed from the current channel definitions cache.
+	Tombstone bool `json:"tombstone"`
 }
 
 func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
+	if a.Tombstone != b.Tombstone {
+		return false
+	}
+
+	if a.Source != b.Source {
+		return false
+	}
+
 	if a.ReportFormat != b.ReportFormat {
 		return false
 	}
+
+	if a.DisableNilStreamValues != b.DisableNilStreamValues {
+		return false
+	}
+
 	if len(a.Streams) != len(b.Streams) {
 		return false
 	}
+
 	for i, strm := range a.Streams {
 		if strm != b.Streams[i] {
 			return false
 		}
 	}
+
 	return bytes.Equal(a.Opts, b.Opts)
 }
 
@@ -268,7 +344,7 @@ func (m ChannelOpts) MarshalJSON() ([]byte, error) {
 
 // formatJSON ensures that the JSON string is in a deterministic shape
 func formatJSON(input []byte) ([]byte, error) {
-	var obj map[string]interface{}
+	var obj map[string]any
 
 	// Unmarshal the JSON string into a map
 	if err := json.Unmarshal(input, &obj); err != nil {
@@ -286,10 +362,10 @@ func formatJSON(input []byte) ([]byte, error) {
 
 type ChannelDefinitions map[ChannelID]ChannelDefinition
 
-func (c *ChannelDefinitions) Scan(value interface{}) error {
+func (c *ChannelDefinitions) Scan(value any) error {
 	bytes, ok := value.([]byte)
 	if !ok {
-		return fmt.Errorf("failed to scan Data: value is not []byte")
+		return errors.New("failed to scan Data: value is not []byte")
 	}
 	if bytes == nil {
 		*c = nil
@@ -312,7 +388,7 @@ func (c ChannelDefinitions) Value() (driver.Value, error) {
 type ChannelID = uint32
 
 type ChannelDefinitionCache interface {
-	Definitions() ChannelDefinitions
+	Definitions(previous ChannelDefinitions) ChannelDefinitions
 	services.Service
 }
 

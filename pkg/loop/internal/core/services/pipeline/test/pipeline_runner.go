@@ -20,7 +20,7 @@ var PipelineRunner = staticPipelineRunnerService{
 	staticPipelineRunnerConfig: staticPipelineRunnerConfig{
 		spec: pipleineSpec,
 		vars: core.Vars{
-			Vars: map[string]interface{}{"foo": "baz"},
+			Vars: map[string]any{"foo": "baz"},
 		},
 		options: core.Options{
 			MaxTaskDuration: 10 * time.Second,

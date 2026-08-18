@@ -2,7 +2,6 @@ package contractreader_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"testing"
@@ -16,7 +15,6 @@ import (
 	chaincomponentstest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCodecClient(t *testing.T) {
@@ -32,23 +30,23 @@ func TestCodecClient(t *testing.T) {
 	for _, errorType := range errorTypes {
 		es.err = errorType
 		t.Run("Encode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := esCodec.Encode(tests.Context(t), anyObj, "doesnotmatter")
-			assert.True(t, errors.Is(err, errorType))
+			_, err := esCodec.Encode(t.Context(), anyObj, "doesnotmatter")
+			assert.ErrorIs(t, err, errorType)
 		})
 
 		t.Run("Decode unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := esCodec.Encode(tests.Context(t), anyObj, "doesnotmatter")
-			assert.True(t, errors.Is(err, errorType))
+			_, err := esCodec.Encode(t.Context(), anyObj, "doesnotmatter")
+			assert.ErrorIs(t, err, errorType)
 		})
 
 		t.Run("GetMaxEncodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := esCodec.GetMaxEncodingSize(tests.Context(t), 1, "anything")
-			assert.True(t, errors.Is(err, errorType))
+			_, err := esCodec.GetMaxEncodingSize(t.Context(), 1, "anything")
+			assert.ErrorIs(t, err, errorType)
 		})
 
 		t.Run("GetMaxDecodingSize unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-			_, err := esCodec.GetMaxDecodingSize(tests.Context(t), 1, "anything")
-			assert.True(t, errors.Is(err, errorType))
+			_, err := esCodec.GetMaxDecodingSize(t.Context(), 1, "anything")
+			assert.ErrorIs(t, err, errorType)
 		})
 	}
 
@@ -57,22 +55,22 @@ func TestCodecClient(t *testing.T) {
 	t.Run("Encode returns error if type cannot be encoded in the wire format", func(t *testing.T) {
 		interfaceTester.Setup(t)
 		c := interfaceTester.GetCodec(t)
-		_, err := c.Encode(tests.Context(t), &cannotEncode{}, "doesnotmatter")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		_, err := c.Encode(t.Context(), &cannotEncode{}, "doesnotmatter")
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns error if type cannot be decoded in the wire format", func(t *testing.T) {
 		interfaceTester.Setup(t)
 		c := interfaceTester.GetCodec(t)
 		fv := int32(1)
-		toDecode, err := c.Encode(tests.Context(t), &interfacetests.TestStruct{Field: &fv}, interfacetests.TestItemType)
+		toDecode, err := c.Encode(t.Context(), &interfacetests.TestStruct{Field: &fv}, interfacetests.TestItemType)
 		require.NoError(t, err)
-		err = c.Decode(tests.Context(t), toDecode, &cannotEncode{}, interfacetests.TestItemType)
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		err = c.Decode(t.Context(), toDecode, &cannotEncode{}, interfacetests.TestItemType)
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Nil esCodec returns unimplemented", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		nilTester := chaincomponentstest.WrapCodecTesterForLoop(&fakeCodecInterfaceTester{impl: nil})
 		nilTester.Setup(t)
 		nilCodec := nilTester.GetCodec(t)

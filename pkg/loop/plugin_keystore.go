@@ -34,12 +34,11 @@ func (p *GRPCPluginKeystore) GRPCServer(broker *plugin.GRPCBroker, server *grpc.
 	return keystorepb.RegisterKeystoreServer(server, broker, p.BrokerConfig, p.PluginServer)
 }
 
-func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *GRPCPluginKeystore) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = keystorepb.NewKeystoreClient(broker, p.BrokerConfig, conn)
-	} else {
-		p.pluginClient.Refresh(broker, conn)
+		p.pluginClient = keystorepb.NewKeystoreClient(p.BrokerConfig)
 	}
+	p.pluginClient.Refresh(broker, conn)
 
 	return keystore.Keystore(p.pluginClient), nil
 }
@@ -49,5 +48,8 @@ func (p *GRPCPluginKeystore) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: PluginKeystoreHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginKeystoreName: p},
 	}
-	return ManagedGRPCClientConfig(c, p.BrokerConfig)
+	if p.pluginClient == nil {
+		p.pluginClient = keystorepb.NewKeystoreClient(p.BrokerConfig)
+	}
+	return ManagedGRPCClientConfig(c, p.pluginClient.BrokerConfig)
 }

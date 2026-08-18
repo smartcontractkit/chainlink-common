@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,16 +17,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	valuespb "github.com/smartcontractkit/chainlink-common/pkg/values/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 const (
@@ -36,6 +35,7 @@ const (
 	oomBinaryLocation          = "test/oom/cmd/testmodule.wasm"
 	oomBinaryCmd               = "test/oom/cmd"
 	sleepBinaryLocation        = "test/sleep/cmd/testmodule.wasm"
+	sleepBinaryLocation2       = "test/sleep/cmd/testmodule_2.wasm" // used to avoid a build race between tests
 	sleepBinaryCmd             = "test/sleep/cmd"
 	filesBinaryLocation        = "test/files/cmd/testmodule.wasm"
 	filesBinaryCmd             = "test/files/cmd"
@@ -61,9 +61,9 @@ const (
 	buildErrorBinaryCmd        = "test/builderr/cmd"
 )
 
-func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) []byte {
-	cmd := exec.Command("go", "build", "-o", path, fmt.Sprintf("github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/%s", outputPath)) // #nosec
-	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm")
+func createTestBinary(outputPath, path string, uncompressed bool, t testing.TB) []byte {
+	cmd := exec.Command("go", "build", "-o", path, "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/"+outputPath) // #nosec
+	cmd.Env = append(os.Environ(), "GOOS=wasip1", "GOARCH=wasm", "CGO_ENABLED=0")
 
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, string(output))
@@ -88,7 +88,7 @@ func createTestBinary(outputPath, path string, uncompressed bool, t *testing.T) 
 
 func Test_GetWorkflowSpec(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
@@ -105,7 +105,7 @@ func Test_GetWorkflowSpec(t *testing.T) {
 
 func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
 
 	_, err := GetWorkflowSpec(
@@ -121,7 +121,7 @@ func Test_GetWorkflowSpec_UncompressedBinary(t *testing.T) {
 }
 
 func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	failBinary := createTestBinary(failureBinaryCmd, failureBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
@@ -139,7 +139,7 @@ func Test_GetWorkflowSpec_BinaryErrors(t *testing.T) {
 
 func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
 	d := time.Duration(0)
@@ -154,12 +154,12 @@ func Test_GetWorkflowSpec_Timeout(t *testing.T) {
 		[]byte(""),
 	)
 	// panic
-	assert.ErrorContains(t, err, "wasm trap: interrupt")
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(buildErrorBinaryCmd, buildErrorBinaryLocation, true, t)
 
 	_, err := GetWorkflowSpec(
@@ -174,57 +174,6 @@ func Test_GetWorkflowSpec_BuildError(t *testing.T) {
 	assert.ErrorContains(t, err, "oops")
 }
 
-func Test_Compute_Logs(t *testing.T) {
-	t.Parallel()
-	ctx := tests.Context(t)
-	binary := createTestBinary(logBinaryCmd, logBinaryLocation, true, t)
-
-	logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
-	m, err := NewModule(&ModuleConfig{
-		Logger:         logger,
-		IsUncompressed: true,
-		Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-			return nil, nil
-		},
-	}, binary)
-	require.NoError(t, err)
-
-	m.Start()
-
-	req := &wasmpb.Request{
-		Id: uuid.New().String(),
-		Message: &wasmpb.Request_ComputeRequest{
-			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
-					Inputs: &valuespb.Map{},
-					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
-						ReferenceId: "transform",
-					},
-				},
-			},
-		},
-	}
-	_, err = m.Run(ctx, req)
-	assert.Nil(t, err)
-
-	require.Len(t, logs.AllUntimed(), 1)
-	expectedEntries := []Entry{
-		{
-			Log: zapcore.Entry{Level: zapcore.InfoLevel, Message: "building workflow..."},
-			Fields: []zapcore.Field{
-				zap.String("test-string-field-key", "this is a test field content"),
-				zap.Float64("test-numeric-field-key", 6400000),
-			},
-		},
-	}
-	for i := range expectedEntries {
-		assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-		assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
-		assert.ElementsMatch(t, expectedEntries[i].Fields, logs.AllUntimed()[i].Context)
-	}
-}
-
 func Test_Compute_Emit(t *testing.T) {
 	t.Parallel()
 	binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
@@ -235,10 +184,10 @@ func Test_Compute_Emit(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId:         "transform",
 						WorkflowId:          "workflow-id",
 						WorkflowName:        "workflow-name",
@@ -250,16 +199,16 @@ func Test_Compute_Emit(t *testing.T) {
 		},
 	}
 
-	fetchFunc := func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+	fetchFunc := func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 		return nil, nil
 	}
 
 	t.Run("successfully call emit with metadata in labels", func(t *testing.T) {
 		ctxKey := "key"
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		ctxValue := "test-value"
 		ctx = context.WithValue(ctx, ctxKey, ctxValue)
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -283,13 +232,13 @@ func Test_Compute_Emit(t *testing.T) {
 		m.Start()
 
 		_, err = m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("failure on emit writes to error chain and logs", func(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -310,28 +259,32 @@ func Test_Compute_Emit(t *testing.T) {
 
 		m.Start()
 
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		_, err = m.Run(ctx, req)
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, assert.AnError.Error())
 
-		require.Len(t, logs.AllUntimed(), 1)
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 2)
 
-		expectedEntries := []Entry{
+		expectedEntries := []zapcore.Entry{
 			{
-				Log: zapcore.Entry{Level: zapcore.ErrorLevel, Message: fmt.Sprintf("error emitting message: %s", assert.AnError)},
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message: %s", assert.AnError),
+			},
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message* failed to create emission* %s", assert.AnError),
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Message)
 		}
 	})
 
 	t.Run("failure on emit due to missing workflow identifying metadata", func(t *testing.T) {
-		lggr := logger.Test(t)
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         lggr,
 			Fetch:          fetchFunc,
 			IsUncompressed: true,
@@ -347,10 +300,10 @@ func Test_Compute_Emit(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -358,10 +311,25 @@ func Test_Compute_Emit(t *testing.T) {
 			},
 		}
 
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		_, err = m.Run(ctx, req)
-		assert.Error(t, err)
-		assert.ErrorContains(t, err, "failed to create emission")
+
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 1)
+
+		expectedEntries := []Entry{
+			{
+				Log: zapcore.Entry{
+					Level:   zapcore.ErrorLevel,
+					Message: "error emitting message* failed to create emission* must provide workflow id to emit event",
+				},
+			},
+		}
+
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Message)
+		}
 	})
 }
 
@@ -369,8 +337,8 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 	t.Parallel()
 	binary := createTestBinary(computePanicBinaryCmd, computePanicBinaryLocation, true, t)
 
-	ctx := tests.Context(t)
-	m, err := NewModule(&ModuleConfig{
+	ctx := t.Context()
+	m, err := NewModule(t.Context(), &ModuleConfig{
 		Logger:         logger.Test(t),
 		IsUncompressed: true,
 	}, binary)
@@ -382,10 +350,10 @@ func Test_Compute_PanicIsRecovered(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -400,24 +368,25 @@ func Test_Compute_Fetch(t *testing.T) {
 	t.Parallel()
 	binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
 
-	t.Run("OK_default_runtime_cfg", func(t *testing.T) {
+	t.Run("OK: default runtime config", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
-		expected := sdk.FetchResponse{
+
+		ctx := t.Context()
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -429,10 +398,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -440,9 +409,9 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
-		actual := sdk.FetchResponse{}
+		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
 		require.NoError(t, err)
 		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
@@ -451,24 +420,26 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("OK_custom_runtime_cfg", func(t *testing.T) {
+	t.Run("OK: successfully transmits headers", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
-		expected := sdk.FetchResponse{
+
+		ctx := t.Context()
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				assert.Equal(t, "bar", req.Headers["foo"])
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -480,23 +451,74 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		response, err := m.Run(ctx, req)
+		assert.NoError(t, err)
+
+		actual := FetchResponse{}
+		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
+		require.NoError(t, err)
+		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
+		require.NoError(t, err)
+
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("OK: custom runtime cfg", func(t *testing.T) {
+		t.Parallel()
+		ctx := t.Context()
+		expected := FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]string{},
+		}
+
+		m, err := NewModule(ctx, &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     expected.StatusCode,
+				}, nil
+			},
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &pb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
 					RuntimeConfig: &wasmpb.RuntimeConfig{
-						MaxFetchResponseSizeBytes: 2 * 1024,
+						MaxResponseSizeBytes: 2 * 1024,
 					},
 				},
 			},
 		}
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
-		actual := sdk.FetchResponse{}
+		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
 		require.NoError(t, err)
 		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
@@ -505,15 +527,15 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("NOK_fetch_error_returned", func(t *testing.T) {
+	t.Run("NOK: fetch error returned", func(t *testing.T) {
 		t.Parallel()
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		logger, logs := logger.TestObserved(t, zapcore.InfoLevel)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger,
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 				return nil, assert.AnError
 			},
 		}, binary)
@@ -525,10 +547,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -536,7 +558,7 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.ErrorContains(t, err, assert.AnError.Error())
 		require.Len(t, logs.AllUntimed(), 1)
 
@@ -546,32 +568,32 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		for i := range expectedEntries {
-			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Entry.Level)
-			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Entry.Message)
+			assert.Equal(t, expectedEntries[i].Log.Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Log.Message, logs.AllUntimed()[i].Message)
 		}
 	})
 
-	t.Run("OK_context_propagation", func(t *testing.T) {
+	t.Run("OK: context propagation", func(t *testing.T) {
 		t.Parallel()
 		type testkey string
 		var key testkey = "test-key"
-		var expectedValue string = "test-value"
+		var expectedValue = "test-value"
 
-		expected := sdk.FetchResponse{
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte(expectedValue),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           []byte(ctx.Value(key).(string)),
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -583,25 +605,25 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
 					RuntimeConfig: &wasmpb.RuntimeConfig{
-						MaxFetchResponseSizeBytes: 2 * 1024,
+						MaxResponseSizeBytes: 2 * 1024,
 					},
 				},
 			},
 		}
 
-		ctx := context.WithValue(tests.Context(t), key, expectedValue)
+		ctx := context.WithValue(t.Context(), key, expectedValue)
 		response, err := m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
-		actual := sdk.FetchResponse{}
+		actual := FetchResponse{}
 		r, err := pb.CapabilityResponseFromProto(response.GetComputeResponse().GetResponse())
 		require.NoError(t, err)
 		err = r.Value.Underlying["Value"].UnwrapTo(&actual)
@@ -610,17 +632,17 @@ func Test_Compute_Fetch(t *testing.T) {
 		assert.Equal(t, expected, actual)
 	})
 
-	t.Run("OK_context_cancelation", func(t *testing.T) {
+	t.Run("OK: context cancelation", func(t *testing.T) {
 		t.Parallel()
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(t.Context(), &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
 				select {
 				case <-ctx.Done():
 					return nil, assert.AnError
 				default:
-					return &wasmpb.FetchResponse{}, nil
+					return &FetchResponse{}, nil
 				}
 			},
 		}, binary)
@@ -632,46 +654,46 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
 					RuntimeConfig: &wasmpb.RuntimeConfig{
-						MaxFetchResponseSizeBytes: 2 * 1024,
+						MaxResponseSizeBytes: 2 * 1024,
 					},
 				},
 			},
 		}
 
-		ctx, cancel := context.WithCancel(tests.Context(t))
+		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		_, err = m.Run(ctx, req)
-		require.NotNil(t, err)
+		require.Error(t, err)
 		assert.ErrorContains(t, err, fmt.Sprintf("error executing runner: error executing custom compute: %s", assert.AnError))
 	})
 
-	t.Run("NOK_exceed_amout_of_defined_max_fetch_calls", func(t *testing.T) {
+	t.Run("NOK: exceeded maximum fetch calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
-		expected := sdk.FetchResponse{
+		ctx := t.Context()
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 			MaxFetchRequests: 1,
@@ -684,10 +706,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -695,28 +717,28 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.NotNil(t, err)
+		require.Error(t, err)
 	})
 
-	t.Run("NOK_exceed_amout_of_default_max_fetch_calls", func(t *testing.T) {
+	t.Run("NOK: exceeded default max fetch calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
-		expected := sdk.FetchResponse{
+		ctx := t.Context()
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 		}, binary)
@@ -728,10 +750,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -739,73 +761,28 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.NotNil(t, err)
+		require.Error(t, err)
 	})
 
-	t.Run("OK_making_up_to_max_fetch_calls", func(t *testing.T) {
+	t.Run("OK: making up to max fetch calls", func(t *testing.T) {
 		t.Parallel()
 		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
-		expected := sdk.FetchResponse{
+		ctx := t.Context()
+		expected := FetchResponse{
 			ExecutionError: false,
 			Body:           []byte("valid-response"),
 			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
+			Headers:        map[string]string{},
 		}
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
 					ExecutionError: expected.ExecutionError,
 					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
-				}, nil
-			},
-			MaxFetchRequests: 6,
-		}, binary)
-		require.NoError(t, err)
-
-		m.Start()
-
-		req := &wasmpb.Request{
-			Id: uuid.New().String(),
-			Message: &wasmpb.Request_ComputeRequest{
-				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
-						Inputs: &valuespb.Map{},
-						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
-							ReferenceId: "transform",
-						},
-					},
-				},
-			},
-		}
-		_, err = m.Run(ctx, req)
-		require.Nil(t, err)
-	})
-
-	t.Run("OK_multiple_request_reusing_module", func(t *testing.T) {
-		t.Parallel()
-		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
-		ctx := tests.Context(t)
-		expected := sdk.FetchResponse{
-			ExecutionError: false,
-			Body:           []byte("valid-response"),
-			StatusCode:     http.StatusOK,
-			Headers:        map[string]any{},
-		}
-
-		m, err := NewModule(&ModuleConfig{
-			Logger:         logger.Test(t),
-			IsUncompressed: true,
-			Fetch: func(ctx context.Context, req *wasmpb.FetchRequest) (*wasmpb.FetchResponse, error) {
-				return &wasmpb.FetchResponse{
-					ExecutionError: expected.ExecutionError,
-					Body:           expected.Body,
-					StatusCode:     uint32(expected.StatusCode),
+					StatusCode:     expected.StatusCode,
 				}, nil
 			},
 			MaxFetchRequests: 6,
@@ -818,10 +795,10 @@ func Test_Compute_Fetch(t *testing.T) {
 			Id: uuid.New().String(),
 			Message: &wasmpb.Request_ComputeRequest{
 				ComputeRequest: &wasmpb.ComputeRequest{
-					Request: &capabilitiespb.CapabilityRequest{
+					Request: &pb.CapabilityRequest{
 						Inputs: &valuespb.Map{},
 						Config: &valuespb.Map{},
-						Metadata: &capabilitiespb.RequestMetadata{
+						Metadata: &pb.RequestMetadata{
 							ReferenceId: "transform",
 						},
 					},
@@ -829,21 +806,65 @@ func Test_Compute_Fetch(t *testing.T) {
 			},
 		}
 		_, err = m.Run(ctx, req)
-		require.Nil(t, err)
+		require.NoError(t, err)
+	})
+
+	t.Run("OK: multiple request reusing module", func(t *testing.T) {
+		t.Parallel()
+		binary := createTestBinary(fetchlimitBinaryCmd, fetchlimitBinaryLocation, true, t)
+		ctx := t.Context()
+		expected := FetchResponse{
+			ExecutionError: false,
+			Body:           []byte("valid-response"),
+			StatusCode:     http.StatusOK,
+			Headers:        map[string]string{},
+		}
+
+		m, err := NewModule(ctx, &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+			Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+				return &FetchResponse{
+					ExecutionError: expected.ExecutionError,
+					Body:           expected.Body,
+					StatusCode:     expected.StatusCode,
+				}, nil
+			},
+			MaxFetchRequests: 6,
+		}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &pb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &pb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.NoError(t, err)
 
 		// we can reuse the request because after completion it gets deleted from the store
 		_, err = m.Run(ctx, req)
-		require.Nil(t, err)
+		require.NoError(t, err)
 	})
-
 }
 
 func TestModule_Errors(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	_, err = m.Run(ctx, nil)
@@ -874,8 +895,8 @@ func TestModule_Errors(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
-					Metadata: &capabilitiespb.RequestMetadata{
+				Request: &pb.CapabilityRequest{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "doesnt-exist",
 					},
 				},
@@ -887,10 +908,10 @@ func TestModule_Errors(t *testing.T) {
 }
 
 func TestModule_Sandbox_Memory(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -903,13 +924,80 @@ func TestModule_Sandbox_Memory(t *testing.T) {
 	assert.ErrorContains(t, err, "exit status 2")
 }
 
+func TestModule_CompressedBinarySize(t *testing.T) {
+	t.Parallel()
+
+	t.Run("compressed binary size is smaller than the default 10mb limit", func(t *testing.T) {
+		binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+
+		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		require.NoError(t, err)
+	})
+
+	t.Run("compressed binary size is bigger than the default 10mb limit", func(t *testing.T) {
+		binary := make([]byte, defaultMaxCompressedBinarySize+1)
+
+		var b bytes.Buffer
+		bwr := brotli.NewWriter(&b)
+		_, err := bwr.Write(binary)
+		require.NoError(t, err)
+		require.NoError(t, bwr.Close())
+
+		_, err = NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, Logger: logger.Test(t)}, binary)
+		require.ErrorContains(t, err, "binary size exceeds the maximum allowed size")
+		var limitErr limits.ErrorBoundLimited[config.Size]
+		require.ErrorAs(t, err, &limitErr)
+		assert.Equal(t, defaultMaxCompressedBinarySize, int(limitErr.Limit))
+	})
+
+	t.Run("compressed binary size is bigger than the custom limit", func(t *testing.T) {
+		customMaxCompressedBinarySize := uint64(1 * 1024 * 1024)
+		binary := make([]byte, customMaxCompressedBinarySize+1)
+
+		var b bytes.Buffer
+		bwr := brotli.NewWriter(&b)
+		_, err := bwr.Write(binary)
+		require.NoError(t, err)
+		require.NoError(t, bwr.Close())
+
+		_, err = NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxCompressedBinarySize: customMaxCompressedBinarySize, Logger: logger.Test(t)}, binary)
+		require.ErrorContains(t, err, "binary size exceeds the maximum allowed size")
+		var limitErr limits.ErrorBoundLimited[config.Size]
+		require.ErrorAs(t, err, &limitErr)
+		assert.Equal(t, customMaxCompressedBinarySize, uint64(limitErr.Limit))
+	})
+}
+
+func TestModule_DecompressedBinarySize(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(successBinaryCmd, successBinaryLocation, false, t)
+	rdr := brotli.NewReader(bytes.NewBuffer(binary))
+	decompedBinary, err := io.ReadAll(rdr)
+	require.NoError(t, err)
+	t.Run("decompressed binary size is within the limit", func(t *testing.T) {
+		customDecompressedBinarySize := uint64(len(decompedBinary))
+		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		require.NoError(t, err)
+	})
+
+	t.Run("decompressed binary size is bigger than the limit", func(t *testing.T) {
+		customDecompressedBinarySize := uint64(len(decompedBinary) - 1)
+		_, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: false, MaxDecompressedBinarySize: customDecompressedBinarySize, Logger: logger.Test(t)}, binary)
+		require.ErrorContains(t, err, "decompressed binary size reached the maximum allowed size")
+		var limitErr limits.ErrorBoundLimited[config.Size]
+		require.ErrorAs(t, err, &limitErr)
+		assert.Equal(t, customDecompressedBinarySize, uint64(limitErr.Limit))
+	})
+}
+
 func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	d := 1 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{Timeout: &d, IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -927,15 +1015,15 @@ func TestModule_Sandbox_SleepIsStubbedOut(t *testing.T) {
 	// but with our stubbed out functions,
 	// it should execute and return almost immediately.
 	assert.WithinDuration(t, start, end, 10*time.Second)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestModule_Sandbox_Timeout(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(sleepBinaryCmd, sleepBinaryLocation, true, t)
 
 	tmt := 10 * time.Millisecond
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Timeout: &tmt}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -947,15 +1035,15 @@ func TestModule_Sandbox_Timeout(t *testing.T) {
 
 	_, err = m.Run(ctx, req)
 
-	assert.ErrorContains(t, err, "interrupt")
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(filesBinaryCmd, filesBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -964,10 +1052,10 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -980,10 +1068,10 @@ func TestModule_Sandbox_CantReadFiles(t *testing.T) {
 
 func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(dirsBinaryCmd, dirsBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -992,10 +1080,10 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1008,10 +1096,10 @@ func TestModule_Sandbox_CantCreateDir(t *testing.T) {
 
 func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(httpBinaryCmd, httpBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
@@ -1020,10 +1108,10 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1031,30 +1119,28 @@ func TestModule_Sandbox_HTTPRequest(t *testing.T) {
 		},
 	}
 	_, err = m.Run(ctx, req)
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 }
 
 func TestModule_Sandbox_ReadEnv(t *testing.T) {
-	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	binary := createTestBinary(envBinaryCmd, envBinaryLocation, true, t)
 
-	m, err := NewModule(&ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
+	m, err := NewModule(ctx, &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t)}, binary)
 	require.NoError(t, err)
 
 	m.Start()
 
-	os.Setenv("FOO", "BAR")
-	defer os.Unsetenv("FOO")
+	t.Setenv("FOO", "BAR")
 
 	req := &wasmpb.Request{
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1063,7 +1149,7 @@ func TestModule_Sandbox_ReadEnv(t *testing.T) {
 	}
 	// This will return an error if FOO == BAR in the WASM binary
 	_, err = m.Run(ctx, req)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestModule_Sandbox_RandomGet(t *testing.T) {
@@ -1072,10 +1158,10 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		Id: uuid.New().String(),
 		Message: &wasmpb.Request_ComputeRequest{
 			ComputeRequest: &wasmpb.ComputeRequest{
-				Request: &capabilitiespb.CapabilityRequest{
+				Request: &pb.CapabilityRequest{
 					Inputs: &valuespb.Map{},
 					Config: &valuespb.Map{},
-					Metadata: &capabilitiespb.RequestMetadata{
+					Metadata: &pb.RequestMetadata{
 						ReferenceId: "transform",
 					},
 				},
@@ -1083,10 +1169,10 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		},
 	}
 	t.Run("success: deterministic override via module config", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 			Determinism: &DeterminismConfig{
@@ -1098,14 +1184,14 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		m.Start()
 
 		_, err = m.Run(ctx, req)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 	})
 
 	t.Run("success: default module config is non deterministic", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		binary := createTestBinary(randBinaryCmd, randBinaryLocation, true, t)
 
-		m, err := NewModule(&ModuleConfig{
+		m, err := NewModule(ctx, &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
 		}, binary)
@@ -1116,6 +1202,190 @@ func TestModule_Sandbox_RandomGet(t *testing.T) {
 		_, err = m.Run(ctx, req)
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "expected deterministic output")
+	})
+}
+
+func TestModule_MaxResponseSizeBytesLimit(t *testing.T) {
+	t.Parallel()
+
+	t.Run("FetchResponse size within the limit", func(t *testing.T) {
+		ctx := t.Context()
+		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
+
+		fetchFn := func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+			return &FetchResponse{
+				Body: make([]byte, 2*1024),
+			}, nil
+		}
+
+		maxResponseSizeBytes := uint64(10 * 1024)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &pb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &pb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+		require.NoError(t, err)
+	})
+	t.Run("FetchResponse size outside the limit", func(t *testing.T) {
+		ctx := t.Context()
+		binary := createTestBinary(fetchBinaryCmd, fetchBinaryLocation, true, t)
+
+		fetchFn := func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
+			return &FetchResponse{
+				Body: make([]byte, 2*1024),
+			}, nil
+		}
+
+		// setting a lower limit than the size of the fetch response
+		maxResponseSizeBytes := uint64(1024)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: logger.Test(t), Fetch: fetchFn, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &pb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &pb.RequestMetadata{
+							ReferenceId: "transform",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+
+		// a response with a 2KB body when marshaled is 2053 bytes
+		assert.ErrorContains(t, err, fmt.Sprintf("response size %d exceeds maximum allowed size %d", 2053, maxResponseSizeBytes))
+	})
+
+	t.Run("Emitted message size within the limit", func(t *testing.T) {
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
+		ctx := t.Context()
+		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
+
+		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+			return errors.New("some error")
+		})
+		// an emitter response with an error "some error" when marshaled is 14 bytes
+		// setting a maxResponseSizeBytes that should handle that payload
+		maxResponseSizeBytes := uint64(14)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &pb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &pb.RequestMetadata{
+							ReferenceId:         "transform",
+							WorkflowId:          "workflow-id",
+							WorkflowName:        "workflow-name",
+							WorkflowOwner:       "workflow-owner",
+							WorkflowExecutionId: "workflow-execution-id",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 2)
+
+		expectedEntries := []zapcore.Entry{
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: "error emitting message: " + "some error",
+			},
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: "error emitting message* failed to create emission* " + "some error",
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Message)
+		}
+	})
+	t.Run("Emitted message size outside the limit", func(t *testing.T) {
+		lggr, logs := logger.TestObserved(t, zapcore.InfoLevel)
+		ctx := t.Context()
+		binary := createTestBinary(emitBinaryCmd, emitBinaryLocation, true, t)
+
+		emitter := newMockMessageEmitter(func(gotCtx context.Context, msg string, kvs map[string]string) error {
+			return errors.New("some error")
+		})
+
+		// setting a lower limit than the size of the emitted message
+		maxResponseSizeBytes := uint64(1)
+		m, err := NewModule(t.Context(), &ModuleConfig{IsUncompressed: true, Logger: lggr, Labeler: emitter, MaxResponseSizeBytes: maxResponseSizeBytes}, binary)
+		require.NoError(t, err)
+
+		m.Start()
+
+		req := &wasmpb.Request{
+			Id: uuid.New().String(),
+			Message: &wasmpb.Request_ComputeRequest{
+				ComputeRequest: &wasmpb.ComputeRequest{
+					Request: &pb.CapabilityRequest{
+						Inputs: &valuespb.Map{},
+						Config: &valuespb.Map{},
+						Metadata: &pb.RequestMetadata{
+							ReferenceId:         "transform",
+							WorkflowId:          "workflow-id",
+							WorkflowName:        "workflow-name",
+							WorkflowOwner:       "workflow-owner",
+							WorkflowExecutionId: "workflow-execution-id",
+						},
+					},
+				},
+			},
+		}
+		_, err = m.Run(ctx, req)
+
+		require.NoError(t, err)
+		require.Len(t, logs.AllUntimed(), 2)
+
+		// an emitter response with an error "some error" when marshaled is 14 bytes
+		expectedEntries := []zapcore.Entry{
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: "error emitting message: " + "some error",
+			},
+			{
+				Level:   zapcore.ErrorLevel,
+				Message: fmt.Sprintf("error emitting message* failed to create emission* response size %d exceeds maximum allowed size %d", 14, maxResponseSizeBytes),
+			},
+		}
+		for i := range expectedEntries {
+			assert.Equal(t, expectedEntries[i].Level, logs.AllUntimed()[i].Level)
+			assert.Equal(t, expectedEntries[i].Message, logs.AllUntimed()[i].Message)
+		}
 	})
 }
 

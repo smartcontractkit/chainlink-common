@@ -1,9 +1,6 @@
 package loop
 
 import (
-	"maps"
-	"net/url"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -14,41 +11,64 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestEnvConfig_parse(t *testing.T) {
 	cases := []struct {
-		name                                   string
-		envVars                                map[string]string
-		expectError                            bool
-		expectedDatabaseURL                    string
-		expectedPrometheusPort                 int
-		expectedTracingEnabled                 bool
-		expectedTracingCollectorTarget         string
-		expectedTracingSamplingRatio           float64
-		expectedTracingTLSCertPath             string
-		expectedTelemetryEnabled               bool
-		expectedTelemetryEndpoint              string
-		expectedTelemetryInsecureConn          bool
-		expectedTelemetryCACertFile            string
-		expectedTelemetryAttributes            OtelAttributes
-		expectedTelemetryTraceSampleRatio      float64
-		expectedTelemetryAuthHeaders           map[string]string
-		expectedTelemetryAuthPubKeyHex         string
-		expectedTelemetryEmitterBatchProcessor bool
-		expectedTelemetryEmitterExportTimeout  time.Duration
+		name        string
+		envVars     map[string]string
+		expectError bool
+
+		expectConfig EnvConfig
 	}{
 		{
 			name: "All variables set correctly",
 			envVars: map[string]string{
-				envDatabaseURL:                        "postgres://user:password@localhost:5432/db",
-				envPromPort:                           "8080",
-				envTracingEnabled:                     "true",
-				envTracingCollectorTarget:             "some:target",
-				envTracingSamplingRatio:               "1.0",
-				envTracingTLSCertPath:                 "internal/test/fixtures/client.pem",
-				envTracingAttribute + "XYZ":           "value",
+				envAppID:                                "app-id",
+				envDatabaseURL:                          "postgres://user:password@localhost:5432/db",
+				envDatabaseIdleInTxSessionTimeout:       "42s",
+				envDatabaseLockTimeout:                  "8m",
+				envDatabaseQueryTimeout:                 "7s",
+				envDatabaseListenerFallbackPollInterval: "17s",
+				envDatabaseLogSQL:                       "true",
+				envDatabaseMaxOpenConns:                 "9999",
+				envDatabaseMaxIdleConns:                 "8080",
+				envDatabaseTracingEnabled:               "true",
+
+				envFeatureLogPoller: "true",
+
+				envGRPCServerMaxRecvMsgSize: "42",
+
+				envMercuryCacheLatestReportDeadline: "1ms",
+				envMercuryCacheLatestReportTTL:      "1µs",
+				envMercuryCacheMaxStaleAge:          "1ns",
+
+				envMercuryTransmitterProtocol:             "foo",
+				envMercuryTransmitterTransmitQueueMaxSize: "42",
+				envMercuryTransmitterTransmitTimeout:      "1s",
+				envMercuryTransmitterTransmitConcurrency:  "13",
+				envMercuryTransmitterReaperFrequency:      "1h",
+				envMercuryTransmitterReaperMaxAge:         "1m",
+				envMercuryVerboseLogging:                  "true",
+
+				envPromPort: "8080",
+
+				envPyroscopeAuthToken:                 "token",
+				envPyroscopeServerAddress:             "http://pyroscope:4040",
+				envPyroscopeEnvironment:               "pyroscope-env",
+				envPyroscopeLinkTracesToProfiles:      "true",
+				envPyroscopePPROFBlockProfileRate:     "42",
+				envPyroscopePPROFMutexProfileFraction: "99",
+
+				envTracingEnabled:           "true",
+				envTracingCollectorTarget:   "some:target",
+				envTracingSamplingRatio:     "1.0",
+				envTracingTLSCertPath:       "internal/test/fixtures/client.pem",
+				envTracingAttribute + "XYZ": "value",
+
 				envTelemetryEnabled:                   "true",
 				envTelemetryEndpoint:                  "example.com/beholder",
 				envTelemetryInsecureConn:              "true",
@@ -60,24 +80,39 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryAuthPubKeyHex:             "pub-key-hex",
 				envTelemetryEmitterBatchProcessor:     "true",
 				envTelemetryEmitterExportTimeout:      "1s",
+				envTelemetryEmitterExportInterval:     "2s",
+				envTelemetryEmitterExportMaxBatchSize: "100",
+				envTelemetryEmitterMaxQueueSize:       "1000",
+				envTelemetryLogStreamingEnabled:       "false",
+				envTelemetryMetricViewsDenyAttributes: "event_id",
+				envTelemetryPrometheusBridgeEnabled:   "true",
+				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
+				envMeterRecordsEnabled:                "true",
+				envMeterSnapshotsEnabled:              "false",
+				envMeterProduct:                       "cre-mainline",
+				envMeterTenant:                        "mainline",
+				envMeterNumericTenantID:               "42",
+				envMeterEnvironment:                   "production",
+				envMeterZone:                          "wf-zone-a",
+				envMeterNodeID:                        "clp-cre-wf-zone-a-1",
+
+				envChipIngressEndpoint:            "chip-ingress.example.com:50051",
+				envChipIngressInsecureConnection:  "true",
+				envChipIngressBatchEmitterEnabled: "false",
+
+				envChipIngressBufferSize:         "1000",
+				envChipIngressMaxBatchSize:       "500",
+				envChipIngressMaxConcurrentSends: "10",
+				envChipIngressSendInterval:       "100ms",
+				envChipIngressSendTimeout:        "3s",
+				envChipIngressDrainTimeout:       "10s",
+				envChipIngressMaxGRPCRequestSize: "10485760",
+
+				envCRESettings:        `{"global":{}}`,
+				envCRESettingsDefault: `{"foo":"bar"}`,
 			},
-			expectError:                            false,
-			expectedDatabaseURL:                    "postgres://user:password@localhost:5432/db",
-			expectedPrometheusPort:                 8080,
-			expectedTracingEnabled:                 true,
-			expectedTracingCollectorTarget:         "some:target",
-			expectedTracingSamplingRatio:           1.0,
-			expectedTracingTLSCertPath:             "internal/test/fixtures/client.pem",
-			expectedTelemetryEnabled:               true,
-			expectedTelemetryEndpoint:              "example.com/beholder",
-			expectedTelemetryInsecureConn:          true,
-			expectedTelemetryCACertFile:            "foo/bar",
-			expectedTelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
-			expectedTelemetryTraceSampleRatio:      0.42,
-			expectedTelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
-			expectedTelemetryAuthPubKeyHex:         "pub-key-hex",
-			expectedTelemetryEmitterBatchProcessor: true,
-			expectedTelemetryEmitterExportTimeout:  1 * time.Second,
+			expectError:  false,
+			expectConfig: envCfgFull,
 		},
 		{
 			name: "CL_DATABASE_URL parse error",
@@ -101,6 +136,15 @@ func TestEnvConfig_parse(t *testing.T) {
 			},
 			expectError: true,
 		},
+		{
+			name: "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT negative value rejected",
+			envVars: map[string]string{
+				envPromPort:                        "8080",
+				envTelemetryEnabled:                "true",
+				envTelemetryMetricCardinalityLimit: "-1",
+			},
+			expectError: true,
+		},
 	}
 
 	for _, tc := range cases {
@@ -113,104 +157,140 @@ func TestEnvConfig_parse(t *testing.T) {
 			err := config.parse()
 
 			if tc.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
+				require.Error(t, err)
 			} else {
-				if err != nil {
-					t.Errorf("Unexpected error: %v", err)
-				} else {
-					if config.DatabaseURL.String() != tc.expectedDatabaseURL {
-						t.Errorf("Expected Database URL %s, got %s", tc.expectedDatabaseURL, config.DatabaseURL)
-					}
-					if config.PrometheusPort != tc.expectedPrometheusPort {
-						t.Errorf("Expected Prometheus port %d, got %d", tc.expectedPrometheusPort, config.PrometheusPort)
-					}
-					if config.TracingEnabled != tc.expectedTracingEnabled {
-						t.Errorf("Expected tracingEnabled %v, got %v", tc.expectedTracingEnabled, config.TracingEnabled)
-					}
-					if config.TracingCollectorTarget != tc.expectedTracingCollectorTarget {
-						t.Errorf("Expected tracingCollectorTarget %s, got %s", tc.expectedTracingCollectorTarget, config.TracingCollectorTarget)
-					}
-					if config.TracingSamplingRatio != tc.expectedTracingSamplingRatio {
-						t.Errorf("Expected tracingSamplingRatio %f, got %f", tc.expectedTracingSamplingRatio, config.TracingSamplingRatio)
-					}
-					if config.TracingTLSCertPath != tc.expectedTracingTLSCertPath {
-						t.Errorf("Expected tracingTLSCertPath %s, got %s", tc.expectedTracingTLSCertPath, config.TracingTLSCertPath)
-					}
-					if config.TelemetryEnabled != tc.expectedTelemetryEnabled {
-						t.Errorf("Expected telemetryEnabled %v, got %v", tc.expectedTelemetryEnabled, config.TelemetryEnabled)
-					}
-					if config.TelemetryEndpoint != tc.expectedTelemetryEndpoint {
-						t.Errorf("Expected telemetryEndpoint %s, got %s", tc.expectedTelemetryEndpoint, config.TelemetryEndpoint)
-					}
-					if config.TelemetryInsecureConnection != tc.expectedTelemetryInsecureConn {
-						t.Errorf("Expected telemetryInsecureConn %v, got %v", tc.expectedTelemetryInsecureConn, config.TelemetryInsecureConnection)
-					}
-					if config.TelemetryCACertFile != tc.expectedTelemetryCACertFile {
-						t.Errorf("Expected telemetryCACertFile %s, got %s", tc.expectedTelemetryCACertFile, config.TelemetryCACertFile)
-					}
-					if !maps.Equal(config.TelemetryAttributes, tc.expectedTelemetryAttributes) {
-						t.Errorf("Expected telemetryAttributes %v, got %v", tc.expectedTelemetryAttributes, config.TelemetryAttributes)
-					}
-					if config.TelemetryTraceSampleRatio != tc.expectedTelemetryTraceSampleRatio {
-						t.Errorf("Expected telemetryTraceSampleRatio %f, got %f", tc.expectedTelemetryTraceSampleRatio, config.TelemetryTraceSampleRatio)
-					}
-					if !maps.Equal(config.TelemetryAuthHeaders, tc.expectedTelemetryAuthHeaders) {
-						t.Errorf("Expected telemetryAuthHeaders %v, got %v", tc.expectedTelemetryAuthHeaders, config.TelemetryAuthHeaders)
-					}
-					if config.TelemetryAuthPubKeyHex != tc.expectedTelemetryAuthPubKeyHex {
-						t.Errorf("Expected telemetryAuthPubKeyHex %s, got %s", tc.expectedTelemetryAuthPubKeyHex, config.TelemetryAuthPubKeyHex)
-					}
-					if config.TelemetryEmitterBatchProcessor != tc.expectedTelemetryEmitterBatchProcessor {
-						t.Errorf("Expected telemetryEmitterBatchProcessor %v, got %v", tc.expectedTelemetryEmitterBatchProcessor, config.TelemetryEmitterBatchProcessor)
-					}
-					if config.TelemetryEmitterExportTimeout != tc.expectedTelemetryEmitterExportTimeout {
-						t.Errorf("Expected telemetryEmitterExportTimeout %v, got %v", tc.expectedTelemetryEmitterExportTimeout, config.TelemetryEmitterExportTimeout)
-					}
-				}
+				require.NoError(t, err)
+				require.Equal(t, tc.expectConfig, config)
 			}
 		})
 	}
 }
 
+var envCfgFull = EnvConfig{
+	AppID: "app-id",
+
+	DatabaseURL:                          config.MustSecretURL("postgres://user:password@localhost:5432/db"),
+	DatabaseIdleInTxSessionTimeout:       42 * time.Second,
+	DatabaseLockTimeout:                  8 * time.Minute,
+	DatabaseQueryTimeout:                 7 * time.Second,
+	DatabaseListenerFallbackPollInterval: 17 * time.Second,
+	DatabaseLogSQL:                       true,
+	DatabaseMaxOpenConns:                 9999,
+	DatabaseMaxIdleConns:                 8080,
+	DatabaseTracingEnabled:               true,
+
+	FeatureLogPoller: true,
+
+	GRPCServerMaxRecvMsgSize: 42,
+
+	MercuryCacheLatestReportDeadline: time.Millisecond,
+	MercuryCacheLatestReportTTL:      time.Microsecond,
+	MercuryCacheMaxStaleAge:          time.Nanosecond,
+
+	MercuryTransmitterProtocol:             "foo",
+	MercuryTransmitterTransmitQueueMaxSize: 42,
+	MercuryTransmitterTransmitTimeout:      time.Second,
+	MercuryTransmitterTransmitConcurrency:  13,
+	MercuryTransmitterReaperFrequency:      time.Hour,
+	MercuryTransmitterReaperMaxAge:         time.Minute,
+	MercuryVerboseLogging:                  true,
+
+	PrometheusPort: 8080,
+
+	PyroscopeAuthToken:                 "token",
+	PyroscopeServerAddress:             "http://pyroscope:4040",
+	PyroscopeEnvironment:               "pyroscope-env",
+	PyroscopeLinkTracesToProfiles:      true,
+	PyroscopePPROFBlockProfileRate:     42,
+	PyroscopePPROFMutexProfileFraction: 99,
+
+	TracingEnabled:         true,
+	TracingAttributes:      map[string]string{"XYZ": "value"},
+	TracingCollectorTarget: "some:target",
+	TracingSamplingRatio:   1.0,
+	TracingTLSCertPath:     "internal/test/fixtures/client.pem",
+
+	TelemetryEnabled:                   true,
+	TelemetryEndpoint:                  "example.com/beholder",
+	TelemetryInsecureConnection:        true,
+	TelemetryCACertFile:                "foo/bar",
+	TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+	TelemetryTraceSampleRatio:          0.42,
+	TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+	TelemetryAuthPubKeyHex:             "pub-key-hex",
+	TelemetryEmitterBatchProcessor:     true,
+	TelemetryEmitterExportTimeout:      1 * time.Second,
+	TelemetryEmitterExportInterval:     2 * time.Second,
+	TelemetryEmitterExportMaxBatchSize: 100,
+	TelemetryEmitterMaxQueueSize:       1000,
+	TelemetryLogStreamingEnabled:       false,
+	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
+	TelemetryMetricViewsDenyAttributes: []string{"event_id"},
+	TelemetryPrometheusBridgeEnabled:   true,
+	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
+	MeterRecordsEnabled:                true,
+	MeterSnapshotsEnabled:              false,
+	MeterProduct:                       "cre-mainline",
+	MeterTenant:                        "mainline",
+	MeterNumericTenantID:               "42",
+	MeterEnvironment:                   "production",
+	MeterZone:                          "wf-zone-a",
+	MeterNodeID:                        "clp-cre-wf-zone-a-1",
+
+	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
+	ChipIngressInsecureConnection:    true,
+	ChipIngressBatchEmitterEnabled:   false,
+	ChipIngressDurableEmitterEnabled: false,
+
+	ChipIngressBufferSize:         1000,
+	ChipIngressMaxBatchSize:       500,
+	ChipIngressMaxConcurrentSends: 10,
+	ChipIngressSendInterval:       100 * time.Millisecond,
+	ChipIngressSendTimeout:        3 * time.Second,
+	ChipIngressDrainTimeout:       10 * time.Second,
+	ChipIngressMaxGRPCRequestSize: 10485760,
+
+	CRESettings:        `{"global":{}}`,
+	CRESettingsDefault: `{"foo":"bar"}`,
+}
+
 func TestEnvConfig_AsCmdEnv(t *testing.T) {
-	envCfg := EnvConfig{
-		DatabaseURL:    &url.URL{Scheme: "postgres", Host: "localhost:5432", User: url.UserPassword("user", "password"), Path: "/db"},
-		PrometheusPort: 9090,
-
-		TracingEnabled:         true,
-		TracingCollectorTarget: "http://localhost:9000",
-		TracingSamplingRatio:   0.1,
-		TracingTLSCertPath:     "some/path",
-		TracingAttributes:      map[string]string{"key": "value"},
-
-		TelemetryEnabled:               true,
-		TelemetryEndpoint:              "example.com/beholder",
-		TelemetryInsecureConnection:    true,
-		TelemetryCACertFile:            "foo/bar",
-		TelemetryAttributes:            OtelAttributes{"foo": "bar", "baz": "42"},
-		TelemetryTraceSampleRatio:      0.42,
-		TelemetryAuthHeaders:           map[string]string{"header-key": "header-value"},
-		TelemetryAuthPubKeyHex:         "pub-key-hex",
-		TelemetryEmitterBatchProcessor: true,
-		TelemetryEmitterExportTimeout:  1 * time.Second,
-	}
 	got := map[string]string{}
-	for _, kv := range envCfg.AsCmdEnv() {
+	for _, kv := range envCfgFull.AsCmdEnv() {
 		pair := strings.SplitN(kv, "=", 2)
 		require.Len(t, pair, 2)
 		got[pair[0]] = pair[1]
 	}
 
 	assert.Equal(t, "postgres://user:password@localhost:5432/db", got[envDatabaseURL])
-	assert.Equal(t, strconv.Itoa(9090), got[envPromPort])
+	assert.Equal(t, "true", got["CL_DATABASE_TRACING_ENABLED"])
+
+	assert.Equal(t, "42", got[envGRPCServerMaxRecvMsgSize])
+	assert.Equal(t, "1ms", got[envMercuryCacheLatestReportDeadline])
+	assert.Equal(t, "1µs", got[envMercuryCacheLatestReportTTL])
+	assert.Equal(t, "1ns", got[envMercuryCacheMaxStaleAge])
+	assert.Equal(t, "foo", got[envMercuryTransmitterProtocol])
+	assert.Equal(t, "42", got[envMercuryTransmitterTransmitQueueMaxSize])
+	assert.Equal(t, "1s", got[envMercuryTransmitterTransmitTimeout])
+	assert.Equal(t, "13", got[envMercuryTransmitterTransmitConcurrency])
+	assert.Equal(t, "1h0m0s", got[envMercuryTransmitterReaperFrequency])
+	assert.Equal(t, "1m0s", got[envMercuryTransmitterReaperMaxAge])
+	assert.Equal(t, "true", got[envMercuryVerboseLogging])
+
+	assert.Equal(t, strconv.Itoa(8080), got[envPromPort])
+
+	assert.Equal(t, "token", got[envPyroscopeAuthToken])
+	assert.Equal(t, "http://pyroscope:4040", got[envPyroscopeServerAddress])
+	assert.Equal(t, "pyroscope-env", got[envPyroscopeEnvironment])
+	assert.Equal(t, "true", got[envPyroscopeLinkTracesToProfiles])
+	assert.Equal(t, "42", got[envPyroscopePPROFBlockProfileRate])
+	assert.Equal(t, "99", got[envPyroscopePPROFMutexProfileFraction])
 
 	assert.Equal(t, "true", got[envTracingEnabled])
-	assert.Equal(t, "http://localhost:9000", got[envTracingCollectorTarget])
-	assert.Equal(t, "0.1", got[envTracingSamplingRatio])
-	assert.Equal(t, "some/path", got[envTracingTLSCertPath])
-	assert.Equal(t, "value", got[envTracingAttribute+"key"])
+	assert.Equal(t, "some:target", got[envTracingCollectorTarget])
+	assert.Equal(t, "1", got[envTracingSamplingRatio])
+	assert.Equal(t, "internal/test/fixtures/client.pem", got[envTracingTLSCertPath])
+	assert.Equal(t, "value", got[envTracingAttribute+"XYZ"])
 
 	assert.Equal(t, "true", got[envTelemetryEnabled])
 	assert.Equal(t, "example.com/beholder", got[envTelemetryEndpoint])
@@ -223,18 +303,132 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "pub-key-hex", got[envTelemetryAuthPubKeyHex])
 	assert.Equal(t, "true", got[envTelemetryEmitterBatchProcessor])
 	assert.Equal(t, "1s", got[envTelemetryEmitterExportTimeout])
+	assert.Equal(t, "2s", got[envTelemetryEmitterExportInterval])
+	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
+	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
+	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
+	assert.Equal(t, strconv.Itoa(beholder.DefaultMetricCardinalityLimit), got[envTelemetryMetricCardinalityLimit])
+	assert.Equal(t, "event_id", got[envTelemetryMetricViewsDenyAttributes])
+	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])
+	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
+	assert.Equal(t, "true", got[envMeterRecordsEnabled])
+	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
+	assert.Equal(t, "cre-mainline", got[envMeterProduct])
+	assert.Equal(t, "mainline", got[envMeterTenant])
+	assert.Equal(t, "42", got[envMeterNumericTenantID])
+	assert.Equal(t, "production", got[envMeterEnvironment])
+	assert.Equal(t, "wf-zone-a", got[envMeterZone])
+	assert.Equal(t, "clp-cre-wf-zone-a-1", got[envMeterNodeID])
+
+	// Assert ChipIngress environment variables
+	assert.Equal(t, "chip-ingress.example.com:50051", got[envChipIngressEndpoint])
+	assert.Equal(t, "true", got[envChipIngressInsecureConnection])
+	assert.Equal(t, "false", got[envChipIngressBatchEmitterEnabled])
+	assert.Equal(t, "1000", got[envChipIngressBufferSize])
+	assert.Equal(t, "500", got[envChipIngressMaxBatchSize])
+	assert.Equal(t, "10", got[envChipIngressMaxConcurrentSends])
+	assert.Equal(t, "100ms", got[envChipIngressSendInterval])
+	assert.Equal(t, "3s", got[envChipIngressSendTimeout])
+	assert.Equal(t, "10s", got[envChipIngressDrainTimeout])
+	assert.Equal(t, "10485760", got[envChipIngressMaxGRPCRequestSize])
+
+	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
+	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
+}
+
+// TestEnvConfig_MetricCardinalityLimit_RoundTrip verifies that an explicit
+// disable (0) survives a AsCmdEnv -> parse round trip the same way an
+// explicit positive limit does, and that leaving the field unset lets the
+// child apply its own default instead of forcing a value.
+func TestEnvConfig_MetricCardinalityLimit_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("explicit disable propagates as 0", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = new(0)
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 0, *parsed.TelemetryMetricCardinalityLimit)
+	})
+
+	t.Run("explicit positive limit propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = new(500)
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 500, *parsed.TelemetryMetricCardinalityLimit)
+	})
+
+	t.Run("unset falls back to child default", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricCardinalityLimit = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryMetricCardinalityLimit+"=", "unset limit must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		require.NotNil(t, parsed.TelemetryMetricCardinalityLimit)
+		assert.Equal(t, 100000, *parsed.TelemetryMetricCardinalityLimit)
+	})
+}
+
+// TestEnvConfig_MetricViewsDenyAttributes_RoundTrip verifies that a
+// comma-separated denylist survives an AsCmdEnv -> parse round trip.
+func TestEnvConfig_MetricViewsDenyAttributes_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("denylist propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsDenyAttributes = []string{"event_id", "workflow_execution_id"}
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Equal(t, []string{"event_id", "workflow_execution_id"}, parsed.TelemetryMetricViewsDenyAttributes)
+	})
+
+	t.Run("unset leaves denylist nil", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryMetricViewsDenyAttributes = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryMetricViewsDenyAttributes+"=", "unset denylist must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Nil(t, parsed.TelemetryMetricViewsDenyAttributes)
+	})
 }
 
 func TestGetMap(t *testing.T) {
-	os.Setenv("TEST_PREFIX_KEY1", "value1")
-	os.Setenv("TEST_PREFIX_KEY2", "value2")
-	os.Setenv("OTHER_KEY", "othervalue")
-
-	defer func() {
-		os.Unsetenv("TEST_PREFIX_KEY1")
-		os.Unsetenv("TEST_PREFIX_KEY2")
-		os.Unsetenv("OTHER_KEY")
-	}()
+	t.Setenv("TEST_PREFIX_KEY1", "value1")
+	t.Setenv("TEST_PREFIX_KEY2", "value2")
+	t.Setenv("OTHER_KEY", "othervalue")
 
 	result := getMap("TEST_PREFIX_")
 
@@ -273,7 +467,7 @@ func TestManagedGRPCClientConfig(t *testing.T) {
 
 		assert.NotNil(t, clientConfig.Logger)
 		assert.Equal(t, []plugin.Protocol{plugin.ProtocolGRPC}, clientConfig.AllowedProtocols)
-		assert.Equal(t, brokerConfig.GRPCOpts.DialOpts, clientConfig.GRPCDialOptions)
+		assert.Equal(t, brokerConfig.DialOpts, clientConfig.GRPCDialOptions)
 		assert.True(t, clientConfig.Managed)
 	})
 }

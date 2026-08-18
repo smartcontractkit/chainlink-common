@@ -3,17 +3,18 @@ package keyvalue
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_KeyValueStoreClient(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// Setup
 	client := Client{grpc: &testGrpcClient{store: make(map[string][]byte)}}
 	key := "key"
@@ -28,7 +29,7 @@ func Test_KeyValueStoreClient(t *testing.T) {
 }
 
 func Test_KeyValueStoreServer(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// Setup
 	server := Server{impl: &testKeyValueStore{store: make(map[string][]byte)}}
 
@@ -36,7 +37,43 @@ func Test_KeyValueStoreServer(t *testing.T) {
 	assert.NoError(t, err)
 	resp, err := server.GetValueForKey(ctx, &pb.GetValueForKeyRequest{Key: "key"})
 	assert.NoError(t, err)
-	assert.Equal(t, []byte(`{"A":"a","B":1}`), resp.Value)
+	assert.JSONEq(t, `{"A":"a","B":1}`, string(resp.Value))
+}
+
+func Test_KeyValueStoreClient_PruneExpiredEntries(t *testing.T) {
+	ctx := context.Background()
+
+	client := Client{grpc: &testGrpcClient{store: make(map[string][]byte)}}
+
+	// Store some test data
+	err := client.Store(ctx, "key1", []byte("value1"))
+	assert.NoError(t, err)
+	err = client.Store(ctx, "key2", []byte("value2"))
+	assert.NoError(t, err)
+
+	// Prune entries
+	numPruned, err := client.PruneExpiredEntries(ctx, time.Hour)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), numPruned)
+}
+
+func Test_KeyValueStoreServer_PruneExpiredEntries(t *testing.T) {
+	ctx := context.Background()
+
+	server := Server{impl: &testKeyValueStore{store: make(map[string][]byte)}}
+
+	// Store some test data through the server
+	_, err := server.StoreKeyValue(ctx, &pb.StoreKeyValueRequest{Key: "key1", Value: []byte("value1")})
+	assert.NoError(t, err)
+	_, err = server.StoreKeyValue(ctx, &pb.StoreKeyValueRequest{Key: "key2", Value: []byte("value2")})
+	assert.NoError(t, err)
+
+	// Prune entries
+	resp, err := server.PruneExpiredEntries(ctx, &pb.PruneExpiredEntriesRequest{
+		MaxAge: durationpb.New(time.Hour),
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), resp.NumPruned)
 }
 
 type testGrpcClient struct {
@@ -52,6 +89,15 @@ func (t *testGrpcClient) GetValueForKey(ctx context.Context, in *pb.GetValueForK
 	return &pb.GetValueForKeyResponse{Value: t.store[in.Key]}, nil
 }
 
+func (t *testGrpcClient) PruneExpiredEntries(ctx context.Context, in *pb.PruneExpiredEntriesRequest, opts ...grpc.CallOption) (*pb.PruneExpiredEntriesResponse, error) {
+	numPruned := 0
+	for k := range t.store {
+		delete(t.store, k)
+		numPruned++
+	}
+	return &pb.PruneExpiredEntriesResponse{NumPruned: int64(numPruned)}, nil
+}
+
 type testKeyValueStore struct {
 	store map[string][]byte
 }
@@ -63,4 +109,13 @@ func (t *testKeyValueStore) Store(ctx context.Context, key string, val []byte) e
 
 func (t *testKeyValueStore) Get(ctx context.Context, key string) ([]byte, error) {
 	return t.store[key], nil
+}
+
+func (t *testKeyValueStore) PruneExpiredEntries(ctx context.Context, maxAge time.Duration) (int64, error) {
+	numPruned := 0
+	for k := range t.store {
+		delete(t.store, k)
+		numPruned++
+	}
+	return int64(numPruned), nil
 }

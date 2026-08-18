@@ -2,6 +2,9 @@ package tests
 
 import (
 	"context"
+	"os"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,7 +18,7 @@ type TestingT interface {
 	Cleanup(func())
 }
 
-func Context(tb TestingT) (ctx context.Context) {
+func getContext(tb TestingT) (ctx context.Context) {
 	ctx = context.Background()
 	var cancel func()
 
@@ -76,6 +79,21 @@ func SkipShort(tb testing.TB, why string) {
 	}
 }
 
+const envVarRunFlakey = "CL_RUN_FLAKEY"
+
+var runFlakey = sync.OnceValues(func() (bool, error) {
+	s := os.Getenv(envVarRunFlakey)
+	if s == "" {
+		return false, nil
+	}
+	return strconv.ParseBool(s)
+})
+
 func SkipFlakey(t *testing.T, ticketURL string) {
-	t.Skip("Flakey", ticketURL)
+	if ok, err := runFlakey(); !ok {
+		if err != nil {
+			t.Logf("Failed to parse %s: %v", envVarRunFlakey, err)
+		}
+		t.Skip("Flakey", ticketURL)
+	}
 }

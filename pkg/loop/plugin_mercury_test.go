@@ -14,26 +14,26 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestPluginMercury(t *testing.T) {
 	t.Parallel()
 
+	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer, BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}, mercurytest.PluginMercury)
+	test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer(lggr), BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}}, mercurytest.PluginMercury)
 
 	t.Run("proxy", func(t *testing.T) {
 		test.PluginTest(t, loop.PluginRelayerName,
 			&loop.GRPCPluginRelayer{
-				PluginServer: relayertest.NewRelayerTester(false),
-				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+				PluginServer: relayertest.NewPluginRelayer(lggr, false),
+				BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 			func(t *testing.T, pr loop.PluginRelayer) {
 				p := newMercuryProvider(t, pr)
 				pm := mercurytest.PluginMercuryTest{MercuryProvider: p}
 				test.PluginTest(t, loop.PluginMercuryName,
-					&loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer,
-						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+					&loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer(lggr),
+						BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
 					pm.TestPluginMercury)
 			})
 	})
@@ -66,8 +66,8 @@ func TestPluginMercuryExec(t *testing.T) {
 }
 
 func newMercuryProvider(t *testing.T, pr loop.PluginRelayer) types.MercuryProvider {
-	ctx := tests.Context(t)
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
+	ctx := t.Context()
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 	p, err := r.NewPluginProvider(ctx, mercurytest.RelayArgs, mercurytest.PluginArgs)

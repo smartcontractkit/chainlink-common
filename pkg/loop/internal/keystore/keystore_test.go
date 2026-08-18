@@ -15,11 +15,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestKeystore(t *testing.T) {
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	stopCh := make(chan struct{})
 	log := logger.Test(t)
 
@@ -136,7 +135,9 @@ type testKeystorePlugin struct {
 func (r *testKeystorePlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
 	r.brokerExt.Broker = broker
 
-	return NewKeystoreClient(r.brokerExt.Broker, r.brokerExt.BrokerConfig, client), nil
+	kc := NewKeystoreClient(r.brokerExt.BrokerConfig)
+	kc.Refresh(broker, client)
+	return kc, nil
 }
 
 func (r *testKeystorePlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {

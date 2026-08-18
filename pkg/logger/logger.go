@@ -1,41 +1,66 @@
 package logger
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"reflect"
 	"testing"
 
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 )
 
-// Logger is a minimal subset of smartcontractkit/chainlink/core/logger.Logger implemented by go.uber.org/zap.SugaredLogger
+// Logger is a basic logging interface implemented by smartcontractkit/chainlink/core/logger.Logger and go.uber.org/zap.SugaredLogger
+//
+// Loggers should be injected (and usually Named as well): e.g. lggr.Named("<service name>")
+//
+// Tests
+//   - Tests should use a [Test] logger, with [New] being reserved for actual runtime and limited direct testing.
+//
+// Levels
+//   - Fatal: Logs and then calls os.Exit(1). Be careful about using this since it does NOT unwind the stack and may exit uncleanly.
+//   - Panic: Unrecoverable error. Example: invariant violation, programmer error
+//   - Error: Something bad happened, and it was clearly on the node op side. No need for immediate action though. Example: database write timed out
+//   - Warn: Something bad happened, not clear who/what is at fault. Node ops should have a rough look at these once in a while to see whether anything stands out. Example: connection to peer was closed unexpectedly. observation timed out.
+//   - Info: High level information. First level we’d expect node ops to look at. Example: entered new epoch with leader, made an observation with value, etc.
+//   - Debug: Useful for forensic debugging, but we don't expect nops to look at this. Example: Got a message, dropped a message, ...
+//
+// Node Operator Docs: https://docs.chain.link/docs/configuration-variables/#log_level
 type Logger interface {
+	// Name returns the fully qualified name of the logger.
 	Name() string
 
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
-	Panic(args ...interface{})
-	Fatal(args ...interface{})
+	Debug(args ...any)
+	Info(args ...any)
+	Warn(args ...any)
+	Error(args ...any)
+	Panic(args ...any)
+	// Fatal logs and then calls os.Exit(1)
+	// Be careful about using this since it does NOT unwind the stack and may exit uncleanly
+	Fatal(args ...any)
 
-	Debugf(format string, values ...interface{})
-	Infof(format string, values ...interface{})
-	Warnf(format string, values ...interface{})
-	Errorf(format string, values ...interface{})
-	Panicf(format string, values ...interface{})
-	Fatalf(format string, values ...interface{})
+	Debugf(format string, values ...any)
+	Infof(format string, values ...any)
+	Warnf(format string, values ...any)
+	Errorf(format string, values ...any)
+	Panicf(format string, values ...any)
+	Fatalf(format string, values ...any)
 
-	Debugw(msg string, keysAndValues ...interface{})
-	Infow(msg string, keysAndValues ...interface{})
-	Warnw(msg string, keysAndValues ...interface{})
-	Errorw(msg string, keysAndValues ...interface{})
-	Panicw(msg string, keysAndValues ...interface{})
-	Fatalw(msg string, keysAndValues ...interface{})
+	Debugw(msg string, keysAndValues ...any)
+	Infow(msg string, keysAndValues ...any)
+	Warnw(msg string, keysAndValues ...any)
+	Errorw(msg string, keysAndValues ...any)
+	Panicw(msg string, keysAndValues ...any)
+	Fatalw(msg string, keysAndValues ...any)
 
+	// Sync flushes any buffered log entries.
+	// Some insignificant errors are suppressed.
 	Sync() error
 }
 
@@ -52,7 +77,14 @@ func New() (Logger, error) { return defaultConfig.New() }
 func (c *Config) New() (Logger, error) {
 	return NewWith(func(cfg *zap.Config) {
 		cfg.Level.SetLevel(c.Level)
+		cfg.InitialFields = map[string]any{
+			"version": buildVersion(),
+		}
 	})
+}
+
+func buildVersion() string {
+	return fmt.Sprintf("%s@%s", build.Version, build.ChecksumPrefix)
 }
 
 // NewWith returns a new Logger from a modified [zap.Config].
@@ -66,10 +98,27 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 	return &logger{core.Sugar()}, nil
 }
 
+// NewCore returns a new Logger core from a modified [zap.Config].
+func NewCore(cfgFn func(*zap.Config)) (zapcore.Core, error) {
+	cfg := zap.NewProductionConfig()
+	cfgFn(&cfg)
+	logger, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+	return logger.Core(), nil
+}
+
 // NewWithSync returns a new Logger with a given SyncWriter.
 func NewWithSync(w io.Writer) Logger {
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(w), zapcore.InfoLevel)
 	return &logger{zap.New(core).Sugar()}
+}
+
+// NewWithCores returns a new Logger with one or more zapcore.Core.
+// If multiple cores are provided, they are combined using zapcore.NewTee.
+func NewWithCores(cores ...zapcore.Core) Logger {
+	return &logger{zap.New(zapcore.NewTee(cores...)).Sugar()}
 }
 
 // Test returns a new test Logger for tb.
@@ -83,7 +132,7 @@ func Test(tb testing.TB) Logger {
 			zapcore.DebugLevel,
 		),
 	)
-	return &logger{lggr.Sugar()}
+	return &logger{lggr.With(zap.String("version", buildVersion())).Sugar()}
 }
 
 // TestSugared returns a new test SugaredLogger.
@@ -120,13 +169,13 @@ type logger struct {
 	*zap.SugaredLogger
 }
 
-func (l *logger) with(args ...interface{}) Logger {
-	return &logger{l.SugaredLogger.With(args...)}
+func (l *logger) with(args ...any) Logger {
+	return &logger{l.With(args...)}
 }
 
 func (l *logger) named(name string) Logger {
 	newLogger := *l
-	newLogger.SugaredLogger = l.SugaredLogger.Named(name)
+	newLogger.SugaredLogger = l.Named(name)
 	return &newLogger
 }
 
@@ -139,11 +188,15 @@ func (l *logger) helper(skip int) Logger {
 }
 
 func (l *logger) sugaredHelper(skip int) *zap.SugaredLogger {
-	return l.SugaredLogger.WithOptions(zap.AddCallerSkip(skip))
+	return l.withOptions(zap.AddCallerSkip(skip))
 }
 
-// With returns a Logger with keyvals, if 'l' has a method `With(...interface{}) L`, where L implements Logger, otherwise it returns l.
-func With(l Logger, keyvals ...interface{}) Logger {
+func (l *logger) withOptions(opts ...zap.Option) *zap.SugaredLogger {
+	return l.WithOptions(opts...)
+}
+
+// With returns a Logger with keyvals, if 'l' has a method `With(...any) L`, where L implements Logger, otherwise it returns l.
+func With(l Logger, keyvals ...any) Logger {
 	switch t := l.(type) {
 	case *logger:
 		return t.with(keyvals...)
@@ -162,8 +215,37 @@ func With(l Logger, keyvals ...interface{}) Logger {
 	return l
 }
 
+func WithOptions(l Logger, opts ...zap.Option) Logger {
+	switch t := l.(type) {
+	case *logger:
+		return &logger{t.withOptions(opts...)}
+	}
+
+	method := reflect.ValueOf(l).MethodByName("WithOptions")
+	if method == (reflect.Value{}) {
+		return l // not available
+	}
+	if ret := method.CallSlice([]reflect.Value{reflect.ValueOf(opts)}); len(ret) == 1 {
+		nl, ok := ret[0].Interface().(Logger)
+		if ok {
+			return nl
+		}
+	}
+	return l
+}
+
 // Named returns a logger with name 'n', if 'l' has a method `Named(string) L`, where L implements Logger, otherwise it returns l.
 func Named(l Logger, n string) Logger {
+	return namedSkip(l, n, 2)
+}
+func namedSkip(l Logger, n string, skip int) Logger {
+	l = named(l, n)
+	if testing.Testing() {
+		Helper(l, skip).Debugf("New logger: %s", n)
+	}
+	return l
+}
+func named(l Logger, n string) Logger {
 	switch t := l.(type) {
 	case *logger:
 		return t.named(n)
@@ -206,7 +288,7 @@ func Helper(l Logger, skip int) Logger {
 // Deprecated: instead use [SugaredLogger.Critical]:
 //
 //	Sugared(l).Critical(args...)
-func Critical(l Logger, args ...interface{}) {
+func Critical(l Logger, args ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Critical(args...)
 }
@@ -214,7 +296,7 @@ func Critical(l Logger, args ...interface{}) {
 // Deprecated: instead use [SugaredLogger.Criticalf]:
 //
 //	Sugared(l).Criticalf(args...)
-func Criticalf(l Logger, format string, values ...interface{}) {
+func Criticalf(l Logger, format string, values ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalf(format, values...)
 }
@@ -222,7 +304,30 @@ func Criticalf(l Logger, format string, values ...interface{}) {
 // Deprecated: instead use [SugaredLogger.Criticalw]:
 //
 //	Sugared(l).Criticalw(args...)
-func Criticalw(l Logger, msg string, keysAndValues ...interface{}) {
+func Criticalw(l Logger, msg string, keysAndValues ...any) {
 	s := &sugared{Logger: l, h: Helper(l, 2)}
 	s.Criticalw(msg, keysAndValues...)
+}
+
+// CtxKeyVals returns a slice of logger keyvals derived from the context. Values are looked up and passed along with the
+// given keys, and if an otel span is present then the trace_id, trace_flags, and trace_flags will be included as well.
+// Example: l.With(CtxKeyVals(ctx, "keyFoo", ctxKeyFoo, "keyBar", ctxKeyBar)...)
+// See: [SugaredLogger.WithCtx]
+func CtxKeyVals(ctx context.Context, keyvals ...any) []any {
+	var kvs []any
+	spanCtx := trace.SpanFromContext(ctx).SpanContext()
+	if spanCtx.HasTraceID() {
+		kvs = append(kvs, "trace_id", spanCtx.TraceID().String())
+		kvs = append(kvs, "trace_flags", spanCtx.TraceFlags().String())
+	}
+	if spanCtx.HasSpanID() {
+		kvs = append(kvs, "span_id", spanCtx.SpanID().String())
+	}
+	for i := 0; i < len(keyvals); i += 2 {
+		kvs = append(kvs, keyvals[i])
+		if i+1 < len(keyvals) { // avoid panic on odd length
+			kvs = append(kvs, ctx.Value(keyvals[i+1]))
+		}
+	}
+	return kvs
 }

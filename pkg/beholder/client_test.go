@@ -1,10 +1,14 @@
-package beholder
+package beholder_test
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,8 +19,13 @@ import (
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 type MockExporter struct {
@@ -42,40 +51,40 @@ func (m *MockExporter) ForceFlush(ctx context.Context) error {
 func TestClient(t *testing.T) {
 	defaultCustomAttributes := func() map[string]any {
 		return map[string]any{
-			"int_key_1":            123,
-			"int64_key_1":          int64(123),
-			"int32_key_1":          int32(123),
-			"str_key_1":            "str_val_1",
-			"bool_key_1":           true,
-			"float_key_1":          123.456,
-			"byte_key_1":           []byte("byte_val_1"),
-			"str_slice_key_1":      []string{"str_val_1", "str_val_2"},
-			"nil_key_1":            nil,
-			"beholder_domain":      "TestDomain",        // Required field
-			"beholder_entity":      "TestEntity",        // Required field
-			"beholder_data_schema": "/schemas/ids/1001", // Required field, URI
+			"int_key_1":                123,
+			"int64_key_1":              int64(123),
+			"int32_key_1":              int32(123),
+			"str_key_1":                "str_val_1",
+			"bool_key_1":               true,
+			"float_key_1":              123.456,
+			"byte_key_1":               []byte("byte_val_1"),
+			"str_slice_key_1":          []string{"str_val_1", "str_val_2"},
+			"nil_key_1":                nil,
+			beholder.AttrKeyDomain:     "TestDomain",        // Required field
+			beholder.AttrKeyEntity:     "TestEntity",        // Required field
+			beholder.AttrKeyDataSchema: "/schemas/ids/1001", // Required field, URI
 		}
 	}
 	defaultMessageBody := []byte("body bytes")
 
-	mustNewGRPCClient := func(t *testing.T, exporterMock *mocks.OTLPExporter) *Client {
+	mustNewGRPCClient := func(t *testing.T, exporterMock *mocks.OTLPExporter) *beholder.Client {
 		// Override exporter factory which is used by Client
 		exporterFactory := func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 			return exporterMock, nil
 		}
-		client, err := newGRPCClient(TestDefaultConfig(), exporterFactory)
+		client, err := beholder.NewGRPCClient(beholder.TestDefaultConfig(), exporterFactory)
 		if err != nil {
 			t.Fatalf("Error creating beholder client: %v", err)
 		}
 		return client
 	}
 
-	mustNewHTTPClient := func(t *testing.T, exporterMock *mocks.OTLPExporter) *Client {
+	mustNewHTTPClient := func(t *testing.T, exporterMock *mocks.OTLPExporter) *beholder.Client {
 		// Override exporter factory which is used by Client
 		exporterFactory := func(...otlploghttp.Option) (sdklog.Exporter, error) {
 			return exporterMock, nil
 		}
-		client, err := newHTTPClient(TestDefaultConfigHTTPClient(), exporterFactory)
+		client, err := beholder.NewHTTPClient(beholder.TestDefaultConfigHTTPClient(), exporterFactory)
 		if err != nil {
 			t.Fatalf("Error creating beholder client: %v", err)
 		}
@@ -89,8 +98,8 @@ func TestClient(t *testing.T) {
 		messageCount           int
 		exporterMockErrorCount int
 		exporterOutputExpected bool
-		messageGenerator       func(client *Client, messageBody []byte, customAttributes map[string]any)
-		mustNewGrpcClient      func(*testing.T, *mocks.OTLPExporter) *Client
+		messageGenerator       func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any)
+		mustNewGrpcClient      func(*testing.T, *mocks.OTLPExporter) *beholder.Client
 	}{
 		{
 			name:                   "Test Emit (GRPC Client)",
@@ -99,8 +108,8 @@ func TestClient(t *testing.T) {
 			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			messageGenerator: func(client *Client, messageBody []byte, customAttributes map[string]any) {
-				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
+			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
+				err := client.Emitter.Emit(t.Context(), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
 			mustNewGrpcClient: mustNewGRPCClient,
@@ -113,8 +122,8 @@ func TestClient(t *testing.T) {
 			messageCount:           10,
 			exporterMockErrorCount: 0,
 			exporterOutputExpected: true,
-			messageGenerator: func(client *Client, messageBody []byte, customAttributes map[string]any) {
-				err := client.Emitter.Emit(tests.Context(t), messageBody, customAttributes)
+			messageGenerator: func(t *testing.T, client *beholder.Client, messageBody []byte, customAttributes map[string]any) {
+				err := client.Emitter.Emit(t.Context(), messageBody, customAttributes)
 				assert.NoError(t, err)
 			},
 			mustNewGrpcClient: mustNewHTTPClient,
@@ -128,7 +137,10 @@ func TestClient(t *testing.T) {
 
 			client := tc.mustNewGrpcClient(t, exporterMock)
 
+			// Set error handler and ensure it's reset after test
+			originalHandler := otel.GetErrorHandler()
 			otel.SetErrorHandler(otelMustNotErr(t))
+			defer otel.SetErrorHandler(originalHandler)
 			// Number of exported messages
 			exportedMessageCount := 0
 
@@ -153,7 +165,7 @@ func TestClient(t *testing.T) {
 							if !ok {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
-							expectedKv := OtelAttr(key, expectedValue)
+							expectedKv := beholder.OtelAttr(key, expectedValue)
 							equal := kv.Value.Equal(expectedKv.Value)
 							assert.True(t, equal, "Record attributes mismatch for key %v", key)
 							return true
@@ -167,135 +179,9 @@ func TestClient(t *testing.T) {
 					})
 			}
 			for i := 0; i < tc.messageCount; i++ {
-				tc.messageGenerator(client, tc.messageBody, customAttributes)
+				tc.messageGenerator(t, client, tc.messageBody, customAttributes)
 			}
 			assert.Equal(t, tc.messageCount, exportedMessageCount, "Expect all emitted messages to be exported")
-		})
-	}
-}
-
-func TestEmitterMessageValidation(t *testing.T) {
-	getEmitter := func(exporterMock *mocks.OTLPExporter) Emitter {
-		client, err := newGRPCClient(
-			TestDefaultConfig(),
-			// Override exporter factory which is used by Client
-			func(...otlploggrpc.Option) (sdklog.Exporter, error) {
-				return exporterMock, nil
-			},
-		)
-		otel.SetErrorHandler(otelMustNotErr(t))
-		assert.NoError(t, err)
-		return client.Emitter
-	}
-
-	for _, tc := range []struct {
-		name                string
-		attrs               Attributes
-		exporterCalledTimes int
-		expectedError       string
-	}{
-		{
-			name: "Missing required attribute",
-			attrs: Attributes{
-				"key": "value",
-			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'required' tag",
-		},
-		{
-			name: "Invalid URI",
-			attrs: Attributes{
-				"beholder_domain":      "TestDomain",
-				"beholder_entity":      "TestEntity",
-				"beholder_data_schema": "example-schema",
-			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderDataSchema' Error:Field validation for 'BeholderDataSchema' failed on the 'uri' tag",
-		},
-		{
-			name: "Invalid Beholder domain (double underscore)",
-			attrs: Attributes{
-				"beholder_data_schema": "/example-schema/versions/1",
-				"beholder_entity":      "TestEntity",
-				"beholder_domain":      "Test__Domain",
-			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
-		},
-		{
-			name: "Invalid Beholder domain (special characters)",
-			attrs: Attributes{
-				"beholder_data_schema": "/example-schema/versions/1",
-				"beholder_entity":      "TestEntity",
-				"beholder_domain":      "TestDomain*$",
-			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderDomain' Error:Field validation for 'BeholderDomain' failed on the 'domain_entity' tag",
-		},
-		{
-			name: "Invalid Beholder entity (double underscore)",
-			attrs: Attributes{
-				"beholder_data_schema": "/example-schema/versions/1",
-				"beholder_entity":      "Test__Entity",
-				"beholder_domain":      "TestDomain",
-			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
-		},
-		{
-			name: "Invalid Beholder entity (special characters)",
-			attrs: Attributes{
-				"beholder_data_schema": "/example-schema/versions/1",
-				"beholder_entity":      "TestEntity*$",
-				"beholder_domain":      "TestDomain",
-			},
-			exporterCalledTimes: 0,
-			expectedError:       "'Metadata.BeholderEntity' Error:Field validation for 'BeholderEntity' failed on the 'domain_entity' tag",
-		},
-		{
-			name:                "Valid Attributes",
-			exporterCalledTimes: 1,
-			attrs: Attributes{
-				"beholder_domain":      "TestDomain",
-				"beholder_entity":      "TestEntity",
-				"beholder_data_schema": "/example-schema/versions/1",
-			},
-			expectedError: "",
-		},
-		{
-			name:                "Valid Attributes (special characters)",
-			exporterCalledTimes: 1,
-			attrs: Attributes{
-				"beholder_domain":      "Test.Domain_42-1",
-				"beholder_entity":      "Test.Entity_42-1",
-				"beholder_data_schema": "/example-schema/versions/1",
-			},
-			expectedError: "",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Run("Emitter.Emit", func(t *testing.T) {
-				// Setup
-				exporterMock := mocks.NewOTLPExporter(t)
-				if tc.exporterCalledTimes > 0 {
-					exporterMock.On("Export", mock.Anything, mock.Anything).Return(nil).Times(tc.exporterCalledTimes)
-				}
-				emitter := getEmitter(exporterMock)
-				message := NewMessage([]byte("test"), tc.attrs)
-				// Emit
-				err := emitter.Emit(tests.Context(t), message.Body, tc.attrs)
-				// Assert expectations
-				if tc.expectedError != "" {
-					require.ErrorContains(t, err, tc.expectedError)
-				} else {
-					require.NoError(t, err)
-				}
-				if tc.exporterCalledTimes > 0 {
-					exporterMock.AssertExpectations(t)
-				} else {
-					exporterMock.AssertNotCalled(t, "Export")
-				}
-			})
 		})
 	}
 }
@@ -304,9 +190,10 @@ func TestClient_Close(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 
-	client, err := NewStdoutClient()
+	client, err := beholder.NewStdoutClient()
 	require.NoError(t, err)
 
+	require.NoError(t, client.Start(t.Context()))
 	err = client.Close()
 	require.NoError(t, err)
 
@@ -317,17 +204,17 @@ func TestClient_ForPackage(t *testing.T) {
 	exporterMock := mocks.NewOTLPExporter(t)
 	defer exporterMock.AssertExpectations(t)
 	var b strings.Builder
-	client, err := NewWriterClient(&b)
+	client, err := beholder.NewWriterClient(&b)
 	require.NoError(t, err)
 	clientForTest := client.ForPackage("TestClient_ForPackage")
 
 	// Log
-	clientForTest.Logger.Emit(tests.Context(t), otellog.Record{})
+	clientForTest.Logger.Emit(t.Context(), otellog.Record{})
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	b.Reset()
 
 	// Trace
-	_, span := clientForTest.Tracer.Start(tests.Context(t), "testSpan")
+	_, span := clientForTest.Tracer.Start(t.Context(), "testSpan")
 	span.End()
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testSpan")
@@ -335,19 +222,37 @@ func TestClient_ForPackage(t *testing.T) {
 
 	// Meter
 	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
-	counter.Add(tests.Context(t), 1)
-	clientForTest.Close()
+	counter.Add(t.Context(), 1)
+	require.NoError(t, client.Start(t.Context()))
+	require.NoError(t, clientForTest.Close())
 	assert.Contains(t, b.String(), `"Name":"TestClient_ForPackage"`)
 	assert.Contains(t, b.String(), "testMetric")
 }
 
 func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
-	return func(err error) { t.Fatalf("otel error: %v", err) }
+	// Create a context that will be canceled when the test completes
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Use t.Cleanup to cancel the context when test completes
+	t.Cleanup(cancel)
+
+	return func(err error) {
+		// Check if test context is still valid
+		select {
+		case <-ctx.Done():
+			// Test has completed, just log the error instead of failing
+			fmt.Printf("otel error after test completion: %v\n", err)
+			return
+		default:
+			// Test is still active, safe to call t.Fatalf
+			t.Fatalf("otel error: %v", err)
+		}
+	}
 }
 
 func TestNewClient(t *testing.T) {
 	t.Run("both endpoints set", func(t *testing.T) {
-		client, err := NewClient(Config{
+		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint: "grpc-endpoint",
 			OtelExporterHTTPEndpoint: "http-endpoint",
 		})
@@ -357,27 +262,760 @@ func TestNewClient(t *testing.T) {
 	})
 
 	t.Run("no endpoints set", func(t *testing.T) {
-		client, err := NewClient(Config{})
+		client, err := beholder.NewClient(beholder.Config{})
 		require.Error(t, err)
 		assert.Nil(t, client)
 		assert.Equal(t, "at least one exporter endpoint should be set", err.Error())
 	})
 
 	t.Run("GRPC endpoint set", func(t *testing.T) {
-		client, err := NewClient(Config{
+		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterGRPCEndpoint: "grpc-endpoint",
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)
-		assert.IsType(t, &Client{}, client)
+		assert.IsType(t, &beholder.Client{}, client)
 	})
 
 	t.Run("HTTP endpoint set", func(t *testing.T) {
-		client, err := NewClient(Config{
+		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterHTTPEndpoint: "http-endpoint",
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)
-		assert.IsType(t, &Client{}, client)
+		assert.IsType(t, &beholder.Client{}, client)
+	})
+
+	t.Run("emitter is dual source when ChipIngress is enabled", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress-endpoint:9090",
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("errors when ChipIngress is enabled but no endpoint is set", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:  "grpc-endpoint",
+			ChipIngressEmitterEnabled: true,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Equal(t, "invalid address format: missing port in address", err.Error())
+	})
+}
+
+func TestNewClientWithChipIngressConfig(t *testing.T) {
+	t.Run("creates client with ChipIngress TLS endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("LogStreamingEnabled true creates logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      true,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+	})
+
+	t.Run("LogStreamingEnabled false disables logger", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "grpc-endpoint",
+			LogStreamingEnabled:      false,
+		}
+		client, err := beholder.NewClient(cfg)
+		require.NoError(t, err)
+		// LoggerProvider and Logger should NOT be nil, but should be no-op implementations
+		assert.NotNil(t, client.LoggerProvider)
+		assert.NotNil(t, client.Logger)
+
+		// Optionally, check that using the logger does not panic
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Logger panicked when LogStreamingEnabled is false: %v", r)
+			}
+		}()
+		client.Logger.Emit(t.Context(), otellog.Record{})
+	})
+
+	t.Run("creates client with ChipIngress insecure endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("creates client with IPv4 ChipIngress endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "192.168.1.100:9090",
+			ChipIngressInsecureConnection:  true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("creates client with IPv6 ChipIngress endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "[::1]:9090",
+			ChipIngressInsecureConnection:  true,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+}
+
+// Update the existing function name to match its actual purpose
+func TestNewClientWithInvalidChipIngressConfig(t *testing.T) {
+	t.Run("errors with ChipIngress endpoint without port", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "missing port")
+	})
+
+	t.Run("errors with malformed ChipIngress endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:invalid:port",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+	})
+
+	t.Run("errors when ChipIngress enabled with empty endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "",
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "invalid address format: missing port in address")
+	})
+
+	t.Run("errors when ChipIngress enabled with whitespace-only endpoint", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "   ",
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+		// The whitespace is preserved in the address, so the error includes the spaces
+		assert.Contains(t, err.Error(), "invalid address format: address")
+		assert.Contains(t, err.Error(), "missing port in address")
+	})
+}
+
+func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
+	t.Run("chip ingress emitter enabled with insecure connection and auth headers", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer my-secret-token",
+			},
+		}
+
+		// Mock the otlploggrpc.New function to avoid creating a real exporter
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		assert.NotNil(t, client.Emitter)
+		// Check that the emitter is a dualSourceEmitter
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress emitter enabled with tls connection", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  false, // Use TLS
+		}
+
+		// Mock the otlploggrpc.New function
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.NotNil(t, client.Emitter)
+	})
+}
+
+func TestNewClient_Chip(t *testing.T) {
+	t.Run("chip interface available with chip-ingress endpoint provided", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.Chip)
+
+		// Verify the emitter is configured as dual source
+		assert.NotNil(t, client.Emitter)
+		assert.IsType(t, &beholder.DualSourceEmitter{}, client.Emitter)
+	})
+
+	t.Run("chip interface can be enabled when chip ingress dual emitter is not enabled ", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "grpc-endpoint",
+			ChipIngressEmitterEnabled:      false,
+			ChipIngressEmitterGRPCEndpoint: "chip-ingress.example.com:9090",
+			ChipIngressInsecureConnection:  false,
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.Chip)
+
+		// Verify emitter is not dual source when dual emitter is disabled
+		assert.NotNil(t, client.Emitter)
+	})
+
+	t.Run("chip interface is nil when chip ingress config is missing", func(t *testing.T) {
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:  "grpc-endpoint",
+			ChipIngressEmitterEnabled: true,
+		})
+		require.Error(t, err)
+		assert.Nil(t, client)
+	})
+}
+
+// mockLogExporter is a no-op exporter for testing purposes.
+type mockLogExporter struct{}
+
+func (m *mockLogExporter) Export(ctx context.Context, logs []sdklog.Record) error {
+	return nil
+}
+
+func (m *mockLogExporter) Shutdown(ctx context.Context) error {
+	return nil
+}
+
+func (m *mockLogExporter) ForceFlush(ctx context.Context) error {
+	return nil
+}
+
+func TestNewGRPCClientRotatingAuth(t *testing.T) {
+	pubKey, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	pubKeyHex := hex.EncodeToString(pubKey)
+
+	t.Run("successful rotating auth setup", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         pubKeyHex,
+			AuthKeySigner:            mockSigner,
+			AuthHeadersTTL:           10 * time.Minute,
+			InsecureConnection:       true,
+		}
+
+		// Mock the otlploggrpc.New function
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+
+	t.Run("error when public key hex is empty but TTL is set", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         "",               // Empty public key hex
+			AuthHeadersTTL:           10 * time.Minute, // TTL > 0 requires public key
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "auth: public key hex required for rotating auth")
+	})
+
+	t.Run("error when TTL is too short", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         pubKeyHex,
+			AuthKeySigner:            mockSigner,
+			AuthHeadersTTL:           5 * time.Minute,
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "auth: headers TTL must be at least 10 minutes")
+	})
+
+	t.Run("error when public key hex is invalid", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthPublicKeyHex:         "invalid-hex", // Invalid hex
+			AuthKeySigner:            mockSigner,
+			AuthHeadersTTL:           10 * time.Minute,
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.Error(t, err)
+		assert.Nil(t, client)
+		assert.Contains(t, err.Error(), "auth: failed to decode public key hex")
+	})
+}
+
+func TestNewGRPCClientStaticAuthFallback(t *testing.T) {
+	t.Run("uses static auth when no rotating auth is configured", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer test-token",
+			},
+			InsecureConnection: true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+
+	t.Run("no auth when neither rotating nor static auth is configured", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			InsecureConnection:       true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
+}
+
+func TestNewGRPCClientChipIngressAuth(t *testing.T) {
+	pubKey, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+	pubKeyHex := hex.EncodeToString(pubKey)
+
+	t.Run("chip ingress with rotating auth", func(t *testing.T) {
+		mockSigner := &MockSigner{}
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthPublicKeyHex:               pubKeyHex,
+			AuthKeySigner:                  mockSigner,
+			AuthHeadersTTL:                 10 * time.Minute,
+			InsecureConnection:             true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress with static auth", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			AuthHeaders: map[string]string{
+				"Authorization": "Bearer test-token",
+			},
+			InsecureConnection: true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+
+	t.Run("chip ingress with no auth", func(t *testing.T) {
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			InsecureConnection:             true,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
+}
+
+func TestChipIngressClient(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("mock client implements interface", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+		var _ chipingress.Client = mockClient
+	})
+
+	t.Run("noop client implements interface", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		var _ chipingress.Client = noopClient
+	})
+
+	t.Run("noop client Close returns no error", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		err := noopClient.Close()
+		assert.NoError(t, err)
+	})
+
+	t.Run("noop client Ping returns success", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		resp, err := noopClient.Ping(ctx, &pb.EmptyRequest{})
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, "pong", resp.Message)
+	})
+
+	t.Run("noop client Publish returns empty response", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		event, err := chipingress.NewEvent("test-domain", "test.type", []byte("test"), nil)
+		require.NoError(t, err)
+
+		eventPb, err := chipingress.EventToProto(event)
+		require.NoError(t, err)
+
+		resp, err := noopClient.Publish(ctx, eventPb)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("noop client PublishBatch returns empty response", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		events := []chipingress.CloudEvent{}
+		for i := range 3 {
+			event, err := chipingress.NewEvent(fmt.Sprintf("domain-%d", i), "test.type", []byte("test"), nil)
+			require.NoError(t, err)
+			events = append(events, event)
+		}
+
+		batch, err := chipingress.EventsToBatch(events)
+		require.NoError(t, err)
+
+		resp, err := noopClient.PublishBatch(ctx, batch)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("noop client RegisterSchema returns empty response", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		req := &pb.RegisterSchemaRequest{
+			Schemas: []*pb.Schema{
+				{Subject: "test-subject", Schema: `{"type":"record"}`, Format: 1},
+			},
+		}
+
+		resp, err := noopClient.RegisterSchema(ctx, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
+	t.Run("noop client RegisterSchemas returns empty map", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		schemas := []*pb.Schema{
+			{Subject: "test-subject-1", Schema: `{"type":"record"}`, Format: 1},
+			{Subject: "test-subject-2", Schema: `{"type":"record"}`, Format: 2},
+		}
+
+		result, err := noopClient.RegisterSchemas(ctx, schemas...)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Empty(t, result)
+	})
+
+	t.Run("noop client StreamEvents returns nil", func(t *testing.T) {
+		noopClient := &chipingress.NoopClient{}
+		stream, err := noopClient.StreamEvents(ctx)
+		assert.NoError(t, err)
+		assert.Nil(t, stream)
+	})
+
+	t.Run("mock client Ping with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		expectedResp := &pb.PingResponse{Message: "pong"}
+		mockClient.EXPECT().Ping(ctx, &pb.EmptyRequest{}).Return(expectedResp, nil)
+
+		resp, err := mockClient.Ping(ctx, &pb.EmptyRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResp, resp)
+		assert.Equal(t, "pong", resp.Message)
+	})
+
+	t.Run("mock client Publish with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		event, err := chipingress.NewEvent("test-domain", "test.type", []byte("test"), nil)
+		require.NoError(t, err)
+
+		eventPb, err := chipingress.EventToProto(event)
+		require.NoError(t, err)
+
+		expectedResp := &pb.PublishResponse{
+			Results: []*pb.PublishResult{{EventId: "123"}},
+		}
+
+		mockClient.EXPECT().Publish(ctx, eventPb).Return(expectedResp, nil)
+
+		resp, err := mockClient.Publish(ctx, eventPb)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("mock client PublishBatch with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		events := []chipingress.CloudEvent{}
+		for i := range 2 {
+			event, err := chipingress.NewEvent(fmt.Sprintf("domain-%d", i), "test.type", []byte("test"), nil)
+			require.NoError(t, err)
+			events = append(events, event)
+		}
+
+		batch, err := chipingress.EventsToBatch(events)
+		require.NoError(t, err)
+
+		expectedResp := &pb.PublishResponse{
+			Results: []*pb.PublishResult{
+				{EventId: "event-1"},
+				{EventId: "event-2"},
+			},
+		}
+
+		mockClient.EXPECT().PublishBatch(ctx, batch).Return(expectedResp, nil)
+
+		resp, err := mockClient.PublishBatch(ctx, batch)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedResp, resp)
+	})
+
+	t.Run("mock client RegisterSchemas with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		schemas := []*pb.Schema{
+			{Subject: "subject-1", Schema: `{"type":"record"}`, Format: 1},
+			{Subject: "subject-2", Schema: `{"type":"record"}`, Format: 2},
+		}
+
+		expectedMap := map[string]int{"subject-1": 1, "subject-2": 2}
+
+		mockClient.EXPECT().RegisterSchemas(ctx, schemas[0], schemas[1]).Return(expectedMap, nil)
+
+		result, err := mockClient.RegisterSchemas(ctx, schemas...)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedMap, result)
+	})
+
+	t.Run("mock client handles errors", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		expectedErr := errors.New("connection error")
+		mockClient.EXPECT().Ping(ctx, &pb.EmptyRequest{}).Return(nil, expectedErr)
+
+		resp, err := mockClient.Ping(ctx, &pb.EmptyRequest{})
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		assert.Equal(t, expectedErr, err)
+	})
+
+	t.Run("mock client Close with expectations", func(t *testing.T) {
+		mockClient := chipmocks.NewClient(t)
+
+		mockClient.EXPECT().Close().Return(nil)
+
+		err := mockClient.Close()
+		assert.NoError(t, err)
+	})
+}
+
+// TestClient_batchEmitterService groups lifecycle and construction tests for the
+// ChipIngress batch emitter sub-service embedded in the beholder Client.
+func TestClient_batchEmitterService(t *testing.T) {
+	newBatchClient := func(t *testing.T) *beholder.Client {
+		t.Helper()
+		client, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint: "localhost:4317",
+			// Use simple exporter in this lifecycle test to avoid batch flush/shutdown delays.
+			EmitterBatchProcessor:          false,
+			LogBatchProcessor:              false,
+			LogRetryConfig:                 &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			TraceRetryConfig:               &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			MetricRetryConfig:              &beholder.RetryConfig{InitialInterval: time.Millisecond, MaxInterval: time.Millisecond, MaxElapsedTime: 0},
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressBatchEmitterEnabled: true,
+			ChipIngressLogger:              logger.Test(t),
+			ChipIngressBufferSize:          10,
+			ChipIngressMaxBatchSize:        5,
+			ChipIngressSendInterval:        50 * time.Millisecond,
+			ChipIngressSendTimeout:         1 * time.Second,
+			ChipIngressDrainTimeout:        1 * time.Second,
+		})
+		require.NoError(t, err)
+		return client
+	}
+
+	// startsWithClient: batch emitter sub-service starts and stops with the Client lifecycle.
+	t.Run("starts with client", func(t *testing.T) {
+		client := newBatchClient(t)
+
+		// Before Start: service is unready and incomplete emit fails validation.
+		assert.ErrorContains(t, client.Ready(), "not started")
+		err := client.Emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+			// AttrKeyDataSchema intentionally omitted — triggers required-field validation error.
+		)
+		assert.ErrorContains(t, err, "BeholderDataSchema")
+
+		require.NoError(t, client.Start(t.Context()))
+		assert.NoError(t, client.Ready())
+		_ = client.Close()
+	})
+
+	// emitSucceedsBeforeStart: a fully-valid Emit returns no error before Start.
+	// The OTLP path is always active; the batch emitter's service-not-started error is
+	// swallowed by DualSourceEmitter and only logged.
+	t.Run("emit succeeds before start", func(t *testing.T) {
+		client := newBatchClient(t)
+
+		assert.ErrorContains(t, client.Ready(), "not started")
+
+		err := client.Emitter.Emit(t.Context(), []byte("body"),
+			beholder.AttrKeyDomain, "platform",
+			beholder.AttrKeyEntity, "TestEvent",
+			beholder.AttrKeyDataSchema, "test-schema",
+		)
+		assert.NoError(t, err, "emit must not fail when service is not yet started")
+
+		require.NoError(t, client.Start(t.Context()))
+		assert.NoError(t, client.Ready())
+		_ = client.Close()
+	})
+
+	// closeWithoutStart: strict service semantics require Start before Close.
+	t.Run("close without start", func(t *testing.T) {
+		client := newBatchClient(t)
+		err := client.Close()
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, services.ErrCannotStopUnstarted)
+	})
+
+	// requiresLogger: constructing with batch emitter enabled but no logger returns an error.
+	t.Run("requires logger", func(t *testing.T) {
+		_, err := beholder.NewClient(beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressBatchEmitterEnabled: true,
+			ChipIngressLogger:              nil,
+		})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "ChipIngressLogger")
 	})
 }

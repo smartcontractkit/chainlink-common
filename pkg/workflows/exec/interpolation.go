@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // InterpolateKey takes a multi-part, dot-separated key and attempts to replace

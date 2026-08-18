@@ -108,41 +108,37 @@ func (b *BrokerExt) Serve(name string, server *grpc.Server, deps ...Resource) (u
 	lis, err := b.Broker.Accept(id)
 	if err != nil {
 		b.CloseAll(deps...)
-		return 0, Resource{}, ErrConnAccept{Name: name, ID: id, Err: err}
+		return 0, Resource{}, ErrConnAccept{Broker: fmt.Sprintf("%p", b.Broker), Name: name, ID: id, Err: err}
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		defer b.CloseAll(deps...)
 		if err := server.Serve(lis); err != nil {
 			b.Logger.Errorw(fmt.Sprintf("Failed to serve %s on connection %d", name, id), "err", err)
 		}
-	}()
+	})
 
 	done := make(chan struct{})
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		select {
 		case <-b.StopCh:
 			server.Stop()
 		case <-done:
 		}
-	}()
+	})
 
-	return id, Resource{fnCloser(func() {
+	return id, Resource{fnCloser(sync.OnceFunc(func() {
 		server.Stop()
 		close(done)
 		wg.Wait()
-	}), name}, nil
+	})), name}, nil
 }
 
 func (b *BrokerExt) CloseAll(deps ...Resource) {
 	for _, d := range deps {
 		if err := d.Close(); err != nil {
-			b.Logger.Error(fmt.Sprintf("Error closing %s", d.Name), "err", err)
+			b.Logger.Errorw("Error closing "+d.Name, "err", err)
 		}
 	}
 }

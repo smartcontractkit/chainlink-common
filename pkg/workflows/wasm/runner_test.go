@@ -21,9 +21,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func Test_Runner_Config_InvalidRequest(t *testing.T) {
@@ -203,7 +203,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - list",
-			expectedOutput: []interface{}([]interface{}{int64(1), int64(2), int64(3), int64(4)}),
+			expectedOutput: []any([]any{int64(1), int64(2), int64(3), int64(4)}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -218,7 +218,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - map",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"test": int64(1)}),
+			expectedOutput: map[string]any(map[string]any{"test": int64(1)}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -234,7 +234,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - deep map",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"test1": map[string]interface{}{"test2": int64(1)}}),
+			expectedOutput: map[string]any(map[string]any{"test1": map[string]any{"test2": int64(1)}}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -265,7 +265,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - struct",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"SomeInt": int64(3), "SomeString": "hiya", "SomeTime": now}),
+			expectedOutput: map[string]any(map[string]any{"SomeInt": int64(3), "SomeString": "hiya", "SomeTime": now}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -286,8 +286,8 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 					workflow,
 					"compute",
 					sdk.Compute1Inputs[basictrigger.TriggerOutputs]{Arg0: trigger},
-					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (interface{}, error) {
-						var empty interface{}
+					func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (any, error) {
+						var empty any
 						return empty, nil
 					},
 				)
@@ -341,7 +341,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 		},
 		{
 			name:           "valid compute func - private struct",
-			expectedOutput: map[string]interface{}(map[string]interface{}{"SomeInt": int64(3), "SomeString": "hiya"}),
+			expectedOutput: map[string]any(map[string]any{"SomeInt": int64(3), "SomeString": "hiya"}),
 			compute: func(workflow *sdk.WorkflowSpecFactory, trigger basictrigger.TriggerOutputsCap) {
 				sdk.Compute1(
 					workflow,
@@ -403,7 +403,7 @@ func TestRunner_Run_ExecuteCompute(t *testing.T) {
 			if tt.errorString == "" {
 				assert.NotNil(t, gotResponse.GetComputeResponse())
 				resp := gotResponse.GetComputeResponse().GetResponse()
-				assert.Equal(t, resp.Error, "")
+				assert.Empty(t, resp.Error)
 
 				m, err = values.FromMapValueProto(resp.Value)
 				require.NoError(t, err)
@@ -468,12 +468,12 @@ func TestRunner_Run_GetWorkflowSpec(t *testing.T) {
 
 	// Do some massaging due to protos lossy conversion of types
 	gotSpec.Triggers[0].Inputs.Mapping = map[string]any{}
-	gotSpec.Triggers[0].Config["number"] = int64(gotSpec.Triggers[0].Config["number"].(uint64))
-	gotSpec.Targets[0].Config["number"] = int64(gotSpec.Targets[0].Config["number"].(uint64))
+	gotSpec.Triggers[0].Config["number"] = gotSpec.Triggers[0].Config["number"].(uint64)
+	gotSpec.Targets[0].Config["number"] = gotSpec.Targets[0].Config["number"].(uint64)
 	assert.Equal(t, &gotSpec, spc)
 
 	// Verify the target is included in the workflow spec
-	assert.Equal(t, targetConfig.Number, uint64(gotSpec.Targets[0].Config["number"].(int64)))
+	assert.Equal(t, targetConfig.Number, gotSpec.Targets[0].Config["number"].(uint64))
 }
 
 // Test_createEmitFn validates the runtime's emit function implementation.  Uses mocks of the
@@ -483,7 +483,7 @@ func Test_createEmitFn(t *testing.T) {
 		l         = logger.Test(t)
 		reqId     = "random-id"
 		sdkConfig = &RuntimeConfig{
-			MaxFetchResponseSizeBytes: 1_000,
+			MaxResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",
@@ -504,6 +504,15 @@ func Test_createEmitFn(t *testing.T) {
 		}
 		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
 		err := runtimeEmit(giveMsg, giveLabels)
+		assert.NoError(t, err)
+	})
+
+	t.Run("success if no labels are given", func(t *testing.T) {
+		hostEmit := func(respptr, resplenptr, reqptr unsafe.Pointer, reqptrlen int32) int32 {
+			return 0
+		}
+		runtimeEmit := createEmitFn(sdkConfig, l, hostEmit)
+		err := runtimeEmit(giveMsg, nil)
 		assert.NoError(t, err)
 	})
 
@@ -571,8 +580,8 @@ func Test_createFetchFn(t *testing.T) {
 		l         = logger.Test(t)
 		requestID = uuid.New().String()
 		sdkConfig = &RuntimeConfig{
-			RequestID:                 &requestID,
-			MaxFetchResponseSizeBytes: 1_000,
+			RequestID:            &requestID,
+			MaxResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",
@@ -590,14 +599,14 @@ func Test_createFetchFn(t *testing.T) {
 		response, err := runtimeFetch(sdk.FetchRequest{})
 		assert.NoError(t, err)
 		assert.Equal(t, sdk.FetchResponse{
-			Headers: map[string]any{},
+			Headers: map[string]string{},
 		}, response)
 	})
 
 	t.Run("NOK-config_missing_request_id", func(t *testing.T) {
 		invalidConfig := &RuntimeConfig{
-			RequestID:                 nil,
-			MaxFetchResponseSizeBytes: 1_000,
+			RequestID:            nil,
+			MaxResponseSizeBytes: 1_000,
 			Metadata: &capabilities.RequestMetadata{
 				WorkflowID:          "workflow_id",
 				WorkflowExecutionID: "workflow_execution_id",

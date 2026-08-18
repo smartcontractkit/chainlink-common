@@ -1,7 +1,6 @@
 package codec
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"math/big"
@@ -45,14 +44,14 @@ func TestGetMapsFromPath(t *testing.T) {
 
 	actual, err = getMapsFromPath(testMap, []string{"A", "B"})
 	require.NoError(t, err)
-	assert.Equal(t, []map[string]interface{}{
+	assert.Equal(t, []map[string]any{
 		{
-			"A": map[string]interface{}{"IntSlice": []int(nil)},
-			"B": map[string]interface{}{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}},
-			"C": map[string]interface{}{"TestAPtrSlice": ptrSlice}, "D": 10, "F": 100},
+			"A": map[string]any{"IntSlice": []int(nil)},
+			"B": map[string]any{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}},
+			"C": map[string]any{"TestAPtrSlice": ptrSlice}, "D": 10, "F": 100},
 		{
-			"A": map[string]interface{}{"IntSlice": []int(nil)},
-			"B": map[string]interface{}{"TestASlice": []testA(nil)}, "C": map[string]interface{}{"TestAPtrSlice": (*[]testA)(nil)}, "D": 20, "F": 200,
+			"A": map[string]any{"IntSlice": []int(nil)},
+			"B": map[string]any{"TestASlice": []testA(nil)}, "C": map[string]any{"TestAPtrSlice": (*[]testA)(nil)}, "D": 20, "F": 200,
 		},
 	}, actual)
 
@@ -93,29 +92,29 @@ func TestBigIntHook(t *testing.T) {
 		Max  *big.Int
 		Min  *big.Int
 	}{
-		{Type: reflect.TypeOf(0), Min: big.NewInt(math.MinInt), Max: big.NewInt(math.MaxInt)},
-		{Type: reflect.TypeOf(uint(0)), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint)},
-		{Type: reflect.TypeOf(int8(0)), Min: big.NewInt(math.MinInt8), Max: big.NewInt(math.MaxInt8)},
-		{Type: reflect.TypeOf(uint8(0)), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint8)},
-		{Type: reflect.TypeOf(int16(0)), Min: big.NewInt(math.MinInt16), Max: big.NewInt(math.MaxInt16)},
-		{Type: reflect.TypeOf(uint16(0)), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint16)},
-		{Type: reflect.TypeOf(int32(0)), Min: big.NewInt(math.MinInt32), Max: big.NewInt(math.MaxInt32)},
-		{Type: reflect.TypeOf(uint32(0)), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint32)},
-		{Type: reflect.TypeOf(int64(0)), Min: big.NewInt(math.MinInt64), Max: big.NewInt(math.MaxInt64)},
-		{Type: reflect.TypeOf(uint64(0)), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint64)},
+		{Type: reflect.TypeFor[int](), Min: big.NewInt(math.MinInt), Max: big.NewInt(math.MaxInt)},
+		{Type: reflect.TypeFor[uint](), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint)},
+		{Type: reflect.TypeFor[int8](), Min: big.NewInt(math.MinInt8), Max: big.NewInt(math.MaxInt8)},
+		{Type: reflect.TypeFor[uint8](), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint8)},
+		{Type: reflect.TypeFor[int16](), Min: big.NewInt(math.MinInt16), Max: big.NewInt(math.MaxInt16)},
+		{Type: reflect.TypeFor[uint16](), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint16)},
+		{Type: reflect.TypeFor[int32](), Min: big.NewInt(math.MinInt32), Max: big.NewInt(math.MaxInt32)},
+		{Type: reflect.TypeFor[uint32](), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint32)},
+		{Type: reflect.TypeFor[int64](), Min: big.NewInt(math.MinInt64), Max: big.NewInt(math.MaxInt64)},
+		{Type: reflect.TypeFor[uint64](), Min: big.NewInt(0), Max: new(big.Int).SetUint64(math.MaxUint64)},
 	}
 	for _, intType := range intTypes {
 		t.Run(fmt.Sprintf("Fits conversion %v", intType.Type), func(t *testing.T) {
 			anyValidNumber := big.NewInt(5)
-			result, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, anyValidNumber)
+			result, err := BigIntHook(reflect.TypeFor[*big.Int](), intType.Type, anyValidNumber)
 			require.NoError(t, err)
 			require.IsType(t, reflect.New(intType.Type).Elem().Interface(), result)
 			if intType.Min.Cmp(big.NewInt(0)) == 0 {
-				u64 := reflect.ValueOf(result).Convert(reflect.TypeOf(uint64(0))).Interface().(uint64)
+				u64 := reflect.ValueOf(result).Convert(reflect.TypeFor[uint64]()).Interface().(uint64)
 				actual := new(big.Int).SetUint64(u64)
 				require.Equal(t, anyValidNumber, actual)
 			} else {
-				i64 := reflect.ValueOf(result).Convert(reflect.TypeOf(int64(0))).Interface().(int64)
+				i64 := reflect.ValueOf(result).Convert(reflect.TypeFor[int64]()).Interface().(int64)
 				actual := big.NewInt(i64)
 				require.Equal(t, 0, anyValidNumber.Cmp(actual))
 			}
@@ -123,20 +122,20 @@ func TestBigIntHook(t *testing.T) {
 
 		t.Run("Overflow return an error "+intType.Type.String(), func(t *testing.T) {
 			bigger := new(big.Int).Add(intType.Max, big.NewInt(1))
-			_, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, bigger)
-			assert.True(t, errors.Is(err, types.ErrInvalidType))
+			_, err := BigIntHook(reflect.TypeFor[*big.Int](), intType.Type, bigger)
+			assert.ErrorIs(t, err, types.ErrInvalidType)
 		})
 
 		t.Run("Underflow return an error "+intType.Type.String(), func(t *testing.T) {
 			smaller := new(big.Int).Sub(intType.Min, big.NewInt(1))
-			_, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), intType.Type, smaller)
-			assert.True(t, errors.Is(err, types.ErrInvalidType))
+			_, err := BigIntHook(reflect.TypeFor[*big.Int](), intType.Type, smaller)
+			assert.ErrorIs(t, err, types.ErrInvalidType)
 		})
 
 		t.Run("Converts from "+intType.Type.String(), func(t *testing.T) {
 			anyValidNumber := int64(5)
 			asType := reflect.ValueOf(anyValidNumber).Convert(intType.Type).Interface()
-			result, err := BigIntHook(intType.Type, reflect.TypeOf((*big.Int)(nil)), asType)
+			result, err := BigIntHook(intType.Type, reflect.TypeFor[*big.Int](), asType)
 			require.NoError(t, err)
 			bi, ok := result.(*big.Int)
 			require.True(t, ok)
@@ -146,7 +145,7 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Converts from string", func(t *testing.T) {
 		anyNumber := int64(5)
-		result, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), strconv.FormatInt(anyNumber, 10))
+		result, err := BigIntHook(reflect.TypeFor[string](), reflect.TypeFor[*big.Int](), strconv.FormatInt(anyNumber, 10))
 		require.NoError(t, err)
 		bi, ok := result.(*big.Int)
 		require.True(t, ok)
@@ -155,19 +154,19 @@ func TestBigIntHook(t *testing.T) {
 
 	t.Run("Converts to string", func(t *testing.T) {
 		anyNumber := int64(5)
-		result, err := BigIntHook(reflect.TypeOf((*big.Int)(nil)), reflect.TypeOf(""), big.NewInt(anyNumber))
+		result, err := BigIntHook(reflect.TypeFor[*big.Int](), reflect.TypeFor[string](), big.NewInt(anyNumber))
 		require.NoError(t, err)
 		assert.Equal(t, strconv.FormatInt(anyNumber, 10), result)
 	})
 
 	t.Run("Errors for invalid string", func(t *testing.T) {
-		_, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf((*big.Int)(nil)), "Not a number :(")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		_, err := BigIntHook(reflect.TypeFor[string](), reflect.TypeFor[*big.Int](), "Not a number :(")
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Not a big int returns the input data", func(t *testing.T) {
 		input := "foo"
-		result, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
+		result, err := BigIntHook(reflect.TypeFor[string](), reflect.TypeFor[int](), input)
 		require.NoError(t, err)
 		assert.Equal(t, input, result)
 	})
@@ -175,9 +174,9 @@ func TestBigIntHook(t *testing.T) {
 
 func TestSliceToArrayVerifySizeHook(t *testing.T) {
 	t.Run("correct size slice converts", func(t *testing.T) {
-		to := reflect.TypeOf([2]int64{})
+		to := reflect.TypeFor[[2]int64]()
 		data := []int64{1, 2}
-		res, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		res, err := SliceToArrayVerifySizeHook(reflect.TypeFor[[]int64](), to, data)
 		assert.NoError(t, err)
 
 		// Mapstructure will convert slices to arrays, all we need in this hook is to pass it along
@@ -185,23 +184,23 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 	})
 
 	t.Run("Too large slice returns error", func(t *testing.T) {
-		to := reflect.TypeOf([2]int64{})
+		to := reflect.TypeFor[[2]int64]()
 		data := []int64{1, 2, 3}
-		_, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		_, err := SliceToArrayVerifySizeHook(reflect.TypeFor[[]int64](), to, data)
+		assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("Too small slice returns error", func(t *testing.T) {
-		to := reflect.TypeOf([2]int64{})
+		to := reflect.TypeFor[[2]int64]()
 		data := []int64{1}
-		_, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
-		assert.True(t, errors.Is(err, types.ErrSliceWrongLen))
+		_, err := SliceToArrayVerifySizeHook(reflect.TypeFor[[]int64](), to, data)
+		assert.ErrorIs(t, err, types.ErrSliceWrongLen)
 	})
 
 	t.Run("Empty slices are treated as ok to allow unset values", func(t *testing.T) {
-		to := reflect.TypeOf([2]int64{})
+		to := reflect.TypeFor[[2]int64]()
 		var data []int64
-		res, err := SliceToArrayVerifySizeHook(reflect.TypeOf(data), to, data)
+		res, err := SliceToArrayVerifySizeHook(reflect.TypeFor[[]int64](), to, data)
 		assert.NoError(t, err)
 
 		// Mapstructure will convert slices to arrays, all we need in this hook is to pass it along
@@ -210,7 +209,7 @@ func TestSliceToArrayVerifySizeHook(t *testing.T) {
 
 	t.Run("Not a slice returns the input data", func(t *testing.T) {
 		input := "foo"
-		result, err := BigIntHook(reflect.TypeOf(""), reflect.TypeOf(10), input)
+		result, err := BigIntHook(reflect.TypeFor[string](), reflect.TypeFor[int](), input)
 		require.NoError(t, err)
 		assert.Equal(t, input, result)
 	})
@@ -235,7 +234,7 @@ func TestEpochToTimeHook(t *testing.T) {
 	t.Run("converts epoch to time", func(t *testing.T) {
 		for _, testValue := range testValues {
 			t.Run(fmt.Sprintf("%T", testValue), func(t *testing.T) {
-				actual, err := EpochToTimeHook(reflect.TypeOf(testValue), reflect.TypeOf(testTime), testValue)
+				actual, err := EpochToTimeHook(reflect.TypeOf(testValue), reflect.TypeFor[time.Time](), testValue)
 				require.NoError(t, err)
 				assert.Equal(t, testTime, actual)
 			})
@@ -245,7 +244,7 @@ func TestEpochToTimeHook(t *testing.T) {
 	t.Run("Converts timestamps to integer type", func(t *testing.T) {
 		for _, testValue := range testValues {
 			t.Run(fmt.Sprintf("%T", testValue), func(t *testing.T) {
-				actual, err := EpochToTimeHook(reflect.TypeOf(testTime), reflect.TypeOf(testValue), testTime)
+				actual, err := EpochToTimeHook(reflect.TypeFor[time.Time](), reflect.TypeOf(testValue), testTime)
 				require.NoError(t, err)
 				assert.Equal(t, testValue, actual)
 			})
@@ -253,14 +252,14 @@ func TestEpochToTimeHook(t *testing.T) {
 	})
 
 	t.Run("returns data for non time types", func(t *testing.T) {
-		actual, err := EpochToTimeHook(reflect.TypeOf(""), reflect.TypeOf(0), "foo")
+		actual, err := EpochToTimeHook(reflect.TypeFor[string](), reflect.TypeFor[int](), "foo")
 		require.NoError(t, err)
 		assert.Equal(t, "foo", actual)
 	})
 
 	t.Run("pointers are maintained in non-conversion scenarios", func(t *testing.T) {
 		t.Run("*time.Time to *time.Time", func(t *testing.T) {
-			tp := reflect.PointerTo(reflect.TypeOf(testTime))
+			tp := reflect.PointerTo(reflect.TypeFor[time.Time]())
 			output, err := EpochToTimeHook(tp, tp, &testTime)
 
 			require.NoError(t, err)
@@ -272,7 +271,7 @@ func TestEpochToTimeHook(t *testing.T) {
 		})
 
 		t.Run("*time.Time to time.Time", func(t *testing.T) {
-			output, err := EpochToTimeHook(reflect.PointerTo(reflect.TypeOf(testTime)), reflect.TypeOf(testTime), &testTime)
+			output, err := EpochToTimeHook(reflect.PointerTo(reflect.TypeFor[time.Time]()), reflect.TypeFor[time.Time](), &testTime)
 
 			require.NoError(t, err)
 
@@ -283,7 +282,7 @@ func TestEpochToTimeHook(t *testing.T) {
 		})
 
 		t.Run("time.Time to *time.Time", func(t *testing.T) {
-			output, err := EpochToTimeHook(reflect.TypeOf(testTime), reflect.PointerTo(reflect.TypeOf(testTime)), testTime)
+			output, err := EpochToTimeHook(reflect.TypeFor[time.Time](), reflect.PointerTo(reflect.TypeFor[time.Time]()), testTime)
 
 			require.NoError(t, err)
 
@@ -326,5 +325,126 @@ func TestEpochToTimeHook(t *testing.T) {
 		}
 
 		require.Equal(t, expected, output)
+	})
+}
+
+func TestValueForPath(t *testing.T) {
+	t.Parallel()
+
+	type nestableStruct struct {
+		X *big.Int
+		Y string
+		Z map[string]any
+	}
+
+	type baseStruct struct {
+		A *int
+		B nestableStruct
+		C []bool
+	}
+
+	t.Run("can extract nested field value", func(t *testing.T) {
+		t.Parallel()
+
+		expected := "test"
+		str := baseStruct{B: nestableStruct{Y: expected}}
+		value, err := ValueForPath(reflect.ValueOf(str), "B.Y")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+
+		value, err = ValueForPath(reflect.ValueOf(&str), "B.Y")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("can extract nested field value with pointer", func(t *testing.T) {
+		t.Parallel()
+
+		expected := big.NewInt(42)
+		str := baseStruct{B: nestableStruct{X: expected}}
+		value, err := ValueForPath(reflect.ValueOf(str), "B.X")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+
+		value, err = ValueForPath(reflect.ValueOf(&str), "B.X")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("can extract nested field value from map", func(t *testing.T) {
+		t.Parallel()
+
+		expected := "test"
+		str := baseStruct{B: nestableStruct{Z: map[string]any{"Field": expected}}}
+		value, err := ValueForPath(reflect.ValueOf(str), "B.Z.Field")
+
+		require.NoError(t, err)
+		assert.Equal(t, expected, value)
+	})
+
+	t.Run("returns error for arrays", func(t *testing.T) {
+		t.Parallel()
+
+		str := baseStruct{C: []bool{true, false}}
+		_, err := ValueForPath(reflect.ValueOf(str), "C.[0]")
+
+		require.ErrorIs(t, err, types.ErrInvalidType)
+	})
+
+	t.Run("returns error for field not found", func(t *testing.T) {
+		t.Parallel()
+
+		expected := "test"
+		str := baseStruct{B: nestableStruct{Y: expected}}
+		_, err := ValueForPath(reflect.ValueOf(str), "B.D")
+
+		require.ErrorIs(t, err, types.ErrInvalidType)
+	})
+}
+
+func TestSetValueAtPath(t *testing.T) {
+	t.Parallel()
+
+	t.Run("works for basic structs", func(t *testing.T) {
+		t.Parallel()
+
+		type basicStruct struct {
+			A *int
+			B string
+		}
+
+		into := reflect.New(reflect.TypeFor[*basicStruct]())
+
+		require.NoError(t, SetValueAtPath(into, reflect.ValueOf(int(42)), "A"))
+
+		output := into.Elem().Interface()
+
+		assert.Equal(t, int(42), *output.(*basicStruct).A)
+	})
+
+	t.Run("works for structs with nested structs", func(t *testing.T) {
+		t.Parallel()
+
+		type nested struct {
+			X *int
+			Y *big.Int
+		}
+
+		type nestableStruct struct {
+			A nested
+			B string
+		}
+
+		into := reflect.New(reflect.TypeFor[nestableStruct]())
+
+		require.NoError(t, SetValueAtPath(into, reflect.ValueOf(big.NewInt(42)), "A.Y"))
+
+		output := into.Interface()
+
+		assert.Equal(t, output.(*nestableStruct).A.Y.String(), big.NewInt(42).String())
 	})
 }

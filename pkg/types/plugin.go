@@ -15,6 +15,10 @@ const (
 	LLO            OCR2PluginType = "llo"
 	GenericPlugin  OCR2PluginType = "plugin"
 	OCR3Capability OCR2PluginType = "ocr3-capability"
+	VaultPlugin    OCR2PluginType = "vault-plugin"
+	DonTimePlugin  OCR2PluginType = "dontime"
+	RingPlugin     OCR2PluginType = "ring"
+	SecureMint     OCR2PluginType = "securemint"
 
 	CCIPCommit    OCR2PluginType = "ccip-commit"
 	CCIPExecution OCR2PluginType = "ccip-execution"

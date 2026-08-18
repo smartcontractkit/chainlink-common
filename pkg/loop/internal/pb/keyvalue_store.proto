@@ -5,6 +5,7 @@ option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/inter
 package loop;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 message StoreKeyValueRequest {
   string key = 1;
@@ -19,7 +20,16 @@ message GetValueForKeyResponse {
   bytes value = 1;
 }
 
+message PruneExpiredEntriesRequest {
+  google.protobuf.Duration max_age = 1;
+}
+
+message PruneExpiredEntriesResponse {
+  int64 num_pruned = 1;
+}
+
 service KeyValueStore {
   rpc StoreKeyValue(StoreKeyValueRequest) returns (google.protobuf.Empty);
   rpc GetValueForKey(GetValueForKeyRequest) returns (GetValueForKeyResponse);
+  rpc PruneExpiredEntries(PruneExpiredEntriesRequest) returns (PruneExpiredEntriesResponse);
 }

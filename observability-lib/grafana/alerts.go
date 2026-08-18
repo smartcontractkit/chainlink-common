@@ -1,10 +1,18 @@
 package grafana
 
 import (
+	"maps"
+
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/expr"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
+)
+
+type RuleQueryType string
+
+const (
+	RuleQueryTypeInstant RuleQueryType = "instant"
 )
 
 type RuleQuery struct {
@@ -12,7 +20,9 @@ type RuleQuery struct {
 	RefID        string
 	Datasource   string
 	LegendFormat string
+	TimeRange    int64
 	Instant      bool
+	QueryType    RuleQueryType
 }
 
 func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
@@ -20,9 +30,13 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 		query.LegendFormat = "__auto"
 	}
 
+	if query.TimeRange == 0 {
+		query.TimeRange = 600
+	}
+
 	res := alerting.NewQueryBuilder(query.RefID).
 		DatasourceUid(query.Datasource).
-		RelativeTimeRange(600, 0) // TODO
+		RelativeTimeRange(alerting.Duration(query.TimeRange), alerting.Duration(0))
 
 	model := prometheus.NewDataqueryBuilder().
 		Expr(query.Expr).
@@ -31,6 +45,10 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 
 	if query.Instant {
 		model.Instant()
+	}
+
+	if query.QueryType != "" {
+		model.QueryType(string(query.QueryType))
 	}
 
 	return res.Model(model)
@@ -47,8 +65,9 @@ type ConditionQuery struct {
 }
 
 type ReduceExpression struct {
-	Expression string
-	Reducer    expr.TypeReduceReducer
+	Expression     string
+	Reducer        expr.TypeReduceReducer
+	ReduceSettings *expr.ExprTypeReduceSettings
 }
 
 type MathExpression struct {
@@ -57,6 +76,7 @@ type MathExpression struct {
 
 type ResampleExpression struct {
 	Expression  string
+	Window      string
 	DownSampler expr.TypeResampleDownsampler
 	UpSampler   expr.TypeResampleUpsampler
 }
@@ -66,18 +86,9 @@ type ThresholdExpression struct {
 	ThresholdConditionsOptions ThresholdConditionsOption
 }
 
-type TypeThresholdType string
-
-const (
-	TypeThresholdTypeGt           TypeThresholdType = "gt"
-	TypeThresholdTypeLt           TypeThresholdType = "lt"
-	TypeThresholdTypeWithinRange  TypeThresholdType = "within_range"
-	TypeThresholdTypeOutsideRange TypeThresholdType = "outside_range"
-)
-
 type ThresholdConditionsOption struct {
 	Params []float64
-	Type   TypeThresholdType
+	Type   expr.ExprTypeThresholdConditionsEvaluatorType
 }
 
 func newThresholdConditionsOptions(options ThresholdConditionsOption) []cog.Builder[expr.ExprTypeThresholdConditions] {
@@ -94,20 +105,32 @@ func newThresholdConditionsOptions(options ThresholdConditionsOption) []cog.Buil
 		Evaluator(
 			expr.NewExprTypeThresholdConditionsEvaluatorBuilder().
 				Params(params).
-				Type(expr.TypeThresholdType(options.Type)),
+				Type(options.Type),
 		),
 	)
 
 	return conditions
 }
 
+func newReduceSettingsOptions(options expr.ExprTypeReduceSettings) cog.Builder[expr.ExprTypeReduceSettings] {
+	builder := expr.NewExprTypeReduceSettingsBuilder().
+		Mode(options.Mode)
+
+	if options.Mode == expr.ExprTypeReduceSettingsModeReplaceNN && options.ReplaceWithValue != nil {
+		builder.ReplaceWithValue(*options.ReplaceWithValue)
+	}
+
+	return builder
+}
+
 func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 	if options.IntervalMs == nil {
-		options.IntervalMs = Pointer[float64](1000)
+		// Recommended value for intervalMs is 30s
+		options.IntervalMs = new(float64(30 * 1000))
 	}
 
 	if options.MaxDataPoints == nil {
-		options.MaxDataPoints = Pointer[int64](43200)
+		options.MaxDataPoints = new(int64(43200))
 	}
 
 	res := alerting.NewQueryBuilder(options.RefID).
@@ -115,43 +138,57 @@ func newConditionQuery(options ConditionQuery) *alerting.QueryBuilder {
 		DatasourceUid("__expr__")
 
 	if options.ReduceExpression != nil {
-		res.Model(expr.NewTypeReduceBuilder().
+		reduceBuilder := expr.NewTypeReduceBuilder().
 			RefId(options.RefID).
 			Expression(options.ReduceExpression.Expression).
 			IntervalMs(*options.IntervalMs).
 			MaxDataPoints(*options.MaxDataPoints).
-			Reducer(options.ReduceExpression.Reducer),
-		)
+			Reducer(options.ReduceExpression.Reducer)
+
+		if options.ReduceExpression.ReduceSettings != nil && options.ReduceExpression.ReduceSettings.Mode != "" {
+			reduceBuilder.Settings(newReduceSettingsOptions(*options.ReduceExpression.ReduceSettings))
+		}
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeReduce(reduceBuilder))
 	}
 
 	if options.MathExpression != nil {
-		res.Model(expr.NewTypeMathBuilder().
-			RefId(options.RefID).
-			Expression(options.MathExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeMath(expr.NewTypeMathBuilder().
+				RefId(options.RefID).
+				Expression(options.MathExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints),
+			))
 	}
 
 	if options.ResampleExpression != nil {
-		res.Model(expr.NewTypeResampleBuilder().
-			RefId(options.RefID).
-			Expression(options.ResampleExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints).
-			Downsampler(options.ResampleExpression.DownSampler).
-			Upsampler(options.ResampleExpression.UpSampler),
-		)
+		window := options.ResampleExpression.Window
+		if window == "" {
+			// Window is required (>= 1 char) by the SDK; default to the relative time range.
+			window = "10m"
+		}
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeResample(expr.NewTypeResampleBuilder().
+				RefId(options.RefID).
+				Expression(options.ResampleExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints).
+				Window(window).
+				Downsampler(options.ResampleExpression.DownSampler).
+				Upsampler(options.ResampleExpression.UpSampler),
+			))
 	}
 
 	if options.ThresholdExpression != nil {
-		res.Model(expr.NewTypeThresholdBuilder().
-			RefId(options.RefID).
-			Expression(options.ThresholdExpression.Expression).
-			IntervalMs(*options.IntervalMs).
-			MaxDataPoints(*options.MaxDataPoints).
-			Conditions(newThresholdConditionsOptions(options.ThresholdExpression.ThresholdConditionsOptions)),
-		)
+		res.Model(expr.NewTypeMathOrTypeReduceOrTypeResampleOrTypeClassicConditionsOrTypeThresholdOrTypeSqlBuilder().
+			TypeThreshold(expr.NewTypeThresholdBuilder().
+				RefId(options.RefID).
+				Expression(options.ThresholdExpression.Expression).
+				IntervalMs(*options.IntervalMs).
+				MaxDataPoints(*options.MaxDataPoints).
+				Conditions(newThresholdConditionsOptions(options.ThresholdExpression.ThresholdConditionsOptions)),
+			))
 	}
 
 	return res
@@ -165,6 +202,7 @@ type AlertOptions struct {
 	For               string
 	NoDataState       alerting.RuleNoDataState
 	RuleExecErrState  alerting.RuleExecErrState
+	Annotations       map[string]string
 	Tags              map[string]string
 	Query             []RuleQuery
 	QueryRefCondition string
@@ -195,6 +233,7 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 		"description": options.Description,
 		"runbook_url": options.RunbookURL,
 	}
+	maps.Copy(annotations, options.Annotations)
 
 	if options.PanelTitle != "" {
 		annotations["panel_title"] = options.PanelTitle
@@ -210,6 +249,8 @@ func NewAlertRule(options *AlertOptions) *alerting.RuleBuilder {
 
 	if options.RuleGroupTitle != "" {
 		rule.RuleGroup(options.RuleGroupTitle)
+	} else {
+		rule.RuleGroup("Default")
 	}
 
 	for _, query := range options.Query {

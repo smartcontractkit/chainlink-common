@@ -15,7 +15,7 @@ type validationService struct {
 	services.StateMachine
 }
 
-func (v *validationService) ValidateConfig(ctx context.Context, config map[string]interface{}) error {
+func (v *validationService) ValidateConfig(ctx context.Context, config map[string]any) error {
 	return nil
 }
 

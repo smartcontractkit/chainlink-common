@@ -3,17 +3,20 @@ package ocr3
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/jonboulle/clockwork"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/metering"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const (
@@ -33,17 +36,18 @@ var info = capabilities.MustNewCapabilityInfo(
 )
 
 type capability struct {
-	services.StateMachine
+	services.Service
+	eng *services.Engine
+
 	capabilities.CapabilityInfo
-	capabilities.Validator[config, inputs, requests.Response]
+	capabilities.Validator[config, inputs, ReportResponse]
 
-	reqHandler *requests.Handler
-	stopCh     services.StopChan
-	wg         sync.WaitGroup
-	lggr       logger.Logger
+	reqHandler *requests.Handler[*ReportRequest, ReportResponse]
 
-	requestTimeout time.Duration
-	clock          clockwork.Clock
+	requestTimeout     time.Duration
+	requestTimeoutLock sync.RWMutex
+
+	clock clockwork.Clock
 
 	aggregatorFactory types.AggregatorFactory
 	aggregators       map[string]types.Aggregator
@@ -57,19 +61,16 @@ type capability struct {
 	mu                     sync.RWMutex
 }
 
-var _ capabilityIface = (*capability)(nil)
-var _ capabilities.ConsensusCapability = (*capability)(nil)
+var _ CapabilityIface = (*capability)(nil)
+var _ capabilities.ExecutableCapability = (*capability)(nil)
 
-func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
+func NewCapability(s *requests.Store[*ReportRequest], clock clockwork.Clock, requestTimeout time.Duration, aggregatorFactory types.AggregatorFactory, encoderFactory types.EncoderFactory, lggr logger.Logger,
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
-		Validator:         capabilities.NewValidator[config, inputs, requests.Response](capabilities.ValidatorArgs{Info: info}),
-		reqHandler:        requests.NewHandler(lggr, s, clock, requestTimeout),
+		Validator:         capabilities.NewValidator[config, inputs, ReportResponse](capabilities.ValidatorArgs{Info: info}),
 		clock:             clock,
 		requestTimeout:    requestTimeout,
-		stopCh:            make(chan struct{}),
-		lggr:              logger.Named(lggr, "OCR3CapabilityClient"),
 		aggregatorFactory: aggregatorFactory,
 		aggregators:       map[string]types.Aggregator{},
 		encoderFactory:    encoderFactory,
@@ -78,37 +79,14 @@ func newCapability(s *requests.Store, clock clockwork.Clock, requestTimeout time
 		callbackChannelBufferSize: callbackChannelBufferSize,
 		registeredWorkflowsIDs:    map[string]bool{},
 	}
+	o.Service, o.eng = services.Config{
+		Name: "OCR3CapabilityClient",
+		NewSubServices: func(l logger.Logger) []services.Service {
+			o.reqHandler = requests.NewHandler(lggr, s, clock, requestTimeout)
+			return []services.Service{o.reqHandler}
+		},
+	}.NewServiceEngine(lggr)
 	return o
-}
-
-func (o *capability) Start(ctx context.Context) error {
-	return o.StartOnce("OCR3Capability", func() error {
-		err := o.reqHandler.Start(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to start request handler: %w", err)
-		}
-
-		return nil
-	})
-}
-
-func (o *capability) Close() error {
-	return o.StopOnce("OCR3Capability", func() error {
-		close(o.stopCh)
-		o.wg.Wait()
-		err := o.reqHandler.Close()
-		if err != nil {
-			return fmt.Errorf("failed to close request handler: %w", err)
-		}
-
-		return nil
-	})
-}
-
-func (o *capability) Name() string { return o.lggr.Name() }
-
-func (o *capability) HealthReport() map[string]error {
-	return map[string]error{o.Name(): o.Healthy()}
 }
 
 func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilities.RegisterToWorkflowRequest) error {
@@ -119,13 +97,13 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.lggr)
+	agg, err := o.aggregatorFactory(c.AggregationMethod, *c.AggregationConfig, o.eng)
 	if err != nil {
 		return err
 	}
 	o.aggregators[request.Metadata.WorkflowID] = agg
 
-	encoder, err := o.encoderFactory(c.Encoder, c.EncoderConfig, o.lggr)
+	encoder, err := o.encoderFactory(c.Encoder, c.EncoderConfig, o.eng)
 	if err != nil {
 		return err
 	}
@@ -134,7 +112,7 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 	return nil
 }
 
-func (o *capability) getAggregator(workflowID string) (types.Aggregator, error) {
+func (o *capability) GetAggregator(workflowID string) (types.Aggregator, error) {
 	agg, ok := o.aggregators[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no aggregator found for workflowID %s", workflowID)
@@ -143,7 +121,7 @@ func (o *capability) getAggregator(workflowID string) (types.Aggregator, error) 
 	return agg, nil
 }
 
-func (o *capability) getEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
+func (o *capability) GetEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
 	enc, ok := o.encoders[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no encoder found for workflowID %s", workflowID)
@@ -152,11 +130,11 @@ func (o *capability) getEncoderByWorkflowID(workflowID string) (types.Encoder, e
 	return enc, nil
 }
 
-func (o *capability) getEncoderByName(encoderName string, config *values.Map) (types.Encoder, error) {
-	return o.encoderFactory(encoderName, config, o.lggr)
+func (o *capability) GetEncoderByName(encoderName string, config *values.Map) (types.Encoder, error) {
+	return o.encoderFactory(encoderName, config, o.eng)
 }
 
-func (o *capability) getRegisteredWorkflowsIDs() []string {
+func (o *capability) GetRegisteredWorkflowsIDs() []string {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
@@ -167,7 +145,7 @@ func (o *capability) getRegisteredWorkflowsIDs() []string {
 	return workflows
 }
 
-func (o *capability) unregisterWorkflowID(workflowID string) {
+func (o *capability) UnregisterWorkflowID(workflowID string) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	delete(o.registeredWorkflowsIDs, workflowID)
@@ -180,6 +158,12 @@ func (o *capability) UnregisterFromWorkflow(ctx context.Context, request capabil
 	delete(o.aggregators, request.Metadata.WorkflowID)
 	delete(o.encoders, request.Metadata.WorkflowID)
 	return nil
+}
+
+func (o *capability) setRequestTimeout(timeout time.Duration) {
+	o.requestTimeoutLock.Lock()
+	defer o.requestTimeoutLock.Unlock()
+	o.requestTimeout = timeout
 }
 
 // Execute enqueues a new consensus request, passing it to the reporting plugin as needed.
@@ -197,7 +181,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 	}
 	err := r.Inputs.UnwrapTo(&m)
 	if err != nil {
-		o.lggr.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
+		o.eng.Warnf("could not unwrap method from CapabilityRequest, using default: %v", err)
 	}
 
 	switch m.Method {
@@ -206,13 +190,13 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return capabilities.CapabilityResponse{}, fmt.Errorf("failed to create map for response inputs: %w", err)
 		}
-		o.lggr.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
+		o.eng.Debugw("Execute - sending response", "workflowExecutionID", r.Metadata.WorkflowExecutionID, "inputs", inputs, "terminate", m.Terminate)
 		var responseErr error
 		if m.Terminate {
-			o.lggr.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
+			o.eng.Debugw("Execute - terminating execution", "workflowExecutionID", r.Metadata.WorkflowExecutionID)
 			responseErr = capabilities.ErrStopExecution
 		}
-		out := requests.Response{
+		out := ReportResponse{
 			WorkflowExecutionID: r.Metadata.WorkflowExecutionID,
 			Value:               inputs,
 			Err:                 responseErr,
@@ -231,6 +215,7 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 		if err != nil {
 			return capabilities.CapabilityResponse{}, err
 		}
+		inputLenBytes := byteSizeOfMap(r.Inputs)
 
 		config, err := o.ValidateConfig(r.Config)
 		if err != nil {
@@ -242,10 +227,20 @@ func (o *capability) Execute(ctx context.Context, r capabilities.CapabilityReque
 			return capabilities.CapabilityResponse{}, err
 		}
 
-		response := <-ch
-		return capabilities.CapabilityResponse{
-			Value: response.Value,
-		}, response.Err
+		select {
+		case <-ctx.Done():
+			return capabilities.CapabilityResponse{}, ctx.Err()
+		case response := <-ch:
+			outputLenBytes := byteSizeOfMap(response.Value)
+			return capabilities.CapabilityResponse{
+				Value: response.Value,
+				Metadata: capabilities.ResponseMetadata{
+					Metering: []capabilities.MeteringNodeDetail{
+						{SpendUnit: metering.PayloadUnit.Name, SpendValue: strconv.Itoa(inputLenBytes + outputLenBytes)},
+					},
+				},
+			}, response.Err
+		}
 	}
 
 	return capabilities.CapabilityResponse{}, fmt.Errorf("unknown method: %s", m.Method)
@@ -260,18 +255,20 @@ func (o *capability) queueRequestForProcessing(
 	metadata capabilities.RequestMetadata,
 	i *inputs,
 	c *config,
-) (<-chan requests.Response, error) {
-	callbackCh := make(chan requests.Response, o.callbackChannelBufferSize)
+) (<-chan ReportResponse, error) {
+	callbackCh := make(chan ReportResponse, o.callbackChannelBufferSize)
 
 	// Use the capability-level request timeout unless the request's config specifies
 	// its own timeout, in which case we'll use that instead. This allows the workflow spec
 	// to configure more granular timeouts depending on the circumstances.
+	o.requestTimeoutLock.RLock()
 	requestTimeout := o.requestTimeout
 	if c.RequestTimeoutMS != 0 {
 		requestTimeout = time.Duration(c.RequestTimeoutMS) * time.Millisecond
 	}
+	o.requestTimeoutLock.RUnlock()
 
-	r := &requests.Request{
+	r := &ReportRequest{
 		StopCh:                   make(chan struct{}),
 		CallbackCh:               callbackCh,
 		WorkflowExecutionID:      metadata.WorkflowExecutionID,
@@ -288,8 +285,19 @@ func (o *capability) queueRequestForProcessing(
 		ExpiresAt:                o.clock.Now().Add(requestTimeout),
 	}
 
-	o.lggr.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
+	o.eng.Debugw("Execute - adding to store", "workflowID", r.WorkflowID, "workflowExecutionID", r.WorkflowExecutionID, "observations", r.Observations)
 
 	o.reqHandler.SendRequest(ctx, r)
 	return callbackCh, nil
+}
+
+// byteSizeOfMap is a utility to get the wire-size
+// of a values.Map.
+func byteSizeOfMap(m *values.Map) int {
+	if m == nil {
+		return 0
+	}
+	pbVal := values.Proto(m)
+	size := proto.Size(pbVal)
+	return size
 }

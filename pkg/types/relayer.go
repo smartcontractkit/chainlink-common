@@ -7,6 +7,16 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/aptos"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/solana"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/ton"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
 )
 
 type RelayID struct {
@@ -71,6 +81,14 @@ type ChainStatus struct {
 	Config  string // TOML
 }
 
+type ChainInfo struct {
+	FamilyName  string
+	ChainID     string
+	NetworkName string
+	// NetworkNameFull has network testnet, mainnet or devnet identifier attached.
+	NetworkNameFull string
+}
+
 type NodeStatus struct {
 	ChainID string
 	Name    string
@@ -84,6 +102,11 @@ type ChainService interface {
 
 	// LatestHead returns the latest head for the underlying chain.
 	LatestHead(ctx context.Context) (Head, error)
+	// FinalizedHead returns the latest finalized head for the underlying chain.
+	// Chains that do not support finality semantics may return codes.Unimplemented.
+	FinalizedHead(ctx context.Context) (Head, error)
+	// GetChainInfo returns the ChainInfo for this Relayer.
+	GetChainInfo(ctx context.Context) (ChainInfo, error)
 	// GetChainStatus returns the ChainStatus for this Relayer.
 	GetChainStatus(ctx context.Context) (ChainStatus, error)
 	// ListNodeStatuses returns the status of RPC nodes.
@@ -91,18 +114,200 @@ type ChainService interface {
 	// Transact submits a transaction to transfer tokens.
 	// If balanceCheck is true, the balance will be checked before submitting.
 	Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error
+	// Replay is an emergency recovery tool to re-process blocks starting at the provided fromBlock
+	Replay(ctx context.Context, fromBlock string, args map[string]any) error
+}
+
+// GethClient is the subset of go-ethereum client methods implemented by EVMService.
+type GethClient interface {
+	// BalanceAt returns the wei balance of the given account.
+	//
+	// Parameters:
+	// request.BlockNumber - specifies at which block height to fetch the balance:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified blockNumber is not finalized
+	//   - "Safe": returns error if specified blockNumber is not safe
+	BalanceAt(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error)
+
+	// CallContract executes a message call transaction, which is directly executed in the VM of the node,
+	// but never mined into the blockchain.
+	//
+	// request.BlockNumber - defines block at which call will be executed:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if call is executed at block that is not safe
+	//   - "Safe": returns error if call is executed at block that is not safe
+	CallContract(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error)
+
+	// FilterLogs executes a filter query.
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable if both q.FromBlock and q.ToBlock are positive values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if specified q.ToBlockNumber is not finalized
+	//   - "Safe": returns error if specified q.ToBlockNumber is not safe
+	FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error)
+
+	// HeaderByNumber returns a block header from the current canonical chain with the specified block number.
+	//
+	// Parameters:
+	// request.BlockNumber - specifies which block to fetch:
+	//   - nil or -2: latest block
+	//   - -3: finalized block
+	//   - -4: safe block
+	//   - positive value: specific block at that height
+	//
+	// request.ConfidenceLevel - determines if additional verification is required (only applicable for positive blockNumber values):
+	//   - "Unconfirmed" or empty string: no additional verification
+	//   - "Finalized": returns error if requested is not finalized
+	//   - "Safe": returns error if requested block is not safe
+	HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error)
+	EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error)
+	GetTransactionByHash(ctx context.Context, request evm.GetTransactionByHashRequest) (*evm.Transaction, error)
+	GetTransactionReceipt(ctx context.Context, request evm.GeTransactionReceiptRequest) (*evm.Receipt, error)
+}
+
+type EVMService interface {
+	GethClient
+	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
+	// based on the provided filter parameters. Once registered, matching logs will be collected
+	// over time and stored in a cache for future querying.
+	// noop guaranteed when filter.Name exists
+	RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error
+
+	// UnregisterLogTracking removes a previously registered log filter by its name.
+	// After removal, logs matching this filter will no longer be collected or cached.
+	// noop guaranteed when filterName doesn't exist
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+
+	// QueryTrackedLogs retrieves logs from the  log storage based on the provided
+	// query expression, sorting, and confidence level. It only returns logs that were
+	// collected through previously registered log filters.
+	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
+		limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error)
+
+	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
+	GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error)
+
+	// LPSkipToBlock skips log poller to the given block number
+	LPSkipToBlock(ctx context.Context, blockNumber int64) error
+
+	// GetFiltersNames returns all registered filters' names for later pruning
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	GetFiltersNames(ctx context.Context) ([]string, error)
+
+	// GetTransactionFee retrieves the fee of a transaction in wei from the underlying chain
+	GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error)
+
+	// Submits a transaction to the EVM chain. It will return once the transaction is included in a block or an error occurs.
+	SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error)
+
+	// Utility function to calculate the total fee based on a tx receipt
+	CalculateTransactionFee(ctx context.Context, receiptGasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error)
+
+	// GetTransactionStatus returns the current status of a transaction in the underlying chain's TXM.
+	GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error)
+
+	// GetForwarderForEOA returns a proper forwarder for a given EOA. If ocr2AggregatorID is non-empty the forwarder is searched within the ocr2AggregatorID contract scope.
+	GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error)
+}
+
+type TONService interface {
+	ton.LiteClient
+
+	// TXM
+	SendTx(ctx context.Context, msg ton.Message) error
+	GetTxStatus(ctx context.Context, lt uint64) (TransactionStatus, ton.ExitCode, error)
+	GetTxExecutionFees(ctx context.Context, lt uint64) (*ton.TransactionFee, error)
+
+	// LogPoller
+	HasFilter(ctx context.Context, name string) bool
+	RegisterFilter(ctx context.Context, filter ton.LPFilterQuery) error
+	UnregisterFilter(ctx context.Context, name string) error
+}
+
+type SolanaService interface {
+	solana.Client
+
+	// Submits a transaction to the chain. It will return once the transaction is finalized or an error occurs.
+	SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error)
+
+	// RegisterLogTracking registers a persistent log filter for tracking and caching logs
+	// based on the provided filter parameters. Once registered, matching logs will be collected
+	// over time and stored in a cache for future querying.
+	// noop guaranteed when filter.Name exists
+	RegisterLogTracking(ctx context.Context, req solana.LPFilterQuery) error
+
+	// UnregisterLogTracking removes a previously registered log filter by its name.
+	// After removal, logs matching this filter will no longer be collected or cached.
+	// noop guaranteed when filterName doesn't exist
+	UnregisterLogTracking(ctx context.Context, filterName string) error
+
+	// QueryTrackedLogs retrieves logs from the  log storage based on the provided
+	// query expression, sorting, and confidence level. It only returns logs that were
+	// collected through previously registered log filters.
+	QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
+		limitAndSort query.LimitAndSort) ([]*solana.Log, error)
+
+	// GetLatestLPBlock retrieves current LatestBlock from cache perspective
+	GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error)
+
+	// GetFiltersNames returns all registered filters' names for later pruning
+	GetFiltersNames(ctx context.Context) ([]string, error)
+}
+
+type AptosService interface {
+	aptos.Client
+	// SubmitTransaction submits a transaction to the chain. It will return once the transaction is finalized or an error occurs.
+	SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error)
+}
+
+// StellarService exposes the Stellar RPC operations needed by CRE:
+// fetch ledger entries, get the latest ledger, and submit transactions.
+type StellarService interface {
+	stellar.Client
+
+	// GetSigningAccount returns the default TXM signing account from the relayer keystore.
+	// Used when contract call arguments must include the signing address explicitly
+	// (e.g. Soroban require_auth on an Address parameter); distinct from FromAddress
+	// on SubmitTransactionRequest, which controls transaction-level signing only.
+	GetSigningAccount(ctx context.Context) (stellar.GetSigningAccountResponse, error)
+
+	// SubmitTransaction invokes a Soroban contract via the chain's TXM pipeline.
+	SubmitTransaction(ctx context.Context, req stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error)
 }
 
 // Relayer extends ChainService with providers for each product.
 type Relayer interface {
 	ChainService
 
+	// EVM returns EVMService that provides access to evm-family specific functionalities
+	EVM() (EVMService, error)
+	// TON returns TONService that provides access to TON specific functionalities
+	TON() (TONService, error)
+	// Solana returns SolanaService that provides access to Solana specific functionalities
+	Solana() (SolanaService, error)
+	// Aptos returns AptosService that provides access to Aptos specific functionalities
+	Aptos() (AptosService, error)
+	// Stellar returns StellarService that provides access to Stellar specific functionalities
+	Stellar() (StellarService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error)
 
 	// NewContractReader returns a new ContractReader.
 	// The format of contractReaderConfig depends on the implementation.
+	// See evm.ContractReaderConfig
 	NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error)
 
 	NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error)
@@ -118,4 +323,350 @@ type Relayer interface {
 	NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error)
 
 	NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error)
+
+	NewCCIPProvider(ctx context.Context, cargs CCIPProviderArgs) (CCIPProvider, error)
+}
+
+var _ Relayer = &UnimplementedRelayer{}
+
+// UnimplementedChainService provides default stub implementations for ChainService methods.
+// Embed this in chain-level structs that implement ChainService so that new methods added to the interface
+// don't immediately break downstream packages on dependency bumps.
+// Explicit method implementations on the embedding struct take precedence over these stubs.
+type UnimplementedChainService struct{}
+
+func (u *UnimplementedChainService) LatestHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedChainService) FinalizedHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method FinalizedHead not implemented")
+}
+
+func (u *UnimplementedChainService) GetChainInfo(ctx context.Context) (ChainInfo, error) {
+	return ChainInfo{}, status.Errorf(codes.Unimplemented, "method GetChainInfo not implemented")
+}
+
+func (u *UnimplementedChainService) GetChainStatus(ctx context.Context) (ChainStatus, error) {
+	return ChainStatus{}, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
+}
+
+func (u *UnimplementedChainService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error) {
+	return []NodeStatus{}, "", -1, status.Errorf(codes.Unimplemented, "method ListNodeStatuses not implemented")
+}
+
+func (u *UnimplementedChainService) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
+	return status.Errorf(codes.Unimplemented, "method Transact not implemented")
+}
+
+func (u *UnimplementedChainService) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	return status.Errorf(codes.Unimplemented, "method Replay not implemented")
+}
+
+// UnimplementedRelayer implements the Relayer interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real Relayer implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement Relayer (through use of an unexported method).
+type UnimplementedRelayer struct{}
+
+func (u *UnimplementedRelayer) Name() string {
+	panic("method Name not implemented")
+}
+
+func (u *UnimplementedRelayer) Start(ctx context.Context) error {
+	return status.Errorf(codes.Unimplemented, "method Start not implemented")
+}
+
+func (u *UnimplementedRelayer) Close() error {
+	return status.Errorf(codes.Unimplemented, "method Close not implemented")
+}
+
+func (u *UnimplementedRelayer) Ready() error {
+	return status.Errorf(codes.Unimplemented, "method Ready not implemented")
+}
+
+func (u *UnimplementedRelayer) HealthReport() map[string]error {
+	panic("method HealthReport not implemented")
+}
+
+func (u *UnimplementedRelayer) LatestHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method LatestHead not implemented")
+}
+
+func (u *UnimplementedRelayer) FinalizedHead(ctx context.Context) (Head, error) {
+	return Head{}, status.Errorf(codes.Unimplemented, "method FinalizedHead not implemented")
+}
+
+func (u *UnimplementedRelayer) GetChainInfo(ctx context.Context) (ChainInfo, error) {
+	return ChainInfo{}, status.Errorf(codes.Unimplemented, "method GetChainInfo not implemented")
+}
+
+func (u *UnimplementedRelayer) GetChainStatus(ctx context.Context) (ChainStatus, error) {
+	return ChainStatus{}, status.Errorf(codes.Unimplemented, "method GetChainStatus not implemented")
+}
+
+func (u *UnimplementedRelayer) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (stats []NodeStatus, nextPageToken string, total int, err error) {
+	return []NodeStatus{}, "", -1, status.Errorf(codes.Unimplemented, "method ListNodeStatuses not implemented")
+}
+
+func (u *UnimplementedRelayer) Transact(ctx context.Context, from, to string, amount *big.Int, balanceCheck bool) error {
+	return status.Errorf(codes.Unimplemented, "method Transact not implemented")
+}
+
+func (u *UnimplementedRelayer) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	return status.Errorf(codes.Unimplemented, "method Replay not implemented")
+}
+
+func (u *UnimplementedRelayer) EVM() (EVMService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EVM not implemented")
+}
+
+func (u *UnimplementedRelayer) TON() (TONService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TON not implemented")
+}
+
+func (u *UnimplementedRelayer) Solana() (SolanaService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Solana not implemented")
+}
+
+func (u *UnimplementedRelayer) Aptos() (AptosService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Aptos not implemented")
+}
+
+func (u *UnimplementedRelayer) Stellar() (StellarService, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stellar not implemented")
+}
+
+func (u *UnimplementedRelayer) NewContractWriter(ctx context.Context, config []byte) (ContractWriter, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractWriter not implemented")
+}
+
+func (u *UnimplementedRelayer) NewContractReader(ctx context.Context, contractReaderConfig []byte) (ContractReader, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewContractReader not implemented")
+}
+
+func (u *UnimplementedRelayer) NewConfigProvider(ctx context.Context, rargs RelayArgs) (ConfigProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewConfigProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMedianProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewFunctionsProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewAutomationProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewLLOProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (LLOProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewLLOProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPCommitProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPCommitProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPExecProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPExecProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPExecProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewPluginProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (PluginProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewPluginProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewOCR3CapabilityProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (OCR3CapabilityProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewOCR3CapabilityProvider not implemented")
+}
+
+func (u *UnimplementedRelayer) NewCCIPProvider(ctx context.Context, cargs CCIPProviderArgs) (CCIPProvider, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NewCCIPProvider not implemented")
+}
+
+var _ EVMService = &UnimplementedEVMService{}
+
+// UnimplementedEVMService implements the EVMService interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real EVMService implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement EVMService (through use of an unexported method).
+type UnimplementedEVMService struct{}
+
+func (ues *UnimplementedEVMService) BalanceAt(ctx context.Context, request evm.BalanceAtRequest) (*evm.BalanceAtReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BalanceAt not implemented")
+}
+
+func (ues *UnimplementedEVMService) CallContract(ctx context.Context, request evm.CallContractRequest) (*evm.CallContractReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CallContract not implemented")
+}
+
+func (ues *UnimplementedEVMService) FilterLogs(ctx context.Context, request evm.FilterLogsRequest) (*evm.FilterLogsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method  not implemented")
+}
+
+func (ues *UnimplementedEVMService) HeaderByNumber(ctx context.Context, request evm.HeaderByNumberRequest) (*evm.HeaderByNumberReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HeaderByNumber not implemented")
+}
+
+func (ues *UnimplementedEVMService) EstimateGas(ctx context.Context, call *evm.CallMsg) (uint64, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method EstimateGas not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionByHash(ctx context.Context, request evm.GetTransactionByHashRequest) (*evm.Transaction, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionByHash not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionReceipt(ctx context.Context, request evm.GeTransactionReceiptRequest) (*evm.Receipt, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionReceipt not implemented")
+}
+
+func (ues *UnimplementedEVMService) RegisterLogTracking(ctx context.Context, filter evm.LPFilterQuery) error {
+	return status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
+}
+
+func (ues *UnimplementedEVMService) UnregisterLogTracking(ctx context.Context, filterName string) error {
+	return status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+
+func (ues *UnimplementedEVMService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression,
+	limitAndSort query.LimitAndSort, confidenceLevel primitives.ConfidenceLevel) ([]*evm.Log, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetLatestLPBlock(ctx context.Context) (*evm.LPBlock, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
+}
+
+func (ues *UnimplementedEVMService) LPSkipToBlock(ctx context.Context, blockNumber int64) error {
+	return status.Errorf(codes.Unimplemented, "method LPSkipToBlock not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionFee(ctx context.Context, transactionID IdempotencyKey) (*evm.TransactionFee, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionFee not implemented")
+}
+
+func (ues *UnimplementedEVMService) SubmitTransaction(ctx context.Context, txRequest evm.SubmitTransactionRequest) (*evm.TransactionResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+func (ues *UnimplementedEVMService) CalculateTransactionFee(ctx context.Context, receiptGasInfo evm.ReceiptGasInfo) (*evm.TransactionFee, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CalculateTransactionFee not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetTransactionStatus(ctx context.Context, transactionID IdempotencyKey) (TransactionStatus, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method GetTransactionStatus not implemented")
+}
+
+func (ues *UnimplementedEVMService) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorID evm.Address, pluginType string) (forwarder evm.Address, err error) {
+	return evm.Address{}, status.Errorf(codes.Unimplemented, "method GetForwarderForEOA not implemented")
+}
+
+var _ SolanaService = &UnimplementedSolanaService{}
+
+// UnimplementedSolanaService implements the SolanaService interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real SolanaService implementations in order to get default behavior for new methods without having
+// to react to each change. Embedding this type is required to implement SolanaService (through solana.Client's mustEmbedUnimplementedClient).
+type UnimplementedSolanaService struct {
+	solana.UnimplementedSolanaClient
+}
+
+func (uss *UnimplementedSolanaService) SubmitTransaction(ctx context.Context, req solana.SubmitTransactionRequest) (*solana.SubmitTransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+func (uss *UnimplementedSolanaService) RegisterLogTracking(ctx context.Context, req solana.LPFilterQuery) error {
+	return status.Errorf(codes.Unimplemented, "method RegisterLogTracking not implemented")
+}
+
+func (uss *UnimplementedSolanaService) UnregisterLogTracking(ctx context.Context, filterName string) error {
+	return status.Errorf(codes.Unimplemented, "method UnregisterLogTracking not implemented")
+}
+func (uss *UnimplementedSolanaService) QueryTrackedLogs(ctx context.Context, filterQuery []query.Expression, limitAndSort query.LimitAndSort) ([]*solana.Log, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryTrackedLogs not implemented")
+}
+func (uss *UnimplementedSolanaService) GetLatestLPBlock(ctx context.Context) (*solana.LPBlock, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestLPBlock not implemented")
+}
+func (uss *UnimplementedSolanaService) GetFiltersNames(ctx context.Context) ([]string, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFiltersNames not implemented")
+}
+
+var _ AptosService = &UnimplementedAptosService{}
+
+// UnimplementedAptosService implements the AptosService interface with stubbed methods that return codes.Unimplemented errors or panic.
+// It is meant to be embedded in real AptosService implementations in order to get default behavior for new methods without having
+// to react to each change.
+// In the future, embedding this type may be required to implement AptosService (through use of an unexported method).
+type UnimplementedAptosService struct{}
+
+func (ua *UnimplementedAptosService) LedgerVersion(ctx context.Context) (uint64, error) {
+	return 0, status.Errorf(codes.Unimplemented, "method LedgerVersion not implemented")
+}
+
+func (ua *UnimplementedAptosService) AccountAPTBalance(ctx context.Context, req aptos.AccountAPTBalanceRequest) (*aptos.AccountAPTBalanceReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountAPTBalance not implemented")
+}
+
+func (ua *UnimplementedAptosService) View(ctx context.Context, req aptos.ViewRequest) (*aptos.ViewReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method View not implemented")
+}
+
+func (ua *UnimplementedAptosService) TransactionByHash(ctx context.Context, req aptos.TransactionByHashRequest) (*aptos.TransactionByHashReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransactionByHash not implemented")
+}
+
+func (ua *UnimplementedAptosService) AccountTransactions(ctx context.Context, req aptos.AccountTransactionsRequest) (*aptos.AccountTransactionsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountTransactions not implemented")
+}
+
+func (ua *UnimplementedAptosService) SubmitTransaction(ctx context.Context, req aptos.SubmitTransactionRequest) (*aptos.SubmitTransactionReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
+}
+
+var _ StellarService = &UnimplementedStellarService{}
+
+// UnimplementedStellarService implements the StellarService interface with stubbed methods that return codes.Unimplemented errors.
+// Embed this in real StellarService implementations so that new methods added to the interface
+// don't immediately break downstream packages on dependency bumps.
+type UnimplementedStellarService struct{}
+
+func (u *UnimplementedStellarService) SimulateTransaction(_ context.Context, _ stellar.SimulateTransactionRequest) (stellar.SimulateTransactionResponse, error) {
+	return stellar.SimulateTransactionResponse{}, status.Errorf(codes.Unimplemented, "method SimulateTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetEvents(_ context.Context, _ stellar.GetEventsRequest) (stellar.GetEventsResponse, error) {
+	return stellar.GetEventsResponse{}, status.Errorf(codes.Unimplemented, "method GetEvents not implemented")
+}
+
+func (u *UnimplementedStellarService) GetTransaction(_ context.Context, _ stellar.GetTransactionRequest) (stellar.GetTransactionResponse, error) {
+	return stellar.GetTransactionResponse{}, status.Errorf(codes.Unimplemented, "method GetTransaction not implemented")
+}
+
+func (u *UnimplementedStellarService) GetSigningAccount(_ context.Context) (stellar.GetSigningAccountResponse, error) {
+	return stellar.GetSigningAccountResponse{}, status.Errorf(codes.Unimplemented, "method GetSigningAccount not implemented")
+}
+
+func (u *UnimplementedStellarService) GetLedgerEntries(_ context.Context, _ stellar.GetLedgerEntriesRequest) (stellar.GetLedgerEntriesResponse, error) {
+	return stellar.GetLedgerEntriesResponse{}, status.Errorf(codes.Unimplemented, "method GetLedgerEntries not implemented")
+}
+
+func (u *UnimplementedStellarService) GetLatestLedger(_ context.Context) (stellar.GetLatestLedgerResponse, error) {
+	return stellar.GetLatestLedgerResponse{}, status.Errorf(codes.Unimplemented, "method GetLatestLedger not implemented")
+}
+
+func (u *UnimplementedStellarService) GetLedgers(_ context.Context, _ stellar.GetLedgersRequest) (stellar.GetLedgersResponse, error) {
+	return stellar.GetLedgersResponse{}, status.Errorf(codes.Unimplemented, "method GetLedgers not implemented")
+}
+
+func (u *UnimplementedStellarService) SubmitTransaction(_ context.Context, _ stellar.SubmitTransactionRequest) (*stellar.SubmitTransactionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitTransaction not implemented")
 }

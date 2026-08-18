@@ -1,6 +1,7 @@
 package goplugin
 
 import (
+	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -12,14 +13,14 @@ type PluginClient struct {
 	*net.BrokerExt
 }
 
-func NewPluginClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *PluginClient {
+// NewPluginClient creates a *PluginClient. Refresh must be called to initialize the net.Broker and *grpc.ClientConn.
+func NewPluginClient(brokerCfg net.BrokerConfig) *PluginClient {
 	var pc PluginClient
 	pc.BrokerExt = &net.BrokerExt{Broker: &pc.AtomicBroker, BrokerConfig: brokerCfg}
-	pc.Refresh(broker, conn)
 	return &pc
 }
 
-func (p *PluginClient) Refresh(broker net.Broker, conn *grpc.ClientConn) {
+func (p *PluginClient) Refresh(broker *plugin.GRPCBroker, conn *grpc.ClientConn) {
 	p.AtomicBroker.Store(broker)
 	p.AtomicClient.Store(conn)
 	p.Logger.Debugw("Refreshed PluginClient connection", "state", conn.GetState())

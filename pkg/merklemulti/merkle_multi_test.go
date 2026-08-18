@@ -2,7 +2,6 @@ package merklemulti
 
 import (
 	"encoding/hex"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ func hashesFromHexStrings(hexStrs []string) [][32]byte {
 	var hashes [][32]byte
 	for _, hexStr := range hexStrs {
 		var hash [32]byte
-		copy(hash[:], mustDecode(fmt.Sprintf("0x%s", hexStr)))
+		copy(hash[:], mustDecode("0x"+hexStr))
 		hashes = append(hashes, hash)
 	}
 	return hashes
@@ -76,7 +75,7 @@ func TestErrorWhenNotAllProofsCanBeUsed(t *testing.T) {
 
 	_, err := VerifyComputeRoot(hasher, leaves, Proof[[32]byte]{Hashes: proofs, SourceFlags: sourceFlags})
 	require.Error(t, err)
-	require.Equal(t, err.Error(), "proof source flags 1 != proof hashes 2")
+	require.Equal(t, "proof source flags 1 != proof hashes 2", err.Error())
 }
 
 func TestSpecFixtureVerifyProof(t *testing.T) {
@@ -87,7 +86,7 @@ func TestSpecFixtureVerifyProof(t *testing.T) {
 			Hashes: proofHashes, SourceFlags: testVector.ProofFlags,
 		})
 		require.NoError(t, err)
-		assert.Equal(t, mustDecode(fmt.Sprintf("0x%s", testVector.ExpectedRoot)), computedRoot[:])
+		assert.Equal(t, mustDecode("0x"+testVector.ExpectedRoot), computedRoot[:])
 	}
 }
 
@@ -105,11 +104,11 @@ func TestSpecFixtureNewTree(t *testing.T) {
 func TestPadding(t *testing.T) {
 	tr4, err := NewTree(hasher, [][32]byte{a, b, c})
 	require.NoError(t, err)
-	assert.Equal(t, 4, len(tr4.layers[0]))
+	assert.Len(t, tr4.layers[0], 4)
 	tr8, err := NewTree(hasher, [][32]byte{a, b, c, d, e})
 	require.NoError(t, err)
-	assert.Equal(t, 6, len(tr8.layers[0]))
-	assert.Equal(t, 4, len(tr8.layers[1]))
+	assert.Len(t, tr8.layers[0], 6)
+	assert.Len(t, tr8.layers[1], 4)
 	p, err := tr8.Prove([]int{0})
 	assert.NoError(t, err)
 	h, err := VerifyComputeRoot(hasher, [][32]byte{a}, p)
@@ -147,7 +146,7 @@ func TestMerkleMultiProof(t *testing.T) {
 		tr, err := NewTree(hasher, leafHashes[:length])
 		require.NoError(t, err)
 		expectedRoot := expectedRoots[length-1]
-		require.Equal(t, tr.Root(), expectedRoot)
+		require.Equal(t, expectedRoot, tr.Root())
 		// Prove every subset of its leaves
 		for k := 1; k <= length; k++ {
 			gen := combin.NewCombinationGenerator(length, k)

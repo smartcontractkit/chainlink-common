@@ -1,0 +1,203 @@
+package resourcemanager
+
+import (
+	"context"
+
+	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
+)
+
+// Meterable is implemented by producers that manage durable billable
+// resources (trigger registrations, workflow specs, log filters). A producer
+// registers itself with a ResourceManager (see ResourceManager.Register) so it
+// is polled once per snapshot tick for the absolute state of its currently
+// active resources, in addition to emitting request-time deltas inline via
+// EmitDelta / EmitUsage.
+type Meterable interface {
+	// GetUtilization returns the current level of the producer's currently
+	// active resources, one SnapshotEntry per resource. The manager emits one
+	// MeterSnapshot per entry.
+	//
+	// It is called on the snapshot tick and MUST be a cheap, non-blocking
+	// read-snapshot of in-memory state: no network, no disk, no lock held
+	// across I/O. It must tolerate ctx cancellation (returning promptly, and
+	// nil/empty is acceptable) and tolerate concurrent registration of new
+	// resources. An empty or nil return is valid and means nothing is currently
+	// active: no snapshots are emitted, and billing zeroes the resource out by
+	// its absence from subsequent snapshots.
+	GetUtilization(ctx context.Context) []SnapshotEntry
+}
+
+// SnapshotEntry is the current level of one active resource at a snapshot tick.
+// Identity is the base resource identity, and Utilizations carries one or more
+// billed dimensions for that resource (resource_type/resource_id/org_id/value);
+// event_id is stamped by the ResourceManager at emit time.
+type SnapshotEntry struct {
+	Identity     ResourceIdentity
+	Utilizations []*meteringpb.Utilization
+}
+
+// DeploymentIdentity carries the static deployment + node identity dimensions
+// that are fixed for a LOOP plugin process. They are resolved once from node
+// config by the host and delivered to every LOOP plugin over the environment
+// (loop.EnvConfig), not the standard-capabilities boundary, so any LOOP plugin
+// can populate the coarse metering rollup dimensions. Any field may be empty if
+// the host did not provide it.
+type DeploymentIdentity struct {
+	// Product is the deployment product, e.g. "cre".
+	Product string
+	// Tenant is the human-readable deployment tenant name, e.g. "mainline" or
+	// "enterprise".
+	Tenant string
+	// NumericTenantID is the numbered tenant identifier as a string.
+	NumericTenantID string
+	// Environment is the deployment environment, e.g. "production", "staging".
+	Environment string
+	// Zone is the deployment zone, e.g. "wf-zone-a".
+	Zone string
+	// NodeID is the node's logical name, e.g. "clp-cre-wf-zone-a-1". It is NOT
+	// the CSA public key; it is a stable name the billing service can use to
+	// look up the node's CSA key in the workflow registry. The CSA key itself is
+	// carried separately as the node_csa_key event attribute.
+	NodeID string
+}
+
+// Config is everything a LOOP producer needs to wire metering from its resolved
+// process environment: the ResourceManagerConfig for NewResourceManager, plus
+// the DeploymentIdentity used to build base ResourceIdentities via
+// NewBaseIdentity. See loop.EnvConfig.MeteringConfig, which builds one of these
+// from a resolved LOOP environment so the mapping lives in one place instead
+// of being copy-pasted into every producer main.
+type Config struct {
+	ResourceManagerConfig
+
+	// DeploymentIdentity carries the static deployment + node identity
+	// dimensions resolved from the LOOP environment.
+	DeploymentIdentity DeploymentIdentity
+}
+
+// DonIdentity captures DON-specific identity dimensions as one unit.
+type DonIdentity struct {
+	// DonID is the DON ID the emitting service belongs to.
+	DonID string
+	// NodeID is the node's logical name within the scope of the DON, e.g.
+	// "clp-cre-wf-zone-a-1". It is a human-readable ID, NOT the CSA
+	// public key. The prefix can be redundant with other fully-qualified
+	// dimensions, but helps readability. The CSA key is emitted separately via
+	// the node_csa_key attribute.
+	NodeID string
+}
+
+// ResourceIdentity is the structured, first-class identity of a durable
+// resource. Its fields map 1:1 to metering.v1.ResourceIdentity so every
+// emitted record carries each dimension as a discrete column rather than a
+// parsed dotted string or out-of-band telemetry attribute.
+type ResourceIdentity struct {
+	// Product is the deployment product, e.g. "cre".
+	Product string
+
+	// Tenant is the human-readable deployment tenant name, e.g. "mainline" or
+	// "enterprise".
+	Tenant string
+
+	// NumericTenantID is the numbered tenant identifier as a string.
+	NumericTenantID string
+
+	// Environment is the deployment environment, e.g. "production",
+	// "staging".
+	Environment string
+
+	// Zone is the deployment zone, e.g. "wf-zone-a".
+	Zone string
+
+	// Don groups DON-specific identity dimensions so consumers can
+	// branch on one struct instead of handling don/node permutations.
+	Don *DonIdentity
+
+	// Service is the stable service constant identifying the emitting service,
+	// e.g. "cron-trigger", "http-trigger", "evm-log-trigger",
+	// "workflow-syncer-v2". It must not
+	// encode deployment environment or zone.
+	Service string
+
+	// ResourcePool is the service-level resource pool the record applies to,
+	// e.g. "trigger_registrations", "log_filters", "workflow_storage".
+	ResourcePool string
+
+	// ResourcePoolID optionally scopes identity further within the resource pool.
+	ResourcePoolID string
+}
+
+// toProto converts r to its wire form. Field order mirrors the proto.
+func (r ResourceIdentity) toProto() *meteringpb.ResourceIdentity {
+	pb := &meteringpb.ResourceIdentity{
+		Product:         r.Product,
+		Tenant:          r.Tenant,
+		NumericTenantId: r.NumericTenantID,
+		Environment:     r.Environment,
+		Zone:            r.Zone,
+		Service:         r.Service,
+		ResourcePool:    r.ResourcePool,
+		ResourcePoolId:  r.ResourcePoolID,
+	}
+	if r.Don != nil {
+		pb.Don = &meteringpb.DonIdentity{
+			DonId:  r.Don.DonID,
+			NodeId: r.Don.NodeID,
+		}
+	}
+	return pb
+}
+
+// DonID returns the DON ID when present.
+func (r ResourceIdentity) DonID() string {
+	if r.Don == nil {
+		return ""
+	}
+	return r.Don.DonID
+}
+
+// NodeID returns the node ID when present.
+func (r ResourceIdentity) NodeID() string {
+	if r.Don == nil {
+		return ""
+	}
+	return r.Don.NodeID
+}
+
+// UnsetProduct is a non-silent default product for misconfigured producers.
+const UnsetProduct = "unset"
+
+// NewBaseIdentity builds a producer's base ResourceIdentity from its static
+// deployment identity plus the service and resource-pool constants. Product
+// falls back to UnsetProduct when empty, and the Don sub-identity is set only
+// when there is a node ID to carry. DON ID is stamped separately via WithDonID
+// once the producer knows it (e.g. after Initialise for LOOP plugins).
+func NewBaseIdentity(dep DeploymentIdentity, service, resourcePool string) ResourceIdentity {
+	product := dep.Product
+	if product == "" {
+		product = UnsetProduct
+	}
+	id := ResourceIdentity{
+		Product:         product,
+		Tenant:          dep.Tenant,
+		NumericTenantID: dep.NumericTenantID,
+		Environment:     dep.Environment,
+		Zone:            dep.Zone,
+		Service:         service,
+		ResourcePool:    resourcePool,
+	}
+	if dep.NodeID != "" {
+		id.Don = &DonIdentity{NodeID: dep.NodeID}
+	}
+	return id
+}
+
+// WithDonID returns a copy of r stamped with donID (empty donID is a no-op),
+// necessary for any resource that is scoped to a DON.
+func (r ResourceIdentity) WithDonID(donID string) ResourceIdentity {
+	if donID == "" {
+		return r
+	}
+	r.Don = &DonIdentity{DonID: donID, NodeID: r.NodeID()}
+	return r
+}

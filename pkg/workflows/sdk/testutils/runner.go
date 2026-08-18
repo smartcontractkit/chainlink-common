@@ -8,20 +8,25 @@ import (
 	"github.com/dominikbraun/graph"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
+	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
-func NewRunner(ctx context.Context) *Runner {
+func NewRunner(ctx context.Context, runtime sdk.Runtime) *Runner {
+	if runtime == nil {
+		runtime = &NoopRuntime{}
+	}
+
 	return &Runner{
 		ctx:          ctx,
 		registry:     map[string]capabilities.ExecutableCapability{},
 		results:      runnerResults{},
 		idToStep:     map[string]sdk.StepDefinition{},
 		dependencies: map[string][]string{},
-		runtime:      &NoopRuntime{},
+		runtime:      runtime,
 	}
 }
 
@@ -75,7 +80,19 @@ func (r *Runner) Err() error {
 }
 
 func (r *Runner) ensureGraph(spec sdk.WorkflowSpec) error {
-	g, err := workflows.BuildDependencyGraph(spec)
+	// BuildDependencyGraph expects non-aliased types as inputs in order to be able to generate the graph correctly.
+	// Serialize and deserialize the workflow to automatically convert the Spec to a supported format.
+	proto, err := wasmpb.WorkflowSpecToProto(&spec)
+	if err != nil {
+		return err
+	}
+
+	newspec, err := wasmpb.ProtoToWorkflowSpec(proto)
+	if err != nil {
+		return err
+	}
+
+	g, err := workflows.BuildDependencyGraph(*newspec)
 	if err != nil {
 		return err
 	}
@@ -136,7 +153,7 @@ func (r *Runner) MockCapability(name string, step *string, capability capabiliti
 	if r.registry[fullName] != nil {
 		forSuffix := ""
 		if step != nil {
-			forSuffix = fmt.Sprintf(" for step %s", *step)
+			forSuffix = " for step " + *step
 		}
 		r.errors = append(r.errors, fmt.Errorf("capability %s already exists in registry%s", name, forSuffix))
 	}
@@ -148,7 +165,7 @@ func (r *Runner) MockTrigger(trigger capabilities.TriggerCapability) {
 	r.trigger = trigger
 }
 
-func (r *Runner) GetRegisteredMock(name string, step string) capabilities.ActionCapability {
+func (r *Runner) GetRegisteredMock(name string, step string) capabilities.ExecutableCapability {
 	fullName := getFullName(name, &step)
 	if c, ok := r.registry[fullName]; ok {
 		return c
@@ -317,7 +334,7 @@ func (r *Runner) unregisterWorkflow(spec sdk.WorkflowSpec) {
 func getFullName(name string, step *string) string {
 	fullName := name
 	if step != nil {
-		fullName += fmt.Sprintf("@@@%s", *step)
+		fullName += "@@@" + *step
 	}
 	return fullName
 }

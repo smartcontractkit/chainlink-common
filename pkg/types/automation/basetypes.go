@@ -3,6 +3,7 @@ package automation
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strings"
@@ -30,9 +31,9 @@ var checkResultStringTemplate = `{
 }`
 
 func init() {
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, " ", "", -1)
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, "\t", "", -1)
-	checkResultStringTemplate = strings.Replace(checkResultStringTemplate, "\n", "", -1)
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, " ", "")
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, "\t", "")
+	checkResultStringTemplate = strings.ReplaceAll(checkResultStringTemplate, "\n", "")
 }
 
 type TransmitEventType int
@@ -178,10 +179,10 @@ func (r CheckResult) UniqueID() string {
 	resultBytes = append(resultBytes, r.PipelineExecutionState)
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
-	resultBytes = append(resultBytes, []byte(fmt.Sprintf("%+v", r.Retryable))...)
+	resultBytes = append(resultBytes, fmt.Appendf(nil, "%+v", r.Retryable)...)
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
-	resultBytes = append(resultBytes, []byte(fmt.Sprintf("%+v", r.Eligible))...)
+	resultBytes = append(resultBytes, fmt.Appendf(nil, "%+v", r.Eligible)...)
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
 	resultBytes = append(resultBytes, r.IneligibilityReason)
@@ -200,7 +201,7 @@ func (r CheckResult) UniqueID() string {
 		// Note: We encode the whole trigger extension so the behaiour of
 		// LogTriggerExtentsion.BlockNumber and LogTriggerExtentsion.BlockHash should be
 		// consistent across nodes when sending observations
-		resultBytes = append(resultBytes, []byte(fmt.Sprintf("%+v", r.Trigger.LogTriggerExtension))...)
+		resultBytes = append(resultBytes, fmt.Appendf(nil, "%+v", r.Trigger.LogTriggerExtension)...)
 	}
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
@@ -223,7 +224,7 @@ func (r CheckResult) UniqueID() string {
 	}
 	resultBytes = append(resultBytes, checkResultDelimiter)
 
-	return fmt.Sprintf("%x", resultBytes)
+	return hex.EncodeToString(resultBytes)
 }
 
 // NOTE: this function is used for debugging purposes only.
@@ -281,7 +282,7 @@ type BlockHistory []BlockKey
 
 func (bh BlockHistory) Latest() (BlockKey, error) {
 	if len(bh) == 0 {
-		return BlockKey{}, fmt.Errorf("empty block history")
+		return BlockKey{}, errors.New("empty block history")
 	}
 
 	return bh[0], nil

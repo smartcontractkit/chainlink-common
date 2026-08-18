@@ -38,9 +38,7 @@ func (s *Subprocesses) Wait() {
 
 // Go calls the given function in a new goroutine.
 func (s *Subprocesses) Go(f func()) {
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
+	s.wg.Go(func() {
 		f()
-	}()
+	})
 }

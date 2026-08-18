@@ -16,17 +16,28 @@ func NewFeedMonitor(
 	pollers []Poller,
 	exporters []Exporter,
 ) FeedMonitor {
+	return NewFeedMonitorWithTimeout(log, pollers, exporters, 1*time.Second)
+}
+
+func NewFeedMonitorWithTimeout(
+	log Logger,
+	pollers []Poller,
+	exporters []Exporter,
+	cleanupTimeout time.Duration,
+) FeedMonitor {
 	return &feedMonitor{
 		log,
 		pollers,
 		exporters,
+		cleanupTimeout,
 	}
 }
 
 type feedMonitor struct {
-	log       Logger
-	pollers   []Poller
-	exporters []Exporter
+	log            Logger
+	pollers        []Poller
+	exporters      []Exporter
+	cleanupTimeout time.Duration
 }
 
 // Run should be executed as a goroutine.
@@ -36,9 +47,8 @@ func (f *feedMonitor) Run(ctx context.Context) {
 	var subs utils.Subprocesses
 
 	// Listen for updates
-	updatesFanIn := make(chan interface{})
+	updatesFanIn := make(chan any)
 	for _, poller := range f.pollers {
-		poller := poller
 		subs.Go(func() {
 			for {
 				select {
@@ -58,7 +68,7 @@ func (f *feedMonitor) Run(ctx context.Context) {
 	// Consume updates.
 CONSUME_LOOP:
 	for {
-		var update interface{}
+		var update any
 		select {
 		case update = <-updatesFanIn:
 		case <-ctx.Done():
@@ -66,7 +76,6 @@ CONSUME_LOOP:
 		}
 		// TODO (dru) do we need a worker pool here?
 		for index, exp := range f.exporters {
-			index, exp := index, exp
 			subs.Go(func() {
 				defer func() {
 					if err := recover(); err != nil {
@@ -82,10 +91,9 @@ CONSUME_LOOP:
 	subs.Wait()
 	subs = utils.Subprocesses{}
 	defer subs.Wait()
-	cleanupContext, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	cleanupContext, cancel := context.WithTimeout(context.Background(), f.cleanupTimeout)
 	defer cancel()
 	for index, exp := range f.exporters {
-		index, exp := index, exp
 		subs.Go(func() {
 			defer func() {
 				if err := recover(); err != nil {

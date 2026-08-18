@@ -13,12 +13,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const workflowTestID = "consensus-workflow-test-id-1"
@@ -49,9 +48,9 @@ func TestOCR3Capability_Schema(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Nop()
 
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	schema, err := cp.Schema()
 	require.NoError(t, err)
 
@@ -87,11 +86,11 @@ func TestOCR3Capability(t *testing.T) {
 			fc := clockwork.NewFakeClockAt(n)
 			lggr := logger.Test(t)
 
-			ctx := tests.Context(t)
+			ctx := t.Context()
 
-			s := requests.NewStore()
+			s := requests.NewStore[*ReportRequest]()
 
-			cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+			cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 			require.NoError(t, cp.Start(ctx))
 
 			config, err := values.NewMap(
@@ -130,7 +129,7 @@ func TestOCR3Capability(t *testing.T) {
 
 			// Mock the oracle returning a response
 			mresp, err := values.NewMap(map[string]any{"observations": obsv})
-			cp.reqHandler.SendResponse(ctx, requests.Response{
+			cp.reqHandler.SendResponse(ctx, ReportResponse{
 				Value:               mresp,
 				WorkflowExecutionID: workflowExecutionTestID,
 			})
@@ -140,6 +139,8 @@ func TestOCR3Capability(t *testing.T) {
 			assert.NoError(t, resp.Err)
 
 			assert.Equal(t, mresp, resp.Value)
+			assert.Equal(t, "RESOURCE_TYPE_NETWORK", resp.Metadata.Metering[0].SpendUnit)
+			assert.Equal(t, "122", resp.Metadata.Metering[0].SpendValue)
 		})
 	}
 }
@@ -149,13 +150,13 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	rea := time.Second
-	s := requests.NewStore()
-	cp := newCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	s := requests.NewStore[*ReportRequest]()
+	cp := NewCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -209,7 +210,7 @@ func TestOCR3Capability_Eviction(t *testing.T) {
 	request := s.Get(rid)
 	assert.Nil(t, request)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
@@ -217,13 +218,13 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	// This is the default expired at
 	rea := time.Hour
-	s := requests.NewStore()
-	cp := newCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	s := requests.NewStore[*ReportRequest]()
+	cp := NewCapability(s, fc, rea, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -280,7 +281,7 @@ func TestOCR3Capability_EvictionUsingConfig(t *testing.T) {
 
 	reqs := s.GetByIDs([]string{rid})
 
-	assert.Equal(t, 0, len(reqs))
+	assert.Empty(t, reqs)
 }
 
 func TestOCR3Capability_Registration(t *testing.T) {
@@ -288,9 +289,9 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
-	s := requests.NewStore()
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	ctx := t.Context()
+	s := requests.NewStore[*ReportRequest]()
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(map[string]any{
@@ -313,7 +314,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	err = cp.RegisterToWorkflow(ctx, registerReq)
 	require.NoError(t, err)
 
-	agg, err := cp.getAggregator(workflowTestID)
+	agg, err := cp.GetAggregator(workflowTestID)
 	require.NoError(t, err)
 	assert.NotNil(t, agg)
 
@@ -326,7 +327,7 @@ func TestOCR3Capability_Registration(t *testing.T) {
 	err = cp.UnregisterFromWorkflow(ctx, unregisterReq)
 	require.NoError(t, err)
 
-	_, err = cp.getAggregator(workflowTestID)
+	_, err = cp.GetAggregator(workflowTestID)
 	assert.ErrorContains(t, err, "no aggregator found for")
 }
 
@@ -335,9 +336,9 @@ func TestOCR3Capability_ValidateConfig(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 
-	o := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	o := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 
 	t.Run("ValidConfig", func(t *testing.T) {
 		config, err := values.NewMap(map[string]any{
@@ -408,11 +409,11 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 10)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -439,7 +440,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
-	cp.reqHandler.SendResponse(ctx, requests.Response{
+	cp.reqHandler.SendResponse(ctx, ReportResponse{
 		Value:               obsv,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
@@ -460,7 +461,7 @@ func TestOCR3Capability_RespondsToLateRequest(t *testing.T) {
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, response)
+	assert.Equal(t, expectedCapabilityResponse.Value, response.Value)
 }
 
 func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsumer(t *testing.T) {
@@ -468,11 +469,11 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 	fc := clockwork.NewFakeClockAt(n)
 	lggr := logger.Test(t)
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
-	s := requests.NewStore()
+	s := requests.NewStore[*ReportRequest]()
 
-	cp := newCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 0)
+	cp := NewCapability(s, fc, 1*time.Second, mockAggregatorFactory, mockEncoderFactory, lggr, 0)
 	require.NoError(t, cp.Start(ctx))
 
 	config, err := values.NewMap(
@@ -499,7 +500,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 	require.NoError(t, err)
 
 	// Mock the oracle returning a response prior to the request being sent
-	cp.reqHandler.SendResponse(ctx, requests.Response{
+	cp.reqHandler.SendResponse(ctx, ReportResponse{
 		Value:               obsv,
 		WorkflowExecutionID: workflowExecutionTestID,
 	})
@@ -520,7 +521,7 @@ func TestOCR3Capability_RespondingToLateRequestDoesNotBlockOnSlowResponseConsume
 		Value: obsv,
 	}
 
-	assert.Equal(t, expectedCapabilityResponse, resp)
+	assert.Equal(t, expectedCapabilityResponse.Value, resp.Value)
 }
 
 type asyncCapabilityResponse struct {
@@ -532,7 +533,7 @@ func executeAsync(ctx context.Context, request capabilities.CapabilityRequest, t
 	respCh := make(chan asyncCapabilityResponse, 1)
 	go func() {
 		resp, err := toExecute(ctx, request)
-		respCh <- asyncCapabilityResponse{CapabilityResponse: capabilities.CapabilityResponse{Value: resp.Value}, Err: err}
+		respCh <- asyncCapabilityResponse{CapabilityResponse: capabilities.CapabilityResponse{Value: resp.Value, Metadata: resp.Metadata}, Err: err}
 		close(respCh)
 	}()
 

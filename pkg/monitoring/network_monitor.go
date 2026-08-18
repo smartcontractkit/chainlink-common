@@ -3,6 +3,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils"
@@ -22,6 +23,7 @@ func NewNetworkMonitor(
 	exporterFactories []ExporterFactory,
 
 	bufferCapacity uint32,
+	cleanupTimeout time.Duration,
 ) NetworkMonitor {
 	return &networkMonitor{
 		chainConfig,
@@ -31,6 +33,7 @@ func NewNetworkMonitor(
 		exporterFactories,
 
 		bufferCapacity,
+		cleanupTimeout,
 	}
 }
 
@@ -42,6 +45,7 @@ type networkMonitor struct {
 	exporterFactories []ExporterFactory
 
 	bufferCapacity uint32
+	cleanupTimeout time.Duration
 }
 
 // Run should be executed as a goroutine.
@@ -78,5 +82,6 @@ func (m *networkMonitor) Run(ctx context.Context, data RDDData) {
 			ChainConfig: m.chainConfig,
 			Nodes:       data.Nodes,
 		},
+		m.cleanupTimeout,
 	)
 }

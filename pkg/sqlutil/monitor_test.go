@@ -13,14 +13,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func Test_sprintQ(t *testing.T) {
 	for _, tt := range []struct {
 		name  string
 		query string
-		args  []interface{}
+		args  []any
 		exp   string
 	}{
 		{"none",
@@ -29,27 +28,27 @@ func Test_sprintQ(t *testing.T) {
 			"SELECT * FROM table;"},
 		{"one",
 			"SELECT $1 FROM table;",
-			[]interface{}{"foo"},
+			[]any{"foo"},
 			"SELECT 'foo' FROM table;"},
 		{"two",
 			"SELECT $1 FROM table WHERE bar = $2;",
-			[]interface{}{"foo", 1},
+			[]any{"foo", 1},
 			"SELECT 'foo' FROM table WHERE bar = 1;"},
 		{"limit",
 			"SELECT $1 FROM table LIMIT $2;",
-			[]interface{}{"foo", limit(10)},
+			[]any{"foo", limit(10)},
 			"SELECT 'foo' FROM table LIMIT 10;"},
 		{"limit-all",
 			"SELECT $1 FROM table LIMIT $2;",
-			[]interface{}{"foo", limit(-1)},
+			[]any{"foo", limit(-1)},
 			"SELECT 'foo' FROM table LIMIT NULL;"},
 		{"bytea",
 			"SELECT $1 FROM table WHERE b = $2;",
-			[]interface{}{"foo", []byte{0x0a}},
+			[]any{"foo", []byte{0x0a}},
 			"SELECT 'foo' FROM table WHERE b = '\\x0a';"},
 		{"bytea[]",
 			"SELECT $1 FROM table WHERE b = $2;",
-			[]interface{}{"foo", pq.ByteaArray([][]byte{{0xa}, {0xb}})},
+			[]any{"foo", pq.ByteaArray([][]byte{{0xa}, {0xb}})},
 			"SELECT 'foo' FROM table WHERE b = ARRAY['\\x0a','\\x0b'];"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -107,7 +106,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 
 				start := time.Now().Add(-time.Second)
 
-				ctx, cancel := context.WithCancel(tests.Context(t))
+				ctx, cancel := context.WithCancel(t.Context())
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
 				}
@@ -127,7 +126,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 
 				start := time.Now().Add(-time.Second)
 
-				ctx, cancel := context.WithTimeout(tests.Context(t), time.Minute)
+				ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
 				ctx = tt.thresholds.ContextWithValue(ctx)
 				ql.logTiming(ctx, start)
 				cancel()
@@ -150,7 +149,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				start := time.Now().Add(-threshold)
 				deadline := time.Now().Add(10*time.Second - threshold)
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), deadline)
+				ctx, cancel := context.WithDeadline(t.Context(), deadline)
 				ctx = tt.thresholds.ContextWithValue(ctx)
 				ql.logTiming(ctx, start)
 				cancel()
@@ -177,7 +176,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				start := time.Now().Add(-threshold)
 				deadline := time.Now().Add(5*time.Second - threshold)
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), deadline)
+				ctx, cancel := context.WithDeadline(t.Context(), deadline)
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
 				}
@@ -203,7 +202,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				start := time.Now().Add(-10 * time.Second)
 				deadline := time.Now()
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), deadline)
+				ctx, cancel := context.WithDeadline(t.Context(), deadline)
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
 				}
@@ -234,7 +233,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				// >100%
 				start := time.Now()
 
-				ctx, cancel := context.WithCancel(tests.Context(t))
+				ctx, cancel := context.WithCancel(t.Context())
 				cancel() // pre-cancel
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)
@@ -262,7 +261,7 @@ func Test_queryLogger_logTiming(t *testing.T) {
 				// >100%
 				start := time.Now()
 
-				ctx, cancel := context.WithDeadline(tests.Context(t), start.Add(-time.Second))
+				ctx, cancel := context.WithDeadline(t.Context(), start.Add(-time.Second))
 				defer cancel()
 				if tt.thresholds != nil {
 					ctx = tt.thresholds.ContextWithValue(ctx)

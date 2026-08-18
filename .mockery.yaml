@@ -2,36 +2,66 @@ dir: "{{ .InterfaceDir }}/mocks"
 mockname: "{{ .InterfaceName }}"
 outpkg: mocks
 filename: "{{ .InterfaceName | snakecase }}.go"
+fail-on-missing: true
 packages:
-  github.com/smartcontractkit/chainlink-common/pkg/capabilities/datastreams:
-    interfaces:
-      ReportCodec:
   github.com/smartcontractkit/chainlink-common/pkg/loop/internal/types:
     interfaces:
       Relayer:
         config:
           dir: "{{ .InterfaceDir }}/../../mocks"
-  github.com/smartcontractkit/chainlink-common/pkg/monitoring:
-    config:
-      dir: "{{ .InterfaceDir }}"
-      filename: "{{ .InterfaceName | snakecase }}_mock.go"
-      inpackage: true
-      mockname: "{{ .InterfaceName }}Mock"
-    interfaces:
-      Metrics:
-      Source:
-      SourceFactory:
-      Exporter:
-      ExporterFactory:
   github.com/smartcontractkit/chainlink-common/pkg/types/ccip:
     interfaces:
       OffRampReader:
         config:
           filename: offramp_reader_mock.go
+  github.com/smartcontractkit/chainlink-common/pkg/types:
+    interfaces:
+      ContractReader:
+      EVMService:
+      TONService:
+      SolanaService:
+      AptosService:
+      StellarService:
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
       CapabilitiesRegistry:
       Relayer:
+      GatewayConnector:
+      MultiGatewayConnector:
+      GatewayConnectorHandler:
+      RelayerSet:
   github.com/smartcontractkit/chainlink-common/pkg/beholder/internal:
     interfaces:
-      OTLPExporter:
+      OTLPExporter: {}
+  github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host:
+    interfaces:
+      ModuleV1: {}
+  github.com/smartcontractkit/chainlink-common/pkg/workflows/host:
+    interfaces:
+      Module: {}
+      ExecutionHelper:
+        config:
+            mockname: "Mock{{.InterfaceName}}"
+      ExecutionHelperWithRawSecrets:
+        config:
+          mockname: "Mock{{.InterfaceName}}"
+  github.com/smartcontractkit/chainlink-common/pkg/custmsg:
+    interfaces:
+      MessageEmitter:
+        config:
+          inpackage: true
+          filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+          mockname: "mock{{.InterfaceName}}"
+          dir: "{{.InterfaceDir}}"
+  github.com/smartcontractkit/chainlink-common/pkg/nodeauth/jwt:
+    interfaces:
+      JWTGenerator:
+      JWTAuthenticator:
+      NodeAuthProvider:
+  github.com/smartcontractkit/chainlink-common/pkg/settings:
+    config:
+      filename: "mock_{{.InterfaceName | snakecase}}_test.go"
+      dir: "{{.InterfaceDir}}/limits"
+      outpkg: limits
+    interfaces:
+      Getter:

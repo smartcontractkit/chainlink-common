@@ -11,7 +11,7 @@ import (
 
 var ValidationService = staticValidationService{}
 
-var GoodPluginConfig = map[string]interface{}{
+var GoodPluginConfig = map[string]any{
 	"isGoodConfig":  true,
 	"someFieldName": "someFieldValue",
 }
@@ -26,7 +26,7 @@ func (t staticValidationService) Evaluate(ctx context.Context, other core.Valida
 	return other.ValidateConfig(ctx, GoodPluginConfig)
 }
 
-func (t staticValidationService) ValidateConfig(ctx context.Context, config map[string]interface{}) error {
+func (t staticValidationService) ValidateConfig(ctx context.Context, config map[string]any) error {
 	if !reflect.DeepEqual(GoodPluginConfig, config) {
 		return fmt.Errorf("expected %+v but got %+v", GoodPluginConfig, config)
 	}

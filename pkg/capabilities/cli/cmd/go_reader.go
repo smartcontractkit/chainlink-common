@@ -136,9 +136,7 @@ func (g *GoStructReader) gatherImports(node *ast.File, structs map[string]Struct
 		}
 	}
 
-	var allValues []string
 	var imports []string
-	var check []bool
 	for _, imp := range node.Imports {
 		var importName string
 		if imp.Name != nil {
@@ -149,8 +147,6 @@ func (g *GoStructReader) gatherImports(node *ast.File, structs map[string]Struct
 		}
 		importName = strings.Trim(importName, "\"")
 
-		allValues = append(allValues, importName)
-		check = append(check, requiredImports[importName])
 		if requiredImports[importName] {
 			imports = append(imports, imp.Path.Value)
 		}

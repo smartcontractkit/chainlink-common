@@ -1,7 +1,6 @@
 package triggers
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,16 +8,14 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const testID = "test-id-1"
 
 func TestOnDemand(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{
@@ -45,7 +42,7 @@ func TestOnDemand(t *testing.T) {
 
 func TestOnDemand_ChannelDoesntExist(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	v, err := values.NewMap(map[string]any{"hello": "world"})
 	require.NoError(t, err)
@@ -61,7 +58,7 @@ func TestOnDemand_ChannelDoesntExist(t *testing.T) {
 
 func TestOnDemand_(t *testing.T) {
 	tr := NewOnDemand(logger.Test(t))
-	ctx := tests.Context(t)
+	ctx := t.Context()
 
 	req := capabilities.TriggerRegistrationRequest{
 		Metadata: capabilities.RequestMetadata{
@@ -85,22 +82,4 @@ func TestOnDemand_(t *testing.T) {
 
 	assert.Len(t, callback, 1)
 	assert.Equal(t, er, <-callback)
-}
-
-func TestOnDemandTrigger_GenerateSchema(t *testing.T) {
-	ts := NewOnDemand(logger.Nop())
-	schema, err := ts.Schema()
-	require.NotNil(t, schema)
-	require.NoError(t, err)
-
-	var shouldUpdate = true
-	if shouldUpdate {
-		err = os.WriteFile("./testdata/fixtures/ondemand/schema.json", []byte(schema), 0600)
-		require.NoError(t, err)
-	}
-
-	fixture, err := os.ReadFile("./testdata/fixtures/ondemand/schema.json")
-	require.NoError(t, err)
-
-	utils.AssertJSONEqual(t, fixture, []byte(schema))
 }

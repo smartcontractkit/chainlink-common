@@ -2,12 +2,13 @@ package ocr3
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jonboulle/clockwork"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
@@ -26,38 +27,25 @@ type Capability struct {
 }
 
 type Config struct {
-	RequestTimeout          *time.Duration
-	BatchSize               int
-	OutcomePruningThreshold uint64
-	Logger                  logger.Logger
-	AggregatorFactory       types.AggregatorFactory
-	EncoderFactory          types.EncoderFactory
-	SendBufferSize          int
+	RequestTimeout    *time.Duration
+	Logger            logger.Logger
+	AggregatorFactory types.AggregatorFactory
+	EncoderFactory    types.EncoderFactory
+	SendBufferSize    int
 
-	store      *requests.Store
+	store      *requests.Store[*ReportRequest]
 	capability *capability
 	clock      clockwork.Clock
 }
 
 const (
-	defaultRequestExpiry           time.Duration = 20 * time.Second
-	defaultBatchSize                             = 20
-	defaultSendBufferSize                        = 10
-	defaultOutcomePruningThreshold               = 3600
+	defaultSendBufferSize = 10
 )
 
 func NewOCR3(config Config) *Capability {
 	if config.RequestTimeout == nil {
 		dre := defaultRequestExpiry
 		config.RequestTimeout = &dre
-	}
-
-	if config.BatchSize == 0 {
-		config.BatchSize = defaultBatchSize
-	}
-
-	if config.OutcomePruningThreshold == 0 {
-		config.OutcomePruningThreshold = defaultOutcomePruningThreshold
 	}
 
 	if config.SendBufferSize == 0 {
@@ -69,11 +57,11 @@ func NewOCR3(config Config) *Capability {
 	}
 
 	if config.store == nil {
-		config.store = requests.NewStore()
+		config.store = requests.NewStore[*ReportRequest]()
 	}
 
 	if config.capability == nil {
-		ci := newCapability(config.store, config.clock, *config.RequestTimeout, config.AggregatorFactory, config.EncoderFactory, config.Logger,
+		ci := NewCapability(config.store, config.clock, *config.RequestTimeout, config.AggregatorFactory, config.EncoderFactory, config.Logger,
 			config.SendBufferSize)
 		config.capability = ci
 	}
@@ -92,7 +80,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 	provider commontypes.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
 	errorLog core.ErrorLog, capabilityRegistry core.CapabilitiesRegistry, keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
-	factory, err := newFactory(o.config.store, o.config.capability, o.config.BatchSize, o.config.OutcomePruningThreshold, o.config.Logger)
+	f, err := newFactory(o.config.store, o.config.capability, o.config.Logger)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +92,7 @@ func (o *Capability) NewReportingPluginFactory(ctx context.Context, cfg core.Rep
 
 	o.capabilityRegistry = capabilityRegistry
 
-	return factory, err
+	return f, err
 }
 
 func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -114,15 +102,11 @@ func (o *Capability) NewValidationService(ctx context.Context) (core.ValidationS
 }
 
 func (o *Capability) Close() error {
-	o.Plugin.Close()
+	err := o.Plugin.Close()
 
-	if o.capabilityRegistry == nil {
-		return nil
+	if o.capabilityRegistry != nil {
+		err = errors.Join(err, o.capabilityRegistry.Remove(context.TODO(), o.config.capability.ID))
 	}
 
-	if err := o.capabilityRegistry.Remove(context.TODO(), o.config.capability.ID); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -21,17 +22,17 @@ type RelayerService struct {
 
 // NewRelayerService returns a new [*RelayerService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
-	newService := func(ctx context.Context, instance any) (Relayer, error) {
+func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
+	newService := func(ctx context.Context, instance any) (Relayer, services.HealthReporter, error) {
 		plug, ok := instance.(PluginRelayer)
 		if !ok {
-			return nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
+			return nil, nil, fmt.Errorf("expected PluginRelayer but got %T", instance)
 		}
-		r, err := plug.NewRelayer(ctx, config, keystore, capabilityRegistry)
+		r, err := plug.NewRelayer(ctx, config, keystore, csaKeystore, capabilityRegistry)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create Relayer: %w", err)
+			return nil, nil, fmt.Errorf("failed to create Relayer: %w", err)
 		}
-		return r, nil
+		return r, plug, nil
 	}
 	stopCh := make(chan struct{})
 	lggr = logger.Named(lggr, "RelayerService")
@@ -39,6 +40,41 @@ func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.C
 	broker := BrokerConfig{StopCh: stopCh, Logger: lggr, GRPCOpts: grpcOpts}
 	rs.Init(PluginRelayerName, &GRPCPluginRelayer{BrokerConfig: broker}, newService, lggr, cmd, stopCh)
 	return &rs
+}
+
+func (r *RelayerService) EVM() (types.EVMService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.EVM()
+}
+
+func (r *RelayerService) TON() (types.TONService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.TON()
+}
+
+func (r *RelayerService) Solana() (types.SolanaService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.Solana()
+}
+
+func (r *RelayerService) Stellar() (types.StellarService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.Stellar()
+}
+
+func (r *RelayerService) Aptos() (types.AptosService, error) {
+	if err := r.Wait(); err != nil {
+		return nil, err
+	}
+	return r.Service.Aptos()
 }
 
 func (r *RelayerService) NewContractReader(ctx context.Context, contractReaderConfig []byte) (types.ContractReader, error) {
@@ -76,6 +112,13 @@ func (r *RelayerService) NewLLOProvider(ctx context.Context, rargs types.RelayAr
 	return r.Service.NewLLOProvider(ctx, rargs, pargs)
 }
 
+func (r *RelayerService) NewCCIPProvider(ctx context.Context, cargs types.CCIPProviderArgs) (types.CCIPProvider, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return nil, err
+	}
+	return r.Service.NewCCIPProvider(ctx, cargs)
+}
+
 func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.Head{}, err
@@ -83,11 +126,25 @@ func (r *RelayerService) LatestHead(ctx context.Context) (types.Head, error) {
 	return r.Service.LatestHead(ctx)
 }
 
+func (r *RelayerService) FinalizedHead(ctx context.Context) (types.Head, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return types.Head{}, err
+	}
+	return r.Service.FinalizedHead(ctx)
+}
+
 func (r *RelayerService) GetChainStatus(ctx context.Context) (types.ChainStatus, error) {
 	if err := r.WaitCtx(ctx); err != nil {
 		return types.ChainStatus{}, err
 	}
 	return r.Service.GetChainStatus(ctx)
+}
+
+func (r *RelayerService) GetChainInfo(ctx context.Context) (types.ChainInfo, error) {
+	if err := r.WaitCtx(ctx); err != nil {
+		return types.ChainInfo{}, err
+	}
+	return r.Service.GetChainInfo(ctx)
 }
 
 func (r *RelayerService) ListNodeStatuses(ctx context.Context, pageSize int32, pageToken string) (nodes []types.NodeStatus, nextPageToken string, total int, err error) {
@@ -102,4 +159,11 @@ func (r *RelayerService) Transact(ctx context.Context, from, to string, amount *
 		return err
 	}
 	return r.Service.Transact(ctx, from, to, amount, balanceCheck)
+}
+
+func (r *RelayerService) Replay(ctx context.Context, fromBlock string, args map[string]any) error {
+	if err := r.WaitCtx(ctx); err != nil {
+		return err
+	}
+	return r.Service.Replay(ctx, fromBlock, args)
 }

@@ -144,7 +144,7 @@ func (testProtoConversionTypeProvider) CreateContractType(itemType string, isEnc
 
 func generateQueryFilterTestCases(t *testing.T) []query.KeyFilter {
 	var queryFilters []query.KeyFilter
-	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed}
+	confirmationsValues := []primitives.ConfidenceLevel{primitives.Finalized, primitives.Unconfirmed, primitives.Safe}
 	operatorValues := []primitives.ComparisonOperator{primitives.Eq, primitives.Neq, primitives.Gt, primitives.Lt, primitives.Gte, primitives.Lte}
 
 	primitiveExpressions := []query.Expression{query.TxHash("txHash")}

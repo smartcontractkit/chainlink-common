@@ -1,0 +1,267 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault";
+
+package vault;
+
+message SecretIdentifier {
+    string key = 1;
+    string namespace = 2;
+    string owner = 3;
+}
+
+message SecretRequest {
+    SecretIdentifier id = 1;
+    repeated string encryption_keys = 2;
+}
+
+message EncryptedShares {
+    repeated string shares = 1;
+    string encryption_key = 2;
+    repeated bytes binary_shares = 3;
+}
+
+message SecretData {
+    string encrypted_value = 2;
+    repeated EncryptedShares encrypted_decryption_key_shares = 3;
+}
+
+message SecretResponse {
+    SecretIdentifier id = 1;
+
+    oneof result {
+      SecretData data = 2;
+      string error = 3;
+    }
+}
+
+message GetSecretsRequest {
+  repeated SecretRequest requests = 1;
+  string org_id = 2 [deprecated = true];
+  string workflow_owner = 3 [deprecated = true];
+}
+
+message GetSecretsResponse {
+  repeated SecretResponse responses = 1;
+}
+
+message EncryptedSecret {
+  SecretIdentifier id = 1;
+  string encrypted_value = 2;
+}
+
+message CreateSecretsRequest {
+  string request_id = 1;
+  repeated EncryptedSecret encrypted_secrets = 2;
+  string org_id = 3 [deprecated = true];
+  string workflow_owner = 4 [deprecated = true];
+}
+
+message CreateSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message CreateSecretsResponse {
+  repeated CreateSecretResponse responses = 1;
+  string request_id = 2;
+}
+
+message UpdateSecretsRequest {
+  string request_id = 1;
+  repeated EncryptedSecret encrypted_secrets = 2;
+  string org_id = 3 [deprecated = true];
+  string workflow_owner = 4 [deprecated = true];
+}
+
+message UpdateSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message UpdateSecretsResponse {
+  repeated UpdateSecretResponse responses = 1;
+  string request_id = 2;
+}
+
+message DeleteSecretsRequest {
+  string request_id = 1;
+  repeated SecretIdentifier ids = 2;
+  string org_id = 3 [deprecated = true];
+  string workflow_owner = 4 [deprecated = true];
+}
+
+message DeleteSecretResponse {
+  SecretIdentifier id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+message DeleteSecretsResponse {
+  repeated DeleteSecretResponse responses = 1;
+  string request_id = 2;
+}
+
+message ListSecretIdentifiersRequest {
+  string request_id = 1;
+  string owner = 2;
+  string namespace = 3;
+  string org_id = 4 [deprecated = true];
+  string workflow_owner = 5 [deprecated = true];
+}
+
+message ListSecretIdentifiersResponse {
+  repeated SecretIdentifier identifiers = 1;
+  bool success = 2;
+  string error = 3;
+  string request_id = 4;
+}
+
+enum RequestType {
+  UNKNOWN = 0;
+  GET_SECRETS = 1;
+  CREATE_SECRETS = 2;
+  UPDATE_SECRETS = 3;
+  DELETE_SECRETS = 4;
+  LIST_SECRET_IDENTIFIERS = 5;
+}
+
+// ObservationError is an item-level Err(E) contribution for a pending queue request.
+// When set on Observation, the observation is an error contribution for that request id.
+message ObservationError {
+  string message = 1;
+}
+
+message Observation {
+  string id = 1;
+  RequestType request_type = 2;
+
+  oneof request {
+    CreateSecretsRequest create_secrets_request = 3;
+    GetSecretsRequest get_secrets_request = 4;
+    UpdateSecretsRequest update_secrets_request = 5;
+    DeleteSecretsRequest delete_secrets_request = 6;
+    ListSecretIdentifiersRequest list_secret_identifiers_request = 7;
+  }
+
+  oneof response {
+    CreateSecretsResponse create_secrets_response = 8;
+    GetSecretsResponse get_secrets_response = 9;
+    UpdateSecretsResponse update_secrets_response = 10;
+    DeleteSecretsResponse delete_secrets_response = 11;
+    ListSecretIdentifiersResponse list_secret_identifiers_response = 12;
+  }
+
+  ObservationError error = 13;
+}
+
+enum PendingQueueStallSignal {
+  PENDING_QUEUE_STALL_SIGNAL_CONTINUE = 0;
+  PENDING_QUEUE_STALL_SIGNAL_STALLED = 1;
+}
+
+message Observations {
+  repeated Observation observations = 1;
+  repeated bytes pending_queue_items = 2;
+  bytes sortNonce = 3;
+  PendingQueueStallSignal pending_queue_stall_signal = 4;
+}
+
+message Outcome {
+  string id = 1;
+  RequestType request_type = 2;
+
+  oneof request {
+    CreateSecretsRequest create_secrets_request = 3;
+    GetSecretsRequest get_secrets_request = 4;
+    UpdateSecretsRequest update_secrets_request = 5;
+    DeleteSecretsRequest delete_secrets_request = 6;
+    ListSecretIdentifiersRequest list_secret_identifiers_request = 7;
+  }
+
+  oneof response {
+    CreateSecretsResponse create_secrets_response = 8;
+    GetSecretsResponse get_secrets_response = 9;
+    UpdateSecretsResponse update_secrets_response = 10;
+    DeleteSecretsResponse delete_secrets_response = 11;
+    ListSecretIdentifiersResponse list_secret_identifiers_response = 12;
+  }
+}
+
+message Outcomes {
+  repeated Outcome outcomes = 1;
+}
+
+enum ReportFormat {
+  REPORT_FORMAT_UNKNOWN = 0;
+  REPORT_FORMAT_JSON = 1;
+  REPORT_FORMAT_PROTOBUF = 2;
+}
+
+message ReportInfo {
+  string id = 1;
+  RequestType request_type = 2;
+  ReportFormat format = 3;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredSecret {
+  bytes encrypted_secret = 1;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredMetadata {
+  repeated SecretIdentifier secret_identifiers = 2;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredPendingQueueIndex {
+  int64 length = 1;
+}
+
+// IMPORTANT: this record is persisted so any changes must be
+// backwards compatible
+message StoredPendingQueueItem {
+  google.protobuf.Any item = 1;
+  string id = 2;
+}
+
+// Wire format for pending queue blobs. Not persisted.
+// When is_batch=false, wire-compatible with StoredPendingQueueItem (field 1 = Any, field 2 = string).
+message PendingQueueBlobItems {
+  repeated google.protobuf.Any items = 1;  // non-batch: raw payload Any; batch: each Any wraps a StoredPendingQueueItem
+  string id = 2;                            // non-batch: request ID; batch: empty
+  bool is_batch = 3;                        // disambiguates single-item from batch during unmarshalling
+}
+
+message ReportingPluginConfig {
+  reserved 8;
+
+  // Plugin-specific configuration
+  int32 BatchSize = 1;
+  int32 MaxSecretsPerOwner = 2;
+  int32 MaxCiphertextLengthBytes = 3;
+  int32 MaxIdentifierKeyLengthBytes = 4;
+  int32 MaxIdentifierOwnerLengthBytes = 5;
+  int32 MaxIdentifierNamespaceLengthBytes = 6;
+  optional string DKGInstanceID = 7;
+
+  // OCR 3.1 ReportInfo configuration
+  int32 LimitsMaxQueryLength = 20;
+  int32 LimitsMaxObservationLength = 21;
+  int32 LimitsMaxReportsPlusPrecursorLength = 22;
+  int32 LimitsMaxReportLength = 23;
+  int32 LimitsMaxReportCount = 24;
+  int32 LimitsMaxKeyValueModifiedKeysPlusValuesLength = 25;
+  int32 LimitsMaxBlobPayloadLength = 26;
+  int32 LimitsMaxKeyValueModifiedKeys = 27;
+  int32 LimitsMaxPerOracleUnexpiredBlobCumulativePayloadBytes = 28;
+  int32 LimitsMaxPerOracleUnexpiredBlobCount = 29;
+}

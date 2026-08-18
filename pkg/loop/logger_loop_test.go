@@ -1,7 +1,6 @@
 package loop_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -14,10 +13,8 @@ import (
 )
 
 func TestHCLogLoggerPanic(t *testing.T) {
-	lggr, ol := logger.TestObservedSugared(t, zapcore.DebugLevel)
-
+	t.Parallel()
 	type testCase struct {
-		name                string
 		level               int
 		expectedMessage     string
 		expectedCustomKey   string
@@ -77,7 +74,9 @@ func TestHCLogLoggerPanic(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(test.FormatLevel(tt.level), func(t *testing.T) {
+			t.Parallel()
+			lggr, ol := logger.TestObservedSugared(t, zapcore.DebugLevel)
 			loggerTest := &test.GRPCPluginLoggerTest{SugaredLogger: lggr}
 			cc := loggerTest.ClientConfig()
 			cc.Cmd = NewHelperProcessCommand(test.PluginLoggerTestName, false, tt.level)
@@ -88,9 +87,10 @@ func TestHCLogLoggerPanic(t *testing.T) {
 			c.Kill()
 			fLogs := ol.FilterMessage(tt.expectedMessage)
 			logs := fLogs.TakeAll()
-			require.Equal(t, len(logs), 1, fmt.Sprintf("could not find expected log %q", tt.expectedMessage))
+			require.Len(t, logs, 1, "could not find expected log %q", tt.expectedMessage)
 			require.Equal(t, tt.expectedMessage, logs[0].Message)
 			require.Equal(t, tt.expectedLogLevel, logs[0].Level)
+			require.Equal(t, zapcore.EntryCaller{}, logs[0].Caller)
 			if tt.expectedCustomKey != "" {
 				found := false
 				for _, e := range logs[0].Context {
@@ -99,7 +99,7 @@ func TestHCLogLoggerPanic(t *testing.T) {
 						break
 					}
 				}
-				require.True(t, found, fmt.Sprintf("could not find expected values %s=%s", tt.expectedCustomKey, tt.expectedCustomValue))
+				require.True(t, found, "could not find expected values %s=%s", tt.expectedCustomKey, tt.expectedCustomValue)
 			}
 		})
 	}

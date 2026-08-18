@@ -17,7 +17,7 @@ func TestJitterPct(t *testing.T) {
 		{0.1, 24 * time.Hour, 21*time.Hour + 36*time.Minute, 26*time.Hour + 24*time.Minute},
 	} {
 		t.Run(tt.dur.String(), func(t *testing.T) {
-			for i := 0; i < 100; i++ {
+			for i := range 100 {
 				got := tt.pct.Apply(tt.dur)
 				t.Logf("%d: %s", i, got)
 				if got < tt.from || got > tt.to {

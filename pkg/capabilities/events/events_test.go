@@ -10,13 +10,14 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type testEmitter struct {
 	payload []byte
 	attrs   []any
 }
+
+func (t *testEmitter) Close() error { return nil }
 
 func (t *testEmitter) Emit(ctx context.Context, payload []byte, attrKVs ...any) error {
 	t.payload = payload
@@ -32,19 +33,19 @@ func TestEmitter(t *testing.T) {
 	message := Message{
 		Msg: msg,
 	}
-	err := emitter.Emit(tests.Context(t), message)
+	err := emitter.Emit(t.Context(), message)
 	assert.ErrorContains(t, err, "must provide workflow owner")
 
 	message.Metadata.WorkflowOwner = "owner"
-	err = emitter.Emit(tests.Context(t), message)
+	err = emitter.Emit(t.Context(), message)
 	assert.ErrorContains(t, err, "must provide workflow id")
 
 	message.Metadata.WorkflowID = "id"
-	err = emitter.Emit(tests.Context(t), message)
+	err = emitter.Emit(t.Context(), message)
 	assert.ErrorContains(t, err, "must provide workflow name")
 
 	message.Metadata.WorkflowName = "name"
-	err = emitter.Emit(tests.Context(t), message)
+	err = emitter.Emit(t.Context(), message)
 	require.NoError(t, err)
 
 	event := &pb.BaseMessage{}
@@ -78,7 +79,7 @@ func TestEmitter_WithMetadata(t *testing.T) {
 	message := Message{
 		Msg: msg,
 	}
-	err := emitter.Emit(tests.Context(t), message)
+	err := emitter.Emit(t.Context(), message)
 	require.NoError(t, err)
 
 	fmt.Printf("%+v", client.attrs)

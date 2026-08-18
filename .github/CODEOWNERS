@@ -1,16 +1,29 @@
 # CODEOWNERS Best Practices
+
 # 1. Per Github docs: "Order is important; the last matching pattern takes the most precedence."
+
 # Please define less specific codeowner paths before more specific codeowner paths in order for the more specific rule to have priority
+
 
 * @smartcontractkit/foundations
 
-/observability-lib/ @Atrax1
-
-/pkg/capabilities/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
-/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations @nolag @pablolagreca 
-/pkg/monitoring/ @topliceanu @pedrovsg
+/keystore @smartcontractkit/prodsec-public @smartcontractkit/foundations
+/pkg/beholder/ @smartcontractkit/data-tooling
+/pkg/capabilities/v2/actions/confidentialhttp @smartcontractkit/privacy
+/pkg/capabilities/v2/actions/confidentialrelay @smartcontractkit/privacy
+/pkg/capabilities/v2/actions/confidentialworkflow @smartcontractkit/privacy
+/pkg/capabilities/v2/chain-capabilities @smartcontractkit/keystone @smartcontractkit/capabilities-team @smartcontractkit/bix-framework
+/pkg/chains/evm @smartcontractkit/bix-framework
+/pkg/chipingress/ @smartcontractkit/data-tooling
+/pkg/codec/ @smartcontractkit/bix-framework @smartcontractkit/foundations
+/pkg/loop/cmd/loopinstall @smartcontractkit/devex-cicd
+/pkg/loop/internal/relayer @smartcontractkit/bix-framework @smartcontractkit/foundations
+/pkg/loop/internal/relayerset @smartcontractkit/bix-framework @smartcontractkit/foundations
+/pkg/types/ @smartcontractkit/foundations
+/pkg/types/ccip @smartcontractkit/ccip-offchain
+/pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
 /pkg/values/ @smartcontractkit/keystone @smartcontractkit/capabilities-team
 /pkg/workflows/ @smartcontractkit/keystone
-/pkg/beholder/ @smartcontractkit/realtime
-/pkg/types/ccipocr3 @smartcontractkit/ccip-offchain
-/pkg/types/ccip @smartcontractkit/ccip-offchain
+/pkg/storage/ @smartcontractkit/dev-services
+/pkg/teeattestation/ @smartcontractkit/privacy @smartcontractkit/foundations
+/pkg/nodeauth/ @smartcontractkit/cre-business @smartcontractkit/foundations

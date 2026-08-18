@@ -24,7 +24,7 @@ type contractTransmitterClient struct {
 	grpc ocr3pb.ContractTransmitterClient
 }
 
-func NewContractTransmitterClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) *contractTransmitterClient {
+func NewContractTransmitterClient(broker *net.BrokerExt, cc grpc.ClientConnInterface) ocr3types.ContractTransmitter[[]byte] {
 	return &contractTransmitterClient{
 		BrokerExt: broker,
 		grpc:      ocr3pb.NewContractTransmitterClient(cc),

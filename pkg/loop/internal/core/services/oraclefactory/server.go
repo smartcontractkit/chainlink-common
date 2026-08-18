@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	oraclesrv "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oracle"
@@ -81,6 +82,8 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 			ContractConfigTrackerPollInterval:  req.LocalConfig.ContractConfigTrackerPollInterval.AsDuration(),
 			ContractTransmitterTransmitTimeout: req.LocalConfig.ContractTransmitterTransmitTimeout.AsDuration(),
 			DatabaseTimeout:                    req.LocalConfig.DatabaseTimeout.AsDuration(),
+			ContractConfigLoadTimeout:          req.LocalConfig.ContractConfigLoadTimeout.AsDuration(),
+			DefaultMaxDurationInitialization:   req.LocalConfig.DefaultMaxDurationInitialization.AsDuration(),
 			MinOCR2MaxDurationQuery:            req.LocalConfig.MinOcr2MaxDurationQuery.AsDuration(),
 			DevelopmentMode:                    req.LocalConfig.DevelopmentMode,
 		},
@@ -106,7 +109,6 @@ func (s *server) NewOracle(ctx context.Context, req *oraclefactorypb.NewOracleRe
 		return nil, fmt.Errorf("failed to serve new oracle: %w", err)
 	}
 	resources = append(resources, oracleRes)
-
 	s.resources = append(s.resources, resources...)
 	return &oraclefactorypb.NewOracleReply{OracleId: oracleID}, nil
 }

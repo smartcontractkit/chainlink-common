@@ -3,10 +3,13 @@ package grafana
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
+
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 )
 
@@ -35,11 +38,30 @@ func (o *Observability) GenerateJSON() ([]byte, error) {
 }
 
 type DeployOptions struct {
-	GrafanaURL            string
-	GrafanaToken          string
-	FolderName            string
-	EnableAlerts          bool
-	NotificationTemplates string
+	GrafanaURL             string
+	GrafanaToken           string
+	FolderName             string
+	FolderUID              string // when set, deploy to this folder instead of resolving FolderName by title
+	EnableAlerts           bool
+	RuleGroupFromDashboard bool // if true, set the alert rule group to the dashboard title on all alerts
+	NotificationTemplates  string
+}
+
+func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folder, error) {
+	if options.FolderUID != "" {
+		folder, err := client.GetFolderByUID(options.FolderUID)
+		if err != nil {
+			return nil, err
+		}
+		if folder == nil {
+			return nil, fmt.Errorf("folder with UID %q not found", options.FolderUID)
+		}
+		return folder, nil
+	}
+	if options.FolderName != "" {
+		return client.FindOrCreateFolder(options.FolderName)
+	}
+	return nil, nil
 }
 
 func alertRuleExist(alerts []alerting.Rule, alert alerting.Rule) bool {
@@ -64,20 +86,22 @@ func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID st
 	var alertsRule []alerting.Rule
 	var errGetAlertRules error
 
+	// check for alert rules by dashboard UID
 	if dashboardUID != nil {
 		alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*dashboardUID)
 		if errGetAlertRules != nil {
 			return nil, errGetAlertRules
 		}
-	} else {
-		if alertGroups != nil && len(alertGroups) > 0 {
-			for _, alertGroup := range alertGroups {
-				alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
-				if errGetAlertRulesPerGroup != nil {
-					return nil, errGetAlertRulesPerGroup
-				}
-				alertsRule = append(alertsRule, alertsRulePerGroup...)
+	}
+
+	// check for alert rules by folder UID and group name
+	if len(alertGroups) > 0 {
+		for _, alertGroup := range alertGroups {
+			alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
+			if errGetAlertRulesPerGroup != nil {
+				return nil, errGetAlertRulesPerGroup
 			}
+			alertsRule = append(alertsRule, alertsRulePerGroup...)
 		}
 	}
 
@@ -91,26 +115,38 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	)
 
 	// Create or update folder
-	var folder *api.Folder
-	var errFolder error
-	if options.FolderName != "" {
-		folder, errFolder = grafanaClient.FindOrCreateFolder(options.FolderName)
-		if errFolder != nil {
-			return errFolder
-		}
+	folder, errFolder := resolveDeployFolder(grafanaClient, options)
+	if errFolder != nil {
+		return errFolder
 	}
 
 	// Create or update dashboard
 	var newDashboard api.PostDashboardResponse
 	var errPostDashboard error
-	if folder != nil && o.Dashboard != nil {
-		newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
-			Dashboard: o.Dashboard,
-			Overwrite: true,
-			FolderID:  int(folder.ID),
-		})
-		if errPostDashboard != nil {
-			return errPostDashboard
+
+	if o.Dashboard != nil && folder != nil {
+		dashboardFound, _, err := grafanaClient.GetDashboardByNameFolderUID(*o.Dashboard.Title, folder.UID)
+		if err != nil {
+			return err
+		}
+		if dashboardFound.UID != nil {
+			if o.Dashboard.Uid == nil {
+				o.Dashboard.Uid = dashboardFound.UID
+			}
+		}
+
+		if folder != nil && o.Dashboard != nil {
+			newDashboard, _, errPostDashboard = grafanaClient.PostDashboard(api.PostDashboardRequest{
+				Dashboard: o.Dashboard,
+				Overwrite: true,
+				FolderUID: folder.UID,
+			})
+			if errPostDashboard != nil {
+				return errPostDashboard
+			}
+			if newDashboard.URL != nil && o.Dashboard.Title != nil {
+				fmt.Fprintf(os.Stderr, "deployed dashboard %q to folder uid=%s: %s\n", *o.Dashboard.Title, folder.UID, *newDashboard.URL)
+			}
 		}
 	}
 
@@ -152,7 +188,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 				alert.FolderUID = folder.UID
 			}
 			if o.Dashboard != nil {
-				if alert.RuleGroup == "" {
+				if options.RuleGroupFromDashboard {
 					alert.RuleGroup = *o.Dashboard.Title
 				}
 				if alert.Annotations["panel_title"] != "" {
@@ -175,9 +211,21 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 				// update alert rule if it already exists
 				alertToUpdate := getAlertRuleByTitle(alertsRule, alert.Title)
 				if alertToUpdate != nil {
-					_, _, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
+					_, updateResp, errPutAlertRule := grafanaClient.UpdateAlertRule(*alertToUpdate.Uid, alert)
 					if errPutAlertRule != nil {
-						return errPutAlertRule
+						// A 409 means a provenance mismatch: the stored rule was created with a
+						// different provenance (e.g. "api") than what we send (""). Migrate by
+						// deleting the old rule and recreating it with the current provenance.
+						if updateResp == nil || updateResp.StatusCode() != 409 {
+							return errPutAlertRule
+						}
+
+						if _, _, errDelete := grafanaClient.DeleteAlertRule(*alertToUpdate.Uid); errDelete != nil {
+							return fmt.Errorf("provenance migration: delete alert rule %q: %w", alert.Title, errDelete)
+						}
+						if _, _, errPost := grafanaClient.PostAlertRule(alert); errPost != nil {
+							return fmt.Errorf("provenance migration: recreate alert rule %q: %w", alert.Title, errPost)
+						}
 					}
 				}
 			} else {
@@ -217,7 +265,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	}
 
 	// Create contact points for the alerts
-	if o.ContactPoints != nil && len(o.ContactPoints) > 0 {
+	if len(o.ContactPoints) > 0 {
 		for _, contactPoint := range o.ContactPoints {
 			errCreateOrUpdateContactPoint := grafanaClient.CreateOrUpdateContactPoint(contactPoint)
 			if errCreateOrUpdateContactPoint != nil {
@@ -227,7 +275,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 	}
 
 	// Create notification policies for the alerts
-	if o.NotificationPolicies != nil && len(o.NotificationPolicies) > 0 {
+	if len(o.NotificationPolicies) > 0 {
 		for _, notificationPolicy := range o.NotificationPolicies {
 			errAddNestedPolicy := grafanaClient.AddNestedPolicy(notificationPolicy)
 			if errAddNestedPolicy != nil {
@@ -240,12 +288,9 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 }
 
 func panelIDByTitle(db *dashboard.Dashboard, title string) string {
-	for _, panel := range db.Panels {
-		if panel.Panel != nil && panel.Panel.Title != nil && *panel.Panel.Title == title {
-			return fmt.Sprintf("%d", *panel.Panel.Id)
-		}
+	if id, ok := PanelIDByTitle(db, title); ok {
+		return strconv.FormatUint(uint64(id), 10)
 	}
-
 	return ""
 }
 
@@ -253,6 +298,7 @@ type DeleteOptions struct {
 	Name         string
 	GrafanaURL   string
 	GrafanaToken string
+	FolderUID    string
 }
 
 func DeleteDashboard(options *DeleteOptions) error {
@@ -261,7 +307,7 @@ func DeleteDashboard(options *DeleteOptions) error {
 		options.GrafanaToken,
 	)
 
-	db, _, errGetDashboard := grafanaClient.GetDashboardByName(options.Name)
+	db, _, errGetDashboard := grafanaClient.GetDashboardByNameFolderUID(options.Name, options.FolderUID)
 	if errGetDashboard != nil {
 		return errGetDashboard
 	}

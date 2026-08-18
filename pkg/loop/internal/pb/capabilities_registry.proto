@@ -8,13 +8,14 @@ import "google/protobuf/empty.proto";
 import "capabilities/pb/registry.proto";
 
 service CapabilitiesRegistry {
-  rpc LocalNode (google.protobuf.Empty) returns (LocalNodeReply) {}
+  rpc LocalNode (google.protobuf.Empty) returns (NodeReply) {}
+  rpc NodeByPeerID(NodeRequest) returns (NodeReply) {}
   rpc ConfigForCapability (ConfigForCapabilityRequest) returns (ConfigForCapabilityReply) {}
+  rpc DONsForCapability (DONForCapabilityRequest) returns (DONForCapabilityReply) {}
+  rpc DONByID (DONByIDRequest) returns (DONByIDReply) {}
   rpc Get (GetRequest) returns (GetReply) {}
   rpc GetTrigger (GetTriggerRequest) returns (GetTriggerReply) {}
-  rpc GetAction (GetActionRequest) returns (GetActionReply) {}
-  rpc GetConsensus (GetConsensusRequest) returns (GetConsensusReply) {}
-  rpc GetTarget (GetTargetRequest) returns (GetTargetReply) {}
+  rpc GetExecutable (GetExecutableRequest) returns (GetExecutableReply) {}
   rpc List (google.protobuf.Empty) returns (ListReply) {}
   rpc Add (AddRequest) returns (google.protobuf.Empty) {}
   rpc Remove (RemoveRequest) returns (google.protobuf.Empty) {}
@@ -24,6 +25,7 @@ enum ExecuteAPIType {
   EXECUTE_API_TYPE_UNKNOWN = 0;
   EXECUTE_API_TYPE_TRIGGER = 1;
   EXECUTE_API_TYPE_EXECUTE = 2;
+  EXECUTE_API_TYPE_COMBINED = 3;
 }
 
 
@@ -33,13 +35,23 @@ message DON {
   repeated bytes members = 2; // [n][32]byte where n is the number of members
   uint32 f = 3; // uint8
   uint32 configVersion  = 4;
+  string name = 5;
+  repeated string families = 6; // [n]string where n is the number of DON families
+  bytes config = 7; 
+}
+
+message NodeRequest {
+  bytes peerID = 1; // [32]byte
 }
 
 // LocalNode has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.LocalNode].
-message LocalNodeReply {
+message NodeReply {
   bytes peerID = 1; // [32]byte
   DON workflowDON = 2;
   repeated DON CapabilityDONs = 3;
+  uint32 nodeOperatorID = 4; // uint32
+  bytes signer = 5; // [32]byte
+  bytes encryptionPublicKey = 6; // [32]byte
 }
 
 // Get has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get].
@@ -63,31 +75,15 @@ message GetTriggerReply {
   uint32 capabilityID = 1;
 }
 
-// GetAction has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetAction].
-message GetActionRequest {
+// GetExecutableRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable].
+message GetExecutableRequest {
   string id = 1;
 }
 
-// GetActionReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
-message GetActionReply {
+// GetExecutableReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+message GetExecutableReply {
   uint32 capabilityID = 1;
 }
-
-// GetConsensus has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetConsensus].
-message GetConsensusRequest {
-  string id = 1;
-}
-
-// GetConsensusReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
-message GetConsensusReply {
-  uint32 capabilityID = 1;
-}
-
-// GetTarget has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTarget].
-message GetTargetRequest {
-  string id = 1;
-}
-
 
 // ListReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.List], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
 message ListReply {
@@ -117,4 +113,25 @@ message ConfigForCapabilityRequest {
 
 message ConfigForCapabilityReply {
   loop.CapabilityConfig capability_config = 1;
+}
+
+message DONForCapabilityRequest {
+  string capabilityID = 1;
+}
+
+message DONWithNodes {
+  DON don = 1;
+  repeated NodeReply nodes = 2;
+}
+
+message DONForCapabilityReply {
+  repeated DONWithNodes dons = 1;
+}
+
+message DONByIDRequest {
+  uint32 donID = 1;
+}
+
+message DONByIDReply {
+  DON don = 1;
 }

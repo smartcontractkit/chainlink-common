@@ -13,6 +13,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/median"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ocr3capability"
 	pluginprovider "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ocr2"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -49,7 +50,7 @@ type serverAdapter struct {
 	NewReportingPluginFactoryFn func(
 		ctx context.Context,
 		config core.ReportingPluginServiceConfig,
-		conn grpc.ClientConnInterface,
+		conn net.ClientConnInterface,
 		pr core.PipelineRunnerService,
 		ts core.TelemetryService,
 		errorLog core.ErrorLog,
@@ -61,6 +62,7 @@ type serverAdapter struct {
 }
 
 type ValidateConfigService interface {
+	services.Service
 	NewValidationService(ctx context.Context) (core.ValidationService, error)
 }
 
@@ -77,14 +79,14 @@ func (s serverAdapter) NewReportingPluginFactory(
 	kv core.KeyValueStore,
 	rs core.RelayerSet,
 ) (types.ReportingPluginFactory, error) {
-	return s.NewReportingPluginFactoryFn(ctx, config, conn, pr, ts, errorLog, kv, rs)
+	return s.NewReportingPluginFactoryFn(ctx, config, net.ClientConnInterfaceFromGRPC(conn), pr, ts, errorLog, kv, rs)
 }
 
 func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
 	newReportingPluginFactoryFn := func(
 		ctx context.Context,
 		cfg core.ReportingPluginServiceConfig,
-		conn grpc.ClientConnInterface,
+		conn net.ClientConnInterface,
 		pr core.PipelineRunnerService,
 		ts core.TelemetryService,
 		el core.ErrorLog,
@@ -103,12 +105,11 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 }
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginClient], updated with the new broker and conn.
-func (g *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (g *GRPCService[T]) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if g.pluginClient == nil {
-		g.pluginClient = ocr2.NewReportingPluginServiceClient(broker, g.BrokerConfig, conn)
-	} else {
-		g.pluginClient.Refresh(broker, conn)
+		g.pluginClient = ocr2.NewReportingPluginServiceClient(g.BrokerConfig)
 	}
+	g.pluginClient.Refresh(broker, conn)
 
 	return core.ReportingPluginClient(g.pluginClient), nil
 }
@@ -118,7 +119,10 @@ func (g *GRPCService[T]) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: ReportingPluginHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginServiceName: g},
 	}
-	return loop.ManagedGRPCClientConfig(c, g.BrokerConfig)
+	if g.pluginClient == nil {
+		g.pluginClient = ocr2.NewReportingPluginServiceClient(g.BrokerConfig)
+	}
+	return loop.ManagedGRPCClientConfig(c, g.pluginClient.BrokerConfig)
 }
 
 // These implement `ConnToProvider` and return the conn wrapped as

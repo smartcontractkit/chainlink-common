@@ -13,7 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func BenchmarkKeystore_Sign(b *testing.B) {
@@ -47,10 +46,10 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			ks := tt.ks()
 			b.Run("in-process", func(b *testing.B) {
-				ctx := tests.Context(b)
+				ctx := b.Context()
 				acct := "0x1234"
 				data := []byte("asdf")
-				for i := 0; i < b.N; i++ {
+				for b.Loop() {
 					got, err := ks.Sign(ctx, acct, data)
 					require.NoError(b, err)
 					require.NotEmpty(b, got)
@@ -66,10 +65,10 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 					b.ResetTimer()
 					defer b.StopTimer()
 
-					ctx := tests.Context(b)
+					ctx := b.Context()
 					acct := "0x1234"
 					data := []byte("asdf")
-					for i := 0; i < b.N; i++ {
+					for b.Loop() {
 						got, err := ks.Sign(ctx, acct, data)
 						require.NoError(b, err)
 						require.NotEmpty(b, got)
@@ -91,4 +90,8 @@ func (k benchKeystore) Accounts(ctx context.Context) ([]string, error) {
 
 func (k benchKeystore) Sign(ctx context.Context, account string, data []byte) ([]byte, error) {
 	return k.sign(ctx, account, data)
+}
+
+func (k benchKeystore) Decrypt(ctx context.Context, account string, encrypted []byte) ([]byte, error) {
+	return nil, nil
 }

@@ -41,7 +41,7 @@ func yamlFixtureReaderBytes(t *testing.T, testCase string) func(name string) []b
 
 var transformJSON = cmp.FilterValues(func(x, y []byte) bool {
 	return json.Valid(x) && json.Valid(y)
-}, cmp.Transformer("ParseJSON", func(in []byte) (out interface{}) {
+}, cmp.Transformer("ParseJSON", func(in []byte) (out any) {
 	if err := json.Unmarshal(in, &out); err != nil {
 		panic(err) // should never occur given previous filter to ensure valid JSON
 	}
@@ -60,7 +60,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test that our workflowSpec still keeps all of the original data
-		var rawSpec interface{}
+		var rawSpec any
 		err = yaml.Unmarshal(workflowBytes, &rawSpec)
 		require.NoError(t, err)
 
@@ -91,7 +91,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		// check bools
 		bools, ok := booleanCoercions["bools"]
 		require.True(t, ok, "expected bools to be present in boolean_coercions")
-		for _, v := range bools.([]interface{}) {
+		for _, v := range bools.([]any) {
 			_, ok = v.(bool)
 			require.True(t, ok, "expected bool but got %T", v)
 		}
@@ -99,7 +99,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		// check strings
 		strings, ok := booleanCoercions["strings"]
 		require.True(t, ok, "expected strings to be present in boolean_coercions")
-		for _, v := range strings.([]interface{}) {
+		for _, v := range strings.([]any) {
 			_, ok = v.(string)
 			require.True(t, ok, "expected string but got %T", v)
 		}
@@ -107,7 +107,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		// check numbers
 		numbers, ok := booleanCoercions["numbers"]
 		require.True(t, ok, "expected numbers to be present in boolean_coercions")
-		for _, v := range numbers.([]interface{}) {
+		for _, v := range numbers.([]any) {
 			_, ok = v.(int64)
 			require.True(t, ok, "expected int64 but got %T", v)
 		}
@@ -121,7 +121,7 @@ func TestWorkflowSpecMarshalling(t *testing.T) {
 		require.NoError(t, err)
 
 		// Test that our workflowSpec still keeps all of the original data
-		var rawSpec interface{}
+		var rawSpec any
 		err = yaml.Unmarshal(workflowBytes, &rawSpec)
 		require.NoError(t, err)
 

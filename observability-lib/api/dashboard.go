@@ -8,12 +8,15 @@ import (
 )
 
 type GetDashboardResponse struct {
-	ID    *uint   `json:"id"`
-	UID   *string `json:"uid"`
-	Title *string `json:"title"`
+	ID          *uint   `json:"id"`
+	UID         *string `json:"uid"`
+	Title       *string `json:"title"`
+	FolderTitle *string `json:"folderTitle"`
+	FolderUID   *string `json:"folderUid"`
+	FolderID    *uint   `json:"folderId"`
 }
 
-func (c *Client) GetDashboardByName(name string) (GetDashboardResponse, *resty.Response, error) {
+func (c *Client) GetDashboardByNameFolderUID(name string, folderUID string) (GetDashboardResponse, *resty.Response, error) {
 	var grafanaResp []GetDashboardResponse
 
 	resp, err := c.resty.R().
@@ -33,7 +36,10 @@ func (c *Client) GetDashboardByName(name string) (GetDashboardResponse, *resty.R
 
 	if len(grafanaResp) > 0 {
 		for _, dashboard := range grafanaResp {
-			if strings.EqualFold(*dashboard.Title, name) {
+			if dashboard.Title == nil || dashboard.FolderUID == nil || dashboard.UID == nil {
+				continue
+			}
+			if strings.EqualFold(*dashboard.Title, name) && strings.EqualFold(*dashboard.FolderUID, folderUID) {
 				return dashboard, resp, nil
 			}
 		}
@@ -43,9 +49,10 @@ func (c *Client) GetDashboardByName(name string) (GetDashboardResponse, *resty.R
 }
 
 type PostDashboardRequest struct {
-	Dashboard interface{} `json:"dashboard"`
-	FolderID  int         `json:"folderId"`
-	Overwrite bool        `json:"overwrite"`
+	Dashboard any    `json:"dashboard"`
+	FolderID  int    `json:"folderId,omitempty"`
+	FolderUID string `json:"folderUid,omitempty"`
+	Overwrite bool   `json:"overwrite"`
 }
 
 type PostDashboardResponse struct {
@@ -78,6 +85,67 @@ func (c *Client) PostDashboard(dashboard PostDashboardRequest) (PostDashboardRes
 	}
 
 	return grafanaResp, resp, nil
+}
+
+type DashboardPanel struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+}
+
+type dashboardPanelJSON struct {
+	ID     int                  `json:"id"`
+	Title  string               `json:"title"`
+	Type   string               `json:"type"`
+	Panels []dashboardPanelJSON `json:"panels"`
+}
+
+type getDashboardByUIDResponse struct {
+	Dashboard struct {
+		ID     uint                 `json:"id"`
+		UID    string               `json:"uid"`
+		Title  string               `json:"title"`
+		Panels []dashboardPanelJSON `json:"panels"`
+	} `json:"dashboard"`
+}
+
+func collectDashboardPanels(panels []dashboardPanelJSON) []DashboardPanel {
+	result := make([]DashboardPanel, 0, len(panels))
+	for _, panel := range panels {
+		result = append(result, DashboardPanel{
+			ID:    panel.ID,
+			Title: panel.Title,
+			Type:  panel.Type,
+		})
+		if len(panel.Panels) > 0 {
+			result = append(result, collectDashboardPanels(panel.Panels)...)
+		}
+	}
+	return result
+}
+
+// GetDashboardPanelsByUID returns all panels (including nested row panels) with their IDs and titles.
+func (c *Client) GetDashboardPanelsByUID(uid string) ([]DashboardPanel, *resty.Response, error) {
+	var grafanaResp getDashboardByUIDResponse
+
+	resp, err := c.resty.R().
+		SetHeader("Accept", "application/json").
+		SetResult(&grafanaResp).
+		Get("/api/dashboards/uid/" + uid)
+
+	if err != nil {
+		return nil, resp, fmt.Errorf("error making API request: %w", err)
+	}
+
+	statusCode := resp.StatusCode()
+	if statusCode == 404 {
+		return nil, resp, nil
+	}
+	if statusCode != 200 {
+		return nil, resp, fmt.Errorf("error fetching dashboard %q, received unexpected status code %d: %s", uid, statusCode, resp.String())
+	}
+
+	return collectDashboardPanels(grafanaResp.Dashboard.Panels), resp, nil
 }
 
 func (c *Client) DeleteDashboardByUID(uid string) (*resty.Response, error) {

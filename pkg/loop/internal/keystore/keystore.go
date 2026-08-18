@@ -22,9 +22,9 @@ type Client struct {
 	grpc keystorepb.KeystoreClient
 }
 
-func NewKeystoreClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *Client {
+func NewKeystoreClient(brokerCfg net.BrokerConfig) *Client {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "KeystoreClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &Client{PluginClient: pc, grpc: keystorepb.NewKeystoreClient(pc)}
 }
 

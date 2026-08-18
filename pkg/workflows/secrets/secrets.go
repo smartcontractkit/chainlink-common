@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"golang.org/x/crypto/nacl/box"
@@ -45,12 +47,7 @@ type EncryptedSecretsResult struct {
 }
 
 func ContainsP2pId(p2pId [32]byte, p2pIds [][32]byte) bool {
-	for _, id := range p2pIds {
-		if id == p2pId {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(p2pIds, p2pId)
 }
 
 func EncryptSecretsForNodes(
@@ -198,7 +195,7 @@ func ValidateEncryptedSecrets(secretsData []byte, encryptionPublicKeys map[strin
 		}
 
 		if keyFromMetadata != hex.EncodeToString(encryptionPublicKey[:]) {
-			return fmt.Errorf("the encryption public key in the encrypted secrets metadata does not match the one in the workflow registry. Ensure secrets have been correctly encrypted for this DON")
+			return errors.New("the encryption public key in the encrypted secrets metadata does not match the one in the workflow registry. Ensure secrets have been correctly encrypted for this DON")
 		}
 	}
 

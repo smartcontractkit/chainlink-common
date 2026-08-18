@@ -1,8 +1,23 @@
 package beholder
 
 import (
+	"context"
+	"crypto"
 	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/binary"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"maps"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
 // authHeaderKey is the name of the header that the node authenticator will use to send the auth token
@@ -10,6 +25,143 @@ var authHeaderKey = "X-Beholder-Node-Auth-Token"
 
 // authHeaderVersion is the version of the auth header format
 var authHeaderVersion = "1"
+var authHeaderV2 = "2"
+
+type HeaderProvider interface {
+	Headers(ctx context.Context) (map[string]string, error)
+}
+
+type PerRPCCredentialsProvider interface {
+	Credentials() credentials.PerRPCCredentials
+}
+
+type Auth interface {
+	PerRPCCredentialsProvider
+	HeaderProvider
+}
+
+type Signer interface {
+	Sign(ctx context.Context, keyID string, data []byte) ([]byte, error)
+}
+
+type staticAuth struct {
+	headers                  map[string]string
+	requireTransportSecurity bool
+}
+
+func (p *staticAuth) Headers(_ context.Context) (map[string]string, error) {
+	return p.headers, nil
+}
+
+func (p *staticAuth) Credentials() credentials.PerRPCCredentials {
+	return p
+}
+
+func (p *staticAuth) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	return p.Headers(ctx)
+}
+
+func (p *staticAuth) RequireTransportSecurity() bool {
+	return p.requireTransportSecurity
+}
+
+func NewStaticAuth(headers map[string]string, requireTransportSecurity bool) Auth {
+	return &staticAuth{headers, requireTransportSecurity}
+}
+
+// Deprecated: use NewStaticAuth instead
+//
+//go:fix inline
+func NewStaticAuthHeaderProvider(headers map[string]string) chipingress.HeaderProvider {
+	return NewStaticAuth(headers, false)
+}
+
+type rotatingAuth struct {
+	csaPubKey                ed25519.PublicKey
+	signer                   Signer
+	signerTimeout            time.Duration
+	headers                  atomic.Value // stores map[string]string
+	ttl                      time.Duration
+	lastUpdatedNanos         atomic.Int64
+	requireTransportSecurity bool
+	mu                       sync.Mutex
+}
+
+// NewRotatingAuth creates a rotating auth mechanism that automatically refreshes headers.
+// If initialHeaders are provided, they will be used immediately until TTL expires.
+// After TTL expiration, the signer is called to generate new headers.
+func NewRotatingAuth(csaPubKey ed25519.PublicKey, signer Signer, ttl time.Duration, requireTransportSecurity bool, initialHeaders map[string]string) Auth {
+	r := &rotatingAuth{
+		csaPubKey:                csaPubKey,
+		signer:                   signer,
+		signerTimeout:            time.Second * 5,
+		ttl:                      ttl,
+		lastUpdatedNanos:         atomic.Int64{},
+		requireTransportSecurity: requireTransportSecurity,
+	}
+
+	headers := make(map[string]string)
+	// If initial headers are provided, use them and set timestamp to now
+	// Otherwise, leave timestamp at 0 so headers are generated on first call
+	if len(initialHeaders) > 0 {
+		headers = initialHeaders
+		// We assume the time between the initial headers being generated is very small
+		r.lastUpdatedNanos.Store(time.Now().UnixNano())
+	}
+
+	r.headers.Store(headers)
+
+	return r
+}
+
+func (r *rotatingAuth) Headers(ctx context.Context) (map[string]string, error) {
+	// Return a copy of the headers to avoid concurrent read/write to the map by callers
+	returnHeader := make(map[string]string)
+	lastUpdated := time.Unix(0, r.lastUpdatedNanos.Load())
+
+	if time.Since(lastUpdated) > r.ttl {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+
+		// Multiple concurrent calls (after the first) will block waiting for the lock.
+		// First will get the lock and update headers + lastUpdated, double check since potentially another goroutine has already
+		// updated the headers and lastUpdated while waiting for the lock.
+		lastUpdated = time.Unix(0, r.lastUpdatedNanos.Load())
+		if time.Since(lastUpdated) < r.ttl {
+			maps.Copy(returnHeader, r.headers.Load().(map[string]string))
+			return returnHeader, nil
+		}
+
+		ctxWithTimeout, cancel := context.WithTimeout(ctx, r.signerTimeout)
+		defer cancel()
+
+		ts := time.Now()
+
+		newHeaders, err := NewAuthHeaderV2(ctxWithTimeout, r.csaPubKey, r.signer, ts)
+		if err != nil {
+			return nil, fmt.Errorf("beholder: failed to create auth header: %w", err)
+		}
+
+		r.headers.Store(newHeaders)
+		r.lastUpdatedNanos.Store(ts.UnixNano())
+	}
+
+	maps.Copy(returnHeader, r.headers.Load().(map[string]string))
+
+	return returnHeader, nil
+}
+
+func (a *rotatingAuth) Credentials() credentials.PerRPCCredentials {
+	return a
+}
+
+func (a *rotatingAuth) GetRequestMetadata(ctx context.Context, _ ...string) (map[string]string, error) {
+	return a.Headers(ctx)
+}
+
+func (a *rotatingAuth) RequireTransportSecurity() bool {
+	return a.requireTransportSecurity
+}
 
 // BuildAuthHeaders creates the auth header value to be included on requests.
 // The current format for the header is:
@@ -17,11 +169,86 @@ var authHeaderVersion = "1"
 // <version>:<public_key_hex>:<signature_hex>
 //
 // where the byte value of <public_key_hex> is what's being signed
+// Deprecated: use NewAuthHeaders
 func BuildAuthHeaders(privKey ed25519.PrivateKey) map[string]string {
-	pubKey := privKey.Public().(ed25519.PublicKey)
-	messageBytes := pubKey
+	messageBytes := privKey.Public().(ed25519.PublicKey)
 	signature := ed25519.Sign(privKey, messageBytes)
 	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
 
 	return map[string]string{authHeaderKey: headerValue}
+}
+
+// NewAuthHeaders creates the auth header value to be included on requests.
+// The current format for the header is:
+//
+// <version>:<public_key_hex>:<signature_hex>
+//
+// where the byte value of <public_key_hex> is what's being signed
+func NewAuthHeaders(ed25519Signer crypto.Signer) (map[string]string, error) {
+	messageBytes := ed25519Signer.Public().(ed25519.PublicKey)
+	signature, err := ed25519Signer.Sign(rand.Reader, messageBytes, crypto.Hash(0))
+	if err != nil {
+		return nil, fmt.Errorf("ed25519: failed to sign message: %w", err)
+	}
+	headerValue := fmt.Sprintf("%s:%x:%x", authHeaderVersion, messageBytes, signature)
+
+	return map[string]string{authHeaderKey: headerValue}, nil
+}
+
+// NewAuthHeadersV2 creates the V2 format of the auth header value to be included on requests.
+// This format includes a timestamp as part of the message to sign.
+// The current format for V2 headers is:
+//
+// <version>:<public_key_hex>:<timestamp_bytes>:<signature_hex>
+//
+// where the byte value of <public_key_hex> + <timestamp_bytes> is what's being signed
+func NewAuthHeaderV2(ctx context.Context, pubKey ed25519.PublicKey, signer Signer, ts time.Time) (map[string]string, error) {
+	// Append the bytes of the public key with bytes of the timestamp to create the message to sign
+	tsBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(tsBytes, uint64(ts.UnixNano()))
+	msgBytes := append(pubKey, tsBytes...)
+
+	// Sign(public key bytes + timestamp bytes)
+	signature, err := signer.Sign(ctx, fmt.Sprintf("%x", pubKey), msgBytes)
+	if err != nil {
+		return nil, fmt.Errorf("beholder: failed to sign auth header: %w", err)
+	}
+
+	headers := make(map[string]string)
+	headers[authHeaderKey] = fmt.Sprintf("%s:%x:%d:%x", authHeaderV2, pubKey, ts.UnixNano(), signature)
+
+	return headers, nil
+}
+
+func authDialOpt(auth PerRPCCredentialsProvider) grpc.DialOption {
+	return grpc.WithPerRPCCredentials(auth.Credentials())
+}
+
+// buildRotatingAuth validates cfg and returns a rotating Auth and its lazySigner.
+// Returns (nil, nil, nil) when AuthHeadersTTL == 0 (no rotating auth configured).
+func buildRotatingAuth(cfg Config) (Auth, *lazySigner, error) {
+	if cfg.AuthHeadersTTL <= 0 {
+		return nil, nil, nil
+	}
+
+	if cfg.AuthPublicKeyHex == "" {
+		return nil, nil, errors.New("auth: public key hex required for rotating auth (TTL > 0)")
+	}
+
+	if cfg.AuthHeadersTTL < 10*time.Minute {
+		return nil, nil, errors.New("auth: headers TTL must be at least 10 minutes")
+	}
+
+	key, err := hex.DecodeString(cfg.AuthPublicKeyHex)
+	if err != nil {
+		return nil, nil, fmt.Errorf("auth: failed to decode public key hex: %w", err)
+	}
+
+	signer := &lazySigner{}
+	if cfg.AuthKeySigner != nil {
+		signer.Set(cfg.AuthKeySigner)
+	}
+
+	auth := NewRotatingAuth(key, signer, cfg.AuthHeadersTTL, !cfg.InsecureConnection, cfg.AuthHeaders)
+	return auth, signer, nil
 }

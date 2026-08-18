@@ -35,9 +35,10 @@ type SchemaRegistry struct {
 }
 
 type Feeds struct {
-	URL             string
-	RDDReadTimeout  time.Duration
-	RDDPollInterval time.Duration
+	URL                    string
+	RDDReadTimeout         time.Duration
+	RDDPollInterval        time.Duration
+	ExporterCleanupTimeout time.Duration
 	// Ids of feeds that are present in the RDD but should not be monitored.
 	// These get matched against the string returned by FeedConfig#GetID() for
 	// each feed in RDD. If equal, the feed will get ignored!

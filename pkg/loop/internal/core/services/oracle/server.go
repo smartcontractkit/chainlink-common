@@ -38,7 +38,7 @@ func NewServer(log logger.Logger, impl core.Oracle, broker *net.BrokerExt) (*ser
 }
 
 func (s *server) Close() error {
-	return nil
+	return s.impl.Close(context.Background())
 }
 
 func (s *server) CloseOracle(ctx context.Context, e *emptypb.Empty) (*emptypb.Empty, error) {

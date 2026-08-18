@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"sort"
 	"strconv"
 	"time"
@@ -18,8 +19,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-	"github.com/smartcontractkit/chainlink-common/pkg/values/pb"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 const (
@@ -37,11 +38,12 @@ const (
 	REPORT_FORMAT_ARRAY     = "array"
 	REPORT_FORMAT_VALUE     = "value"
 	MODE_QUORUM_OCR         = "ocr"
+	MODE_QUORUM_ALL         = "all"
 	MODE_QUORUM_ANY         = "any"
 
 	DEFAULT_REPORT_FORMAT     = REPORT_FORMAT_MAP
 	DEFAULT_OUTPUT_FIELD_NAME = "Reports"
-	DEFAULT_MODE_QUORUM       = MODE_QUORUM_ANY
+	DEFAULT_MODE_QUORUM       = MODE_QUORUM_OCR
 )
 
 type ReduceAggConfig struct {
@@ -58,7 +60,7 @@ type ReduceAggConfig struct {
 
 type AggregationField struct {
 	// An optional check to only report when the difference from the previous report exceeds a certain threshold.
-	// Can only be used when the field is of a numeric type: string, decimal, int64, big.Int, time.Time, float64
+	// Can only be used when the field is of a numeric type: string, decimal, uint64, int64, big.Int, time.Time, float64
 	// If no deviation is provided on any field, there will always be a report once minimum observations are reached.
 	Deviation       decimal.Decimal `mapstructure:"-"  json:"-"`
 	DeviationString string          `mapstructure:"deviation"  json:"deviation,omitempty"`
@@ -228,7 +230,7 @@ func (a *reduceAggregator) shouldReport(lggr logger.Logger, field AggregationFie
 			if !bytes.Equal(v, unwrappedSingleValue.([]byte)) {
 				return true, nil
 			}
-		case map[string]interface{}, []any:
+		case map[string]any, []any:
 			marshalledOldValue, err := proto.MarshalOptions{Deterministic: true}.Marshal(values.Proto(oldValue))
 			if err != nil {
 				return false, err
@@ -305,9 +307,13 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 		// values are then re-wrapped here to handle aggregating against Value types
 		// which is used for mode aggregation
 		switch val := val.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			_, ok := val[aggregationKey]
 			if !ok {
+				continue
+			}
+			if val[aggregationKey] == nil {
+				lggr.Warnf("node %d contributed with a nil value under key %s", nodeID, aggregationKey)
 				continue
 			}
 
@@ -317,12 +323,17 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 				continue
 			}
 			vals = append(vals, rewrapped)
-		case []interface{}:
+		case []any:
 			i, err := strconv.Atoi(aggregationKey)
 			if err != nil {
 				lggr.Warnf("aggregation key %s could not be used to index a list type", aggregationKey)
 				continue
 			}
+			if i >= len(val) {
+				lggr.Warnf("node %d contributed with an array shorter than index %s", nodeID, aggregationKey)
+				continue
+			}
+
 			rewrapped, err := values.Wrap(val[i])
 			if err != nil {
 				lggr.Warnf("unable to wrap value %s", val[i])
@@ -401,22 +412,24 @@ func toDecimal(item values.Value) (decimal.Decimal, error) {
 
 	switch v := unwrapped.(type) {
 	case string:
-		deci, err := decimal.NewFromString(unwrapped.(string))
+		deci, err := decimal.NewFromString(v)
 		if err != nil {
 			return decimal.NewFromInt(0), err
 		}
 		return deci, nil
 	case decimal.Decimal:
-		return unwrapped.(decimal.Decimal), nil
+		return v, nil
 	case int64:
-		return decimal.NewFromInt(unwrapped.(int64)), nil
+		return decimal.NewFromInt(v), nil
+	case uint64:
+		return decimal.NewFromUint64(v), nil
 	case *big.Int:
 		big := unwrapped.(*big.Int)
 		return decimal.NewFromBigInt(big, 10), nil
 	case time.Time:
-		return decimal.NewFromInt(unwrapped.(time.Time).Unix()), nil
+		return decimal.NewFromInt(v.Unix()), nil
 	case float64:
-		return decimal.NewFromFloat(unwrapped.(float64)), nil
+		return decimal.NewFromFloat(v), nil
 	default:
 		// unsupported type
 		return decimal.NewFromInt(0), fmt.Errorf("unable to convert type %T to decimal", v)
@@ -455,16 +468,17 @@ func mode(items []values.Value) (values.Value, int, error) {
 		}
 	}
 
-	var modes []values.Value
-	for _, ctr := range counts {
+	var tied [][32]byte
+	for sha, ctr := range counts {
 		if ctr.count == maxCount {
-			modes = append(modes, ctr.fullObservation)
+			tied = append(tied, sha)
 		}
 	}
-
-	// If more than one mode found, choose first
-
-	return modes[0], maxCount, nil
+	slices.SortFunc(tied, func(a, b [32]byte) int {
+		return bytes.Compare(a[:], b[:])
+	})
+	// If more than one mode ties for max count, pick the one with smallest content hash (stable across nodes).
+	return counts[tied[0]].fullObservation, maxCount, nil
 }
 
 func modeHasQuorum(quorumType string, count int, f int) error {
@@ -474,6 +488,11 @@ func modeHasQuorum(quorumType string, count int, f int) error {
 	case MODE_QUORUM_OCR:
 		if count < f+1 {
 			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, f+1)
+		}
+		return nil
+	case MODE_QUORUM_ALL:
+		if count < 2*f+1 {
+			return fmt.Errorf("mode quorum not reached. have: %d, want: %d", count, 2*f+1)
 		}
 		return nil
 	default:
@@ -528,12 +547,7 @@ func formatReport(report map[string]any, format string) (any, error) {
 }
 
 func isOneOf(toCheck string, options []string) bool {
-	for _, option := range options {
-		if toCheck == option {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(options, toCheck)
 }
 
 func NewReduceAggregator(config values.Map) (types.Aggregator, error) {
@@ -592,11 +606,11 @@ func ParseConfigReduceAggregator(config values.Map) (ReduceAggConfig, error) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field must contain a method. options: [%s, %s]", AGGREGATION_METHOD_MEDIAN, AGGREGATION_METHOD_MODE)
 		}
 		if field.Method == AGGREGATION_METHOD_MODE && len(field.ModeQuorum) == 0 {
-			field.ModeQuorum = MODE_QUORUM_OCR
-			parsedConfig.Fields[i].ModeQuorum = MODE_QUORUM_OCR
+			field.ModeQuorum = DEFAULT_MODE_QUORUM
+			parsedConfig.Fields[i].ModeQuorum = DEFAULT_MODE_QUORUM
 		}
-		if field.Method == AGGREGATION_METHOD_MODE && !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR}) {
-			return ReduceAggConfig{}, fmt.Errorf("mode quorum must be one of options: [%s, %s]", MODE_QUORUM_ANY, MODE_QUORUM_OCR)
+		if field.Method == AGGREGATION_METHOD_MODE && !isOneOf(field.ModeQuorum, []string{MODE_QUORUM_ANY, MODE_QUORUM_OCR, MODE_QUORUM_ALL}) {
+			return ReduceAggConfig{}, fmt.Errorf("mode quorum must be one of options: [%s, %s, %s]", MODE_QUORUM_ANY, MODE_QUORUM_OCR, MODE_QUORUM_ALL)
 		}
 		if len(field.DeviationString) > 0 && isOneOf(field.DeviationType, []string{DEVIATION_TYPE_NONE, DEVIATION_TYPE_ANY}) {
 			return ReduceAggConfig{}, fmt.Errorf("aggregation field cannot have deviation with a deviation type of %s", field.DeviationType)

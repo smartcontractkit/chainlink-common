@@ -58,7 +58,10 @@ func sendResponseFn(response *wasmpb.Response) {
 		os.Exit(CodeInvalidRequest)
 	}
 
-	ptr, ptrlen := bufferToPointerLen(pb)
+	ptr, ptrlen, err := bufferToPointerLen(pb)
+	if err != nil {
+		os.Exit(CodeInvalidResponse)
+	}
 	errno := sendResponse(ptr, ptrlen)
 	if errno != 0 {
 		os.Exit(CodeHostErr)
@@ -76,7 +79,10 @@ type wasmWriteSyncer struct{}
 
 // Write is used to proxy log requests from the WASM binary back to the host
 func (wws *wasmWriteSyncer) Write(p []byte) (n int, err error) {
-	ptr, ptrlen := bufferToPointerLen(p)
+	ptr, ptrlen, err := bufferToPointerLen(p)
+	if err != nil {
+		return int(ptrlen), err
+	}
 	log(ptr, ptrlen)
 	return int(ptrlen), nil
 }

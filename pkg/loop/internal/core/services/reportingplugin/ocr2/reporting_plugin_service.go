@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
@@ -32,9 +33,9 @@ type ReportingPluginServiceClient struct {
 	reportingPluginService pb.ReportingPluginServiceClient
 }
 
-func NewReportingPluginServiceClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *ReportingPluginServiceClient {
+func NewReportingPluginServiceClient(brokerCfg net.BrokerConfig) *ReportingPluginServiceClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "ReportingPluginServiceClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &ReportingPluginServiceClient{PluginClient: pc, reportingPluginService: pb.NewReportingPluginServiceClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
@@ -59,7 +60,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterPipelineRunnerServiceServer(s, pipeline.NewRunnerServer(pipelineRunner))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(pipelineRunnerRes)
 
@@ -67,7 +68,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterTelemetryServer(s, telemetry.NewTelemetryServer(telemetryService))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(telemetryRes)
 
@@ -75,7 +76,7 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			pb.RegisterErrorLogServer(s, errorlog.NewServer(errorLog))
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		deps.Add(errorLogRes)
 
@@ -84,22 +85,22 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 		})
 
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new key value store: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new key value store: %w", err)
 		}
 
 		deps.Add(keyValueStoreRes)
 
 		relayerSetServer, relayerSetServerRes := relayerset.NewRelayerSetServer(m.Logger, relayerSet, m.BrokerExt)
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to create new relayer set: %w", err)
+			return 0, deps, fmt.Errorf("failed to create new relayer set: %w", err)
 		}
 
 		relayerSetID, relayerSetRes, err := m.ServeNew("RelayerSet", func(s *grpc.Server) {
-			relayersetpb.RegisterRelayerSetServer(s, relayerSetServer)
+			relayersetpb.RegisterRelayerSetServerWithDependants(s, relayerSetServer)
 		})
 
 		if err != nil {
-			return 0, nil, fmt.Errorf("failed to serve new relayer set: %w", err)
+			return 0, deps, fmt.Errorf("failed to serve new relayer set: %w", err)
 		}
 
 		deps.Add(relayerSetRes)
@@ -121,11 +122,11 @@ func (m *ReportingPluginServiceClient) NewReportingPluginFactory(
 			RelayerSetID:     relayerSetID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
-		return reply.ID, nil, nil
+		return reply.ID, deps, nil
 	})
-	return NewReportingPluginFactoryClient(m.PluginClient.BrokerExt, cc), nil
+	return NewReportingPluginFactoryClient(m.BrokerExt, cc), nil
 }
 
 func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context) (core.ValidationService, error) {
@@ -136,7 +137,7 @@ func (m *ReportingPluginServiceClient) NewValidationService(ctx context.Context)
 		}
 		return reply.ID, nil, nil
 	})
-	return validation.NewValidationServiceClient(m.PluginClient.BrokerExt, cc), nil
+	return validation.NewValidationServiceClient(m.BrokerExt, cc), nil
 }
 
 var _ pb.ReportingPluginServiceServer = (*reportingPluginServiceServer)(nil)
@@ -149,6 +150,7 @@ type reportingPluginServiceServer struct {
 }
 
 func RegisterReportingPluginServiceServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl core.ReportingPluginClient) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: impl})
 	pb.RegisterReportingPluginServiceServer(server, newReportingPluginServiceServer(&net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}, impl))
 	return nil
 }

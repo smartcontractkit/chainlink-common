@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"os"
-	"runtime/debug"
 
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,19 +20,16 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 )
 
 type GRPCOpts = loopnet.GRPCOpts
 
-type OtelAttributes map[string]string
-
-func (a OtelAttributes) AsStringAttributes() (attributes []attribute.KeyValue) {
-	for k, v := range a {
-		attributes = append(attributes, attribute.String(k, v))
-	}
-	return attributes
-}
+type OtelAttributes = beholder.OtelAttributes
 
 type TracingConfig struct {
 	// NodeAttributes are the attributes to attach to traces.
@@ -58,13 +54,31 @@ type TracingConfig struct {
 	AuthHeaders map[string]string
 }
 
+type GRPCOptsConfig struct {
+	Registerer           prometheus.Registerer // leave nil to use default [prometheus.Registerer]
+	ServerMaxRecvMsgSize int                   // [grpc.MaxRecvMsgSize]
+}
+
+func (c GRPCOptsConfig) New(lggr logger.Logger) GRPCOpts {
+	if c.Registerer == nil {
+		c.Registerer = prometheus.DefaultRegisterer
+	}
+	opts := GRPCOpts{DialOpts: dialOptions(c.Registerer), NewServer: newServerFn(lggr, c.Registerer)}
+	if c.ServerMaxRecvMsgSize > 0 {
+		newFn := opts.NewServer
+		opts.NewServer = func(opts []grpc.ServerOption) *grpc.Server {
+			opts = append(opts, grpc.MaxRecvMsgSize(c.ServerMaxRecvMsgSize))
+			return newFn(opts)
+		}
+	}
+	return opts
+}
+
 // NewGRPCOpts initializes open telemetry and returns GRPCOpts with telemetry interceptors.
 // It is called from the host and each plugin - intended as there is bidirectional communication
+// Deprecated: Use GRPCOptsConfig.New
 func NewGRPCOpts(registerer prometheus.Registerer) GRPCOpts {
-	if registerer == nil {
-		registerer = prometheus.DefaultRegisterer
-	}
-	return GRPCOpts{DialOpts: dialOptions(registerer), NewServer: newServerFn(registerer)}
+	return GRPCOptsConfig{Registerer: registerer}.New(logger.Nop())
 }
 
 // SetupTracing initializes open telemetry with the provided config.
@@ -100,21 +114,10 @@ func SetupTracing(config TracingConfig) error {
 }
 
 func (config TracingConfig) Attributes() []attribute.KeyValue {
-	var version string
-	var service string
-	buildInfo, ok := debug.ReadBuildInfo()
-	if !ok {
-		version = "unknown"
-		service = "cl-node"
-	} else {
-		version = buildInfo.Main.Version
-		service = buildInfo.Main.Path
-	}
-
 	attributes := []attribute.KeyValue{
-		semconv.ServiceNameKey.String(service),
+		semconv.ServiceNameKey.String(build.Program),
 		semconv.ProcessPIDKey.Int(os.Getpid()),
-		semconv.ServiceVersionKey.String(version),
+		semconv.ServiceVersionKey.String(build.Version),
 	}
 
 	for k, v := range config.NodeAttributes {
@@ -137,7 +140,6 @@ func (config TracingConfig) NewSpanExporter() (sdktrace.SpanExporter, error) {
 		creds = insecure.NewCredentials()
 	}
 
-	//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
 	//nolint:staticcheck
 	conn, err := grpc.DialContext(ctx, config.CollectorTarget,
 		// Note the potential use of insecure transport here. TLS is recommended in production.
@@ -173,37 +175,36 @@ func dialOptions(r prometheus.Registerer) []grpc.DialOption {
 	r.MustRegister(cm)
 	ctxExemplar := grpcprom.WithExemplarFromContext(exemplarFromContext)
 	return []grpc.DialOption{
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
 		grpc.WithChainUnaryInterceptor(
-			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.UnaryClientInterceptor(), //nolint:staticcheck
+			contexts.CREUnaryInterceptor,
 			cm.UnaryClientInterceptor(ctxExemplar),
 		),
 		grpc.WithChainStreamInterceptor(
-			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.StreamClientInterceptor(), //nolint:staticcheck
+			contexts.CREStreamInterceptor,
 			cm.StreamClientInterceptor(ctxExemplar),
 		),
 	}
 }
 
 // newServerFn return a func for constructing [*grpc.Server]s that intercepts and reports telemetry.
-func newServerFn(r prometheus.Registerer) func(opts []grpc.ServerOption) *grpc.Server {
+func newServerFn(lggr logger.Logger, r prometheus.Registerer) func(opts []grpc.ServerOption) *grpc.Server {
 	srvMetrics := grpcprom.NewServerMetrics(
 		grpcprom.WithServerHandlingTimeHistogram(grpcprom.WithHistogramBuckets(grpcpromBuckets)),
 	)
 	r.MustRegister(srvMetrics)
 	ctxExemplar := grpcprom.WithExemplarFromContext(exemplarFromContext)
+	creInterceptor := contexts.NewCREServerInterceptor(lggr)
 	interceptors := []grpc.ServerOption{
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		// Order matters e.g. tracing interceptor have to create span first for the later exemplars to work.
 		grpc.ChainUnaryInterceptor(
-			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.UnaryServerInterceptor(), //nolint:staticcheck
+			creInterceptor.UnaryServerInterceptor,
 			srvMetrics.UnaryServerInterceptor(ctxExemplar),
 		),
 		grpc.ChainStreamInterceptor(
-			//TODO https://smartcontract-it.atlassian.net/browse/BCF-3290
-			otelgrpc.StreamServerInterceptor(), //nolint:staticcheck
+			creInterceptor.StreamServerInterceptor,
 			srvMetrics.StreamServerInterceptor(ctxExemplar),
 		),
 	}

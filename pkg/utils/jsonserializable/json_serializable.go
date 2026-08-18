@@ -12,16 +12,16 @@ import (
 )
 
 type JSONSerializable struct {
-	Val   interface{}
+	Val   any
 	Valid bool
 }
 
-func ReinterpretJSONNumbers(val interface{}) (interface{}, error) {
+func ReinterpretJSONNumbers(val any) (any, error) {
 	switch v := val.(type) {
 	case json.Number:
 		return getJSONNumberValue(v)
-	case []interface{}:
-		s := make([]interface{}, len(v))
+	case []any:
+		s := make([]any, len(v))
 		for i, vv := range v {
 			ival, ierr := ReinterpretJSONNumbers(vv)
 			if ierr != nil {
@@ -30,8 +30,8 @@ func ReinterpretJSONNumbers(val interface{}) (interface{}, error) {
 			s[i] = ival
 		}
 		return s, nil
-	case map[string]interface{}:
-		m := make(map[string]interface{}, len(v))
+	case map[string]any:
+		m := make(map[string]any, len(v))
 		for k, vv := range v {
 			ival, ierr := ReinterpretJSONNumbers(vv)
 			if ierr != nil {
@@ -54,7 +54,7 @@ func (js *JSONSerializable) UnmarshalJSON(bs []byte) error {
 		return nil
 	}
 
-	var decoded interface{}
+	var decoded any
 	d := json.NewDecoder(bytes.NewReader(bs))
 	d.UseNumber()
 	if err := d.Decode(&decoded); err != nil {
@@ -85,7 +85,7 @@ func (js JSONSerializable) MarshalJSON() ([]byte, error) {
 	return json.Marshal(jsWithHex)
 }
 
-func (js *JSONSerializable) Scan(value interface{}) error {
+func (js *JSONSerializable) Scan(value any) error {
 	if value == nil {
 		*js = JSONSerializable{}
 		return nil
@@ -112,7 +112,7 @@ func (js *JSONSerializable) Empty() bool {
 }
 
 // replaceBytesWithHex replaces all []byte with hex-encoded strings
-func replaceBytesWithHex(val interface{}) interface{} {
+func replaceBytesWithHex(val any) any {
 	if v, ok := val.(interface{ Hex() string }); ok {
 		return v.Hex()
 	}
@@ -128,20 +128,20 @@ func replaceBytesWithHex(val interface{}) interface{} {
 			list = append(list, stringToHex(string(bytes)))
 		}
 		return list
-	case []interface{}:
+	case []any:
 		if value == nil {
 			return value
 		}
-		var list []interface{}
+		var list []any
 		for _, item := range value {
 			list = append(list, replaceBytesWithHex(item))
 		}
 		return list
-	case map[string]interface{}:
+	case map[string]any:
 		if value == nil {
 			return value
 		}
-		m := make(map[string]interface{})
+		m := make(map[string]any)
 		for k, v := range value {
 			m[k] = replaceBytesWithHex(v)
 		}
@@ -172,7 +172,7 @@ func replaceBytesWithHex(val interface{}) interface{} {
 }
 
 // uint8ArrayToSlice converts [N]uint8 array to slice.
-func uint8ArrayToSlice(arr interface{}) interface{} {
+func uint8ArrayToSlice(arr any) any {
 	t := reflect.TypeOf(arr)
 	if t.Kind() != reflect.Array || t.Elem().Kind() != reflect.Uint8 {
 		return nil
@@ -183,8 +183,8 @@ func uint8ArrayToSlice(arr interface{}) interface{} {
 	return s.Interface()
 }
 
-func getJSONNumberValue(value json.Number) (interface{}, error) {
-	var result interface{}
+func getJSONNumberValue(value json.Number) (any, error) {
+	var result any
 
 	bn, ok := new(big.Int).SetString(value.String(), 10)
 	if ok {

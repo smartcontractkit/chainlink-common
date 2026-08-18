@@ -25,10 +25,10 @@ func TestSignature(t *testing.T) {
 	roundTrip, err := SignatureFromBytes(b)
 	require.NoError(t, err)
 	// compare fields because comparing proto objects directly gave incorrect failures
-	require.EqualValues(t, s.sig.X.GetValue(), roundTrip.sig.X.GetValue())
-	require.EqualValues(t, s.sig.X.GetNegative(), roundTrip.sig.X.GetNegative())
-	require.EqualValues(t, s.sig.Y.GetValue(), roundTrip.sig.Y.GetValue())
-	require.EqualValues(t, s.sig.Y.GetNegative(), roundTrip.sig.Y.GetNegative())
+	require.Equal(t, s.sig.X.GetValue(), roundTrip.sig.X.GetValue())
+	require.Equal(t, s.sig.X.GetNegative(), roundTrip.sig.X.GetNegative())
+	require.Equal(t, s.sig.Y.GetValue(), roundTrip.sig.Y.GetValue())
+	require.Equal(t, s.sig.Y.GetNegative(), roundTrip.sig.Y.GetNegative())
 
 	// no negative allowed
 	s, err = SignatureFromBigInts(big.NewInt(-7),

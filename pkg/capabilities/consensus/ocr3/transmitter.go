@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"google.golang.org/protobuf/proto"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -118,7 +119,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		c.capability = cp.(capabilities.ExecutableCapability)
 	}
 
-	msg := "report with id " + info.Id.ReportId + " should be reported: " + fmt.Sprint(info.ShouldReport)
+	msg := "report with id " + info.Id.ReportId + " should be reported: " + strconv.FormatBool(info.ShouldReport)
 	err = c.emitter.With(
 		"workflowExecutionID", info.Id.WorkflowExecutionId,
 		"workflowID", info.Id.WorkflowId,
@@ -127,7 +128,7 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 		"reportId", info.Id.ReportId,
 	).Emit(ctx, msg)
 	if err != nil {
-		c.lggr.Errorw(fmt.Sprintf("could not emit message: %s", msg), "error", err)
+		c.lggr.Errorw("could not emit message: "+msg, "error", err)
 	}
 
 	_, err = c.capability.Execute(ctx, capabilities.CapabilityRequest{
@@ -147,6 +148,10 @@ func (c *ContractTransmitter) Transmit(ctx context.Context, configDigest types.C
 
 func (c *ContractTransmitter) FromAccount(_ context.Context) (types.Account, error) {
 	return types.Account(c.fromAccount), nil
+}
+
+func (c *ContractTransmitter) SetCapability(capability capabilities.ExecutableCapability) {
+	c.capability = capability
 }
 
 func NewContractTransmitter(lggr logger.Logger, registry core.CapabilitiesRegistry, fromAccount string) *ContractTransmitter {

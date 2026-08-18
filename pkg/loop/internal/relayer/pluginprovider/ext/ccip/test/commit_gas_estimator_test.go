@@ -11,12 +11,11 @@ import (
 	ccippb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ccip"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/ccip"
 	looptest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestStaticCommitGasEstimator(t *testing.T) {
 	t.Parallel()
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	// ensure GasPriceEstimatorCommit fixture is self consistent
 	assert.NoError(t, GasPriceEstimatorCommit.Evaluate(ctx, GasPriceEstimatorCommit))
 
@@ -41,28 +40,28 @@ func TestGasPriceEstimatorCommitGRPC(t *testing.T) {
 // do not add client.Close to this test, test that from the driver test
 func roundTripGasPriceEstimatorCommitTests(t *testing.T, client *ccip.CommitGasEstimatorGRPCClient) {
 	t.Run("GetGasPrice", func(t *testing.T) {
-		price, err := client.GetGasPrice(tests.Context(t))
+		price, err := client.GetGasPrice(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.getGasPriceResponse, price)
 	})
 
 	t.Run("DenoteInUSD", func(t *testing.T) {
-		ctx := tests.Context(t)
+		ctx := t.Context()
 		usd, err := client.DenoteInUSD(ctx, GasPriceEstimatorCommit.denoteInUSDRequest.p, GasPriceEstimatorCommit.denoteInUSDRequest.wrappedNativePrice)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.denoteInUSDResponse.result, usd)
 	})
 
 	t.Run("Deviates", func(t *testing.T) {
-		ctx := tests.Context(t)
-		isDeviant, err := client.Deviates(ctx, GasPriceEstimatorCommit.deviatesRequest.p1, GasPriceEstimatorCommit.deviatesRequest.p2)
+		ctx := t.Context()
+		isDeviant, err := client.Deviates(ctx, GasPriceEstimatorCommit.p1, GasPriceEstimatorCommit.p2)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.deviatesResponse, isDeviant)
 	})
 
 	t.Run("Median", func(t *testing.T) {
-		ctx := tests.Context(t)
-		median, err := client.Median(ctx, GasPriceEstimatorCommit.medianRequest.gasPrices)
+		ctx := t.Context()
+		median, err := client.Median(ctx, GasPriceEstimatorCommit.gasPrices)
 		require.NoError(t, err)
 		assert.Equal(t, GasPriceEstimatorCommit.medianResponse, median)
 	})
@@ -75,6 +74,6 @@ func setupCommitGasEstimatorServer(t *testing.T, s *grpc.Server, b *loopnet.Brok
 }
 
 // adapt the client constructor so we can use it with the grpc scaffold
-func setupCommitGasEstimatorClient(b *loopnet.BrokerExt, conn grpc.ClientConnInterface) *ccip.CommitGasEstimatorGRPCClient {
+func setupCommitGasEstimatorClient(b *loopnet.BrokerExt, conn loopnet.ClientConnInterface) *ccip.CommitGasEstimatorGRPCClient {
 	return ccip.NewCommitGasEstimatorGRPCClient(conn)
 }

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+
+package loop;
+
+import "google/protobuf/empty.proto";
+
+message GetOrganizationRequest {
+  string owner = 1;
+}
+
+message GetOrganizationResponse {
+  string organization_id = 1;
+}
+
+service OrgResolver {
+  rpc Get(GetOrganizationRequest) returns (GetOrganizationResponse);
+}

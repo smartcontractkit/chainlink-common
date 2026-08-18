@@ -31,7 +31,7 @@ func TestMultiFeedMonitorSynchronousMode(t *testing.T) {
 	chainCfg.ReadTimeout = 1 * time.Second
 	chainCfg.PollInterval = 5 * time.Second
 	feeds := make([]FeedConfig, numFeeds)
-	for i := 0; i < numFeeds; i++ {
+	for i := range numFeeds {
 		feeds[i] = generateFeedConfig()
 	}
 	nodes := []NodeConfig{generateNodeConfig()}
@@ -41,7 +41,7 @@ func TestMultiFeedMonitorSynchronousMode(t *testing.T) {
 
 	producer := fakeProducer{make(chan producerMessage), make(chan struct{})}
 	defer func() { assert.NoError(t, producer.Close()) }()
-	factory := &fakeRandomDataSourceFactory{make(chan interface{})}
+	factory := &fakeRandomDataSourceFactory{make(chan any)}
 
 	prometheusExporterFactory := NewPrometheusExporterFactory(
 		newNullLogger(),
@@ -63,6 +63,7 @@ func TestMultiFeedMonitorSynchronousMode(t *testing.T) {
 		[]SourceFactory{factory},
 		[]ExporterFactory{prometheusExporterFactory, kafkaExporterFactory},
 		100, // bufferCapacity for source pollers
+		1*time.Second,
 	)
 	subs.Go(func() {
 		monitor.Run(ctx, RDDData{feeds, nodes})
@@ -115,7 +116,7 @@ func TestMultiFeedMonitorForPerformance(t *testing.T) {
 	chainCfg.ReadTimeout = 1 * time.Second
 	chainCfg.PollInterval = 5 * time.Second
 	feeds := []FeedConfig{}
-	for i := 0; i < numFeeds; i++ {
+	for range numFeeds {
 		feeds = append(feeds, generateFeedConfig())
 	}
 	nodes := []NodeConfig{generateNodeConfig()}
@@ -125,7 +126,7 @@ func TestMultiFeedMonitorForPerformance(t *testing.T) {
 
 	producer := fakeProducer{make(chan producerMessage), make(chan struct{})}
 	defer func() { assert.NoError(t, producer.Close()) }()
-	factory := &fakeRandomDataSourceFactory{make(chan interface{})}
+	factory := &fakeRandomDataSourceFactory{make(chan any)}
 
 	prometheusExporterFactory := NewPrometheusExporterFactory(
 		newNullLogger(),
@@ -147,6 +148,7 @@ func TestMultiFeedMonitorForPerformance(t *testing.T) {
 		[]SourceFactory{factory},
 		[]ExporterFactory{prometheusExporterFactory, kafkaExporterFactory},
 		100, // bufferCapacity for source pollers
+		1*time.Second,
 	)
 	subs.Go(func() {
 		monitor.Run(ctx, RDDData{feeds, nodes})
@@ -215,6 +217,7 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 			[]SourceFactory{sourceFactory1, sourceFactory2},
 			[]ExporterFactory{exporterFactory1, exporterFactory2},
 			10, // bufferCapacity for source pollers
+			1*time.Second,
 		)
 
 		sourceFactory1.On("NewSource", chainConfig, feeds[0]).Return(nil, fmt.Errorf("source_factory1/feed1 failed"))
@@ -242,13 +245,13 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 		var subs utils.Subprocesses
 		ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 
-		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan interface{})}
-		sourceFactory2 := &fakeSourceFactoryWithError{make(chan interface{}), make(chan error), true}
-		sourceFactory3 := &fakeRandomDataSourceFactory{make(chan interface{})}
+		sourceFactory1 := &fakeRandomDataSourceFactory{make(chan any)}
+		sourceFactory2 := &fakeSourceFactoryWithError{make(chan any), make(chan error), true}
+		sourceFactory3 := &fakeRandomDataSourceFactory{make(chan any)}
 
-		exporterFactory1 := &fakeExporterFactory{make(chan interface{}), false}
-		exporterFactory2 := &fakeExporterFactory{make(chan interface{}), true} // factory errors out on NewExporter.
-		exporterFactory3 := &fakeExporterFactory{make(chan interface{}), false}
+		exporterFactory1 := &fakeExporterFactory{make(chan any), false}
+		exporterFactory2 := &fakeExporterFactory{make(chan any), true} // factory errors out on NewExporter.
+		exporterFactory3 := &fakeExporterFactory{make(chan any), false}
 
 		monitor := NewMultiFeedMonitor(
 			chainCfg,
@@ -256,6 +259,7 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 			[]SourceFactory{sourceFactory1, sourceFactory2, sourceFactory3},
 			[]ExporterFactory{exporterFactory1, exporterFactory2, exporterFactory3},
 			100, // bufferCapacity for source pollers
+			1*time.Second,
 		)
 
 		envelope, err := generateEnvelope(ctx)
@@ -268,9 +272,8 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 		for _, factory := range []*fakeRandomDataSourceFactory{
 			sourceFactory1, sourceFactory3,
 		} {
-			factory := factory
 			subs.Go(func() {
-				for i := 0; i < 10; i++ {
+				for range 10 {
 					select {
 					case factory.updates <- envelope:
 					case <-ctx.Done():
@@ -281,7 +284,7 @@ func TestMultiFeedMonitorErroringFactories(t *testing.T) {
 		}
 
 		subs.Go(func() {
-			for i := 0; i < 10; i++ {
+			for range 10 {
 				select {
 				case sourceFactory2.updates <- envelope:
 				case <-ctx.Done():

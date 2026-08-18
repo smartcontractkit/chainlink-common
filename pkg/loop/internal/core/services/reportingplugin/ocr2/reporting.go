@@ -5,10 +5,11 @@ import (
 	"math"
 	"time"
 
-	"github.com/smartcontractkit/libocr/commontypes"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+
+	"github.com/smartcontractkit/libocr/commontypes"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -21,9 +22,10 @@ type ReportingPluginFactoryClient struct {
 	grpc pb.ReportingPluginFactoryClient
 }
 
-func NewReportingPluginFactoryClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ReportingPluginFactoryClient {
+func NewReportingPluginFactoryClient(b *net.BrokerExt, cc net.ClientConnInterface) *ReportingPluginFactoryClient {
+	b = b.WithName("ReportingPluginProviderClient")
 	return &ReportingPluginFactoryClient{
-		BrokerExt:     b.WithName("ReportingPluginProviderClient"),
+		BrokerExt:     b,
 		ServiceClient: goplugin.NewServiceClient(b, cc),
 		grpc:          pb.NewReportingPluginFactoryClient(cc),
 	}
@@ -56,7 +58,7 @@ func (r *ReportingPluginFactoryClient) NewReportingPlugin(ctx context.Context, c
 			MaxReportLength:      int(reply.ReportingPluginInfo.ReportingPluginLimits.MaxReportLength),
 		},
 	}
-	cc, err := r.BrokerExt.Dial(reply.ReportingPluginID)
+	cc, err := r.Dial(reply.ReportingPluginID)
 	if err != nil {
 		return nil, libocr.ReportingPluginInfo{}, err
 	}

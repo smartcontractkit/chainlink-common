@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/smartcontractkit/grpc-proxy/proxy"
 	"google.golang.org/grpc"
+
+	"github.com/smartcontractkit/grpc-proxy/proxy"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr2"
@@ -28,9 +29,9 @@ type CommitLOOPClient struct {
 	generator ccippb.CommitFactoryGeneratorClient
 }
 
-func NewCommitLOOPClient(broker net.Broker, brokerCfg net.BrokerConfig, conn *grpc.ClientConn) *CommitLOOPClient {
+func NewCommitLOOPClient(brokerCfg net.BrokerConfig) *CommitLOOPClient {
 	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "CommitLOOPClient")
-	pc := goplugin.NewPluginClient(broker, brokerCfg, conn)
+	pc := goplugin.NewPluginClient(brokerCfg)
 	return &CommitLOOPClient{
 		PluginClient:  pc,
 		ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc),
@@ -73,7 +74,7 @@ func (c *CommitLOOPClient) NewCommitFactory(ctx context.Context, provider types.
 			ProviderServiceId: providerID,
 		})
 		if err != nil {
-			return 0, nil, err
+			return 0, deps, err
 		}
 		return resp.CommitFactoryServiceId, deps, nil
 	}

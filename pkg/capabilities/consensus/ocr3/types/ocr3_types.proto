@@ -4,18 +4,18 @@ option go_package = "capabilities/consensus/ocr3/types";
 
 package ocr3_types;
 
-import "values/pb/values.proto";
+import "values/v1/values.proto";
 import "google/protobuf/timestamp.proto";
 
 // per-workflow aggregation outcome
 message AggregationOutcome {
-  values.Map encodableOutcome = 1; // passed to encoders
+  values.v1.Map encodableOutcome = 1; // passed to encoders
   bytes metadata = 2; // internal to the aggregator
   bool shouldReport = 3;
   uint64 lastSeenAt = 4; // this is the equivalent of a SeqNr
   google.protobuf.Timestamp timestamp = 5; // current time of the node
   string encoderName = 6; // optional dynamic encoder override
-  values.Map encoderConfig = 7; // optional dynamic encoder config
+  values.v1.Map encoderConfig = 7; // optional dynamic encoder config
 }
 
 message Query {
@@ -38,9 +38,9 @@ message Id {
 message Observation {
   Id id = 1;
   // list of observations defined in inputs.observations
-  values.List observations = 4;
+  values.v1.List observations = 4;
   string overriddenEncoderName = 5;
-  values.Map overriddenEncoderConfig = 6;
+  values.v1.Map overriddenEncoderConfig = 6;
 }
 
 message Observations {

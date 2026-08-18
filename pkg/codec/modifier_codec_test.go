@@ -2,7 +2,6 @@ package codec_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"strconv"
 	"testing"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/codec"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 var anyTestBytes = []byte("any test bytes")
@@ -30,7 +28,7 @@ const anyForEncoding = true
 func TestModifierCodec(t *testing.T) {
 	t.Parallel()
 
-	ctx := tests.Context(t)
+	ctx := t.Context()
 	mod, err := codec.NewModifierCodec(&testCodec{}, testModifier{})
 	require.NoError(t, err)
 
@@ -96,7 +94,7 @@ func TestModifierCodec(t *testing.T) {
 	t.Run("Decode works on slices", func(t *testing.T) {
 		decoded := &[]ModifierCodecOffChainCompatibleType{}
 		require.NoError(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType))
-		assert.Equal(t, len(*decoded), anyValue)
+		assert.Len(t, *decoded, anyValue)
 		for i, d := range *decoded {
 			assert.Equal(t, anyValue+i, d.Z)
 		}
@@ -115,7 +113,7 @@ func TestModifierCodec(t *testing.T) {
 
 	t.Run("Encode returns errors from type converter", func(t *testing.T) {
 		_, err = mod.Encode(ctx, &modifierCodecOffChainType{Z: anyValue}, "invalid type")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns errors from codec", func(t *testing.T) {
@@ -124,29 +122,29 @@ func TestModifierCodec(t *testing.T) {
 
 	t.Run("Decode returns error for non pointer types", func(t *testing.T) {
 		decoded := modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anyItemType), types.ErrInvalidType))
+		require.ErrorIs(t, mod.Decode(ctx, anyTestBytes, decoded, anyItemType), types.ErrInvalidType)
 	})
 
 	t.Run("Decode returns error arrays with wrong number of elements", func(t *testing.T) {
 		decoded := &[3]modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrSliceWrongLen))
+		require.ErrorIs(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrSliceWrongLen)
 	})
 
 	t.Run("Decode returns error for incompatible type", func(t *testing.T) {
 		decoded := &modifierCodecOffChainType{}
-		require.True(t, errors.Is(mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrInvalidType))
+		require.ErrorIs(t, mod.Decode(ctx, anyTestBytes, decoded, anySliceItemType), types.ErrInvalidType)
 	})
 
 	t.Run("Encode returns errors from type converter", func(t *testing.T) {
 		err = mod.Decode(ctx, anyTestBytes, &modifierCodecOffChainType{}, "invalid type")
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
 	var actual any
 	t.Run("CreateContractType returns modified type", func(t *testing.T) {
 		actual, err = mod.(types.TypeProvider).CreateType(anyItemType, anyForEncoding)
 		require.NoError(t, err)
-		assert.Equal(t, reflect.TypeOf(&modifierCodecOffChainType{}), reflect.TypeOf(actual))
+		assert.Equal(t, reflect.TypeFor[*modifierCodecOffChainType](), reflect.TypeOf(actual))
 	})
 
 	t.Run("Create type returns errors from type provides", func(t *testing.T) {
@@ -256,7 +254,7 @@ func (t *testCodec) Decode(_ context.Context, raw []byte, into any, itemType str
 	case anySliceItemType:
 		items := make([]modifierCodecChainType, anyValue)
 		reflect.Indirect(reflect.ValueOf(into)).Set(reflect.ValueOf(items))
-		for i := 0; i < anyValue; i++ {
+		for i := range anyValue {
 			items[i].A = anyValue + i
 		}
 	default:
@@ -305,12 +303,12 @@ type testModifier struct{}
 
 func (testModifier) RetypeToOffChain(onChainType reflect.Type, _ string) (reflect.Type, error) {
 	switch onChainType {
-	case reflect.TypeOf(&modifierCodecChainType{}):
-		return reflect.TypeOf(&modifierCodecOffChainType{}), nil
-	case reflect.TypeOf(&[]modifierCodecChainType{}):
-		return reflect.TypeOf(&[]modifierCodecOffChainType{}), nil
-	case reflect.TypeOf([]modifierCodecChainType{}):
-		return reflect.TypeOf([]modifierCodecOffChainType{}), nil
+	case reflect.TypeFor[*modifierCodecChainType]():
+		return reflect.TypeFor[*modifierCodecOffChainType](), nil
+	case reflect.TypeFor[*[]modifierCodecChainType]():
+		return reflect.TypeFor[*[]modifierCodecOffChainType](), nil
+	case reflect.TypeFor[[]modifierCodecChainType]():
+		return reflect.TypeFor[[]modifierCodecOffChainType](), nil
 	default:
 		return nil, types.ErrInvalidType
 	}

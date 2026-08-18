@@ -30,15 +30,15 @@ type staticReportingPlugin struct {
 }
 
 func (s staticReportingPlugin) Query(ctx context.Context, timestamp libocr.ReportTimestamp) (libocr.Query, error) {
-	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
-		return nil, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
+	if timestamp != s.ReportContext.ReportTimestamp {
+		return nil, errExpected(s.ReportContext.ReportTimestamp, timestamp)
 	}
 	return s.staticReportingPluginConfig.Query, nil
 }
 
 func (s staticReportingPlugin) Observation(ctx context.Context, timestamp libocr.ReportTimestamp, q libocr.Query) (libocr.Observation, error) {
-	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
-		return nil, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
+	if timestamp != s.ReportContext.ReportTimestamp {
+		return nil, errExpected(s.ReportContext.ReportTimestamp, timestamp)
 	}
 	if !bytes.Equal(q, s.staticReportingPluginConfig.Query) {
 		return nil, errExpected(s.staticReportingPluginConfig.Query, q)
@@ -47,21 +47,21 @@ func (s staticReportingPlugin) Observation(ctx context.Context, timestamp libocr
 }
 
 func (s staticReportingPlugin) Report(ctx context.Context, timestamp libocr.ReportTimestamp, q libocr.Query, observations []libocr.AttributedObservation) (bool, libocr.Report, error) {
-	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
-		return false, nil, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
+	if timestamp != s.ReportContext.ReportTimestamp {
+		return false, nil, errExpected(s.ReportContext.ReportTimestamp, timestamp)
 	}
 	if !bytes.Equal(q, s.staticReportingPluginConfig.Query) {
 		return false, nil, errExpected(s.staticReportingPluginConfig.Query, q)
 	}
-	if !assert.ObjectsAreEqual(s.staticReportingPluginConfig.AttributedObservations, observations) {
-		return false, nil, errExpected(s.staticReportingPluginConfig.AttributedObservations, observations)
+	if !assert.ObjectsAreEqual(s.AttributedObservations, observations) {
+		return false, nil, errExpected(s.AttributedObservations, observations)
 	}
-	return s.staticReportingPluginConfig.ShouldReport, s.staticReportingPluginConfig.Report, nil
+	return s.ShouldReport, s.staticReportingPluginConfig.Report, nil
 }
 
 func (s staticReportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, timestamp libocr.ReportTimestamp, r libocr.Report) (bool, error) {
-	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
-		return false, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
+	if timestamp != s.ReportContext.ReportTimestamp {
+		return false, errExpected(s.ReportContext.ReportTimestamp, timestamp)
 	}
 	if !bytes.Equal(r, s.staticReportingPluginConfig.Report) {
 		return false, errExpected(s.staticReportingPluginConfig.Report, r)
@@ -70,8 +70,8 @@ func (s staticReportingPlugin) ShouldAcceptFinalizedReport(ctx context.Context, 
 }
 
 func (s staticReportingPlugin) ShouldTransmitAcceptedReport(ctx context.Context, timestamp libocr.ReportTimestamp, r libocr.Report) (bool, error) {
-	if timestamp != s.staticReportingPluginConfig.ReportContext.ReportTimestamp {
-		return false, errExpected(s.staticReportingPluginConfig.ReportContext.ReportTimestamp, timestamp)
+	if timestamp != s.ReportContext.ReportTimestamp {
+		return false, errExpected(s.ReportContext.ReportTimestamp, timestamp)
 	}
 	if !bytes.Equal(r, s.staticReportingPluginConfig.Report) {
 		return false, errExpected(s.staticReportingPluginConfig.Report, r)

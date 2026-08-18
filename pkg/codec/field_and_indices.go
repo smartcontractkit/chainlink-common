@@ -20,8 +20,8 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 	for ; inputType.Kind() != reflect.Struct; inputType = inputType.Elem() {
 		tmp := typeTransform
 		switch inputType.Kind() {
-		case reflect.Ptr:
-			typeTransform = func(t reflect.Type) reflect.Type { return reflect.PtrTo(tmp(t)) }
+		case reflect.Pointer:
+			typeTransform = func(t reflect.Type) reflect.Type { return reflect.PointerTo(tmp(t)) }
 		case reflect.Slice:
 			typeTransform = func(t reflect.Type) reflect.Type { return reflect.SliceOf(tmp(t)) }
 		case reflect.Array:
@@ -34,7 +34,7 @@ func getFieldIndices(inputType reflect.Type) (*fieldsAndIndices, error) {
 	fields := make([]reflect.StructField, length)
 	Indices := map[string]int{}
 
-	for i := 0; i < length; i++ {
+	for i := range length {
 		field := inputType.Field(i)
 		Indices[field.Name] = i
 		fields[i] = field

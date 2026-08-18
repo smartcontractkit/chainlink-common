@@ -7,13 +7,14 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/smartcontractkit/libocr/commontypes"
-	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
-	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/libocr/offchainreporting2/reportingplugin/median"
+	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -38,12 +39,12 @@ type ProviderClient struct {
 	codec              types.Codec
 }
 
-func NewProviderClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ProviderClient {
+func NewProviderClient(b *net.BrokerExt, cc net.ClientConnInterface) *ProviderClient {
 	m := &ProviderClient{PluginProviderClient: ocr2.NewPluginProviderClient(b.WithName("MedianProviderClient"), cc)}
 	m.reportCodec = &reportCodecClient{b, pb.NewReportCodecClient(cc)}
 	m.medianContract = &medianContractClient{pb.NewMedianContractClient(cc)}
 	m.onchainConfigCodec = &onchainConfigCodecClient{b, pb.NewOnchainConfigCodecClient(cc)}
-	m.contractReader = contractreader.NewClient(b, cc)
+	m.contractReader = contractreader.NewClient(goplugin.NewServiceClient(b, cc), pb.NewContractReaderClient(cc))
 	m.codec = contractreader.NewCodecClient(b, cc)
 	return m
 }
@@ -312,7 +313,7 @@ type ProviderServer struct{}
 
 func (m ProviderServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.Broker, brokerCfg net.BrokerConfig) types.MedianProvider {
 	be := &net.BrokerExt{Broker: broker, BrokerConfig: brokerCfg}
-	pc := NewProviderClient(be, conn)
+	pc := NewProviderClient(be, net.ClientConnInterfaceFromGRPC(conn))
 	pc.RmUnimplemented(context.Background())
 	return pc
 }

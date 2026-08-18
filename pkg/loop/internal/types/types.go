@@ -10,7 +10,8 @@ import (
 )
 
 type PluginRelayer interface {
-	NewRelayer(ctx context.Context, config string, keystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
+	services.Service
+	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
 }
 
 type MedianProvider interface {
@@ -45,6 +46,11 @@ type OCR3CapabilityProvider interface {
 type Relayer interface {
 	types.ChainService
 
+	EVM() (types.EVMService, error)
+	TON() (types.TONService, error)
+	Solana() (types.SolanaService, error)
+	Aptos() (types.AptosService, error)
+	Stellar() (types.StellarService, error)
 	// NewContractWriter returns a new ContractWriter.
 	// The format of config depends on the implementation.
 	NewContractWriter(ctx context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
@@ -55,6 +61,7 @@ type Relayer interface {
 	NewConfigProvider(context.Context, types.RelayArgs) (types.ConfigProvider, error)
 	NewPluginProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.PluginProvider, error)
 	NewLLOProvider(context.Context, types.RelayArgs, types.PluginArgs) (types.LLOProvider, error)
+	NewCCIPProvider(context.Context, types.CCIPProviderArgs) (types.CCIPProvider, error)
 }
 
 // Keystore This interface contains all the keystore GRPC functionality, keystore.Keystore is meant to be exposed to consumers and the keystore.Management interface in exposed only to the core node

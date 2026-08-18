@@ -175,6 +175,7 @@ func (m Monitor) Run() {
 		instrumentedSourceFactories,
 		m.ExporterFactories,
 		100, // bufferCapacity for source pollers
+		m.Config.Feeds.ExporterCleanupTimeout,
 	)
 	networkMonitor := NewNetworkMonitor(
 		m.ChainConfig,
@@ -182,6 +183,7 @@ func (m Monitor) Run() {
 		m.NetworkSourceFactories,
 		m.NetworkExporterFactories,
 		100, // bufferCapacity for source pollers
+		m.Config.Feeds.ExporterCleanupTimeout,
 	)
 	subs.Go(func() {
 		m.Manager.Run(rootCtx,

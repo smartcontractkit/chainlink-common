@@ -1,9 +1,11 @@
 package grafana_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
+	"github.com/grafana/grafana-foundation-sdk/go/expr"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -46,13 +48,21 @@ func TestNewBuilder(t *testing.T) {
 			Title: "Alert Title",
 		}))
 
+		builder.AddAlert(grafana.NewAlertRule(&grafana.AlertOptions{
+			Title:          "Alert Title 2",
+			RuleGroupTitle: "RuleGroup Title",
+		}))
+
 		o, err := builder.Build()
 		if err != nil {
 			t.Errorf("Error during build: %v", err)
 		}
 		require.NotEmpty(t, o.Dashboard)
 		require.NotEmpty(t, o.Alerts)
-		require.Len(t, o.Alerts, 1)
+		require.Len(t, o.Alerts, 2)
+		require.Equal(t, "Default", o.Alerts[0].RuleGroup)
+		require.Equal(t, "RuleGroup Title", o.Alerts[1].RuleGroup)
+
 		require.Empty(t, o.ContactPoints)
 		require.Empty(t, o.NotificationPolicies)
 	})
@@ -130,6 +140,255 @@ func TestNewBuilder(t *testing.T) {
 		require.Empty(t, o.ContactPoints)
 		require.NotEmpty(t, o.NotificationPolicies)
 	})
+
+	t.Run("NewBuilder builds a dashboard with row and panels inside", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddRow("Row Title")
+		builder.AddPanelToRow("Row Title", grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel Title"),
+			},
+		}))
+
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error during build: %v", err)
+		}
+		require.NotEmpty(t, o.Dashboard)
+		require.Len(t, o.Dashboard.Panels, 1)
+		rowPanel := o.Dashboard.Panels[0]
+		require.IsType(t, dashboard.RowPanel{}, *rowPanel.RowPanel)
+		require.True(t, rowPanel.RowPanel.Collapsed)
+		require.Len(t, rowPanel.RowPanel.Panels, 1)
+	})
+
+	t.Run("NewBuilder builds a dashboard with row and multiple panels inside", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddRow("Row Title")
+		builder.AddPanelToRow("Row Title",
+			grafana.NewStatPanel(&grafana.StatPanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("Stat Panel"),
+				},
+			}),
+			grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("TimeSeries Panel"),
+				},
+			}),
+			grafana.NewTablePanel(&grafana.TablePanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("Table Panel"),
+				},
+			}),
+		)
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		require.Len(t, o.Dashboard.Panels, 1)
+		rowPanel := o.Dashboard.Panels[0]
+		require.NotNil(t, rowPanel.RowPanel)
+		require.True(t, rowPanel.RowPanel.Collapsed)
+		require.Len(t, rowPanel.RowPanel.Panels, 3)
+	})
+
+	t.Run("NewBuilder preserves order with interleaved AddPanel and AddRow", func(t *testing.T) {
+		// Layout: top-level panel, then a row, then another top-level panel
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Top Panel 1"),
+			},
+		}))
+		builder.AddRow("Row A")
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Top Panel 2"),
+			},
+		}))
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		require.Len(t, o.Dashboard.Panels, 3)
+		// First: top-level panel
+		require.NotNil(t, o.Dashboard.Panels[0].Panel)
+		require.Equal(t, "Top Panel 1", *o.Dashboard.Panels[0].Panel.Title)
+		// Second: row
+		require.NotNil(t, o.Dashboard.Panels[1].RowPanel)
+		require.Equal(t, "Row A", *o.Dashboard.Panels[1].RowPanel.Title)
+		// Third: top-level panel
+		require.NotNil(t, o.Dashboard.Panels[2].Panel)
+		require.Equal(t, "Top Panel 2", *o.Dashboard.Panels[2].Panel.Title)
+	})
+
+	t.Run("NewBuilder mixed rows with and without panels preserve order", func(t *testing.T) {
+		// Layout: row without panels, top-level panel, row with 2 panels, top-level panel
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddRow("Open Row")
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel After Open Row"),
+			},
+		}))
+		builder.AddRow("Row With Panels")
+		builder.AddPanelToRow("Row With Panels",
+			grafana.NewStatPanel(&grafana.StatPanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("Inside Row 1"),
+				},
+			}),
+			grafana.NewGaugePanel(&grafana.GaugePanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("Inside Row 2"),
+				},
+			}),
+		)
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel After Row With Panels"),
+			},
+		}))
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		// Expected top-level: Open Row, Panel After Open Row, Row With Panels, Panel After Row With Panels
+		require.Len(t, o.Dashboard.Panels, 4)
+
+		// 1. Row without panels
+		require.NotNil(t, o.Dashboard.Panels[0].RowPanel)
+		require.Equal(t, "Open Row", *o.Dashboard.Panels[0].RowPanel.Title)
+		require.False(t, o.Dashboard.Panels[0].RowPanel.Collapsed)
+
+		// 2. Top-level panel after the open row
+		require.NotNil(t, o.Dashboard.Panels[1].Panel)
+		require.Equal(t, "Panel After Open Row", *o.Dashboard.Panels[1].Panel.Title)
+
+		// 3. Row with its 2 panels nested inside (automatically collapsed)
+		require.NotNil(t, o.Dashboard.Panels[2].RowPanel)
+		require.Equal(t, "Row With Panels", *o.Dashboard.Panels[2].RowPanel.Title)
+		require.True(t, o.Dashboard.Panels[2].RowPanel.Collapsed)
+		require.Len(t, o.Dashboard.Panels[2].RowPanel.Panels, 2)
+
+		// 4. Top-level panel after the row with panels
+		require.NotNil(t, o.Dashboard.Panels[3].Panel)
+		require.Equal(t, "Panel After Row With Panels", *o.Dashboard.Panels[3].Panel.Title)
+	})
+
+	t.Run("NewBuilder multiple rows each with their own panels", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddRow("Row A")
+		builder.AddPanelToRow("Row A", grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel in A"),
+			},
+		}))
+		builder.AddRow("Row B")
+		builder.AddPanelToRow("Row B",
+			grafana.NewStatPanel(&grafana.StatPanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("Panel in B1"),
+				},
+			}),
+			grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+				PanelOptions: &grafana.PanelOptions{
+					Title: new("Panel in B2"),
+				},
+			}),
+		)
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		require.Len(t, o.Dashboard.Panels, 2)
+
+		// First row
+		require.NotNil(t, o.Dashboard.Panels[0].RowPanel)
+		require.Equal(t, "Row A", *o.Dashboard.Panels[0].RowPanel.Title)
+		require.Len(t, o.Dashboard.Panels[0].RowPanel.Panels, 1)
+
+		// Second row
+		require.NotNil(t, o.Dashboard.Panels[1].RowPanel)
+		require.Equal(t, "Row B", *o.Dashboard.Panels[1].RowPanel.Title)
+		require.Len(t, o.Dashboard.Panels[1].RowPanel.Panels, 2)
+	})
+
+	t.Run("NewBuilder row without panels is not collapsed", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddRow("Open Row")
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		require.Len(t, o.Dashboard.Panels, 1)
+		require.NotNil(t, o.Dashboard.Panels[0].RowPanel)
+		require.False(t, o.Dashboard.Panels[0].RowPanel.Collapsed)
+		require.Empty(t, o.Dashboard.Panels[0].RowPanel.Panels)
+	})
+}
+
+func TestBuilder_BuildOnce(t *testing.T) {
+	t.Run("Build returns error on second call", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		_, err := builder.Build()
+		require.NoError(t, err)
+
+		_, err = builder.Build()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "already been called")
+	})
+
+	t.Run("Build returns error when panels added without dashboard name", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
+		builder.AddPanel(grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel Title"),
+			},
+		}))
+
+		_, err := builder.Build()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "cannot add rows or panels without a dashboard")
+	})
+
+	t.Run("Build returns error when AddPanelToRow references unknown row", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+		builder.AddPanelToRow("NonExistent Row", grafana.NewStatPanel(&grafana.StatPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel Title"),
+			},
+		}))
+
+		_, err := builder.Build()
+		require.Error(t, err)
+		require.Contains(t, err.Error(), `unknown row "NonExistent Row"`)
+	})
+
+	t.Run("Build succeeds for alerts-only without dashboard name", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{})
+		builder.AddAlert(grafana.NewAlertRule(&grafana.AlertOptions{
+			Title: "Alert Title",
+		}))
+
+		o, err := builder.Build()
+		require.NoError(t, err)
+		require.Empty(t, o.Dashboard)
+		require.Len(t, o.Alerts, 1)
+	})
 }
 
 func TestBuilder_AddVars(t *testing.T) {
@@ -153,6 +412,37 @@ func TestBuilder_AddVars(t *testing.T) {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 		require.Len(t, o.Dashboard.Templating.List, 1)
+	})
+
+	t.Run("AddVars adds variables with AllValue to the dashboard", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		variable := grafana.NewQueryVariable(&grafana.QueryVariableOptions{
+			VariableOption: &grafana.VariableOption{
+				Name:  "Variable Name",
+				Label: "Variable Label",
+			},
+			Query:      "query",
+			Datasource: grafana.NewDataSource("Prometheus", "").Name,
+			IncludeAll: true,
+			AllValue:   ".*",
+		})
+
+		builder.AddVars(variable)
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error building dashboard: %v", err)
+		}
+		require.Len(t, o.Dashboard.Templating.List, 1)
+
+		// Verify the AllValue is set correctly
+		varModel := o.Dashboard.Templating.List[0]
+		require.NotNil(t, varModel.AllValue)
+		require.Equal(t, ".*", *varModel.AllValue)
+		require.NotNil(t, varModel.IncludeAll)
+		require.True(t, *varModel.IncludeAll)
 	})
 }
 
@@ -179,7 +469,7 @@ func TestBuilder_AddPanel(t *testing.T) {
 
 		panel := grafana.NewStatPanel(&grafana.StatPanelOptions{
 			PanelOptions: &grafana.PanelOptions{
-				Title: "Panel Title",
+				Title: new("Panel Title"),
 			},
 		})
 
@@ -189,5 +479,146 @@ func TestBuilder_AddPanel(t *testing.T) {
 			t.Errorf("Error building dashboard: %v", err)
 		}
 		require.IsType(t, dashboard.Panel{}, *o.Dashboard.Panels[0].Panel)
+	})
+}
+
+func TestNewAlertRule_ConditionExpressionModels(t *testing.T) {
+	t.Run("builds a model for every expression type", func(t *testing.T) {
+		ruleBuilder := grafana.NewAlertRule(&grafana.AlertOptions{
+			Title: "Expression Alert",
+			Query: []grafana.RuleQuery{
+				{
+					Expr:       `my_metric`,
+					Instant:    true,
+					RefID:      "A",
+					Datasource: "datasource-uid",
+				},
+			},
+			QueryRefCondition: "E",
+			Condition: []grafana.ConditionQuery{
+				{
+					RefID: "B",
+					ReduceExpression: &grafana.ReduceExpression{
+						Expression: "A",
+						Reducer:    expr.TypeReduceReducerSum,
+					},
+				},
+				{
+					RefID: "C",
+					MathExpression: &grafana.MathExpression{
+						Expression: "$B * 2",
+					},
+				},
+				{
+					RefID: "D",
+					ResampleExpression: &grafana.ResampleExpression{
+						Expression:  "A",
+						Window:      "10s",
+						DownSampler: expr.TypeResampleDownsamplerMean,
+						UpSampler:   expr.TypeResampleUpsamplerPad,
+					},
+				},
+				{
+					RefID: "E",
+					ThresholdExpression: &grafana.ThresholdExpression{
+						Expression: "D",
+						ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+							Params: []float64{2},
+							Type:   expr.ExprTypeThresholdConditionsEvaluatorTypeLt,
+						},
+					},
+				},
+			},
+		})
+
+		rule, err := ruleBuilder.Build()
+		require.NoError(t, err)
+
+		models := map[string]string{}
+		for _, query := range rule.Data {
+			require.NotNil(t, query.RefId)
+			raw, errMarshal := json.Marshal(query.Model)
+			require.NoError(t, errMarshal)
+			models[*query.RefId] = string(raw)
+		}
+
+		require.Contains(t, models["B"], `"type":"reduce"`)
+
+		require.Contains(t, models["C"], `"type":"math"`)
+		require.Contains(t, models["C"], `"expression":"$B * 2"`)
+
+		require.Contains(t, models["D"], `"type":"resample"`)
+		require.Contains(t, models["D"], `"downsampler":"mean"`)
+		require.Contains(t, models["D"], `"upsampler":"pad"`)
+		require.Contains(t, models["D"], `"expression":"A"`)
+		require.Contains(t, models["D"], `"window":"10s"`)
+
+		require.Contains(t, models["E"], `"type":"threshold"`)
+	})
+}
+
+func TestBuilder_AddTimeSeriesPanelWithAlert(t *testing.T) {
+	t.Run("AddPanel adds a panel to the dashboard", func(t *testing.T) {
+		builder := grafana.NewBuilder(&grafana.BuilderOptions{
+			Name: "Dashboard Name",
+		})
+
+		panel := grafana.NewTimeSeriesPanel(&grafana.TimeSeriesPanelOptions{
+			PanelOptions: &grafana.PanelOptions{
+				Title: new("Panel Title"),
+			},
+			AlertsOptions: []grafana.AlertOptions{
+				{
+					Summary:     `Test Alert Summary`,
+					Description: `Test Description with value {{ index $values "A" }}`,
+					RunbookURL:  "https://github.com/smartcontractkit/chainlink-common/tree/main/observability-lib",
+					For:         "1m",
+					Tags: map[string]string{
+						"severity": "warning",
+					},
+					Query: []grafana.RuleQuery{
+						{
+							Expr:       `my_metric`,
+							Instant:    true,
+							RefID:      "A",
+							Datasource: "datasource-uid",
+						},
+					},
+					QueryRefCondition: "B",
+					Condition: []grafana.ConditionQuery{
+						{
+							RefID: "B",
+							ReduceExpression: &grafana.ReduceExpression{
+								Expression: "A",
+								Reducer:    expr.TypeReduceReducerSum,
+								ReduceSettings: &expr.ExprTypeReduceSettings{
+									Mode: expr.ExprTypeReduceSettingsModeDropNN,
+								},
+							},
+						},
+						{
+							RefID: "C",
+							ThresholdExpression: &grafana.ThresholdExpression{
+								Expression: "B",
+								ThresholdConditionsOptions: grafana.ThresholdConditionsOption{
+									Params: []float64{2},
+									Type:   expr.ExprTypeThresholdConditionsEvaluatorTypeLt,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+
+		builder.AddPanel(panel)
+		o, err := builder.Build()
+		if err != nil {
+			t.Errorf("Error building dashboard: %v", err)
+		}
+		require.IsType(t, dashboard.Panel{}, *o.Dashboard.Panels[0].Panel)
+		require.Len(t, o.Alerts, 1)
+		// RuleGroup defaults to Panel Title
+		require.Equal(t, "Panel Title", o.Alerts[0].RuleGroup)
 	})
 }

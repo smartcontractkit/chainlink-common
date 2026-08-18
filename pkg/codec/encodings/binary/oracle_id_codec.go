@@ -28,7 +28,7 @@ func (o *OracleID) Decode(encoded []byte) (any, []byte, error) {
 }
 
 func (o *OracleID) GetType() reflect.Type {
-	return reflect.TypeOf(commontypes.OracleID(0))
+	return reflect.TypeFor[commontypes.OracleID]()
 }
 
 func (o *OracleID) Size(_ int) (int, error) {

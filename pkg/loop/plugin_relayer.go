@@ -25,6 +25,8 @@ func PluginRelayerHandshakeConfig() plugin.HandshakeConfig {
 }
 
 // Deprecated
+//
+//go:fix inline
 type Keystore = core.Keystore
 
 type Relayer = looptypes.Relayer
@@ -50,12 +52,11 @@ func (p *GRPCPluginRelayer) GRPCServer(broker *plugin.GRPCBroker, server *grpc.S
 
 // GRPCClient implements [plugin.GRPCPlugin] and returns the pluginClient [types.PluginRelayer], updated with the new broker and conn.
 
-func (p *GRPCPluginRelayer) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (interface{}, error) {
+func (p *GRPCPluginRelayer) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
 	if p.pluginClient == nil {
-		p.pluginClient = relayer.NewPluginRelayerClient(broker, p.BrokerConfig, conn)
-	} else {
-		p.pluginClient.Refresh(broker, conn)
+		p.pluginClient = relayer.NewPluginRelayerClient(p.BrokerConfig)
 	}
+	p.pluginClient.Refresh(broker, conn)
 	return PluginRelayer(p.pluginClient), nil
 }
 
@@ -64,5 +65,8 @@ func (p *GRPCPluginRelayer) ClientConfig() *plugin.ClientConfig {
 		HandshakeConfig: PluginRelayerHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginRelayerName: p},
 	}
-	return ManagedGRPCClientConfig(c, p.BrokerConfig)
+	if p.pluginClient == nil {
+		p.pluginClient = relayer.NewPluginRelayerClient(p.BrokerConfig)
+	}
+	return ManagedGRPCClientConfig(c, p.pluginClient.BrokerConfig)
 }

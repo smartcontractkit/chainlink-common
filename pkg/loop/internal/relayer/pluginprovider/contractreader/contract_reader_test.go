@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"iter"
+	"maps"
 	"math/big"
 	"reflect"
 	"sort"
@@ -21,49 +22,57 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chainreader"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader"
+	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	contractreadertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/contractreader/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/query/primitives"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 	. "github.com/smartcontractkit/chainlink-common/pkg/types/interfacetests"
 )
 
 func TestVersionedBytesFunctions(t *testing.T) {
 	const unsupportedVer = 25913
-	t.Run("contractreader.EncodeVersionedBytes unsupported type", func(t *testing.T) {
+	t.Run("EncodeVersionedBytes unsupported type", func(t *testing.T) {
 		invalidData := make(chan int)
 
-		_, err := contractreader.EncodeVersionedBytes(invalidData, contractreader.JSONEncodingVersion2)
+		_, err := codecpb.EncodeVersionedBytes(invalidData, codecpb.JSONEncodingVersion2)
 
-		assert.True(t, errors.Is(err, types.ErrInvalidType))
+		assert.ErrorIs(t, err, types.ErrInvalidType)
 	})
 
-	t.Run("contractreader.EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
+	t.Run("EncodeVersionedBytes unsupported encoding version", func(t *testing.T) {
 		expected := fmt.Errorf("%w: unsupported encoding version %d for data map[key:value]", types.ErrInvalidEncoding, unsupportedVer)
-		data := map[string]interface{}{
+		data := map[string]any{
 			"key": "value",
 		}
 
-		_, err := contractreader.EncodeVersionedBytes(data, unsupportedVer)
+		_, err := codecpb.EncodeVersionedBytes(data, unsupportedVer)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
 	})
 
-	t.Run("contractreader.DecodeVersionedBytes", func(t *testing.T) {
-		var decodedData map[string]interface{}
+	t.Run("DecodeVersionedBytes", func(t *testing.T) {
+		var decodedData map[string]any
 		expected := fmt.Errorf("unsupported encoding version %d for versionedData [97 98 99 100 102]", unsupportedVer)
-		versionedBytes := &pb.VersionedBytes{
+		versionedBytes := &codecpb.VersionedBytes{
 			Version: unsupportedVer, // Unsupported version
 			Data:    []byte("abcdf"),
 		}
 
-		err := contractreader.DecodeVersionedBytes(&decodedData, versionedBytes)
+		err := codecpb.DecodeVersionedBytes(&decodedData, versionedBytes)
+		if err == nil || err.Error() != expected.Error() {
+			t.Errorf("expected error: %s, but got: %v", expected, err)
+		}
+	})
+
+	t.Run("DecodeVersionedBytes if nil returns error", func(t *testing.T) {
+		var decodedData map[string]any
+		expected := errors.New("cannot decode nil versioned bytes")
+
+		err := codecpb.DecodeVersionedBytes(&decodedData, nil)
 		if err == nil || err.Error() != expected.Error() {
 			t.Errorf("expected error: %s, but got: %v", expected, err)
 		}
@@ -73,7 +82,7 @@ func TestVersionedBytesFunctions(t *testing.T) {
 func TestContractReaderInterfaceTests(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -85,6 +94,7 @@ func TestContractReaderInterfaceTests(t *testing.T) {
 					contractreadertest.WithContractReaderLoopEncoding(version),
 				),
 				true,
+				false,
 			)
 		}
 	})
@@ -100,7 +110,7 @@ func TestContractReaderByIDWrapper(t *testing.T) {
 func TestBind(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -116,15 +126,15 @@ func TestBind(t *testing.T) {
 			for _, errorType := range errorTypes {
 				es.err = errorType
 				t.Run("Bind unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := tests.Context(t)
+					ctx := t.Context()
 					err := contractReader.Bind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 
 				t.Run("Unbind unwraps errors from server"+errorType.Error(), func(t *testing.T) {
-					ctx := tests.Context(t)
+					ctx := t.Context()
 					err := contractReader.Unbind(ctx, []types.BoundContract{{Name: "Contract", Address: "address"}})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 		}
@@ -134,7 +144,7 @@ func TestBind(t *testing.T) {
 func TestGetLatestValue(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -150,7 +160,7 @@ func TestGetLatestValue(t *testing.T) {
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				t.Parallel()
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
@@ -163,18 +173,18 @@ func TestGetLatestValue(t *testing.T) {
 			for _, errorType := range errorTypes {
 				es.err = errorType
 				t.Run("GetLatestValue unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := tests.Context(t)
+					ctx := t.Context()
 					err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, nil, "anything")
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 
 			// make sure that errors come from client directly
 			es.err = nil
 			t.Run("GetLatestValue returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				err := contractReader.GetLatestValue(ctx, "method", primitives.Unconfirmed, &cannotEncode{}, &TestStruct{})
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			})
 		}
 	})
@@ -183,7 +193,7 @@ func TestGetLatestValue(t *testing.T) {
 func TestBatchGetLatestValues(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -199,7 +209,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
 				t.Parallel()
 
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
@@ -212,16 +222,16 @@ func TestBatchGetLatestValues(t *testing.T) {
 			for _, errorType := range errorTypes {
 				es.err = errorType
 				t.Run("BatchGetLatestValues unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := tests.Context(t)
+					ctx := t.Context()
 					_, err := contractReader.BatchGetLatestValues(ctx, types.BatchGetLatestValuesRequest{})
-					assert.True(t, errors.Is(err, errorType))
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 
 			// make sure that errors come from client directly
 			es.err = nil
 			t.Run("BatchGetLatestValues returns error if type cannot be encoded in the wire format", func(t *testing.T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 				_, err := contractReader.BatchGetLatestValues(
 					ctx,
 					types.BatchGetLatestValuesRequest{
@@ -231,7 +241,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 					},
 				)
 
-				assert.True(t, errors.Is(err, types.ErrInvalidType))
+				assert.ErrorIs(t, err, types.ErrInvalidType)
 			})
 		}
 	})
@@ -240,7 +250,7 @@ func TestBatchGetLatestValues(t *testing.T) {
 func TestQueryKey(t *testing.T) {
 	t.Parallel()
 
-	contractreadertest.TestAllEncodings(t, func(version contractreader.EncodingVersion) func(t *testing.T) {
+	contractreadertest.TestAllEncodings(t, func(version codecpb.EncodingVersion) func(t *testing.T) {
 		return func(t *testing.T) {
 			t.Parallel()
 
@@ -255,22 +265,22 @@ func TestQueryKey(t *testing.T) {
 			contractReader := errTester.GetContractReader(t)
 
 			t.Run("nil reader should return unimplemented", func(t *testing.T) {
-				ctx := tests.Context(t)
+				ctx := t.Context()
 
 				nilTester := contractreadertest.WrapContractReaderTesterForLoop(&fakeContractReaderInterfaceTester{impl: nil})
 				nilTester.Setup(t)
 				nilCr := nilTester.GetContractReader(t)
 
-				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
+				_, err := nilCr.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]any{nil})
 				assert.Equal(t, codes.Unimplemented, status.Convert(err).Code())
 			})
 
 			for _, errorType := range errorTypes {
 				es.err = errorType
 				t.Run("QueryKey unwraps errors from server "+errorType.Error(), func(t *testing.T) {
-					ctx := tests.Context(t)
-					_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]interface{}{nil})
-					assert.True(t, errors.Is(err, errorType))
+					ctx := t.Context()
+					_, err := contractReader.QueryKey(ctx, types.BoundContract{}, query.KeyFilter{}, query.LimitAndSort{}, &[]any{nil})
+					assert.ErrorIs(t, err, errorType)
 				})
 			}
 
@@ -279,7 +289,7 @@ func TestQueryKey(t *testing.T) {
 					impl.expectedQueryFilter = tc
 					filter, err := query.Where(tc.Key, tc.Expressions...)
 					require.NoError(t, err)
-					_, err = cr.QueryKey(tests.Context(t), types.BoundContract{}, filter, query.LimitAndSort{}, &[]interface{}{nil})
+					_, err = cr.QueryKey(t.Context(), types.BoundContract{}, filter, query.LimitAndSort{}, &[]any{nil})
 					require.NoError(t, err)
 				}
 			})
@@ -347,15 +357,6 @@ type valConfidencePair struct {
 	confidenceLevel primitives.ConfidenceLevel
 }
 
-type eventConfidencePair struct {
-	testStruct      TestStruct
-	confidenceLevel primitives.ConfidenceLevel
-}
-
-type dynamicTopicEventConfidencePair struct {
-	someDynamicTopicEvent SomeDynamicTopicEvent
-	confidenceLevel       primitives.ConfidenceLevel
-}
 type event struct {
 	contractID      string
 	event           any
@@ -387,7 +388,6 @@ func (e *eventsRecorder) RecordEvent(contractID string, evt any, confidenceLevel
 		if !ok {
 			return fmt.Errorf("unexpected event type %T", evt)
 		}
-
 	}
 
 	e.events = append(e.events, event{contractID: contractID, event: evt, confidenceLevel: confidenceLevel, eventType: eventType})
@@ -524,9 +524,7 @@ func (f *fakeContractReader) SetBatchLatestValues(batchCallEntry BatchCallEntry)
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	f.batchStored = make(BatchCallEntry)
-	for contractName, contractBatchEntry := range batchCallEntry {
-		f.batchStored[contractName] = contractBatchEntry
-	}
+	maps.Copy(f.batchStored, batchCallEntry)
 }
 
 func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier string, confidenceLevel primitives.ConfidenceLevel, params, returnVal any) error {
@@ -662,23 +660,24 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 		storedContractBatch := f.batchStored[requestContract]
 
 		contractBatchResults := types.ContractBatchResults{}
-		for i := 0; i < len(requestContractBatch); i++ {
+		for i := range requestContractBatch {
 			var err error
 			var returnVal any
 
 			req := requestContractBatch[i]
 
-			if req.ReadName == MethodReturningUint64 {
+			switch req.ReadName {
+			case MethodReturningUint64:
 				returnVal = req.ReturnVal.(*uint64)
 				if requestContract.Name == AnyContractName {
 					*returnVal.(*uint64) = AnyValueToReadWithoutAnArgument
 				} else {
 					*returnVal.(*uint64) = AnyDifferentValueToReadWithoutAnArgument
 				}
-			} else if req.ReadName == MethodReturningUint64Slice {
+			case MethodReturningUint64Slice:
 				returnVal = req.ReturnVal.(*[]uint64)
 				*returnVal.(*[]uint64) = AnySliceToReadWithoutAnArgument
-			} else if req.ReadName == MethodReturningSeenStruct {
+			case MethodReturningSeenStruct:
 				ts := *req.Params.(*TestStruct)
 				ts.AccountStruct = AccountStruct{
 					Account:    anyAccountBytes,
@@ -689,7 +688,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 					TestStruct: ts,
 					ExtraField: AnyExtraValue,
 				}
-			} else if req.ReadName == MethodTakingLatestParamsReturningTestStruct {
+			case MethodTakingLatestParamsReturningTestStruct:
 				latestParams := requestContractBatch[i].Params.(*LatestParams)
 				if latestParams.I <= 0 {
 					returnVal = &LatestParams{}
@@ -697,7 +696,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 				} else {
 					returnVal = storedContractBatch[latestParams.I-1].ReturnValue
 				}
-			} else {
+			default:
 				return nil, errors.New("unknown read " + req.ReadName)
 			}
 
@@ -713,7 +712,7 @@ func (f *fakeContractReader) BatchGetLatestValues(_ context.Context, request typ
 }
 
 func (f *fakeContractReader) QueryKey(ctx context.Context, bc types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, sequenceType any) ([]types.Sequence, error) {
-	seqsIter, err := f.QueryKeys(ctx, []types.ContractKeyFilter{types.ContractKeyFilter{
+	seqsIter, err := f.QueryKeys(ctx, []types.ContractKeyFilter{{
 		KeyFilter:        filter,
 		Contract:         bc,
 		SequenceDataType: sequenceType,
@@ -811,9 +810,9 @@ func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.Contra
 				if err != nil {
 					return nil, err
 				}
-				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), Data: &value}})
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), TxHash: []byte("0xtest"), Data: &value}})
 			} else {
-				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: fmt.Sprintf("%d", idx), Data: trigger.event}})
+				sequences = append(sequences, sequenceWithEventType{eventType: trigger.eventType, sequence: types.Sequence{Cursor: strconv.Itoa(idx), TxHash: []byte("0xtest"), Data: trigger.event}})
 			}
 		}
 
@@ -871,7 +870,6 @@ func (f *fakeContractReader) QueryKeys(_ context.Context, filters []types.Contra
 			}
 		}
 	}, nil
-
 }
 
 func (f *fakeContractReader) GenerateBlocksTillConfidenceLevel(_ *testing.T, _, _ string, confidenceLevel primitives.ConfidenceLevel) {
@@ -950,14 +948,14 @@ func (pc *protoConversionTestContractReader) BatchGetLatestValues(_ context.Cont
 
 func (pc *protoConversionTestContractReader) Bind(_ context.Context, bc []types.BoundContract) error {
 	if !reflect.DeepEqual(pc.expectedBindings, bc) {
-		return fmt.Errorf("bound contract wasn't parsed properly")
+		return errors.New("bound contract wasn't parsed properly")
 	}
 	return nil
 }
 
 func (pc *protoConversionTestContractReader) Unbind(_ context.Context, bc []types.BoundContract) error {
 	if !reflect.DeepEqual(pc.expectedBindings, bc) {
-		return fmt.Errorf("bound contract wasn't parsed properly")
+		return errors.New("bound contract wasn't parsed properly")
 	}
 
 	return nil
@@ -965,7 +963,7 @@ func (pc *protoConversionTestContractReader) Unbind(_ context.Context, bc []type
 
 func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types.BoundContract, filter query.KeyFilter, limitAndSort query.LimitAndSort, _ any) ([]types.Sequence, error) {
 	if !reflect.DeepEqual(pc.expectedQueryFilter, filter) {
-		return nil, fmt.Errorf("filter wasn't parsed properly")
+		return nil, errors.New("filter wasn't parsed properly")
 	}
 
 	// using deep equal on a slice returns false when one slice is nil and another is empty
@@ -984,7 +982,7 @@ func (pc *protoConversionTestContractReader) QueryKey(_ context.Context, _ types
 	}
 
 	if !reflect.DeepEqual(pc.expectedLimitAndSort.Limit, limitAndSort.Limit) || !reflect.DeepEqual(aSlice, bSlice) {
-		return nil, fmt.Errorf("limitAndSort wasn't parsed properly")
+		return nil, errors.New("limitAndSort wasn't parsed properly")
 	}
 
 	return nil, nil
@@ -1000,7 +998,7 @@ func runContractReaderByIDGetLatestValue(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
 
 			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
@@ -1026,7 +1024,7 @@ func runContractReaderByIDGetLatestValue(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
 
 			anyContracts := BindingsByName(tester.GetBindings(t), AnyContractName)
@@ -1065,7 +1063,7 @@ func runContractReaderByIDBatchGetLatestValues(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
 
 			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
@@ -1102,7 +1100,7 @@ func runContractReaderByIDBatchGetLatestValues(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
 
 			anyContracts := BindingsByName(tester.GetBindings(t), AnyContractName)
@@ -1162,11 +1160,12 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			fake := &fakeContractReader{}
+			fakeCW := &fakeContractWriter{cr: fake}
 			tester := &fakeContractReaderInterfaceTester{impl: fake}
 			tester.Setup(t)
 
 			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
 
 			anyContract := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
@@ -1179,14 +1178,14 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			require.NoError(t, cr.Bind(ctx, toBind))
 
 			ts1AnyContract := CreateTestStruct(0, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract, anyContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnyContract, anyContract, types.Unconfirmed)
 			ts2AnyContract := CreateTestStruct(1, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract, anyContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnyContract, anyContract, types.Unconfirmed)
 
 			ts1AnySecondContract := CreateTestStruct(0, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract, anySecondContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnySecondContract, anySecondContract, types.Unconfirmed)
 			ts2AnySecondContract := CreateTestStruct(1, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnySecondContract, anySecondContract, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
 			require.Eventually(t, func() bool {
@@ -1196,7 +1195,7 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 
 			require.Eventually(t, func() bool {
 				sequences, err := cr.QueryKey(ctx, anyContractID, query.KeyFilter{Key: EventName}, query.LimitAndSort{}, tsAnyContractType)
-				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data)
+				return err == nil && len(sequences) == 2 && reflect.DeepEqual(ts1AnySecondContract, sequences[1].Data) && reflect.DeepEqual(ts2AnySecondContract, sequences[0].Data) && assert.Equal(t, []byte("0xtest"), sequences[0].TxHash) && assert.Equal(t, []byte("0xtest"), sequences[1].TxHash)
 			}, tester.MaxWaitTimeForEvents(), time.Millisecond*10)
 		})
 
@@ -1205,11 +1204,13 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 			fake := &fakeContractReader{}
+			fakeCW := &fakeContractWriter{cr: fake}
+
 			tester := &fakeContractReaderInterfaceTester{impl: fake}
 			tester.Setup(t)
 
 			toBind := make(map[string]types.BoundContract)
-			ctx := tests.Context(t)
+			ctx := t.Context()
 			cr := chainreader.WrapContractReaderByIDs(tester.GetContractReader(t))
 
 			anyContract1 := BindingsByName(tester.GetBindings(t), AnyContractName)[0]
@@ -1225,22 +1226,22 @@ func runContractReaderByIDQueryKey(t *testing.T) {
 			require.NoError(t, cr.Bind(ctx, toBind))
 
 			ts1AnyContract1 := CreateTestStruct(0, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract1, anyContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnyContract1, anyContract1, types.Unconfirmed)
 			ts2AnyContract1 := CreateTestStruct(1, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract1, anyContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnyContract1, anyContract1, types.Unconfirmed)
 			ts1AnyContract2 := CreateTestStruct(2, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnyContract2, anyContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnyContract2, anyContract2, types.Unconfirmed)
 			ts2AnyContract2 := CreateTestStruct(3, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnyContract2, anyContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnyContract2, anyContract2, types.Unconfirmed)
 
 			ts1AnySecondContract1 := CreateTestStruct(4, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract1, anySecondContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnySecondContract1, anySecondContract1, types.Unconfirmed)
 			ts2AnySecondContract1 := CreateTestStruct(5, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract1, anySecondContract1, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnySecondContract1, anySecondContract1, types.Unconfirmed)
 			ts1AnySecondContract2 := CreateTestStruct(6, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts1AnySecondContract2, anySecondContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts1AnySecondContract2, anySecondContract2, types.Unconfirmed)
 			ts2AnySecondContract2 := CreateTestStruct(7, tester)
-			_ = SubmitTransactionToCW(t, tester, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
+			_ = SubmitTransactionToCW(t, tester, fakeCW, MethodTriggeringEvent, ts2AnySecondContract2, anySecondContract2, types.Unconfirmed)
 
 			tsAnyContractType := &TestStruct{}
 			require.Eventually(t, func() bool {

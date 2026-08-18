@@ -2,7 +2,6 @@ package ccip
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -60,7 +59,7 @@ func Test_OnchainConfig(t *testing.T) {
 
 	// lint doesn't like that a proto is copied because it has a mutex
 	for _, tt := range tests { // nolint
-		tt := tt // nolint
+		// nolint
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -131,7 +130,7 @@ func Test_OffchainConfig(t *testing.T) {
 
 	// lint doesn't like that a proto is copied because it has a mutex
 	for _, tt := range tests { // nolint
-		tt := tt // nolint
+		// nolint
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -195,8 +194,7 @@ func Test_byte32Slice(t *testing.T) {
 		{name: "too short", args: args{pbVal: [][]byte{tooShort}}, ifaceVal: nil, wantErr: true},
 	}
 	for _, tt := range tests {
-		tt := tt
-		t.Run(fmt.Sprintf("pb-to-iface %s", tt.name), func(t *testing.T) {
+		t.Run("pb-to-iface "+tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			got, err := byte32Slice(tt.args.pbVal)
@@ -209,7 +207,7 @@ func Test_byte32Slice(t *testing.T) {
 			}
 		})
 
-		t.Run(fmt.Sprintf("iface-to-pb %s", tt.name), func(t *testing.T) {
+		t.Run("iface-to-pb "+tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			// there are no errors in this direction so skip tests that expect errors

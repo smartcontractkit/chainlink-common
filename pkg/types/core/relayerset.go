@@ -29,8 +29,25 @@ type RelayArgs struct {
 
 type Relayer interface {
 	services.Service
-	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (types.PluginProvider, error)
+	// EVM returns EVMService that provides access to evm-family specific functionalities
+	EVM() (types.EVMService, error)
+	// TON returns TONService that provides access to TON specific functionalities
+	TON() (types.TONService, error)
+	// Solana returns SolanaService that provides access to Solana specific functionalities
+	Solana() (types.SolanaService, error)
+	// Aptos returns AptosService that provides access to Aptos specific functionalities
+	Aptos() (types.AptosService, error)
+	// Stellar returns StellarService that provides access to Stellar specific functionalities
+	Stellar() (types.StellarService, error)
+	NewPluginProvider(context.Context, RelayArgs, PluginArgs) (PluginProvider, error)
 	NewContractReader(_ context.Context, contractReaderConfig []byte) (types.ContractReader, error)
 	NewContractWriter(_ context.Context, contractWriterConfig []byte) (types.ContractWriter, error)
 	LatestHead(context.Context) (types.Head, error)
+	FinalizedHead(context.Context) (types.Head, error)
+	GetChainInfo(ctx context.Context) (types.ChainInfo, error)
+}
+
+// PluginProvider provides config required by the oracle factory.
+type PluginProvider interface {
+	types.ConfigProvider
 }

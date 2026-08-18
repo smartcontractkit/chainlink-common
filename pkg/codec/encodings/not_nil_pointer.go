@@ -13,7 +13,7 @@ type NotNilPointer struct {
 
 func (n *NotNilPointer) Encode(value any, into []byte) ([]byte, error) {
 	rValue := reflect.ValueOf(value)
-	if rValue.Kind() != reflect.Ptr {
+	if rValue.Kind() != reflect.Pointer {
 		return nil, fmt.Errorf("%w: expected pointer, got %T", types.ErrInvalidType, value)
 	}
 

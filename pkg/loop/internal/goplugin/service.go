@@ -24,11 +24,11 @@ var (
 // to another loop that is proxied through the core node.
 type ServiceClient struct {
 	b    *net.BrokerExt
-	cc   grpc.ClientConnInterface
+	cc   net.ClientConnInterface
 	grpc pb.ServiceClient
 }
 
-func NewServiceClient(b *net.BrokerExt, cc grpc.ClientConnInterface) *ServiceClient {
+func NewServiceClient(b *net.BrokerExt, cc net.ClientConnInterface) *ServiceClient {
 	return &ServiceClient{b, cc, pb.NewServiceClient(cc)}
 }
 
@@ -41,7 +41,7 @@ func (s *ServiceClient) Close() error {
 	defer cancel()
 
 	_, err := s.grpc.Close(ctx, &emptypb.Empty{})
-	return err
+	return errors.Join(err, s.cc.Close())
 }
 
 func (s *ServiceClient) Ready() error {
@@ -62,13 +62,12 @@ func (s *ServiceClient) HealthReport() map[string]error {
 	ctx, cancel = context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
+	name := s.b.Logger.Name()
 	reply, err := s.grpc.HealthReport(ctx, &emptypb.Empty{})
 	if err != nil {
-		return map[string]error{s.b.Logger.Name(): err}
+		return map[string]error{name: err}
 	}
-	hr := healthReport(reply.HealthReport)
-	hr[s.b.Logger.Name()] = nil
-	return hr
+	return healthReport(name, reply.HealthReport)
 }
 
 // ClientConn implements GRPCClientConn interface.
@@ -102,14 +101,15 @@ func (s *ServiceServer) HealthReport(ctx context.Context, empty *emptypb.Empty) 
 	return &r, nil
 }
 
-func healthReport(s map[string]string) (hr map[string]error) {
-	hr = make(map[string]error, len(s))
+func healthReport(prefix string, s map[string]string) (hr map[string]error) {
+	hr = make(map[string]error, len(s)+1)
+	hr[prefix] = nil
 	for n, e := range s {
 		var err error
 		if e != "" {
 			err = errors.New(e)
 		}
-		hr[n] = err
+		hr[prefix+"."+n] = err
 	}
 	return hr
 }

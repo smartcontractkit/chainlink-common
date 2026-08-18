@@ -8,12 +8,12 @@ import (
 
 type ValidationService interface {
 	services.Service
-	ValidateConfig(ctx context.Context, config map[string]interface{}) error
+	ValidateConfig(ctx context.Context, config map[string]any) error
 }
 
 type ValidationServiceClient interface {
-	ValidateConfig(ctx context.Context, config map[string]interface{}) error
+	ValidateConfig(ctx context.Context, config map[string]any) error
 }
 type ValidationServiceServer interface {
-	ValidateConfig(ctx context.Context, config map[string]interface{}) error
+	ValidateConfig(ctx context.Context, config map[string]any) error
 }

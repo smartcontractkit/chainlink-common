@@ -20,21 +20,21 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 func TestCommitService(t *testing.T) {
 	t.Parallel()
 
-	commit := loop.NewCommitService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	lggr := logger.Test(t)
+	commit := loop.NewCommitService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.CCIPCommitLOOPName, false, 0)
-	}, cciptest.CommitProvider)
+	}, cciptest.CommitProvider(lggr))
 
 	t.Run("service not nil", func(t *testing.T) {
 		require.NotPanics(t, func() { commit.Name() })
 	})
 
-	hook := commit.PluginService.XXXTestHook()
+	hook := commit.XXXTestHook()
 	servicetest.Run(t, commit)
 
 	t.Run("control", func(t *testing.T) {
@@ -62,14 +62,15 @@ func TestCommitService(t *testing.T) {
 
 func TestCommitService_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	commit := loop.NewCommitService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	commit := loop.NewCommitService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
 			Command: loop.CCIPCommitLOOPName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, cciptest.CommitProvider)
+	}, cciptest.CommitProvider(lggr))
 	servicetest.Run(t, commit)
 
 	reportingplugintest.RunFactory(t, commit)
@@ -110,8 +111,8 @@ func TestCommitLOOP(t *testing.T) {
 }
 
 func newCommitProvider(t *testing.T, pr loop.PluginRelayer) (types.CCIPCommitProvider, error) {
-	ctx := tests.Context(t)
-	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, nil)
+	ctx := t.Context()
+	r, err := pr.NewRelayer(ctx, test.ConfigTOML, keystoretest.Keystore, keystoretest.Keystore, nil)
 	require.NoError(t, err)
 	servicetest.Run(t, r)
 

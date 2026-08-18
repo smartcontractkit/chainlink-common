@@ -20,10 +20,11 @@ import (
 func TestMercuryV4Service(t *testing.T) {
 	t.Parallel()
 
-	mercuryV4 := loop.NewMercuryV4Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	lggr := logger.Test(t)
+	mercuryV4 := loop.NewMercuryV4Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
-	}, mercurytest.MercuryProvider, mercuryv4test.DataSource)
-	hook := mercuryV4.PluginService.XXXTestHook()
+	}, mercurytest.MercuryProvider(lggr), mercuryv4test.DataSource)
+	hook := mercuryV4.XXXTestHook()
 	servicetest.Run(t, mercuryV4)
 
 	t.Run("control", func(t *testing.T) {
@@ -51,14 +52,15 @@ func TestMercuryV4Service(t *testing.T) {
 
 func TestMercuryV4Service_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	mercury := loop.NewMercuryV4Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	mercury := loop.NewMercuryV4Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
 			Command: loop.PluginMercuryName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, mercurytest.MercuryProvider, mercuryv4test.DataSource)
+	}, mercurytest.MercuryProvider(lggr), mercuryv4test.DataSource)
 	servicetest.Run(t, mercury)
 
 	mercurytest.MercuryPluginFactory(t, mercury)
@@ -67,10 +69,11 @@ func TestMercuryV4Service_recovery(t *testing.T) {
 func TestMercuryV3Service(t *testing.T) {
 	t.Parallel()
 
-	mercuryV3 := loop.NewMercuryV3Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	lggr := logger.Test(t)
+	mercuryV3 := loop.NewMercuryV3Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
-	}, mercurytest.MercuryProvider, mercuryv3test.DataSource)
-	hook := mercuryV3.PluginService.XXXTestHook()
+	}, mercurytest.MercuryProvider(lggr), mercuryv3test.DataSource)
+	hook := mercuryV3.XXXTestHook()
 	servicetest.Run(t, mercuryV3)
 
 	t.Run("control", func(t *testing.T) {
@@ -98,14 +101,15 @@ func TestMercuryV3Service(t *testing.T) {
 
 func TestMercuryV3Service_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	mercury := loop.NewMercuryV3Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	mercury := loop.NewMercuryV3Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
 			Command: loop.PluginMercuryName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, mercurytest.MercuryProvider, mercuryv3test.DataSource)
+	}, mercurytest.MercuryProvider(lggr), mercuryv3test.DataSource)
 	servicetest.Run(t, mercury)
 
 	mercurytest.MercuryPluginFactory(t, mercury)
@@ -114,10 +118,11 @@ func TestMercuryV3Service_recovery(t *testing.T) {
 func TestMercuryV1Service(t *testing.T) {
 	t.Parallel()
 
-	mercuryV1 := loop.NewMercuryV1Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	lggr := logger.Test(t)
+	mercuryV1 := loop.NewMercuryV1Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
-	}, mercurytest.MercuryProvider, mercuryv1test.DataSource)
-	hook := mercuryV1.PluginService.XXXTestHook()
+	}, mercurytest.MercuryProvider(lggr), mercuryv1test.DataSource)
+	hook := mercuryV1.XXXTestHook()
 	servicetest.Run(t, mercuryV1)
 
 	t.Run("control", func(t *testing.T) {
@@ -145,14 +150,15 @@ func TestMercuryV1Service(t *testing.T) {
 
 func TestMercuryV1Service_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	mercury := loop.NewMercuryV1Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	mercury := loop.NewMercuryV1Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
 			Command: loop.PluginMercuryName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, mercurytest.MercuryProvider, mercuryv1test.DataSource)
+	}, mercurytest.MercuryProvider(lggr), mercuryv1test.DataSource)
 	servicetest.Run(t, mercury)
 
 	mercurytest.MercuryPluginFactory(t, mercury)
@@ -161,10 +167,11 @@ func TestMercuryV1Service_recovery(t *testing.T) {
 func TestMercuryV2Service(t *testing.T) {
 	t.Parallel()
 
-	mercuryV2 := loop.NewMercuryV2Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	lggr := logger.Test(t)
+	mercuryV2 := loop.NewMercuryV2Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		return NewHelperProcessCommand(loop.PluginMercuryName, true, 0)
-	}, mercurytest.MercuryProvider, mercuryv2test.DataSource)
-	hook := mercuryV2.PluginService.XXXTestHook()
+	}, mercurytest.MercuryProvider(lggr), mercuryv2test.DataSource)
+	hook := mercuryV2.XXXTestHook()
 	servicetest.Run(t, mercuryV2)
 
 	t.Run("control", func(t *testing.T) {
@@ -192,14 +199,15 @@ func TestMercuryV2Service(t *testing.T) {
 
 func TestMercuryV2Service_recovery(t *testing.T) {
 	t.Parallel()
+	lggr := logger.Test(t)
 	var limit atomic.Int32
-	mercury := loop.NewMercuryV2Service(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
+	mercury := loop.NewMercuryV2Service(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
 		h := HelperProcessCommand{
 			Command: loop.PluginMercuryName,
 			Limit:   int(limit.Add(1)),
 		}
 		return h.New()
-	}, mercurytest.MercuryProvider, mercuryv2test.DataSource)
+	}, mercurytest.MercuryProvider(lggr), mercuryv2test.DataSource)
 	servicetest.Run(t, mercury)
 
 	mercurytest.MercuryPluginFactory(t, mercury)

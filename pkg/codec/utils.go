@@ -1,6 +1,7 @@
 package codec
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -14,14 +15,14 @@ import (
 )
 
 var (
-	codecNumType = reflect.TypeOf(Number("0"))
-	intType      = reflect.TypeOf(int(0))
-	int8Type     = reflect.TypeOf(int8(0))
-	int16Type    = reflect.TypeOf(int16(0))
-	int32Type    = reflect.TypeOf(int32(0))
-	int64Type    = reflect.TypeOf(int64(0))
-	float32Type  = reflect.TypeOf(float32(0))
-	float64Type  = reflect.TypeOf(float64(0))
+	codecNumType = reflect.TypeFor[Number]()
+	intType      = reflect.TypeFor[int]()
+	int8Type     = reflect.TypeFor[int8]()
+	int16Type    = reflect.TypeFor[int16]()
+	int32Type    = reflect.TypeFor[int32]()
+	int64Type    = reflect.TypeFor[int64]()
+	float32Type  = reflect.TypeFor[float32]()
+	float64Type  = reflect.TypeFor[float64]()
 )
 
 func NumberHook(from reflect.Type, to reflect.Type, val any) (any, error) {
@@ -78,7 +79,7 @@ func FitsInNBitsSigned(n int, bi *big.Int) bool {
 // BigIntHook is a mapstructure hook that converts number types to *[math/big.Int] and vice versa.
 // Float values are cast to an int64 before being converted to a *[math/big.Int].
 func BigIntHook(_, to reflect.Type, data any) (any, error) {
-	if to == reflect.TypeOf(&big.Int{}) {
+	if to == reflect.TypeFor[*big.Int]() {
 		bigInt := big.NewInt(0)
 
 		switch v := data.(type) {
@@ -116,57 +117,57 @@ func BigIntHook(_, to reflect.Type, data any) (any, error) {
 
 	if bi, ok := data.(*big.Int); ok {
 		switch to {
-		case reflect.TypeOf(0):
+		case reflect.TypeFor[int]():
 			if FitsInNBitsSigned(strconv.IntSize, bi) {
 				return int(bi.Int64()), nil
 			}
 			return nil, fmt.Errorf("%w: can not %s fit into int", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(int8(0)):
+		case reflect.TypeFor[int8]():
 			if FitsInNBitsSigned(8, bi) {
 				return int8(bi.Int64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into int8", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(int16(0)):
+		case reflect.TypeFor[int16]():
 			if FitsInNBitsSigned(16, bi) {
 				return int16(bi.Int64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into int16", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(int32(0)):
+		case reflect.TypeFor[int32]():
 			if FitsInNBitsSigned(32, bi) {
 				return int32(bi.Int64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into int32 ", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(int64(0)):
+		case reflect.TypeFor[int64]():
 			if FitsInNBitsSigned(64, bi) {
 				return bi.Int64(), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into int64 ", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(uint(0)):
+		case reflect.TypeFor[uint]():
 			if bi.Sign() >= 0 && bi.BitLen() <= strconv.IntSize {
 				return uint(bi.Uint64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into uint", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(uint8(0)):
+		case reflect.TypeFor[uint8]():
 			if bi.Sign() >= 0 && bi.BitLen() <= 8 {
 				return uint8(bi.Uint64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into uint8", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(uint16(0)):
+		case reflect.TypeFor[uint16]():
 			if bi.Sign() >= 0 && bi.BitLen() <= 16 {
 				return uint16(bi.Uint64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into uint16", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(uint32(0)):
+		case reflect.TypeFor[uint32]():
 			if bi.Sign() >= 0 && bi.BitLen() <= 32 {
 				return uint32(bi.Uint64()), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into uint32", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(uint64(0)):
+		case reflect.TypeFor[uint64]():
 			if bi.Sign() >= 0 && bi.BitLen() <= 64 {
 				return bi.Uint64(), nil
 			}
 			return nil, fmt.Errorf("%w: cannot fit %s into uint64", types.ErrInvalidType, bi.String())
-		case reflect.TypeOf(""):
+		case reflect.TypeFor[string]():
 			return bi.String(), nil
 		default:
 			return data, nil
@@ -201,11 +202,11 @@ func SliceToArrayVerifySizeHook(from reflect.Type, to reflect.Type, data any) (a
 }
 
 var (
-	i64Type     = reflect.TypeOf(int64(0))
-	timeType    = reflect.TypeOf(time.Time{})
+	i64Type     = reflect.TypeFor[int64]()
+	timeType    = reflect.TypeFor[time.Time]()
 	timePtrType = reflect.PointerTo(timeType)
-	biType      = reflect.TypeOf(&big.Int{})
-	mapType     = reflect.TypeOf(map[string]interface{}{})
+	biType      = reflect.TypeFor[*big.Int]()
+	mapType     = reflect.TypeFor[map[string]any]()
 	ptrMapType  = reflect.PointerTo(mapType)
 	interMapKey = "IntermediateEpochMapKey"
 )
@@ -224,7 +225,7 @@ func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) 
 		return data, nil
 	case mapType, ptrMapType:
 		// map to int64
-		timeMap, ok := reflect.Indirect(reflect.ValueOf(data)).Interface().(map[string]interface{})
+		timeMap, ok := reflect.Indirect(reflect.ValueOf(data)).Interface().(map[string]any)
 		if !ok {
 			return data, nil
 		}
@@ -242,9 +243,10 @@ func EpochToTimeHook(from reflect.Type, to reflect.Type, data any) (any, error) 
 		return convertToEpoch(to, time.Unix(unixTime, 0)), nil
 	default:
 		// value to time.Time
-		if to == timeType {
+		switch to {
+		case timeType:
 			return convertToTime(from, data), nil
-		} else if to == timePtrType {
+		case timePtrType:
 			if t, ok := convertToTime(from, data).(time.Time); ok {
 				return &t, nil
 			}
@@ -321,7 +323,7 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 			}
 
 			iItem := reflect.ValueOf(item)
-			if iItem.Kind() == reflect.Ptr {
+			if iItem.Kind() == reflect.Pointer {
 				iItem = iItem.Elem()
 			}
 
@@ -329,7 +331,7 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 			case reflect.Array, reflect.Slice:
 				length := iItem.Len()
 				maps := make([]map[string]any, length)
-				for i := 0; i < length; i++ {
+				for i := range length {
 					if err := mapstructure.Decode(iItem.Index(i).Interface(), &maps[i]); err != nil {
 						return nil, fmt.Errorf("%w: %w", types.ErrInvalidType, err)
 					}
@@ -345,7 +347,7 @@ func getMapsFromPath(valueMap map[string]any, path []string) ([]map[string]any, 
 				// cleanup empty values for non path keys
 				for k, v := range m {
 					valueOfV := reflect.ValueOf(v)
-					if k != p && valueOfV.IsValid() && valueOfV.IsZero() {
+					if k != p && valueOfV.IsValid() && valueOfV.IsZero() && valueOfV.Kind() != reflect.Uint8 {
 						delete(m, k)
 					}
 				}
@@ -369,4 +371,162 @@ func addr(value reflect.Value) reflect.Value {
 	tmp := reflect.New(value.Type())
 	tmp.Elem().Set(value)
 	return tmp
+}
+
+func ValueForPath(from reflect.Value, itemType string) (any, error) {
+	if itemType == "" {
+		return from.Interface(), nil
+	}
+
+	switch from.Kind() {
+	case reflect.Pointer:
+		elem, err := ValueForPath(from.Elem(), itemType)
+		if err != nil {
+			return nil, err
+		}
+
+		return elem, nil
+	case reflect.Array, reflect.Slice:
+		return nil, fmt.Errorf("%w: cannot extract a field from an array or slice", types.ErrInvalidType)
+	case reflect.Struct:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := from.FieldByName(head)
+		if !field.IsValid() {
+			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
+		}
+
+		if tail == "" {
+			return field.Interface(), nil
+		}
+
+		return ValueForPath(field, tail)
+	case reflect.Map:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := from.MapIndex(reflect.ValueOf(head))
+		if !field.IsValid() {
+			return nil, fmt.Errorf("%w: field not found for path %s and itemType %s", types.ErrInvalidType, from, itemType)
+		}
+
+		if tail == "" {
+			return field.Interface(), nil
+		}
+
+		return ValueForPath(reflect.ValueOf(field.Interface()), tail)
+	default:
+		return nil, fmt.Errorf("%w: cannot extract a field from kind %s", types.ErrInvalidType, from.Kind())
+	}
+}
+
+func SetValueAtPath(vInto, vField reflect.Value, itemType string) error {
+	switch vInto.Kind() {
+	case reflect.Pointer:
+		if !vInto.Elem().IsValid() {
+			into := reflect.New(vInto.Type().Elem())
+
+			vInto.Set(into)
+		}
+
+		err := SetValueAtPath(vInto.Elem(), vField, itemType)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	case reflect.Array, reflect.Slice:
+		return fmt.Errorf("%w: cannot set a field from an array or slice", types.ErrInvalidType)
+	case reflect.Struct:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := vInto.FieldByName(head)
+		if !field.IsValid() {
+			return fmt.Errorf("%w: invalid field for type %s and name %s", types.ErrInvalidType, vInto, head)
+		}
+
+		if tail == "" {
+			if err := applyValue(field, vField); err != nil {
+				return fmt.Errorf("%w: %w for field %s", types.ErrInvalidType, err, head)
+			}
+
+			return nil
+		}
+
+		return SetValueAtPath(field, vField, tail)
+	case reflect.Map:
+		head, tail := ItemTyper(itemType).Next()
+
+		field := vInto.MapIndex(reflect.ValueOf(head))
+		if !field.IsValid() {
+			return fmt.Errorf("%w: field not found for itemType %s", types.ErrInvalidType, itemType)
+		}
+
+		if tail == "" {
+			if err := applyValue(field, vField); err != nil {
+				return fmt.Errorf("%w: %w for field %s", types.ErrInvalidType, err, head)
+			}
+
+			return nil
+		}
+
+		return SetValueAtPath(field, vField, tail)
+	default:
+		return fmt.Errorf("%w: cannot set a field from kind %s", types.ErrInvalidType, vInto.Kind())
+	}
+}
+
+func applyValue(vInto, vField reflect.Value) error {
+	if derefTypePtr(vInto.Type()) != derefTypePtr(vField.Type()) {
+		return errors.New("value type mismatch for field")
+	}
+
+	switch vInto.Kind() {
+	case reflect.Pointer:
+		switch vField.Kind() {
+		case reflect.Pointer:
+			if vInto.CanSet() {
+				vInto.Set(vField)
+
+				return nil
+			}
+
+			if !vInto.Elem().IsValid() {
+				return errors.New("value to set is unaddressable")
+			}
+
+			if vField.IsNil() {
+				vField = reflect.New(vField.Type().Elem())
+			}
+
+			vInto.Elem().Set(vField.Elem())
+		default:
+			if !vInto.Elem().IsValid() {
+				vInto.Set(reflect.New(vInto.Type().Elem()))
+			}
+
+			vInto.Elem().Set(vField)
+		}
+	default:
+		if vInto.CanSet() {
+			switch vField.Kind() {
+			case reflect.Pointer:
+				vInto.Set(vField.Elem())
+			default:
+				vInto.Set(vField)
+			}
+
+			return nil
+		}
+
+		return errors.New("value is not settable")
+	}
+
+	return nil
+}
+
+func derefTypePtr(typ reflect.Type) reflect.Type {
+	for typ.Kind() == reflect.Pointer {
+		typ = typ.Elem()
+	}
+	return typ
 }

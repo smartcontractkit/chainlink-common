@@ -2,27 +2,67 @@ package net
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/jpillora/backoff"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 )
 
-var _ grpc.ClientConnInterface = (*AtomicClient)(nil)
+var _ ClientConnInterface = (*grpc.ClientConn)(nil)
+
+type ClientConnInterface interface {
+	grpc.ClientConnInterface
+	GetState() connectivity.State
+	Close() error
+}
+
+func ClientConnInterfaceFromGRPC(conn grpc.ClientConnInterface) ClientConnInterface {
+	connCloser, ok := conn.(ClientConnInterface)
+	if !ok {
+		connCloser = &noopClientConnInterface{conn}
+	}
+	return connCloser
+}
+
+// noopClientConnInterface adapts ClientConnInterface to implement net.ClientConnInterface with no-ops.
+type noopClientConnInterface struct {
+	grpc.ClientConnInterface
+}
+
+func (c *noopClientConnInterface) GetState() connectivity.State {
+	return connectivity.State(-1)
+}
+
+func (*noopClientConnInterface) Close() error { return nil }
+
+var _ ClientConnInterface = (*AtomicClient)(nil)
 
 // An AtomicClient implements [grpc.ClientConnInterface] and is backed by a swappable [*grpc.ClientConn].
 type AtomicClient struct {
 	cc atomic.Pointer[grpc.ClientConn]
 }
 
+func (a *AtomicClient) Close() error {
+	if v := a.cc.Swap(nil); v != nil {
+		return (*v).Close()
+	}
+	return nil
+}
+
+func (a *AtomicClient) GetState() connectivity.State {
+	return a.cc.Load().GetState()
+}
+
 func (a *AtomicClient) Store(cc *grpc.ClientConn) { a.cc.Store(cc) }
 
-func (a *AtomicClient) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (a *AtomicClient) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	return a.cc.Load().Invoke(ctx, method, args, reply, opts...)
 }
 
@@ -30,7 +70,7 @@ func (a *AtomicClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, met
 	return a.cc.Load().NewStream(ctx, desc, method, opts...)
 }
 
-var _ grpc.ClientConnInterface = (*clientConn)(nil)
+var _ ClientConnInterface = (*clientConn)(nil)
 
 // newClientFn returns a new client connection id to dial, and a set of Resource dependencies to close.
 type newClientFn func(context.Context) (id uint32, deps Resources, err error)
@@ -48,13 +88,42 @@ type clientConn struct {
 	cc   *grpc.ClientConn
 }
 
-func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}, reply interface{}, opts ...grpc.CallOption) error {
+func (c *clientConn) Close() error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.close()
+}
+
+func (c *clientConn) close() error {
+	if c.cc != nil {
+		err := c.cc.Close()
+		c.CloseAll(c.deps...)
+		c.cc = nil
+		c.deps = nil
+		return err
+	}
+	return nil
+}
+
+func (c *clientConn) GetState() connectivity.State {
+	c.mu.RLock()
+	cc := c.cc
+	c.mu.RUnlock()
+	if cc != nil {
+		return cc.GetState()
+	}
+	// fall back to Shutdown to reflect underlying state
+	return connectivity.Shutdown
+}
+
+func (c *clientConn) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
 	c.mu.RLock()
 	cc := c.cc
 	c.mu.RUnlock()
 
+	var refErr error
 	if cc == nil {
-		cc = c.refresh(ctx, nil)
+		cc, refErr = c.refresh(ctx, nil)
 	}
 	for cc != nil {
 		err := cc.Invoke(ctx, method, args, reply, opts...)
@@ -64,13 +133,13 @@ func (c *clientConn) Invoke(ctx context.Context, method string, args interface{}
 				c.Logger.Warnw("clientConn: Invoke: terminal error", "method", method, "err", err)
 				return err
 			}
-			c.Logger.Warnw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
-			cc = c.refresh(ctx, cc)
+			c.Logger.Errorw("clientConn: Invoke: terminal error, refreshing connection", "method", method, "err", err)
+			cc, refErr = c.refresh(ctx, cc)
 			continue
 		}
 		return err
 	}
-	return context.Cause(ctx)
+	return refErr
 }
 
 func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
@@ -78,43 +147,43 @@ func (c *clientConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, metho
 	cc := c.cc
 	c.mu.RUnlock()
 
+	var refErr error
 	if cc == nil {
-		cc = c.refresh(ctx, nil)
+		cc, refErr = c.refresh(ctx, nil)
 	}
 	for cc != nil {
 		s, err := cc.NewStream(ctx, desc, method, opts...)
 		if isErrTerminal(err) {
-			c.Logger.Warnw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
-			cc = c.refresh(ctx, cc)
+			c.Logger.Errorw("clientConn: NewStream: terminal error, refreshing connection", "err", err)
+			cc, refErr = c.refresh(ctx, cc)
 			continue
 		}
 		return s, err
 	}
-	return nil, context.Cause(ctx)
+	return nil, refErr
 }
 
 // refresh replaces c.cc with a new (different from orig) *grpc.ClientConn, and returns it as well.
 // It will block until a new connection is successfully dialed, or return nil if the context expires.
-func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.ClientConn {
+func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) (*grpc.ClientConn, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.cc != orig {
-		return c.cc
+		return c.cc, nil
 	}
-	if c.cc != nil {
-		if err := c.cc.Close(); err != nil {
-			c.Logger.Errorw("Client close failed", "err", err)
-		}
-		c.CloseAll(c.deps...)
+	if err := c.close(); err != nil {
+		c.Logger.Errorw("Client close failed", "err", err)
 	}
 
-	try := func() bool {
-		c.Logger.Debug("Client refresh")
+	try := func() error {
+		if d, ok := ctx.Deadline(); ok {
+			c.Logger.Debugw("Client refresh", "deadline", d, "until", time.Until(d))
+		}
 		id, deps, err := c.newClient(ctx)
 		if err != nil {
 			c.Logger.Errorw("Client refresh attempt failed", "err", err)
 			c.CloseAll(deps...)
-			return false
+			return err
 		}
 		c.deps = deps
 
@@ -126,9 +195,9 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 				lggr.Errorw("Client dial failed", "err", ErrConnDial{Name: c.name, ID: id, Err: err})
 			}
 			c.CloseAll(c.deps...)
-			return false
+			return err
 		}
-		return true
+		return nil
 	}
 
 	b := backoff.Backoff{
@@ -136,19 +205,20 @@ func (c *clientConn) refresh(ctx context.Context, orig *grpc.ClientConn) *grpc.C
 		Max:    5 * time.Second,
 		Factor: 2,
 	}
-	for !try() {
+	for err := try(); err != nil; err = try() {
 		if ctx.Err() != nil {
-			c.Logger.Errorw("Client refresh failed: aborting refresh due to context error", "err", ctx.Err())
-			return nil
+			err = fmt.Errorf("%w: last error: %w", context.Cause(ctx), err)
+			c.Logger.Errorw("Client refresh failed: aborting refresh", "err", err)
+			return nil, err
 		}
 		wait := b.Duration()
 		c.Logger.Infow("Waiting to refresh", "wait", wait)
 		select {
 		case <-ctx.Done():
-			return nil
+			return nil, fmt.Errorf("%w: last error: %w", context.Cause(ctx), err)
 		case <-time.After(wait):
 		}
 	}
 
-	return c.cc
+	return c.cc, nil
 }

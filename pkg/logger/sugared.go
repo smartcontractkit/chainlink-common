@@ -1,13 +1,21 @@
 package logger
 
-// SugaredLogger extends the base Logger interface with syntactic sugar, similar to zap.SugaredLogger.
+import (
+	"context"
+
+	"go.uber.org/zap"
+)
+
+// SugaredLogger extends the base Logger interface with syntactic sugar, similar to [zap.SugaredLogger], include two new levels.
+//   - Critical: Requires quick action from the node op, obviously these should happen extremely rarely. Example: failed to listen on TCP port
+//   - Trace: Only included if compiled with the trace tag. For example: go test -tags trace ...
 type SugaredLogger interface {
 	Logger
 
 	// AssumptionViolation variants log at error level with the message prefix "AssumptionViolation: ".
-	AssumptionViolation(args ...interface{})
-	AssumptionViolationf(format string, vals ...interface{})
-	AssumptionViolationw(msg string, keysAndVals ...interface{})
+	AssumptionViolation(args ...any)
+	AssumptionViolationf(format string, vals ...any)
+	AssumptionViolationw(msg string, keysAndVals ...any)
 
 	// ErrorIf logs the error if present.
 	ErrorIf(err error, msg string)
@@ -18,19 +26,32 @@ type SugaredLogger interface {
 	ErrorIfFn(fn func() error, msg string)
 
 	// Critical emits critical level logs (a remapping of [zap.DPanicLevel]) or falls back to error level with a '[crit]' prefix.
-	Critical(args ...interface{})
-	Criticalf(format string, vals ...interface{})
-	Criticalw(msg string, keysAndVals ...interface{})
+	Critical(args ...any)
+	Criticalf(format string, vals ...any)
+	Criticalw(msg string, keysAndVals ...any)
 
 	// Trace emits logs only when built with the 'trace' tag.
 	//
 	//	go test -tags trace ./foo -run TestBar
-	Trace(args ...interface{})
-	Tracef(format string, vals ...interface{})
-	Tracew(msg string, keysAndVals ...interface{})
+	Trace(args ...any)
+	Tracef(format string, vals ...any)
+	Tracew(msg string, keysAndVals ...any)
 
+	// Named creates a new Logger sub-scoped with name.
+	// Names are inherited and dot-separated.
+	//   a := l.Named("A") // logger=A
+	//   b := a.Named("A") // logger=A.B
+	// Names are generally `MixedCaps`, without spaces, like Go names. `Foo.Bar.HTTPBaz`
 	Named(string) SugaredLogger
+	// With returns a new Logger with the given arguments.
 	With(keyvals ...any) SugaredLogger
+	WithOptions(opts ...zap.Option) SugaredLogger
+	// WithCtx returns a new Logger with keyvals from the given context.
+	// Example: l.WithCtx(ctx, "keyFoo", ctxKeyFoo, "keyBar", ctxKeyBar)
+	// See [CtxKeyVals].
+	WithCtx(context.Context, ...any) SugaredLogger
+	// Helper returns a new logger with the number of callers skipped by caller annotation increased by skip.
+	// This allows wrappers and helpers to point higher up the stack (like testing.T.Helper()).
 	Helper(skip int) SugaredLogger
 }
 
@@ -65,28 +86,28 @@ func (s *sugared) ErrorIfFn(fn func() error, msg string) {
 
 const assumptionViolationPrefix = "AssumptionViolation: "
 
-func (s *sugared) AssumptionViolation(args ...interface{}) {
-	s.h.Error(append([]interface{}{assumptionViolationPrefix}, args...))
+func (s *sugared) AssumptionViolation(args ...any) {
+	s.h.Error(append([]any{assumptionViolationPrefix}, args...))
 }
 
-func (s *sugared) AssumptionViolationf(format string, vals ...interface{}) {
+func (s *sugared) AssumptionViolationf(format string, vals ...any) {
 	s.h.Errorf(assumptionViolationPrefix+format, vals...)
 }
 
-func (s *sugared) AssumptionViolationw(msg string, keyvals ...interface{}) {
+func (s *sugared) AssumptionViolationw(msg string, keyvals ...any) {
 	s.h.Errorw(assumptionViolationPrefix+msg, keyvals...)
 }
 
 const critPrefix = "[crit] "
 
-func (s *sugared) Critical(args ...interface{}) {
+func (s *sugared) Critical(args ...any) {
 	switch t := s.h.(type) {
 	case *logger:
 		t.DPanic(args...)
 		return
 	}
 	c, ok := s.h.(interface {
-		Critical(args ...interface{})
+		Critical(args ...any)
 	})
 	if ok {
 		c.Critical(args...)
@@ -95,14 +116,14 @@ func (s *sugared) Critical(args ...interface{}) {
 	s.h.Error(append([]any{critPrefix}, args...)...)
 }
 
-func (s *sugared) Criticalf(format string, values ...interface{}) {
+func (s *sugared) Criticalf(format string, values ...any) {
 	switch t := s.h.(type) {
 	case *logger:
 		t.DPanicf(format, values...)
 		return
 	}
 	c, ok := s.h.(interface {
-		Criticalf(format string, values ...interface{})
+		Criticalf(format string, values ...any)
 	})
 	if ok {
 		c.Criticalf(format, values...)
@@ -111,14 +132,14 @@ func (s *sugared) Criticalf(format string, values ...interface{}) {
 	s.h.Errorf(critPrefix+format, values...)
 }
 
-func (s *sugared) Criticalw(msg string, keysAndValues ...interface{}) {
+func (s *sugared) Criticalw(msg string, keysAndValues ...any) {
 	switch t := s.h.(type) {
 	case *logger:
 		t.DPanicw(msg, keysAndValues...)
 		return
 	}
 	c, ok := s.h.(interface {
-		Criticalw(msg string, keysAndValues ...interface{})
+		Criticalw(msg string, keysAndValues ...any)
 	})
 	if ok {
 		c.Criticalw(msg, keysAndValues...)
@@ -128,13 +149,21 @@ func (s *sugared) Criticalw(msg string, keysAndValues ...interface{}) {
 }
 
 func (s *sugared) Named(n string) SugaredLogger {
-	return Sugared(Named(s.Logger, n))
+	return Sugared(namedSkip(s.Logger, n, 2))
 }
 
-func (s *sugared) With(keyvals ...interface{}) SugaredLogger {
+func (s *sugared) With(keyvals ...any) SugaredLogger {
 	return Sugared(With(s.Logger, keyvals...))
+}
+
+func (s *sugared) WithOptions(opts ...zap.Option) SugaredLogger {
+	return Sugared(WithOptions(s.Logger, opts...))
 }
 
 func (s *sugared) Helper(skip int) SugaredLogger {
 	return Sugared(Helper(s.Logger, skip))
+}
+
+func (s *sugared) WithCtx(ctx context.Context, keyvals ...any) SugaredLogger {
+	return s.With(CtxKeyVals(ctx, keyvals...)...)
 }

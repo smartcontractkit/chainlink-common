@@ -1,0 +1,544 @@
+package relayerset
+
+import (
+	"context"
+	"errors"
+	"fmt"
+
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
+
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
+
+	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
+	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
+	"github.com/smartcontractkit/chainlink-common/pkg/types"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/evm"
+)
+
+// evmClient wraps the EVMRelayerSetClient by attaching a RelayerID to EVMClient requests.
+// The attached RelayerID is stored in the context metadata.
+type evmClient struct {
+	relayID types.RelayID
+	client  evmpb.EVMClient
+}
+
+var _ evmpb.EVMClient = (*evmClient)(nil)
+
+func (e *evmClient) CalculateTransactionFee(ctx context.Context, in *evmpb.CalculateTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.CalculateTransactionFeeReply, error) {
+	return e.client.CalculateTransactionFee(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e *evmClient) SubmitTransaction(ctx context.Context, in *evmpb.SubmitTransactionRequest, opts ...grpc.CallOption) (*evmpb.SubmitTransactionReply, error) {
+	return e.client.SubmitTransaction(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetTransactionFee(ctx context.Context, in *evmpb.GetTransactionFeeRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionFeeReply, error) {
+	return e.client.GetTransactionFee(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) CallContract(ctx context.Context, in *evmpb.CallContractRequest, opts ...grpc.CallOption) (*evmpb.CallContractReply, error) {
+	return e.client.CallContract(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) FilterLogs(ctx context.Context, in *evmpb.FilterLogsRequest, opts ...grpc.CallOption) (*evmpb.FilterLogsReply, error) {
+	return e.client.FilterLogs(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) BalanceAt(ctx context.Context, in *evmpb.BalanceAtRequest, opts ...grpc.CallOption) (*evmpb.BalanceAtReply, error) {
+	return e.client.BalanceAt(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) EstimateGas(ctx context.Context, in *evmpb.EstimateGasRequest, opts ...grpc.CallOption) (*evmpb.EstimateGasReply, error) {
+	return e.client.EstimateGas(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetTransactionByHash(ctx context.Context, in *evmpb.GetTransactionByHashRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionByHashReply, error) {
+	return e.client.GetTransactionByHash(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetTransactionReceipt(ctx context.Context, in *evmpb.GetTransactionReceiptRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionReceiptReply, error) {
+	return e.client.GetTransactionReceipt(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) HeaderByNumber(ctx context.Context, in *evmpb.HeaderByNumberRequest, opts ...grpc.CallOption) (*evmpb.HeaderByNumberReply, error) {
+	return e.client.HeaderByNumber(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) QueryTrackedLogs(ctx context.Context, in *evmpb.QueryTrackedLogsRequest, opts ...grpc.CallOption) (*evmpb.QueryTrackedLogsReply, error) {
+	return e.client.QueryTrackedLogs(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetFiltersNames(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	return e.client.GetFiltersNames(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) RegisterLogTracking(ctx context.Context, in *evmpb.RegisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return e.client.RegisterLogTracking(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) UnregisterLogTracking(ctx context.Context, in *evmpb.UnregisterLogTrackingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return e.client.UnregisterLogTracking(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetTransactionStatus(ctx context.Context, in *evmpb.GetTransactionStatusRequest, opts ...grpc.CallOption) (*evmpb.GetTransactionStatusReply, error) {
+	return e.client.GetTransactionStatus(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetForwarderForEOA(ctx context.Context, in *evmpb.GetForwarderForEOARequest, opts ...grpc.CallOption) (*evmpb.GetForwarderForEOAReply, error) {
+	return e.client.GetForwarderForEOA(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*evmpb.GetLatestLPBlockReply, error) {
+	return e.client.GetLatestLPBlock(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+func (e evmClient) LPSkipToBlock(ctx context.Context, in *evmpb.LPSkipToBlockRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return e.client.LPSkipToBlock(appendRelayID(ctx, e.relayID), in, opts...)
+}
+
+type evmServer struct {
+	evmpb.UnimplementedEVMServer
+	parent *Server
+}
+
+var _ evmpb.EVMServer = (*evmServer)(nil)
+
+func (es *evmServer) GetTransactionFee(ctx context.Context, request *evmpb.GetTransactionFeeRequest) (*evmpb.GetTransactionFeeReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.GetTransactionFee(ctx, request.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
+
+	return &evmpb.GetTransactionFeeReply{TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee)}, nil
+}
+
+func (es *evmServer) CallContract(ctx context.Context, request *evmpb.CallContractRequest) (*evmpb.CallContractReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	callMsg, err := evmpb.ConvertCallMsgFromProto(request.Call)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.CallContract(ctx, evm.CallContractRequest{
+		Msg:             callMsg,
+		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
+		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
+
+	return &evmpb.CallContractReply{
+		Data: reply.Data,
+	}, nil
+}
+
+func (es *evmServer) FilterLogs(ctx context.Context, request *evmpb.FilterLogsRequest) (*evmpb.FilterLogsReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	expression, err := evmpb.ConvertFilterFromProto(request.FilterQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.FilterLogs(ctx, evm.FilterLogsRequest{
+		FilterQuery:     expression,
+		ConfidenceLevel: conf,
+		IsExternal:      request.IsExternal,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
+
+	logs, err := evmpb.ConvertLogsToProto(reply.Logs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert reply to proto: %w", err)
+	}
+	return &evmpb.FilterLogsReply{Logs: logs}, nil
+}
+
+func (es *evmServer) BalanceAt(ctx context.Context, request *evmpb.BalanceAtRequest) (*evmpb.BalanceAtReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	address, err := evmpb.ConvertOptionalAddressFromProto(request.GetAccount())
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.BalanceAt(ctx, evm.BalanceAtRequest{
+		Address:         address,
+		BlockNumber:     valuespb.NewIntFromBigInt(request.BlockNumber),
+		ConfidenceLevel: conf,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
+
+	return &evmpb.BalanceAtReply{Balance: valuespb.NewBigIntFromInt(reply.Balance)}, nil
+}
+
+func (es *evmServer) EstimateGas(ctx context.Context, request *evmpb.EstimateGasRequest) (*evmpb.EstimateGasReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	callMsg, err := evmpb.ConvertCallMsgFromProto(request.GetMsg())
+	if err != nil {
+		return nil, err
+	}
+
+	gasLimit, err := evmService.EstimateGas(ctx, callMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.EstimateGasReply{Gas: gasLimit}, nil
+}
+
+func (es *evmServer) GetTransactionByHash(ctx context.Context, request *evmpb.GetTransactionByHashRequest) (*evmpb.GetTransactionByHashReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.GetTransactionByHash(ctx, evm.GetTransactionByHashRequest{
+		Hash:       evm.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := evmpb.ConvertTransactionToProto(reply)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetTransactionByHashReply{
+		Transaction: tx,
+	}, nil
+}
+
+func (es *evmServer) GetTransactionReceipt(ctx context.Context, request *evmpb.GetTransactionReceiptRequest) (*evmpb.GetTransactionReceiptReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.GetTransactionReceipt(ctx, evm.GeTransactionReceiptRequest{
+		Hash:       evm.Hash(request.GetHash()),
+		IsExternal: request.IsExternal,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	receipt, err := evmpb.ConvertReceiptToProto(reply)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetTransactionReceiptReply{
+		Receipt: receipt,
+	}, nil
+}
+
+func (es *evmServer) HeaderByNumber(ctx context.Context, request *evmpb.HeaderByNumberRequest) (*evmpb.HeaderByNumberReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.HeaderByNumber(ctx, evm.HeaderByNumberRequest{
+		Number:          valuespb.NewIntFromBigInt(request.GetBlockNumber()),
+		ConfidenceLevel: conf,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
+
+	header, err := evmpb.ConvertHeaderToProto(reply.Header)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.HeaderByNumberReply{
+		Header: header,
+	}, nil
+}
+
+func (es *evmServer) QueryTrackedLogs(ctx context.Context, request *evmpb.QueryTrackedLogsRequest) (*evmpb.QueryTrackedLogsReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	expression, err := evmpb.ConvertExpressionsFromProto(request.GetExpression())
+	if err != nil {
+		return nil, err
+	}
+
+	limitAndSort, err := chaincommonpb.ConvertLimitAndSortFromProto(request.GetLimitAndSort())
+	if err != nil {
+		return nil, err
+	}
+
+	conf, err := chaincommonpb.ConfidenceFromProto(request.GetConfidenceLevel())
+	if err != nil {
+		return nil, err
+	}
+
+	logs, err := evmService.QueryTrackedLogs(ctx, expression, limitAndSort, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	l, err := evmpb.ConvertLogsToProto(logs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.QueryTrackedLogsReply{Logs: l}, nil
+}
+
+func (es *evmServer) GetFiltersNames(ctx context.Context, _ *emptypb.Empty) (*evmpb.GetFiltersNamesReply, error) {
+	// TODO PLEX-1465: once code is moved away, remove this GetFiltersNames method
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	names, err := evmService.GetFiltersNames(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetFiltersNamesReply{Items: names}, nil
+}
+
+func (es *evmServer) RegisterLogTracking(ctx context.Context, request *evmpb.RegisterLogTrackingRequest) (*emptypb.Empty, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	filter, err := evmpb.ConvertLPFilterFromProto(request.GetFilter())
+	if err != nil {
+		return nil, err
+	}
+
+	if err = evmService.RegisterLogTracking(ctx, filter); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (es *evmServer) UnregisterLogTracking(ctx context.Context, request *evmpb.UnregisterLogTrackingRequest) (*emptypb.Empty, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = evmService.UnregisterLogTracking(ctx, request.GetFilterName()); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (es *evmServer) GetTransactionStatus(ctx context.Context, request *evmpb.GetTransactionStatusRequest) (*evmpb.GetTransactionStatusReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	txStatus, err := evmService.GetTransactionStatus(ctx, request.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+
+	//nolint: gosec // G115
+	return &evmpb.GetTransactionStatusReply{TransactionStatus: evmpb.TransactionStatus(txStatus)}, nil
+}
+
+func (es *evmServer) SubmitTransaction(ctx context.Context, request *evmpb.SubmitTransactionRequest) (*evmpb.SubmitTransactionReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	address, err := evmpb.ConvertOptionalAddressFromProto(request.To)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.SubmitTransaction(ctx, evm.SubmitTransactionRequest{
+		To:        address,
+		Data:      request.Data,
+		GasConfig: evmpb.ConvertGasConfigFromProto(request.GetGasConfig()),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("txResult is nil")
+	}
+
+	return &evmpb.SubmitTransactionReply{
+		TxHash:           reply.TxHash[:],
+		TxStatus:         evmpb.ConvertTxStatusToProto(reply.TxStatus),
+		TxIdempotencyKey: reply.TxIdempotencyKey,
+	}, nil
+}
+
+func (es *evmServer) CalculateTransactionFee(ctx context.Context, request *evmpb.CalculateTransactionFeeRequest) (*evmpb.CalculateTransactionFeeReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := evmService.CalculateTransactionFee(ctx, evm.ReceiptGasInfo{
+		GasUsed:           request.GasInfo.GasUsed,
+		EffectiveGasPrice: valuespb.NewIntFromBigInt(request.GasInfo.EffectiveGasPrice),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if reply == nil {
+		return nil, errors.New("reply is nil")
+	}
+
+	return &evmpb.CalculateTransactionFeeReply{
+		TransactionFee: valuespb.NewBigIntFromInt(reply.TransactionFee),
+	}, nil
+}
+
+func (es *evmServer) GetLatestLPBlock(ctx context.Context, in *emptypb.Empty) (*evmpb.GetLatestLPBlockReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := evmService.GetLatestLPBlock(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &evmpb.GetLatestLPBlockReply{
+		LpBlock: &evmpb.LPBlock{
+			Hash:                 b.BlockHash[:],
+			LatestBlockNumber:    b.LatestBlockNumber,
+			FinalizedBlockNumber: b.FinalizedBlockNumber,
+			SafeBlockNumber:      b.SafeBlockNumber,
+			BlockTimestamp:       b.BlockTimestamp,
+		},
+	}, nil
+}
+
+func (es *evmServer) LPSkipToBlock(ctx context.Context, request *evmpb.LPSkipToBlockRequest) (*emptypb.Empty, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = evmService.LPSkipToBlock(ctx, request.GetBlockNumber()); err != nil {
+		return nil, err
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
+func (es *evmServer) GetForwarderForEOA(ctx context.Context, request *evmpb.GetForwarderForEOARequest) (*evmpb.GetForwarderForEOAReply, error) {
+	evmService, err := es.parent.getEVMService(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	eoa, err := evmpb.ConvertAddressFromProto(request.GetAddr())
+	if err != nil {
+		return nil, fmt.Errorf("invalid EOA address: %w", err)
+	}
+
+	ocr2AggregatorID, err := evmpb.ConvertAddressFromProto(request.GetAggr())
+	if err != nil {
+		return nil, fmt.Errorf("invalid OCR2 Aggregator address: %w", err)
+	}
+
+	forwarder, err := evmService.GetForwarderForEOA(ctx, eoa, ocr2AggregatorID, request.PluginType)
+	if err != nil {
+		return nil, err
+	}
+	return &evmpb.GetForwarderForEOAReply{Addr: forwarder[:]}, nil
+}
+
+func (s *Server) getEVMService(ctx context.Context) (types.EVMService, error) {
+	id, err := readRelayID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	idT := relayerset.RelayerId{Network: id.Network, ChainId: id.ChainID}
+	r, err := s.getRelayer(ctx, &idT)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.EVM()
+}

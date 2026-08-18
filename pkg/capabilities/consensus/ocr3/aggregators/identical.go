@@ -3,22 +3,23 @@ package aggregators
 import (
 	"crypto/sha256"
 	"fmt"
+	"strconv"
 
 	"google.golang.org/protobuf/proto"
 
+	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/values"
-
-	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 // Aggregates by the most frequent observation for each index of a data set
 type identicalAggregator struct {
-	config identicalAggConfig
+	config IdenticalAggConfig
 }
 
-type identicalAggConfig struct {
+type IdenticalAggConfig struct {
 	// Length of the list of observations that each node is expected to provide.
 	// Aggregator's output (i.e. EncodableOutcome) will be a values.Map with the same
 	// number of elements and keyed by indices 0,1,2,... (unless KeyOverrides are provided).
@@ -88,7 +89,7 @@ func (a *identicalAggregator) collectHighestCounts(counters []map[[32]byte]*coun
 		if useOverrides {
 			outcome[a.config.KeyOverrides[idx]] = highestObservation
 		} else {
-			outcome[fmt.Sprintf("%d", idx)] = highestObservation
+			outcome[strconv.Itoa(idx)] = highestObservation
 		}
 	}
 	valMap, err := values.NewMap(outcome)
@@ -112,10 +113,10 @@ func NewIdenticalAggregator(config values.Map) (*identicalAggregator, error) {
 	}, nil
 }
 
-func ParseConfigIdenticalAggregator(config values.Map) (identicalAggConfig, error) {
-	parsedConfig := identicalAggConfig{}
+func ParseConfigIdenticalAggregator(config values.Map) (IdenticalAggConfig, error) {
+	parsedConfig := IdenticalAggConfig{}
 	if err := config.UnwrapTo(&parsedConfig); err != nil {
-		return identicalAggConfig{}, err
+		return IdenticalAggConfig{}, err
 	}
 	if parsedConfig.ExpectedObservationsLen == 0 {
 		parsedConfig.ExpectedObservationsLen = 1

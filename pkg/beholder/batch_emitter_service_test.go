@@ -38,13 +38,6 @@ func newTestConfig() beholder.Config {
 	}
 }
 
-// Deprecated: use [logger.Test] instead.
-//
-//go:fix inline
-func newTestLogger(t *testing.T) logger.Logger {
-	return logger.Test(t)
-}
-
 func TestNewChipIngressBatchEmitterService(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)

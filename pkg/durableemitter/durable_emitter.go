@@ -162,6 +162,7 @@ type DurableEmitter struct {
 	eng *services.Engine
 
 	store        DurableEventStore
+	isStoreQueue bool // whether the innermost DurableEventStore is a DurableQueueObserver, since the metrics wrapper always passes a cast
 	batchEmitter BatchEmitter
 	// retransmitEnabled controls whether this instance runs the retransmit and
 	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
@@ -235,6 +236,8 @@ func NewDurableEmitter(
 	if lggr == nil {
 		return nil, errors.New("logger is nil")
 	}
+	bi, isStoreBatch := store.(BatchInserter)
+	_, isQueue := store.(DurableQueueObserver)
 	var m *durableEmitterMetrics
 	if cfg.Metrics != nil {
 		if meter == nil {
@@ -249,6 +252,7 @@ func NewDurableEmitter(
 	}
 	d := &DurableEmitter{
 		store:             store,
+		isStoreQueue:      isQueue,
 		batchEmitter:      batchEmitter,
 		retransmitEnabled: retransmitEnabled,
 		cfg:               cfg,
@@ -261,16 +265,15 @@ func NewDurableEmitter(
 		Close: d.stop,
 	}.NewServiceEngine(lggr)
 
-	if cfg.InsertBatchSize > 0 {
-		if bi, ok := store.(BatchInserter); ok {
-			d.batchInserter = bi
-			chanSize := max(cfg.InsertBatchSize*200, 10_000)
-			d.insertCh = make(chan *insertRequest, chanSize)
-			d.eng.Infow("DurableEmitter: write coalescing enabled",
-				"insertBatchSize", cfg.InsertBatchSize,
-				"insertBatchWorkers", cfg.InsertBatchWorkers,
-				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
-		}
+	if cfg.InsertBatchSize > 0 && isStoreBatch {
+		d.batchInserter = bi
+		chanSize := max(cfg.InsertBatchSize*200, 10_000)
+		d.insertCh = make(chan *insertRequest, chanSize)
+		d.eng.Infow("DurableEmitter: write coalescing enabled",
+			"insertBatchSize", cfg.InsertBatchSize,
+			"insertBatchWorkers", cfg.InsertBatchWorkers,
+			"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
+
 	}
 
 	if cfg.DeleteBatchSize > 0 {
@@ -805,7 +808,7 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			if obs, ok := d.store.(DurableQueueObserver); ok {
+			if obs, ok := d.store.(DurableQueueObserver); ok && d.isStoreQueue {
 				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
 				if err != nil {
 					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)

@@ -281,7 +281,11 @@ func (e *EVMClient) GetForwarderForEOA(ctx context.Context, eoa, ocr2AggregatorI
 	if err != nil {
 		return evmtypes.Address{}, net.WrapRPCErr(err)
 	}
-	return evmtypes.Address(reply.GetAddr()), nil
+	addr := reply.GetAddr()
+	if len(addr) != evmtypes.AddressLength {
+		return evmtypes.Address{}, fmt.Errorf("invalid address length: %d", len(addr))
+	}
+	return evmtypes.Address(addr), nil
 }
 
 func (e *EVMClient) GetLatestLPBlock(ctx context.Context) (*evmtypes.LPBlock, error) {

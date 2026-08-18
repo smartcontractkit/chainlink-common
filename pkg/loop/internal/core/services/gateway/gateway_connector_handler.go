@@ -66,6 +66,9 @@ func (s GatewayConnectorHandlerServer) HandleGatewayMessage(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message: %w", err)
 	}
+	if msg == nil {
+		return nil, fmt.Errorf("message must be a JSON-RPC request object")
+	}
 	if err := s.impl.HandleGatewayMessage(ctx, req.GatewayId, msg); err != nil {
 		return nil, fmt.Errorf("failed to handle gateway message: %s: %w", req.GatewayId, err)
 	}

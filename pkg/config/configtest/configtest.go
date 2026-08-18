@@ -77,10 +77,7 @@ func assertElementsNotNil(t *testing.T, prefix string, s reflect.Value) (err err
 	return
 }
 
-var (
-	textUnmarshaler     encoding.TextUnmarshaler
-	textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
-)
+var textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
 
 // assertValNotNil recursively checks that val is not nil. val must be a struct, map, slice, or point to one.
 func assertValNotNil(t *testing.T, key string, val reflect.Value) error {

@@ -29,7 +29,7 @@ type BaseTriggerBeholderMetrics struct {
 	storeOpDurationMs         metric.Int64Histogram
 }
 
-// contentionBuckets span sub-millisecond fast paths through multi-minute stalls.
+// contentionBuckets span millisecond-scale fast paths (>=1ms) through multi-minute stalls.
 // The upper bound must stay well above any observed stall: values past the last
 // boundary land in +Inf, where histogram_quantile clamps and silently censors the
 // tail (a p95 pinned exactly at the top bucket means "at least this", not "this").

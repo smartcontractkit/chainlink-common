@@ -314,7 +314,6 @@ type Relayer interface {
 
 	NewMedianProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MedianProvider, error)
 	NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error)
-	NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error)
 	NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error)
 	NewLLOProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (LLOProvider, error)
 	NewCCIPCommitProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (CCIPCommitProvider, error)
@@ -455,10 +454,6 @@ func (u *UnimplementedRelayer) NewMedianProvider(ctx context.Context, rargs Rela
 
 func (u *UnimplementedRelayer) NewMercuryProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (MercuryProvider, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NewMercuryProvider not implemented")
-}
-
-func (u *UnimplementedRelayer) NewFunctionsProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (FunctionsProvider, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method NewFunctionsProvider not implemented")
 }
 
 func (u *UnimplementedRelayer) NewAutomationProvider(ctx context.Context, rargs RelayArgs, pargs PluginArgs) (AutomationProvider, error) {

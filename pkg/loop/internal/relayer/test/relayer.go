@@ -109,7 +109,6 @@ type staticRelayerConfig struct {
 	ocr3CapabilityProvider testtypes.OCR3CapabilityProviderTester
 	contractReaderProvider testtypes.ContractReaderTester
 	// Note: add other Provider testers here when we implement them
-	// eg Functions, Automation, etc
 	nodeRequest        nodeRequest
 	nodeResponse       nodeResponse
 	transactionRequest transactionRequest
@@ -657,7 +656,6 @@ func RunFuzzProvider[K any](f *testing.F, providerFunc func(*testing.T) Fuzzable
 	f.Add([]byte{}, int32(-1), "ABC\xa8\x8c\xb3G\xfc", false, []byte{}, "", "", []byte{})                                                    // bad inputs
 	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.Median), "testtransmitter", []byte{100: 88})     // valid for MedianProvider
 	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.Mercury), "testtransmitter", []byte{100: 88})    // valid for MercuryProvider
-	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.Functions), "testtransmitter", []byte{100: 88})  // valid for FunctionsProvider
 	f.Add(validRawBytes, int32(123), "testcontract", true, []byte(ConfigTOML), string(types.OCR2Keeper), "testtransmitter", []byte{100: 88}) // valid for AutomationProvider
 
 	f.Fuzz(func(

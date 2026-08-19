@@ -3,9 +3,10 @@ package ocr2offchain_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	commonks "github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/ocr2offchain"
-	"github.com/stretchr/testify/require"
 )
 
 func TestOCR2OffchainKeyring(t *testing.T) {
@@ -46,6 +47,10 @@ func TestOCR2OffchainKeyring(t *testing.T) {
 	signature2, err := keyring2.OffchainSign(msg2)
 	require.NoError(t, err)
 	require.NotNil(t, signature2)
+
+	// Cannot use empty keyring names.
+	_, err = ocr2offchain.CreateOCR2OffchainKeyring(ctx, ks, "")
+	require.EqualError(t, err, "keyring name cannot be empty")
 
 	// List by name works.
 	keyrings2, err := ocr2offchain.GetOCR2OffchainKeyrings(ctx, ks, []string{"test-ocr2-offchain-keyring-2"})

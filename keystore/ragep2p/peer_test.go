@@ -3,9 +3,10 @@ package ragep2p_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	commonks "github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/ragep2p"
-	"github.com/stretchr/testify/require"
 )
 
 func TestPeerKeyring(t *testing.T) {
@@ -42,6 +43,10 @@ func TestPeerKeyring(t *testing.T) {
 	signature2, err := peerKeyring2.Sign(msg2)
 	require.NoError(t, err)
 	require.NotNil(t, signature2)
+
+	// Cannot use empty keyring names.
+	_, err = ragep2p.CreatePeerKeyring(ctx, ks, "")
+	require.EqualError(t, err, "keyring name cannot be empty")
 
 	// List by name works.
 	peerKeyRings, err = ragep2p.GetPeerKeyrings(ctx, ks, []string{"test-peer-keyring-2"})

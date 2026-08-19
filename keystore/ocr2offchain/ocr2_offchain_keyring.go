@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/keystore"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"golang.org/x/crypto/curve25519"
+
+	"github.com/smartcontractkit/chainlink-common/keystore"
 )
 
 const (
@@ -17,6 +18,10 @@ const (
 )
 
 func CreateOCR2OffchainKeyring(ctx context.Context, ks keystore.Keystore, keyringName string) (ocrtypes.OffchainKeyring, error) {
+	if keyringName == "" {
+		return nil, fmt.Errorf("keyring name cannot be empty")
+	}
+
 	signingKeyPath := keystore.NewKeyPath(PrefixOCR2Offchain, keyringName, OCR2OffchainSigning)
 	encryptionKeyPath := keystore.NewKeyPath(PrefixOCR2Offchain, keyringName, OCR2OffchainEncryption)
 	createReq := keystore.CreateKeysRequest{

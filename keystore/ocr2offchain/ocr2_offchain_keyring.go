@@ -2,6 +2,7 @@ package ocr2offchain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -19,7 +20,7 @@ const (
 
 func CreateOCR2OffchainKeyring(ctx context.Context, ks keystore.Keystore, keyringName string) (ocrtypes.OffchainKeyring, error) {
 	if keyringName == "" {
-		return nil, fmt.Errorf("keyring name cannot be empty")
+		return nil, errors.New("keyring name cannot be empty")
 	}
 
 	signingKeyPath := keystore.NewKeyPath(PrefixOCR2Offchain, keyringName, OCR2OffchainSigning)

@@ -60,7 +60,7 @@ func (k *PeerKeyring) Sign(msg []byte) ([]byte, error) {
 
 func CreatePeerKeyring(ctx context.Context, ks commonks.Keystore, name string) (*PeerKeyring, error) {
 	if name == "" {
-		return nil, fmt.Errorf("keyring name cannot be empty")
+		return nil, errors.New("keyring name cannot be empty")
 	}
 	keyPath := commonks.NewKeyPath(PrefixPeerKeyring, name)
 	createReq := commonks.CreateKeysRequest{

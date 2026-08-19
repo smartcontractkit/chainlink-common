@@ -14,45 +14,14 @@ import (
 	"google.golang.org/grpc/stats"
 )
 
-// exportBytesKey is the context key under which a metered exporter stashes a
-// per-export byte holder for beholderStatsHandler to fill in.
-type exportBytesKey struct{}
-
-// beholderStatsHandler is a minimal, stateless gRPC stats.Handler that records the
-// uncompressed proto size of each outbound message.
-type beholderStatsHandler struct{}
-
-func (beholderStatsHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
-	return ctx
-}
-
-func (beholderStatsHandler) HandleConn(context.Context, stats.ConnStats) {}
-
-func (beholderStatsHandler) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context {
-	return ctx
-}
-
-// HandleRPC fires on every gRPC stats event. On OutPayload it stores the
-// uncompressed message length, the same field otelgrpc used for
-// rpc.client.request.size
-func (beholderStatsHandler) HandleRPC(ctx context.Context, rs stats.RPCStats) {
-	op, ok := rs.(*stats.OutPayload)
-	if !ok {
-		return
-	}
-	if holder, ok := ctx.Value(exportBytesKey{}).(*atomic.Int64); ok {
-		holder.Store(int64(op.Length))
-	}
-}
-
 const (
 	exportBytesMetric    = "beholder.export.bytes"
 	exportDurationMetric = "beholder.export.duration"
 )
 
-// exportMetrics holds the instruments shared by all metered exporters. They live
-// on the beholder MeterProvider and are distinguished per exporter only by
-// attributes, so one set covers every signal.
+// exportMetrics holds the instruments shared by the export stats handler and
+// the metered exporters. They live on the beholder MeterProvider and are
+// distinguished per signal.
 type exportMetrics struct {
 	bytes    otelmetric.Int64Counter
 	duration otelmetric.Float64Histogram
@@ -95,37 +64,28 @@ func exportAttrs(signal, csaPublicKeyHex string, extra ...attribute.KeyValue) ot
 	return otelmetric.WithAttributes(append(attrs, extra...)...)
 }
 
-// meteredExporter holds the shared metering logic: run an export with a per-call
-// size holder in the context, then record the captured OutPayload size on
-// success and the duration either way. Attribute options are
-// precomputed so the export path allocates nothing per call.
+// meteredExporter holds the shared metering logic for all signals.
 type meteredExporter struct {
 	metrics exportMetrics
 
-	byteAttrs otelmetric.MeasurementOption // otel_signal, csa_public_key
-	okAttrs   otelmetric.MeasurementOption // + error=false
-	errAttrs  otelmetric.MeasurementOption // + error=true
+	okAttrs  otelmetric.MeasurementOption // otel_signal, csa_public_key, error=false
+	errAttrs otelmetric.MeasurementOption // otel_signal, csa_public_key, error=true
 }
 
 func newBaseExporter(metrics exportMetrics, signal, csaPublicKeyHex string) meteredExporter {
 	return meteredExporter{
-		metrics:   metrics,
-		byteAttrs: exportAttrs(signal, csaPublicKeyHex),
-		okAttrs:   exportAttrs(signal, csaPublicKeyHex, attribute.Bool("error", false)),
-		errAttrs:  exportAttrs(signal, csaPublicKeyHex, attribute.Bool("error", true)),
+		metrics:  metrics,
+		okAttrs:  exportAttrs(signal, csaPublicKeyHex, attribute.Bool("error", false)),
+		errAttrs: exportAttrs(signal, csaPublicKeyHex, attribute.Bool("error", true)),
 	}
 }
 
-func (m meteredExporter) record(ctx context.Context, export func(context.Context) error) error {
-	var size atomic.Int64
+func (m meteredExporter) record(ctx context.Context, export func() error) error {
 	start := time.Now()
-	err := export(context.WithValue(ctx, exportBytesKey{}, &size))
+	err := export()
 	elapsed := time.Since(start).Seconds()
 
-	// Bytes are only meaningful for a batch that landed; duration is recorded
-	// either way
 	if err == nil {
-		m.metrics.bytes.Add(ctx, size.Load(), m.byteAttrs)
 		m.metrics.duration.Record(ctx, elapsed, m.okAttrs)
 	} else {
 		m.metrics.duration.Record(ctx, elapsed, m.errAttrs)
@@ -134,9 +94,9 @@ func (m meteredExporter) record(ctx context.Context, export func(context.Context
 }
 
 // meteredLogExporter wraps an sdklog.Exporter and records each export batch's
-// uncompressed proto size and duration. It sits above the otlploggrpc retry
-// loop, so Export is called once per logical batch: bytes are counted only on
-// success, and the duration covers the whole retry sequence.
+// duration. It sits above the otlploggrpc retry loop, so Export is called once
+// per logical batch and the duration covers the whole retry sequence. Bytes are
+// recorded by exportStatsHandler inside the gRPC stack.
 type meteredLogExporter struct {
 	meteredExporter
 	inner sdklog.Exporter
@@ -150,15 +110,15 @@ func newMeteredLogExporter(inner sdklog.Exporter, metrics exportMetrics, csaPubl
 }
 
 func (e *meteredLogExporter) Export(ctx context.Context, records []sdklog.Record) error {
-	return e.record(ctx, func(c context.Context) error { return e.inner.Export(c, records) })
+	return e.record(ctx, func() error { return e.inner.Export(ctx, records) })
 }
 
 func (e *meteredLogExporter) Shutdown(ctx context.Context) error { return e.inner.Shutdown(ctx) }
 
 func (e *meteredLogExporter) ForceFlush(ctx context.Context) error { return e.inner.ForceFlush(ctx) }
 
-// lazyMetered defers instrument wiring for exporters constructed before
-// beholder MeterProvider exist
+// lazyMetered defers duration instrument wiring for exporters constructed
+// before the beholder MeterProvider exists
 type lazyMetered struct {
 	signal string
 	base   atomic.Pointer[meteredExporter]
@@ -170,10 +130,10 @@ func (l *lazyMetered) attachMetrics(metrics exportMetrics, csaPublicKeyHex strin
 	l.base.Store(&base)
 }
 
-func (l *lazyMetered) record(ctx context.Context, export func(context.Context) error) error {
+func (l *lazyMetered) record(ctx context.Context, export func() error) error {
 	base := l.base.Load()
 	if base == nil {
-		return export(ctx)
+		return export()
 	}
 	return base.record(ctx, export)
 }
@@ -191,7 +151,7 @@ func newMeteredMetricExporter(inner sdkmetric.Exporter) *meteredMetricExporter {
 }
 
 func (e *meteredMetricExporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
-	return e.record(ctx, func(c context.Context) error { return e.Exporter.Export(c, rm) })
+	return e.record(ctx, func() error { return e.Exporter.Export(ctx, rm) })
 }
 
 type meteredTraceExporter struct {
@@ -204,5 +164,75 @@ func newMeteredTraceExporter(inner sdktrace.SpanExporter) *meteredTraceExporter 
 }
 
 func (e *meteredTraceExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {
-	return e.record(ctx, func(c context.Context) error { return e.SpanExporter.ExportSpans(c, spans) })
+	return e.record(ctx, func() error { return e.SpanExporter.ExportSpans(ctx, spans) })
 }
+
+// rpcStateKey is the handler's private context key.
+type rpcStateKey struct{}
+
+// rpcState accumulates one RPC's outbound bytes.
+type rpcState struct {
+	outBytes atomic.Int64
+}
+
+// boundInstruments is the handler's metric wiring.
+type boundInstruments struct {
+	bytes otelmetric.Int64Counter
+	attrs otelmetric.MeasurementOption
+}
+
+type exportStatsHandler struct {
+	signal          string
+	csaPublicKeyHex string
+
+	// nil until attachMetrics; the handler is registered at dial time but the
+	// instruments only exist once the beholder MeterProvider does.
+	instruments atomic.Pointer[boundInstruments]
+}
+
+func newExportStatsHandler(signal, csaPublicKeyHex string) *exportStatsHandler {
+	return &exportStatsHandler{signal: signal, csaPublicKeyHex: csaPublicKeyHex}
+}
+
+// attachMetrics wires the bytes instrument once the MeterProvider exists. Until
+// it is called the handler is an inert no-op.
+func (h *exportStatsHandler) attachMetrics(metrics exportMetrics) {
+	h.instruments.Store(&boundInstruments{
+		bytes: metrics.bytes,
+		attrs: exportAttrs(h.signal, h.csaPublicKeyHex),
+	})
+}
+
+// TagRPC allocates this RPC's byte accumulator. grpc-go threads the returned
+// context through every subsequent HandleRPC call for this RPC.
+func (h *exportStatsHandler) TagRPC(ctx context.Context, _ *stats.RPCTagInfo) context.Context {
+	return context.WithValue(ctx, rpcStateKey{}, &rpcState{})
+}
+
+// HandleRPC accumulates outbound proto length per RPC and records it when the
+// RPC ends successfully.
+func (h *exportStatsHandler) HandleRPC(ctx context.Context, rs stats.RPCStats) {
+	state, ok := ctx.Value(rpcStateKey{}).(*rpcState)
+	if !ok {
+		return
+	}
+	switch e := rs.(type) {
+	case *stats.OutPayload:
+		state.outBytes.Add(int64(e.Length))
+	case *stats.End:
+		// Swap keeps this idempotent if End is ever delivered twice.
+		n := state.outBytes.Swap(0)
+		if e.Error != nil || n == 0 {
+			return
+		}
+		if inst := h.instruments.Load(); inst != nil {
+			inst.bytes.Add(ctx, n, inst.attrs)
+		}
+	}
+}
+
+func (h *exportStatsHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
+	return ctx
+}
+
+func (h *exportStatsHandler) HandleConn(context.Context, stats.ConnStats) {}

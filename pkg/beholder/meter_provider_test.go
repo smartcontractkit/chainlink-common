@@ -148,7 +148,7 @@ func TestNewMeterProvider_AppliesCardinalityLimit(t *testing.T) {
 	resource, err := newOtelResource(cfg)
 	require.NoError(t, err)
 
-	mp, metered, err := newMeterProvider(cfg, resource, nil, insecure.NewCredentials())
+	mp, metered, err := newMeterProvider(cfg, resource, nil, insecure.NewCredentials(), newExportStatsHandler("metrics", cfg.AuthPublicKeyHex))
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
 

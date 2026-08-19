@@ -20,31 +20,18 @@ import (
 
 // --- test doubles ---------------------------------------------------------
 
-// fakeLogExporter stands in for the otlploggrpc exporter. On Export it mimics
-// what the real gRPC stack does
+// fakeLogExporter stands in for the otlploggrpc exporter. Bytes are recorded by
+// exportStatsHandler inside the gRPC stack, so this fake only controls the two
+// things the wrapper observes: how long Export takes and whether it fails.
 type fakeLogExporter struct {
-	size            int           // OutPayload length to report
-	sizeFromRecords bool          // if true, report len(records) instead of size
-	fireN           int           // number of OutPayload events (retry simulation); 0 => 1
-	delay           time.Duration // widen the store→read window for the race test
-	err             error
+	delay time.Duration
+	err   error
 
 	shutdownCalled   atomic.Bool
 	forceFlushCalled atomic.Bool
 }
 
-func (f *fakeLogExporter) Export(ctx context.Context, records []sdklog.Record) error {
-	sz := f.size
-	if f.sizeFromRecords {
-		sz = len(records)
-	}
-	n := f.fireN
-	if n == 0 {
-		n = 1
-	}
-	for i := 0; i < n; i++ {
-		beholderStatsHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: sz})
-	}
+func (f *fakeLogExporter) Export(context.Context, []sdklog.Record) error {
 	if f.delay > 0 {
 		time.Sleep(f.delay)
 	}
@@ -59,7 +46,6 @@ func (f *fakeLogExporter) ForceFlush(context.Context) error {
 
 // fakeMetricExporter stands in for the otlpmetricgrpc exporter.
 type fakeMetricExporter struct {
-	size  int
 	delay time.Duration
 	err   error
 
@@ -79,8 +65,7 @@ func (f *fakeMetricExporter) Aggregation(k sdkmetric.InstrumentKind) sdkmetric.A
 	return sdkmetric.DefaultAggregationSelector(k)
 }
 
-func (f *fakeMetricExporter) Export(ctx context.Context, _ *metricdata.ResourceMetrics) error {
-	beholderStatsHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: f.size})
+func (f *fakeMetricExporter) Export(context.Context, *metricdata.ResourceMetrics) error {
 	if f.delay > 0 {
 		time.Sleep(f.delay)
 	}
@@ -98,22 +83,13 @@ func (f *fakeMetricExporter) Shutdown(context.Context) error {
 
 // fakeTraceExporter stands in for the otlptracegrpc exporter.
 type fakeTraceExporter struct {
-	size  int
-	fireN int // number of OutPayload events (retry simulation); 0 => 1
 	delay time.Duration
 	err   error
 
 	shutdownCalled atomic.Bool
 }
 
-func (f *fakeTraceExporter) ExportSpans(ctx context.Context, _ []sdktrace.ReadOnlySpan) error {
-	n := f.fireN
-	if n == 0 {
-		n = 1
-	}
-	for range n {
-		beholderStatsHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: f.size})
-	}
+func (f *fakeTraceExporter) ExportSpans(context.Context, []sdktrace.ReadOnlySpan) error {
 	if f.delay > 0 {
 		time.Sleep(f.delay)
 	}
@@ -190,105 +166,21 @@ func histForSignal(t *testing.T, ms []metricdata.Metrics, signal string, wantErr
 	return metricdata.HistogramDataPoint[float64]{}, false
 }
 
-// --- beholderStatsHandler -----------------------------------------------
-
-func TestBeholderStatsHandler_StoresOutPayloadLength(t *testing.T) {
-	var holder atomic.Int64
-	ctx := context.WithValue(context.Background(), exportBytesKey{}, &holder)
-
-	beholderStatsHandler{}.HandleRPC(ctx, &stats.OutPayload{Length: 1234})
-
-	assert.Equal(t, int64(1234), holder.Load())
-}
-
-func TestBeholderStatsHandler_IgnoresNonOutPayload(t *testing.T) {
-	var holder atomic.Int64
-	ctx := context.WithValue(context.Background(), exportBytesKey{}, &holder)
-
-	beholderStatsHandler{}.HandleRPC(ctx, &stats.InPayload{Length: 999})
-	beholderStatsHandler{}.HandleRPC(ctx, &stats.Begin{})
-	beholderStatsHandler{}.HandleRPC(ctx, &stats.End{})
-
-	assert.Equal(t, int64(0), holder.Load())
-}
-
-func TestBeholderStatsHandler_LastWriteWins(t *testing.T) {
-	// Retries resend the same proto, so each OutPayload reports the same length.
-	// Store means the holder ends at that length, not a multiple of it.
-	var holder atomic.Int64
-	ctx := context.WithValue(context.Background(), exportBytesKey{}, &holder)
-	h := beholderStatsHandler{}
-
-	h.HandleRPC(ctx, &stats.OutPayload{Length: 700})
-	h.HandleRPC(ctx, &stats.OutPayload{Length: 700})
-	h.HandleRPC(ctx, &stats.OutPayload{Length: 700})
-
-	assert.Equal(t, int64(700), holder.Load())
-}
-
-func TestBeholderStatsHandler_NoHolderInContextIsNoop(t *testing.T) {
-	assert.NotPanics(t, func() {
-		beholderStatsHandler{}.HandleRPC(context.Background(), &stats.OutPayload{Length: 5})
-	})
-}
-
-func TestBeholderStatsHandler_TagAndConnAreInert(t *testing.T) {
-	h := beholderStatsHandler{}
-	ctx := context.WithValue(context.Background(), exportBytesKey{}, &atomic.Int64{})
-
-	assert.Equal(t, ctx, h.TagRPC(ctx, &stats.RPCTagInfo{}))
-	assert.Equal(t, ctx, h.TagConn(ctx, &stats.ConnTagInfo{}))
-	assert.NotPanics(t, func() { h.HandleConn(ctx, &stats.ConnBegin{}) })
-}
-
 // --- meteredLogExporter ---------------------------------------------------
 
-func TestMeteredLogExporter_RecordsBytesOnSuccess(t *testing.T) {
+func TestMeteredLogExporter_RecordsErrorDurationOnFailure(t *testing.T) {
 	metrics, collect := newTestMetrics(t)
-	inner := &fakeLogExporter{size: 4096}
-	exp := newMeteredLogExporter(inner, metrics, "csa-pub-hex")
-
-	require.NoError(t, exp.Export(context.Background(), nil))
-
-	dp, ok := dpForSignal(t, collect(), "logs")
-	require.True(t, ok, "expected a logs datapoint")
-	assert.Equal(t, int64(4096), dp.Value)
-
-	csa, ok := dp.Attributes.Value(attribute.Key("csa_public_key"))
-	require.True(t, ok)
-	assert.Equal(t, "csa-pub-hex", csa.AsString())
-}
-
-func TestMeteredLogExporter_NoRecordOnError(t *testing.T) {
-	metrics, collect := newTestMetrics(t)
-	// Handler still fires, but Export returns an error.
-	inner := &fakeLogExporter{size: 4096, err: errors.New("boom")}
+	inner := &fakeLogExporter{err: errors.New("boom")}
 	exp := newMeteredLogExporter(inner, metrics, "csa")
 
 	require.Error(t, exp.Export(context.Background(), nil))
 
 	ms := collect()
-	_, ok := dpForSignal(t, ms, "logs")
-	assert.False(t, ok, "no bytes should be recorded when export fails")
-	// Duration is still recorded, labelled error=true.
 	hdp, ok := histForSignal(t, ms, "logs", true)
 	require.True(t, ok, "expected an error-labelled logs duration datapoint")
 	assert.Equal(t, uint64(1), hdp.Count)
 	_, ok = histForSignal(t, ms, "logs", false)
 	assert.False(t, ok, "a failed export must not be labelled error=false")
-}
-
-func TestMeteredLogExporter_RetriesCountedOnce(t *testing.T) {
-	metrics, collect := newTestMetrics(t)
-	// Three OutPayload events for one batch, all the same size.
-	inner := &fakeLogExporter{size: 500, fireN: 3}
-	exp := newMeteredLogExporter(inner, metrics, "csa")
-
-	require.NoError(t, exp.Export(context.Background(), nil))
-
-	dp, ok := dpForSignal(t, collect(), "logs")
-	require.True(t, ok)
-	assert.Equal(t, int64(500), dp.Value, "retries of the same batch must be counted once")
 }
 
 func TestMeteredLogExporter_Passthrough(t *testing.T) {
@@ -302,81 +194,33 @@ func TestMeteredLogExporter_Passthrough(t *testing.T) {
 	assert.True(t, inner.forceFlushCalled.Load())
 }
 
-// TestMeteredExporter_ConcurrentExportsIsolated is the regression guard for the
-// per-call context holder
-func TestMeteredExporter_ConcurrentExportsIsolated(t *testing.T) {
-	metrics, collect := newTestMetrics(t)
-	// delay widens the window between the handler storing and record reading,
-	// so a broken implementation would reliably mis-attribute.
-	inner := &fakeLogExporter{sizeFromRecords: true, delay: 200 * time.Microsecond}
-	exp := newMeteredLogExporter(inner, metrics, "csa")
-
-	const n = 50
-	var wg sync.WaitGroup
-	var want int64
-	for i := 1; i <= n; i++ {
-		size := i
-		want += int64(size)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			assert.NoError(t, exp.Export(context.Background(), make([]sdklog.Record, size)))
-		}()
-	}
-	wg.Wait()
-
-	dp, ok := dpForSignal(t, collect(), "logs")
-	require.True(t, ok)
-	assert.Equal(t, want, dp.Value)
-}
-
 // --- meteredMetricExporter ------------------------------------------------
-
-func TestMeteredMetricExporter_RecordsBytesOnSuccess(t *testing.T) {
-	metrics, collect := newTestMetrics(t)
-	inner := &fakeMetricExporter{size: 8192}
-	exp := newMeteredMetricExporter(inner)
-	exp.attachMetrics(metrics, "csa-pub-hex")
-
-	require.NoError(t, exp.Export(context.Background(), &metricdata.ResourceMetrics{}))
-
-	dp, ok := dpForSignal(t, collect(), "metrics")
-	require.True(t, ok, "expected a metrics datapoint")
-	assert.Equal(t, int64(8192), dp.Value)
-
-	csa, ok := dp.Attributes.Value(attribute.Key("csa_public_key"))
-	require.True(t, ok)
-	assert.Equal(t, "csa-pub-hex", csa.AsString())
-}
 
 func TestMeteredMetricExporter_UnmeteredBeforeAttach(t *testing.T) {
 	_, collect := newTestMetrics(t)
-	inner := &fakeMetricExporter{size: 8192}
+	inner := &fakeMetricExporter{}
 	exp := newMeteredMetricExporter(inner) // no attachMetrics
 
 	require.NoError(t, exp.Export(context.Background(), &metricdata.ResourceMetrics{}))
 
 	ms := collect()
-	_, ok := dpForSignal(t, ms, "metrics")
-	assert.False(t, ok, "no bytes should be recorded before the instruments are attached")
-	_, ok = histForSignal(t, ms, "metrics", false)
+	_, ok := histForSignal(t, ms, "metrics", false)
 	assert.False(t, ok, "no duration should be recorded before the instruments are attached")
 }
 
-func TestMeteredMetricExporter_NoRecordOnError(t *testing.T) {
+func TestMeteredMetricExporter_RecordsErrorDurationOnFailure(t *testing.T) {
 	metrics, collect := newTestMetrics(t)
-	inner := &fakeMetricExporter{size: 8192, err: errors.New("boom")}
-	exp := newMeteredMetricExporter(inner)
+	exp := newMeteredMetricExporter(&fakeMetricExporter{err: errors.New("boom")})
 	exp.attachMetrics(metrics, "csa")
 
-	require.Error(t, exp.Export(context.Background(), &metricdata.ResourceMetrics{}))
+	require.Error(t, exp.Export(context.Background(), nil))
 
 	ms := collect()
-	_, ok := dpForSignal(t, ms, "metrics")
-	assert.False(t, ok)
 	hdp, ok := histForSignal(t, ms, "metrics", true)
 	require.True(t, ok, "expected an error-labelled metrics duration datapoint")
 	assert.Equal(t, uint64(1), hdp.Count)
+	_, ok = histForSignal(t, ms, "metrics", false)
+	assert.False(t, ok, "a failed export must not be labelled error=false")
 }
 
 func TestMeteredMetricExporter_Passthrough(t *testing.T) {
@@ -399,58 +243,37 @@ func TestMeteredMetricExporter_Passthrough(t *testing.T) {
 // The trace exporter is not wired into NewGRPCClient yet; these lock in the
 // behaviour so enabling it later is a wiring change only.
 
-func TestMeteredTraceExporter_RecordsBytesAndDurationOnSuccess(t *testing.T) {
+func TestMeteredTraceExporter_RecordsDurationOnSuccess(t *testing.T) {
+	const delay = 2 * time.Millisecond
 	inst, collect := newTestMetrics(t)
-	const delay = 20 * time.Millisecond
-	exp := newMeteredTraceExporter(&fakeTraceExporter{size: 2048, delay: delay})
+	exp := newMeteredTraceExporter(&fakeTraceExporter{delay: delay})
 	exp.attachMetrics(inst, "csa-pub-hex")
 
 	require.NoError(t, exp.ExportSpans(context.Background(), nil))
 
-	ms := collect()
-	dp, ok := dpForSignal(t, ms, "traces")
-	require.True(t, ok, "expected a traces bytes datapoint")
-	assert.Equal(t, int64(2048), dp.Value)
-
-	csa, ok := dp.Attributes.Value(attribute.Key("csa_public_key"))
-	require.True(t, ok)
-	assert.Equal(t, "csa-pub-hex", csa.AsString())
-
-	hdp, ok := histForSignal(t, ms, "traces", false)
+	hdp, ok := histForSignal(t, collect(), "traces", false)
 	require.True(t, ok, "expected a traces duration datapoint")
 	assert.Equal(t, uint64(1), hdp.Count)
 	assert.GreaterOrEqual(t, hdp.Sum, delay.Seconds())
+
+	csa, ok := hdp.Attributes.Value(attribute.Key("csa_public_key"))
+	require.True(t, ok)
+	assert.Equal(t, "csa-pub-hex", csa.AsString())
 }
 
-func TestMeteredTraceExporter_NoBytesOnErrorButDurationRecorded(t *testing.T) {
+func TestMeteredTraceExporter_RecordsErrorDurationOnFailure(t *testing.T) {
 	inst, collect := newTestMetrics(t)
-	exp := newMeteredTraceExporter(&fakeTraceExporter{size: 2048, err: errors.New("boom")})
+	exp := newMeteredTraceExporter(&fakeTraceExporter{err: errors.New("boom")})
 	exp.attachMetrics(inst, "csa")
 
 	require.Error(t, exp.ExportSpans(context.Background(), nil))
 
 	ms := collect()
-	_, ok := dpForSignal(t, ms, "traces")
-	assert.False(t, ok, "no bytes should be recorded when export fails")
 	hdp, ok := histForSignal(t, ms, "traces", true)
 	require.True(t, ok, "expected an error-labelled traces duration datapoint")
 	assert.Equal(t, uint64(1), hdp.Count)
-}
-
-func TestMeteredTraceExporter_RetriesCountedOnce(t *testing.T) {
-	inst, collect := newTestMetrics(t)
-	exp := newMeteredTraceExporter(&fakeTraceExporter{size: 700, fireN: 3})
-	exp.attachMetrics(inst, "csa")
-
-	require.NoError(t, exp.ExportSpans(context.Background(), nil))
-
-	ms := collect()
-	dp, ok := dpForSignal(t, ms, "traces")
-	require.True(t, ok)
-	assert.Equal(t, int64(700), dp.Value, "retries of the same batch must be counted once")
-	hdp, ok := histForSignal(t, ms, "traces", false)
-	require.True(t, ok)
-	assert.Equal(t, uint64(1), hdp.Count, "one batch must be one duration observation")
+	_, ok = histForSignal(t, ms, "traces", false)
+	assert.False(t, ok, "a failed export must not be labelled error=false")
 }
 
 // TestMeteredTraceExporter_UnmeteredBeforeAttach is the guard for the deferred
@@ -458,15 +281,13 @@ func TestMeteredTraceExporter_RetriesCountedOnce(t *testing.T) {
 // unattached exporter must still export rather than panic.
 func TestMeteredTraceExporter_UnmeteredBeforeAttach(t *testing.T) {
 	_, collect := newTestMetrics(t)
-	inner := &fakeTraceExporter{size: 2048}
+	inner := &fakeTraceExporter{}
 	exp := newMeteredTraceExporter(inner) // no attachMetrics
 
 	require.NoError(t, exp.ExportSpans(context.Background(), nil))
 
 	ms := collect()
-	_, ok := dpForSignal(t, ms, "traces")
-	assert.False(t, ok, "no bytes before the instruments are attached")
-	_, ok = histForSignal(t, ms, "traces", false)
+	_, ok := histForSignal(t, ms, "traces", false)
 	assert.False(t, ok, "no duration before the instruments are attached")
 }
 
@@ -481,41 +302,26 @@ func TestMeteredTraceExporter_Passthrough(t *testing.T) {
 
 // --- shared naming --------------------------------------------------------
 
+// TestMeteredExporters_ShareOneMetricBySignal asserts the three wrappers write
+// to one shared duration histogram, separated only by otel_signal.
 func TestMeteredExporters_ShareOneMetricBySignal(t *testing.T) {
 	inst, collect := newTestMetrics(t)
-	logs := newMeteredLogExporter(&fakeLogExporter{size: 100}, inst, "csa")
-	metrics := newMeteredMetricExporter(&fakeMetricExporter{size: 200})
+
+	logs := newMeteredLogExporter(&fakeLogExporter{}, inst, "csa")
+	metrics := newMeteredMetricExporter(&fakeMetricExporter{})
 	metrics.attachMetrics(inst, "csa")
-	traces := newMeteredTraceExporter(&fakeTraceExporter{size: 300})
+	traces := newMeteredTraceExporter(&fakeTraceExporter{})
 	traces.attachMetrics(inst, "csa")
 
 	require.NoError(t, logs.Export(context.Background(), nil))
-	require.NoError(t, metrics.Export(context.Background(), &metricdata.ResourceMetrics{}))
+	require.NoError(t, metrics.Export(context.Background(), nil))
 	require.NoError(t, traces.ExportSpans(context.Background(), nil))
 
 	ms := collect()
-	for _, tc := range []struct {
-		signal string
-		want   int64
-	}{{"logs", 100}, {"metrics", 200}, {"traces", 300}} {
-		dp, ok := dpForSignal(t, ms, tc.signal)
-		require.True(t, ok, "expected a %s bytes datapoint", tc.signal)
-		assert.Equal(t, tc.want, dp.Value)
-
-		// Each signal gets its own duration datapoint on the same instrument too.
-		hdp, ok := histForSignal(t, ms, tc.signal, false)
-		require.True(t, ok, "expected a %s duration datapoint", tc.signal)
-		assert.Equal(t, uint64(1), hdp.Count)
-	}
-
-	// Both are datapoints of the same instrument, distinguished only by otel_signal.
-	for _, m := range ms {
-		switch m.Name {
-		case exportBytesMetric:
-			assert.Equal(t, "By", m.Unit)
-		case exportDurationMetric:
-			assert.Equal(t, "s", m.Unit)
-		}
+	for _, signal := range []string{"logs", "metrics", "traces"} {
+		hdp, ok := histForSignal(t, ms, signal, false)
+		require.True(t, ok, "expected a %s duration datapoint", signal)
+		assert.Equal(t, uint64(1), hdp.Count, "one observation per export for %s", signal)
 	}
 }
 
@@ -524,7 +330,7 @@ func TestMeteredExporters_ShareOneMetricBySignal(t *testing.T) {
 func TestMeteredLogExporter_RecordsDurationOnSuccess(t *testing.T) {
 	inst, collect := newTestMetrics(t)
 	const delay = 20 * time.Millisecond
-	inner := &fakeLogExporter{size: 4096, delay: delay}
+	inner := &fakeLogExporter{delay: delay}
 	exp := newMeteredLogExporter(inner, inst, "csa-pub-hex")
 
 	require.NoError(t, exp.Export(context.Background(), nil))
@@ -544,7 +350,7 @@ func TestMeteredLogExporter_RecordsDurationOnSuccess(t *testing.T) {
 func TestMeteredMetricExporter_RecordsDurationOnSuccess(t *testing.T) {
 	inst, collect := newTestMetrics(t)
 	const delay = 20 * time.Millisecond
-	exp := newMeteredMetricExporter(&fakeMetricExporter{size: 8192, delay: delay})
+	exp := newMeteredMetricExporter(&fakeMetricExporter{delay: delay})
 	exp.attachMetrics(inst, "csa-pub-hex")
 
 	require.NoError(t, exp.Export(context.Background(), &metricdata.ResourceMetrics{}))
@@ -559,12 +365,12 @@ func TestMeteredMetricExporter_RecordsDurationOnSuccess(t *testing.T) {
 	assert.Equal(t, "csa-pub-hex", csa.AsString())
 }
 
-// TestMeteredExporter_DurationRetriesCountedOnce mirrors the bytes behaviour:
-// the wrapper sits above the otlp retry loop, so one logical batch is one
-// observation covering the whole retry sequence.
+// TestMeteredExporter_DurationRetriesCountedOnce: the wrapper sits above the
+// otlp retry loop, so one logical batch is one observation covering the whole
+// retry sequence.
 func TestMeteredExporter_DurationRetriesCountedOnce(t *testing.T) {
 	inst, collect := newTestMetrics(t)
-	inner := &fakeLogExporter{size: 500, fireN: 3}
+	inner := &fakeLogExporter{}
 	exp := newMeteredLogExporter(inner, inst, "csa")
 
 	require.NoError(t, exp.Export(context.Background(), nil))
@@ -598,8 +404,8 @@ func TestExportDuration_UsesSecondScaledBuckets(t *testing.T) {
 
 func TestMeteredExporter_DurationRecordedPerOutcome(t *testing.T) {
 	inst, collect := newTestMetrics(t)
-	ok1 := newMeteredLogExporter(&fakeLogExporter{size: 10}, inst, "csa")
-	bad := newMeteredLogExporter(&fakeLogExporter{size: 10, err: errors.New("boom")}, inst, "csa")
+	ok1 := newMeteredLogExporter(&fakeLogExporter{}, inst, "csa")
+	bad := newMeteredLogExporter(&fakeLogExporter{err: errors.New("boom")}, inst, "csa")
 
 	require.NoError(t, ok1.Export(context.Background(), nil))
 	require.NoError(t, ok1.Export(context.Background(), nil))
@@ -613,4 +419,181 @@ func TestMeteredExporter_DurationRecordedPerOutcome(t *testing.T) {
 	errDP, found := histForSignal(t, ms, "logs", true)
 	require.True(t, found)
 	assert.Equal(t, uint64(1), errDP.Count)
+}
+
+// --- exportStatsHandler ---------------------------------------------------
+
+// simulateRPC drives one full unary gRPC lifecycle through the handler, in the
+// same order grpc-go fires the events. Nothing outside the handler touches the
+// context: TagRPC allocates the state, HandleRPC reads it back.
+func simulateRPC(h *exportStatsHandler, parent context.Context, size int, rpcErr error) {
+	ctx := h.TagRPC(parent, &stats.RPCTagInfo{FullMethodName: "/test.Service/Export"})
+	h.HandleRPC(ctx, &stats.Begin{})
+	h.HandleRPC(ctx, &stats.OutPayload{Length: size})
+	h.HandleRPC(ctx, &stats.End{Error: rpcErr})
+}
+
+func TestExportStatsHandler_RecordsBytesOnSuccessfulRPC(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa-pub-hex")
+	h.attachMetrics(metrics)
+
+	simulateRPC(h, context.Background(), 4096, nil)
+
+	dp, ok := dpForSignal(t, collect(), "logs")
+	require.True(t, ok, "expected a logs datapoint")
+	assert.Equal(t, int64(4096), dp.Value)
+
+	csa, ok := dp.Attributes.Value(attribute.Key("csa_public_key"))
+	require.True(t, ok)
+	assert.Equal(t, "csa-pub-hex", csa.AsString())
+}
+
+func TestExportStatsHandler_NoBytesOnFailedRPC(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	simulateRPC(h, context.Background(), 4096, errors.New("unavailable"))
+
+	_, ok := dpForSignal(t, collect(), "logs")
+	assert.False(t, ok, "a failed RPC must not contribute bytes")
+}
+
+// TestExportStatsHandler_RetryAttemptsCountedOnce is the semantic guard: the
+// OTLP exporters retry by issuing a fresh unary RPC per attempt, so the handler
+// sees three independent RPCs carrying the same proto. Only the one that lands
+// may be counted.
+func TestExportStatsHandler_RetryAttemptsCountedOnce(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	simulateRPC(h, context.Background(), 500, errors.New("unavailable"))
+	simulateRPC(h, context.Background(), 500, errors.New("unavailable"))
+	simulateRPC(h, context.Background(), 500, nil)
+
+	dp, ok := dpForSignal(t, collect(), "logs")
+	require.True(t, ok)
+	assert.Equal(t, int64(500), dp.Value, "retries of the same batch must be counted once")
+}
+
+// TestExportStatsHandler_ConcurrentRPCsIsolated replaces the old
+// TestMeteredExporter_ConcurrentExportsIsolated. State is per-RPC via TagRPC,
+// so interleaved RPCs cannot overwrite each other.
+func TestExportStatsHandler_ConcurrentRPCsIsolated(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	const n = 50
+	var wg sync.WaitGroup
+	var want int64
+	for i := 1; i <= n; i++ {
+		size := i
+		want += int64(size)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			simulateRPC(h, context.Background(), size, nil)
+		}()
+	}
+	wg.Wait()
+
+	dp, ok := dpForSignal(t, collect(), "logs")
+	require.True(t, ok)
+	assert.Equal(t, want, dp.Value)
+}
+
+func TestExportStatsHandler_AccumulatesMultipleOutPayloads(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	ctx := h.TagRPC(context.Background(), &stats.RPCTagInfo{FullMethodName: "/test.Service/Export"})
+	h.HandleRPC(ctx, &stats.OutPayload{Length: 100})
+	h.HandleRPC(ctx, &stats.OutPayload{Length: 250})
+	h.HandleRPC(ctx, &stats.End{})
+
+	dp, ok := dpForSignal(t, collect(), "logs")
+	require.True(t, ok)
+	assert.Equal(t, int64(350), dp.Value, "all outbound payloads of one RPC belong to that RPC")
+}
+
+func TestExportStatsHandler_IgnoresInboundAndEmptyRPCs(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	// Inbound payload only: nothing was sent, so nothing is counted.
+	ctx := h.TagRPC(context.Background(), &stats.RPCTagInfo{FullMethodName: "/test.Service/Export"})
+	h.HandleRPC(ctx, &stats.InPayload{Length: 999})
+	h.HandleRPC(ctx, &stats.End{})
+
+	_, ok := dpForSignal(t, collect(), "logs")
+	assert.False(t, ok, "an RPC with no outbound payload must not record a zero datapoint")
+}
+
+func TestExportStatsHandler_SecondEndIsIdempotent(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	ctx := h.TagRPC(context.Background(), &stats.RPCTagInfo{FullMethodName: "/test.Service/Export"})
+	h.HandleRPC(ctx, &stats.OutPayload{Length: 64})
+	h.HandleRPC(ctx, &stats.End{})
+	h.HandleRPC(ctx, &stats.End{})
+
+	dp, ok := dpForSignal(t, collect(), "logs")
+	require.True(t, ok)
+	assert.Equal(t, int64(64), dp.Value)
+}
+
+func TestExportStatsHandler_NoStateInContextIsNoop(t *testing.T) {
+	metrics, _ := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "csa")
+	h.attachMetrics(metrics)
+
+	assert.NotPanics(t, func() {
+		h.HandleRPC(context.Background(), &stats.OutPayload{Length: 5})
+		h.HandleRPC(context.Background(), &stats.End{})
+	})
+}
+
+// TestExportStatsHandler_UnattachedIsNoop covers the window before the
+// MeterProvider exists: the handler is registered at dial time, instruments
+// arrive later.
+func TestExportStatsHandler_UnattachedIsNoop(t *testing.T) {
+	h := newExportStatsHandler("metrics", "csa")
+
+	assert.NotPanics(t, func() {
+		simulateRPC(h, context.Background(), 128, nil)
+	})
+}
+
+func TestExportStatsHandler_ConnHooksAreInert(t *testing.T) {
+	h := newExportStatsHandler("logs", "csa")
+	ctx := context.Background()
+
+	assert.Equal(t, ctx, h.TagConn(ctx, &stats.ConnTagInfo{}))
+	assert.NotPanics(t, func() { h.HandleConn(ctx, &stats.ConnBegin{}) })
+}
+
+func TestExportStatsHandler_PerSignalAttribution(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	logs := newExportStatsHandler("logs", "csa")
+	logs.attachMetrics(metrics)
+	mtrx := newExportStatsHandler("metrics", "csa")
+	mtrx.attachMetrics(metrics)
+
+	simulateRPC(logs, context.Background(), 100, nil)
+	simulateRPC(mtrx, context.Background(), 200, nil)
+
+	ms := collect()
+	logDP, ok := dpForSignal(t, ms, "logs")
+	require.True(t, ok)
+	assert.Equal(t, int64(100), logDP.Value)
+	metricDP, ok := dpForSignal(t, ms, "metrics")
+	require.True(t, ok)
+	assert.Equal(t, int64(200), metricDP.Value)
 }

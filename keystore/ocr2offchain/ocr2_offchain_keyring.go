@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"golang.org/x/crypto/curve25519"
+
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/keystore"
 )

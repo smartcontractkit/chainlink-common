@@ -168,9 +168,12 @@ func NewBaseTriggerCapability[T proto.Message](
 // scan, prune), so this is the primary signal for whether a slow AckEvent is waiting on
 // the lock rather than on the store.
 func (b *BaseTriggerCapability[T]) lockMu(op string) {
+	b.lggr.Infow("waiting for lock", "capabilityID", b.capabilityId, "op", op)
 	start := time.Now()
 	b.mu.Lock()
-	b.metrics.ObserveMuWait(op, time.Since(start))
+	waited := time.Since(start)
+	b.metrics.ObserveMuWait(op, waited)
+	b.lggr.Infow("got lock", "capabilityID", b.capabilityId, "op", op, "waitedMs", waited.Milliseconds())
 }
 
 // observeStoreOp records the latency and outcome of an EventStore call. The store is
@@ -629,6 +632,12 @@ func isDuplicateKeyError(err error) bool {
 }
 
 func (b *BaseTriggerCapability[T]) scanPending() {
+	scanStart := time.Now()
+	defer func() {
+		b.lggr.Infow("scanPending finished", "capabilityID", b.capabilityId,
+			"durationMs", time.Since(scanStart).Milliseconds())
+	}()
+
 	now := time.Now()
 	ctx := b.ctx
 
@@ -662,8 +671,14 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 	// Recorded outside the lock. The retransmit loop re-arms a 100ms timer after
 	// scanPending returns, so held/(held+100ms) is the share of wall-clock this scan
 	// holds b.mu — i.e. how much it starves AckEvent.
-	b.metrics.ObserveScanPendingLockHeld(time.Since(lockedAt))
+	lockHeld := time.Since(lockedAt)
+	b.metrics.ObserveScanPendingLockHeld(lockHeld)
 	b.metrics.SetPreAckedEntries(int64(preAckedRemaining))
+	b.lggr.Infow("scanPending released lock", "capabilityID", b.capabilityId,
+		"lockHeldMs", lockHeld.Milliseconds(),
+		"preAckedEntries", preAckedRemaining,
+		"triggers", len(b.byTrigger),
+		"toResend", len(toResend))
 
 	for _, ev := range toStop {
 		b.emitStoppedResending(ev, maxRetries)

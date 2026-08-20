@@ -579,6 +579,20 @@ func TestExportStatsHandler_ConnHooksAreInert(t *testing.T) {
 	assert.NotPanics(t, func() { h.HandleConn(ctx, &stats.ConnBegin{}) })
 }
 
+func TestExportStatsHandler_CSAKeyFallbackWhenEmpty(t *testing.T) {
+	metrics, collect := newTestMetrics(t)
+	h := newExportStatsHandler("logs", "")
+	h.attachMetrics(metrics)
+
+	simulateRPC(h, context.Background(), 64, nil)
+
+	dp, ok := dpForSignal(t, collect(), "logs")
+	require.True(t, ok)
+	csa, ok := dp.Attributes.Value(attribute.Key("csa_public_key"))
+	require.True(t, ok)
+	assert.Equal(t, "not-configured", csa.AsString())
+}
+
 func TestExportStatsHandler_PerSignalAttribution(t *testing.T) {
 	metrics, collect := newTestMetrics(t)
 	logs := newExportStatsHandler("logs", "csa")

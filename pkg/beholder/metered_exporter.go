@@ -19,6 +19,14 @@ const (
 	exportDurationMetric = "beholder.export.duration"
 )
 
+const (
+	signalLogs    = "logs"
+	signalMetrics = "metrics"
+	signalTraces  = "traces"
+)
+
+const csaPublicKeyNotConfigured = "not-configured"
+
 // exportMetrics holds the instruments shared by the export stats handler and
 // the metered exporters. They live on the beholder MeterProvider and are
 // distinguished per signal.
@@ -56,6 +64,9 @@ func newExportMetrics(meter otelmetric.Meter) (exportMetrics, error) {
 // exportAttrs builds the attribute set identifying one signal's exports, plus
 // any per-measurement extras.
 func exportAttrs(signal, csaPublicKeyHex string, extra ...attribute.KeyValue) otelmetric.MeasurementOption {
+	if csaPublicKeyHex == "" {
+		csaPublicKeyHex = csaPublicKeyNotConfigured
+	}
 	attrs := make([]attribute.KeyValue, 0, 2+len(extra))
 	attrs = append(attrs,
 		attribute.String("otel_signal", signal),
@@ -104,7 +115,7 @@ type meteredLogExporter struct {
 
 func newMeteredLogExporter(inner sdklog.Exporter, metrics exportMetrics, csaPublicKeyHex string) *meteredLogExporter {
 	return &meteredLogExporter{
-		meteredExporter: newBaseExporter(metrics, "logs", csaPublicKeyHex),
+		meteredExporter: newBaseExporter(metrics, signalLogs, csaPublicKeyHex),
 		inner:           inner,
 	}
 }
@@ -147,7 +158,7 @@ type meteredMetricExporter struct {
 }
 
 func newMeteredMetricExporter(inner sdkmetric.Exporter) *meteredMetricExporter {
-	return &meteredMetricExporter{Exporter: inner, lazyMetered: lazyMetered{signal: "metrics"}}
+	return &meteredMetricExporter{Exporter: inner, lazyMetered: lazyMetered{signal: signalMetrics}}
 }
 
 func (e *meteredMetricExporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
@@ -160,7 +171,7 @@ type meteredTraceExporter struct {
 }
 
 func newMeteredTraceExporter(inner sdktrace.SpanExporter) *meteredTraceExporter {
-	return &meteredTraceExporter{SpanExporter: inner, lazyMetered: lazyMetered{signal: "traces"}}
+	return &meteredTraceExporter{SpanExporter: inner, lazyMetered: lazyMetered{signal: signalTraces}}
 }
 
 func (e *meteredTraceExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {

@@ -109,7 +109,7 @@ type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, er
 
 // NewGRPCClient creates a GRPC based beholder Client. Use NewClient to create a client from a Config which will pick
 // the best client type from the Config.
-func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, error) {
+func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, err error) {
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err
@@ -136,16 +136,28 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (*Client, erro
 	if err != nil {
 		return nil, err
 	}
+	// If any later step fails, shut the providers down so their gRPC
+	// connections and the metric periodic-reader goroutine are not leaked.
+	defer func() {
+		if err != nil {
+			_ = tracerProvider.Shutdown(context.Background())
+		}
+	}()
 	tracer := tracerProvider.Tracer(defaultPackageName)
 
-	logStatsHandler := newExportStatsHandler("logs", cfg.AuthPublicKeyHex)
-	metricStatsHandler := newExportStatsHandler("metrics", cfg.AuthPublicKeyHex)
+	logStatsHandler := newExportStatsHandler(signalLogs, cfg.AuthPublicKeyHex)
+	metricStatsHandler := newExportStatsHandler(signalMetrics, cfg.AuthPublicKeyHex)
 
 	// Meter
 	meterProvider, meteredMetrics, err := newMeterProvider(cfg, baseResource, auth, creds, metricStatsHandler)
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			_ = meterProvider.Shutdown(context.Background())
+		}
+	}()
 	meter := meterProvider.Meter(defaultPackageName)
 
 	// Shared export instruments beholder.export.* metrics
@@ -364,7 +376,7 @@ func newOtelResource(cfg Config) (resource *sdkresource.Resource, err error) {
 	}
 
 	// Add csa public key resource attribute
-	csaPublicKeyHex := "not-configured"
+	csaPublicKeyHex := csaPublicKeyNotConfigured
 	if len(cfg.AuthPublicKeyHex) > 0 {
 		csaPublicKeyHex = cfg.AuthPublicKeyHex
 	}

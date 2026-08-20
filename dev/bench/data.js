@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786636783144,
+  "lastUpdate": 1787245438155,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -58140,6 +58140,66 @@ window.BENCHMARK_DATA = {
             "value": 128929,
             "unit": "ns/op",
             "extra": "8751 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kiryll.kuzniecow@gmail.com",
+            "name": "Kiryll Kuzniecow",
+            "username": "kirqz23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "bfb2dc34f8c010f38aec605b5ec4b1d55a735be9",
+          "message": "INFOPLAT-13349: feat(beholder): track beholder.export.* metrics per export via custom gRPC stats handler (#2251)\n\n* feat(beholder): track beholder.export.* metrics per node via custom gRPC stats handler\n\n* refactor(beholder): own export bytes in the gRPC stats handler, drop context injection\n\n* chore(beholder): shared signal vars and graceful shutdown\n\n* chore(beholder): nil guard in record function\n\n* chore(beholder): newMeteredTraceProvider used in the client",
+          "timestamp": "2026-08-20T16:50:48Z",
+          "tree_id": "f83660ec7717abd5fb0856373bfdf78995a7becb",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/bfb2dc34f8c010f38aec605b5ec4b1d55a735be9"
+        },
+        "date": 1787245433814,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 682,
+            "unit": "ns/op",
+            "extra": "1741470 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 69581,
+            "unit": "ns/op",
+            "extra": "18102 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 469.5,
+            "unit": "ns/op",
+            "extra": "2287666 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 70313,
+            "unit": "ns/op",
+            "extra": "17012 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21938,
+            "unit": "ns/op",
+            "extra": "54790 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 114813,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

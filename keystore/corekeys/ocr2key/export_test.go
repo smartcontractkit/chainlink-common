@@ -3,6 +3,7 @@ package ocr2key
 import (
 	"testing"
 
+	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,6 +21,8 @@ func TestExport(t *testing.T) {
 		{chain: corekeys.StarkNet},
 		{chain: corekeys.Aptos},
 		{chain: corekeys.Tron},
+		{chain: corekeys.TON},
+		{chain: corekeys.Sui},
 		{chain: corekeys.Stellar},
 	}
 	for _, tc := range tt {
@@ -37,6 +40,17 @@ func TestExport(t *testing.T) {
 			assert.Equal(t, kbAfter.Raw(), kb.Raw())
 			assert.Equal(t, kbAfter.ConfigEncryptionPublicKey(), kb.ConfigEncryptionPublicKey())
 			assert.Equal(t, kbAfter.ChainType(), kb.ChainType())
+
+			signature, err := kb.Sign(ocrtypes.ReportContext{}, make(ocrtypes.Report, 32))
+			require.NoError(t, err)
+			restoredSignature, err := kbAfter.Sign(ocrtypes.ReportContext{}, make(ocrtypes.Report, 32))
+			require.NoError(t, err)
+			if tc.chain == corekeys.StarkNet {
+				assert.True(t, kb.Verify(kb.PublicKey(), ocrtypes.ReportContext{}, make(ocrtypes.Report, 32), signature))
+				assert.True(t, kbAfter.Verify(kbAfter.PublicKey(), ocrtypes.ReportContext{}, make(ocrtypes.Report, 32), restoredSignature))
+			} else {
+				assert.Equal(t, signature, restoredSignature)
+			}
 		})
 	}
 }

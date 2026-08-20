@@ -126,6 +126,7 @@ FeatureUseSingleDONTimeProviderPerExecutionActivePeriod = '[2100-01-01 00:00:00 
 FeatureChainCapabilityHashBasedOCRActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureEVMWriteReportL1FeeActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureAptosWriteReportBlockTimestampActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureOptInRequestHashActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'

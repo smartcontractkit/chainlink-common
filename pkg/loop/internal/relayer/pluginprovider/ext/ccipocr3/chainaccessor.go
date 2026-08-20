@@ -2,6 +2,7 @@ package ccipocr3
 
 import (
 	"context"
+	"errors"
 	"maps"
 	"sync"
 	"time"
@@ -560,6 +561,9 @@ func (s *chainAccessorServer) GetLatestPriceSeqNr(ctx context.Context, req *empt
 
 // SourceAccessor server methods
 func (s *chainAccessorServer) MsgsBetweenSeqNums(ctx context.Context, req *ccipocr3pb.MsgsBetweenSeqNumsRequest) (*ccipocr3pb.MsgsBetweenSeqNumsResponse, error) {
+	if req.SeqNumRange == nil {
+		return nil, errors.New("seqNumRange is required")
+	}
 	seqNumRange := ccipocr3.NewSeqNumRange(
 		ccipocr3.SeqNum(req.SeqNumRange.Start),
 		ccipocr3.SeqNum(req.SeqNumRange.End),

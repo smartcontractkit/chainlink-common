@@ -1851,6 +1851,3 @@ func ptrUint64(v uint64) *uint64 {
 	}
 	return &v
 }
-
-//go:fix inline
-func ptrUnix(v solana.UnixTimeSeconds) *solana.UnixTimeSeconds { return new(v) }

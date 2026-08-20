@@ -66,6 +66,10 @@ func (as *aptosServer) LedgerVersion(ctx context.Context, _ *aptospb.LedgerVersi
 }
 
 func (as *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.AccountAPTBalanceRequest) (*aptospb.AccountAPTBalanceReply, error) {
+	if len(req.Address) != aptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid address length, must be %d bytes but got: %d", aptos.AccountAddressLength, len(req.Address))
+	}
+
 	aptosService, err := as.parent.getAptosService(ctx)
 	if err != nil {
 		return nil, err

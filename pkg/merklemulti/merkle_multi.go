@@ -147,8 +147,11 @@ func computeNextLayer[H hashutil.Hash](hasher hashutil.Hasher[H], layer []H) ([]
 func VerifyComputeRoot[H hashutil.Hash](hasher hashutil.Hasher[H], leafHashes []H, proof Proof[H]) (H, error) {
 	leavesLength := len(leafHashes)
 	proofsLength := len(proof.Hashes)
-	if leavesLength == 0 && proofsLength == 0 {
-		return hasher.ZeroHash(), errors.New("leaves and proofs are empty")
+	if leavesLength == 0 {
+		if proofsLength == 0 {
+			return hasher.ZeroHash(), errors.New("leaves and proofs are empty")
+		}
+		return hasher.ZeroHash(), errors.New("no leaves supplied")
 	}
 	if leavesLength > MaxNumberTreeLeaves+1 || proofsLength > MaxNumberTreeLeaves+1 {
 		return hasher.ZeroHash(), fmt.Errorf("leaves or proofs length is beyond the limit %d", MaxNumberTreeLeaves)

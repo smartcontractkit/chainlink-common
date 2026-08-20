@@ -329,7 +329,9 @@ func (a *reduceAggregator) extractValues(lggr logger.Logger, observations map[oc
 				lggr.Warnf("aggregation key %s could not be used to index a list type", aggregationKey)
 				continue
 			}
-			if i >= len(val) {
+			if i < 0 {
+				lggr.Warnf("node %d contributed with a negative index: %s", nodeID, aggregationKey)
+			} else if i >= len(val) {
 				lggr.Warnf("node %d contributed with an array shorter than index %s", nodeID, aggregationKey)
 				continue
 			}

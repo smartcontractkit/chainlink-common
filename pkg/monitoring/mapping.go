@@ -166,7 +166,7 @@ func int32ArrToInt64Arr(xs []uint32) []int64 {
 }
 
 func createConfigSetSimplifiedOracles(offchainPublicKeys [][]byte, peerIDs []string, transmitters []types.Account) ([]byte, error) {
-	if len(offchainPublicKeys) != len(peerIDs) && len(transmitters) != len(peerIDs) {
+	if len(offchainPublicKeys) != len(peerIDs) || len(transmitters) != len(peerIDs) {
 		return nil, fmt.Errorf("length missmatch len(offchainPublicKeys)=%d , len(transmitters)=%d, len(peerIDs)=%d", len(offchainPublicKeys), len(transmitters), len(peerIDs))
 	}
 	out := make([]any, len(transmitters))

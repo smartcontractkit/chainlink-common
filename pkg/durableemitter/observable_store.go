@@ -85,6 +85,9 @@ type metricsInstrumentedStore struct {
 var _ DurableEventStore = (*metricsInstrumentedStore)(nil)
 var _ DurableQueueObserver = (*metricsInstrumentedStore)(nil)
 
+// newMetricsInstrumentedStore returns a new instrumented DurableEventStore.
+// Note: The returned DurableEventStore implements both BatchInserter and DurableQueueObserver and so will pass type casts,
+// even if the inner DurableEventStore does not. It should be checked directly ahead of time whenever possible.
 func newMetricsInstrumentedStore(inner DurableEventStore, m *durableEmitterMetrics) DurableEventStore {
 	if m == nil {
 		return inner

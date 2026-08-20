@@ -1,8 +1,7 @@
-// Package client_test, not client: an internal test here (package client) would still work for
-// these, but external keeps this file matching the integration suite that exercises client against
-// a real registry server (now in the capabilities repo's crecore/registry package, the sole
-// consumer of that production code).
-package client_test
+// External test package: keeps this file matching the integration suite that exercises the remote
+// registry against a real registry server (in the capabilities repo's crecore/registry package, the
+// sole consumer of that production code).
+package registry_test
 
 import (
 	"testing"
@@ -12,7 +11,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/client"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 )
 
 // --- conversions ---
@@ -38,5 +37,5 @@ func TestCapabilityTypeConvertersRoundTrip(t *testing.T) {
 }
 
 func TestDONFromProto_Nil(t *testing.T) {
-	assert.Equal(t, capabilities.DON{}, client.DONFromProto(nil))
+	assert.Equal(t, capabilities.DON{}, registry.DONFromProto(nil))
 }

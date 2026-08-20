@@ -1,4 +1,4 @@
-package client
+package registry
 
 import (
 	"context"
@@ -142,7 +142,7 @@ func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capab
 		return nil, cancel, caperrors.DeserializeErrorFromString(ackMsg.GetResponse().GetError())
 	}
 
-	return forwardTriggerResponses(streamCtx, responseStream.Recv), cancel, nil
+	return forwardTriggerResponseStream(streamCtx, responseStream.Recv), cancel, nil
 }
 
 func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) error {
@@ -175,7 +175,7 @@ func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerID, event
 	return nil
 }
 
-func forwardTriggerResponses(ctx context.Context, receive func() (*pb.TriggerResponseMessage, error)) <-chan capabilities.TriggerResponse {
+func forwardTriggerResponseStream(ctx context.Context, receive func() (*pb.TriggerResponseMessage, error)) <-chan capabilities.TriggerResponse {
 	responseCh := make(chan capabilities.TriggerResponse)
 
 	send := func(resp capabilities.TriggerResponse) {

@@ -1,4 +1,4 @@
-package client
+package registry
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-type Client struct {
+type remote struct {
 	lggr logger.Logger
 	grpc registrypb.CapabilitiesRegistryClient
 
@@ -30,9 +30,9 @@ type Client struct {
 	conns map[string]*grpc.ClientConn
 }
 
-func New(lggr logger.Logger, cc grpc.ClientConnInterface, capabilityDialOpts ...grpc.DialOption) *Client {
-	return &Client{
-		lggr:     logger.Named(lggr, "CapabilitiesRegistryClient"),
+func newRemote(lggr logger.Logger, cc grpc.ClientConnInterface, capabilityDialOpts ...grpc.DialOption) *remote {
+	return &remote{
+		lggr:     logger.Named(lggr, "RemoteRegistry"),
 		grpc:     registrypb.NewCapabilitiesRegistryClient(cc),
 		dialOpts: capabilityDialOpts,
 		conns:    map[string]*grpc.ClientConn{},
@@ -40,7 +40,7 @@ func New(lggr logger.Logger, cc grpc.ClientConnInterface, capabilityDialOpts ...
 }
 
 // Close tears down every cached capability connection.
-func (c *Client) Close() error {
+func (c *remote) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -54,7 +54,7 @@ func (c *Client) Close() error {
 	return errors.Join(errs...)
 }
 
-func (c *Client) connFor(addr string) (*grpc.ClientConn, error) {
+func (c *remote) connFor(addr string) (*grpc.ClientConn, error) {
 	if addr == "" {
 		return nil, errors.New("registry returned an empty callback address")
 	}
@@ -76,7 +76,7 @@ func (c *Client) connFor(addr string) (*grpc.ClientConn, error) {
 
 // wrap turns a handle into the capability surface its type promises, and returns
 // that type so callers can report what a capability actually is.
-func (c *Client) wrap(h *registrypb.CapabilityHandle) (capabilities.BaseCapability, capabilities.CapabilityType, error) {
+func (c *remote) wrap(h *registrypb.CapabilityHandle) (capabilities.BaseCapability, capabilities.CapabilityType, error) {
 	capType, err := capabilitiespb.CapabilityTypeFromProto(h.GetType())
 	if err != nil {
 		return nil, capabilities.CapabilityTypeUnknown, fmt.Errorf("capability %s: %w", h.GetCapabilityId(), err)
@@ -97,7 +97,7 @@ func (c *Client) wrap(h *registrypb.CapabilityHandle) (capabilities.BaseCapabili
 // Wrap builds the capability surface capType promises, served over conn.
 //
 // Exported so a registry holding a Handle (an ID, a type and a callback address) can dial that
-// address itself and get back a real capabilities.BaseCapability, the same way this Client does for
+// address itself and get back a real capabilities.BaseCapability, the same way this remote does for
 // its own callers - server.Registry uses this to back Add with an actual value instead of only the
 // address.
 func Wrap(lggr logger.Logger, conn grpc.ClientConnInterface, capType capabilities.CapabilityType) (capabilities.BaseCapability, error) {
@@ -134,7 +134,7 @@ type lookupFn func(context.Context, *registrypb.GetRequest, ...grpc.CallOption) 
 //
 // The three Get* methods differ only in which RPC they call and which surface
 // they demand, so the lookup, wrap and assert steps live here once.
-func resolve[T capabilities.BaseCapability](ctx context.Context, c *Client, id, surface string, lookup lookupFn) (T, error) {
+func resolve[T capabilities.BaseCapability](ctx context.Context, c *remote, id, surface string, lookup lookupFn) (T, error) {
 	var zero T
 
 	h, err := lookup(ctx, &registrypb.GetRequest{CapabilityId: id})
@@ -157,19 +157,19 @@ func resolve[T capabilities.BaseCapability](ctx context.Context, c *Client, id, 
 	return typed, nil
 }
 
-func (c *Client) Get(ctx context.Context, id string) (capabilities.BaseCapability, error) {
+func (c *remote) Get(ctx context.Context, id string) (capabilities.BaseCapability, error) {
 	return resolve[capabilities.BaseCapability](ctx, c, id, "base", c.grpc.Get)
 }
 
-func (c *Client) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
+func (c *remote) GetTrigger(ctx context.Context, id string) (capabilities.TriggerCapability, error) {
 	return resolve[capabilities.TriggerCapability](ctx, c, id, "trigger", c.grpc.GetTrigger)
 }
 
-func (c *Client) GetExecutable(ctx context.Context, id string) (capabilities.ExecutableCapability, error) {
+func (c *remote) GetExecutable(ctx context.Context, id string) (capabilities.ExecutableCapability, error) {
 	return resolve[capabilities.ExecutableCapability](ctx, c, id, "executable", c.grpc.GetExecutable)
 }
 
-func (c *Client) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
+func (c *remote) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
 	reply, err := c.grpc.List(ctx, &emptypb.Empty{})
 	if err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func (c *Client) List(ctx context.Context) ([]capabilities.BaseCapability, error
 // The digest is computed by the registry rather than here: it covers the
 // configuration together with the chain and address the registry was read from,
 // which only that process knows. See core.OCRConfigRegistry.
-func (c *Client) OCRConfig(ctx context.Context, capabilityID string, donID uint32, key string) (ocrtypes.ContractConfig, error) {
+func (c *remote) OCRConfig(ctx context.Context, capabilityID string, donID uint32, key string) (ocrtypes.ContractConfig, error) {
 	reply, err := c.grpc.OCRConfig(ctx, &registrypb.OCRConfigRequest{
 		CapabilityId: capabilityID,
 		DonId:        donID,
@@ -215,7 +215,7 @@ func (c *Client) OCRConfig(ctx context.Context, capabilityID string, donID uint3
 }
 
 // AddAt registers a capability served at addr.
-func (c *Client) AddAt(ctx context.Context, id string, capType capabilities.CapabilityType, addr string) error {
+func (c *remote) AddAt(ctx context.Context, id string, capType capabilities.CapabilityType, addr string) error {
 	if capType == capabilities.CapabilityTypeUnknown {
 		return fmt.Errorf("cannot register capability %s: no capability type, so the registry cannot know which services it serves", id)
 	}
@@ -237,14 +237,14 @@ func (c *Client) AddAt(ctx context.Context, id string, capType capabilities.Capa
 	return nil
 }
 
-func (c *Client) Remove(ctx context.Context, id string) error {
+func (c *remote) Remove(ctx context.Context, id string) error {
 	_, err := c.grpc.Remove(ctx, &registrypb.RemoveRequest{CapabilityId: id})
 	return err
 }
 
 // --- metadata ---
 
-func (c *Client) LocalNode(ctx context.Context) (capabilities.Node, error) {
+func (c *remote) LocalNode(ctx context.Context) (capabilities.Node, error) {
 	reply, err := c.grpc.LocalNode(ctx, &emptypb.Empty{})
 	if err != nil {
 		return capabilities.Node{}, err
@@ -252,7 +252,7 @@ func (c *Client) LocalNode(ctx context.Context) (capabilities.Node, error) {
 	return nodeFromProto(reply)
 }
 
-func (c *Client) NodeByPeerID(ctx context.Context, peerID ragetypes.PeerID) (capabilities.Node, error) {
+func (c *remote) NodeByPeerID(ctx context.Context, peerID ragetypes.PeerID) (capabilities.Node, error) {
 	reply, err := c.grpc.NodeByPeerID(ctx, &registrypb.NodeRequest{PeerId: peerID[:]})
 	if err != nil {
 		return capabilities.Node{}, err
@@ -261,7 +261,7 @@ func (c *Client) NodeByPeerID(ctx context.Context, peerID ragetypes.PeerID) (cap
 }
 
 // ConfigForCapability decodes the capability configuration the registry serves.
-func (c *Client) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+func (c *remote) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
 	reply, err := c.grpc.ConfigForCapability(ctx, &registrypb.ConfigForCapabilityRequest{
 		CapabilityId: capabilityID,
 		DonId:        donID,
@@ -273,7 +273,7 @@ func (c *Client) ConfigForCapability(ctx context.Context, capabilityID string, d
 	return capabilitiespb.CapabilityConfigFromProto(reply.GetCapabilityConfig())
 }
 
-func (c *Client) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
+func (c *remote) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
 	reply, err := c.grpc.DONsForCapability(ctx, &registrypb.DONsForCapabilityRequest{CapabilityId: capabilityID})
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ func (c *Client) DONsForCapability(ctx context.Context, capabilityID string) ([]
 	return out, nil
 }
 
-func (c *Client) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+func (c *remote) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
 	reply, err := c.grpc.DONByID(ctx, &registrypb.DONByIDRequest{DonId: donID})
 	if err != nil {
 		return capabilities.DON{}, err

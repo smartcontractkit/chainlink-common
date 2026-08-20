@@ -35,23 +35,28 @@ type BootstrapCommand interface {
 type BootstrapDependency[T any] interface {
 	Get(ctx context.Context, c CommonConfig) (T, error)
 
-	// ForEmbedding returns the dependency instance i of an embedded run resolves instead of this
-	// one. It is called once per instance, after the configuration has been decoded and before
-	// anything is resolved, and only for an embedded run - a single instance resolves the
-	// dependency exactly as configured.
+	// ForEmbedding returns the dependency instance i of an embedded run of instances instances
+	// resolves instead of this one. It is called once per instance, after the configuration has been
+	// decoded and before anything is resolved, and only for an embedded run - a single instance
+	// resolves the dependency exactly as configured.
 	//
 	// What it returns is already specific to instance i: everything embedding changes - a derived
 	// identity instead of a stored one, an in-process transport instead of a socket, a schema of
 	// its own instead of the shared one - is settled here, so Get has no instance to ask about and
 	// no mode to branch on. A dependency whose embedded form needs none of its settings is free to
-	// return something else entirely (see ocr.Host), which is also how a setting that only a real
+	// return something else entirely (see rage.Host), which is also how a setting that only a real
 	// deployment needs stops being required.
+	//
+	// instances is how many there are, and is here because the instances of an embedded run are
+	// peers of each other rather than copies: naming the set they belong to - the members of a DON,
+	// say - is a question no instance can answer from its own index, since it has to name members
+	// that have not started yet. Everything else follows from i alone.
 	//
 	// Return the receiver to be shared by every instance, which is what a dependency backed by
 	// one process-wide resource wants: sharing the dependency shares the single value it resolves
 	// to. Anything else returns a copy, deep-copying the configuration it adapts so that instances
 	// never write through to each other's settings.
-	ForEmbedding(i int) BootstrapDependency[T]
+	ForEmbedding(i, instances int) BootstrapDependency[T]
 
 	BootstrapCommand
 }
@@ -85,8 +90,8 @@ func (o *onceBootstrapper[T]) Get(ctx context.Context, c CommonConfig) (T, error
 // ForEmbedding gives each instance its own cache, since each resolves its own value - unless the
 // wrapped dependency returns itself, meaning it is shared by every instance, in which case this
 // wrapper (and the one value it caches) is shared too.
-func (o *onceBootstrapper[T]) ForEmbedding(i int) BootstrapDependency[T] {
-	next := o.BootstrapDependency.ForEmbedding(i)
+func (o *onceBootstrapper[T]) ForEmbedding(i, instances int) BootstrapDependency[T] {
+	next := o.BootstrapDependency.ForEmbedding(i, instances)
 	if next == o.BootstrapDependency {
 		return o
 	}

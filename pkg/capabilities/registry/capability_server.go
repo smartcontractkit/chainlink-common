@@ -1,4 +1,4 @@
-package client
+package registry
 
 import (
 	"context"
@@ -216,7 +216,7 @@ func (s *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 // and/or TriggerExecutable according to t.
 //
 // A capability host calls this on its own gRPC server and then announces that
-// server's address with Client.Add, which is the whole registration protocol.
+// server's address with remote.Add, which is the whole registration protocol.
 // The set of services per capability type is kept here so the two sides of the
 // registry cannot disagree about what a handle's type implies.
 func RegisterCapability(lggr logger.Logger, srv grpc.ServiceRegistrar, impl capabilities.BaseCapability, t capabilities.CapabilityType) error {

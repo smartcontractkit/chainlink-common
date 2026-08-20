@@ -183,6 +183,15 @@ func TestMeteredLogExporter_RecordsErrorDurationOnFailure(t *testing.T) {
 	assert.False(t, ok, "a failed export must not be labelled error=false")
 }
 
+// TestMeteredLogExporter_ZeroValueMetricsIsPassthrough guards the nil-check in
+// record: a wrapper built without instruments must export and propagate the
+// inner error rather than panic.
+func TestMeteredLogExporter_ZeroValueMetricsIsPassthrough(t *testing.T) {
+	exp := newMeteredLogExporter(&fakeLogExporter{err: errors.New("boom")}, exportMetrics{}, "csa")
+
+	require.Error(t, exp.Export(context.Background(), nil))
+}
+
 func TestMeteredLogExporter_Passthrough(t *testing.T) {
 	inner := &fakeLogExporter{}
 	exp := newMeteredLogExporter(inner, exportMetrics{}, "csa")

@@ -92,6 +92,11 @@ func newBaseExporter(metrics exportMetrics, signal, csaPublicKeyHex string) mete
 }
 
 func (m meteredExporter) record(ctx context.Context, export func() error) error {
+	// A zero-value exportMetrics (no instruments) degrades to passthrough,
+	// matching lazyMetered's unattached behavior.
+	if m.metrics.duration == nil {
+		return export()
+	}
 	start := time.Now()
 	err := export()
 	elapsed := time.Since(start).Seconds()

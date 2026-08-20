@@ -247,10 +247,7 @@ func TestMeteredMetricExporter_Passthrough(t *testing.T) {
 	assert.True(t, inner.shutdownCalled.Load())
 }
 
-// --- meteredTraceExporter --------------------------------------------------
-//
-// The trace exporter is not wired into NewGRPCClient yet; these lock in the
-// behaviour so enabling it later is a wiring change only.
+// --- meteredTraceExporter -------------------------------------------------
 
 func TestMeteredTraceExporter_RecordsDurationOnSuccess(t *testing.T) {
 	const delay = 2 * time.Millisecond

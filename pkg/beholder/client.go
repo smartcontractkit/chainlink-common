@@ -131,8 +131,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		return nil, err
 	}
 
+	traceStatsHandler := newExportStatsHandler(signalTraces, cfg.AuthPublicKeyHex)
+
 	// Tracer
-	tracerProvider, err := newTracerProvider(cfg, baseResource, auth, creds)
+	tracerProvider, meteredTraces, err := newTracerProvider(cfg, baseResource, auth, creds, traceStatsHandler)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +169,9 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	}
 	logStatsHandler.attachMetrics(expMetrics)
 	metricStatsHandler.attachMetrics(expMetrics)
+	traceStatsHandler.attachMetrics(expMetrics)
 	meteredMetrics.attachMetrics(expMetrics, cfg.AuthPublicKeyHex)
+	meteredTraces.attachMetrics(expMetrics, cfg.AuthPublicKeyHex)
 
 	// Shared log exporter for both logger and message emitter.
 	logOpts, err := newLoggerOpts(cfg, auth, creds, logStatsHandler)
@@ -472,8 +476,12 @@ type shutdowner interface {
 	Shutdown(ctx context.Context) error
 }
 
-func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials) (*sdktrace.TracerProvider, error) {
+func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials, statsHandler *exportStatsHandler) (*sdktrace.TracerProvider, *meteredTraceExporter, error) {
 	ctx := context.Background()
+
+	dialOpts := []grpc.DialOption{
+		grpc.WithStatsHandler(statsHandler),
+	}
 
 	exporterOpts := []otlptracegrpc.Option{
 		otlptracegrpc.WithTLSCredentials(creds),
@@ -482,13 +490,15 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	switch {
 	// Rotating auth
 	case auth != nil:
-		exporterOpts = append(exporterOpts, otlptracegrpc.WithDialOption(authDialOpt(auth)))
+		dialOpts = append(dialOpts, authDialOpt(auth))
 	// Static auth
 	case len(config.AuthHeaders) > 0:
 		exporterOpts = append(exporterOpts, otlptracegrpc.WithHeaders(config.AuthHeaders))
 	// No auth
 	default:
 	}
+
+	exporterOpts = append(exporterOpts, otlptracegrpc.WithDialOption(dialOpts...))
 	switch compressor := config.TraceCompressor; compressor {
 	case "none":
 	case "":
@@ -508,14 +518,16 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	// note: context is used internally
 	exporter, err := otlptracegrpc.New(ctx, exporterOpts...)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	metered := newMeteredTraceExporter(exporter)
+
 	batcherOpts := []sdktrace.BatchSpanProcessorOption{}
 	if config.TraceBatchTimeout > 0 {
 		batcherOpts = append(batcherOpts, sdktrace.WithBatchTimeout(config.TraceBatchTimeout)) // Default is 5s
 	}
 	opts := []sdktrace.TracerProviderOption{
-		sdktrace.WithBatcher(exporter, batcherOpts...),
+		sdktrace.WithBatcher(metered, batcherOpts...),
 		sdktrace.WithResource(resource),
 		sdktrace.WithSampler(
 			sdktrace.ParentBased(
@@ -526,7 +538,7 @@ func newTracerProvider(config Config, resource *sdkresource.Resource, auth Auth,
 	if config.TraceSpanExporter != nil {
 		opts = append(opts, sdktrace.WithBatcher(config.TraceSpanExporter))
 	}
-	return sdktrace.NewTracerProvider(opts...), nil
+	return sdktrace.NewTracerProvider(opts...), metered, nil
 }
 
 func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, creds credentials.TransportCredentials, statsHandler *exportStatsHandler) (*sdkmetric.MeterProvider, *meteredMetricExporter, error) {

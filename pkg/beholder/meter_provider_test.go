@@ -183,3 +183,23 @@ func TestNewMeterProvider_AppliesCardinalityLimit(t *testing.T) {
 	assert.Len(t, sum.DataPoints, limit,
 		"newMeterProvider must honour MetricCardinalityLimit via Config.metricOptions")
 }
+
+func TestNewTracerProvider_WiresMeteredTraceExporter(t *testing.T) {
+	cfg := TestDefaultConfig()
+	resource, err := newOtelResource(cfg)
+	require.NoError(t, err)
+
+	tp, metered, err := newTracerProvider(cfg, resource, nil, insecure.NewCredentials(), newExportStatsHandler("traces", cfg.AuthPublicKeyHex))
+	require.NoError(t, err)
+	require.NotNil(t, tp)
+	require.NotNil(t, metered, "the trace exporter must be wrapped so beholder.export.duration is emitted for traces")
+
+	inst, collect := newTestMetrics(t)
+	metered.attachMetrics(inst, cfg.AuthPublicKeyHex)
+	require.NoError(t, metered.ExportSpans(context.Background(), nil))
+
+	_, ok := histForSignal(t, collect(), "traces", false)
+	assert.True(t, ok, "expected a traces duration datapoint")
+
+	require.NoError(t, tp.Shutdown(context.Background()))
+}

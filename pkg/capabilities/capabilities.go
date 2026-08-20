@@ -152,9 +152,10 @@ func ResponseToReportData(workflowExecutionID, referenceID string, responsePaylo
 }
 
 type MeteringNodeDetail struct {
-	Peer2PeerID string
-	SpendUnit   string
-	SpendValue  string
+	Peer2PeerID          string
+	SpendUnit            string
+	SpendValue           string
+	SpendValueInGasUnits string
 }
 
 // ResponseAndMetadata is the action's output structure that includes both the response and its metadata (billing).

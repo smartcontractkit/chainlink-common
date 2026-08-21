@@ -498,11 +498,9 @@ func TestExportStatsHandler_ConcurrentRPCsIsolated(t *testing.T) {
 	for i := 1; i <= n; i++ {
 		size := i
 		want += int64(size)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			simulateRPC(h, context.Background(), size, nil)
-		}()
+		})
 	}
 	wg.Wait()
 

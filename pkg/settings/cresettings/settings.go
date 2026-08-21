@@ -486,7 +486,7 @@ type Workflows struct {
 	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
-	FeatureRequestHashIncludeWorkflowTagActivePeriod       Setting[Range[config.Timestamp]]
+	FeatureRequestHashIncludeWorkflowTagActivePeriod        Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

@@ -2,10 +2,12 @@ package orgresolver
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -32,6 +34,13 @@ type OrgResolver interface {
 	Get(ctx context.Context, owner string) (string, error)
 }
 
+type CacheStore interface {
+	// GetOrg returns the cached orgID for owner, or error if absent.
+	GetOrg(ctx context.Context, owner string) (string, error)
+	// UpsertOrg stores the owner->orgID mapping.
+	UpsertOrg(ctx context.Context, owner, orgID string) error
+}
+
 type Config struct {
 	URL                           string
 	TLSEnabled                    bool
@@ -43,6 +52,11 @@ type Config struct {
 
 	Client linkingclient.LinkingServiceClient // optional
 	Meter  metric.Meter                       // optional
+
+	// CacheEnabled turns on durable caching of owner->orgID mappings via CacheStore.
+	CacheEnabled bool
+	// CacheStore is required when CacheEnabled is true.
+	CacheStore CacheStore
 }
 
 // orgResolver makes direct calls to the linking service to resolve organization IDs from workflow owners.
@@ -57,9 +71,25 @@ type orgResolver struct {
 	jwtGenerator   JWTGenerator
 	requestTimeout time.Duration
 
-	passCount metric.Int64Counter
-	failCount metric.Int64Counter
+	cacheEnabled bool
+	cacheStore   CacheStore
+
+	passCount    metric.Int64Counter
+	failCount    metric.Int64Counter
+	cacheLookups metric.Int64Counter // tagged with result=hit|miss|error
 }
+
+const (
+	cacheResultAttrName = "result"
+	cacheOwnerAttrName  = "owner"
+	cacheResultHit      = "hit"
+	cacheResultMiss     = "miss"
+	cacheResultError    = "error"
+)
+
+// ErrCacheMiss is returned by CacheStore.GetOrg when no mapping exists for owner.
+// Stores backed by SQL may return sql.ErrNoRows; both are treated as a miss.
+var ErrCacheMiss = errors.New("org not found in cache")
 
 // NewOrgResolver creates a new org resolver with the specified configuration
 // Deprecated: Use Config.New
@@ -84,12 +114,18 @@ func (cfg *Config) New(logger log.Logger) (*orgResolver, error) {
 		requestTimeout = defaultRequestTimeout
 	}
 
+	if cfg.CacheEnabled && cfg.CacheStore == nil {
+		return nil, errors.New("CacheStore is required when CacheEnabled is true")
+	}
+
 	resolver := &orgResolver{
 		workflowRegistryAddress:       cfg.WorkflowRegistryAddress,
 		workflowRegistryChainSelector: cfg.WorkflowRegistryChainSelector,
 		logger:                        log.Sugared(logger).Named("OrgResolver"),
 		jwtGenerator:                  cfg.JWTGenerator,
 		requestTimeout:                requestTimeout,
+		cacheEnabled:                  cfg.CacheEnabled,
+		cacheStore:                    cfg.CacheStore,
 	}
 
 	if cfg.Client != nil {
@@ -125,6 +161,12 @@ func (cfg *Config) New(logger log.Logger) (*orgResolver, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create failure count metric: %w", err)
 		}
+		if resolver.cacheEnabled {
+			resolver.cacheLookups, err = cfg.Meter.Int64Counter("org_resolver_cache_lookups")
+			if err != nil {
+				return nil, fmt.Errorf("failed to create cache lookups metric: %w", err)
+			}
+		}
 	}
 
 	return resolver, nil
@@ -148,6 +190,12 @@ func (o *orgResolver) addJWTAuth(ctx context.Context, req any) (context.Context,
 }
 
 func (o *orgResolver) Get(ctx context.Context, owner string) (string, error) {
+	if o.cacheEnabled {
+		if orgID, ok := o.checkCache(ctx, owner); ok {
+			return orgID, nil
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(ctx, o.requestTimeout)
 	defer cancel()
 
@@ -174,7 +222,43 @@ func (o *orgResolver) Get(ctx context.Context, owner string) (string, error) {
 	if o.passCount != nil {
 		o.passCount.Add(ctx, 1)
 	}
+
+	if o.cacheEnabled {
+		o.storeInCache(ctx, owner, resp.OrganizationId)
+	}
 	return resp.OrganizationId, nil
+}
+
+// checkCache looks up owner in the durable cache. Returns (orgID, true) on hit.
+// A cache store error is logged and treated as a miss so lookups remain resilient.
+func (o *orgResolver) checkCache(ctx context.Context, owner string) (string, bool) {
+	orgID, err := o.cacheStore.GetOrg(ctx, owner)
+	if err != nil {
+		if errors.Is(err, ErrCacheMiss) || errors.Is(err, sql.ErrNoRows) {
+			o.recordCacheLookup(ctx, cacheResultMiss, owner)
+		} else {
+			o.logger.Warnw("Failed to read org from cache store, falling back to linking service", "owner", owner, "error", err)
+			o.recordCacheLookup(ctx, cacheResultError, owner)
+		}
+		return "", false
+	}
+	o.recordCacheLookup(ctx, cacheResultHit, owner)
+	return orgID, true
+}
+
+func (o *orgResolver) storeInCache(ctx context.Context, owner, orgID string) {
+	if err := o.cacheStore.UpsertOrg(ctx, owner, orgID); err != nil {
+		o.logger.Warnw("Failed to persist org to cache store", "owner", owner, "error", err)
+	}
+}
+
+func (o *orgResolver) recordCacheLookup(ctx context.Context, result, owner string) {
+	if o.cacheLookups != nil {
+		o.cacheLookups.Add(ctx, 1, metric.WithAttributes(
+			attribute.String(cacheResultAttrName, result),
+			attribute.String(cacheOwnerAttrName, owner),
+		))
+	}
 }
 
 func (o *orgResolver) Start(_ context.Context) error {

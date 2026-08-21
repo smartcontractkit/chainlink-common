@@ -116,7 +116,7 @@ func (g *GoStructReader) configName(field *ast.Field) string {
 	tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1])
 	jsonTag := tag.Get("json")
 	if jsonTag != "" {
-		jsonName := strings.Split(jsonTag, ",")[0]
+		jsonName, _, _ := strings.Cut(jsonTag, ",")
 		if jsonName != "" {
 			return jsonName
 		}

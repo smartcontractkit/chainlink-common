@@ -3,6 +3,7 @@ package sqlutil
 import (
 	"context"
 	"database/sql"
+	"slices"
 
 	"github.com/jmoiron/sqlx"
 
@@ -40,8 +41,8 @@ func WrapDataSource(db DataSource, l logger.Logger, hs ...QueryHook) DataSource 
 		// Nest the QueryHook calls so that they are wrapped from first to last.
 		// Example:
 		// 	[A, B, C] => A(B(C(do())))
-		for i := len(hs) - 1; i >= 0; i-- {
-			next := hs[i]
+		for _, next := range slices.Backward(hs) {
+
 			prev := iq.hook
 			iq.hook = func(ctx context.Context, lggr logger.Logger, do func(context.Context) error, query string, args ...any) error {
 				// opt: cache the construction of these loggers

@@ -8,6 +8,7 @@ import (
 	"maps"
 	"math/big"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -533,9 +534,9 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 	if strings.HasSuffix(readIdentifier, MethodReturningAlterableUint64) {
 		r := returnVal.(*uint64)
 		vals := f.vals[contractName]
-		for i := len(vals) - 1; i >= 0; i-- {
-			if vals[i].confidenceLevel == confidenceLevel {
-				*r = vals[i].val
+		for _, val := range slices.Backward(vals) {
+			if val.confidenceLevel == confidenceLevel {
+				*r = val.val
 				return nil
 			}
 		}
@@ -577,9 +578,9 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 			return types.ErrNotFound
 		}
 
-		for i := len(events) - 1; i >= 0; i-- {
-			if events[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*TestStruct) = events[i].event.(TestStruct)
+		for _, event := range slices.Backward(events) {
+			if event.confidenceLevel == confidenceLevel {
+				*returnVal.(*TestStruct) = event.event.(TestStruct)
 				return nil
 			}
 		}
@@ -590,8 +591,8 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 		defer f.lock.Unlock()
 		param := params.(*FilterEventParams)
 		triggers := f.triggers.getEvents(func(e event) bool { return e.contractID == contractName && e.eventType == EventName })
-		for i := len(triggers) - 1; i >= 0; i-- {
-			testStruct := triggers[i].event.(TestStruct)
+		for _, trigger := range slices.Backward(triggers) {
+			testStruct := trigger.event.(TestStruct)
 			if *testStruct.Field == param.Field {
 				*returnVal.(*TestStruct) = testStruct
 				return nil
@@ -608,9 +609,9 @@ func (f *fakeContractReader) GetLatestValue(_ context.Context, readIdentifier st
 			return types.ErrNotFound
 		}
 
-		for i := len(triggers) - 1; i >= 0; i-- {
-			if triggers[i].confidenceLevel == confidenceLevel {
-				*returnVal.(*SomeDynamicTopicEvent) = triggers[i].event.(SomeDynamicTopicEvent)
+		for _, trigger := range slices.Backward(triggers) {
+			if trigger.confidenceLevel == confidenceLevel {
+				*returnVal.(*SomeDynamicTopicEvent) = trigger.event.(SomeDynamicTopicEvent)
 				return nil
 			}
 		}

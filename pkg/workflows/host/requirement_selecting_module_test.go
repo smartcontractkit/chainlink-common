@@ -322,12 +322,12 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		want := &sdk.ExecutionResult{}
 
-		var mainTriggerCalls int32
+		var mainTriggerCalls atomic.Int32
 		main := ModuleAndHandler{
 			Module: &stubModule{
 				executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 					if req.GetTrigger() != nil {
-						atomic.AddInt32(&mainTriggerCalls, 1)
+						mainTriggerCalls.Add(1)
 						return want, nil
 					}
 					return subscribeResult(subWithReqs(teeReqs)), nil
@@ -354,7 +354,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		got, err := m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
 		assert.Equal(t, want, got)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&mainTriggerCalls), "trigger should run on main")
+		assert.Equal(t, int32(1), mainTriggerCalls.Load(), "trigger should run on main")
 	})
 
 	t.Run("cached trigger sets requirements before execute", func(t *testing.T) {
@@ -412,12 +412,12 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 	t.Run("cached trigger skips main on subsequent calls", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
-		var mainTriggerCalls int32
+		var mainTriggerCalls atomic.Int32
 
 		main := ModuleAndHandler{Module: &stubModule{
 			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				if req.GetTrigger() != nil {
-					atomic.AddInt32(&mainTriggerCalls, 1)
+					mainTriggerCalls.Add(1)
 				}
 				return subscribeResult(subWithReqs(teeReqs)), nil
 			},
@@ -439,21 +439,21 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 
 		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(0), atomic.LoadInt32(&mainTriggerCalls), "cached trigger should skip main")
+		assert.Equal(t, int32(0), mainTriggerCalls.Load(), "cached trigger should skip main")
 
 		_, err = m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(0), atomic.LoadInt32(&mainTriggerCalls), "cached trigger should skip main on repeat")
+		assert.Equal(t, int32(0), mainTriggerCalls.Load(), "cached trigger should skip main on repeat")
 	})
 
 	t.Run("trigger not in cache goes to main", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
-		var mainTriggerCalls int32
+		var mainTriggerCalls atomic.Int32
 
 		main := ModuleAndHandler{Module: &stubModule{
 			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				if req.GetTrigger() != nil {
-					atomic.AddInt32(&mainTriggerCalls, 1)
+					mainTriggerCalls.Add(1)
 					return &sdk.ExecutionResult{}, nil
 				}
 				// subscription 0 has requirements; subscription 1 does not
@@ -478,7 +478,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		// trigger 1 has no requirements → goes to main
 		_, err = m.Execute(t.Context(), triggerRequest(1), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&mainTriggerCalls))
+		assert.Equal(t, int32(1), mainTriggerCalls.Load())
 	})
 
 	t.Run("different triggers route to different modules", func(t *testing.T) {
@@ -488,13 +488,13 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 				TeeTypeAndRegions: []*sdk.TeeTypeAndRegions{{Type: sdk.TeeType_TEE_TYPE_AWS_NITRO}},
 			}},
 		}}
-		var mainTriggerCalls int32
+		var mainTriggerCalls atomic.Int32
 		wantAdditional := &sdk.ExecutionResult{}
 
 		main := ModuleAndHandler{Module: &stubModule{
 			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
 				if req.GetTrigger() != nil {
-					atomic.AddInt32(&mainTriggerCalls, 1)
+					mainTriggerCalls.Add(1)
 					return &sdk.ExecutionResult{}, nil
 				}
 				return subscribeResult(subWithReqs(teeReqs), subWithReqs(nil)), nil
@@ -519,12 +519,12 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 		got, err := m.Execute(t.Context(), triggerRequest(0), nil)
 		require.NoError(t, err)
 		assert.Equal(t, wantAdditional, got)
-		assert.Equal(t, int32(0), atomic.LoadInt32(&mainTriggerCalls))
+		assert.Equal(t, int32(0), mainTriggerCalls.Load())
 
 		// trigger 1 has no requirements → main
 		_, err = m.Execute(t.Context(), triggerRequest(1), nil)
 		require.NoError(t, err)
-		assert.Equal(t, int32(1), atomic.LoadInt32(&mainTriggerCalls))
+		assert.Equal(t, int32(1), mainTriggerCalls.Load())
 	})
 
 	t.Run("no additional modules when subscribe has requirements returns error", func(t *testing.T) {

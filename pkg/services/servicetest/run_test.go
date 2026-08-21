@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,8 +39,8 @@ func runFake(fn func(t TestingT)) ([]string, bool) {
 	var t fakeTest
 	func() {
 		defer func() {
-			for i := len(t.cleanup) - 1; i >= 0; i-- {
-				t.cleanup[i]()
+			for _, v := range slices.Backward(t.cleanup) {
+				v()
 			}
 			if r := recover(); r != nil {
 				if _, ok := r.(failNow); ok {

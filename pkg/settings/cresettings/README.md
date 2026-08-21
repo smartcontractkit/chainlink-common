@@ -174,6 +174,7 @@ flowchart
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
         PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod\]:::gate
         PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod[/PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod\]:::gate
+        PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end

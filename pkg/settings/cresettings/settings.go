@@ -332,6 +332,14 @@ var Default = Schema{
 		FeatureRequestHashIncludeWorkflowTagActivePeriod: TimeRange(
 			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// OFF by default: the workflow_specs_v2.workflow_tag reconcile backfill
+		// is intentionally disabled on a fresh deploy. Ops narrows the range to
+		// cover "now" only after FeatureRequestHashIncludeWorkflowTag is muted
+		// on every DON member, so DBs can heal without producing tag-driven
+		// hash divergence during the fill window.
+		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -487,6 +495,7 @@ type Workflows struct {
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
 	FeatureRequestHashIncludeWorkflowTagActivePeriod        Setting[Range[config.Timestamp]]
+	FeatureWorkflowTagBackfillActivePeriod                  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

@@ -258,15 +258,15 @@ func TestFeatureHTTPTriggerNewExecutionIDsActivePeriodKeyInit(t *testing.T) {
 	}, s.DefaultValue)
 }
 
-func TestFeatureOptInRequestHashActivePeriodKeyInit(t *testing.T) {
-	s := Default.PerWorkflow.FeatureOptInRequestHashActivePeriod
+func TestFeatureRequestHashIncludeWorkflowTagActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod
 
-	assert.Equal(t, "PerWorkflow.FeatureOptInRequestHashActivePeriod", s.GetKey())
+	assert.Equal(t, "PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod", s.GetKey())
 	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
 	assert.NotNil(t, s.Parse)
 	assert.Equal(t, settings.Range[config.Timestamp]{
-		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
-		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Lower: config.Timestamp(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
 	}, s.DefaultValue)
 }
 

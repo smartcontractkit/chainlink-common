@@ -326,9 +326,12 @@ var Default = Schema{
 		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureOptInRequestHashActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// ON by default: covers all possible timestamps including zero time.Time{},
+		// so WorkflowTag is included in the hash matching current prod behavior.
+		// After rollout, set to far-future window to exclude WorkflowTag.
+		FeatureRequestHashIncludeWorkflowTagActivePeriod: TimeRange(
+			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -483,7 +486,7 @@ type Workflows struct {
 	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
-	FeatureOptInRequestHashActivePeriod                     Setting[Range[config.Timestamp]]
+	FeatureRequestHashIncludeWorkflowTagActivePeriod       Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

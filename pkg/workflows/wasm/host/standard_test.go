@@ -697,11 +697,6 @@ func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleCo
 	return mod
 }
 
-func buildTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) (*module, error) {
-	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
-	return buildTestModuleByName(t, testPath, testName, cfg, true)
-}
-
 func buildTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) (*module, error) {
 	wasmName := path.Join(testName, "test.wasm")
 	absPath, err := filepath.Abs(testPath)

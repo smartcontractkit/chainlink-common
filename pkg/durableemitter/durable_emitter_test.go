@@ -981,12 +981,6 @@ func (s *mockChipServer) Ping(context.Context, *pb.EmptyRequest) (*pb.PingRespon
 	return &pb.PingResponse{Message: "pong"}, nil
 }
 
-func (s *mockChipServer) setPublishErr(err error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.publishErr = err
-}
-
 func (s *mockChipServer) setBatchErr(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -997,12 +991,6 @@ func (s *mockChipServer) receivedCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return len(s.received)
-}
-
-func (s *mockChipServer) batchCallCount() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.batchReceived)
 }
 
 // startMockServer starts a gRPC server on a random port and returns the

@@ -59,10 +59,7 @@ func writeDefaults(r io.Reader, w *io.PipeWriter) {
 	}
 }
 
-var (
-	textUnmarshaler     encoding.TextUnmarshaler
-	textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
-)
+var textUnmarshalerType = reflect.TypeFor[encoding.TextUnmarshaler]()
 
 func nilToZero(val reflect.Value) {
 	if val.Kind() == reflect.Pointer {

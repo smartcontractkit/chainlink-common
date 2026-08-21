@@ -605,7 +605,6 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 
 // newLoggerOpts creates options for a logger exporter
 func newLoggerOpts(cfg Config, auth Auth, creds credentials.TransportCredentials, statsHandler *exportStatsHandler) ([]otlploggrpc.Option, error) {
-
 	dialOpts := []grpc.DialOption{
 		grpc.WithStatsHandler(statsHandler),
 	}

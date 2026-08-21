@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v48"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -1116,6 +1116,8 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 	}
 }
 
+var logRawMessageReg = regexp.MustCompile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
+
 // logRawMessage decodes a JSON-encoded log message received from the WASM guest and
 // logs it at the appropriate level.
 func logRawMessage(logger logger.Logger, b []byte) error {
@@ -1140,8 +1142,7 @@ func logRawMessage(logger logger.Logger, b []byte) error {
 		args = append(args, k, v)
 	}
 
-	reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
-	sanitizedMsg := reg.ReplaceAllString(msg, "*")
+	sanitizedMsg := logRawMessageReg.ReplaceAllString(msg, "*")
 
 	switch level {
 	case "debug":

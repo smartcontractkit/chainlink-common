@@ -112,6 +112,9 @@ func newAptosServer(impl types.AptosService, b *net.BrokerExt) *aptosServer {
 }
 
 func (s *aptosServer) AccountAPTBalance(ctx context.Context, req *aptospb.AccountAPTBalanceRequest) (*aptospb.AccountAPTBalanceReply, error) {
+	if len(req.Address) != aptos.AccountAddressLength {
+		return nil, fmt.Errorf("invalid address length, must be %d bytes but got: %d", aptos.AccountAddressLength, len(req.Address))
+	}
 	reply, err := s.impl.AccountAPTBalance(ctx, aptos.AccountAPTBalanceRequest{
 		Address: aptos.AccountAddress(req.Address),
 	})

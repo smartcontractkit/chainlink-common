@@ -512,8 +512,8 @@ func buildTagsFromFlags(flags []string) string {
 		if f == "-tags" && i+1 < len(flags) {
 			return flags[i+1]
 		}
-		if strings.HasPrefix(f, "-tags=") {
-			return strings.TrimPrefix(f, "-tags=")
+		if after, ok := strings.CutPrefix(f, "-tags="); ok {
+			return after
 		}
 	}
 	return ""

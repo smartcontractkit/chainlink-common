@@ -217,6 +217,9 @@ func commitPluginReportToPb(report ccipocr3.CommitPluginReport) *ccipocr3pb.Comm
 }
 
 func pbToCommitPluginReportDetailed(pb *ccipocr3pb.CommitPluginReport) ccipocr3.CommitPluginReport {
+	if pb == nil {
+		return ccipocr3.CommitPluginReport{}
+	}
 	report := ccipocr3.CommitPluginReport{}
 
 	// Convert PriceUpdates
@@ -241,14 +244,14 @@ func pbToCommitPluginReportDetailed(pb *ccipocr3pb.CommitPluginReport) ccipocr3.
 	// Convert BlessedMerkleRoots
 	for _, pbMerkleRoot := range pb.BlessedMerkleRoots {
 		var merkleRoot ccipocr3.Bytes32
-		copy(merkleRoot[:], pbMerkleRoot.MerkleRoot)
+		copy(merkleRoot[:], pbMerkleRoot.GetMerkleRoot())
 
 		report.BlessedMerkleRoots = append(report.BlessedMerkleRoots, ccipocr3.MerkleRootChain{
-			ChainSel:   ccipocr3.ChainSelector(pbMerkleRoot.ChainSelector),
+			ChainSel:   ccipocr3.ChainSelector(pbMerkleRoot.GetChainSelector()),
 			MerkleRoot: merkleRoot,
 			SeqNumsRange: ccipocr3.NewSeqNumRange(
-				ccipocr3.SeqNum(pbMerkleRoot.SeqNumRange.Start),
-				ccipocr3.SeqNum(pbMerkleRoot.SeqNumRange.End),
+				ccipocr3.SeqNum(pbMerkleRoot.GetSeqNumRange().GetStart()),
+				ccipocr3.SeqNum(pbMerkleRoot.GetSeqNumRange().GetEnd()),
 			),
 			OnRampAddress: pbMerkleRoot.OnRampAddress,
 		})
@@ -263,8 +266,8 @@ func pbToCommitPluginReportDetailed(pb *ccipocr3pb.CommitPluginReport) ccipocr3.
 			ChainSel:   ccipocr3.ChainSelector(pbMerkleRoot.ChainSelector),
 			MerkleRoot: merkleRoot,
 			SeqNumsRange: ccipocr3.NewSeqNumRange(
-				ccipocr3.SeqNum(pbMerkleRoot.SeqNumRange.Start),
-				ccipocr3.SeqNum(pbMerkleRoot.SeqNumRange.End),
+				ccipocr3.SeqNum(pbMerkleRoot.GetSeqNumRange().GetStart()),
+				ccipocr3.SeqNum(pbMerkleRoot.GetSeqNumRange().GetEnd()),
 			),
 			OnRampAddress: pbMerkleRoot.OnRampAddress,
 		})
@@ -579,7 +582,9 @@ func pbToExecutePluginReport(pb *ccipocr3pb.ExecutePluginReport) ccipocr3.Execut
 
 		// Convert proofs
 		for _, proof := range pbCr.Proofs {
-			chainReport.Proofs = append(chainReport.Proofs, ccipocr3.Bytes32(proof))
+			var bytes ccipocr3.Bytes32
+			copy(bytes[:], proof)
+			chainReport.Proofs = append(chainReport.Proofs, bytes)
 		}
 
 		chainReports = append(chainReports, chainReport)

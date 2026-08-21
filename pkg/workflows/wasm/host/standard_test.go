@@ -692,6 +692,17 @@ func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 }
 
 func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) *module {
+	mod, err := buildTestModuleByName(t, testPath, testName, cfg, required)
+	require.NoError(t, err)
+	return mod
+}
+
+func buildTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) (*module, error) {
+	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
+	return buildTestModuleByName(t, testPath, testName, cfg, true)
+}
+
+func buildTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) (*module, error) {
 	wasmName := path.Join(testName, "test.wasm")
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
@@ -717,9 +728,7 @@ func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleCo
 	if cfg == nil {
 		cfg = defaultNoDAGModCfg(t)
 	}
-	mod, err := NewModule(t.Context(), cfg, binary)
-	require.NoError(t, err)
-	return mod
+	return NewModule(t.Context(), cfg, binary)
 }
 
 func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {

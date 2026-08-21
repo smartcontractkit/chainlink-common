@@ -226,8 +226,7 @@ func (t *triggerExecutableServer) RegisterTrigger(request *pb.TriggerRegistratio
 
 		// If it's a capability error, serialize it and send it to the client for proper deserialization and handling on the client side.
 		errorString := err.Error()
-		var capErr caperrors.Error
-		if errors.As(err, &capErr) {
+		if capErr, ok := errors.AsType[caperrors.Error](err); ok {
 			errorString = capErr.SerializeToString()
 		}
 		msg := &pb.TriggerResponseMessage{
@@ -448,8 +447,7 @@ func (c *executableServer) Execute(reqpb *pb.CapabilityRequest, server pb.Execut
 	var responseMessage *pb.CapabilityResponse
 	response, err := c.impl.Execute(server.Context(), req)
 	if err != nil {
-		var capabilityError caperrors.Error
-		if errors.As(err, &capabilityError) {
+		if capabilityError, ok := errors.AsType[caperrors.Error](err); ok {
 			responseMessage = &pb.CapabilityResponse{Error: capabilityError.SerializeToString()}
 		} else {
 			// All other errors are treated as private visibility and are marked as such to prevent accidental or malicious

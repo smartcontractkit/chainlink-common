@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"slices"
 	"time"
 
 	gethkeystore "github.com/ethereum/go-ethereum/accounts/keystore"
@@ -140,9 +141,9 @@ func (ks *KeyStates) Enable(addr common.Address, chainID *big.Int, updatedAt tim
 // warning: not thread-safe! caller must sync
 func (ks *KeyStates) Delete(addr common.Address) {
 	var chainIDs []*big.Int
-	for i := len(ks.All) - 1; i >= 0; i-- {
-		if ks.All[i].Address.Address() == addr {
-			chainIDs = append(chainIDs, ks.All[i].EVMChainID.ToInt())
+	for i, v := range slices.Backward(ks.All) {
+		if v.Address.Address() == addr {
+			chainIDs = append(chainIDs, v.EVMChainID.ToInt())
 			ks.All = append(ks.All[:i], ks.All[i+1:]...)
 		}
 	}

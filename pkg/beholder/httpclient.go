@@ -287,6 +287,8 @@ func newHTTPMeterProvider(config Config, resource *sdkresource.Resource, tlsConf
 
 	mpOpts := append(config.metricOptions(),
 		sdkmetric.WithReader(
+			// NewPeriodicReader reads OTEL_GO_X_METRIC_EXPORT_BATCH_SIZE at
+			// construction and applies the upstream experimental data-point batching.
 			sdkmetric.NewPeriodicReader(
 				exporter,
 				sdkmetric.WithInterval(config.MetricReaderInterval), // Default is 10s

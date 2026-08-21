@@ -551,6 +551,8 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	for _, p := range cfg.MetricProducers {
 		readerOpts = append(readerOpts, sdkmetric.WithProducer(p))
 	}
+	// NewPeriodicReader reads OTEL_GO_X_METRIC_EXPORT_BATCH_SIZE at
+	// construction and applies the upstream experimental data-point batching.
 	mpOpts := append(cfg.metricOptions(),
 		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, readerOpts...)),
 		sdkmetric.WithResource(resource),

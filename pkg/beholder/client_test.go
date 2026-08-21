@@ -280,6 +280,7 @@ func TestNewClient(t *testing.T) {
 	t.Run("HTTP endpoint set", func(t *testing.T) {
 		client, err := beholder.NewClient(beholder.Config{
 			OtelExporterHTTPEndpoint: "http-endpoint",
+			InsecureConnection:       true,
 		})
 		require.NoError(t, err)
 		assert.NotNil(t, client)

@@ -37,6 +37,12 @@ type Config struct {
 	TraceCompressor string
 
 	// OTel Metric
+	// Metric export batching is controlled by the OTel SDK's experimental
+	// OTEL_GO_X_METRIC_EXPORT_BATCH_SIZE environment variable. Set it to a
+	// positive integer before the client is created to limit each exporter
+	// call to that many data points. The value is process-wide and is read
+	// when each PeriodicReader is constructed; unset, invalid, zero, and
+	// negative values preserve unbatched export behavior.
 	MetricReaderInterval time.Duration
 	MetricRetryConfig    *RetryConfig
 	MetricViews          []metric.View

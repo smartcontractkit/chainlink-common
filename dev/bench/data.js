@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787334425806,
+  "lastUpdate": 1787338504667,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -58680,6 +58680,66 @@ window.BENCHMARK_DATA = {
             "value": 140015,
             "unit": "ns/op",
             "extra": "7689 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ceb4f7f4e973134d71b1487c97d7afdde74bacf2",
+          "message": "Block CRE WASM modules that don't expose memory (#2335)\n\n* Block CRE WASM modules that don't expose memory\n\n* Remove unused test function\n\n* Merge main and update wasmtime in the test to match the newer version\n\n* Fix test using the bug",
+          "timestamp": "2026-08-21T18:41:43Z",
+          "tree_id": "95ca5de91bacab36df3b10ac891196d08652b418",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ceb4f7f4e973134d71b1487c97d7afdde74bacf2"
+        },
+        "date": 1787338501911,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 729.6,
+            "unit": "ns/op",
+            "extra": "1633126 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 80798,
+            "unit": "ns/op",
+            "extra": "14799 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 381.8,
+            "unit": "ns/op",
+            "extra": "3190714 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 76211,
+            "unit": "ns/op",
+            "extra": "16084 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28178,
+            "unit": "ns/op",
+            "extra": "42034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 130005,
+            "unit": "ns/op",
+            "extra": "8310 times\n4 procs"
           }
         ]
       }

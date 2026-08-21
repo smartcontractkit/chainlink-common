@@ -273,7 +273,6 @@ func NewDurableEmitter(
 			"insertBatchSize", cfg.InsertBatchSize,
 			"insertBatchWorkers", cfg.InsertBatchWorkers,
 			"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
-
 	}
 
 	if cfg.DeleteBatchSize > 0 {

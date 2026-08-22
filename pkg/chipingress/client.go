@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -215,9 +214,13 @@ func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *clientConfig) { c.headerProvider = provider }
 }
 
-// WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes
-// as sanitized gRPC metadata headers. It combines SanitizeMetadataHeaders with
-// NewStaticHeaderProvider so the safe, validated path is used by default.
+// WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes as
+// gRPC metadata on every request, under ResourceHeaderPrefix. It combines SanitizeMetadataHeaders
+// with NewStaticHeaderProvider so the safe, validated path is used by default.
+//
+// Attributes are attached once per request rather than to individual events because they describe the
+// producer, not any one event. Chip-ingress fans them out onto every Kafka record the request
+// produces.
 func WithResourceAttributeHeaders(attrs map[string]string) Opt {
 	return WithHeaderProvider(NewStaticHeaderProvider(SanitizeMetadataHeaders(attrs)))
 }
@@ -254,11 +257,15 @@ func WithTracerProvider(provider trace.TracerProvider) Opt {
 	return func(c *clientConfig) { c.tracerProvider = provider }
 }
 
+// nopInfoHeaderKey is the metadata key WithNOPLookup sets, asking chip-ingress to look up NOP info
+// for the authenticated CSA key.
+const nopInfoHeaderKey = "x-include-nop-info"
+
 func WithNOPLookup() Opt {
 	return func(c *clientConfig) {
 		c.nopInfoHeaderProvider = headerProviderFunc(func(ctx context.Context) (map[string]string, error) {
 			return map[string]string{
-				"x-include-nop-info": "true",
+				nopInfoHeaderKey: "true",
 			}, nil
 		})
 	}
@@ -283,42 +290,12 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	}
 }
 
-// EventOpt configures a CloudEvent after its well-known attributes have been set by NewEvent.
-type EventOpt func(*ce.Event)
-
-// sanitizeExtensionName lower-cases name and strips every rune outside [a-z0-9], the character
-// set the CloudEvents spec requires for extension attribute names.
-func sanitizeExtensionName(name string) string {
-	var b strings.Builder
-	for _, r := range strings.ToLower(name) {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
-// WithResourceAttributeExtensions returns an EventOpt that sets a CloudEvent extension for each
-// entry in attrs, sanitizing keys via sanitizeExtensionName so they satisfy the CloudEvents
-// extension-name character set. Entries that sanitize to an empty string, or that collide with a
-// reserved extension name (see reservedExtensionNames), are skipped. Keys are applied in sorted
-// order so that if two distinct keys sanitize to the same name, the result is deterministic.
-func WithResourceAttributeExtensions(attrs map[string]string) EventOpt {
-	return func(event *ce.Event) {
-		for _, pair := range sanitizeResourceAttributeKeys(attrs, nil) {
-			event.SetExtension(pair.name, attrs[pair.key])
-		}
-	}
-}
-
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
+//
+// Resource attributes are deliberately not stamped here. They describe the producer rather than any
+// individual event, so they travel once per request as gRPC metadata (see
+// WithResourceAttributeHeaders) instead of being repeated on every event in a batch.
 func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
-	return NewEventWithOpts(domain, entity, payload, attributes)
-}
-
-// NewEventWithOpts creates a new CloudEvent like NewEvent, additionally applying opts (e.g.
-// WithResourceAttributeExtensions) to the event before its data is set.
-func NewEventWithOpts(domain, entity string, payload []byte, attributes map[string]any, opts ...EventOpt) (CloudEvent, error) {
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)
@@ -350,10 +327,6 @@ func NewEventWithOpts(domain, entity string, payload []byte, attributes map[stri
 	}
 	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
 		event.SetExtension(IdempotencyKeyAttr, val)
-	}
-
-	for _, opt := range opts {
-		opt(&event)
 	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)

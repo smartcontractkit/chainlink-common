@@ -66,6 +66,7 @@ var Default = Schema{
 	VaultBase64EncodingEnabled:                        Bool(false),
 	VaultForceEmptyOCRRounds:                          Bool(false),
 	VaultOptimizationsEnabled:                         Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
@@ -362,6 +363,7 @@ type Schema struct {
 	VaultBase64EncodingEnabled                        Setting[bool]
 	VaultForceEmptyOCRRounds                          Setting[bool]
 	VaultOptimizationsEnabled                         Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]

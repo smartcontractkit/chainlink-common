@@ -46,6 +46,7 @@ flowchart
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate

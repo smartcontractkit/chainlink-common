@@ -54,29 +54,6 @@ func TestOCR3KeyringPublicKeyIsEncoded(t *testing.T) {
 	assert.Equal(t, want, keyring.PublicKey())
 }
 
-// What a process signing on an oracle's behalf serves has to be the signature the
-// oracle would have made itself.
-func TestSignOCR3ReportMatchesKeyring(t *testing.T) {
-	t.Parallel()
-
-	bundle, err := New(corekeys.EVM)
-	require.NoError(t, err)
-	keyring, err := NewOCR3Keyring(string(corekeys.EVM), bundle)
-	require.NoError(t, err)
-
-	digest := ocrtypes.ConfigDigest{0x0a}
-	report := ocrtypes.Report("a report")
-	const seqNr = uint64(7)
-
-	served, err := SignOCR3Report(bundle, digest, seqNr, report)
-	require.NoError(t, err)
-
-	own, err := keyring.Sign(digest, seqNr, ocr3types.ReportWithInfo[[]byte]{Report: report})
-	require.NoError(t, err)
-
-	assert.Equal(t, own, served)
-}
-
 func TestNewOCR3KeyringRejectsUnknownFamily(t *testing.T) {
 	t.Parallel()
 

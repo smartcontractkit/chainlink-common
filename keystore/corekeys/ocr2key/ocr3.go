@@ -24,12 +24,3 @@ func OCR3ReportContext(digest ocrtypes.ConfigDigest, seqNr uint64) ocrtypes.Repo
 		ExtraHash: [32]byte{},
 	}
 }
-
-// SignOCR3Report signs an OCR3 report with bundle, over OCR3ReportContext.
-//
-// Exported for a process signing on another's behalf: what it returns has to be
-// the signature the oracle would have made itself, so the two cannot each decide
-// what a round's bytes are.
-func SignOCR3Report(bundle KeyBundle, digest ocrtypes.ConfigDigest, seqNr uint64, report ocrtypes.Report) ([]byte, error) {
-	return bundle.Sign(OCR3ReportContext(digest, seqNr), report)
-}

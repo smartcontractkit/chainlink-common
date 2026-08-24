@@ -57,21 +57,12 @@ func NewOCR3Keyring(family string, bundle KeyBundle) (*OCR3Keyring, error) {
 	return &OCR3Keyring{bundle: bundle, family: family, publicKey: publicKey}, nil
 }
 
-// NewOCR3KeyringForChainType is NewOCR3Keyring under the bundle's own chain type,
-// for a caller whose bundles are not named by anything else.
-func NewOCR3KeyringForChainType(bundle KeyBundle) (*OCR3Keyring, error) {
-	if bundle == nil {
-		return nil, errors.New("no key bundle to sign with")
-	}
-	return NewOCR3Keyring(string(bundle.ChainType()), bundle)
-}
-
 // PublicKey is the multichain-encoded form, which is what a configuration lists
 // this oracle as and therefore what libocr compares against.
 func (k *OCR3Keyring) PublicKey() ocrtypes.OnchainPublicKey { return k.publicKey }
 
 func (k *OCR3Keyring) Sign(digest ocrtypes.ConfigDigest, seqNr uint64, report ocr3types.ReportWithInfo[[]byte]) ([]byte, error) {
-	return SignOCR3Report(k.bundle, digest, seqNr, report.Report)
+	return k.bundle.Sign(OCR3ReportContext(digest, seqNr), report.Report)
 }
 
 // Verify checks a peer's signature. publicKey is that peer's entry as the

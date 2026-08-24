@@ -63,6 +63,10 @@ type ClientOptions struct {
 func NewClient(ctx context.Context, opts ClientOptions) (ClientWithClose, error) {
 	var clientOpts []option.ClientOption
 	if opts.CredentialsFile != "" {
+		// WithCredentialsFile is deprecated upstream because long-lived key files are a standing
+		// credential-leak risk. It is kept for the local-development path only; production leaves
+		// CredentialsFile empty and authenticates through Application Default Credentials.
+		//nolint:staticcheck // deliberate: local-development-only service-account key support
 		clientOpts = append(clientOpts, option.WithCredentialsFile(opts.CredentialsFile))
 	}
 	client, err := apiv1.NewKeyManagementClient(ctx, clientOpts...)
@@ -90,12 +94,12 @@ func (c *clientAdapter) AsymmetricSign(ctx context.Context, req *kmspb.Asymmetri
 
 func (c *clientAdapter) ListCryptoKeys(ctx context.Context, keyRingName string) ([]*kmspb.CryptoKey, error) {
 	iter := c.client.ListCryptoKeys(ctx, &kmspb.ListCryptoKeysRequest{Parent: keyRingName})
-	return drain(iter.Next, fmt.Sprintf("crypto keys in %s", keyRingName))
+	return drain(iter.Next, "crypto keys in "+keyRingName)
 }
 
 func (c *clientAdapter) ListCryptoKeyVersions(ctx context.Context, cryptoKeyName string) ([]*kmspb.CryptoKeyVersion, error) {
 	iter := c.client.ListCryptoKeyVersions(ctx, &kmspb.ListCryptoKeyVersionsRequest{Parent: cryptoKeyName})
-	return drain(iter.Next, fmt.Sprintf("crypto key versions of %s", cryptoKeyName))
+	return drain(iter.Next, "crypto key versions of "+cryptoKeyName)
 }
 
 // drain reads a Cloud KMS iterator to completion. what describes the listed resources and is only

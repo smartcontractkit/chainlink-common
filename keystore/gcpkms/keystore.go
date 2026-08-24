@@ -72,7 +72,7 @@ func NewKeystore(client Client, opts KeystoreOptions) (interface {
 	keystore.Signer
 }, error) {
 	if client == nil {
-		return nil, fmt.Errorf("GCP KMS client is required")
+		return nil, errors.New("GCP KMS client is required")
 	}
 	return &keystoreSignerReader{
 		client:      client,
@@ -119,7 +119,7 @@ func (k *keystoreSignerReader) resolveKeyVersion(ctx context.Context, keyName st
 			return resolvedKey{}, fmt.Errorf("failed to get crypto key version %s: %w", keyName, err)
 		}
 		if got == nil {
-			return resolvedKey{}, fmt.Errorf("Cloud KMS returned an empty crypto key version response for %s", keyName)
+			return resolvedKey{}, fmt.Errorf("empty crypto key version response from Cloud KMS for %s", keyName)
 		}
 		if got.Name != keyName {
 			return resolvedKey{}, fmt.Errorf("crypto key version response has name %q, expected %q", got.Name, keyName)
@@ -201,12 +201,12 @@ func (k *keystoreSignerReader) getPublicKeyBytes(ctx context.Context, versionNam
 		return nil, fmt.Errorf("failed to get public key for %s: %w", versionName, err)
 	}
 	if pk == nil {
-		return nil, fmt.Errorf("Cloud KMS returned an empty public key response for %s", versionName)
+		return nil, fmt.Errorf("empty public key response from Cloud KMS for %s", versionName)
 	}
 	if pk.Name != versionName {
 		return nil, fmt.Errorf("public key response has name %q, expected %q", pk.Name, versionName)
 	}
-	if err := checkCrc32c([]byte(pk.Pem), pk.PemCrc32C); err != nil {
+	if err = checkCrc32c([]byte(pk.Pem), pk.PemCrc32C); err != nil {
 		return nil, fmt.Errorf("public key for %s: %w", versionName, err)
 	}
 
@@ -251,7 +251,7 @@ func signingKeyNames(listedKeys []*kmspb.CryptoKey) ([]string, error) {
 	keyNames := make([]string, 0, len(listedKeys))
 	for _, key := range listedKeys {
 		if key == nil || key.Name == "" {
-			return nil, fmt.Errorf("Cloud KMS returned a crypto key without a name")
+			return nil, errors.New("crypto key without a name returned by Cloud KMS")
 		}
 		if key.Purpose != kmspb.CryptoKey_ASYMMETRIC_SIGN {
 			continue
@@ -287,7 +287,7 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 	listed := len(keyNames) == 0
 	if listed {
 		if k.keyRingName == "" {
-			return keystore.GetKeysResponse{}, fmt.Errorf("key ring name is required to list Cloud KMS keys")
+			return keystore.GetKeysResponse{}, errors.New("key ring name is required to list Cloud KMS keys")
 		}
 		lister, ok := k.client.(KeyRingLister)
 		if !ok {
@@ -362,15 +362,15 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 			return keystore.SignResponse{}, fmt.Errorf("failed to sign data: %w", err)
 		}
 		if sig == nil {
-			return keystore.SignResponse{}, fmt.Errorf("Cloud KMS returned an empty signing response")
+			return keystore.SignResponse{}, errors.New("empty signing response from Cloud KMS")
 		}
 		if sig.Name != versionName {
 			return keystore.SignResponse{}, fmt.Errorf("signing response has name %q, expected %q", sig.Name, versionName)
 		}
 		if !sig.VerifiedDigestCrc32C {
-			return keystore.SignResponse{}, fmt.Errorf("Cloud KMS did not verify the digest CRC32C checksum")
+			return keystore.SignResponse{}, errors.New("digest CRC32C checksum was not verified by Cloud KMS")
 		}
-		if err := checkCrc32c(sig.Signature, sig.SignatureCrc32C); err != nil {
+		if err = checkCrc32c(sig.Signature, sig.SignatureCrc32C); err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("signature for key %s: %w", req.KeyName, err)
 		}
 		// Cloud KMS returns the ECDSA signature in ASN.1 DER format, identical to AWS. Reuse the
@@ -392,15 +392,15 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 			return keystore.SignResponse{}, fmt.Errorf("failed to sign data: %w", err)
 		}
 		if sig == nil {
-			return keystore.SignResponse{}, fmt.Errorf("Cloud KMS returned an empty signing response")
+			return keystore.SignResponse{}, errors.New("empty signing response from Cloud KMS")
 		}
 		if sig.Name != versionName {
 			return keystore.SignResponse{}, fmt.Errorf("signing response has name %q, expected %q", sig.Name, versionName)
 		}
 		if !sig.VerifiedDataCrc32C {
-			return keystore.SignResponse{}, fmt.Errorf("Cloud KMS did not verify the data CRC32C checksum")
+			return keystore.SignResponse{}, errors.New("data CRC32C checksum was not verified by Cloud KMS")
 		}
-		if err := checkCrc32c(sig.Signature, sig.SignatureCrc32C); err != nil {
+		if err = checkCrc32c(sig.Signature, sig.SignatureCrc32C); err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("signature for key %s: %w", req.KeyName, err)
 		}
 		// Ed25519 signatures from Cloud KMS are already in the correct format (64 bytes).

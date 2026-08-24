@@ -24,7 +24,7 @@ type GetKeyResponse struct {
 
 // Reader is the interface for reading keys from the keystore.
 // GetKeys returns all keys in the keystore if no names are provided, or the keys with the given names.
-// Keys are sorted by name in lexicographic order.
+// The order of returned keys is implementation-specific; callers must not rely on a particular ordering.
 type Reader interface {
 	GetKeys(ctx context.Context, req GetKeysRequest) (GetKeysResponse, error)
 }

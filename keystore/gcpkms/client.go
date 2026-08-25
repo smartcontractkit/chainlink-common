@@ -49,27 +49,19 @@ type ClientWithClose interface {
 	Close() error
 }
 
-// ClientOptions contains options for creating a Cloud KMS client.
-type ClientOptions struct {
-	// CredentialsFile is the path to a GCP service account JSON key. Local development only —
-	// leave empty in production, where credentials come from the default credential chain
-	// (GKE Workload Identity, GCE instance/service accounts, or GOOGLE_APPLICATION_CREDENTIALS).
-	CredentialsFile string
-}
-
 // NewClient constructs a new Google Cloud KMS client using the Go SDK.
-// If CredentialsFile is specified, it uses service-account-key-based authentication (local dev).
-// Otherwise, it uses Application Default Credentials (Workload Identity in production, etc.).
-func NewClient(ctx context.Context, opts ClientOptions) (ClientWithClose, error) {
-	var clientOpts []option.ClientOption
-	if opts.CredentialsFile != "" {
-		// WithCredentialsFile is deprecated upstream because long-lived key files are a standing
-		// credential-leak risk. It is kept for the local-development path only; production leaves
-		// CredentialsFile empty and authenticates through Application Default Credentials.
-		//nolint:staticcheck // deliberate: local-development-only service-account key support
-		clientOpts = append(clientOpts, option.WithCredentialsFile(opts.CredentialsFile))
-	}
-	client, err := apiv1.NewKeyManagementClient(ctx, clientOpts...)
+//
+// Credentials always come from Application Default Credentials, which covers both production (GKE
+// Workload Identity, GCE/Cloud Run service accounts) and local development (`gcloud auth
+// application-default login`, or GOOGLE_APPLICATION_CREDENTIALS pointing at a service-account key
+// file). There is deliberately no credentials-file option: ADC already reads that env var, so a
+// dedicated field would only duplicate it while hard-coding a long-lived key file into config.
+//
+// opts is passed through to the SDK for the cases ADC does not cover — a custom endpoint or
+// emulator, a quota project, a non-default token source.
+// https://cloud.google.com/docs/authentication/application-default-credentials
+func NewClient(ctx context.Context, opts ...option.ClientOption) (ClientWithClose, error) {
+	client, err := apiv1.NewKeyManagementClient(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Google Cloud KMS client: %w", err)
 	}

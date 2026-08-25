@@ -49,16 +49,17 @@ func TestGCPKMSKeystore(t *testing.T) {
 			require.Equal(t, keyName, resp.Keys[0].KeyInfo.Name)
 			require.Equal(t, keyName2, resp.Keys[1].KeyInfo.Name)
 		})
-		t.Run("specific keys preserve the requested order", func(t *testing.T) {
+		t.Run("specific keys are sorted by name", func(t *testing.T) {
+			// keystore.Reader specifies lexicographic order regardless of request order.
 			resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
 				KeyNames: []string{keyName2, keyName},
 			})
 			require.NoError(t, err)
 			require.Len(t, resp.Keys, 2)
-			require.Equal(t, keyName2, resp.Keys[0].KeyInfo.Name)
-			require.Equal(t, keyName, resp.Keys[1].KeyInfo.Name)
-			require.Equal(t, keystore.ECDSA_S256, resp.Keys[1].KeyInfo.KeyType)
-			require.Equal(t, crypto.FromECDSAPub(&key.PublicKey), resp.Keys[1].KeyInfo.PublicKey)
+			require.Equal(t, keyName, resp.Keys[0].KeyInfo.Name)
+			require.Equal(t, keyName2, resp.Keys[1].KeyInfo.Name)
+			require.Equal(t, keystore.ECDSA_S256, resp.Keys[0].KeyInfo.KeyType)
+			require.Equal(t, crypto.FromECDSAPub(&key.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
 		})
 		t.Run("explicit key version", func(t *testing.T) {
 			resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
@@ -337,4 +338,59 @@ func TestGCPKMSKeystore_ClientWithoutKeyRingLister(t *testing.T) {
 		_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
 		require.ErrorContains(t, err, "does not implement KeyRingLister")
 	})
+}
+
+// A rotation landing between GetKeys and Sign must not change which version signs: the public key a
+// caller already holds has to stay the one that verifies its signatures.
+func TestGCPKMSKeystore_PinsVersionAcrossRotation(t *testing.T) {
+	originalKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+	rotatedKey, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	fakeClient, err := gcpkms.NewFakeGCPKMSClient([]gcpkms.Key{
+		{KeyType: keystore.ECDSA_S256, KeyID: keyName, VersionNumber: 1, PrivateKey: internal.NewRaw(crypto.FromECDSA(originalKey))},
+	})
+	require.NoError(t, err)
+	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	require.NoError(t, err)
+	ctx := t.Context()
+
+	resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
+	require.NoError(t, err)
+	require.Len(t, resp.Keys, 1)
+	publicKey := resp.Keys[0].KeyInfo.PublicKey
+	require.Equal(t, crypto.FromECDSAPub(&originalKey.PublicKey), publicKey)
+
+	// Cloud KMS gains a newer enabled version after the caller has read the public key.
+	require.NoError(t, fakeClient.AddVersion(gcpkms.Key{
+		KeyType:       keystore.ECDSA_S256,
+		KeyID:         keyName,
+		VersionNumber: 2,
+		PrivateKey:    internal.NewRaw(crypto.FromECDSA(rotatedKey)),
+	}))
+
+	signResp, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyName, Data: make([]byte, 32)})
+	require.NoError(t, err)
+
+	verifyResp, err := ks.Verify(ctx, keystore.VerifyRequest{
+		KeyType:   keystore.ECDSA_S256,
+		PublicKey: publicKey,
+		Data:      make([]byte, 32),
+		Signature: signResp.Signature,
+	})
+	require.NoError(t, err)
+	require.True(t, verifyResp.Valid, "signature must verify against the public key GetKeys reported")
+
+	// GetKeys keeps reporting the pinned version too, so the two never diverge.
+	resp, err = ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
+	require.NoError(t, err)
+	require.Equal(t, publicKey, resp.Keys[0].KeyInfo.PublicKey)
+
+	// A keystore started after the rotation picks up the newer version.
+	fresh, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	require.NoError(t, err)
+	resp, err = fresh.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
+	require.NoError(t, err)
+	require.Equal(t, crypto.FromECDSAPub(&rotatedKey.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
 }

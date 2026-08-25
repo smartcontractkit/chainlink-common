@@ -54,30 +54,51 @@ type FakeGCPKMSClient struct {
 func NewFakeGCPKMSClient(keys []Key) (*FakeGCPKMSClient, error) {
 	keys = append([]Key(nil), keys...)
 	for i := range keys {
-		if keys[i].KeyID == "" {
-			return nil, errors.New("key ID is required")
-		}
-		if keys[i].VersionNumber == 0 {
-			keys[i].VersionNumber = 1
-		}
-		if keys[i].State == kmspb.CryptoKeyVersion_CRYPTO_KEY_VERSION_STATE_UNSPECIFIED {
-			keys[i].State = kmspb.CryptoKeyVersion_ENABLED
-		}
-		if keys[i].Purpose == kmspb.CryptoKey_CRYPTO_KEY_PURPOSE_UNSPECIFIED {
-			keys[i].Purpose = kmspb.CryptoKey_ASYMMETRIC_SIGN
-		}
-		if keys[i].Algorithm == kmspb.CryptoKeyVersion_CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED {
-			algorithm, err := keyTypeToAlgorithm(keys[i].KeyType)
-			if err != nil {
-				return nil, err
-			}
-			keys[i].Algorithm = algorithm
+		if err := normalizeKey(&keys[i]); err != nil {
+			return nil, err
 		}
 	}
 	return &FakeGCPKMSClient{
 		keys:      keys,
 		createdAt: time.Now(),
 	}, nil
+}
+
+// AddVersion appends a CryptoKeyVersion after construction, emulating a rotation that lands while
+// the keystore is live. Not safe for concurrent use with the client's read methods.
+func (m *FakeGCPKMSClient) AddVersion(key Key) error {
+	if err := normalizeKey(&key); err != nil {
+		return err
+	}
+	if _, err := m.findVersion(key.versionName()); err == nil {
+		return fmt.Errorf("version %s already exists", key.versionName())
+	}
+	m.keys = append(m.keys, key)
+	return nil
+}
+
+// normalizeKey validates a Key and fills in the fields a test left at their zero value.
+func normalizeKey(key *Key) error {
+	if key.KeyID == "" {
+		return errors.New("key ID is required")
+	}
+	if key.VersionNumber == 0 {
+		key.VersionNumber = 1
+	}
+	if key.State == kmspb.CryptoKeyVersion_CRYPTO_KEY_VERSION_STATE_UNSPECIFIED {
+		key.State = kmspb.CryptoKeyVersion_ENABLED
+	}
+	if key.Purpose == kmspb.CryptoKey_CRYPTO_KEY_PURPOSE_UNSPECIFIED {
+		key.Purpose = kmspb.CryptoKey_ASYMMETRIC_SIGN
+	}
+	if key.Algorithm == kmspb.CryptoKeyVersion_CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED {
+		algorithm, err := keyTypeToAlgorithm(key.KeyType)
+		if err != nil {
+			return err
+		}
+		key.Algorithm = algorithm
+	}
+	return nil
 }
 
 func keyTypeToAlgorithm(keyType keystore.KeyType) (kmspb.CryptoKeyVersion_CryptoKeyVersionAlgorithm, error) {

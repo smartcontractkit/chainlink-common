@@ -38,8 +38,13 @@ func crc32c(data []byte) int64 {
 }
 
 // checkCrc32c verifies that a received CRC32C checksum matches the computed value of the data.
-// This is Google's recommended integrity check for responses returned by Cloud KMS. A missing
-// checksum is treated as a failure: the responses we check it on always carry one, so its absence
+//
+// Cloud KMS documents this as the required client-side step for detecting corruption in transit:
+// "you should verify the integrity of the response" by recomputing the CRC32C over the returned
+// bytes and comparing it against the response's *_crc32c field.
+// https://cloud.google.com/kms/docs/data-integrity-guidelines
+//
+// A missing checksum is treated as a failure: every response we check carries one, so its absence
 // means the response was truncated or tampered with in transit.
 func checkCrc32c(data []byte, received *wrapperspb.Int64Value) error {
 	if received == nil {
@@ -55,10 +60,13 @@ type keystoreSignerReader struct {
 	client      Client
 	keyRingName string
 
+	mu sync.RWMutex
+	// versions pins each key name to the CryptoKeyVersion it first resolved to, so that the public
+	// key reported by GetKeys and the version used by Sign can never diverge. See resolveKeyVersion.
+	versions map[string]resolvedKey
 	// publicKeys caches public keys by CryptoKeyVersion resource name. A version's public key is
 	// immutable, so this is safe to cache indefinitely and saves a round trip per signature.
-	publicKeysMu sync.RWMutex
-	publicKeys   map[string][]byte
+	publicKeys map[string][]byte
 }
 
 type KeystoreOptions struct {
@@ -77,6 +85,7 @@ func NewKeystore(client Client, opts KeystoreOptions) (interface {
 	return &keystoreSignerReader{
 		client:      client,
 		keyRingName: opts.KeyRingName,
+		versions:    make(map[string]resolvedKey),
 		publicKeys:  make(map[string][]byte),
 	}, nil
 }
@@ -107,11 +116,29 @@ type resolvedKey struct {
 // Cloud KMS only populates CryptoKey.Primary for ENCRYPT_DECRYPT keys — asymmetric signing keys
 // never have a primary version — so a concrete version has to be selected here. keyName may be
 // either:
-//   - a CryptoKeyVersion resource name (.../cryptoKeys/<k>/cryptoKeyVersions/<n>), which pins that
-//     exact version, or
-//   - a CryptoKey resource name, in which case the highest-numbered enabled version is used, so
-//     that rotations are picked up without a redeploy.
+//   - a CryptoKeyVersion resource name (.../cryptoKeys/<k>/cryptoKeyVersions/<n>), which names one
+//     version outright, or
+//   - a CryptoKey resource name, in which case the highest-numbered enabled version is selected.
+//
+// The result is pinned for the lifetime of the keystore: the first resolution of a given key name
+// wins, and every later GetKeys and Sign for that name reuses it. Re-resolving per call would let a
+// rotation land between the two, so a caller could hold the public key of version N while its
+// signatures came from version N+1 — a silent verification failure with nothing in SignResponse to
+// identify which version signed. Pinning makes the public key reported by GetKeys authoritative for
+// every signature this keystore will produce.
+//
+// The cost is that a rotation is picked up on restart rather than immediately. That is the safer
+// default for signing keys, whose public keys are typically registered with peers or on-chain and
+// cannot change under a running system. Deployments that want rotation on an explicit schedule
+// should configure CryptoKeyVersion names directly.
 func (k *keystoreSignerReader) resolveKeyVersion(ctx context.Context, keyName string) (resolvedKey, error) {
+	k.mu.RLock()
+	pinned, ok := k.versions[keyName]
+	k.mu.RUnlock()
+	if ok {
+		return pinned, nil
+	}
+
 	var version *kmspb.CryptoKeyVersion
 	if strings.Contains(keyName, cryptoKeyVersionsSegment) {
 		got, err := k.client.GetCryptoKeyVersion(ctx, &kmspb.GetCryptoKeyVersionRequest{Name: keyName})
@@ -143,7 +170,16 @@ func (k *keystoreSignerReader) resolveKeyVersion(ctx context.Context, keyName st
 	if err != nil {
 		return resolvedKey{}, fmt.Errorf("crypto key %s: %w", keyName, err)
 	}
-	return resolvedKey{version: version, keyType: keyType}, nil
+
+	resolved := resolvedKey{version: version, keyType: keyType}
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	// First writer wins, so concurrent resolutions racing a rotation still converge on one version.
+	if existing, ok := k.versions[keyName]; ok {
+		return existing, nil
+	}
+	k.versions[keyName] = resolved
+	return resolved, nil
 }
 
 // latestEnabledVersion returns the highest-numbered enabled version of a CryptoKey.
@@ -189,9 +225,9 @@ func cryptoKeyVersionNumber(versionName string) (uint64, error) {
 // getPublicKeyBytes fetches the public key for a crypto key version and converts it to the
 // keystore's native format for the given key type. Results are cached per version name.
 func (k *keystoreSignerReader) getPublicKeyBytes(ctx context.Context, versionName string, keyType keystore.KeyType) ([]byte, error) {
-	k.publicKeysMu.RLock()
+	k.mu.RLock()
 	cached, ok := k.publicKeys[versionName]
-	k.publicKeysMu.RUnlock()
+	k.mu.RUnlock()
 	if ok {
 		return cached, nil
 	}
@@ -238,9 +274,9 @@ func (k *keystoreSignerReader) getPublicKeyBytes(ctx context.Context, versionNam
 		return nil, fmt.Errorf("unsupported key type: %s", keyType)
 	}
 
-	k.publicKeysMu.Lock()
+	k.mu.Lock()
 	k.publicKeys[versionName] = publicKeyBytes
-	k.publicKeysMu.Unlock()
+	k.mu.Unlock()
 	return publicKeyBytes, nil
 }
 
@@ -270,9 +306,9 @@ func signingKeyNames(listedKeys []*kmspb.CryptoKey) ([]string, error) {
 //
 // Key names are either CryptoKey resource names
 // (projects/<p>/locations/<l>/keyRings/<r>/cryptoKeys/<k>), for which the highest-numbered enabled
-// version is resolved so that rotations are picked up without redeploying, or CryptoKeyVersion
-// resource names, which pin one version. The returned key names match the requested ones, in the
-// requested order.
+// version is resolved and pinned, or CryptoKeyVersion resource names, which name one version
+// outright. Keys are returned sorted by name, per [keystore.Reader]; correlate them by
+// KeyInfo.Name rather than by position.
 //
 // When no key names are given, the configured key ring is listed and keys that this keystore
 // cannot use — another purpose, an unsupported algorithm, or no enabled version — are skipped,
@@ -301,9 +337,10 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 		if err != nil {
 			return keystore.GetKeysResponse{}, err
 		}
-		// Cloud KMS does not guarantee a listing order; sort for a stable response.
-		sort.Strings(keyNames)
 	}
+	// keystore.Reader specifies keys sorted by name. Sorting the names up front also gives the
+	// listing path a stable order, which Cloud KMS does not otherwise guarantee.
+	sort.Strings(keyNames)
 
 	keys := make([]keystore.GetKeyResponse, 0, len(keyNames))
 	seen := make(map[string]struct{}, len(keyNames))
@@ -403,9 +440,9 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 		if err = checkCrc32c(sig.Signature, sig.SignatureCrc32C); err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("signature for key %s: %w", req.KeyName, err)
 		}
-		// Ed25519 signatures from Cloud KMS are already in the correct format (64 bytes).
-		if len(sig.Signature) != 64 {
-			return keystore.SignResponse{}, fmt.Errorf("invalid Ed25519 signature length: expected 64 bytes, got %d", len(sig.Signature))
+		// Ed25519 signatures from Cloud KMS are already in the correct format.
+		if len(sig.Signature) != ed25519.SignatureSize {
+			return keystore.SignResponse{}, fmt.Errorf("invalid Ed25519 signature length: expected %d bytes, got %d", ed25519.SignatureSize, len(sig.Signature))
 		}
 		return keystore.SignResponse{Signature: sig.Signature}, nil
 	default:

@@ -45,6 +45,7 @@ flowchart
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate

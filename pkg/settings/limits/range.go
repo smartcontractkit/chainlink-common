@@ -202,17 +202,18 @@ func (b *rangeLimiter[N]) Limit(ctx context.Context) (settings.Range[N], error) 
 	defer b.wg.Done()
 
 	tenant, bound, err := b.get(ctx)
-	if err != nil {
-		return zero, err
+	if err != nil && tenant == "" && b.scope != settings.ScopeGlobal {
+		return zero, err // no tenant, so get() never read a value at all
 	}
-	if tenant == "" && b.scope != settings.ScopeGlobal {
+	if tenant == "" && b.scope != settings.ScopeGlobal && err == nil {
 		return zero, nil // fail open
 	}
 
-	return bound, nil
+	return bound, err // bound is always usable; err is advisory
 }
 
 func (b *rangeLimiter[N]) get(ctx context.Context) (tenant string, bound settings.Range[N], err error) {
+	u := b.updater
 	if b.scope != settings.ScopeGlobal {
 		tenant = b.scope.Value(ctx)
 		if tenant == "" {
@@ -225,10 +226,11 @@ func (b *rangeLimiter[N]) get(ctx context.Context) (tenant string, bound setting
 			return
 		}
 
-		u := newUpdater(b.lggr, b.getLimitFn, b.subFn)
-		actual, loaded := b.updaters.LoadOrStore(tenant, u)
+		newU := newUpdater(b.lggr, b.getLimitFn, b.subFn)
+		actual, loaded := b.updaters.LoadOrStore(tenant, newU)
 		creCtx := contexts.WithCRE(ctx, b.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
+			u = newU
 			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[settings.Range[N]])
@@ -238,7 +240,14 @@ func (b *rangeLimiter[N]) get(ctx context.Context) (tenant string, bound setting
 
 	bound, err = b.getLimitFn(ctx)
 	if err != nil {
-		b.lggr.Errorw("Failed to get limit. Using default value", "default", bound, "err", err)
+		if last, ok := u.lastGood(); ok {
+			b.lggr.Errorw("Failed to get limit. Using last known value", "value", last, "err", err)
+			bound = last
+		} else {
+			b.lggr.Errorw("Failed to get limit. Using compiled default", "default", bound, "err", err)
+		}
+	} else {
+		u.setLast(bound)
 	}
 	b.recordBound(ctx, bound, withScope(ctx, b.scope))
 	return

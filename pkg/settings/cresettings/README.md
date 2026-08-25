@@ -53,6 +53,7 @@ flowchart
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultIncludeInvalidPendingItemsEnabled[/VaultIncludeInvalidPendingItemsEnabled\]:::gate
         VaultPendingQueueStallThreshold{{VaultPendingQueueStallThreshold}}:::bound
         %% Deprecated: feature flag has been retired; behavior is now always enabled.

@@ -73,6 +73,7 @@ var Default = Schema{
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
 	VaultPendingQueueStallThreshold:                   Int(0),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
@@ -373,6 +374,7 @@ type Schema struct {
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
 	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.

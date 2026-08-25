@@ -174,12 +174,8 @@ func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {
 	}
 	defer g.wg.Done()
 
-	tenant, limit, err := g.get(ctx)
-	if tenant == "" && g.scope != settings.ScopeGlobal {
-		return false, err // no tenant: get() never resolved a value
-	}
-
-	return limit, err // limit is get()'s resolved (or default) value; err is advisory
+	_, limit, err := g.get(ctx)
+	return limit, err // limit is get()'s resolved value; false if no tenant, or default on error
 }
 
 func (g *gateLimiter) AllowErr(ctx context.Context) error {

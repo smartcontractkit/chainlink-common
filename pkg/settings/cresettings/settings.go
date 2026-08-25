@@ -69,10 +69,12 @@ var Default = Schema{
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
 	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
 	VaultPendingQueueStallThreshold:                   Int(0),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
@@ -366,10 +368,12 @@ type Schema struct {
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
 	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
 	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]

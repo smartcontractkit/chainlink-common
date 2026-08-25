@@ -175,11 +175,11 @@ func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {
 	defer g.wg.Done()
 
 	tenant, limit, err := g.get(ctx)
-	if err != nil && tenant == "" && g.scope != settings.ScopeGlobal {
-		return false, err // no tenant, so get() never read a value at all
+	if tenant == "" && g.scope != settings.ScopeGlobal {
+		return false, err // no tenant: get() never resolved a value
 	}
 
-	return limit, err // limit is always usable; err is advisory
+	return limit, err // limit is get()'s resolved (or default) value; err is advisory
 }
 
 func (g *gateLimiter) AllowErr(ctx context.Context) error {
@@ -200,7 +200,6 @@ func (g *gateLimiter) AllowErr(ctx context.Context) error {
 }
 
 func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err error) {
-	u := g.updater
 	if g.scope != settings.ScopeGlobal {
 		tenant = g.scope.Value(ctx)
 		if tenant == "" {
@@ -213,11 +212,10 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 			return
 		}
 
-		newU := newUpdater(g.lggr, g.getLimitFn, g.subFn)
-		actual, loaded := g.updaters.LoadOrStore(tenant, newU)
+		u := newUpdater(g.lggr, g.getLimitFn, g.subFn)
+		actual, loaded := g.updaters.LoadOrStore(tenant, u)
 		creCtx := contexts.WithCRE(ctx, g.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			u = newU
 			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[bool])
@@ -227,14 +225,7 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 
 	open, err = g.getLimitFn(ctx)
 	if err != nil {
-		if last, ok := u.lastGood(); ok {
-			g.lggr.Errorw("Failed to get status. Using last known value", "value", last, "err", err)
-			open = last
-		} else {
-			g.lggr.Errorw("Failed to get status. Using compiled default", "default", open, "err", err)
-		}
-	} else {
-		u.setLast(open)
+		g.lggr.Errorw("Failed to get status. Using default value", "default", open, "err", err)
 	}
 	// TODO: include map key in attributes
 	g.recordStatus(ctx, open, withScope(ctx, g.scope))

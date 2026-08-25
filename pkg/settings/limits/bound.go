@@ -213,18 +213,14 @@ func (b *boundLimiter[N]) Limit(ctx context.Context) (N, error) {
 	defer b.wg.Done()
 
 	tenant, bound, err := b.get(ctx)
-	if err != nil && tenant == "" && b.scope != settings.ScopeGlobal {
-		return zero, err // no tenant, so get() never read a value at all
-	}
-	if tenant == "" && b.scope != settings.ScopeGlobal && err == nil {
-		return zero, nil // fail open
+	if tenant == "" && b.scope != settings.ScopeGlobal {
+		return zero, err // no tenant: get() never resolved a value
 	}
 
-	return bound, err // bound is always usable; err is advisory
+	return bound, err // bound is get()'s resolved (or default) value; err is advisory
 }
 
 func (b *boundLimiter[N]) get(ctx context.Context) (tenant string, bound N, err error) {
-	u := b.updater
 	if b.scope != settings.ScopeGlobal {
 		tenant = b.scope.Value(ctx)
 		if tenant == "" {
@@ -237,11 +233,10 @@ func (b *boundLimiter[N]) get(ctx context.Context) (tenant string, bound N, err 
 			return
 		}
 
-		newU := newUpdater(b.lggr, b.getLimitFn, b.subFn)
-		actual, loaded := b.updaters.LoadOrStore(tenant, newU)
+		u := newUpdater(b.lggr, b.getLimitFn, b.subFn)
+		actual, loaded := b.updaters.LoadOrStore(tenant, u)
 		creCtx := contexts.WithCRE(ctx, b.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			u = newU
 			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[N])
@@ -251,14 +246,7 @@ func (b *boundLimiter[N]) get(ctx context.Context) (tenant string, bound N, err 
 
 	bound, err = b.getLimitFn(ctx)
 	if err != nil {
-		if last, ok := u.lastGood(); ok {
-			b.lggr.Errorw("Failed to get limit. Using last known value", "value", last, "err", err)
-			bound = last
-		} else {
-			b.lggr.Errorw("Failed to get limit. Using compiled default", "default", bound, "err", err)
-		}
-	} else {
-		u.setLast(bound)
+		b.lggr.Errorw("Failed to get limit. Using default value", "default", bound, "err", err)
 	}
 	b.recordBound(ctx, bound, withScope(ctx, b.scope))
 	return

@@ -191,28 +191,27 @@ func (l *timeLimiter) WithTimeout(ctx context.Context) (context.Context, func(),
 	defer l.wg.Done()
 
 	tenant, timeout, err := l.get(ctx)
-	if err != nil && tenant == "" && l.scope != settings.ScopeGlobal {
-		return nil, nil, err // no tenant, so get() never read a value at all
-	}
-	if tenant == "" && l.scope != settings.ScopeGlobal && err == nil {
+	if tenant == "" && l.scope != settings.ScopeGlobal {
+		if err != nil {
+			return nil, nil, err // no tenant: get() never resolved a value
+		}
 		return ctx, func() {}, nil // fail open
 	}
 
-	// timeout is always usable; err is advisory. Still build a real deadline from it.
 	countTimeout := func() { l.countTimeout(ctx) } // constructing this first to reference the original ctx
-	timeoutCtx, cancel := context.WithTimeoutCause(ctx, timeout, ErrorTimeLimited{Key: l.key, Scope: l.scope, Tenant: tenant, Timeout: timeout})
-	stop := context.AfterFunc(timeoutCtx, countTimeout)
+	ctx, cancel := context.WithTimeoutCause(ctx, timeout, ErrorTimeLimited{Key: l.key, Scope: l.scope, Tenant: tenant, Timeout: timeout})
+	stop := context.AfterFunc(ctx, countTimeout)
 
 	start := time.Now()
-	return timeoutCtx, func() {
+	return ctx, func() {
 		elapsed := time.Since(start)
 
-		l.recordRuntime(timeoutCtx, elapsed)
+		l.recordRuntime(ctx, elapsed)
 		if stop() {
-			l.countSuccess(timeoutCtx)
+			l.countSuccess(ctx)
 		}
 		cancel()
-	}, err
+	}, err // timeout is get()'s resolved (or default) value; err is advisory
 }
 
 func (l *timeLimiter) Limit(ctx context.Context) (time.Duration, error) {
@@ -222,18 +221,14 @@ func (l *timeLimiter) Limit(ctx context.Context) (time.Duration, error) {
 	defer l.wg.Done()
 
 	tenant, timeout, err := l.get(ctx)
-	if err != nil && tenant == "" && l.scope != settings.ScopeGlobal {
-		return -1, err
-	}
-	if tenant == "" && l.scope != settings.ScopeGlobal && err == nil {
-		return -1, nil // fail open
+	if tenant == "" && l.scope != settings.ScopeGlobal {
+		return -1, err // no tenant: get() never resolved a value
 	}
 
-	return timeout, err
+	return timeout, err // timeout is get()'s resolved (or default) value; err is advisory
 }
 
 func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Duration, err error) {
-	u := l.updater
 	if l.scope != settings.ScopeGlobal {
 		tenant = l.scope.Value(ctx)
 		if tenant == "" {
@@ -246,11 +241,10 @@ func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Dura
 			return
 		}
 
-		newU := newUpdater(l.lggr, l.getLimitFn, l.subFn)
-		actual, loaded := l.updaters.LoadOrStore(tenant, newU)
+		u := newUpdater(l.lggr, l.getLimitFn, l.subFn)
+		actual, loaded := l.updaters.LoadOrStore(tenant, u)
 		creCtx := contexts.WithCRE(ctx, l.scope.RoundCRE(contexts.CREValue(ctx)))
 		if !loaded {
-			u = newU
 			go u.updateLoop(creCtx)
 		} else {
 			u = actual.(*updater[time.Duration])
@@ -260,14 +254,7 @@ func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Dura
 
 	timeout, err = l.getLimitFn(ctx)
 	if err != nil {
-		if last, ok := u.lastGood(); ok {
-			l.lggr.Errorw("Failed to get limit. Using last known value", "value", last, "err", err)
-			timeout = last
-		} else {
-			l.lggr.Errorw("Failed to get limit. Using compiled default", "default", timeout, "err", err)
-		}
-	} else {
-		u.setLast(timeout)
+		l.lggr.Errorw("Failed to get limit. Using default value", "default", timeout, "err", err)
 	}
 	l.recordTimeout(ctx, timeout)
 

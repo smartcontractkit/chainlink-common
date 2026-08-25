@@ -3,7 +3,6 @@ package limits
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -26,9 +25,6 @@ type updater[N any] struct {
 	stopCh    services.StopChan
 	done      chan struct{}
 	cancelSub func() // optional
-
-	// lastGoodValue is the fallback used on a read failure, instead of Setting.DefaultValue.
-	lastGoodValue atomic.Pointer[N]
 }
 
 // newUpdater returns a new updater. lggr and subFn are optional, but getLimitFn is required.
@@ -66,19 +62,6 @@ func (u *updater[N]) updateCtx(ctx context.Context) {
 	}
 }
 
-func (u *updater[N]) setLast(n N) {
-	u.lastGoodValue.Store(&n)
-}
-
-// lastGood returns false if no value has ever resolved successfully.
-func (u *updater[N]) lastGood() (N, bool) {
-	if v := u.lastGoodValue.Load(); v != nil {
-		return *v, true
-	}
-	var zero N
-	return zero, false
-}
-
 // updateLoop updates the limit either by subscribing via subFn or polling if subFn is not set. It also processes
 // contexts.CRE updates. Stopped by Close.
 // opt: reap after period of non-use
@@ -107,14 +90,7 @@ func (u *updater[N]) updateLoop(ctx context.Context) {
 		case <-c:
 			limit, err := u.getLimitFn(ctx)
 			if err != nil {
-				if last, ok := u.lastGood(); ok {
-					u.lggr.Errorw("Failed to get limit. Using last known value", "value", last, "err", err)
-					limit = last
-				} else {
-					u.lggr.Errorw("Failed to get limit. Using compiled default", "default", limit, "err", err)
-				}
-			} else {
-				u.setLast(limit)
+				u.lggr.Errorw("Failed to get limit. Using default value", "default", limit, "err", err)
 			}
 			u.recordLimit(ctx, limit)
 			if u.onLimitUpdate != nil {
@@ -122,18 +98,10 @@ func (u *updater[N]) updateLoop(ctx context.Context) {
 			}
 
 		case update := <-updates:
-			limit := update.Value
 			if update.Err != nil {
-				if last, ok := u.lastGood(); ok {
-					u.lggr.Errorw("Failed to update limit. Using last known value", "value", last, "err", update.Err)
-					limit = last
-				} else {
-					u.lggr.Errorw("Failed to update limit. Using compiled default", "default", update.Value, "err", update.Err)
-				}
-			} else {
-				u.setLast(limit)
+				u.lggr.Errorw("Failed to update limit. Using default value", "default", update.Value, "err", update.Err)
 			}
-			u.recordLimit(ctx, limit)
+			u.recordLimit(ctx, update.Value)
 			if u.onLimitUpdate != nil {
 				u.onLimitUpdate(ctx)
 			}

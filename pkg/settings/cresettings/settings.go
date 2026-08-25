@@ -71,6 +71,7 @@ var Default = Schema{
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
 	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
 	VaultPendingQueueStallThreshold:                   Int(0),
@@ -370,6 +371,7 @@ type Schema struct {
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
 	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
 	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`

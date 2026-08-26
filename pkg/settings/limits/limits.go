@@ -29,10 +29,7 @@ type Number interface {
 
 type Limiter[N any] interface {
 	io.Closer // Limiters spawn background goroutines and must be closed.
-	// Limit returns the current limit. The value is always usable, even when err is
-	// non-nil: on a read failure it's the compiled default (Setting.DefaultValue), so err
-	// is advisory, not a signal to discard the value. The exception is a required tenant
-	// missing from ctx, where no read is attempted and the zero value is returned instead.
+	// Limit returns the current limit, or an error along with a usable fallback value.
 	Limit(context.Context) (N, error)
 }
 

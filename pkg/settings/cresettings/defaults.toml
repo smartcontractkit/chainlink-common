@@ -61,7 +61,7 @@ ConfidentialRelayHandlerTimeout = '1m0s'
 InsecureSkipTLSVerify = 'false'
 EnclaveRefreshInterval = '10s'
 MaxPublicKeyRetries = '2'
-MaxPublicKeyRetriesBackoff = '5s'
+PublicKeyRetriesBackoff = '5s'
 
 [ConfidentialCompute.PublicKeyCache]
 Enabled = 'true'

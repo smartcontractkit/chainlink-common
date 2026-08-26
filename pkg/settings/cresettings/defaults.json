@@ -61,7 +61,7 @@
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
 		"MaxPublicKeyRetries": "2",
-		"MaxPublicKeyRetriesBackoff": "5s",
+		"PublicKeyRetriesBackoff": "5s",
 		"PublicKeyCache": {
 			"Enabled": "true",
 			"TTL": "5m0s",

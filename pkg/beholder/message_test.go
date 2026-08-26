@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	otellog "go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 )
@@ -172,12 +172,12 @@ func TestMessage_OtelAttributes(t *testing.T) {
 		"key_int":            1,
 		"not_supported_type": notSupportedType{"not supported type"},
 	})
-	otelAttrs := make([]otellog.KeyValue, 0, len(m.Attrs))
+	otelAttrs := make([]attribute.KeyValue, 0, len(m.Attrs))
 	for k, v := range m.Attrs {
 		otelAttrs = append(otelAttrs, beholder.OtelAttr(k, v))
 	}
-	slices.SortFunc(otelAttrs, func(a, b otellog.KeyValue) int {
-		return strings.Compare(a.Key, b.Key)
+	slices.SortFunc(otelAttrs, func(a, b attribute.KeyValue) int {
+		return strings.Compare(string(a.Key), string(b.Key))
 	})
 
 	assert.Len(t, otelAttrs, 3)

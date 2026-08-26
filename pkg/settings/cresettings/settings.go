@@ -156,7 +156,7 @@ var Default = Schema{
 		InsecureSkipTLSVerify:             Bool(false),
 		EnclaveRefreshInterval:            Duration(10 * time.Second),
 		MaxPublicKeyRetries:               Int(2),
-		MaxPublicKeyRetriesBackoffSeconds: Int(5),
+		MaxPublicKeyRetriesBackoffSeconds: Duration(5 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),

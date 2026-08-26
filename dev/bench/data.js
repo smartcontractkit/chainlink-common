@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787338504667,
+  "lastUpdate": 1787767581211,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -58740,6 +58740,66 @@ window.BENCHMARK_DATA = {
             "value": 130005,
             "unit": "ns/op",
             "extra": "8310 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "vreff",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c1aa3d03197ca7f0baa6e7043e6cbc8a2f57296d",
+          "message": "chore: add MaxPublicKeyRetries and MaxPublicKeyRetriesBackoff to CRESettings (#2344)\n\n* chore: add MaxPublicKeyRetries and MaxPublicKeyRetriesBackoffSeconds CRE settings\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* remove suffix\n\n* remove prefix\n\n* fix CI\n\n* rename\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-26T17:53:34Z",
+          "tree_id": "60cfb5d3b0af8e375a9a3d17977d56d0346e1904",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c1aa3d03197ca7f0baa6e7043e6cbc8a2f57296d"
+        },
+        "date": 1787767578250,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 820.8,
+            "unit": "ns/op",
+            "extra": "1395606 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91868,
+            "unit": "ns/op",
+            "extra": "13015 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.6,
+            "unit": "ns/op",
+            "extra": "2984516 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90459,
+            "unit": "ns/op",
+            "extra": "13240 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26090,
+            "unit": "ns/op",
+            "extra": "46724 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139601,
+            "unit": "ns/op",
+            "extra": "8216 times\n4 procs"
           }
         ]
       }

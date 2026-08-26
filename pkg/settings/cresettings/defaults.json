@@ -60,6 +60,8 @@
 		"ConfidentialRelayHandlerTimeout": "1m0s",
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
+		"PublicKeyRetriesMax": "2",
+		"PublicKeyRetriesBackoff": "5s",
 		"PublicKeyCache": {
 			"Enabled": "true",
 			"TTL": "5m0s",

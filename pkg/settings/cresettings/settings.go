@@ -155,6 +155,8 @@ var Default = Schema{
 		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
 		InsecureSkipTLSVerify:           Bool(false),
 		EnclaveRefreshInterval:          Duration(10 * time.Second),
+		PublicKeyRetriesMax:             Int(2),
+		PublicKeyRetriesBackoff:         Duration(5 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -581,10 +583,12 @@ type confidentialCompute struct {
 	// past that point can only produce a response nobody is waiting for.
 	ConfidentialRelayHandlerTimeout Setting[time.Duration]
 
-	InsecureSkipTLSVerify  Setting[bool]
-	EnclaveRefreshInterval Setting[time.Duration]
-	PublicKeyCache         ccPublicKeyCache
-	Session                ccSession
+	InsecureSkipTLSVerify   Setting[bool]
+	EnclaveRefreshInterval  Setting[time.Duration]
+	PublicKeyRetriesMax     Setting[int] `unit:"{attempt}"`
+	PublicKeyRetriesBackoff Setting[time.Duration]
+	PublicKeyCache          ccPublicKeyCache
+	Session                 ccSession
 }
 
 // ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.

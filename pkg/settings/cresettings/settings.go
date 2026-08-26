@@ -586,7 +586,7 @@ type confidentialCompute struct {
 	InsecureSkipTLSVerify   Setting[bool]
 	EnclaveRefreshInterval  Setting[time.Duration]
 	MaxPublicKeyRetries     Setting[int] `unit:"{attempt}"`
-	PublicKeyRetriesBackoff Setting[int] `unit:"{second}"`
+	PublicKeyRetriesBackoff Setting[time.Duration]
 	PublicKeyCache          ccPublicKeyCache
 	Session                 ccSession
 }

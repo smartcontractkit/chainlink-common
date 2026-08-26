@@ -40,56 +40,55 @@ type KeyRingLister interface {
 	ListCryptoKeys(ctx context.Context, keyRingName string) ([]*kmspb.CryptoKey, error)
 }
 
-// ClientWithClose is the client returned by NewClient: the full Cloud KMS surface, including key
-// ring listing, plus the underlying transport lifecycle. Whether listing actually succeeds is a
-// matter of the credentials' IAM bindings, not of the Go type.
-type ClientWithClose interface {
-	Client
-	KeyRingLister
-	Close() error
-}
-
 // NewClient constructs a new Google Cloud KMS client using the Go SDK.
 //
 // Credentials always come from Application Default Credentials, which covers both production (GKE
 // Workload Identity, GCE/Cloud Run service accounts) and local development (`gcloud auth
-// application-default login`, or GOOGLE_APPLICATION_CREDENTIALS pointing at a service-account key
-// file). There is deliberately no credentials-file option: ADC already reads that env var, so a
-// dedicated field would only duplicate it while hard-coding a long-lived key file into config.
+// application-default login`, or GOOGLE_APPLICATION_CREDENTIALS pointing at a service-account key file).
 //
 // opts is passed through to the SDK for the cases ADC does not cover — a custom endpoint or
 // emulator, a quota project, a non-default token source.
 // https://cloud.google.com/docs/authentication/application-default-credentials
-func NewClient(ctx context.Context, opts ...option.ClientOption) (ClientWithClose, error) {
+func NewClient(ctx context.Context, opts ...option.ClientOption) (*SDKClient, error) {
 	client, err := apiv1.NewKeyManagementClient(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Google Cloud KMS client: %w", err)
 	}
-	return &clientAdapter{client: client}, nil
+	return &SDKClient{client: client}, nil
 }
 
-type clientAdapter struct {
+// SDKClient adapts the generated Cloud KMS client to this package's interfaces. It satisfies both
+// [Client] and [KeyRingLister], and owns the underlying transport, so callers must Close it.
+//
+// Satisfying KeyRingLister says only that the method exists; whether a listing call succeeds depends
+// on the credentials' IAM bindings, not on the Go type.
+type SDKClient struct {
 	client *apiv1.KeyManagementClient
 }
 
-func (c *clientAdapter) GetCryptoKeyVersion(ctx context.Context, req *kmspb.GetCryptoKeyVersionRequest, opts ...gax.CallOption) (*kmspb.CryptoKeyVersion, error) {
+var (
+	_ Client        = (*SDKClient)(nil)
+	_ KeyRingLister = (*SDKClient)(nil)
+)
+
+func (c *SDKClient) GetCryptoKeyVersion(ctx context.Context, req *kmspb.GetCryptoKeyVersionRequest, opts ...gax.CallOption) (*kmspb.CryptoKeyVersion, error) {
 	return c.client.GetCryptoKeyVersion(ctx, req, opts...)
 }
 
-func (c *clientAdapter) GetPublicKey(ctx context.Context, req *kmspb.GetPublicKeyRequest, opts ...gax.CallOption) (*kmspb.PublicKey, error) {
+func (c *SDKClient) GetPublicKey(ctx context.Context, req *kmspb.GetPublicKeyRequest, opts ...gax.CallOption) (*kmspb.PublicKey, error) {
 	return c.client.GetPublicKey(ctx, req, opts...)
 }
 
-func (c *clientAdapter) AsymmetricSign(ctx context.Context, req *kmspb.AsymmetricSignRequest, opts ...gax.CallOption) (*kmspb.AsymmetricSignResponse, error) {
+func (c *SDKClient) AsymmetricSign(ctx context.Context, req *kmspb.AsymmetricSignRequest, opts ...gax.CallOption) (*kmspb.AsymmetricSignResponse, error) {
 	return c.client.AsymmetricSign(ctx, req, opts...)
 }
 
-func (c *clientAdapter) ListCryptoKeys(ctx context.Context, keyRingName string) ([]*kmspb.CryptoKey, error) {
+func (c *SDKClient) ListCryptoKeys(ctx context.Context, keyRingName string) ([]*kmspb.CryptoKey, error) {
 	iter := c.client.ListCryptoKeys(ctx, &kmspb.ListCryptoKeysRequest{Parent: keyRingName})
 	return drain(iter.Next, "crypto keys in "+keyRingName)
 }
 
-func (c *clientAdapter) ListCryptoKeyVersions(ctx context.Context, cryptoKeyName string) ([]*kmspb.CryptoKeyVersion, error) {
+func (c *SDKClient) ListCryptoKeyVersions(ctx context.Context, cryptoKeyName string) ([]*kmspb.CryptoKeyVersion, error) {
 	iter := c.client.ListCryptoKeyVersions(ctx, &kmspb.ListCryptoKeyVersionsRequest{Parent: cryptoKeyName})
 	return drain(iter.Next, "crypto key versions of "+cryptoKeyName)
 }
@@ -110,6 +109,6 @@ func drain[T any](next func() (T, error), what string) ([]T, error) {
 	}
 }
 
-func (c *clientAdapter) Close() error {
+func (c *SDKClient) Close() error {
 	return c.client.Close()
 }

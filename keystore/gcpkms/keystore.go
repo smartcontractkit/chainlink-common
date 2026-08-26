@@ -24,9 +24,13 @@ import (
 // CryptoKeyVersion resource name.
 const cryptoKeyVersionsSegment = "/cryptoKeyVersions/"
 
-// errNoEnabledVersion is returned when a CryptoKey has no enabled version to sign with. It is
-// matchable so that key ring listings can skip such keys instead of failing outright.
-var errNoEnabledVersion = errors.New("has no enabled version")
+// errNoEnabledVersion and errUnsupportedAlgorithm mark the two ways a CryptoKey can turn out to be
+// unusable by this keystore. Both are matchable so that a key ring listing can skip such keys
+// instead of failing outright, while an explicitly requested key still surfaces the error.
+var (
+	errNoEnabledVersion     = errors.New("has no enabled version")
+	errUnsupportedAlgorithm = errors.New("unsupported Cloud KMS key algorithm")
+)
 
 // castagnoliTable is the CRC32C (Castagnoli) table used by Google Cloud KMS for integrity checks.
 var castagnoliTable = crc32.MakeTable(crc32.Castagnoli)
@@ -101,7 +105,7 @@ func cryptoKeyVersionAlgorithmToKeyType(algo kmspb.CryptoKeyVersion_CryptoKeyVer
 	case kmspb.CryptoKeyVersion_EC_SIGN_ED25519:
 		return keystore.Ed25519, nil
 	default:
-		return "", fmt.Errorf("unsupported Cloud KMS key algorithm: %s (supported: EC_SIGN_SECP256K1_SHA256, EC_SIGN_ED25519)", algo)
+		return "", fmt.Errorf("%w: %s (supported: EC_SIGN_SECP256K1_SHA256, EC_SIGN_ED25519)", errUnsupportedAlgorithm, algo)
 	}
 }
 
@@ -281,13 +285,18 @@ func (k *keystoreSignerReader) getPublicKeyBytes(ctx context.Context, versionNam
 }
 
 // signingKeyNames filters a key ring listing down to the asymmetric signing keys this keystore can
-// use. Key rings are commonly shared, so keys with another purpose or an unsupported algorithm are
-// skipped rather than failing the whole listing.
-func signingKeyNames(listedKeys []*kmspb.CryptoKey) ([]string, error) {
+// use. Key rings are commonly shared, so anything unusable is skipped rather than failing the whole
+// listing.
+//
+// The version-template check is an optimisation: it rejects keys whose configured algorithm is
+// unsupported without spending an RPC on them. VersionTemplate is optional in the API, so a key that
+// survives this filter is not necessarily usable; resolveKeyVersion checks the algorithm of the
+// version it actually resolves, and GetKeys skips anything that fails there for the same reasons.
+func signingKeyNames(listedKeys []*kmspb.CryptoKey) []string {
 	keyNames := make([]string, 0, len(listedKeys))
 	for _, key := range listedKeys {
 		if key == nil || key.Name == "" {
-			return nil, errors.New("crypto key without a name returned by Cloud KMS")
+			continue
 		}
 		if key.Purpose != kmspb.CryptoKey_ASYMMETRIC_SIGN {
 			continue
@@ -299,7 +308,7 @@ func signingKeyNames(listedKeys []*kmspb.CryptoKey) ([]string, error) {
 		}
 		keyNames = append(keyNames, key.Name)
 	}
-	return keyNames, nil
+	return keyNames
 }
 
 // GetKeys lists keys in the Cloud KMS keystore.
@@ -333,10 +342,7 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 		if err != nil {
 			return keystore.GetKeysResponse{}, err
 		}
-		keyNames, err = signingKeyNames(listedKeys)
-		if err != nil {
-			return keystore.GetKeysResponse{}, err
-		}
+		keyNames = signingKeyNames(listedKeys)
 	}
 	// keystore.Reader specifies keys sorted by name. Sorting the names up front also gives the
 	// listing path a stable order, which Cloud KMS does not otherwise guarantee.
@@ -351,7 +357,7 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 		seen[keyName] = struct{}{}
 		resolved, err := k.resolveKeyVersion(ctx, keyName)
 		if err != nil {
-			if listed && errors.Is(err, errNoEnabledVersion) {
+			if listed && (errors.Is(err, errNoEnabledVersion) || errors.Is(err, errUnsupportedAlgorithm)) {
 				continue
 			}
 			return keystore.GetKeysResponse{}, err

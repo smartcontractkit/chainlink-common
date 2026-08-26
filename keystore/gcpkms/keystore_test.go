@@ -252,7 +252,16 @@ func TestGCPKMSKeystore_ListSkipsUnusableKeys(t *testing.T) {
 			KeyType:    keystore.ECDSA_S256,
 			KeyID:      keyRingName + "/cryptoKeys/disabled-key",
 			State:      kmspb.CryptoKeyVersion_DISABLED,
-			PrivateKey: internal.NewRaw(crypto.FromECDSA(disabledKey)),
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(unsupportedKey)),
+		},
+		{
+			// An unsupported key that reports no VersionTemplate, so the cheap pre-filter cannot
+			// see its algorithm and the skip has to happen after the version is resolved.
+			KeyType:             keystore.ECDSA_S256,
+			KeyID:               keyRingName + "/cryptoKeys/p256-key-no-template",
+			Algorithm:           kmspb.CryptoKeyVersion_EC_SIGN_P256_SHA256,
+			OmitVersionTemplate: true,
+			PrivateKey:          internal.NewRaw(crypto.FromECDSA(disabledKey)),
 		},
 	})
 	require.NoError(t, err)
@@ -274,6 +283,10 @@ func TestGCPKMSKeystore_ListSkipsUnusableKeys(t *testing.T) {
 		KeyNames: []string{keyRingName + "/cryptoKeys/disabled-key"},
 	})
 	require.ErrorContains(t, err, "has no enabled version")
+	_, err = ks.GetKeys(ctx, keystore.GetKeysRequest{
+		KeyNames: []string{keyRingName + "/cryptoKeys/p256-key-no-template"},
+	})
+	require.ErrorContains(t, err, "unsupported Cloud KMS key algorithm")
 }
 
 func TestGCPKMSKeystore_InvalidEd25519Key(t *testing.T) {

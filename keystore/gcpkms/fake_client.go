@@ -40,6 +40,9 @@ type Key struct {
 	// Algorithm is the algorithm reported for this version and for the parent CryptoKey's version
 	// template. Defaults to the algorithm matching KeyType; set it to emulate an unsupported one.
 	Algorithm kmspb.CryptoKeyVersion_CryptoKeyVersionAlgorithm
+	// OmitVersionTemplate drops VersionTemplate from the parent CryptoKey in ListCryptoKeys. The
+	// field is optional in the API, so a listing can arrive without it.
+	OmitVersionTemplate bool
 }
 
 // FakeGCPKMSClient is an in-memory implementation of Client for tests. It emulates the parts of
@@ -181,12 +184,15 @@ func (m *FakeGCPKMSClient) ListCryptoKeys(ctx context.Context, keyRingName strin
 		}
 		seen[key.KeyID] = struct{}{}
 		// Note: no Primary — Cloud KMS only sets it for ENCRYPT_DECRYPT keys.
-		keys = append(keys, &kmspb.CryptoKey{
-			Name:            key.KeyID,
-			Purpose:         key.Purpose,
-			CreateTime:      timestamppb.New(m.createdAt),
-			VersionTemplate: &kmspb.CryptoKeyVersionTemplate{Algorithm: key.Algorithm},
-		})
+		cryptoKey := &kmspb.CryptoKey{
+			Name:       key.KeyID,
+			Purpose:    key.Purpose,
+			CreateTime: timestamppb.New(m.createdAt),
+		}
+		if !key.OmitVersionTemplate {
+			cryptoKey.VersionTemplate = &kmspb.CryptoKeyVersionTemplate{Algorithm: key.Algorithm}
+		}
+		keys = append(keys, cryptoKey)
 	}
 	return keys, nil
 }

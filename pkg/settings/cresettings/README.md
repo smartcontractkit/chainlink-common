@@ -294,7 +294,7 @@ flowchart
         ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
         ConfidentialCompute.InsecureSkipTLSVerify[/ConfidentialCompute.InsecureSkipTLSVerify\]:::gate
         ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
-        ConfidentialCompute.MaxPublicKeyRetries{{ConfidentialCompute.MaxPublicKeyRetries}}:::bound
+        ConfidentialCompute.PublicKeyRetriesMax{{ConfidentialCompute.PublicKeyRetriesMax}}:::bound
         ConfidentialCompute.PublicKeyRetriesBackoff>ConfidentialCompute.PublicKeyRetriesBackoff:::time
         subgraph ConfidentialCompute.PublicKeyCache
             ConfidentialCompute.PublicKeyCache.Enabled[/Enabled\]:::gate

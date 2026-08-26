@@ -146,17 +146,17 @@ var Default = Schema{
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
 	ConfidentialCompute: confidentialCompute{
-		GlobalRate:                        Rate(rate.Limit(1000), 1000),
-		MaxRetries:                        Int(3),
-		RetryBackoff:                      Duration(2 * time.Second),
-		SecretsCacheEnabled:               Bool(false),
-		EnclaveRequestTimeout:             Duration(30 * time.Second),
-		PublicKeyRequestTimeout:           Duration(5 * time.Second),
-		ConfidentialRelayHandlerTimeout:   Duration(60 * time.Second),
-		InsecureSkipTLSVerify:             Bool(false),
-		EnclaveRefreshInterval:            Duration(10 * time.Second),
-		MaxPublicKeyRetries:               Int(2),
-		MaxPublicKeyRetriesBackoffSeconds: Duration(5 * time.Second),
+		GlobalRate:                      Rate(rate.Limit(1000), 1000),
+		MaxRetries:                      Int(3),
+		RetryBackoff:                    Duration(2 * time.Second),
+		SecretsCacheEnabled:             Bool(false),
+		EnclaveRequestTimeout:           Duration(30 * time.Second),
+		PublicKeyRequestTimeout:         Duration(5 * time.Second),
+		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
+		InsecureSkipTLSVerify:           Bool(false),
+		EnclaveRefreshInterval:          Duration(10 * time.Second),
+		MaxPublicKeyRetries:             Int(2),
+		MaxPublicKeyRetriesBackoff:      Duration(5 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -583,12 +583,12 @@ type confidentialCompute struct {
 	// past that point can only produce a response nobody is waiting for.
 	ConfidentialRelayHandlerTimeout Setting[time.Duration]
 
-	InsecureSkipTLSVerify             Setting[bool]
-	EnclaveRefreshInterval            Setting[time.Duration]
-	MaxPublicKeyRetries               Setting[int] `unit:"{attempt}"`
-	MaxPublicKeyRetriesBackoffSeconds Setting[int] `unit:"{second}"`
-	PublicKeyCache                    ccPublicKeyCache
-	Session                           ccSession
+	InsecureSkipTLSVerify      Setting[bool]
+	EnclaveRefreshInterval     Setting[time.Duration]
+	MaxPublicKeyRetries        Setting[int] `unit:"{attempt}"`
+	MaxPublicKeyRetriesBackoff Setting[int] `unit:"{second}"`
+	PublicKeyCache             ccPublicKeyCache
+	Session                    ccSession
 }
 
 // ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.

@@ -80,6 +80,8 @@ var Default = Schema{
 	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
 	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
 	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
+	GatewayHTTPActionOutboundConcurrencyLimit:         Int(256),
+	GatewayHTTPActionOutboundPerNodeConcurrencyLimit:  Int(32),
 	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                          Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                             Int(20),
@@ -378,7 +380,14 @@ type Schema struct {
 	GatewayConfidentialRelayPerNodeRate               Setting[config.Rate]
 	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
 	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
-	TriggerRegistrationStatusUpdateTimeout            Setting[time.Duration]
+	// GatewayHTTPActionOutboundConcurrencyLimit bounds the number of outbound HTTP action
+	// requests the gateway will have in flight at once, across all nodes.
+	GatewayHTTPActionOutboundConcurrencyLimit Setting[int] `unit:"{request}"`
+	// GatewayHTTPActionOutboundPerNodeConcurrencyLimit bounds the number of outbound HTTP
+	// action requests the gateway will have in flight for a single node, so one node cannot
+	// occupy every slot in GatewayHTTPActionOutboundConcurrencyLimit.
+	GatewayHTTPActionOutboundPerNodeConcurrencyLimit Setting[int] `unit:"{request}"`
+	TriggerRegistrationStatusUpdateTimeout           Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`

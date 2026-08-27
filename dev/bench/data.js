@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787849198713,
+  "lastUpdate": 1787857994335,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -58920,6 +58920,66 @@ window.BENCHMARK_DATA = {
             "value": 147023,
             "unit": "ns/op",
             "extra": "8300 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "vreff",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ffe164d15efb52b862cba53d31feaa97417bcb10",
+          "message": "Add callback ID to the SecretsRequestParams type (#2346)\n\n* Add callback ID to the SecretsRequestParams type\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-27T19:01:17Z",
+          "tree_id": "09110357dc4f34a50119b2cf5bc0dc4f4cdec0b9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/ffe164d15efb52b862cba53d31feaa97417bcb10"
+        },
+        "date": 1787857991800,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 356.7,
+            "unit": "ns/op",
+            "extra": "3277086 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 89755,
+            "unit": "ns/op",
+            "extra": "13314 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 407.6,
+            "unit": "ns/op",
+            "extra": "2918497 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 89698,
+            "unit": "ns/op",
+            "extra": "13441 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25894,
+            "unit": "ns/op",
+            "extra": "45760 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 139167,
+            "unit": "ns/op",
+            "extra": "8359 times\n4 procs"
           }
         ]
       }

@@ -41,7 +41,6 @@ func (s *callCapAsyncErrorStub) EmitUserMetric(context.Context, *wfpb.WorkflowUs
 var _ ExecutionHelper = (*callCapAsyncErrorStub)(nil)
 
 func TestCallCapAsync_errorSerialization(t *testing.T) {
-
 	capErr := caperrors.NewPublicUserError(errors.New("capability failed"), caperrors.InvalidArgument)
 	plainErr := errors.New("plain error")
 
@@ -64,7 +63,6 @@ func TestCallCapAsync_errorSerialization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			exec := newTestExec(1, &callCapAsyncErrorStub{err: tt.err})
 			exec.ctx = t.Context()
 
@@ -82,7 +80,7 @@ func TestCallCapAsync_errorSerialization(t *testing.T) {
 			require.True(t, ok, "expected error response")
 			require.Equal(t, tt.wantErrStr, errResp.Error)
 
-			if tt.err == capErr {
+			if errors.Is(tt.err, capErr) {
 				require.NotEqual(t, capErr.Error(), errResp.Error, "capability errors must use SerializeToString, not Error()")
 			}
 		})

@@ -152,11 +152,7 @@ func DecryptSecretsForNode(
 }
 
 func normalizeOwner(owner string) string {
-	o := owner
-	if strings.HasPrefix(o, "0x") {
-		o = o[2:]
-	}
-
+	o := strings.TrimPrefix(owner, "0x")
 	o = strings.ToLower(o)
 	return o
 }

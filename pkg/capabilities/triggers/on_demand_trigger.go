@@ -81,7 +81,7 @@ func (o *OnDemand) RegisterTrigger(ctx context.Context, req capabilities.Trigger
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	ch := make(chan capabilities.TriggerResponse, defaultSendChannelBufferSize)
+	ch := make(chan capabilities.TriggerResponse, 100)
 	o.chans[workflowID(wid)] = ch
 	return ch, nil
 }

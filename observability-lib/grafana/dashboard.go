@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/grafana/grafana-foundation-sdk/go/alerting"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -287,12 +288,9 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 }
 
 func panelIDByTitle(db *dashboard.Dashboard, title string) string {
-	for _, panel := range db.Panels {
-		if panel.Panel != nil && panel.Panel.Title != nil && *panel.Panel.Title == title {
-			return fmt.Sprintf("%d", *panel.Panel.Id)
-		}
+	if id, ok := PanelIDByTitle(db, title); ok {
+		return strconv.FormatUint(uint64(id), 10)
 	}
-
 	return ""
 }
 

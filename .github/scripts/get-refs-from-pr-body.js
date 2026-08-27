@@ -8,16 +8,6 @@ const REPO_CONFIG = {
     defaultRef: "develop",
     outputKey: "core-ref",
   },
-  solana: {
-    pattern: /solana ref:\s*(\S+)/i,
-    defaultRef: "develop",
-    outputKey: "solana-ref",
-  },
-  starknet: {
-    pattern: /starknet ref:\s*(\S+)/i,
-    defaultRef: "develop",
-    outputKey: "starknet-ref",
-  },
   // Add new config here:
   // <name>: {
   //   pattern: /<name> ref:\s*(\S+)/i,

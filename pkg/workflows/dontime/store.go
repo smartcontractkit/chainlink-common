@@ -1,6 +1,7 @@
 package dontime
 
 import (
+	"errors"
 	"fmt"
 	"maps"
 	"sync"
@@ -174,7 +175,10 @@ func (s *Store) setLastObservedDonTime(observedDonTime int64) {
 
 func (s *Store) deleteExecutionID(executionID string) {
 	s.mu.Lock()
-	defer s.mu.Unlock()
+	req := s.removeRequestLocked(executionID)
 	delete(s.donTimes, executionID)
-	s.removeRequestLocked(executionID)
+	s.mu.Unlock()
+	if req != nil {
+		req.SendResponse(Response{WorkflowExecutionID: executionID, Err: errors.New("execution removed from consensus outcome")})
+	}
 }

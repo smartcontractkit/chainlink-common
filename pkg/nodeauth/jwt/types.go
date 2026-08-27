@@ -18,8 +18,8 @@ type JWTGenerator interface {
 // JWTAuthenticator handles JWT token authentication.
 type JWTAuthenticator interface {
 	// AuthenticateJWT authenticates the JWT token for the given request and return the JWT claims.
-	// If the JWT token is invalid, the function will return nil claims and error.
-	AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (bool, *nodeauthtypes.NodeJWTClaims, error)
+	// If the JWT token is invalid, the function will still return claims along with an error.
+	AuthenticateJWT(ctx context.Context, tokenString string, originalRequest any) (valid bool, claims *nodeauthtypes.NodeJWTClaims, err error)
 }
 
 // NodeAuthProvider interface for node <-> DON auth provider

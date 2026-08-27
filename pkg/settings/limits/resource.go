@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -479,8 +480,8 @@ func (m MultiResourcePoolLimiter[N]) Free(ctx context.Context, amount N) (errs e
 type freeFns []func()
 
 func (f freeFns) freeAll() {
-	for i := len(f) - 1; i >= 0; i-- {
-		f[i]()
+	for _, v := range slices.Backward(f) {
+		v()
 	}
 }
 

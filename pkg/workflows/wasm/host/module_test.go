@@ -7,13 +7,16 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v48"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -684,4 +687,52 @@ func Test_CallAwaitRace(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+type fakeModuleMetrics struct {
+	hostFnPanicRecoveredCount int
+}
+
+func (f *fakeModuleMetrics) IncHostFnPanicRecovered() {
+	f.hostFnPanicRecoveredCount++
+}
+
+func Test_Integration_Execute_RecoversHostFunctionPanic(t *testing.T) {
+	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
+	cfg := defaultNoDAGModCfg(t)
+	cfg.Logger = lggr
+
+	// The logging module calls env.log, whose host callback reaches EmitUserLog
+	// synchronously on the goroutine running the guest. Using a real module keeps
+	// the whole link and execute path in the test instead of a stub linker.
+	m := makeTestModuleByName(t, testPath, "logging", cfg, true)
+
+	m.Start()
+	defer m.Close()
+
+	metrics := &fakeModuleMetrics{}
+	m.metrics = metrics
+
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("test-execution-id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).RunAndReturn(func(string) error {
+		panic("boom")
+	}).Once()
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	_, err := m.Execute(t.Context(), triggerExecuteRequest(t, 0, trigger), mockExecutionHelper)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "boom")
+	assert.Equal(t, 1, metrics.hostFnPanicRecoveredCount)
+
+	require.Len(t, logs.AllUntimed(), 1)
+	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
+	assert.Equal(t, "panic during wasm execution", logs.AllUntimed()[0].Message)
 }

@@ -36,7 +36,7 @@ type batchEmitterMetrics struct {
 // NewChipIngressBatchEmitterService creates a batch emitter service backed by the given chipingress client.
 func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitterService, error) {
 	if client == nil {
-		return nil, fmt.Errorf("chip ingress client is nil")
+		return nil, errors.New("chip ingress client is nil")
 	}
 
 	defaults := DefaultConfig()
@@ -171,8 +171,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 				// every dropped event. chip_ingress.events_dropped (error_code) already
 				// captures that it's happening and roughly why; the full reason isn't
 				// needed at fleet-wide log volume.
-				var pubErr *batch.PublishError
-				if !errors.As(sendErr, &pubErr) {
+				if _, ok := errors.AsType[*batch.PublishError](sendErr); !ok {
 					e.eng.Errorw("failed to emit to chip ingress",
 						"error", sendErr,
 						"error_code", errorCode,

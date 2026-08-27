@@ -35,7 +35,7 @@ func ConfigureHooks(orig services.HealthCheckerConfig, lggr logger.Logger, emitt
 		return orig, errors.New("emitter can't be nil")
 	}
 	cfg := orig // copy
-	
+
 	cfg.SetHealth = func(ctx context.Context, svcHealth map[string]error) {
 		if orig.SetHealth != nil {
 			orig.SetHealth(ctx, svcHealth)

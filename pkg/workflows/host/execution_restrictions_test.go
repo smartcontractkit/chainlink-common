@@ -3,6 +3,7 @@ package host_test
 import (
 	"context"
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,7 +90,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		h := host.NewRestrictedExecutionHelper(inner, restrictions)
 		_, err := h.CallCapability(t.Context(), &sdk.CapabilityRequest{Id: "blocked@1.0.0", Method: "Bar"})
 		var capErr caperrors.Error
-		require.True(t, errors.As(err, &capErr))
+		require.ErrorAs(t, err, &capErr)
 		assert.Contains(t, capErr.Error(), "denied by user pre-hook restrictions")
 		assert.Equal(t, caperrors.LimitExceeded, capErr.Code())
 	})
@@ -247,11 +248,11 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		assert.Equal(t, []bool{true, true, false}, got)
 	})
 
-	t.Run("negative max total calls means unlimited (method limit still applies)", func(t *testing.T) {
+	t.Run("max value max total calls means unlimited (method limit still applies)", func(t *testing.T) {
 		req := &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"}
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
-				MaxTotalCalls: -1,
+				MaxTotalCalls: math.MaxUint32,
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 				Restrictions: []*sdk.CapabilityRestriction{
 					{Restriction: &sdk.CapabilityRestriction_Method{
@@ -263,7 +264,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		assert.Equal(t, []bool{true, true, false}, got)
 	})
 
-	t.Run("negative max calls on method means unlimited (total limit still applies)", func(t *testing.T) {
+	t.Run("max value max calls on method means unlimited (total limit still applies)", func(t *testing.T) {
 		req := &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"}
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
@@ -271,7 +272,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 				Restrictions: []*sdk.CapabilityRestriction{
 					{Restriction: &sdk.CapabilityRestriction_Method{
-						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: -1},
+						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: math.MaxUint32},
 					}},
 				},
 			},
@@ -279,7 +280,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		assert.Equal(t, []bool{true, true, true, false}, got)
 	})
 
-	t.Run("duplicate restrictions keep smallest non-negative value", func(t *testing.T) {
+	t.Run("duplicate restrictions keep smallest value", func(t *testing.T) {
 		req := &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"}
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
@@ -298,7 +299,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 		assert.Equal(t, []bool{true, true, false}, got)
 	})
 
-	t.Run("duplicate restrictions non-negative overrides negative", func(t *testing.T) {
+	t.Run("duplicate restrictions smaller value overrides unlimited", func(t *testing.T) {
 		req := &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"}
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
@@ -306,7 +307,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 				Restrictions: []*sdk.CapabilityRestriction{
 					{Restriction: &sdk.CapabilityRestriction_Method{
-						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: -1},
+						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: math.MaxUint32},
 					}},
 					{Restriction: &sdk.CapabilityRestriction_Method{
 						Method: &sdk.MethodRestriction{Id: "cap@1.0.0", Method: "Foo", MaxCalls: 3},
@@ -338,7 +339,7 @@ func TestRequirementSelectingModule_CallCapWithRestrictions(t *testing.T) {
 	t.Run("closed with no methods denies all", func(t *testing.T) {
 		got := capabilitySequence(t, &sdk.Restrictions{
 			Capabilities: &sdk.CapabilityRestrictions{
-				MaxTotalCalls: -1,
+				MaxTotalCalls: math.MaxUint32,
 				Type:          sdk.CapabilityRestrictionType_CAPABILITY_RESTRICTION_TYPE_CLOSED,
 			},
 		}, &sdk.CapabilityRequest{Id: "cap@1.0.0", Method: "Foo"})
@@ -441,7 +442,7 @@ func TestRequirementSelectingModule_ConfidentialHTTPWithRestrictions(t *testing.
 			&confidentialhttp.SecretIdentifier{Key: "blocked-secret", Namespace: "ns"})
 		_, err := h.CallCapability(t.Context(), req)
 		var capErr caperrors.Error
-		require.True(t, errors.As(err, &capErr))
+		require.ErrorAs(t, err, &capErr)
 		assert.Contains(t, capErr.Error(), "denied by user pre-hook restrictions")
 		assert.Equal(t, caperrors.LimitExceeded, capErr.Code())
 	})
@@ -652,14 +653,14 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 		assert.Equal(t, []bool{true, false}, got)
 	})
 
-	t.Run("negative max secrets means unlimited", func(t *testing.T) {
+	t.Run("max value max secrets means unlimited", func(t *testing.T) {
 		reqs := make([]*sdk.SecretRequest, 100)
 		for i := range reqs {
 			reqs[i] = &sdk.SecretRequest{Id: "db-password", Namespace: "infra"}
 		}
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
-				MaxSecrets: -1,
+				MaxSecrets: math.MaxUint32,
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_ExactSecret{
 						ExactSecret: &sdk.Secret{Id: "db-password", Namespace: "infra"},
@@ -672,7 +673,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 		}
 	})
 
-	t.Run("negative prefix max secrets means unlimited for that prefix (global limit applies)", func(t *testing.T) {
+	t.Run("max value prefix max secrets means unlimited for that prefix (global limit applies)", func(t *testing.T) {
 		req := &sdk.SecretRequest{Id: "db-password", Namespace: "infra"}
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
@@ -680,7 +681,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_PrefixedSecret{
 						PrefixedSecret: &sdk.SecretPrefixRestriction{
-							Prefix: "db-", Namespace: "infra", MaxSecrets: -1,
+							Prefix: "db-", Namespace: "infra", MaxSecrets: math.MaxUint32,
 						},
 					}},
 				},
@@ -711,7 +712,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 		req := &sdk.SecretRequest{Id: "db-password", Namespace: "infra"}
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
-				MaxSecrets: -1,
+				MaxSecrets: math.MaxUint32,
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_ExactSecret{
 						ExactSecret: &sdk.Secret{Id: "db-password", Namespace: "infra"},
@@ -768,7 +769,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 	t.Run("multiple overlapping prefixes all decrement on match", func(t *testing.T) {
 		got := secretSequence(t, &sdk.Restrictions{
 			Secrets: &sdk.SecretsRestritions{
-				MaxSecrets: -1,
+				MaxSecrets: math.MaxUint32,
 				Restrictions: []*sdk.SecretRestriction{
 					{Restriction: &sdk.SecretRestriction_PrefixedSecret{
 						PrefixedSecret: &sdk.SecretPrefixRestriction{
@@ -813,7 +814,7 @@ func TestRequirementSelectingModule_GetSecretsWithRestrictions(t *testing.T) {
 			}).Once()
 
 		h := host.NewRestrictedExecutionHelper(inner, &sdk.Restrictions{Secrets: &sdk.SecretsRestritions{
-			MaxSecrets:   -1,
+			MaxSecrets:   math.MaxUint32,
 			Restrictions: []*sdk.SecretRestriction{{Restriction: &sdk.SecretRestriction_ExactSecret{ExactSecret: secret}}},
 		}})
 
@@ -954,7 +955,6 @@ func TestRequirementSelectingModule_GetOwner(t *testing.T) {
 
 	owner := h.GetOwner()
 	assert.Equal(t, "owner-123", owner)
-
 }
 
 func TestRequirementSelectingModule_NewCreatesTheRightInterface(t *testing.T) {

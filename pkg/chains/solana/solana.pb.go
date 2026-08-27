@@ -648,6 +648,7 @@ type GetAccountInfoWithOptsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Account       []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"` // 32-byte Pubkey
 	Opts          *GetAccountInfoOpts    `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal    bool                   `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -696,10 +697,18 @@ func (x *GetAccountInfoWithOptsRequest) GetOpts() *GetAccountInfoOpts {
 	return nil
 }
 
+func (x *GetAccountInfoWithOptsRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
+}
+
 // Reply for GetBalance.
 type GetBalanceReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Value         uint64                 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"` // lamports
+	Slot          uint64                 `protobuf:"varint,2,opt,name=slot,proto3" json:"slot,omitempty"`   // processed slot
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -737,6 +746,13 @@ func (*GetBalanceReply) Descriptor() ([]byte, []int) {
 func (x *GetBalanceReply) GetValue() uint64 {
 	if x != nil {
 		return x.Value
+	}
+	return 0
+}
+
+func (x *GetBalanceReply) GetSlot() uint64 {
+	if x != nil {
+		return x.Slot
 	}
 	return 0
 }
@@ -972,7 +988,8 @@ func (x *GetBlockRequest) GetOpts() *GetBlockOpts {
 // Fee quote for a base58-encoded Message.
 type GetFeeForMessageReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Fee           uint64                 `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"` // lamports
+	Fee           uint64                 `protobuf:"varint,1,opt,name=fee,proto3" json:"fee,omitempty"`   // lamports
+	Slot          uint64                 `protobuf:"varint,2,opt,name=slot,proto3" json:"slot,omitempty"` // processed slot
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1010,6 +1027,13 @@ func (*GetFeeForMessageReply) Descriptor() ([]byte, []int) {
 func (x *GetFeeForMessageReply) GetFee() uint64 {
 	if x != nil {
 		return x.Fee
+	}
+	return 0
+}
+
+func (x *GetFeeForMessageReply) GetSlot() uint64 {
+	if x != nil {
+		return x.Slot
 	}
 	return 0
 }
@@ -1237,6 +1261,7 @@ type GetMultipleAccountsWithOptsRequest struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Accounts      [][]byte                 `protobuf:"bytes,1,rep,name=accounts,proto3" json:"accounts,omitempty"` // list of 32-byte Pubkeys
 	Opts          *GetMultipleAccountsOpts `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal    bool                     `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1285,6 +1310,347 @@ func (x *GetMultipleAccountsWithOptsRequest) GetOpts() *GetMultipleAccountsOpts 
 	return nil
 }
 
+func (x *GetMultipleAccountsWithOptsRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
+}
+
+// Memcmp filter for getProgramAccounts.
+type RPCFilterMemcmp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offset        uint64                 `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"` // byte offset into account data
+	Bytes         []byte                 `protobuf:"bytes,2,opt,name=bytes,proto3" json:"bytes,omitempty"`    // data to match (RPC encodes as base58)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RPCFilterMemcmp) Reset() {
+	*x = RPCFilterMemcmp{}
+	mi := &file_solana_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RPCFilterMemcmp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RPCFilterMemcmp) ProtoMessage() {}
+
+func (x *RPCFilterMemcmp) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RPCFilterMemcmp.ProtoReflect.Descriptor instead.
+func (*RPCFilterMemcmp) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RPCFilterMemcmp) GetOffset() uint64 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *RPCFilterMemcmp) GetBytes() []byte {
+	if x != nil {
+		return x.Bytes
+	}
+	return nil
+}
+
+// Account filter for getProgramAccounts (memcmp or data size).
+type RPCFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Memcmp        *RPCFilterMemcmp       `protobuf:"bytes,1,opt,name=memcmp,proto3" json:"memcmp,omitempty"`
+	DataSize      uint64                 `protobuf:"varint,2,opt,name=data_size,json=dataSize,proto3" json:"data_size,omitempty"` // match accounts with this data length
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RPCFilter) Reset() {
+	*x = RPCFilter{}
+	mi := &file_solana_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RPCFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RPCFilter) ProtoMessage() {}
+
+func (x *RPCFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RPCFilter.ProtoReflect.Descriptor instead.
+func (*RPCFilter) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *RPCFilter) GetMemcmp() *RPCFilterMemcmp {
+	if x != nil {
+		return x.Memcmp
+	}
+	return nil
+}
+
+func (x *RPCFilter) GetDataSize() uint64 {
+	if x != nil {
+		return x.DataSize
+	}
+	return 0
+}
+
+// Options for GetProgramAccounts.
+type GetProgramAccountsOpts struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Encoding      EncodingType           `protobuf:"varint,1,opt,name=encoding,proto3,enum=loop.solana.EncodingType" json:"encoding,omitempty"`
+	Commitment    CommitmentType         `protobuf:"varint,2,opt,name=commitment,proto3,enum=loop.solana.CommitmentType" json:"commitment,omitempty"`
+	DataSlice     *DataSlice             `protobuf:"bytes,3,opt,name=data_slice,json=dataSlice,proto3" json:"data_slice,omitempty"`
+	Filters       []*RPCFilter           `protobuf:"bytes,4,rep,name=filters,proto3" json:"filters,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProgramAccountsOpts) Reset() {
+	*x = GetProgramAccountsOpts{}
+	mi := &file_solana_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProgramAccountsOpts) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProgramAccountsOpts) ProtoMessage() {}
+
+func (x *GetProgramAccountsOpts) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProgramAccountsOpts.ProtoReflect.Descriptor instead.
+func (*GetProgramAccountsOpts) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetProgramAccountsOpts) GetEncoding() EncodingType {
+	if x != nil {
+		return x.Encoding
+	}
+	return EncodingType_ENCODING_TYPE_NONE
+}
+
+func (x *GetProgramAccountsOpts) GetCommitment() CommitmentType {
+	if x != nil {
+		return x.Commitment
+	}
+	return CommitmentType_COMMITMENT_TYPE_NONE
+}
+
+func (x *GetProgramAccountsOpts) GetDataSlice() *DataSlice {
+	if x != nil {
+		return x.DataSlice
+	}
+	return nil
+}
+
+func (x *GetProgramAccountsOpts) GetFilters() []*RPCFilter {
+	if x != nil {
+		return x.Filters
+	}
+	return nil
+}
+
+// Program-owned account with its pubkey.
+type KeyedAccount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pubkey        []byte                 `protobuf:"bytes,1,opt,name=pubkey,proto3" json:"pubkey,omitempty"` // 32-byte Pubkey
+	Account       *Account               `protobuf:"bytes,2,opt,name=account,proto3" json:"account,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *KeyedAccount) Reset() {
+	*x = KeyedAccount{}
+	mi := &file_solana_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KeyedAccount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KeyedAccount) ProtoMessage() {}
+
+func (x *KeyedAccount) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KeyedAccount.ProtoReflect.Descriptor instead.
+func (*KeyedAccount) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *KeyedAccount) GetPubkey() []byte {
+	if x != nil {
+		return x.Pubkey
+	}
+	return nil
+}
+
+func (x *KeyedAccount) GetAccount() *Account {
+	if x != nil {
+		return x.Account
+	}
+	return nil
+}
+
+// Reply for GetProgramAccounts.
+type GetProgramAccountsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         []*KeyedAccount        `protobuf:"bytes,1,rep,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProgramAccountsReply) Reset() {
+	*x = GetProgramAccountsReply{}
+	mi := &file_solana_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProgramAccountsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProgramAccountsReply) ProtoMessage() {}
+
+func (x *GetProgramAccountsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProgramAccountsReply.ProtoReflect.Descriptor instead.
+func (*GetProgramAccountsReply) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetProgramAccountsReply) GetValue() []*KeyedAccount {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+// Request for GetProgramAccounts.
+type GetProgramAccountsRequest struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Program       []byte                  `protobuf:"bytes,1,opt,name=program,proto3" json:"program,omitempty"` // 32-byte program Pubkey
+	Opts          *GetProgramAccountsOpts `protobuf:"bytes,2,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal    bool                    `protobuf:"varint,3,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProgramAccountsRequest) Reset() {
+	*x = GetProgramAccountsRequest{}
+	mi := &file_solana_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProgramAccountsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProgramAccountsRequest) ProtoMessage() {}
+
+func (x *GetProgramAccountsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_solana_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProgramAccountsRequest.ProtoReflect.Descriptor instead.
+func (*GetProgramAccountsRequest) Descriptor() ([]byte, []int) {
+	return file_solana_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetProgramAccountsRequest) GetProgram() []byte {
+	if x != nil {
+		return x.Program
+	}
+	return nil
+}
+
+func (x *GetProgramAccountsRequest) GetOpts() *GetProgramAccountsOpts {
+	if x != nil {
+		return x.Opts
+	}
+	return nil
+}
+
+func (x *GetProgramAccountsRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
+}
+
 // Reply for GetSignatureStatuses.
 type GetSignatureStatusesReply struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
@@ -1295,7 +1661,7 @@ type GetSignatureStatusesReply struct {
 
 func (x *GetSignatureStatusesReply) Reset() {
 	*x = GetSignatureStatusesReply{}
-	mi := &file_solana_proto_msgTypes[18]
+	mi := &file_solana_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1673,7 @@ func (x *GetSignatureStatusesReply) String() string {
 func (*GetSignatureStatusesReply) ProtoMessage() {}
 
 func (x *GetSignatureStatusesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[18]
+	mi := &file_solana_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1686,7 @@ func (x *GetSignatureStatusesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSignatureStatusesReply.ProtoReflect.Descriptor instead.
 func (*GetSignatureStatusesReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{18}
+	return file_solana_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetSignatureStatusesReply) GetResults() []*GetSignatureStatusesResult {
@@ -1340,7 +1706,7 @@ type GetSignatureStatusesRequest struct {
 
 func (x *GetSignatureStatusesRequest) Reset() {
 	*x = GetSignatureStatusesRequest{}
-	mi := &file_solana_proto_msgTypes[19]
+	mi := &file_solana_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1352,7 +1718,7 @@ func (x *GetSignatureStatusesRequest) String() string {
 func (*GetSignatureStatusesRequest) ProtoMessage() {}
 
 func (x *GetSignatureStatusesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[19]
+	mi := &file_solana_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1365,7 +1731,7 @@ func (x *GetSignatureStatusesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSignatureStatusesRequest.ProtoReflect.Descriptor instead.
 func (*GetSignatureStatusesRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{19}
+	return file_solana_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetSignatureStatusesRequest) GetSigs() [][]byte {
@@ -1388,7 +1754,7 @@ type GetSignatureStatusesResult struct {
 
 func (x *GetSignatureStatusesResult) Reset() {
 	*x = GetSignatureStatusesResult{}
-	mi := &file_solana_proto_msgTypes[20]
+	mi := &file_solana_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1400,7 +1766,7 @@ func (x *GetSignatureStatusesResult) String() string {
 func (*GetSignatureStatusesResult) ProtoMessage() {}
 
 func (x *GetSignatureStatusesResult) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[20]
+	mi := &file_solana_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1413,7 +1779,7 @@ func (x *GetSignatureStatusesResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSignatureStatusesResult.ProtoReflect.Descriptor instead.
 func (*GetSignatureStatusesResult) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{20}
+	return file_solana_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetSignatureStatusesResult) GetSlot() uint64 {
@@ -1454,7 +1820,7 @@ type GetSlotHeightReply struct {
 
 func (x *GetSlotHeightReply) Reset() {
 	*x = GetSlotHeightReply{}
-	mi := &file_solana_proto_msgTypes[21]
+	mi := &file_solana_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1466,7 +1832,7 @@ func (x *GetSlotHeightReply) String() string {
 func (*GetSlotHeightReply) ProtoMessage() {}
 
 func (x *GetSlotHeightReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[21]
+	mi := &file_solana_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1479,7 +1845,7 @@ func (x *GetSlotHeightReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSlotHeightReply.ProtoReflect.Descriptor instead.
 func (*GetSlotHeightReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{21}
+	return file_solana_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetSlotHeightReply) GetHeight() uint64 {
@@ -1498,7 +1864,7 @@ type GetSlotHeightRequest struct {
 
 func (x *GetSlotHeightRequest) Reset() {
 	*x = GetSlotHeightRequest{}
-	mi := &file_solana_proto_msgTypes[22]
+	mi := &file_solana_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1510,7 +1876,7 @@ func (x *GetSlotHeightRequest) String() string {
 func (*GetSlotHeightRequest) ProtoMessage() {}
 
 func (x *GetSlotHeightRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[22]
+	mi := &file_solana_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1523,7 +1889,7 @@ func (x *GetSlotHeightRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSlotHeightRequest.ProtoReflect.Descriptor instead.
 func (*GetSlotHeightRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{22}
+	return file_solana_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetSlotHeightRequest) GetCommitment() CommitmentType {
@@ -1545,7 +1911,7 @@ type MessageHeader struct {
 
 func (x *MessageHeader) Reset() {
 	*x = MessageHeader{}
-	mi := &file_solana_proto_msgTypes[23]
+	mi := &file_solana_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1557,7 +1923,7 @@ func (x *MessageHeader) String() string {
 func (*MessageHeader) ProtoMessage() {}
 
 func (x *MessageHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[23]
+	mi := &file_solana_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1570,7 +1936,7 @@ func (x *MessageHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageHeader.ProtoReflect.Descriptor instead.
 func (*MessageHeader) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{23}
+	return file_solana_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *MessageHeader) GetNumRequiredSignatures() uint32 {
@@ -1607,7 +1973,7 @@ type ParsedMessage struct {
 
 func (x *ParsedMessage) Reset() {
 	*x = ParsedMessage{}
-	mi := &file_solana_proto_msgTypes[24]
+	mi := &file_solana_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1619,7 +1985,7 @@ func (x *ParsedMessage) String() string {
 func (*ParsedMessage) ProtoMessage() {}
 
 func (x *ParsedMessage) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[24]
+	mi := &file_solana_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1632,7 +1998,7 @@ func (x *ParsedMessage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParsedMessage.ProtoReflect.Descriptor instead.
 func (*ParsedMessage) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{24}
+	return file_solana_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ParsedMessage) GetRecentBlockhash() []byte {
@@ -1674,7 +2040,7 @@ type ParsedTransaction struct {
 
 func (x *ParsedTransaction) Reset() {
 	*x = ParsedTransaction{}
-	mi := &file_solana_proto_msgTypes[25]
+	mi := &file_solana_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1686,7 +2052,7 @@ func (x *ParsedTransaction) String() string {
 func (*ParsedTransaction) ProtoMessage() {}
 
 func (x *ParsedTransaction) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[25]
+	mi := &file_solana_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1699,7 +2065,7 @@ func (x *ParsedTransaction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParsedTransaction.ProtoReflect.Descriptor instead.
 func (*ParsedTransaction) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{25}
+	return file_solana_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ParsedTransaction) GetSignatures() [][]byte {
@@ -1728,7 +2094,7 @@ type UiTokenAmount struct {
 
 func (x *UiTokenAmount) Reset() {
 	*x = UiTokenAmount{}
-	mi := &file_solana_proto_msgTypes[26]
+	mi := &file_solana_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1740,7 +2106,7 @@ func (x *UiTokenAmount) String() string {
 func (*UiTokenAmount) ProtoMessage() {}
 
 func (x *UiTokenAmount) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[26]
+	mi := &file_solana_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1753,7 +2119,7 @@ func (x *UiTokenAmount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UiTokenAmount.ProtoReflect.Descriptor instead.
 func (*UiTokenAmount) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{26}
+	return file_solana_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *UiTokenAmount) GetAmount() string {
@@ -1791,7 +2157,7 @@ type TokenBalance struct {
 
 func (x *TokenBalance) Reset() {
 	*x = TokenBalance{}
-	mi := &file_solana_proto_msgTypes[27]
+	mi := &file_solana_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1803,7 +2169,7 @@ func (x *TokenBalance) String() string {
 func (*TokenBalance) ProtoMessage() {}
 
 func (x *TokenBalance) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[27]
+	mi := &file_solana_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1816,7 +2182,7 @@ func (x *TokenBalance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenBalance.ProtoReflect.Descriptor instead.
 func (*TokenBalance) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{27}
+	return file_solana_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *TokenBalance) GetAccountIndex() uint32 {
@@ -1865,7 +2231,7 @@ type InnerInstruction struct {
 
 func (x *InnerInstruction) Reset() {
 	*x = InnerInstruction{}
-	mi := &file_solana_proto_msgTypes[28]
+	mi := &file_solana_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1877,7 +2243,7 @@ func (x *InnerInstruction) String() string {
 func (*InnerInstruction) ProtoMessage() {}
 
 func (x *InnerInstruction) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[28]
+	mi := &file_solana_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1890,7 +2256,7 @@ func (x *InnerInstruction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InnerInstruction.ProtoReflect.Descriptor instead.
 func (*InnerInstruction) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{28}
+	return file_solana_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *InnerInstruction) GetIndex() uint32 {
@@ -1918,7 +2284,7 @@ type LoadedAddresses struct {
 
 func (x *LoadedAddresses) Reset() {
 	*x = LoadedAddresses{}
-	mi := &file_solana_proto_msgTypes[29]
+	mi := &file_solana_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1930,7 +2296,7 @@ func (x *LoadedAddresses) String() string {
 func (*LoadedAddresses) ProtoMessage() {}
 
 func (x *LoadedAddresses) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[29]
+	mi := &file_solana_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1943,7 +2309,7 @@ func (x *LoadedAddresses) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoadedAddresses.ProtoReflect.Descriptor instead.
 func (*LoadedAddresses) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{29}
+	return file_solana_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *LoadedAddresses) GetReadonly() [][]byte {
@@ -1973,7 +2339,7 @@ type CompiledInstruction struct {
 
 func (x *CompiledInstruction) Reset() {
 	*x = CompiledInstruction{}
-	mi := &file_solana_proto_msgTypes[30]
+	mi := &file_solana_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1985,7 +2351,7 @@ func (x *CompiledInstruction) String() string {
 func (*CompiledInstruction) ProtoMessage() {}
 
 func (x *CompiledInstruction) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[30]
+	mi := &file_solana_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1998,7 +2364,7 @@ func (x *CompiledInstruction) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompiledInstruction.ProtoReflect.Descriptor instead.
 func (*CompiledInstruction) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{30}
+	return file_solana_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *CompiledInstruction) GetProgramIdIndex() uint32 {
@@ -2040,7 +2406,7 @@ type Data struct {
 
 func (x *Data) Reset() {
 	*x = Data{}
-	mi := &file_solana_proto_msgTypes[31]
+	mi := &file_solana_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2052,7 +2418,7 @@ func (x *Data) String() string {
 func (*Data) ProtoMessage() {}
 
 func (x *Data) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[31]
+	mi := &file_solana_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2065,7 +2431,7 @@ func (x *Data) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Data.ProtoReflect.Descriptor instead.
 func (*Data) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{31}
+	return file_solana_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *Data) GetContent() []byte {
@@ -2093,7 +2459,7 @@ type ReturnData struct {
 
 func (x *ReturnData) Reset() {
 	*x = ReturnData{}
-	mi := &file_solana_proto_msgTypes[32]
+	mi := &file_solana_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2105,7 +2471,7 @@ func (x *ReturnData) String() string {
 func (*ReturnData) ProtoMessage() {}
 
 func (x *ReturnData) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[32]
+	mi := &file_solana_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2118,7 +2484,7 @@ func (x *ReturnData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReturnData.ProtoReflect.Descriptor instead.
 func (*ReturnData) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{32}
+	return file_solana_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ReturnData) GetProgramId() []byte {
@@ -2155,7 +2521,7 @@ type TransactionMeta struct {
 
 func (x *TransactionMeta) Reset() {
 	*x = TransactionMeta{}
-	mi := &file_solana_proto_msgTypes[33]
+	mi := &file_solana_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2167,7 +2533,7 @@ func (x *TransactionMeta) String() string {
 func (*TransactionMeta) ProtoMessage() {}
 
 func (x *TransactionMeta) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[33]
+	mi := &file_solana_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2180,7 +2546,7 @@ func (x *TransactionMeta) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionMeta.ProtoReflect.Descriptor instead.
 func (*TransactionMeta) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{33}
+	return file_solana_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *TransactionMeta) GetErrJson() string {
@@ -2274,7 +2640,7 @@ type TransactionEnvelope struct {
 
 func (x *TransactionEnvelope) Reset() {
 	*x = TransactionEnvelope{}
-	mi := &file_solana_proto_msgTypes[34]
+	mi := &file_solana_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2286,7 +2652,7 @@ func (x *TransactionEnvelope) String() string {
 func (*TransactionEnvelope) ProtoMessage() {}
 
 func (x *TransactionEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[34]
+	mi := &file_solana_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2299,7 +2665,7 @@ func (x *TransactionEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TransactionEnvelope.ProtoReflect.Descriptor instead.
 func (*TransactionEnvelope) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{34}
+	return file_solana_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *TransactionEnvelope) GetTransaction() isTransactionEnvelope_Transaction {
@@ -2356,7 +2722,7 @@ type GetTransactionReply struct {
 
 func (x *GetTransactionReply) Reset() {
 	*x = GetTransactionReply{}
-	mi := &file_solana_proto_msgTypes[35]
+	mi := &file_solana_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2368,7 +2734,7 @@ func (x *GetTransactionReply) String() string {
 func (*GetTransactionReply) ProtoMessage() {}
 
 func (x *GetTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[35]
+	mi := &file_solana_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2381,7 +2747,7 @@ func (x *GetTransactionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionReply.ProtoReflect.Descriptor instead.
 func (*GetTransactionReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{35}
+	return file_solana_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetTransactionReply) GetSlot() uint64 {
@@ -2415,14 +2781,15 @@ func (x *GetTransactionReply) GetMeta() *TransactionMeta {
 // GetTransaction request.
 type GetTransactionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"` // 64-byte signature
+	Signature     []byte                 `protobuf:"bytes,1,opt,name=signature,proto3" json:"signature,omitempty"`                      // 64-byte signature
+	IsExternal    bool                   `protobuf:"varint,2,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetTransactionRequest) Reset() {
 	*x = GetTransactionRequest{}
-	mi := &file_solana_proto_msgTypes[36]
+	mi := &file_solana_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2434,7 +2801,7 @@ func (x *GetTransactionRequest) String() string {
 func (*GetTransactionRequest) ProtoMessage() {}
 
 func (x *GetTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[36]
+	mi := &file_solana_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2447,7 +2814,7 @@ func (x *GetTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTransactionRequest.ProtoReflect.Descriptor instead.
 func (*GetTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{36}
+	return file_solana_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetTransactionRequest) GetSignature() []byte {
@@ -2455,6 +2822,13 @@ func (x *GetTransactionRequest) GetSignature() []byte {
 		return x.Signature
 	}
 	return nil
+}
+
+func (x *GetTransactionRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
 }
 
 // RPC read context.
@@ -2467,7 +2841,7 @@ type RPCContext struct {
 
 func (x *RPCContext) Reset() {
 	*x = RPCContext{}
-	mi := &file_solana_proto_msgTypes[37]
+	mi := &file_solana_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2479,7 +2853,7 @@ func (x *RPCContext) String() string {
 func (*RPCContext) ProtoMessage() {}
 
 func (x *RPCContext) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[37]
+	mi := &file_solana_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2492,7 +2866,7 @@ func (x *RPCContext) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RPCContext.ProtoReflect.Descriptor instead.
 func (*RPCContext) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{37}
+	return file_solana_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *RPCContext) GetSlot() uint64 {
@@ -2515,7 +2889,7 @@ type SimulateTXOpts struct {
 
 func (x *SimulateTXOpts) Reset() {
 	*x = SimulateTXOpts{}
-	mi := &file_solana_proto_msgTypes[38]
+	mi := &file_solana_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2527,7 +2901,7 @@ func (x *SimulateTXOpts) String() string {
 func (*SimulateTXOpts) ProtoMessage() {}
 
 func (x *SimulateTXOpts) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[38]
+	mi := &file_solana_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2540,7 +2914,7 @@ func (x *SimulateTXOpts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXOpts.ProtoReflect.Descriptor instead.
 func (*SimulateTXOpts) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{38}
+	return file_solana_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *SimulateTXOpts) GetSigVerify() bool {
@@ -2584,7 +2958,7 @@ type SimulateTXReply struct {
 
 func (x *SimulateTXReply) Reset() {
 	*x = SimulateTXReply{}
-	mi := &file_solana_proto_msgTypes[39]
+	mi := &file_solana_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2596,7 +2970,7 @@ func (x *SimulateTXReply) String() string {
 func (*SimulateTXReply) ProtoMessage() {}
 
 func (x *SimulateTXReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[39]
+	mi := &file_solana_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2609,7 +2983,7 @@ func (x *SimulateTXReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXReply.ProtoReflect.Descriptor instead.
 func (*SimulateTXReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{39}
+	return file_solana_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *SimulateTXReply) GetErr() string {
@@ -2646,13 +3020,14 @@ type SimulateTXRequest struct {
 	Receiver           []byte                 `protobuf:"bytes,1,opt,name=receiver,proto3" json:"receiver,omitempty"`                                               // 32-byte program id (target)
 	EncodedTransaction string                 `protobuf:"bytes,2,opt,name=encoded_transaction,json=encodedTransaction,proto3" json:"encoded_transaction,omitempty"` // base64/base58 tx
 	Opts               *SimulateTXOpts        `protobuf:"bytes,3,opt,name=opts,proto3" json:"opts,omitempty"`
+	IsExternal         bool                   `protobuf:"varint,4,opt,name=is_external,json=isExternal,proto3" json:"is_external,omitempty"` // if true, limits like response size limit may be applied
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *SimulateTXRequest) Reset() {
 	*x = SimulateTXRequest{}
-	mi := &file_solana_proto_msgTypes[40]
+	mi := &file_solana_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2664,7 +3039,7 @@ func (x *SimulateTXRequest) String() string {
 func (*SimulateTXRequest) ProtoMessage() {}
 
 func (x *SimulateTXRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[40]
+	mi := &file_solana_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2677,7 +3052,7 @@ func (x *SimulateTXRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTXRequest.ProtoReflect.Descriptor instead.
 func (*SimulateTXRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{40}
+	return file_solana_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *SimulateTXRequest) GetReceiver() []byte {
@@ -2701,6 +3076,13 @@ func (x *SimulateTXRequest) GetOpts() *SimulateTXOpts {
 	return nil
 }
 
+func (x *SimulateTXRequest) GetIsExternal() bool {
+	if x != nil {
+		return x.IsExternal
+	}
+	return false
+}
+
 // Accounts to return during simulation.
 type SimulateTransactionAccountsOpts struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -2712,7 +3094,7 @@ type SimulateTransactionAccountsOpts struct {
 
 func (x *SimulateTransactionAccountsOpts) Reset() {
 	*x = SimulateTransactionAccountsOpts{}
-	mi := &file_solana_proto_msgTypes[41]
+	mi := &file_solana_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2724,7 +3106,7 @@ func (x *SimulateTransactionAccountsOpts) String() string {
 func (*SimulateTransactionAccountsOpts) ProtoMessage() {}
 
 func (x *SimulateTransactionAccountsOpts) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[41]
+	mi := &file_solana_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2737,7 +3119,7 @@ func (x *SimulateTransactionAccountsOpts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SimulateTransactionAccountsOpts.ProtoReflect.Descriptor instead.
 func (*SimulateTransactionAccountsOpts) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{41}
+	return file_solana_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *SimulateTransactionAccountsOpts) GetEncoding() EncodingType {
@@ -2766,7 +3148,7 @@ type SubmitTransactionReply struct {
 
 func (x *SubmitTransactionReply) Reset() {
 	*x = SubmitTransactionReply{}
-	mi := &file_solana_proto_msgTypes[42]
+	mi := &file_solana_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2778,7 +3160,7 @@ func (x *SubmitTransactionReply) String() string {
 func (*SubmitTransactionReply) ProtoMessage() {}
 
 func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[42]
+	mi := &file_solana_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2791,7 +3173,7 @@ func (x *SubmitTransactionReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionReply.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{42}
+	return file_solana_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *SubmitTransactionReply) GetSignature() []byte {
@@ -2827,7 +3209,7 @@ type SubmitTransactionRequest struct {
 
 func (x *SubmitTransactionRequest) Reset() {
 	*x = SubmitTransactionRequest{}
-	mi := &file_solana_proto_msgTypes[43]
+	mi := &file_solana_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2839,7 +3221,7 @@ func (x *SubmitTransactionRequest) String() string {
 func (*SubmitTransactionRequest) ProtoMessage() {}
 
 func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[43]
+	mi := &file_solana_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2852,7 +3234,7 @@ func (x *SubmitTransactionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitTransactionRequest.ProtoReflect.Descriptor instead.
 func (*SubmitTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{43}
+	return file_solana_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *SubmitTransactionRequest) GetCfg() *ComputeConfig {
@@ -2887,7 +3269,7 @@ type EventSig struct {
 
 func (x *EventSig) Reset() {
 	*x = EventSig{}
-	mi := &file_solana_proto_msgTypes[44]
+	mi := &file_solana_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2899,7 +3281,7 @@ func (x *EventSig) String() string {
 func (*EventSig) ProtoMessage() {}
 
 func (x *EventSig) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[44]
+	mi := &file_solana_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2912,7 +3294,7 @@ func (x *EventSig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventSig.ProtoReflect.Descriptor instead.
 func (*EventSig) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{44}
+	return file_solana_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *EventSig) GetTopic() uint64 {
@@ -2940,7 +3322,7 @@ type IndexedValueComparator struct {
 
 func (x *IndexedValueComparator) Reset() {
 	*x = IndexedValueComparator{}
-	mi := &file_solana_proto_msgTypes[45]
+	mi := &file_solana_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2952,7 +3334,7 @@ func (x *IndexedValueComparator) String() string {
 func (*IndexedValueComparator) ProtoMessage() {}
 
 func (x *IndexedValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[45]
+	mi := &file_solana_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2965,7 +3347,7 @@ func (x *IndexedValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IndexedValueComparator.ProtoReflect.Descriptor instead.
 func (*IndexedValueComparator) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{45}
+	return file_solana_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *IndexedValueComparator) GetValue() []byte {
@@ -2993,7 +3375,7 @@ type EventBySubkey struct {
 
 func (x *EventBySubkey) Reset() {
 	*x = EventBySubkey{}
-	mi := &file_solana_proto_msgTypes[46]
+	mi := &file_solana_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3005,7 +3387,7 @@ func (x *EventBySubkey) String() string {
 func (*EventBySubkey) ProtoMessage() {}
 
 func (x *EventBySubkey) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[46]
+	mi := &file_solana_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3018,7 +3400,7 @@ func (x *EventBySubkey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EventBySubkey.ProtoReflect.Descriptor instead.
 func (*EventBySubkey) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{46}
+	return file_solana_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *EventBySubkey) GetSubkeyIndex() uint64 {
@@ -3049,7 +3431,7 @@ type Expression struct {
 
 func (x *Expression) Reset() {
 	*x = Expression{}
-	mi := &file_solana_proto_msgTypes[47]
+	mi := &file_solana_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3061,7 +3443,7 @@ func (x *Expression) String() string {
 func (*Expression) ProtoMessage() {}
 
 func (x *Expression) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[47]
+	mi := &file_solana_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3074,7 +3456,7 @@ func (x *Expression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Expression.ProtoReflect.Descriptor instead.
 func (*Expression) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{47}
+	return file_solana_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *Expression) GetEvaluator() isExpression_Evaluator {
@@ -3129,7 +3511,7 @@ type BooleanExpression struct {
 
 func (x *BooleanExpression) Reset() {
 	*x = BooleanExpression{}
-	mi := &file_solana_proto_msgTypes[48]
+	mi := &file_solana_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3141,7 +3523,7 @@ func (x *BooleanExpression) String() string {
 func (*BooleanExpression) ProtoMessage() {}
 
 func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[48]
+	mi := &file_solana_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3154,7 +3536,7 @@ func (x *BooleanExpression) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BooleanExpression.ProtoReflect.Descriptor instead.
 func (*BooleanExpression) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{48}
+	return file_solana_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *BooleanExpression) GetBooleanOperator() chain_common.BooleanOperator {
@@ -3187,7 +3569,7 @@ type Primitive struct {
 
 func (x *Primitive) Reset() {
 	*x = Primitive{}
-	mi := &file_solana_proto_msgTypes[49]
+	mi := &file_solana_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3199,7 +3581,7 @@ func (x *Primitive) String() string {
 func (*Primitive) ProtoMessage() {}
 
 func (x *Primitive) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[49]
+	mi := &file_solana_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3212,7 +3594,7 @@ func (x *Primitive) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Primitive.ProtoReflect.Descriptor instead.
 func (*Primitive) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{49}
+	return file_solana_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *Primitive) GetPrimitive() isPrimitive_Primitive {
@@ -3297,7 +3679,7 @@ type HashedValueComparator struct {
 
 func (x *HashedValueComparator) Reset() {
 	*x = HashedValueComparator{}
-	mi := &file_solana_proto_msgTypes[50]
+	mi := &file_solana_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3309,7 +3691,7 @@ func (x *HashedValueComparator) String() string {
 func (*HashedValueComparator) ProtoMessage() {}
 
 func (x *HashedValueComparator) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[50]
+	mi := &file_solana_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3322,7 +3704,7 @@ func (x *HashedValueComparator) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HashedValueComparator.ProtoReflect.Descriptor instead.
 func (*HashedValueComparator) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{50}
+	return file_solana_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *HashedValueComparator) GetValues() [][]byte {
@@ -3349,7 +3731,7 @@ type Subkeys struct {
 
 func (x *Subkeys) Reset() {
 	*x = Subkeys{}
-	mi := &file_solana_proto_msgTypes[51]
+	mi := &file_solana_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3361,7 +3743,7 @@ func (x *Subkeys) String() string {
 func (*Subkeys) ProtoMessage() {}
 
 func (x *Subkeys) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[51]
+	mi := &file_solana_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3374,7 +3756,7 @@ func (x *Subkeys) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Subkeys.ProtoReflect.Descriptor instead.
 func (*Subkeys) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{51}
+	return file_solana_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *Subkeys) GetSubkeys() []string {
@@ -3394,7 +3776,7 @@ type CPIFilterConfig struct {
 
 func (x *CPIFilterConfig) Reset() {
 	*x = CPIFilterConfig{}
-	mi := &file_solana_proto_msgTypes[52]
+	mi := &file_solana_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3406,7 +3788,7 @@ func (x *CPIFilterConfig) String() string {
 func (*CPIFilterConfig) ProtoMessage() {}
 
 func (x *CPIFilterConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[52]
+	mi := &file_solana_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3419,7 +3801,7 @@ func (x *CPIFilterConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CPIFilterConfig.ProtoReflect.Descriptor instead.
 func (*CPIFilterConfig) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{52}
+	return file_solana_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *CPIFilterConfig) GetDestAddress() []byte {
@@ -3458,7 +3840,7 @@ type LPFilterQuery struct {
 
 func (x *LPFilterQuery) Reset() {
 	*x = LPFilterQuery{}
-	mi := &file_solana_proto_msgTypes[53]
+	mi := &file_solana_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3470,7 +3852,7 @@ func (x *LPFilterQuery) String() string {
 func (*LPFilterQuery) ProtoMessage() {}
 
 func (x *LPFilterQuery) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[53]
+	mi := &file_solana_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3483,7 +3865,7 @@ func (x *LPFilterQuery) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LPFilterQuery.ProtoReflect.Descriptor instead.
 func (*LPFilterQuery) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{53}
+	return file_solana_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *LPFilterQuery) GetName() string {
@@ -3591,7 +3973,7 @@ type Log struct {
 
 func (x *Log) Reset() {
 	*x = Log{}
-	mi := &file_solana_proto_msgTypes[54]
+	mi := &file_solana_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3603,7 +3985,7 @@ func (x *Log) String() string {
 func (*Log) ProtoMessage() {}
 
 func (x *Log) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[54]
+	mi := &file_solana_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3616,7 +3998,7 @@ func (x *Log) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Log.ProtoReflect.Descriptor instead.
 func (*Log) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{54}
+	return file_solana_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *Log) GetChainId() string {
@@ -3707,7 +4089,7 @@ type QueryTrackedLogsRequest struct {
 
 func (x *QueryTrackedLogsRequest) Reset() {
 	*x = QueryTrackedLogsRequest{}
-	mi := &file_solana_proto_msgTypes[55]
+	mi := &file_solana_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3719,7 +4101,7 @@ func (x *QueryTrackedLogsRequest) String() string {
 func (*QueryTrackedLogsRequest) ProtoMessage() {}
 
 func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[55]
+	mi := &file_solana_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3732,7 +4114,7 @@ func (x *QueryTrackedLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTrackedLogsRequest.ProtoReflect.Descriptor instead.
 func (*QueryTrackedLogsRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{55}
+	return file_solana_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *QueryTrackedLogsRequest) GetFilterQuery() []*Expression {
@@ -3758,7 +4140,7 @@ type QueryTrackedLogsReply struct {
 
 func (x *QueryTrackedLogsReply) Reset() {
 	*x = QueryTrackedLogsReply{}
-	mi := &file_solana_proto_msgTypes[56]
+	mi := &file_solana_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3770,7 +4152,7 @@ func (x *QueryTrackedLogsReply) String() string {
 func (*QueryTrackedLogsReply) ProtoMessage() {}
 
 func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[56]
+	mi := &file_solana_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3783,7 +4165,7 @@ func (x *QueryTrackedLogsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryTrackedLogsReply.ProtoReflect.Descriptor instead.
 func (*QueryTrackedLogsReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{56}
+	return file_solana_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *QueryTrackedLogsReply) GetLogs() []*Log {
@@ -3803,7 +4185,7 @@ type RegisterLogTrackingRequest struct {
 
 func (x *RegisterLogTrackingRequest) Reset() {
 	*x = RegisterLogTrackingRequest{}
-	mi := &file_solana_proto_msgTypes[57]
+	mi := &file_solana_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3815,7 +4197,7 @@ func (x *RegisterLogTrackingRequest) String() string {
 func (*RegisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[57]
+	mi := &file_solana_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3828,7 +4210,7 @@ func (x *RegisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{57}
+	return file_solana_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *RegisterLogTrackingRequest) GetFilter() *LPFilterQuery {
@@ -3846,7 +4228,7 @@ type RegisterLogTrackingReply struct {
 
 func (x *RegisterLogTrackingReply) Reset() {
 	*x = RegisterLogTrackingReply{}
-	mi := &file_solana_proto_msgTypes[58]
+	mi := &file_solana_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3858,7 +4240,7 @@ func (x *RegisterLogTrackingReply) String() string {
 func (*RegisterLogTrackingReply) ProtoMessage() {}
 
 func (x *RegisterLogTrackingReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[58]
+	mi := &file_solana_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3871,7 +4253,7 @@ func (x *RegisterLogTrackingReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterLogTrackingReply.ProtoReflect.Descriptor instead.
 func (*RegisterLogTrackingReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{58}
+	return file_solana_proto_rawDescGZIP(), []int{64}
 }
 
 // Unregister a filter by name/id.
@@ -3884,7 +4266,7 @@ type UnregisterLogTrackingRequest struct {
 
 func (x *UnregisterLogTrackingRequest) Reset() {
 	*x = UnregisterLogTrackingRequest{}
-	mi := &file_solana_proto_msgTypes[59]
+	mi := &file_solana_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3896,7 +4278,7 @@ func (x *UnregisterLogTrackingRequest) String() string {
 func (*UnregisterLogTrackingRequest) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[59]
+	mi := &file_solana_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3909,7 +4291,7 @@ func (x *UnregisterLogTrackingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingRequest.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingRequest) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{59}
+	return file_solana_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *UnregisterLogTrackingRequest) GetFilterName() string {
@@ -3927,7 +4309,7 @@ type UnregisterLogTrackingReply struct {
 
 func (x *UnregisterLogTrackingReply) Reset() {
 	*x = UnregisterLogTrackingReply{}
-	mi := &file_solana_proto_msgTypes[60]
+	mi := &file_solana_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3939,7 +4321,7 @@ func (x *UnregisterLogTrackingReply) String() string {
 func (*UnregisterLogTrackingReply) ProtoMessage() {}
 
 func (x *UnregisterLogTrackingReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[60]
+	mi := &file_solana_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3952,7 +4334,7 @@ func (x *UnregisterLogTrackingReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnregisterLogTrackingReply.ProtoReflect.Descriptor instead.
 func (*UnregisterLogTrackingReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{60}
+	return file_solana_proto_rawDescGZIP(), []int{66}
 }
 
 // latest block processed by lp
@@ -3965,7 +4347,7 @@ type GetLatestLPBlockReply struct {
 
 func (x *GetLatestLPBlockReply) Reset() {
 	*x = GetLatestLPBlockReply{}
-	mi := &file_solana_proto_msgTypes[61]
+	mi := &file_solana_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3977,7 +4359,7 @@ func (x *GetLatestLPBlockReply) String() string {
 func (*GetLatestLPBlockReply) ProtoMessage() {}
 
 func (x *GetLatestLPBlockReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[61]
+	mi := &file_solana_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3990,7 +4372,7 @@ func (x *GetLatestLPBlockReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestLPBlockReply.ProtoReflect.Descriptor instead.
 func (*GetLatestLPBlockReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{61}
+	return file_solana_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *GetLatestLPBlockReply) GetSlot() uint64 {
@@ -4010,7 +4392,7 @@ type GetFiltersNamesReply struct {
 
 func (x *GetFiltersNamesReply) Reset() {
 	*x = GetFiltersNamesReply{}
-	mi := &file_solana_proto_msgTypes[62]
+	mi := &file_solana_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4022,7 +4404,7 @@ func (x *GetFiltersNamesReply) String() string {
 func (*GetFiltersNamesReply) ProtoMessage() {}
 
 func (x *GetFiltersNamesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_solana_proto_msgTypes[62]
+	mi := &file_solana_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4035,7 +4417,7 @@ func (x *GetFiltersNamesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFiltersNamesReply.ProtoReflect.Descriptor instead.
 func (*GetFiltersNamesReply) Descriptor() ([]byte, []int) {
-	return file_solana_proto_rawDescGZIP(), []int{62}
+	return file_solana_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *GetFiltersNamesReply) GetItems() []string {
@@ -4083,12 +4465,15 @@ const file_solana_proto_rawDesc = "" +
 	"\vrpc_context\x18\x01 \x01(\v2\x17.loop.solana.RPCContextR\n" +
 	"rpcContext\x12/\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.loop.solana.AccountH\x00R\x05value\x88\x01\x01B\b\n" +
-	"\x06_value\"n\n" +
+	"\x06_value\"\x8f\x01\n" +
 	"\x1dGetAccountInfoWithOptsRequest\x12\x18\n" +
 	"\aaccount\x18\x01 \x01(\fR\aaccount\x123\n" +
-	"\x04opts\x18\x02 \x01(\v2\x1f.loop.solana.GetAccountInfoOptsR\x04opts\"'\n" +
+	"\x04opts\x18\x02 \x01(\v2\x1f.loop.solana.GetAccountInfoOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x03 \x01(\bR\n" +
+	"isExternal\";\n" +
 	"\x0fGetBalanceReply\x12\x14\n" +
-	"\x05value\x18\x01 \x01(\x04R\x05value\"d\n" +
+	"\x05value\x18\x01 \x01(\x04R\x05value\x12\x12\n" +
+	"\x04slot\x18\x02 \x01(\x04R\x04slot\"d\n" +
 	"\x11GetBalanceRequest\x12\x12\n" +
 	"\x04addr\x18\x01 \x01(\fR\x04addr\x12;\n" +
 	"\n" +
@@ -4109,9 +4494,10 @@ const file_solana_proto_rawDesc = "" +
 	"\v_block_time\"T\n" +
 	"\x0fGetBlockRequest\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\x04R\x04slot\x12-\n" +
-	"\x04opts\x18\x02 \x01(\v2\x19.loop.solana.GetBlockOptsR\x04opts\")\n" +
+	"\x04opts\x18\x02 \x01(\v2\x19.loop.solana.GetBlockOptsR\x04opts\"=\n" +
 	"\x15GetFeeForMessageReply\x12\x10\n" +
-	"\x03fee\x18\x01 \x01(\x04R\x03fee\"p\n" +
+	"\x03fee\x18\x01 \x01(\x04R\x03fee\x12\x12\n" +
+	"\x04slot\x18\x02 \x01(\x04R\x04slot\"p\n" +
 	"\x17GetFeeForMessageRequest\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12;\n" +
 	"\n" +
@@ -4132,10 +4518,36 @@ const file_solana_proto_rawDesc = "" +
 	" GetMultipleAccountsWithOptsReply\x128\n" +
 	"\vrpc_context\x18\x01 \x01(\v2\x17.loop.solana.RPCContextR\n" +
 	"rpcContext\x129\n" +
-	"\x05value\x18\x02 \x03(\v2#.loop.solana.OptionalAccountWrapperR\x05value\"z\n" +
+	"\x05value\x18\x02 \x03(\v2#.loop.solana.OptionalAccountWrapperR\x05value\"\x9b\x01\n" +
 	"\"GetMultipleAccountsWithOptsRequest\x12\x1a\n" +
 	"\baccounts\x18\x01 \x03(\fR\baccounts\x128\n" +
-	"\x04opts\x18\x02 \x01(\v2$.loop.solana.GetMultipleAccountsOptsR\x04opts\"^\n" +
+	"\x04opts\x18\x02 \x01(\v2$.loop.solana.GetMultipleAccountsOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x03 \x01(\bR\n" +
+	"isExternal\"?\n" +
+	"\x0fRPCFilterMemcmp\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x04R\x06offset\x12\x14\n" +
+	"\x05bytes\x18\x02 \x01(\fR\x05bytes\"^\n" +
+	"\tRPCFilter\x124\n" +
+	"\x06memcmp\x18\x01 \x01(\v2\x1c.loop.solana.RPCFilterMemcmpR\x06memcmp\x12\x1b\n" +
+	"\tdata_size\x18\x02 \x01(\x04R\bdataSize\"\xf5\x01\n" +
+	"\x16GetProgramAccountsOpts\x125\n" +
+	"\bencoding\x18\x01 \x01(\x0e2\x19.loop.solana.EncodingTypeR\bencoding\x12;\n" +
+	"\n" +
+	"commitment\x18\x02 \x01(\x0e2\x1b.loop.solana.CommitmentTypeR\n" +
+	"commitment\x125\n" +
+	"\n" +
+	"data_slice\x18\x03 \x01(\v2\x16.loop.solana.DataSliceR\tdataSlice\x120\n" +
+	"\afilters\x18\x04 \x03(\v2\x16.loop.solana.RPCFilterR\afilters\"V\n" +
+	"\fKeyedAccount\x12\x16\n" +
+	"\x06pubkey\x18\x01 \x01(\fR\x06pubkey\x12.\n" +
+	"\aaccount\x18\x02 \x01(\v2\x14.loop.solana.AccountR\aaccount\"J\n" +
+	"\x17GetProgramAccountsReply\x12/\n" +
+	"\x05value\x18\x01 \x03(\v2\x19.loop.solana.KeyedAccountR\x05value\"\x8f\x01\n" +
+	"\x19GetProgramAccountsRequest\x12\x18\n" +
+	"\aprogram\x18\x01 \x01(\fR\aprogram\x127\n" +
+	"\x04opts\x18\x02 \x01(\v2#.loop.solana.GetProgramAccountsOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x03 \x01(\bR\n" +
+	"isExternal\"^\n" +
 	"\x19GetSignatureStatusesReply\x12A\n" +
 	"\aresults\x18\x01 \x03(\v2'.loop.solana.GetSignatureStatusesResultR\aresults\"1\n" +
 	"\x1bGetSignatureStatusesRequest\x12\x12\n" +
@@ -4225,9 +4637,11 @@ const file_solana_proto_rawDesc = "" +
 	"\x04meta\x18\x04 \x01(\v2\x1c.loop.solana.TransactionMetaH\x02R\x04meta\x88\x01\x01B\r\n" +
 	"\v_block_timeB\x0e\n" +
 	"\f_transactionB\a\n" +
-	"\x05_meta\"5\n" +
+	"\x05_meta\"V\n" +
 	"\x15GetTransactionRequest\x12\x1c\n" +
-	"\tsignature\x18\x01 \x01(\fR\tsignature\" \n" +
+	"\tsignature\x18\x01 \x01(\fR\tsignature\x12\x1f\n" +
+	"\vis_external\x18\x02 \x01(\bR\n" +
+	"isExternal\" \n" +
 	"\n" +
 	"RPCContext\x12\x12\n" +
 	"\x04slot\x18\x01 \x01(\x04R\x04slot\"\xf0\x01\n" +
@@ -4243,11 +4657,13 @@ const file_solana_proto_rawDesc = "" +
 	"\x03err\x18\x01 \x01(\tR\x03err\x12\x12\n" +
 	"\x04logs\x18\x02 \x03(\tR\x04logs\x120\n" +
 	"\baccounts\x18\x03 \x03(\v2\x14.loop.solana.AccountR\baccounts\x12%\n" +
-	"\x0eunits_consumed\x18\x04 \x01(\x04R\runitsConsumed\"\x91\x01\n" +
+	"\x0eunits_consumed\x18\x04 \x01(\x04R\runitsConsumed\"\xb2\x01\n" +
 	"\x11SimulateTXRequest\x12\x1a\n" +
 	"\breceiver\x18\x01 \x01(\fR\breceiver\x12/\n" +
 	"\x13encoded_transaction\x18\x02 \x01(\tR\x12encodedTransaction\x12/\n" +
-	"\x04opts\x18\x03 \x01(\v2\x1b.loop.solana.SimulateTXOptsR\x04opts\"v\n" +
+	"\x04opts\x18\x03 \x01(\v2\x1b.loop.solana.SimulateTXOptsR\x04opts\x12\x1f\n" +
+	"\vis_external\x18\x04 \x01(\bR\n" +
+	"isExternal\"v\n" +
 	"\x1fSimulateTransactionAccountsOpts\x125\n" +
 	"\bencoding\x18\x01 \x01(\x0e2\x19.loop.solana.EncodingTypeR\bencoding\x12\x1c\n" +
 	"\taddresses\x18\x02 \x03(\fR\taddresses\"\x8e\x01\n" +
@@ -4360,15 +4776,15 @@ const file_solana_proto_rawDesc = "" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x15\n" +
 	"\x11TX_STATUS_ABORTED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\xfb\n" +
-	"\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x022\xdf\v\n" +
 	"\x06Solana\x12n\n" +
 	"\x16GetAccountInfoWithOpts\x12*.loop.solana.GetAccountInfoWithOptsRequest\x1a(.loop.solana.GetAccountInfoWithOptsReply\x12J\n" +
 	"\n" +
 	"GetBalance\x12\x1e.loop.solana.GetBalanceRequest\x1a\x1c.loop.solana.GetBalanceReply\x12D\n" +
 	"\bGetBlock\x12\x1c.loop.solana.GetBlockRequest\x1a\x1a.loop.solana.GetBlockReply\x12\\\n" +
 	"\x10GetFeeForMessage\x12$.loop.solana.GetFeeForMessageRequest\x1a\".loop.solana.GetFeeForMessageReply\x12}\n" +
-	"\x1bGetMultipleAccountsWithOpts\x12/.loop.solana.GetMultipleAccountsWithOptsRequest\x1a-.loop.solana.GetMultipleAccountsWithOptsReply\x12h\n" +
+	"\x1bGetMultipleAccountsWithOpts\x12/.loop.solana.GetMultipleAccountsWithOptsRequest\x1a-.loop.solana.GetMultipleAccountsWithOptsReply\x12b\n" +
+	"\x12GetProgramAccounts\x12&.loop.solana.GetProgramAccountsRequest\x1a$.loop.solana.GetProgramAccountsReply\x12h\n" +
 	"\x14GetSignatureStatuses\x12(.loop.solana.GetSignatureStatusesRequest\x1a&.loop.solana.GetSignatureStatusesReply\x12S\n" +
 	"\rGetSlotHeight\x12!.loop.solana.GetSlotHeightRequest\x1a\x1f.loop.solana.GetSlotHeightReply\x12V\n" +
 	"\x0eGetTransaction\x12\".loop.solana.GetTransactionRequest\x1a .loop.solana.GetTransactionReply\x12\\\n" +
@@ -4394,7 +4810,7 @@ func file_solana_proto_rawDescGZIP() []byte {
 }
 
 var file_solana_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
+var file_solana_proto_msgTypes = make([]protoimpl.MessageInfo, 69)
 var file_solana_proto_goTypes = []any{
 	(EncodingType)(0),                          // 0: loop.solana.EncodingType
 	(CommitmentType)(0),                        // 1: loop.solana.CommitmentType
@@ -4418,66 +4834,72 @@ var file_solana_proto_goTypes = []any{
 	(*OptionalAccountWrapper)(nil),             // 19: loop.solana.OptionalAccountWrapper
 	(*GetMultipleAccountsWithOptsReply)(nil),   // 20: loop.solana.GetMultipleAccountsWithOptsReply
 	(*GetMultipleAccountsWithOptsRequest)(nil), // 21: loop.solana.GetMultipleAccountsWithOptsRequest
-	(*GetSignatureStatusesReply)(nil),          // 22: loop.solana.GetSignatureStatusesReply
-	(*GetSignatureStatusesRequest)(nil),        // 23: loop.solana.GetSignatureStatusesRequest
-	(*GetSignatureStatusesResult)(nil),         // 24: loop.solana.GetSignatureStatusesResult
-	(*GetSlotHeightReply)(nil),                 // 25: loop.solana.GetSlotHeightReply
-	(*GetSlotHeightRequest)(nil),               // 26: loop.solana.GetSlotHeightRequest
-	(*MessageHeader)(nil),                      // 27: loop.solana.MessageHeader
-	(*ParsedMessage)(nil),                      // 28: loop.solana.ParsedMessage
-	(*ParsedTransaction)(nil),                  // 29: loop.solana.ParsedTransaction
-	(*UiTokenAmount)(nil),                      // 30: loop.solana.UiTokenAmount
-	(*TokenBalance)(nil),                       // 31: loop.solana.TokenBalance
-	(*InnerInstruction)(nil),                   // 32: loop.solana.InnerInstruction
-	(*LoadedAddresses)(nil),                    // 33: loop.solana.LoadedAddresses
-	(*CompiledInstruction)(nil),                // 34: loop.solana.CompiledInstruction
-	(*Data)(nil),                               // 35: loop.solana.Data
-	(*ReturnData)(nil),                         // 36: loop.solana.ReturnData
-	(*TransactionMeta)(nil),                    // 37: loop.solana.TransactionMeta
-	(*TransactionEnvelope)(nil),                // 38: loop.solana.TransactionEnvelope
-	(*GetTransactionReply)(nil),                // 39: loop.solana.GetTransactionReply
-	(*GetTransactionRequest)(nil),              // 40: loop.solana.GetTransactionRequest
-	(*RPCContext)(nil),                         // 41: loop.solana.RPCContext
-	(*SimulateTXOpts)(nil),                     // 42: loop.solana.SimulateTXOpts
-	(*SimulateTXReply)(nil),                    // 43: loop.solana.SimulateTXReply
-	(*SimulateTXRequest)(nil),                  // 44: loop.solana.SimulateTXRequest
-	(*SimulateTransactionAccountsOpts)(nil),    // 45: loop.solana.SimulateTransactionAccountsOpts
-	(*SubmitTransactionReply)(nil),             // 46: loop.solana.SubmitTransactionReply
-	(*SubmitTransactionRequest)(nil),           // 47: loop.solana.SubmitTransactionRequest
-	(*EventSig)(nil),                           // 48: loop.solana.EventSig
-	(*IndexedValueComparator)(nil),             // 49: loop.solana.IndexedValueComparator
-	(*EventBySubkey)(nil),                      // 50: loop.solana.EventBySubkey
-	(*Expression)(nil),                         // 51: loop.solana.Expression
-	(*BooleanExpression)(nil),                  // 52: loop.solana.BooleanExpression
-	(*Primitive)(nil),                          // 53: loop.solana.Primitive
-	(*HashedValueComparator)(nil),              // 54: loop.solana.HashedValueComparator
-	(*Subkeys)(nil),                            // 55: loop.solana.Subkeys
-	(*CPIFilterConfig)(nil),                    // 56: loop.solana.CPIFilterConfig
-	(*LPFilterQuery)(nil),                      // 57: loop.solana.LPFilterQuery
-	(*Log)(nil),                                // 58: loop.solana.Log
-	(*QueryTrackedLogsRequest)(nil),            // 59: loop.solana.QueryTrackedLogsRequest
-	(*QueryTrackedLogsReply)(nil),              // 60: loop.solana.QueryTrackedLogsReply
-	(*RegisterLogTrackingRequest)(nil),         // 61: loop.solana.RegisterLogTrackingRequest
-	(*RegisterLogTrackingReply)(nil),           // 62: loop.solana.RegisterLogTrackingReply
-	(*UnregisterLogTrackingRequest)(nil),       // 63: loop.solana.UnregisterLogTrackingRequest
-	(*UnregisterLogTrackingReply)(nil),         // 64: loop.solana.UnregisterLogTrackingReply
-	(*GetLatestLPBlockReply)(nil),              // 65: loop.solana.GetLatestLPBlockReply
-	(*GetFiltersNamesReply)(nil),               // 66: loop.solana.GetFiltersNamesReply
-	(*pb.BigInt)(nil),                          // 67: values.v1.BigInt
-	(chain_common.ComparisonOperator)(0),       // 68: loop.chain.common.ComparisonOperator
-	(chain_common.BooleanOperator)(0),          // 69: loop.chain.common.BooleanOperator
-	(*chain_common.Primitive)(nil),             // 70: loop.chain.common.Primitive
-	(*chain_common.LimitAndSort)(nil),          // 71: loop.chain.common.LimitAndSort
-	(*emptypb.Empty)(nil),                      // 72: google.protobuf.Empty
+	(*RPCFilterMemcmp)(nil),                    // 22: loop.solana.RPCFilterMemcmp
+	(*RPCFilter)(nil),                          // 23: loop.solana.RPCFilter
+	(*GetProgramAccountsOpts)(nil),             // 24: loop.solana.GetProgramAccountsOpts
+	(*KeyedAccount)(nil),                       // 25: loop.solana.KeyedAccount
+	(*GetProgramAccountsReply)(nil),            // 26: loop.solana.GetProgramAccountsReply
+	(*GetProgramAccountsRequest)(nil),          // 27: loop.solana.GetProgramAccountsRequest
+	(*GetSignatureStatusesReply)(nil),          // 28: loop.solana.GetSignatureStatusesReply
+	(*GetSignatureStatusesRequest)(nil),        // 29: loop.solana.GetSignatureStatusesRequest
+	(*GetSignatureStatusesResult)(nil),         // 30: loop.solana.GetSignatureStatusesResult
+	(*GetSlotHeightReply)(nil),                 // 31: loop.solana.GetSlotHeightReply
+	(*GetSlotHeightRequest)(nil),               // 32: loop.solana.GetSlotHeightRequest
+	(*MessageHeader)(nil),                      // 33: loop.solana.MessageHeader
+	(*ParsedMessage)(nil),                      // 34: loop.solana.ParsedMessage
+	(*ParsedTransaction)(nil),                  // 35: loop.solana.ParsedTransaction
+	(*UiTokenAmount)(nil),                      // 36: loop.solana.UiTokenAmount
+	(*TokenBalance)(nil),                       // 37: loop.solana.TokenBalance
+	(*InnerInstruction)(nil),                   // 38: loop.solana.InnerInstruction
+	(*LoadedAddresses)(nil),                    // 39: loop.solana.LoadedAddresses
+	(*CompiledInstruction)(nil),                // 40: loop.solana.CompiledInstruction
+	(*Data)(nil),                               // 41: loop.solana.Data
+	(*ReturnData)(nil),                         // 42: loop.solana.ReturnData
+	(*TransactionMeta)(nil),                    // 43: loop.solana.TransactionMeta
+	(*TransactionEnvelope)(nil),                // 44: loop.solana.TransactionEnvelope
+	(*GetTransactionReply)(nil),                // 45: loop.solana.GetTransactionReply
+	(*GetTransactionRequest)(nil),              // 46: loop.solana.GetTransactionRequest
+	(*RPCContext)(nil),                         // 47: loop.solana.RPCContext
+	(*SimulateTXOpts)(nil),                     // 48: loop.solana.SimulateTXOpts
+	(*SimulateTXReply)(nil),                    // 49: loop.solana.SimulateTXReply
+	(*SimulateTXRequest)(nil),                  // 50: loop.solana.SimulateTXRequest
+	(*SimulateTransactionAccountsOpts)(nil),    // 51: loop.solana.SimulateTransactionAccountsOpts
+	(*SubmitTransactionReply)(nil),             // 52: loop.solana.SubmitTransactionReply
+	(*SubmitTransactionRequest)(nil),           // 53: loop.solana.SubmitTransactionRequest
+	(*EventSig)(nil),                           // 54: loop.solana.EventSig
+	(*IndexedValueComparator)(nil),             // 55: loop.solana.IndexedValueComparator
+	(*EventBySubkey)(nil),                      // 56: loop.solana.EventBySubkey
+	(*Expression)(nil),                         // 57: loop.solana.Expression
+	(*BooleanExpression)(nil),                  // 58: loop.solana.BooleanExpression
+	(*Primitive)(nil),                          // 59: loop.solana.Primitive
+	(*HashedValueComparator)(nil),              // 60: loop.solana.HashedValueComparator
+	(*Subkeys)(nil),                            // 61: loop.solana.Subkeys
+	(*CPIFilterConfig)(nil),                    // 62: loop.solana.CPIFilterConfig
+	(*LPFilterQuery)(nil),                      // 63: loop.solana.LPFilterQuery
+	(*Log)(nil),                                // 64: loop.solana.Log
+	(*QueryTrackedLogsRequest)(nil),            // 65: loop.solana.QueryTrackedLogsRequest
+	(*QueryTrackedLogsReply)(nil),              // 66: loop.solana.QueryTrackedLogsReply
+	(*RegisterLogTrackingRequest)(nil),         // 67: loop.solana.RegisterLogTrackingRequest
+	(*RegisterLogTrackingReply)(nil),           // 68: loop.solana.RegisterLogTrackingReply
+	(*UnregisterLogTrackingRequest)(nil),       // 69: loop.solana.UnregisterLogTrackingRequest
+	(*UnregisterLogTrackingReply)(nil),         // 70: loop.solana.UnregisterLogTrackingReply
+	(*GetLatestLPBlockReply)(nil),              // 71: loop.solana.GetLatestLPBlockReply
+	(*GetFiltersNamesReply)(nil),               // 72: loop.solana.GetFiltersNamesReply
+	(*pb.BigInt)(nil),                          // 73: values.v1.BigInt
+	(chain_common.ComparisonOperator)(0),       // 74: loop.chain.common.ComparisonOperator
+	(chain_common.BooleanOperator)(0),          // 75: loop.chain.common.BooleanOperator
+	(*chain_common.Primitive)(nil),             // 76: loop.chain.common.Primitive
+	(*chain_common.LimitAndSort)(nil),          // 77: loop.chain.common.LimitAndSort
+	(*emptypb.Empty)(nil),                      // 78: google.protobuf.Empty
 }
 var file_solana_proto_depIdxs = []int32{
 	6,  // 0: loop.solana.Account.data:type_name -> loop.solana.DataBytesOrJSON
-	67, // 1: loop.solana.Account.rent_epoch:type_name -> values.v1.BigInt
+	73, // 1: loop.solana.Account.rent_epoch:type_name -> values.v1.BigInt
 	0,  // 2: loop.solana.DataBytesOrJSON.encoding:type_name -> loop.solana.EncodingType
 	0,  // 3: loop.solana.GetAccountInfoOpts.encoding:type_name -> loop.solana.EncodingType
 	1,  // 4: loop.solana.GetAccountInfoOpts.commitment:type_name -> loop.solana.CommitmentType
 	7,  // 5: loop.solana.GetAccountInfoOpts.data_slice:type_name -> loop.solana.DataSlice
-	41, // 6: loop.solana.GetAccountInfoWithOptsReply.rpc_context:type_name -> loop.solana.RPCContext
+	47, // 6: loop.solana.GetAccountInfoWithOptsReply.rpc_context:type_name -> loop.solana.RPCContext
 	4,  // 7: loop.solana.GetAccountInfoWithOptsReply.value:type_name -> loop.solana.Account
 	8,  // 8: loop.solana.GetAccountInfoWithOptsRequest.opts:type_name -> loop.solana.GetAccountInfoOpts
 	1,  // 9: loop.solana.GetBalanceRequest.commitment:type_name -> loop.solana.CommitmentType
@@ -4488,84 +4910,94 @@ var file_solana_proto_depIdxs = []int32{
 	1,  // 14: loop.solana.GetMultipleAccountsOpts.commitment:type_name -> loop.solana.CommitmentType
 	7,  // 15: loop.solana.GetMultipleAccountsOpts.data_slice:type_name -> loop.solana.DataSlice
 	4,  // 16: loop.solana.OptionalAccountWrapper.account:type_name -> loop.solana.Account
-	41, // 17: loop.solana.GetMultipleAccountsWithOptsReply.rpc_context:type_name -> loop.solana.RPCContext
+	47, // 17: loop.solana.GetMultipleAccountsWithOptsReply.rpc_context:type_name -> loop.solana.RPCContext
 	19, // 18: loop.solana.GetMultipleAccountsWithOptsReply.value:type_name -> loop.solana.OptionalAccountWrapper
 	18, // 19: loop.solana.GetMultipleAccountsWithOptsRequest.opts:type_name -> loop.solana.GetMultipleAccountsOpts
-	24, // 20: loop.solana.GetSignatureStatusesReply.results:type_name -> loop.solana.GetSignatureStatusesResult
-	2,  // 21: loop.solana.GetSignatureStatusesResult.confirmation_status:type_name -> loop.solana.ConfirmationStatusType
-	1,  // 22: loop.solana.GetSlotHeightRequest.commitment:type_name -> loop.solana.CommitmentType
-	27, // 23: loop.solana.ParsedMessage.header:type_name -> loop.solana.MessageHeader
-	34, // 24: loop.solana.ParsedMessage.instructions:type_name -> loop.solana.CompiledInstruction
-	28, // 25: loop.solana.ParsedTransaction.message:type_name -> loop.solana.ParsedMessage
-	30, // 26: loop.solana.TokenBalance.ui:type_name -> loop.solana.UiTokenAmount
-	34, // 27: loop.solana.InnerInstruction.instructions:type_name -> loop.solana.CompiledInstruction
-	0,  // 28: loop.solana.Data.encoding:type_name -> loop.solana.EncodingType
-	35, // 29: loop.solana.ReturnData.data:type_name -> loop.solana.Data
-	31, // 30: loop.solana.TransactionMeta.pre_token_balances:type_name -> loop.solana.TokenBalance
-	31, // 31: loop.solana.TransactionMeta.post_token_balances:type_name -> loop.solana.TokenBalance
-	32, // 32: loop.solana.TransactionMeta.inner_instructions:type_name -> loop.solana.InnerInstruction
-	33, // 33: loop.solana.TransactionMeta.loaded_addresses:type_name -> loop.solana.LoadedAddresses
-	36, // 34: loop.solana.TransactionMeta.return_data:type_name -> loop.solana.ReturnData
-	29, // 35: loop.solana.TransactionEnvelope.parsed:type_name -> loop.solana.ParsedTransaction
-	38, // 36: loop.solana.GetTransactionReply.transaction:type_name -> loop.solana.TransactionEnvelope
-	37, // 37: loop.solana.GetTransactionReply.meta:type_name -> loop.solana.TransactionMeta
-	1,  // 38: loop.solana.SimulateTXOpts.commitment:type_name -> loop.solana.CommitmentType
-	45, // 39: loop.solana.SimulateTXOpts.accounts:type_name -> loop.solana.SimulateTransactionAccountsOpts
-	4,  // 40: loop.solana.SimulateTXReply.accounts:type_name -> loop.solana.Account
-	42, // 41: loop.solana.SimulateTXRequest.opts:type_name -> loop.solana.SimulateTXOpts
-	0,  // 42: loop.solana.SimulateTransactionAccountsOpts.encoding:type_name -> loop.solana.EncodingType
-	3,  // 43: loop.solana.SubmitTransactionReply.status:type_name -> loop.solana.TxStatus
-	5,  // 44: loop.solana.SubmitTransactionRequest.cfg:type_name -> loop.solana.ComputeConfig
-	54, // 45: loop.solana.EventSig.hashed_value_comparers:type_name -> loop.solana.HashedValueComparator
-	68, // 46: loop.solana.IndexedValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
-	49, // 47: loop.solana.EventBySubkey.value_comparers:type_name -> loop.solana.IndexedValueComparator
-	53, // 48: loop.solana.Expression.primitive:type_name -> loop.solana.Primitive
-	52, // 49: loop.solana.Expression.boolean_expression:type_name -> loop.solana.BooleanExpression
-	69, // 50: loop.solana.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
-	51, // 51: loop.solana.BooleanExpression.expression:type_name -> loop.solana.Expression
-	70, // 52: loop.solana.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
-	50, // 53: loop.solana.Primitive.event_by_subkey:type_name -> loop.solana.EventBySubkey
-	55, // 54: loop.solana.LPFilterQuery.subkey_paths:type_name -> loop.solana.Subkeys
-	56, // 55: loop.solana.LPFilterQuery.cpi_filter_config:type_name -> loop.solana.CPIFilterConfig
-	51, // 56: loop.solana.QueryTrackedLogsRequest.filterQuery:type_name -> loop.solana.Expression
-	71, // 57: loop.solana.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
-	58, // 58: loop.solana.QueryTrackedLogsReply.logs:type_name -> loop.solana.Log
-	57, // 59: loop.solana.RegisterLogTrackingRequest.filter:type_name -> loop.solana.LPFilterQuery
-	10, // 60: loop.solana.Solana.GetAccountInfoWithOpts:input_type -> loop.solana.GetAccountInfoWithOptsRequest
-	12, // 61: loop.solana.Solana.GetBalance:input_type -> loop.solana.GetBalanceRequest
-	15, // 62: loop.solana.Solana.GetBlock:input_type -> loop.solana.GetBlockRequest
-	17, // 63: loop.solana.Solana.GetFeeForMessage:input_type -> loop.solana.GetFeeForMessageRequest
-	21, // 64: loop.solana.Solana.GetMultipleAccountsWithOpts:input_type -> loop.solana.GetMultipleAccountsWithOptsRequest
-	23, // 65: loop.solana.Solana.GetSignatureStatuses:input_type -> loop.solana.GetSignatureStatusesRequest
-	26, // 66: loop.solana.Solana.GetSlotHeight:input_type -> loop.solana.GetSlotHeightRequest
-	40, // 67: loop.solana.Solana.GetTransaction:input_type -> loop.solana.GetTransactionRequest
-	59, // 68: loop.solana.Solana.QueryTrackedLogs:input_type -> loop.solana.QueryTrackedLogsRequest
-	61, // 69: loop.solana.Solana.RegisterLogTracking:input_type -> loop.solana.RegisterLogTrackingRequest
-	44, // 70: loop.solana.Solana.SimulateTX:input_type -> loop.solana.SimulateTXRequest
-	47, // 71: loop.solana.Solana.SubmitTransaction:input_type -> loop.solana.SubmitTransactionRequest
-	63, // 72: loop.solana.Solana.UnregisterLogTracking:input_type -> loop.solana.UnregisterLogTrackingRequest
-	72, // 73: loop.solana.Solana.GetLatestLPBlock:input_type -> google.protobuf.Empty
-	72, // 74: loop.solana.Solana.GetFiltersNames:input_type -> google.protobuf.Empty
-	9,  // 75: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
-	11, // 76: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
-	14, // 77: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
-	16, // 78: loop.solana.Solana.GetFeeForMessage:output_type -> loop.solana.GetFeeForMessageReply
-	20, // 79: loop.solana.Solana.GetMultipleAccountsWithOpts:output_type -> loop.solana.GetMultipleAccountsWithOptsReply
-	22, // 80: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
-	25, // 81: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
-	39, // 82: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
-	60, // 83: loop.solana.Solana.QueryTrackedLogs:output_type -> loop.solana.QueryTrackedLogsReply
-	62, // 84: loop.solana.Solana.RegisterLogTracking:output_type -> loop.solana.RegisterLogTrackingReply
-	43, // 85: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
-	46, // 86: loop.solana.Solana.SubmitTransaction:output_type -> loop.solana.SubmitTransactionReply
-	64, // 87: loop.solana.Solana.UnregisterLogTracking:output_type -> loop.solana.UnregisterLogTrackingReply
-	65, // 88: loop.solana.Solana.GetLatestLPBlock:output_type -> loop.solana.GetLatestLPBlockReply
-	66, // 89: loop.solana.Solana.GetFiltersNames:output_type -> loop.solana.GetFiltersNamesReply
-	75, // [75:90] is the sub-list for method output_type
-	60, // [60:75] is the sub-list for method input_type
-	60, // [60:60] is the sub-list for extension type_name
-	60, // [60:60] is the sub-list for extension extendee
-	0,  // [0:60] is the sub-list for field type_name
+	22, // 20: loop.solana.RPCFilter.memcmp:type_name -> loop.solana.RPCFilterMemcmp
+	0,  // 21: loop.solana.GetProgramAccountsOpts.encoding:type_name -> loop.solana.EncodingType
+	1,  // 22: loop.solana.GetProgramAccountsOpts.commitment:type_name -> loop.solana.CommitmentType
+	7,  // 23: loop.solana.GetProgramAccountsOpts.data_slice:type_name -> loop.solana.DataSlice
+	23, // 24: loop.solana.GetProgramAccountsOpts.filters:type_name -> loop.solana.RPCFilter
+	4,  // 25: loop.solana.KeyedAccount.account:type_name -> loop.solana.Account
+	25, // 26: loop.solana.GetProgramAccountsReply.value:type_name -> loop.solana.KeyedAccount
+	24, // 27: loop.solana.GetProgramAccountsRequest.opts:type_name -> loop.solana.GetProgramAccountsOpts
+	30, // 28: loop.solana.GetSignatureStatusesReply.results:type_name -> loop.solana.GetSignatureStatusesResult
+	2,  // 29: loop.solana.GetSignatureStatusesResult.confirmation_status:type_name -> loop.solana.ConfirmationStatusType
+	1,  // 30: loop.solana.GetSlotHeightRequest.commitment:type_name -> loop.solana.CommitmentType
+	33, // 31: loop.solana.ParsedMessage.header:type_name -> loop.solana.MessageHeader
+	40, // 32: loop.solana.ParsedMessage.instructions:type_name -> loop.solana.CompiledInstruction
+	34, // 33: loop.solana.ParsedTransaction.message:type_name -> loop.solana.ParsedMessage
+	36, // 34: loop.solana.TokenBalance.ui:type_name -> loop.solana.UiTokenAmount
+	40, // 35: loop.solana.InnerInstruction.instructions:type_name -> loop.solana.CompiledInstruction
+	0,  // 36: loop.solana.Data.encoding:type_name -> loop.solana.EncodingType
+	41, // 37: loop.solana.ReturnData.data:type_name -> loop.solana.Data
+	37, // 38: loop.solana.TransactionMeta.pre_token_balances:type_name -> loop.solana.TokenBalance
+	37, // 39: loop.solana.TransactionMeta.post_token_balances:type_name -> loop.solana.TokenBalance
+	38, // 40: loop.solana.TransactionMeta.inner_instructions:type_name -> loop.solana.InnerInstruction
+	39, // 41: loop.solana.TransactionMeta.loaded_addresses:type_name -> loop.solana.LoadedAddresses
+	42, // 42: loop.solana.TransactionMeta.return_data:type_name -> loop.solana.ReturnData
+	35, // 43: loop.solana.TransactionEnvelope.parsed:type_name -> loop.solana.ParsedTransaction
+	44, // 44: loop.solana.GetTransactionReply.transaction:type_name -> loop.solana.TransactionEnvelope
+	43, // 45: loop.solana.GetTransactionReply.meta:type_name -> loop.solana.TransactionMeta
+	1,  // 46: loop.solana.SimulateTXOpts.commitment:type_name -> loop.solana.CommitmentType
+	51, // 47: loop.solana.SimulateTXOpts.accounts:type_name -> loop.solana.SimulateTransactionAccountsOpts
+	4,  // 48: loop.solana.SimulateTXReply.accounts:type_name -> loop.solana.Account
+	48, // 49: loop.solana.SimulateTXRequest.opts:type_name -> loop.solana.SimulateTXOpts
+	0,  // 50: loop.solana.SimulateTransactionAccountsOpts.encoding:type_name -> loop.solana.EncodingType
+	3,  // 51: loop.solana.SubmitTransactionReply.status:type_name -> loop.solana.TxStatus
+	5,  // 52: loop.solana.SubmitTransactionRequest.cfg:type_name -> loop.solana.ComputeConfig
+	60, // 53: loop.solana.EventSig.hashed_value_comparers:type_name -> loop.solana.HashedValueComparator
+	74, // 54: loop.solana.IndexedValueComparator.operator:type_name -> loop.chain.common.ComparisonOperator
+	55, // 55: loop.solana.EventBySubkey.value_comparers:type_name -> loop.solana.IndexedValueComparator
+	59, // 56: loop.solana.Expression.primitive:type_name -> loop.solana.Primitive
+	58, // 57: loop.solana.Expression.boolean_expression:type_name -> loop.solana.BooleanExpression
+	75, // 58: loop.solana.BooleanExpression.boolean_operator:type_name -> loop.chain.common.BooleanOperator
+	57, // 59: loop.solana.BooleanExpression.expression:type_name -> loop.solana.Expression
+	76, // 60: loop.solana.Primitive.general_primitive:type_name -> loop.chain.common.Primitive
+	56, // 61: loop.solana.Primitive.event_by_subkey:type_name -> loop.solana.EventBySubkey
+	61, // 62: loop.solana.LPFilterQuery.subkey_paths:type_name -> loop.solana.Subkeys
+	62, // 63: loop.solana.LPFilterQuery.cpi_filter_config:type_name -> loop.solana.CPIFilterConfig
+	57, // 64: loop.solana.QueryTrackedLogsRequest.filterQuery:type_name -> loop.solana.Expression
+	77, // 65: loop.solana.QueryTrackedLogsRequest.limit_and_sort:type_name -> loop.chain.common.LimitAndSort
+	64, // 66: loop.solana.QueryTrackedLogsReply.logs:type_name -> loop.solana.Log
+	63, // 67: loop.solana.RegisterLogTrackingRequest.filter:type_name -> loop.solana.LPFilterQuery
+	10, // 68: loop.solana.Solana.GetAccountInfoWithOpts:input_type -> loop.solana.GetAccountInfoWithOptsRequest
+	12, // 69: loop.solana.Solana.GetBalance:input_type -> loop.solana.GetBalanceRequest
+	15, // 70: loop.solana.Solana.GetBlock:input_type -> loop.solana.GetBlockRequest
+	17, // 71: loop.solana.Solana.GetFeeForMessage:input_type -> loop.solana.GetFeeForMessageRequest
+	21, // 72: loop.solana.Solana.GetMultipleAccountsWithOpts:input_type -> loop.solana.GetMultipleAccountsWithOptsRequest
+	27, // 73: loop.solana.Solana.GetProgramAccounts:input_type -> loop.solana.GetProgramAccountsRequest
+	29, // 74: loop.solana.Solana.GetSignatureStatuses:input_type -> loop.solana.GetSignatureStatusesRequest
+	32, // 75: loop.solana.Solana.GetSlotHeight:input_type -> loop.solana.GetSlotHeightRequest
+	46, // 76: loop.solana.Solana.GetTransaction:input_type -> loop.solana.GetTransactionRequest
+	65, // 77: loop.solana.Solana.QueryTrackedLogs:input_type -> loop.solana.QueryTrackedLogsRequest
+	67, // 78: loop.solana.Solana.RegisterLogTracking:input_type -> loop.solana.RegisterLogTrackingRequest
+	50, // 79: loop.solana.Solana.SimulateTX:input_type -> loop.solana.SimulateTXRequest
+	53, // 80: loop.solana.Solana.SubmitTransaction:input_type -> loop.solana.SubmitTransactionRequest
+	69, // 81: loop.solana.Solana.UnregisterLogTracking:input_type -> loop.solana.UnregisterLogTrackingRequest
+	78, // 82: loop.solana.Solana.GetLatestLPBlock:input_type -> google.protobuf.Empty
+	78, // 83: loop.solana.Solana.GetFiltersNames:input_type -> google.protobuf.Empty
+	9,  // 84: loop.solana.Solana.GetAccountInfoWithOpts:output_type -> loop.solana.GetAccountInfoWithOptsReply
+	11, // 85: loop.solana.Solana.GetBalance:output_type -> loop.solana.GetBalanceReply
+	14, // 86: loop.solana.Solana.GetBlock:output_type -> loop.solana.GetBlockReply
+	16, // 87: loop.solana.Solana.GetFeeForMessage:output_type -> loop.solana.GetFeeForMessageReply
+	20, // 88: loop.solana.Solana.GetMultipleAccountsWithOpts:output_type -> loop.solana.GetMultipleAccountsWithOptsReply
+	26, // 89: loop.solana.Solana.GetProgramAccounts:output_type -> loop.solana.GetProgramAccountsReply
+	28, // 90: loop.solana.Solana.GetSignatureStatuses:output_type -> loop.solana.GetSignatureStatusesReply
+	31, // 91: loop.solana.Solana.GetSlotHeight:output_type -> loop.solana.GetSlotHeightReply
+	45, // 92: loop.solana.Solana.GetTransaction:output_type -> loop.solana.GetTransactionReply
+	66, // 93: loop.solana.Solana.QueryTrackedLogs:output_type -> loop.solana.QueryTrackedLogsReply
+	68, // 94: loop.solana.Solana.RegisterLogTracking:output_type -> loop.solana.RegisterLogTrackingReply
+	49, // 95: loop.solana.Solana.SimulateTX:output_type -> loop.solana.SimulateTXReply
+	52, // 96: loop.solana.Solana.SubmitTransaction:output_type -> loop.solana.SubmitTransactionReply
+	70, // 97: loop.solana.Solana.UnregisterLogTracking:output_type -> loop.solana.UnregisterLogTrackingReply
+	71, // 98: loop.solana.Solana.GetLatestLPBlock:output_type -> loop.solana.GetLatestLPBlockReply
+	72, // 99: loop.solana.Solana.GetFiltersNames:output_type -> loop.solana.GetFiltersNamesReply
+	84, // [84:100] is the sub-list for method output_type
+	68, // [68:84] is the sub-list for method input_type
+	68, // [68:68] is the sub-list for extension type_name
+	68, // [68:68] is the sub-list for extension extendee
+	0,  // [0:68] is the sub-list for field type_name
 }
 
 func init() { file_solana_proto_init() }
@@ -4580,32 +5012,32 @@ func file_solana_proto_init() {
 	file_solana_proto_msgTypes[5].OneofWrappers = []any{}
 	file_solana_proto_msgTypes[10].OneofWrappers = []any{}
 	file_solana_proto_msgTypes[15].OneofWrappers = []any{}
-	file_solana_proto_msgTypes[20].OneofWrappers = []any{}
-	file_solana_proto_msgTypes[27].OneofWrappers = []any{}
+	file_solana_proto_msgTypes[26].OneofWrappers = []any{}
 	file_solana_proto_msgTypes[33].OneofWrappers = []any{}
-	file_solana_proto_msgTypes[34].OneofWrappers = []any{
+	file_solana_proto_msgTypes[39].OneofWrappers = []any{}
+	file_solana_proto_msgTypes[40].OneofWrappers = []any{
 		(*TransactionEnvelope_Raw)(nil),
 		(*TransactionEnvelope_Parsed)(nil),
 	}
-	file_solana_proto_msgTypes[35].OneofWrappers = []any{}
-	file_solana_proto_msgTypes[47].OneofWrappers = []any{
+	file_solana_proto_msgTypes[41].OneofWrappers = []any{}
+	file_solana_proto_msgTypes[53].OneofWrappers = []any{
 		(*Expression_Primitive)(nil),
 		(*Expression_BooleanExpression)(nil),
 	}
-	file_solana_proto_msgTypes[49].OneofWrappers = []any{
+	file_solana_proto_msgTypes[55].OneofWrappers = []any{
 		(*Primitive_GeneralPrimitive)(nil),
 		(*Primitive_Address)(nil),
 		(*Primitive_EventSig)(nil),
 		(*Primitive_EventBySubkey)(nil),
 	}
-	file_solana_proto_msgTypes[53].OneofWrappers = []any{}
+	file_solana_proto_msgTypes[59].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_solana_proto_rawDesc), len(file_solana_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   63,
+			NumMessages:   69,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

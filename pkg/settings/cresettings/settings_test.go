@@ -139,6 +139,9 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.False(t, cfg.VaultGetSecretsShareAggregationIncludesPublicKeys.DefaultValue)
 	assert.False(t, cfg.VaultOwnerAddressCanonicalizationEnabled.DefaultValue)
 	assert.False(t, cfg.VaultJSONOmitUnpopulatedEnabled.DefaultValue)
+	assert.False(t, cfg.VaultGetSecretsRelaxedConsensusEnabled.DefaultValue)
+	assert.False(t, cfg.VaultIncludeInvalidPendingItemsEnabled.DefaultValue)
+	assert.Equal(t, 0, cfg.VaultPendingQueueStallThreshold.DefaultValue)
 	assert.False(t, cfg.VaultSignedResponseRequestIDEnabled.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(20), Burst: 7}, cfg.GatewayConfidentialRelayGlobalRate.DefaultValue)
 	assert.Equal(t, config.Rate{Limit: rate.Limit(4), Burst: 2}, cfg.GatewayConfidentialRelayPerNodeRate.DefaultValue)
@@ -255,13 +258,37 @@ func TestFeatureHTTPTriggerNewExecutionIDsActivePeriodKeyInit(t *testing.T) {
 	}, s.DefaultValue)
 }
 
+func TestFeatureRequestHashIncludeWorkflowTagActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
+}
+
+func TestFeatureWorkflowTagBackfillActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureWorkflowTagBackfillActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureWorkflowTagBackfillActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
+}
+
 func TestGatewayProxyDonIDKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
 
 	assert.Equal(t, "PerWorkflow.HTTPAction.GatewayProxyDonID", s.GetKey())
 	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
 	assert.NotNil(t, s.Parse)
-	assert.Equal(t, "", s.DefaultValue)
+	assert.Empty(t, s.DefaultValue)
 
 	got, err := s.Parse("don-123")
 	require.NoError(t, err)
@@ -274,7 +301,7 @@ func TestGatewayProxyDonIDGetOrDefault(t *testing.T) {
 
 	got, err := setting.GetOrDefault(ctx, nil)
 	require.NoError(t, err)
-	assert.Equal(t, "", got)
+	assert.Empty(t, got)
 
 	t.Cleanup(reinit)
 	t.Setenv(EnvNameSettings, `{

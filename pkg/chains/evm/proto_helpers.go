@@ -758,7 +758,9 @@ func ConvertSubmitTransactionRequestFromProto(txRequest *SubmitTransactionReques
 	if txRequest == nil {
 		return evmtypes.SubmitTransactionRequest{}, errors.New("tx request can't be nil")
 	}
-
+	if len(txRequest.To) != evmtypes.AddressLength {
+		return evmtypes.SubmitTransactionRequest{}, fmt.Errorf("invalid address length: must be %d but got %d", evmtypes.AddressLength, len(txRequest.To))
+	}
 	return evmtypes.SubmitTransactionRequest{
 		To:        evmtypes.Address(txRequest.To),
 		Data:      txRequest.Data,

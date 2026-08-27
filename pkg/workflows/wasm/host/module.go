@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v48"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -38,6 +38,14 @@ import (
 )
 
 const v2ImportPrefix = "version_v2"
+
+// memoryExportName is the export name the host memory accessors resolve the
+// guest's linear memory by.
+const memoryExportName = "memory"
+
+// callCapabilityV2ParamCount is the number of params the V2 call_capability
+// import declares (req, reqLen, responseBuffer, maxResponseLen).
+const callCapabilityV2ParamCount = 4
 
 var (
 	defaultTickInterval              = 100 * time.Millisecond
@@ -86,6 +94,10 @@ type ModuleConfig struct {
 	MaxDecompressedBinaryLimiter limits.BoundLimiter[config.Size] // supersedes MaxDecompressedBinarySize if set
 	MaxResponseSizeBytes         uint64
 	MaxResponseSizeLimiter       limits.BoundLimiter[config.Size] // supersedes MaxResponseSizeBytes if set
+
+	// MaxSubscriptionsLimiter bounds nsubscriptions in the WASI poll_oneoff host
+	// call. Defaults to cresettings.Default.WASMPollOneoffSubscriptionLimit.
+	MaxSubscriptionsLimiter limits.BoundLimiter[int]
 
 	MaxLogLenBytes      uint32
 	MaxLogCountDONMode  uint32
@@ -140,15 +152,28 @@ type module struct {
 
 	cfg *ModuleConfig
 
+	metrics moduleMetrics
+
 	wg     sync.WaitGroup
 	stopCh chan struct{}
 
 	v2ImportName string
+
+	// callCapParams records the number of parameters the guest's
+	// call_capability import declares. 2 = legacy V1 (no response buffer),
+	// 4 = V2 (with response buffer). 0 = not imported (e.g. legacy DAG).
+	callCapParams int
+
+	// linkV2 wires the host functions the v2/NoDAG guest imports. It defaults
+	// to linkNoDAG; tests may override it to substitute a host function
+	// implementation (e.g. one that panics) without going through a real
+	// compiled wasm binary.
+	linkV2 linkFn[*sdkpb.ExecutionResult]
 }
 
 var _ ModuleV1 = (*module)(nil)
 
-type linkFn[T any] func(m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
+type linkFn[T any] func(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
 
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
@@ -334,6 +359,13 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
 		}
 	}
+	if modCfg.MaxSubscriptionsLimiter == nil {
+		var err error
+		modCfg.MaxSubscriptionsLimiter, err = limits.MakeUpperBoundLimiter(lf, cresettings.Default.WASMPollOneoffSubscriptionLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make poll_oneoff subscription limiter: %w", err)
+		}
+	}
 
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
@@ -367,10 +399,15 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		return nil, fmt.Errorf("failed to check decompressed binary size limit: %w", err)
 	}
 
-	return newModule(modCfg, binary)
+	metrics, err := newModuleMetrics()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create module metrics: %w", err)
+	}
+
+	return newModule(modCfg, binary, metrics)
 }
 
-func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
+func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
 	if modCfg.InitialFuel > 0 {
@@ -389,28 +426,46 @@ func newModule(modCfg *ModuleConfig, binary []byte) (*module, error) {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
+	// Every host callback reaches the guest through its exported linear memory,
+	// so a module that doesn't export one under the expected name can't be run
+	// at all. Reject it here rather than letting the first callback dereference
+	// a missing or wrong-typed export.
+	if err = requireMemoryExport(mod); err != nil {
+		return nil, err
+	}
+
 	v2ImportName := ""
+	callCapParams := 0
 	for _, modImport := range mod.Imports() {
 		name := modImport.Name()
-		if modImport.Module() == "env" && name != nil && strings.HasPrefix(*name, v2ImportPrefix) {
-			v2ImportName = *name
-			break
+		if modImport.Module() == "env" && name != nil {
+			if strings.HasPrefix(*name, v2ImportPrefix) {
+				v2ImportName = *name
+			}
+			if *name == "call_capability" {
+				if ft := modImport.Type().FuncType(); ft != nil {
+					callCapParams = len(ft.Params())
+				}
+			}
 		}
 	}
 
 	modCfg.SdkLabeler(v2ImportName)
 
 	return &module{
-		engine:       engine,
-		module:       mod,
-		wconfig:      cfg,
-		cfg:          modCfg,
-		stopCh:       make(chan struct{}),
-		v2ImportName: v2ImportName,
+		engine:        engine,
+		module:        mod,
+		wconfig:       cfg,
+		cfg:           modCfg,
+		metrics:       metrics,
+		stopCh:        make(chan struct{}),
+		v2ImportName:  v2ImportName,
+		callCapParams: callCapParams,
+		linkV2:        linkNoDAG,
 	}, nil
 }
 
-func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
+func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
 	linker, err := newWasiLinker(exec, m.engine)
 	if err != nil {
 		return nil, err
@@ -437,7 +492,7 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 	if err = linker.FuncWrap(
 		"env",
 		"call_capability",
-		createCallCapFn(logger, exec),
+		createCallCapFn(logger, exec, m.callCapParams),
 	); err != nil {
 		return nil, fmt.Errorf("error wrapping callcap func: %w", err)
 	}
@@ -506,8 +561,8 @@ func linkNoDAG(m *module, store *wasmtime.Store, exec *execution[*sdkpb.Executio
 	return linker.Instantiate(store, m.module)
 }
 
-func linkLegacyDAG(m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newDagWasiLinker(m.cfg, m.engine)
+func linkLegacyDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
+	linker, err := newDagWasiLinker(ctx, m.cfg, m.engine)
 	if err != nil {
 		return nil, err
 	}
@@ -602,7 +657,7 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	case *sdkpb.ExecuteRequest_PreHook:
 		timeout = *m.cfg.PrehookTimeout
 	}
-	return runWasm(ctx, m, req, setMaxResponseSize, linkNoDAG, executor, timeout)
+	return runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
 }
 
 // Run is deprecated, use execute instead
@@ -631,6 +686,28 @@ func (m *module) Run(ctx context.Context, request *wasmdagpb.Request) (*wasmdagp
 	return runWasm(ctx, m, request, setMaxResponseSize, linkLegacyDAG, nil, *m.cfg.Timeout)
 }
 
+// callStart looks up and invokes the wasm module's _start function, but
+// recovers any panic. It's sufficient to just recover here, wasmtime-go
+// recovers panics that originated from guest calls to the host, and
+// re-panics them in Go.
+// See https://pkg.go.dev/github.com/bytecodealliance/wasmtime-go/v47#Func.Call.
+func callStart(m *module, instance *wasmtime.Instance, store *wasmtime.Store) (result any, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			m.cfg.Logger.Errorw("panic during wasm execution", "panic", r)
+			m.metrics.IncHostFnPanicRecovered()
+			err = fmt.Errorf("panic during wasm execution: %v", r)
+		}
+	}()
+
+	start := instance.GetFunc(store, "_start")
+	if start == nil {
+		return nil, errors.New("could not get start function")
+	}
+
+	return start.Call(store)
+}
+
 func runWasm[I, O proto.Message](
 	ctx context.Context,
 	m *module,
@@ -638,7 +715,8 @@ func runWasm[I, O proto.Message](
 	setMaxResponseSize func(i I, maxSize uint64),
 	linkWasm linkFn[O],
 	helper ExecutionHelper,
-	maxTimeout time.Duration) (O, error) {
+	maxTimeout time.Duration,
+) (O, error) {
 	var o O
 
 	// No reason to run the WASM longer if the outer ctx will cancel.
@@ -726,18 +804,13 @@ func runWasm[I, O proto.Message](
 		nodeSeed:            int64(rand.Uint64()),
 	}
 
-	instance, err := linkWasm(m, store, exec)
+	instance, err := linkWasm(ctxWithTimeout, m, store, exec)
 	if err != nil {
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
 
-	start := instance.GetFunc(store, "_start")
-	if start == nil {
-		return o, errors.New("could not get start function")
-	}
-
 	startTime := time.Now()
-	_, err = start.Call(store)
+	_, err = callStart(m, instance, store)
 	executionDuration := time.Since(startTime)
 
 	// The error codes below are only returned by the v1 legacy DAG workflow.
@@ -786,7 +859,8 @@ func containsCode(err error, code int) bool {
 func createSendResponseFn[T proto.Message](
 	logger logger.Logger,
 	exec *execution[T],
-	newT func() T) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	newT func() T,
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
@@ -1042,6 +1116,8 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 	}
 }
 
+var logRawMessageReg = regexp.MustCompile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
+
 // logRawMessage decodes a JSON-encoded log message received from the WASM guest and
 // logs it at the appropriate level.
 func logRawMessage(logger logger.Logger, b []byte) error {
@@ -1066,8 +1142,7 @@ func logRawMessage(logger logger.Logger, b []byte) error {
 		args = append(args, k, v)
 	}
 
-	reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
-	sanitizedMsg := reg.ReplaceAllString(msg, "*")
+	sanitizedMsg := logRawMessageReg.ReplaceAllString(msg, "*")
 
 	switch level {
 	case "debug":
@@ -1153,7 +1228,25 @@ type unsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
 
 // wasmMemoryAccessor is the default implementation for unsafely accessing the memory of the WASM module.
 func wasmMemoryAccessor(caller *wasmtime.Caller) []byte {
-	return caller.GetExport("memory").Memory().UnsafeData(caller)
+	return caller.GetExport(memoryExportName).Memory().UnsafeData(caller)
+}
+
+// requireMemoryExport verifies that the module exports linear memory under the
+// name the host memory accessors look it up by.
+func requireMemoryExport(mod *wasmtime.Module) error {
+	for _, export := range mod.Exports() {
+		if export.Name() != memoryExportName {
+			continue
+		}
+
+		if export.Type().MemoryType() == nil {
+			return fmt.Errorf("module export %q is not a memory", memoryExportName)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("module does not export %q", memoryExportName)
 }
 
 // wasmRead returns a copy of the wasm module memory at the given pointer and size.
@@ -1236,34 +1329,76 @@ func write(memory, src []byte, ptr, maxSize int32) int64 {
 	return int64(copy(buffer, src))
 }
 
-func createCallCapFn(
+// callCapability is the core host function for call_capability. It reads a
+// CapabilityRequest from the request buffer, dispatches it asynchronously via
+// callCapAsync, and writes any synchronous error string to the response buffer.
+// The return value protocol: >= 0 is success (the async response comes later
+// via await_capabilities), < 0 means the error string is in
+// responseBuffer[:-returnValue].
+func callCapability(
+	caller *wasmtime.Caller,
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
-	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
-		b, innerErr := wasmRead(caller, ptr, ptrlen)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
-			logger.Error(errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		req := &sdkpb.CapabilityRequest{}
-		innerErr = proto.Unmarshal(b, req)
-		if innerErr != nil {
-			errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
-			logger.Errorf("%s", errStr)
-			return truncateWasmWrite(caller, []byte(errStr), ptr, ptrlen)
-		}
-
-		if err := exec.callCapAsync(exec.ctx, req); err != nil {
-			errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
-			logger.Error(errStr)
-			// TODO (CAPPL-846): write error to the response buffer, not the request buffer
-			return -1
-		}
-
-		return 0
+	exec *execution[*sdkpb.ExecutionResult],
+	ptr, ptrlen, responseBuffer, maxResponseLen int32,
+) int64 {
+	b, innerErr := wasmRead(caller, ptr, ptrlen)
+	if innerErr != nil {
+		errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
+		logger.Error(errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
 	}
+
+	req := &sdkpb.CapabilityRequest{}
+	innerErr = proto.Unmarshal(b, req)
+	if innerErr != nil {
+		errStr := fmt.Sprintf("error calling proto unmarshal: %s", innerErr)
+		logger.Errorf("%s", errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	if err := exec.callCapAsync(exec.ctx, req); err != nil {
+		errStr := fmt.Sprintf("error calling callCapAsync: %s", err)
+		logger.Error(errStr)
+		return truncateWasmWrite(caller, []byte(errStr), responseBuffer, maxResponseLen)
+	}
+
+	return 0
+}
+
+// createCallCapFnV1 is the legacy 2-param host function for call_capability.
+// It passes the request buffer as the response buffer, matching the existing
+// behavior where error strings are written to the request buffer. This
+// function exists for backward compatibility with WASM modules compiled
+// against older SDKs that declare a 2-param call_capability import.
+func createCallCapFnV1(
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int64 {
+		return callCapability(caller, logger, exec, ptr, ptrlen, ptr, ptrlen)
+	}
+}
+
+// createCallCapFnV2 is the new 4-param host function for call_capability.
+// It accepts a dedicated response buffer and writes error strings to it
+// instead of the request buffer.
+func createCallCapFnV2(
+	logger logger.Logger,
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
+	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32, responseBuffer int32, maxResponseLen int32) int64 {
+		return callCapability(caller, logger, exec, ptr, ptrlen, responseBuffer, maxResponseLen)
+	}
+}
+
+// createCallCapFn selects the appropriate call_capability host function
+// based on the param count the guest module's import declares. 4 params = V2
+// (with response buffer), anything else = V1 (legacy, backward compatible).
+func createCallCapFn(logger logger.Logger, exec *execution[*sdkpb.ExecutionResult], callCapParams int) any {
+	if callCapParams == callCapabilityV2ParamCount {
+		return createCallCapFnV2(logger, exec)
+	}
+	return createCallCapFnV1(logger, exec)
 }
 
 func createAwaitCapsFn(
@@ -1313,7 +1448,8 @@ func createAwaitCapsFn(
 
 func createGetSecretsFn(
 	logger logger.Logger,
-	exec *execution[*sdkpb.ExecutionResult]) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+	exec *execution[*sdkpb.ExecutionResult],
+) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 		b, innerErr := wasmRead(caller, req, requestLen)
 		if innerErr != nil {

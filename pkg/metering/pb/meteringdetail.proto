@@ -12,4 +12,5 @@ message MeteringReportNodeDetail {
   string peer_2_peer_id = 1;
   string spend_unit = 2;
   string spend_value = 3;
+  string spend_value_in_gas_units = 4; // native fixed-point integer (wei, lamports, etc.). Empty = legacy, fall back to spend_value + Shift(18).
 }

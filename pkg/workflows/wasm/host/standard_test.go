@@ -569,7 +569,7 @@ func TestStandardTeeRuntime(t *testing.T) {
 	t.Parallel()
 
 	cfg := defaultNoDAGModCfg(t)
-	m := makeOptionalTestModuleWithConfig(t, cfg)
+	m := makeTestModuleWithConfig(t, cfg)
 	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
 	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
 	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
@@ -634,7 +634,7 @@ func TestStandardRestrictions(t *testing.T) {
 	// subscribe so pre-hooks are known.
 	// subscriptions are always done before the first trigger
 	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
-	underlying := makeOptionalTestModuleWithConfig(t, nil)
+	underlying := makeTestModuleWithConfig(t, nil)
 	m := host.NewRequirementSelectingModule(host.ModuleAndHandler{Module: underlying}, []host.ModuleAndHandler{})
 	_, err := m.Execute(t.Context(), subscribe, mockExecutionHelper)
 	require.NoError(t, err)
@@ -685,12 +685,19 @@ func makeTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	return makeTestModuleByName(t, testPath, testName, cfg, true)
 }
 
+// nolint:unused // This function makes it easy to add tests that will become required later, but are optional now.
 func makeOptionalTestModuleWithConfig(t *testing.T, cfg *ModuleConfig) *module {
 	testName := strcase.ToSnake(t.Name()[len("TestStandard"):])
 	return makeTestModuleByName(t, testPath, testName, cfg, false)
 }
 
 func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) *module {
+	mod, err := buildTestModuleByName(t, testPath, testName, cfg, required)
+	require.NoError(t, err)
+	return mod
+}
+
+func buildTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleConfig, required bool) (*module, error) {
 	wasmName := path.Join(testName, "test.wasm")
 	absPath, err := filepath.Abs(testPath)
 	require.NoError(t, err, "Failed to get absolute path for test directory")
@@ -716,9 +723,7 @@ func makeTestModuleByName(t *testing.T, testPath, testName string, cfg *ModuleCo
 	if cfg == nil {
 		cfg = defaultNoDAGModCfg(t)
 	}
-	mod, err := NewModule(t.Context(), cfg, binary)
-	require.NoError(t, err)
-	return mod
+	return NewModule(t.Context(), cfg, binary)
 }
 
 func setupNodeCallAndConsensusCall(t *testing.T, output int32) func(_ context.Context, request *sdk.CapabilityRequest) (*sdk.CapabilityResponse, error) {

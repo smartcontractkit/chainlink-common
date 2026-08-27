@@ -74,7 +74,7 @@ func TestString(t *testing.T) {
 
 	got, err = s.Parse("")
 	require.NoError(t, err)
-	assert.Equal(t, "", got)
+	assert.Empty(t, got)
 
 	got, err = s.GetOrDefault(t.Context(), nil)
 	require.NoError(t, err)

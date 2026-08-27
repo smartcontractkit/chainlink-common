@@ -49,6 +49,9 @@ flowchart
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
+        VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
+        VaultIncludeInvalidPendingItemsEnabled[/VaultIncludeInvalidPendingItemsEnabled\]:::gate
+        VaultPendingQueueStallThreshold{{VaultPendingQueueStallThreshold}}:::bound
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
         VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
         PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate
@@ -79,6 +82,7 @@ flowchart
 
     subgraph host.NewModule
         PerWorkflow.WASMCompressedBinarySizeLimit{{PerWorkflow.WASMCompressedBinarySizeLimit}}:::bound
+        WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
     end
     
     subgraph Engine.init
@@ -169,6 +173,8 @@ flowchart
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
         PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod\]:::gate
+        PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod[/PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod\]:::gate
+        PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
@@ -215,6 +221,10 @@ flowchart
             PerWorkflow.ChainRead.CallLimit{{CallLimit}}:::bound
             PerWorkflow.ChainRead.LogQueryBlockLimit{{LogQueryBlockLimit}}:::bound
             PerWorkflow.ChainRead.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            subgraph SolanaRead
+                PerWorkflow.ChainRead.Solana.BatchItemLimit{{BatchItemLimit}}:::bound
+                PerWorkflow.ChainRead.Solana.PayloadSizeLimit{{PayloadSizeLimit}}:::bound
+            end
         end
         subgraph PerWorkflow.Consensus
             PerWorkflow.Consensus.ObservationSizeLimit{{ObservationSizeLimit}}:::bound
@@ -301,12 +311,22 @@ flowchart
         end
     end
 
+    subgraph HandleGatewayMessage[EnclaveRelayHandler.HandleGatewayMessage]
+%%      enclave → gateway → relay DON node. The server side of the exchange the
+%%      executor's ConfidentialCompute.EnclaveRequestTimeout bounds, so it is a
+%%      separate entry point rather than part of the executor subgraph above.
+        ConfidentialCompute.ConfidentialRelayHandlerTimeout>ConfidentialCompute.ConfidentialRelayHandlerTimeout]:::time
+    end
+
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution
     Engine.startExecution-->ExecutionHelper.CallCapability-->actions
     Engine.startExecution-->PerWorkflow.SecretsConcurrencyLimit-->vault
 
 %%  DON nodes → gateway is a separate entry point, not connected to the trigger/execution chain above
     HandleNodeMessage
+
+%%  enclave → gateway → relay DON node is likewise its own entry point
+    HandleGatewayMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

@@ -56,6 +56,7 @@ var Default = Schema{
 	WorkflowExecutionConcurrencyLimit:           Int(1000),
 	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:               Bool(true),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
@@ -65,13 +66,19 @@ var Default = Schema{
 	PropagateOrgIDInRequestMetadata:                   Bool(false),
 	VaultBase64EncodingEnabled:                        Bool(false),
 	VaultForceEmptyOCRRounds:                          Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultOptimizationsEnabled:                         Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
 	VaultPendingQueueStallThreshold:                   Int(0),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
@@ -350,6 +357,7 @@ type Schema struct {
 	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
 	GatewayVaultManagementEnabled               Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled                         Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
@@ -363,13 +371,19 @@ type Schema struct {
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]
 	VaultForceEmptyOCRRounds                          Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultOptimizationsEnabled                         Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
 	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]

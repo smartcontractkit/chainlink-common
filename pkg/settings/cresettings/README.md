@@ -40,18 +40,25 @@ flowchart
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
         TenantID[(TenantID)]:::setting
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultIncludeInvalidPendingItemsEnabled[/VaultIncludeInvalidPendingItemsEnabled\]:::gate
         VaultPendingQueueStallThreshold{{VaultPendingQueueStallThreshold}}:::bound
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
         VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
         PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate

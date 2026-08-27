@@ -1837,10 +1837,10 @@ func (x *FilterLogsReply) GetLogs() []*Log {
 type BalanceAtRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Account []byte                 `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"` // in evm address [20]byte fix-sized array format
-	//   - nil or -2: latest block
-	//   - -3: finalized block
-	//   - -4: safe block
-	//   - positive value: specific block at that height
+	// - nil or -2: latest block
+	// - -3: finalized block
+	// - -4: safe block
+	// - positive value: specific block at that height
 	BlockNumber *pb.BigInt `protobuf:"bytes,2,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`
 	// opts.confidence - determines if additional verification is required (only applicable for positive blockNumber values):
 	//   - "Unconfirmed" or empty string: no additional verification

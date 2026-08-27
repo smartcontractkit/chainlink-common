@@ -642,6 +642,7 @@ type CapabilityConfig struct {
 	// Map key is an OCR instance name:
 	//   - "__default__" for single-instance capabilities
 	//   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
+	//
 	// When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
 	Ocr3Configs map[string]*OCR3Config `protobuf:"bytes,9,rep,name=ocr3_configs,json=ocr3Configs,proto3" json:"ocr3_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Oracle factory configs for OCR-based capabilities (moved from job specs).

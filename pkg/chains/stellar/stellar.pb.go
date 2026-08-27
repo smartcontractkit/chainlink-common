@@ -137,10 +137,11 @@ type SimulateTransactionRequest struct {
 	// Optional Stellar RPC simulation auth mode.
 	//
 	// Valid values should map to the underlying RPC protocol values:
-	//   ""                    = service default, recommended to default to "record"
-	//   "record"              = record required auth entries
-	//   "enforce"             = enforce existing auth entries
-	//   "record_allow_nonroot" = record non-root auth entries where supported
+	//
+	//	""                    = service default, recommended to default to "record"
+	//	"record"              = record required auth entries
+	//	"enforce"             = enforce existing auth entries
+	//	"record_allow_nonroot" = record non-root auth entries where supported
 	AuthMode string `protobuf:"bytes,5,opt,name=auth_mode,json=authMode,proto3" json:"auth_mode,omitempty"`
 	// Optional simulation resource configuration.
 	ResourceConfig *SimulateResourceConfig `protobuf:"bytes,6,opt,name=resource_config,json=resourceConfig,proto3" json:"resource_config,omitempty"`

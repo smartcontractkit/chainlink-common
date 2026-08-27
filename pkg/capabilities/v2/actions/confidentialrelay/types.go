@@ -55,7 +55,7 @@ type SecretsRequestParams struct {
 	Owner            string             `json:"owner"`            // Ethereum address (hex, 0x-prefixed)
 	ExecutionID      string             `json:"execution_id"`     // 32 bytes, hex-encoded
 	OrgID            string             `json:"org_id,omitempty"` // Organization identifier for org-based secret ownership
-	CallbackID       int                `json:"callback_id"`
+	CallbackID       int                `json:"callback_id,omitempty"`
 	Secrets          []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey string             `json:"enclave_public_key"`
 	// EnclaveConfig is the enclave's current config, included so the relay can

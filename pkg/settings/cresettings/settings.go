@@ -278,6 +278,10 @@ var Default = Schema{
 				ReportSizeLimit: Size(5 * config.KByte),
 				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
+			Stellar: stellarChainWrite{
+				ReportSizeLimit: Size(5 * config.KByte),
+				MaxResourceFee: PerChainSelector(Uint64(1_000_000), map[string]uint64{}),
+			},
 		},
 		ChainRead: chainRead{
 			CallLimit:          Int(15),
@@ -530,9 +534,10 @@ type chainWrite struct {
 	TargetsLimit    Setting[int]         `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size] // Deprecated
 
-	EVM    evmChainWrite
-	Solana solanaChainWrite
-	Aptos  aptosChainWrite
+	EVM     evmChainWrite
+	Solana  solanaChainWrite
+	Aptos   aptosChainWrite
+	Stellar stellarChainWrite
 }
 type solanaChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
@@ -541,6 +546,10 @@ type solanaChainWrite struct {
 type aptosChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
 	GasLimit        SettingMap[uint64] `unit:"{gas}"`
+}
+type stellarChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	MaxResourceFee SettingMap[uint64] `unit:"{stroop}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated

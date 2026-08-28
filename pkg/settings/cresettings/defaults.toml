@@ -182,6 +182,14 @@ Default = '2000000'
 
 [PerWorkflow.ChainWrite.Aptos.GasLimit.Values]
 
+[PerWorkflow.ChainWrite.Stellar]
+ReportSizeLimit = '5kb'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee]
+Default = '1000000'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee.Values]
+
 [PerWorkflow.ChainRead]
 CallLimit = '15'
 LogQueryBlockLimit = '100'

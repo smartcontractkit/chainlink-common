@@ -396,7 +396,7 @@ func writeSecretsRequestParams(h hash.Hash, params SecretsRequestParams) {
 	writeString(h, params.OrgID)
 
 	if params.CallbackID != 0 {
-		writeInt(h, params.CallbackID)
+		writeInt32(h, params.CallbackID)
 	}
 
 	secrets := append([]SecretIdentifier(nil), params.Secrets...)
@@ -462,8 +462,8 @@ func writeString(h hash.Hash, s string) {
 	writeBytes(h, []byte(s))
 }
 
-func writeInt(h hash.Hash, i int) {
-	writeBytes(h, []byte(strconv.Itoa(i)))
+func writeInt32(h hash.Hash, i int32) {
+	writeBytes(h, []byte(strconv.FormatInt(int64(i), 10)))
 }
 
 func writeBytes(h hash.Hash, b []byte) {

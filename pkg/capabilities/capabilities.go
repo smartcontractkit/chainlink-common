@@ -652,13 +652,7 @@ type RemoteTriggerConfig struct {
 	BatchCollectionPeriod   time.Duration
 }
 
-type RemoteTargetConfig struct { // deprecated - v1 only
-	RequestHashExcludedAttributes []string
-}
-
 type RemoteExecutableConfig struct {
-	RequestHashExcludedAttributes []string // deprecated - v1 only
-
 	// Fields below are used only by v2 capabilities
 	TransmissionSchedule      TransmissionSchedule
 	DeltaStage                time.Duration
@@ -736,17 +730,6 @@ type CapabilityMethodConfig struct {
 }
 
 type CapabilityConfiguration struct {
-	DefaultConfig *values.Map
-	// RestrictedKeys is a list of keys that can't be provided by users in their
-	// configuration; we'll remove these fields before passing them to the capability.
-	RestrictedKeys []string
-	// RestrictedConfig is configuration that can only be set by us; this
-	// takes precedence over any user-provided config.
-	RestrictedConfig       *values.Map
-	RemoteTriggerConfig    *RemoteTriggerConfig
-	RemoteTargetConfig     *RemoteTargetConfig
-	RemoteExecutableConfig *RemoteExecutableConfig
-
 	// v2 / "NoDAG" capabilities - config for Don2Don framework.
 	CapabilityMethodConfig map[string]CapabilityMethodConfig
 	// if true, the capability won't be callable via don2don

@@ -146,26 +146,6 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
-	mc, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
-	if err != nil {
-		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
-	}
-
-	var remoteTriggerConfig *capabilities.RemoteTriggerConfig
-	var remoteTargetConfig *capabilities.RemoteTargetConfig
-	var remoteExecutableConfig *capabilities.RemoteExecutableConfig
-
-	switch res.CapabilityConfig.RemoteConfig.(type) {
-	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
-		remoteTriggerConfig = decodeRemoteTriggerConfig(res.CapabilityConfig.GetRemoteTriggerConfig())
-	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
-		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
-		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
-		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
-	case *capabilitiespb.CapabilityConfig_RemoteExecutableConfig:
-		remoteExecutableConfig = decodeRemoteExecutableConfig(res.CapabilityConfig.GetRemoteExecutableConfig())
-	}
-
 	var methodConfig map[string]capabilities.CapabilityMethodConfig
 	if res.CapabilityConfig.MethodConfigs != nil {
 		methodConfig = make(map[string]capabilities.CapabilityMethodConfig, len(res.CapabilityConfig.MethodConfigs))
@@ -212,10 +192,6 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	}
 
 	return capabilities.CapabilityConfiguration{
-		DefaultConfig:          mc,
-		RemoteTriggerConfig:    remoteTriggerConfig,
-		RemoteTargetConfig:     remoteTargetConfig,
-		RemoteExecutableConfig: remoteExecutableConfig,
 		CapabilityMethodConfig: methodConfig,
 		LocalOnly:              res.CapabilityConfig.LocalOnly,
 		Ocr3Configs:            ocr3Configs,
@@ -237,7 +213,6 @@ func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabi
 
 func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *capabilities.RemoteExecutableConfig {
 	remoteExecutableConfig := &capabilities.RemoteExecutableConfig{}
-	remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
 	remoteExecutableConfig.TransmissionSchedule = capabilities.TransmissionSchedule(prtc.TransmissionSchedule)
 	remoteExecutableConfig.DeltaStage = prtc.DeltaStage.AsDuration()
 	remoteExecutableConfig.RequestTimeout = prtc.RequestTimeout.AsDuration()
@@ -424,46 +399,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		return nil, err
 	}
 
-	ecm := values.Proto(cc.DefaultConfig).GetMapValue()
-
-	ccp := &capabilitiespb.CapabilityConfig{
-		DefaultConfig: ecm,
-	}
-
-	if cc.RemoteTriggerConfig != nil {
-		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
-			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
-				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
-				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
-				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
-				MaxBatchSize:            cc.RemoteTriggerConfig.MaxBatchSize,
-				BatchCollectionPeriod:   durationpb.New(cc.RemoteTriggerConfig.BatchCollectionPeriod),
-			},
-		}
-	}
-
-	if cc.RemoteTargetConfig != nil {
-		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTargetConfig{
-			RemoteTargetConfig: &capabilitiespb.RemoteTargetConfig{
-				RequestHashExcludedAttributes: cc.RemoteTargetConfig.RequestHashExcludedAttributes,
-			},
-		}
-	}
-
-	if cc.RemoteExecutableConfig != nil {
-		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteExecutableConfig{
-			RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
-				RequestHashExcludedAttributes: cc.RemoteExecutableConfig.RequestHashExcludedAttributes,
-				TransmissionSchedule:          capabilitiespb.TransmissionSchedule(cc.RemoteExecutableConfig.TransmissionSchedule),
-				DeltaStage:                    durationpb.New(cc.RemoteExecutableConfig.DeltaStage),
-				RequestTimeout:                durationpb.New(cc.RemoteExecutableConfig.RequestTimeout),
-				ServerMaxParallelRequests:     cc.RemoteExecutableConfig.ServerMaxParallelRequests,
-				RequestHasherType:             capabilitiespb.RequestHasherType(cc.RemoteExecutableConfig.RequestHasherType),
-				MinResponsesToAggregate:       cc.RemoteExecutableConfig.MinResponsesToAggregate,
-			},
-		}
-	}
+	ccp := &capabilitiespb.CapabilityConfig{}
 
 	// Handle method configs
 	if cc.CapabilityMethodConfig != nil {
@@ -489,13 +425,12 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			if mConfig.RemoteExecutableConfig != nil {
 				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig{
 					RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
-						RequestHashExcludedAttributes: mConfig.RemoteExecutableConfig.RequestHashExcludedAttributes,
-						TransmissionSchedule:          capabilitiespb.TransmissionSchedule(mConfig.RemoteExecutableConfig.TransmissionSchedule),
-						DeltaStage:                    durationpb.New(mConfig.RemoteExecutableConfig.DeltaStage),
-						RequestTimeout:                durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
-						ServerMaxParallelRequests:     mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
-						RequestHasherType:             capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
-						MinResponsesToAggregate:       mConfig.RemoteExecutableConfig.MinResponsesToAggregate,
+						TransmissionSchedule:      capabilitiespb.TransmissionSchedule(mConfig.RemoteExecutableConfig.TransmissionSchedule),
+						DeltaStage:                durationpb.New(mConfig.RemoteExecutableConfig.DeltaStage),
+						RequestTimeout:            durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
+						ServerMaxParallelRequests: mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
+						RequestHasherType:         capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
+						MinResponsesToAggregate:   mConfig.RemoteExecutableConfig.MinResponsesToAggregate,
 					},
 				}
 			}

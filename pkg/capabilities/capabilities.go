@@ -357,66 +357,6 @@ type TriggerEvent struct {
 
 	// Trigger-specific payload for no DAG workflows
 	Payload *anypb.Any
-
-	// Deprecated: use Outputs instead
-	// TODO: remove after core services are updated (pending https://github.com/smartcontractkit/chainlink/pull/16950)
-	OCREvent *OCRTriggerEvent
-}
-
-type OCRTriggerEvent struct {
-	ConfigDigest []byte
-	SeqNr        uint64
-	Report       []byte // marshaled pb.OCRTriggerReport
-	Sigs         []OCRAttributedOnchainSignature
-}
-
-// DO NOT change this. it is in the encoding of [TriggerEvent].Outputs
-//
-// TODO: a more sophisticated way to handle this would be to have add this const
-// in the protobuf definition of the TriggerEvent struct.
-const ocrTriggerEventOutputKey = "OCRTriggerEvent"
-
-func (e *OCRTriggerEvent) topLevelKey() string {
-	return ocrTriggerEventOutputKey
-}
-
-// ToMap converts the OCRTriggerEvent to a map.
-// This is useful serialization purposes with the [TriggerEvent] struct.
-func (e *OCRTriggerEvent) ToMap() (*values.Map, error) {
-	x, err := values.Wrap(e)
-	if err != nil {
-		return nil, fmt.Errorf("failed to wrap OCRTriggerEvent: %w", err)
-	}
-	return values.NewMap(map[string]any{
-		e.topLevelKey(): x,
-	})
-}
-
-// FromMap converts a map to an OCRTriggerEvent.
-// This is useful deserialization purposes with the [TriggerEvent] struct.
-func (e *OCRTriggerEvent) FromMap(m *values.Map) error {
-	if m == nil {
-		return errors.New("nil map")
-	}
-	if m.Underlying == nil {
-		return errors.New("nil underlying map")
-	}
-	val, ok := m.Underlying[e.topLevelKey()]
-	if !ok {
-		return fmt.Errorf("missing key: %s", e.topLevelKey())
-	}
-	var unwrapped OCRTriggerEvent
-	err := val.UnwrapTo(&unwrapped)
-	if err != nil {
-		return fmt.Errorf("failed to unwrap OCRTriggerEvent: %w", err)
-	}
-	*e = unwrapped
-	return nil
-}
-
-type OCRAttributedOnchainSignature struct {
-	Signature []byte
-	Signer    uint32 // oracle ID (0,1,...,N-1)
 }
 
 type TriggerExecutable interface {
@@ -652,13 +592,7 @@ type RemoteTriggerConfig struct {
 	BatchCollectionPeriod   time.Duration
 }
 
-type RemoteTargetConfig struct { // deprecated - v1 only
-	RequestHashExcludedAttributes []string
-}
-
 type RemoteExecutableConfig struct {
-	RequestHashExcludedAttributes []string // deprecated - v1 only
-
 	// Fields below are used only by v2 capabilities
 	TransmissionSchedule      TransmissionSchedule
 	DeltaStage                time.Duration
@@ -742,10 +676,7 @@ type CapabilityConfiguration struct {
 	RestrictedKeys []string
 	// RestrictedConfig is configuration that can only be set by us; this
 	// takes precedence over any user-provided config.
-	RestrictedConfig       *values.Map
-	RemoteTriggerConfig    *RemoteTriggerConfig
-	RemoteTargetConfig     *RemoteTargetConfig
-	RemoteExecutableConfig *RemoteExecutableConfig
+	RestrictedConfig *values.Map
 
 	// v2 / "NoDAG" capabilities - config for Don2Don framework.
 	CapabilityMethodConfig map[string]CapabilityMethodConfig

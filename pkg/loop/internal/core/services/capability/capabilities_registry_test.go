@@ -434,16 +434,12 @@ func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testin
 
 	capID := "some-cap@1.0.0"
 	donID := uint32(1)
-	wm, err := values.WrapMap(map[string]any{"hello": "world"})
-	require.NoError(t, err)
 
 	var rtc capabilities.RemoteTriggerConfig
 	rtc.ApplyDefaults()
 	var rec capabilities.RemoteExecutableConfig
 	rec.ApplyDefaults()
 	expectedCapConfig := capabilities.CapabilityConfiguration{
-		DefaultConfig:       wm,
-		RemoteTriggerConfig: &rtc,
 		CapabilityMethodConfig: map[string]capabilities.CapabilityMethodConfig{
 			"trigger-method": {
 				RemoteTriggerConfig: &rtc,
@@ -495,14 +491,15 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 
 	capID := "some-cap@1.0.0"
 	donID := uint32(1)
-	wm, err := values.WrapMap(map[string]any{"hello": "world"})
-	require.NoError(t, err)
 
 	var rec capabilities.RemoteExecutableConfig
 	rec.ApplyDefaults()
 	expectedCapConfig := capabilities.CapabilityConfiguration{
-		DefaultConfig:          wm,
-		RemoteExecutableConfig: &rec,
+		CapabilityMethodConfig: map[string]capabilities.CapabilityMethodConfig{
+			"executable-method": {
+				RemoteExecutableConfig: &rec,
+			},
+		},
 	}
 	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
 
@@ -544,8 +541,6 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 
 	capID := "ocr-cap@1.0.0"
 	donID := uint32(1)
-	wm, err := values.WrapMap(map[string]any{"hello": "world"})
-	require.NoError(t, err)
 
 	oracleFactoryConfig, err := values.WrapMap(map[string]any{"maxQueryLength": 1000})
 	require.NoError(t, err)
@@ -554,7 +549,6 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 	require.NoError(t, err)
 
 	expectedCapConfig := capabilities.CapabilityConfiguration{
-		DefaultConfig: wm,
 		Ocr3Configs: map[string]ocrtypes.ContractConfig{
 			"__default__": {
 				ConfigCount:           5,

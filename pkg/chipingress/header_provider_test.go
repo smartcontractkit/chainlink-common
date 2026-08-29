@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"strings"
 	"testing"
@@ -284,34 +285,17 @@ func TestNewStaticHeaderProvider(t *testing.T) {
 	assert.False(t, tlsReq.RequireTransportSecurity())
 }
 
-func TestSanitizeMetadataValue(t *testing.T) {
-	tests := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{name: "printable ASCII is unchanged", in: "chain-1_prod.v2", want: "chain-1_prod.v2"},
-		{name: "empty", in: "", want: ""},
-		{name: "control character replaced", in: "value\nwith\tcontrol", want: "value?with?control"},
-		{name: "non-ASCII UTF-8 replaced byte-wise", in: "café", want: "caf??"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, chipingress.SanitizeMetadataValue(tt.in))
-		})
-	}
-}
-
 const rp = chipingress.ResourceHeaderPrefix
 
 func TestSanitizeMetadataHeaders(t *testing.T) {
-	t.Run("keys are prefixed and keep their structure", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{
+	t.Run("valid keys are prefixed and kept verbatim", func(t *testing.T) {
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{
 			"service.name":   "beholder",
 			"csa_public_key": "abc123",
 			"node-operator":  "acme",
-			"DonID":          "don-1",
+			"donid":          "don-1",
 		})
+		assert.Empty(t, dropped)
 		assert.Equal(t, map[string]string{
 			rp + "service.name":   "beholder",
 			rp + "csa_public_key": "abc123",
@@ -320,83 +304,142 @@ func TestSanitizeMetadataHeaders(t *testing.T) {
 		}, got)
 	})
 
-	t.Run("structure-preserving normalization", func(t *testing.T) {
+	t.Run("validate, don't rewrite", func(t *testing.T) {
 		tests := []struct {
-			name string
-			in   string
-			want string
+			name    string
+			in      string
+			want    string // "" if the key must be omitted
+			omitted bool
 		}{
-			// grpc accepts [0-9a-z-_.], so structure survives and chip-ingress can emit the
-			// forwarded header verbatim.
-			{"snake case preserved", "csa_public_key", rp + "csa_public_key"},
-			{"dotted preserved", "service.name", rp + "service.name"},
-			{"upper-cased is lowered", "DonID", rp + "donid"},
-			{"mixed separators preserved", "k8s.pod-name_1", rp + "k8s.pod-name_1"},
-			{"illegal characters become underscores", "chain id/2:x", rp + "chain_id_2_x"},
-			{"non-ascii becomes underscores", "héllo", rp + "h_llo"},
-			// A "-bin" suffix tells grpc the value is base64-encoded binary; rewrite it so grpc
-			// does not try to decode a plain-text resource attribute.
-			{"bin suffix is rewritten", "payload-bin", rp + "payload_bin"},
-			{"bin substring is untouched", "payload-binary", rp + "payload-binary"},
+			// grpc accepts [0-9a-z-_.], so a valid key's structure survives untouched and
+			// chip-ingress can emit the forwarded header verbatim.
+			{name: "snake case preserved", in: "csa_public_key", want: rp + "csa_public_key"},
+			{name: "dotted preserved", in: "service.name", want: rp + "service.name"},
+			{name: "upper-cased is lowered", in: "DonID", want: rp + "donid"},
+			{name: "mixed separators preserved", in: "k8s.pod-name_1", want: rp + "k8s.pod-name_1"},
+			// Invalid keys are OMITTED, never rewritten: silently collapsing two distinct
+			// configured keys into one gRPC metadata key is worse than dropping one.
+			{name: "illegal characters omit the attribute", in: "chain id/2:x", omitted: true},
+			{name: "non-ascii omits the attribute", in: "héllo", omitted: true},
+			{name: "empty key omits the attribute", in: "", omitted: true},
+			// A "-bin" suffix tells grpc the value is base64-encoded binary; omit rather than
+			// rewrite so a plain-text resource attribute can't silently start being decoded.
+			{name: "bin suffix omits the attribute", in: "payload-bin", omitted: true},
+			{name: "bin substring is untouched", in: "payload-binary", want: rp + "payload-binary"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				assert.Equal(t, map[string]string{tt.want: "v"},
-					chipingress.SanitizeMetadataHeaders(map[string]string{tt.in: "v"}))
+				got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{tt.in: "v"})
+				if tt.omitted {
+					assert.Empty(t, got)
+					require.Len(t, dropped, 1)
+					assert.Equal(t, tt.in, dropped[0].Key)
+					return
+				}
+				assert.Empty(t, dropped)
+				assert.Equal(t, map[string]string{tt.want: "v"}, got)
 			})
-		}
-	})
-
-	t.Run("keys with nothing left after normalization are dropped", func(t *testing.T) {
-		// A bare prefix carries no information.
-		for _, key := range []string{"", "---", "__"} {
-			assert.Empty(t, chipingress.SanitizeMetadataHeaders(map[string]string{key: "value"}),
-				"key %q must be dropped", key)
 		}
 	})
 
 	// This is the property that replaces the reserved-key set the prefix made redundant. The header
 	// interceptor appends to outgoing metadata rather than replacing, so an attribute landing on an
 	// existing header name would send two values under one key — for the CSA auth token that breaks
-	// authentication. Prefixing puts every attribute out of reach of every reserved gRPC key.
+	// authentication. Prefixing puts every valid attribute out of reach of every reserved gRPC key.
 	t.Run("no attribute can collide with a reserved gRPC metadata key", func(t *testing.T) {
 		for _, key := range []string{
-			"X-Beholder-Node-Auth-Token", // CSA auth token, via WithTokenAuth
-			"x-include-nop-info",         // WithNOPLookup
-			"authorization",              // WithBasicAuth
+			"x-include-nop-info", // WithNOPLookup
+			"authorization",      // WithBasicAuth
 			"te", "content-type", "cookie", "host", "user-agent",
 			"grpc-timeout", "grpc-encoding",
 		} {
-			got := chipingress.SanitizeMetadataHeaders(map[string]string{key: "forged"})
+			got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{key: "forged"})
+			assert.Empty(t, dropped, "key %q should be valid and namespaced, not dropped", key)
 			require.Len(t, got, 1, "key %q should still be sent, just namespaced", key)
 			for name := range got {
 				assert.True(t, strings.HasPrefix(name, rp), "key %q must be prefixed, got %q", key, name)
 				assert.NotEqual(t, strings.ToLower(key), name, "key %q must not reach the reserved name", key)
 			}
 		}
+		// The CSA auth token header contains uppercase letters and hyphens; hyphens are a valid
+		// gRPC metadata char, so this key is namespaced rather than omitted, same as the others.
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{"X-Beholder-Node-Auth-Token": "forged"})
+		assert.Empty(t, dropped)
+		assert.Equal(t, map[string]string{rp + "x-beholder-node-auth-token": "forged"}, got)
 	})
 
 	t.Run("CloudEvents context attribute names are kept, they mean nothing as gRPC metadata", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"subject": "keep-me", "source": "keep-me-too"})
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{"subject": "keep-me", "source": "keep-me-too"})
+		assert.Empty(t, dropped)
 		assert.Equal(t, map[string]string{rp + "subject": "keep-me", rp + "source": "keep-me-too"}, got)
 	})
 
-	t.Run("non-printable values are sanitized", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"chain_id": "1\n2"})
-		assert.Equal(t, "1?2", got[rp+"chain_id"])
+	t.Run("non-printable values omit the whole attribute", func(t *testing.T) {
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{"chain_id": "1\n2"})
+		assert.Empty(t, got)
+		require.Len(t, dropped, 1)
+		assert.Equal(t, "chain_id", dropped[0].Key)
+		assert.Equal(t, "invalid_value", dropped[0].Reason)
 	})
 
-	t.Run("duplicate normalized keys resolve deterministically to sorted-first key", func(t *testing.T) {
-		// Both normalize to chain_id; sorted order is "chain id" < "chain_id" (' ' < '_'), so the
-		// space-separated key wins.
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"chain id": "from-space", "chain_id": "from-snake"})
-		assert.Equal(t, map[string]string{rp + "chain_id": "from-space"}, got)
-	})
-
-	t.Run("keys that differ only in case collapse deterministically", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"DonID": "upper", "donid": "lower"})
-		// sorted order: "DonID" < "donid" (upper-case sorts first in ASCII).
+	t.Run("duplicate keys resolve deterministically to sorted-first key", func(t *testing.T) {
+		// "DonID" and "donid" both validate to "donid"; sorted order of the ORIGINAL keys is
+		// "DonID" < "donid" (upper-case sorts first in ASCII), so "DonID" wins.
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{"DonID": "upper", "donid": "lower"})
 		assert.Equal(t, map[string]string{rp + "donid": "upper"}, got)
+		require.Len(t, dropped, 1)
+		assert.Equal(t, "donid", dropped[0].Key)
+		assert.Equal(t, "duplicate_key", dropped[0].Reason)
+	})
+
+	t.Run("oversized key is omitted, not truncated", func(t *testing.T) {
+		longKey := strings.Repeat("a", 129)
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{longKey: "v"})
+		assert.Empty(t, got)
+		require.Len(t, dropped, 1)
+		assert.Equal(t, "invalid_key", dropped[0].Reason)
+	})
+
+	t.Run("oversized value is omitted, not truncated", func(t *testing.T) {
+		longVal := strings.Repeat("v", 513)
+		got, dropped := chipingress.SanitizeMetadataHeaders(map[string]string{"chain_id": longVal})
+		assert.Empty(t, got)
+		require.Len(t, dropped, 1)
+		assert.Equal(t, "invalid_value", dropped[0].Reason)
+	})
+
+	t.Run("attribute count is capped at 32, excess dropped deterministically", func(t *testing.T) {
+		in := make(map[string]string, 33)
+		for i := 0; i < 33; i++ {
+			in[fmt.Sprintf("attr_%02d", i)] = "v"
+		}
+		got, dropped := chipingress.SanitizeMetadataHeaders(in)
+		assert.Len(t, got, 32)
+		require.Len(t, dropped, 1)
+		// Sorted order: "attr_32" sorts last among "attr_00".."attr_32".
+		assert.Equal(t, "attr_32", dropped[0].Key)
+		assert.Equal(t, "limit_exceeded", dropped[0].Reason)
+	})
+
+	t.Run("total key+value bytes are capped at 4096, tail dropped deterministically", func(t *testing.T) {
+		// Each accepted attribute contributes len(key)+len(value) bytes (prefix excluded). 9
+		// attributes of 500 bytes each would total 4500, over the 4096 cap, so the last one or
+		// two (in sorted order) must be dropped.
+		in := make(map[string]string, 9)
+		val := strings.Repeat("v", 490)
+		for i := 0; i < 9; i++ {
+			in[fmt.Sprintf("attr_%d", i)] = val // key is 6 bytes, so each entry is 496 bytes
+		}
+		got, dropped := chipingress.SanitizeMetadataHeaders(in)
+		assert.NotEmpty(t, dropped)
+		for _, d := range dropped {
+			assert.Equal(t, "limit_exceeded", d.Reason)
+		}
+		total := 0
+		for name, v := range got {
+			total += len(name) - len(rp) + len(v)
+		}
+		assert.LessOrEqual(t, total, 4096)
 	})
 }
 
@@ -440,9 +483,11 @@ func TestSanitizeMetadataHeaders_AvoidsRPCFailure(t *testing.T) {
 	})
 
 	t.Run("sanitized headers succeed", func(t *testing.T) {
+		sanitized, dropped := chipingress.SanitizeMetadataHeaders(dirty)
+		require.Len(t, dropped, 1, "the non-printable value must be omitted, not rewritten")
 		client, err := chipingress.NewClient(lis.Addr().String(),
 			chipingress.WithInsecureConnection(),
-			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(chipingress.SanitizeMetadataHeaders(dirty))),
+			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(sanitized)),
 		)
 		require.NoError(t, err)
 		defer client.Close() //nolint:errcheck

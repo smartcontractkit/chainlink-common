@@ -5,12 +5,17 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -214,15 +219,51 @@ func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *clientConfig) { c.headerProvider = provider }
 }
 
+// resourceAttributeLogger receives one warning per dropped resource attribute. It defaults to a
+// no-op so library consumers who don't configure a logger see no output; tests substitute their own
+// via setResourceAttributeLogger.
+var resourceAttributeLogger atomic.Pointer[zap.Logger]
+
+func init() {
+	resourceAttributeLogger.Store(zap.NewNop())
+}
+
+// SetResourceAttributeLogger overrides the logger WithResourceAttributeHeaders warns through when it
+// drops a resource attribute. Intended for host applications that want dropped attributes surfaced
+// in their own logs; the default is a no-op logger.
+func SetResourceAttributeLogger(logger *zap.Logger) {
+	resourceAttributeLogger.Store(logger)
+}
+
+// resourceAttributeDropsCounter counts resource attributes SanitizeMetadataHeaders omitted, by
+// reason, against the global otel MeterProvider. It is created lazily against the global provider
+// (rather than a per-client one from WithMeterProvider) because WithResourceAttributeHeaders runs at
+// Opt-construction time, before any client-level configuration is wired.
+var resourceAttributeDropsCounter = sync.OnceValue(func() metric.Int64Counter {
+	c, _ := otel.Meter("github.com/smartcontractkit/chainlink-common/pkg/chipingress").
+		Int64Counter("chipingress.resource_attribute.dropped",
+			metric.WithDescription("Resource attributes omitted by SanitizeMetadataHeaders, by reason."))
+	return c
+})
+
 // WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes as
 // gRPC metadata on every request, under ResourceHeaderPrefix. It combines SanitizeMetadataHeaders
-// with NewStaticHeaderProvider so the safe, validated path is used by default.
+// with NewStaticHeaderProvider so the safe, validated path is used by default, and warns + meters
+// every attribute SanitizeMetadataHeaders had to omit.
 //
 // Attributes are attached once per request rather than to individual events because they describe the
 // producer, not any one event. Chip-ingress fans them out onto every Kafka record the request
 // produces.
 func WithResourceAttributeHeaders(attrs map[string]string) Opt {
-	return WithHeaderProvider(NewStaticHeaderProvider(SanitizeMetadataHeaders(attrs)))
+	sanitized, dropped := SanitizeMetadataHeaders(attrs)
+	for _, d := range dropped {
+		resourceAttributeLogger.Load().Warn("dropping invalid resource attribute",
+			zap.String("key", d.Key), zap.String("reason", d.Reason))
+		if counter := resourceAttributeDropsCounter(); counter != nil {
+			counter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("reason", d.Reason)))
+		}
+	}
+	return WithHeaderProvider(NewStaticHeaderProvider(sanitized))
 }
 
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).

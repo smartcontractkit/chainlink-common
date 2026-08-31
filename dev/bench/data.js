@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787929250583,
+  "lastUpdate": 1788200839955,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -59100,6 +59100,66 @@ window.BENCHMARK_DATA = {
             "value": 95442,
             "unit": "ns/op",
             "extra": "12585 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "152236536+Krish-vemula@users.noreply.github.com",
+            "name": "Krish-vemula",
+            "username": "Krish-vemula"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e32c7284ce1c4fd69e38735b29fecf12991872da",
+          "message": "Add Stellar write max resource fee setting (#2347)\n\n* Add Stellar write max resource fee setting\n\n* add proto field",
+          "timestamp": "2026-08-31T18:17:02Z",
+          "tree_id": "fc6a2524c5a52d402259c532aaadf6bf17c34f59",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e32c7284ce1c4fd69e38735b29fecf12991872da"
+        },
+        "date": 1788200836868,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 467.3,
+            "unit": "ns/op",
+            "extra": "2409906 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90894,
+            "unit": "ns/op",
+            "extra": "13182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 406.6,
+            "unit": "ns/op",
+            "extra": "3016932 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90421,
+            "unit": "ns/op",
+            "extra": "13288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25649,
+            "unit": "ns/op",
+            "extra": "46750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 134763,
+            "unit": "ns/op",
+            "extra": "8811 times\n4 procs"
           }
         ]
       }

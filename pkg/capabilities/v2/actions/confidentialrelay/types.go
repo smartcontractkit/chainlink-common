@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"sort"
+	"strconv"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
@@ -54,6 +55,7 @@ type SecretsRequestParams struct {
 	Owner            string             `json:"owner"`            // Ethereum address (hex, 0x-prefixed)
 	ExecutionID      string             `json:"execution_id"`     // 32 bytes, hex-encoded
 	OrgID            string             `json:"org_id,omitempty"` // Organization identifier for org-based secret ownership
+	CallbackID       int32              `json:"callback_id,omitempty"`
 	Secrets          []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey string             `json:"enclave_public_key"`
 	// EnclaveConfig is the enclave's current config, included so the relay can
@@ -393,6 +395,10 @@ func writeSecretsRequestParams(h hash.Hash, params SecretsRequestParams) {
 	writeString(h, params.ExecutionID)
 	writeString(h, params.OrgID)
 
+	if params.CallbackID != 0 {
+		writeInt32(h, params.CallbackID)
+	}
+
 	secrets := append([]SecretIdentifier(nil), params.Secrets...)
 	sortSecretIdentifiers(secrets)
 
@@ -454,6 +460,10 @@ func sortSecretEntries(secrets []SecretEntry) {
 
 func writeString(h hash.Hash, s string) {
 	writeBytes(h, []byte(s))
+}
+
+func writeInt32(h hash.Hash, i int32) {
+	writeBytes(h, []byte(strconv.FormatInt(int64(i), 10)))
 }
 
 func writeBytes(h hash.Hash, b []byte) {

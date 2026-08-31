@@ -1295,6 +1295,7 @@ type SubmitTransactionRequest struct {
 	Function           string                 `protobuf:"bytes,4,opt,name=function,proto3" json:"function,omitempty"`                                                  // Soroban function name
 	Args               []*scval.ScVal         `protobuf:"bytes,5,rep,name=args,proto3" json:"args,omitempty"`                                                          // Typed Soroban arguments
 	LedgerBoundsOffset uint32                 `protobuf:"varint,6,opt,name=ledger_bounds_offset,json=ledgerBoundsOffset,proto3" json:"ledger_bounds_offset,omitempty"` // Per-tx ledger-bounds override; 0 = use TXM default
+	MaxResourceFee     uint64                 `protobuf:"varint,7,opt,name=max_resource_fee,json=maxResourceFee,proto3" json:"max_resource_fee,omitempty"`             // Optional per-request Soroban resource-fee ceiling (stroops); 0 = use TXM default
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1367,6 +1368,13 @@ func (x *SubmitTransactionRequest) GetArgs() []*scval.ScVal {
 func (x *SubmitTransactionRequest) GetLedgerBoundsOffset() uint32 {
 	if x != nil {
 		return x.LedgerBoundsOffset
+	}
+	return 0
+}
+
+func (x *SubmitTransactionRequest) GetMaxResourceFee() uint64 {
+	if x != nil {
+		return x.MaxResourceFee
 	}
 	return 0
 }
@@ -1922,7 +1930,7 @@ const file_stellar_proto_rawDesc = "" +
 	"\fTopicSegment\x12\x1c\n" +
 	"\bwildcard\x18\x01 \x01(\tH\x00R\bwildcard\x12F\n" +
 	"\x05scval\x18\x02 \x01(\v2..capabilities.blockchain.stellar.v1alpha.ScValH\x00R\x05scvalB\a\n" +
-	"\x05value\"\x99\x02\n" +
+	"\x05value\"\xc3\x02\n" +
 	"\x18SubmitTransactionRequest\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12!\n" +
 	"\ffrom_address\x18\x02 \x01(\tR\vfromAddress\x12\x1f\n" +
@@ -1930,7 +1938,8 @@ const file_stellar_proto_rawDesc = "" +
 	"contractId\x12\x1a\n" +
 	"\bfunction\x18\x04 \x01(\tR\bfunction\x12B\n" +
 	"\x04args\x18\x05 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x120\n" +
-	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\"\xf8\x02\n" +
+	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\x12(\n" +
+	"\x10max_resource_fee\x18\a \x01(\x04R\x0emaxResourceFee\"\xf8\x02\n" +
 	"\x19SubmitTransactionResponse\x123\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2\x16.loop.stellar.TxStatusR\btxStatus\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +

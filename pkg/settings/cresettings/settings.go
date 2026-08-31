@@ -80,8 +80,8 @@ var Default = Schema{
 	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
 	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
 	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
-	GatewayHTTPActionOutboundConcurrencyLimit:         Int(256),
-	GatewayHTTPActionOutboundPerNodeConcurrencyLimit:  Int(32),
+	GatewayHTTPActionOutboundConcurrencyLimit:         Int(875),
+	GatewayHTTPActionOutboundPerNodeConcurrencyLimit:  Int(175),
 	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                          Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                             Int(20),
@@ -381,11 +381,16 @@ type Schema struct {
 	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
 	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
 	// GatewayHTTPActionOutboundConcurrencyLimit bounds the number of outbound HTTP action
-	// requests the gateway will have in flight at once, across all nodes.
+	// requests the gateway will have in flight at once, across all nodes. Sized to
+	// GatewayHTTPGlobalRate's ceiling (500rps burst) times observed p99.9 outbound latency
+	// (~1.75s in production-mainnet), so this never binds tighter than the rate limit already
+	// permits: 500 * 1.75 ~= 875.
 	GatewayHTTPActionOutboundConcurrencyLimit Setting[int] `unit:"{request}"`
 	// GatewayHTTPActionOutboundPerNodeConcurrencyLimit bounds the number of outbound HTTP
 	// action requests the gateway will have in flight for a single node, so one node cannot
-	// occupy every slot in GatewayHTTPActionOutboundConcurrencyLimit.
+	// occupy every slot in GatewayHTTPActionOutboundConcurrencyLimit. Sized the same way as
+	// GatewayHTTPActionOutboundConcurrencyLimit, against GatewayHTTPPerNodeRate's ceiling
+	// (100rps burst): 100 * 1.75 ~= 175.
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit Setting[int] `unit:"{request}"`
 	TriggerRegistrationStatusUpdateTimeout           Setting[time.Duration]
 

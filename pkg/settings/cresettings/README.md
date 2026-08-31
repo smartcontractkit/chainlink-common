@@ -222,6 +222,11 @@ flowchart
                 PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.Aptos.GasLimit{{GasLimit}}:::bound
             end
+            subgraph Stellar
+                direction LR
+                PerWorkflow.ChainWrite.Stellar.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Stellar.MaxResourceFee{{MaxResourceFee}}:::bound
+            end
         end
         subgraph PerWorkflow.ChainRead
             direction LR

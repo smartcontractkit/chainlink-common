@@ -40,18 +40,25 @@ flowchart
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate
         TenantID[(TenantID)]:::setting
         PropagateOrgIDInRequestMetadata[/PropagateOrgIDInRequestMetadata\]:::gate
         VaultBase64EncodingEnabled[/VaultBase64EncodingEnabled\]:::gate
         VaultForceEmptyOCRRounds[/VaultForceEmptyOCRRounds\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsRelaxedConsensusEnabled[/VaultGetSecretsRelaxedConsensusEnabled\]:::gate
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultIncludeInvalidPendingItemsEnabled[/VaultIncludeInvalidPendingItemsEnabled\]:::gate
         VaultPendingQueueStallThreshold{{VaultPendingQueueStallThreshold}}:::bound
+        %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
         VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
         PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate
@@ -215,6 +222,11 @@ flowchart
                 PerWorkflow.ChainWrite.Aptos.ReportSizeLimit{{ReportSizeLimit}}:::bound
                 PerWorkflow.ChainWrite.Aptos.GasLimit{{GasLimit}}:::bound
             end
+            subgraph Stellar
+                direction LR
+                PerWorkflow.ChainWrite.Stellar.ReportSizeLimit{{ReportSizeLimit}}:::bound
+                PerWorkflow.ChainWrite.Stellar.MaxResourceFee{{MaxResourceFee}}:::bound
+            end
         end
         subgraph PerWorkflow.ChainRead
             direction LR
@@ -294,6 +306,8 @@ flowchart
         ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
         ConfidentialCompute.InsecureSkipTLSVerify[/ConfidentialCompute.InsecureSkipTLSVerify\]:::gate
         ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
+        ConfidentialCompute.PublicKeyRetriesMax{{ConfidentialCompute.PublicKeyRetriesMax}}:::bound
+        ConfidentialCompute.PublicKeyRetriesBackoff>ConfidentialCompute.PublicKeyRetriesBackoff:::time
         subgraph ConfidentialCompute.PublicKeyCache
             ConfidentialCompute.PublicKeyCache.Enabled[/Enabled\]:::gate
             ConfidentialCompute.PublicKeyCache.TTL>TTL]:::time

@@ -60,6 +60,8 @@
 		"ConfidentialRelayHandlerTimeout": "1m0s",
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
+		"PublicKeyRetriesMax": "2",
+		"PublicKeyRetriesBackoff": "5s",
 		"PublicKeyCache": {
 			"Enabled": "true",
 			"TTL": "5m0s",
@@ -164,6 +166,13 @@
 				"ReportSizeLimit": "5kb",
 				"GasLimit": {
 					"Default": "2000000",
+					"Values": {}
+				}
+			},
+			"Stellar": {
+				"ReportSizeLimit": "5kb",
+				"MaxResourceFee": {
+					"Default": "1000000",
 					"Values": {}
 				}
 			}

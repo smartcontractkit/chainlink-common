@@ -34,8 +34,8 @@ const (
 	RelayResponseSignaturePrefix = "CONFIDENTIAL_RELAY_PAYLOAD_"
 )
 
-// IsAsyncMethod reports whether method is one of the asynchronous (enclave-polled)
-// relay routes.
+// IsAsyncMethod reports whether method is an asynchronous (enclave-polled) relay route,
+// identified by the ".async" suffix.
 func IsAsyncMethod(method string) bool {
 	return strings.HasSuffix(method, asyncSuffix)
 }

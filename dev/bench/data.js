@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788200839955,
+  "lastUpdate": 1788277231013,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -59160,6 +59160,66 @@ window.BENCHMARK_DATA = {
             "value": 134763,
             "unit": "ns/op",
             "extra": "8811 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "vreff",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6b01cb8b44f2def95090582ce30a464bfe268837",
+          "message": "Add async confidential relay methods (#2351)\n\n* Add async confidential relay methods\n\n* Potential fix for pull request finding\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n* add test\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-01T15:30:05Z",
+          "tree_id": "a5beb493f64875b5ecf0447782e58db10d8c0988",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6b01cb8b44f2def95090582ce30a464bfe268837"
+        },
+        "date": 1788277228369,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 371,
+            "unit": "ns/op",
+            "extra": "2900895 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 77841,
+            "unit": "ns/op",
+            "extra": "15306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 373.9,
+            "unit": "ns/op",
+            "extra": "3186578 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79073,
+            "unit": "ns/op",
+            "extra": "15289 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28383,
+            "unit": "ns/op",
+            "extra": "42302 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 127317,
+            "unit": "ns/op",
+            "extra": "9039 times\n4 procs"
           }
         ]
       }

@@ -506,6 +506,52 @@ func TestSecretsResponseHash_CallbackIDZeroOmitted(t *testing.T) {
 	require.NotEqual(t, mustSecretsHash(t, result, pZeroA), mustSecretsHash(t, result, pNonZero))
 }
 
+// TestIsAsyncMethod covers the method-routing predicate: it must report true
+// only for the asynchronous (enclave-polled) relay routes and false for the
+// synchronous routes and any unknown method.
+func TestIsAsyncMethod(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		want   bool
+	}{
+		{"secrets get async", MethodSecretsGetAsync, true},
+		{"capability exec async", MethodCapabilityExecAsync, true},
+		{"secrets get sync", MethodSecretsGet, false},
+		{"capability exec sync", MethodCapabilityExec, false},
+		{"unknown method", "confidential.unknown", false},
+		{"empty method", "", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, IsAsyncMethod(tc.method))
+		})
+	}
+}
+
+// TestSyncMethod covers stripping the async suffix: async routes map back to
+// their synchronous counterpart, while sync and unknown methods are returned
+// unchanged.
+func TestSyncMethod(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		want   string
+	}{
+		{"secrets get async strips suffix", MethodSecretsGetAsync, MethodSecretsGet},
+		{"capability exec async strips suffix", MethodCapabilityExecAsync, MethodCapabilityExec},
+		{"secrets get sync unchanged", MethodSecretsGet, MethodSecretsGet},
+		{"capability exec sync unchanged", MethodCapabilityExec, MethodCapabilityExec},
+		{"unknown method unchanged", "confidential.unknown", "confidential.unknown"},
+		{"empty method unchanged", "", ""},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.want, SyncMethod(tc.method))
+		})
+	}
+}
+
 // TestSecretsResponseHash_StableUnderSignerReordering proves that the
 // EnclaveConfig.Signers ordering does not affect the hash. The relay-side
 // comparison against onchain state is order-independent so the hash must be

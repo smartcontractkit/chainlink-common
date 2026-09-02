@@ -56,6 +56,7 @@ var Default = Schema{
 	WorkflowExecutionConcurrencyLimit:           Int(1000),
 	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:               Bool(true),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
@@ -65,13 +66,19 @@ var Default = Schema{
 	PropagateOrgIDInRequestMetadata:                   Bool(false),
 	VaultBase64EncodingEnabled:                        Bool(false),
 	VaultForceEmptyOCRRounds:                          Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultOptimizationsEnabled:                         Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled:            Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultIncludeInvalidPendingItemsEnabled:            Bool(false),
 	VaultPendingQueueStallThreshold:                   Int(0),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled:               Bool(false),
 	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
 	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
@@ -155,6 +162,8 @@ var Default = Schema{
 		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
 		InsecureSkipTLSVerify:           Bool(false),
 		EnclaveRefreshInterval:          Duration(10 * time.Second),
+		PublicKeyRetriesMax:             Int(2),
+		PublicKeyRetriesBackoff:         Duration(5 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -269,6 +278,10 @@ var Default = Schema{
 				ReportSizeLimit: Size(5 * config.KByte),
 				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
+			Stellar: stellarChainWrite{
+				ReportSizeLimit: Size(5 * config.KByte),
+				MaxResourceFee: PerChainSelector(Uint64(1_000_000), map[string]uint64{}),
+			},
 		},
 		ChainRead: chainRead{
 			CallLimit:          Int(15),
@@ -326,6 +339,20 @@ var Default = Schema{
 		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// ON by default: covers all possible timestamps including zero time.Time{},
+		// so WorkflowTag is included in the hash matching current prod behavior.
+		// After rollout, set to far-future window to exclude WorkflowTag.
+		FeatureRequestHashIncludeWorkflowTagActivePeriod: TimeRange(
+			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// OFF by default: the workflow_specs_v2.workflow_tag reconcile backfill
+		// is intentionally disabled on a fresh deploy. Ops narrows the range to
+		// cover "now" only after FeatureRequestHashIncludeWorkflowTag is muted
+		// on every DON member, so DBs can heal without producing tag-driven
+		// hash divergence during the fill window.
+		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -334,6 +361,7 @@ type Schema struct {
 	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
 	GatewayVaultManagementEnabled               Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled                         Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
@@ -347,13 +375,19 @@ type Schema struct {
 	PropagateOrgIDInRequestMetadata                   Setting[bool]
 	VaultBase64EncodingEnabled                        Setting[bool]
 	VaultForceEmptyOCRRounds                          Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultOptimizationsEnabled                         Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsRelaxedConsensusEnabled            Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultIncludeInvalidPendingItemsEnabled            Setting[bool]
 	VaultPendingQueueStallThreshold                   Setting[int] `unit:"{observation}"`
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled               Setting[bool]
 	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
 	GatewayHTTPGlobalRate                             Setting[config.Rate]
@@ -480,6 +514,8 @@ type Workflows struct {
 	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
+	FeatureRequestHashIncludeWorkflowTagActivePeriod        Setting[Range[config.Timestamp]]
+	FeatureWorkflowTagBackfillActivePeriod                  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {
@@ -498,9 +534,10 @@ type chainWrite struct {
 	TargetsLimit    Setting[int]         `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size] // Deprecated
 
-	EVM    evmChainWrite
-	Solana solanaChainWrite
-	Aptos  aptosChainWrite
+	EVM     evmChainWrite
+	Solana  solanaChainWrite
+	Aptos   aptosChainWrite
+	Stellar stellarChainWrite
 }
 type solanaChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
@@ -509,6 +546,10 @@ type solanaChainWrite struct {
 type aptosChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
 	GasLimit        SettingMap[uint64] `unit:"{gas}"`
+}
+type stellarChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	MaxResourceFee SettingMap[uint64] `unit:"{stroop}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
@@ -565,10 +606,12 @@ type confidentialCompute struct {
 	// past that point can only produce a response nobody is waiting for.
 	ConfidentialRelayHandlerTimeout Setting[time.Duration]
 
-	InsecureSkipTLSVerify  Setting[bool]
-	EnclaveRefreshInterval Setting[time.Duration]
-	PublicKeyCache         ccPublicKeyCache
-	Session                ccSession
+	InsecureSkipTLSVerify   Setting[bool]
+	EnclaveRefreshInterval  Setting[time.Duration]
+	PublicKeyRetriesMax     Setting[int] `unit:"{attempt}"`
+	PublicKeyRetriesBackoff Setting[time.Duration]
+	PublicKeyCache          ccPublicKeyCache
+	Session                 ccSession
 }
 
 // ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.

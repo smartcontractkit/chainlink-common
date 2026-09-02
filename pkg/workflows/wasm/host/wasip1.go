@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v48"
 	"github.com/jonboulle/clockwork"
 )
 
@@ -255,6 +255,9 @@ func createRandomGet(cfg *ModuleConfig) func(caller *wasmtime.Caller, buf, bufLe
 
 		// bufLen is guest-controlled; a negative value would panic make below.
 		if bufLen < 0 {
+			return ErrnoInval
+		}
+		if int(bufLen) > len(wasmMemoryAccessor(caller)) {
 			return ErrnoInval
 		}
 

@@ -171,8 +171,7 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 				// every dropped event. chip_ingress.events_dropped (error_code) already
 				// captures that it's happening and roughly why; the full reason isn't
 				// needed at fleet-wide log volume.
-				var pubErr *batch.PublishError
-				if !errors.As(sendErr, &pubErr) {
+				if _, ok := errors.AsType[*batch.PublishError](sendErr); !ok {
 					e.eng.Errorw("failed to emit to chip ingress",
 						"error", sendErr,
 						"error_code", errorCode,

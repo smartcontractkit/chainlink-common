@@ -117,9 +117,10 @@ func TestCapabilityResponseFromProto(t *testing.T) {
 			Metadata: capabilities.ResponseMetadata{
 				Metering: []capabilities.MeteringNodeDetail{
 					{
-						Peer2PeerID: "peer_id",
-						SpendUnit:   "spend_unit",
-						SpendValue:  "spend_value",
+						Peer2PeerID:          "peer_id",
+						SpendUnit:            "spend_unit",
+						SpendValue:           "spend_value",
+						SpendValueInGasUnits: "spend_value_in_gas_units",
 					},
 				},
 			},

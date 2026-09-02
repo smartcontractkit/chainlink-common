@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -65,6 +66,9 @@ func (s GatewayConnectorHandlerServer) HandleGatewayMessage(ctx context.Context,
 	err := json.Unmarshal(req.Message, &msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode message: %w", err)
+	}
+	if msg == nil {
+		return nil, errors.New("message must be a JSON-RPC request object")
 	}
 	if err := s.impl.HandleGatewayMessage(ctx, req.GatewayId, msg); err != nil {
 		return nil, fmt.Errorf("failed to handle gateway message: %s: %w", req.GatewayId, err)

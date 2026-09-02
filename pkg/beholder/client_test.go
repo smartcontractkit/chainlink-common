@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
@@ -156,18 +157,17 @@ func TestClient(t *testing.T) {
 						records := args.Get(1).([]sdklog.Record)
 						assert.Len(t, records, 1, "batching is disabled, expecte 1 record")
 						record := records[0]
-						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
+						assert.Equal(t, tc.messageBody, record.Body().AsByteSlice(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
-						record.WalkAttributes(func(kv otellog.KeyValue) bool {
-							key := kv.Key
+						record.WalkAttributes(func(kv attribute.KeyValue) bool {
+							key := string(kv.Key)
 							actualAttributeKeys[key] = struct{}{}
 							expectedValue, ok := customAttributes[key]
 							if !ok {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
 							expectedKv := beholder.OtelAttr(key, expectedValue)
-							equal := kv.Value.Equal(expectedKv.Value)
-							assert.True(t, equal, "Record attributes mismatch for key %v", key)
+							assert.Equal(t, expectedKv.Value, kv.Value, "Record attributes mismatch for key %v", key)
 							return true
 						})
 						for key := range customAttributes {

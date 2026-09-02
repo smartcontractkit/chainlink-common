@@ -27,7 +27,7 @@ func generateFlat(gen *pkg.ProtocGen, proto, outDir string) error {
 		return err
 	}
 
-	topDir := strings.Split(proto, string(os.PathSeparator))[0]
+	topDir, _, _ := strings.Cut(proto, string(os.PathSeparator))
 	return os.RemoveAll(topDir)
 }
 

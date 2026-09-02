@@ -19,11 +19,13 @@ import (
 
 const slowMsg = "SLOW SQL QUERY"
 
+var sqlQueryTimeBuckets = []float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120}
+
 // PromSQLQueryTime is exported temporarily while transitioning the core ORMs.
 var PromSQLQueryTime = promauto.NewHistogram(prometheus.HistogramOpts{
 	Name:    "sql_query_timeout_percent",
 	Help:    "SQL query time as a percentage of timeout.",
-	Buckets: []float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120},
+	Buckets: sqlQueryTimeBuckets,
 })
 
 // MonitorHook returns a [QueryHook] that measures the timing of each query and logs about slow queries at increasing levels of severity.
@@ -172,6 +174,7 @@ func (q *queryLogger) logTiming(ctx context.Context, start time.Time) {
 	}
 
 	PromSQLQueryTime.Observe(pct)
+	getSQLQueryTimeMetric(q.lggr).Record(ctx, pct)
 }
 
 // LogThresholds holds funcs for computing thresholds for timeout usage.

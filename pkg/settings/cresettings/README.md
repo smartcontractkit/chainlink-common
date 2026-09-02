@@ -330,6 +330,12 @@ flowchart
 %%      executor's ConfidentialCompute.EnclaveRequestTimeout bounds, so it is a
 %%      separate entry point rather than part of the executor subgraph above.
         ConfidentialCompute.ConfidentialRelayHandlerTimeout>ConfidentialCompute.ConfidentialRelayHandlerTimeout]:::time
+%%      The completed-response memo: an enclave retry (re-fan-out after a gateway
+%%      rotation or timeout) is served from here instead of re-executing.
+        subgraph ConfidentialCompute.RelayResponseCache
+            ConfidentialCompute.RelayResponseCache.TTL>TTL]:::time
+            ConfidentialCompute.RelayResponseCache.CleanupInterval>CleanupInterval]:::time
+        end
     end
 
     handleRequest-->Store.FetchWorkflowArtifacts-->host.NewModule-->Engine.init-->Engine.runTriggerSubscriptionPhase-->triggers-->Engine.handleAllTriggerEvents-->Engine.startExecution

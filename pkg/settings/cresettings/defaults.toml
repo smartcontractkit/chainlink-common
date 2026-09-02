@@ -63,6 +63,10 @@ EnclaveRefreshInterval = '10s'
 PublicKeyRetriesMax = '2'
 PublicKeyRetriesBackoff = '5s'
 
+[ConfidentialCompute.RelayResponseCache]
+TTL = '10m0s'
+CleanupInterval = '1m0s'
+
 [ConfidentialCompute.PublicKeyCache]
 Enabled = 'true'
 TTL = '5m0s'

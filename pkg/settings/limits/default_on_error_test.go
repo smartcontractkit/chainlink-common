@@ -107,3 +107,44 @@ func TestTimeLimiter_WithTimeout_UsableOnReadFailure(t *testing.T) {
 	assert.InDelta(t, 10*time.Second, deadline.Sub(before), float64(2*time.Second),
 		"deadline should be based on the compiled default (10s), not hang open or fire instantly")
 }
+
+// TestTimeLimiter_WithTimeout_UsableWithoutTenant covers the missing-tenant path. The timeout
+// doesn't depend on the tenant, so the context must still be bounded by the compiled default:
+// a zero timeout would expire immediately, and a nil context would make callers drop the work.
+// A tenant that was required but missing still surfaces an error, so the bug stays visible.
+func TestTimeLimiter_WithTimeout_UsableWithoutTenant(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		scope     settings.Scope
+		expectErr bool
+	}{
+		{settings.ScopeOrg, false},     // tenant not required
+		{settings.ScopeWorkflow, true}, // tenant required
+	} {
+		t.Run(tt.scope.String(), func(t *testing.T) {
+			t.Parallel()
+			setting := settings.Duration(10 * time.Second)
+			setting.Key, setting.Scope = "test.time.no-tenant", tt.scope
+			tl, err := Factory{}.MakeTimeLimiter(setting)
+			require.NoError(t, err)
+			t.Cleanup(func() { assert.NoError(t, tl.Close()) })
+
+			before := time.Now()
+			ctx, done, err := tl.WithTimeout(t.Context()) // no contexts.WithCRE, so no tenant
+			if tt.expectErr {
+				require.Error(t, err, "a required but missing tenant must stay visible")
+			} else {
+				require.NoError(t, err)
+			}
+			require.NotNil(t, ctx, "ctx must be usable without a tenant")
+			require.NotNil(t, done)
+			defer done()
+
+			deadline, ok := ctx.Deadline()
+			require.True(t, ok, "ctx must carry a real deadline, not be unbounded")
+			assert.InDelta(t, 10*time.Second, deadline.Sub(before), float64(2*time.Second),
+				"deadline should be based on the compiled default (10s), not fire instantly")
+		})
+	}
+}

@@ -12,8 +12,7 @@ import (
 func DecodeTOML(r io.Reader, v any) error {
 	d := toml.NewDecoder(r).DisallowUnknownFields()
 	if err := d.Decode(v); err != nil {
-		var strict *toml.StrictMissingError
-		if errors.As(err, &strict) {
+		if strict, ok := errors.AsType[*toml.StrictMissingError](err); ok {
 			return errors.New(strict.String())
 		}
 		return err

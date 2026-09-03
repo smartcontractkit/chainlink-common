@@ -1,6 +1,7 @@
 package dontime
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -262,7 +263,7 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 	}
 
 	slices.SortFunc(timestampNodePairs, func(a, b timestampNodePair) int {
-		return int(a.Timestamp - b.Timestamp)
+		return cmp.Compare(a.Timestamp, b.Timestamp)
 	})
 	donTime := timestampNodePairs[len(timestampNodePairs)/2].Timestamp
 	for i := range timestampNodePairs {

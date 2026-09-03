@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v48"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -38,6 +38,10 @@ import (
 )
 
 const v2ImportPrefix = "version_v2"
+
+// memoryExportName is the export name the host memory accessors resolve the
+// guest's linear memory by.
+const memoryExportName = "memory"
 
 // callCapabilityV2ParamCount is the number of params the V2 call_capability
 // import declares (req, reqLen, responseBuffer, maxResponseLen).
@@ -420,6 +424,14 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 	mod, err := wasmtime.NewModule(engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
+	}
+
+	// Every host callback reaches the guest through its exported linear memory,
+	// so a module that doesn't export one under the expected name can't be run
+	// at all. Reject it here rather than letting the first callback dereference
+	// a missing or wrong-typed export.
+	if err = requireMemoryExport(mod); err != nil {
+		return nil, err
 	}
 
 	v2ImportName := ""
@@ -1104,6 +1116,8 @@ func createLogFn(logger logger.Logger) func(caller *wasmtime.Caller, ptr int32, 
 	}
 }
 
+var logRawMessageReg = regexp.MustCompile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
+
 // logRawMessage decodes a JSON-encoded log message received from the WASM guest and
 // logs it at the appropriate level.
 func logRawMessage(logger logger.Logger, b []byte) error {
@@ -1128,8 +1142,7 @@ func logRawMessage(logger logger.Logger, b []byte) error {
 		args = append(args, k, v)
 	}
 
-	reg, _ := regexp.Compile(`[\r\n\t]|[\x00-\x1F]|[<>\"'\\&%$;:{}\[\]/]`)
-	sanitizedMsg := reg.ReplaceAllString(msg, "*")
+	sanitizedMsg := logRawMessageReg.ReplaceAllString(msg, "*")
 
 	switch level {
 	case "debug":
@@ -1215,7 +1228,25 @@ type unsafeReaderFunc func(c *wasmtime.Caller, ptr, len int32) ([]byte, error)
 
 // wasmMemoryAccessor is the default implementation for unsafely accessing the memory of the WASM module.
 func wasmMemoryAccessor(caller *wasmtime.Caller) []byte {
-	return caller.GetExport("memory").Memory().UnsafeData(caller)
+	return caller.GetExport(memoryExportName).Memory().UnsafeData(caller)
+}
+
+// requireMemoryExport verifies that the module exports linear memory under the
+// name the host memory accessors look it up by.
+func requireMemoryExport(mod *wasmtime.Module) error {
+	for _, export := range mod.Exports() {
+		if export.Name() != memoryExportName {
+			continue
+		}
+
+		if export.Type().MemoryType() == nil {
+			return fmt.Errorf("module export %q is not a memory", memoryExportName)
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("module does not export %q", memoryExportName)
 }
 
 // wasmRead returns a copy of the wasm module memory at the given pointer and size.

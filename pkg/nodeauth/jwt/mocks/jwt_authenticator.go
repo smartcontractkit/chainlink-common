@@ -80,8 +80,8 @@ func (_c *JWTAuthenticator_AuthenticateJWT_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *JWTAuthenticator_AuthenticateJWT_Call) Return(_a0 bool, _a1 *types.NodeJWTClaims, _a2 error) *JWTAuthenticator_AuthenticateJWT_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *JWTAuthenticator_AuthenticateJWT_Call) Return(valid bool, claims *types.NodeJWTClaims, err error) *JWTAuthenticator_AuthenticateJWT_Call {
+	_c.Call.Return(valid, claims, err)
 	return _c
 }
 

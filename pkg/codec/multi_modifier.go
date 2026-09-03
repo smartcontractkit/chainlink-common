@@ -2,6 +2,7 @@ package codec
 
 import (
 	"reflect"
+	"slices"
 )
 
 // MultiModifier is a Modifier that applies each element for the slice in-order (reverse order for TransformForOnChain).
@@ -13,9 +14,9 @@ func (c MultiModifier) RetypeToOffChain(onChainType reflect.Type, itemType strin
 
 func (c MultiModifier) TransformToOnChain(offChainValue any, itemType string) (any, error) {
 	onChainValue := offChainValue
-	for i := len(c) - 1; i >= 0; i-- {
+	for _, v := range slices.Backward(c) {
 		var err error
-		if onChainValue, err = c[i].TransformToOnChain(onChainValue, itemType); err != nil {
+		if onChainValue, err = v.TransformToOnChain(onChainValue, itemType); err != nil {
 			return nil, err
 		}
 	}

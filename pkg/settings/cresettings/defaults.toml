@@ -60,6 +60,8 @@ PublicKeyRequestTimeout = '5s'
 ConfidentialRelayHandlerTimeout = '1m0s'
 InsecureSkipTLSVerify = 'false'
 EnclaveRefreshInterval = '10s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
 
 [ConfidentialCompute.PublicKeyCache]
 Enabled = 'true'
@@ -126,6 +128,8 @@ FeatureUseSingleDONTimeProviderPerExecutionActivePeriod = '[2100-01-01 00:00:00 
 FeatureChainCapabilityHashBasedOCRActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureEVMWriteReportL1FeeActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureAptosWriteReportBlockTimestampActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureRequestHashIncludeWorkflowTagActivePeriod = '[0001-01-01 00:00:00 +0000 UTC,2100-01-01 00:00:00 +0000 UTC]'
+FeatureWorkflowTagBackfillActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'
@@ -177,6 +181,14 @@ ReportSizeLimit = '5kb'
 Default = '2000000'
 
 [PerWorkflow.ChainWrite.Aptos.GasLimit.Values]
+
+[PerWorkflow.ChainWrite.Stellar]
+ReportSizeLimit = '5kb'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee]
+Default = '1000000'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee.Values]
 
 [PerWorkflow.ChainRead]
 CallLimit = '15'

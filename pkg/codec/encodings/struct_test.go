@@ -191,8 +191,3 @@ func TestStructCodec(t *testing.T) {
 		assert.Equal(t, reflect.PointerTo(reflect.TypeFor[uint64]()), tc.GetType())
 	})
 }
-
-//go:fix inline
-func toPointer[T any](t T) *T {
-	return new(t)
-}

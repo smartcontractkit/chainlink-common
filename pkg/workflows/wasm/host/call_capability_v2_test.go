@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v48"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -240,7 +240,7 @@ func TestCallCapability_V2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	resultI64 := result.(int64)
 
 	// Should return a negative value (error).
-	assert.Less(t, resultI64, int64(0),
+	assert.Negative(t, resultI64,
 		"V2 should return negative on callCapAsync error")
 
 	// Read the error string from the response buffer.
@@ -350,7 +350,7 @@ func TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 	require.NoError(t, err)
 
 	resultI64 := result.(int64)
-	assert.Less(t, resultI64, int64(0),
+	assert.Negative(t, resultI64,
 		"V2 should return negative on proto unmarshal error")
 
 	// Read error from response buffer.
@@ -416,7 +416,7 @@ func TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) 
 	// V1 writes the error to the request buffer (same buffer for both) and
 	// returns a negative value. This is the known limitation that V2 fixes
 	// by using a dedicated response buffer.
-	assert.Less(t, resultI64, int64(0),
+	assert.Negative(t, resultI64,
 		"V1 should return negative on callCapAsync error")
 
 	// The error string is written to the request buffer (offset 0), but

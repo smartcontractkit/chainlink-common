@@ -113,6 +113,8 @@ func (o *capability) RegisterToWorkflow(ctx context.Context, request capabilitie
 }
 
 func (o *capability) GetAggregator(workflowID string) (types.Aggregator, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
 	agg, ok := o.aggregators[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no aggregator found for workflowID %s", workflowID)
@@ -122,6 +124,8 @@ func (o *capability) GetAggregator(workflowID string) (types.Aggregator, error) 
 }
 
 func (o *capability) GetEncoderByWorkflowID(workflowID string) (types.Encoder, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
 	enc, ok := o.encoders[workflowID]
 	if !ok {
 		return nil, fmt.Errorf("no encoder found for workflowID %s", workflowID)

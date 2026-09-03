@@ -60,6 +60,8 @@
 		"ConfidentialRelayHandlerTimeout": "1m0s",
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
+		"PublicKeyRetriesMax": "2",
+		"PublicKeyRetriesBackoff": "5s",
 		"PublicKeyCache": {
 			"Enabled": "true",
 			"TTL": "5m0s",
@@ -166,6 +168,13 @@
 					"Default": "2000000",
 					"Values": {}
 				}
+			},
+			"Stellar": {
+				"ReportSizeLimit": "5kb",
+				"MaxResourceFee": {
+					"Default": "1000000",
+					"Values": {}
+				}
 			}
 		},
 		"ChainRead": {
@@ -210,6 +219,8 @@
 		"FeatureUseSingleDONTimeProviderPerExecutionActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureEVMWriteReportL1FeeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
-		"FeatureAptosWriteReportBlockTimestampActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
+		"FeatureAptosWriteReportBlockTimestampActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureRequestHashIncludeWorkflowTagActivePeriod": "[0001-01-01 00:00:00 +0000 UTC,2100-01-01 00:00:00 +0000 UTC]",
+		"FeatureWorkflowTagBackfillActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

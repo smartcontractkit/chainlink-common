@@ -146,8 +146,10 @@ message NodeSettings {
   uint64 max_blob_payload_bytes                  = 5;
   uint64 max_pending_queue_write_size            = 6;
   uint64 max_request_batch_size                  = 7;
-  bool   vault_optimizations_enabled             = 8;
-  bool   vault_force_empty_ocr_rounds            = 9;
+  // 8-9 reserved: retired vault_optimizations_enabled and
+  // vault_force_empty_ocr_rounds; the former flag was retired and the latter is
+  // a per-node emergency lever that must not be consensus-governed.
+  reserved 8 to 9;
 }
 
 message Observation {

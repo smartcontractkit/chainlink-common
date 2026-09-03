@@ -162,6 +162,13 @@ const (
 	reasonLimitExceeded = "limit_exceeded"
 )
 
+// isValidMetadataKeyChar reports whether r is allowed in an outgoing gRPC metadata key. grpc-go
+// accepts [0-9a-z-_.] (see internal/metadata.ValidateKey); upper-case is handled by lower-casing
+// before this is called.
+func isValidMetadataKeyChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '-' || r == '_'
+}
+
 // sanitizeMetadataKey validates a resource-attribute key as a valid outgoing gRPC metadata key,
 // without the ResourceHeaderPrefix that SanitizeMetadataHeaders adds, and reports whether it is
 // valid. It never rewrites: a key that fails validation is omitted by the caller rather than
@@ -178,7 +185,7 @@ func sanitizeMetadataKey(key string) (string, bool) {
 	}
 	lower := strings.ToLower(key)
 	for _, r := range lower {
-		if !((r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '-' || r == '_') {
+		if !isValidMetadataKeyChar(r) {
 			return "", false
 		}
 	}

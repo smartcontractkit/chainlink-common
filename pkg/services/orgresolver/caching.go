@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand/v2"
 	"slices"
 	"sync"
 	"time"
@@ -24,39 +23,17 @@ const (
 	initialRetryBackoff = 100 * time.Millisecond
 	maxRetryBackoff     = 1 * time.Second
 
-	// defaultRefreshInterval is how often a cached entry triggers a background
-	// revalidation call to the underlying resolver, used when
-	// CachingResolverConfig.RefreshInterval is unset.
+	// defaultRefreshInterval is how often the background loop revalidates
+	// every known owner against the underlying resolver
 	defaultRefreshInterval = 10 * time.Minute
-	defaultRefreshWorkers  = 4
-	refreshQueueSize       = 1024
-	// refreshJitterMaxFraction extends the effective refresh interval by up
-	// to an extra 50% so cache entries populated around the same time
-	// don't all become due for a refresh call at the same instant.
-	refreshJitterMaxFraction = 0.5
+	// refreshOwnerDelay is the pause between successive owner revalidations
+	// within a single refreshAllOwners sweep
+	refreshOwnerDelay = 100 * time.Millisecond
 
 	cacheResultHit   = "hit"
 	cacheResultMiss  = "miss"
 	cacheResultError = "error"
 )
-
-var getRetryBackoff = backoff.Backoff{
-	Min:    initialRetryBackoff,
-	Max:    maxRetryBackoff,
-	Factor: 2,
-}
-
-func getRetryStrategy() *retry.Strategy[getResult] {
-	return &retry.Strategy[getResult]{
-		MaxRetries: maxGetRetries,
-		Backoff:    getRetryBackoff.Copy(),
-	}
-}
-
-type getResult struct {
-	orgID string
-	err   error
-}
 
 // CacheEntry is a cached owner->orgID mapping, along with the time it was last
 // confirmed against the underlying resolver.
@@ -102,25 +79,14 @@ type CachingResolverConfig struct {
 	// Cache backs the owner->orgID mapping. Required; the caller picks the
 	// implementation (e.g. NewInMemoryCache, or a durable DB-backed store).
 	Cache Cache
-	// RefreshInterval controls how often a cached entry triggers a background
-	// revalidation call to the underlying resolver. It does not affect
+	// RefreshInterval controls how often the background loop revalidates
+	// every known owner against the underlying resolver. It does not affect
 	// whether a cache hit is trusted - a present entry is always returned
 	// immediately, refreshed or not. Defaults to DefaultRefreshInterval when
 	// zero.
 	RefreshInterval time.Duration
-	// Workers is the size of the background goroutine pool that processes
-	// async cache refreshes. Defaults to DefaultRefreshWorkers when zero.
-	Workers int
 	// Meter, if provided, is used to record metrics.
 	Meter metric.Meter // optional
-}
-
-// refreshJob is a request to revalidate owner against the underlying
-// resolver, carrying the cache entry that was current when the request was
-// queued (used only for the mapping-changed log comparison).
-type refreshJob struct {
-	owner    string
-	previous CacheEntry
 }
 
 // CachingResolver wraps an OrgResolver with a Cache of owner->orgID mappings.
@@ -129,21 +95,19 @@ type refreshJob struct {
 // cached it is trusted indefinitely and returned immediately, without ever
 // blocking on a call to the underlying resolver. To guard against a bad
 // entry becoming permanent (e.g. from a resolver bug or a transient
-// corruption), an entry older than RefreshInterval also queues a
-// revalidation against the underlying resolver, processed by a background
-// worker pool started by Start and stopped by Close; this never delays the
-// Get call that triggered it. If the revalidation fails, the existing cache
-// entry is left in place and continues to be served.
+// corruption), a single background loop - started by Start and stopped by
+// Close - wakes up every RefreshInterval and revalidates every owner ever
+// passed to Get against the underlying resolver; this never delays the Get
+// call that triggered it. If a revalidation fails, the existing cache entry
+// is left in place and continues to be served.
 type CachingResolver struct {
 	inner           OrgResolver
 	cache           Cache
 	refreshInterval time.Duration
-	numWorkers      int
 	logger          log.SugaredLogger
 
-	refreshCh    chan refreshJob
-	refreshingMu sync.Mutex
-	refreshing   map[string]struct{} // owner -> struct{}{} while queued or being refreshed
+	ownersMu sync.Mutex
+	owners   map[string]struct{} // every owner ever passed to Get
 
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
@@ -160,17 +124,11 @@ func NewCachingResolver(inner OrgResolver, cfg CachingResolverConfig, logger log
 	if refreshInterval <= 0 {
 		refreshInterval = defaultRefreshInterval
 	}
-	numWorkers := cfg.Workers
-	if numWorkers <= 0 {
-		numWorkers = defaultRefreshWorkers
-	}
 	resolver := &CachingResolver{
 		inner:           inner,
 		cache:           cfg.Cache,
 		refreshInterval: refreshInterval,
-		numWorkers:      numWorkers,
-		refreshCh:       make(chan refreshJob, refreshQueueSize),
-		refreshing:      make(map[string]struct{}),
+		owners:          make(map[string]struct{}),
 		logger:          log.Sugared(logger).Named("CachingResolver"),
 	}
 
@@ -190,12 +148,10 @@ func NewCachingResolver(inner OrgResolver, cfg CachingResolverConfig, logger log
 }
 
 func (c *CachingResolver) Get(ctx context.Context, owner string) (string, error) {
+	c.rememberOwner(owner)
+
 	entry, cached := c.lookupCache(ctx, owner)
 	if cached {
-		jitteredInterval := c.refreshInterval + time.Duration(rand.Float64()*refreshJitterMaxFraction*float64(c.refreshInterval))
-		if time.Since(entry.RefreshedAt) >= jitteredInterval {
-			c.queueRefresh(owner, entry)
-		}
 		return entry.OrgID, nil
 	}
 
@@ -209,65 +165,98 @@ func (c *CachingResolver) Get(ctx context.Context, owner string) (string, error)
 	return orgID, nil
 }
 
-// queueRefresh hands owner off to the background worker pool to revalidate
-// against the underlying resolver, so that Get never blocks on a cache hit.
-// At most one refresh per owner is queued/running at a time. If the queue is
-// full, the request is dropped; it will be retried on a later stale cache
-// hit.
-func (c *CachingResolver) queueRefresh(owner string, previous CacheEntry) {
-	c.refreshingMu.Lock()
-	_, inFlight := c.refreshing[owner]
-	if !inFlight {
-		c.refreshing[owner] = struct{}{}
-	}
-	c.refreshingMu.Unlock()
-	if inFlight {
-		return
-	}
-	select {
-	case c.refreshCh <- refreshJob{owner: owner, previous: previous}:
-	default:
-		c.refreshingMu.Lock()
-		delete(c.refreshing, owner)
-		c.refreshingMu.Unlock()
-		c.logger.Warnw("Refresh queue full; will retry on a later stale cache hit", "owner", owner)
-	}
+// rememberOwner records owner so the background refresh loop picks it up.
+func (c *CachingResolver) rememberOwner(owner string) {
+	c.ownersMu.Lock()
+	c.owners[owner] = struct{}{}
+	c.ownersMu.Unlock()
 }
 
-func (c *CachingResolver) refreshWorker(ctx context.Context) {
+// refreshLoop wakes up every RefreshInterval and revalidates every known
+// owner against the underlying resolver.
+func (c *CachingResolver) refreshLoop(ctx context.Context) {
 	defer c.wg.Done()
+	ticker := time.NewTicker(c.refreshInterval)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case job := <-c.refreshCh:
-			c.runRefresh(ctx, job)
+		case <-ticker.C:
+			c.refreshAllOwners(ctx)
 		}
 	}
 }
 
-// runRefresh revalidates job.owner against the underlying resolver. A failed
+// refreshAllOwners revalidates every owner ever passed to Get against the
+// underlying resolver, one at a time, pausing refreshOwnerDelay between calls
+// to smooth the load on the underlying resolver.
+func (c *CachingResolver) refreshAllOwners(ctx context.Context) {
+	c.ownersMu.Lock()
+	owners := make([]string, 0, len(c.owners))
+	for owner := range c.owners {
+		owners = append(owners, owner)
+	}
+	c.ownersMu.Unlock()
+
+	for i, owner := range owners {
+		if i > 0 {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(refreshOwnerDelay):
+			}
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		c.refreshOwner(ctx, owner)
+	}
+}
+
+// refreshOwner revalidates owner against the underlying resolver. A failed
 // revalidation is logged and otherwise ignored - the existing entry remains
 // cached and trusted.
-func (c *CachingResolver) runRefresh(ctx context.Context, job refreshJob) {
-	defer func() {
-		c.refreshingMu.Lock()
-		delete(c.refreshing, job.owner)
-		c.refreshingMu.Unlock()
-	}()
-
-	orgID, err := c.resolveWithRetry(ctx, job.owner)
+func (c *CachingResolver) refreshOwner(ctx context.Context, owner string) {
+	previous, ok, err := c.cache.Get(ctx, owner)
 	if err != nil {
-		c.logger.Warnw("Failed to refresh cached org mapping; keeping existing entry", "owner", job.owner, "error", err)
+		c.logger.Warnw("Failed to read from cache during refresh; skipping", "owner", owner, "error", err)
 		return
 	}
-	if orgID != job.previous.OrgID {
-		c.logger.Errorw("Org mapping changed for owner", "owner", job.owner, "previousOrgID", job.previous.OrgID, "newOrgID", orgID)
+	if !ok {
+		return
+	}
+
+	orgID, err := c.resolveWithRetry(ctx, owner)
+	if err != nil {
+		c.logger.Warnw("Failed to refresh cached org mapping; keeping existing entry", "owner", owner, "error", err)
+		return
+	}
+	if orgID != previous.OrgID {
+		c.logger.Errorw("Org mapping changed for owner", "owner", owner, "previousOrgID", previous.OrgID, "newOrgID", orgID)
 		if c.mappingChanges != nil {
-			c.mappingChanges.Add(ctx, 1, metric.WithAttributes(attribute.String("owner", job.owner)))
+			c.mappingChanges.Add(ctx, 1, metric.WithAttributes(attribute.String("owner", owner)))
 		}
 	}
-	c.storeInCache(ctx, job.owner, orgID)
+	c.storeInCache(ctx, owner, orgID)
+}
+
+var getRetryBackoff = backoff.Backoff{
+	Min:    initialRetryBackoff,
+	Max:    maxRetryBackoff,
+	Factor: 2,
+}
+
+type getResult struct {
+	orgID string
+	err   error
+}
+
+func getRetryStrategy() *retry.Strategy[getResult] {
+	return &retry.Strategy[getResult]{
+		MaxRetries: maxGetRetries,
+		Backoff:    getRetryBackoff.Copy(),
+	}
 }
 
 // resolveWithRetry calls the underlying resolver, retrying retriable gRPC
@@ -363,24 +352,22 @@ func unwrapErr(err error) error {
 	return nil
 }
 
-// Start starts the inner resolver and the background refresh worker pool.
+// Start starts the inner resolver and the background refresh loop.
 func (c *CachingResolver) Start(ctx context.Context) error {
 	if err := c.inner.Start(ctx); err != nil {
 		return err
 	}
 
-	// Workers must outlive the Start call, so they get their own context,
+	// The loop must outlive the Start call, so it gets its own context,
 	// cancelled explicitly by Close rather than inherited from ctx.
-	workerCtx, cancel := context.WithCancel(context.Background())
+	loopCtx, cancel := context.WithCancel(context.Background())
 	c.cancel = cancel
-	for range c.numWorkers {
-		c.wg.Add(1)
-		go c.refreshWorker(workerCtx)
-	}
+	c.wg.Add(1)
+	go c.refreshLoop(loopCtx)
 	return nil
 }
 
-// Close stops the refresh worker pool, waits for in-flight refreshes to
+// Close stops the refresh loop, waits for an in-flight refresh sweep to
 // finish, and closes the inner resolver.
 func (c *CachingResolver) Close() error {
 	if c.cancel != nil {

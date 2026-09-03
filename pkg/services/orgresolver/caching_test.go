@@ -88,8 +88,8 @@ func newTestCachingResolver(t *testing.T, inner OrgResolver, cfg CachingResolver
 }
 
 // newTestCachingResolverStarted additionally starts the background refresh
-// worker pool and registers its shutdown, for tests that exercise async
-// refresh behavior.
+// loop and registers its shutdown, for tests that exercise the ticker end to
+// end.
 func newTestCachingResolverStarted(t *testing.T, inner OrgResolver, cfg CachingResolverConfig) *CachingResolver {
 	t.Helper()
 	c := newTestCachingResolver(t, inner, cfg)
@@ -116,26 +116,22 @@ func TestCachingResolver_FreshCacheHit_SkipsInnerResolver(t *testing.T) {
 	assert.Equal(t, "org-for-owner-a", orgID)
 	assert.Equal(t, int32(1), inner.calls.Load())
 
-	// Second call: served entirely from cache, no network call, no async refresh
-	// (well within the refresh interval).
+	// Second call: served entirely from cache, no network call.
 	orgID, err = c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
 	assert.Equal(t, "org-for-owner-a", orgID)
-	assert.Equal(t, int32(1), inner.calls.Load(), "fresh cache hit must not call inner resolver")
+	assert.Equal(t, int32(1), inner.calls.Load(), "cache hit must not call inner resolver")
 }
 
-func TestCachingResolver_StaleCacheHit_DoesNotBlockOnRefresh(t *testing.T) {
-	// Even a stale cache entry must be returned synchronously; revalidation
-	// against the underlying resolver happens only in the background.
+func TestCachingResolver_CacheHit_NeverBlocksOnBackgroundRefresh(t *testing.T) {
+	// Even while the background loop is refreshing an owner, a cache hit for
+	// that owner must be returned synchronously.
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "org-first", nil
 	})
 	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-first", RefreshedAt: time.Now()}))
 	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	time.Sleep(2 * time.Millisecond) // let the entry go stale
 
 	release := make(chan struct{})
 	inner.setGetFunc(func(_ context.Context, _ string) (string, error) {
@@ -149,7 +145,7 @@ func TestCachingResolver_StaleCacheHit_DoesNotBlockOnRefresh(t *testing.T) {
 	elapsed := time.Since(start)
 	require.NoError(t, err)
 	assert.Equal(t, "org-first", orgID)
-	assert.Less(t, elapsed, 100*time.Millisecond, "cache hit must not block on the async refresh")
+	assert.Less(t, elapsed, 100*time.Millisecond, "cache hit must not block on the background refresh loop")
 }
 
 func TestCachingResolver_CacheHit_IgnoresCancelledContext(t *testing.T) {
@@ -175,45 +171,7 @@ func TestCachingResolver_DefaultRefreshInterval(t *testing.T) {
 		return "org-for-" + owner, nil
 	})
 	c := newTestCachingResolver(t, inner, CachingResolverConfig{})
-	assert.Equal(t, DefaultRefreshInterval, c.refreshInterval)
-}
-
-func TestCachingResolver_RefreshJitter_NeverTriggersBeforeBaseInterval(t *testing.T) {
-	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
-		return "org-refreshed", nil
-	})
-	cache := NewInMemoryCache()
-	base := 100 * time.Millisecond
-	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{
-		OrgID:       "org-old",
-		RefreshedAt: time.Now().Add(-base / 2), // younger than the base interval
-	}))
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: base})
-
-	for range 50 {
-		_, err := c.Get(context.Background(), "owner-a")
-		require.NoError(t, err)
-	}
-	time.Sleep(20 * time.Millisecond) // give any (incorrectly) queued refresh a moment to run
-	assert.Equal(t, int32(0), inner.calls.Load(), "an entry younger than RefreshInterval must never trigger a refresh")
-}
-
-func TestCachingResolver_RefreshJitter_AlwaysTriggersPastMaxInterval(t *testing.T) {
-	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
-		return "org-refreshed", nil
-	})
-	cache := NewInMemoryCache()
-	base := 10 * time.Millisecond
-	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{
-		OrgID:       "org-old",
-		RefreshedAt: time.Now().Add(-2 * base), // older than the max possible jittered interval (1.5x base)
-	}))
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: base})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-
-	require.Eventually(t, func() bool { return inner.calls.Load() == 1 }, eventuallyTimeout, eventuallyTick)
+	assert.Equal(t, defaultRefreshInterval, c.refreshInterval)
 }
 
 func TestCachingResolver_RequiresCache(t *testing.T) {
@@ -225,172 +183,178 @@ func TestCachingResolver_RequiresCache(t *testing.T) {
 	assert.Contains(t, err.Error(), "Cache is required")
 }
 
-// -- Async refresh tests --
+// -- Owner-tracking tests --
 
-func TestCachingResolver_StaleCacheHit_RefreshesInBackground(t *testing.T) {
+func TestCachingResolver_Get_RemembersOwnerForBackgroundRefresh(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
-		return "org-refreshed", nil
+		return "org-for-" + owner, nil
 	})
-	cache := NewInMemoryCache()
-	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{
-		OrgID:       "org-old",
-		RefreshedAt: time.Now().Add(-time.Hour),
-	}))
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: 5 * time.Minute})
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{})
 
-	// The stale value is still returned immediately.
-	orgID, err := c.Get(context.Background(), "owner-a")
+	_, err := c.Get(context.Background(), "owner-a") // cache miss
 	require.NoError(t, err)
-	assert.Equal(t, "org-old", orgID)
+	_, err = c.Get(context.Background(), "owner-a") // cache hit
+	require.NoError(t, err)
 
-	// The refresh happens asynchronously; wait for it to land.
-	require.Eventually(t, func() bool {
-		entry, ok, err := cache.Get(context.Background(), "owner-a")
-		return err == nil && ok && entry.OrgID == "org-refreshed"
-	}, eventuallyTimeout, eventuallyTick)
-	assert.Equal(t, int32(1), inner.calls.Load())
+	c.ownersMu.Lock()
+	_, remembered := c.owners["owner-a"]
+	c.ownersMu.Unlock()
+	assert.True(t, remembered, "Get must remember the owner regardless of cache hit/miss")
 }
 
-func TestCachingResolver_StaleCacheHit_DedupesConcurrentRefreshes(t *testing.T) {
+// -- refreshOwner tests: exercise the per-owner refresh logic directly and
+// deterministically, without depending on the background loop's timing --
+
+func TestCachingResolver_RefreshOwner_UpdatesCache(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
 		return "org-refreshed", nil
 	})
 	cache := NewInMemoryCache()
-	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{
-		OrgID:       "org-old",
-		RefreshedAt: time.Now().Add(-time.Hour),
-	}))
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: 5 * time.Minute})
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-old", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
 
-	var wg sync.WaitGroup
-	for range 20 {
-		wg.Go(func() {
-			_, err := c.Get(context.Background(), "owner-a")
-			assert.NoError(t, err)
-		})
-	}
-	wg.Wait()
+	c.refreshOwner(context.Background(), "owner-a")
 
-	require.Eventually(t, func() bool {
-		entry, ok, err := cache.Get(context.Background(), "owner-a")
-		return err == nil && ok && entry.OrgID == "org-refreshed"
-	}, eventuallyTimeout, eventuallyTick)
-	assert.Equal(t, int32(1), inner.calls.Load(), "concurrent Get calls for the same owner must trigger at most one refresh")
+	entry, ok, err := cache.Get(context.Background(), "owner-a")
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Equal(t, "org-refreshed", entry.OrgID)
 }
 
-func TestCachingResolver_StaleCacheHit_RefreshRetriesRetriableErrors(t *testing.T) {
+func TestCachingResolver_RefreshOwner_SkipsOwnerWithNoCacheEntry(t *testing.T) {
+	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
+		return "org-for-" + owner, nil
+	})
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{})
+
+	c.refreshOwner(context.Background(), "owner-never-cached")
+
+	assert.Equal(t, int32(0), inner.calls.Load(), "an owner with no cache entry must not be refreshed")
+}
+
+func TestCachingResolver_RefreshOwner_RetriesRetriableErrors(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
-		return "org-first", nil
-	})
-	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	assert.Equal(t, int32(1), inner.calls.Load())
-
-	time.Sleep(2 * time.Millisecond)
-	inner.setGetFunc(func(_ context.Context, _ string) (string, error) {
 		return "", status.Error(codes.Unavailable, "still down")
 	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-first", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
 
-	orgID, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	assert.Equal(t, "org-first", orgID, "cache hit must return immediately, not wait on the background refresh")
+	c.refreshOwner(context.Background(), "owner-a")
 
-	require.Eventually(t, func() bool {
-		return inner.calls.Load() == 5 // initial + refresh's (initial attempt + 3 retries)
-	}, eventuallyTimeout, eventuallyTick)
-
+	assert.Equal(t, int32(4), inner.calls.Load(), "initial attempt + 3 retries")
 	entry, ok, err := cache.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
 	require.True(t, ok)
 	assert.Equal(t, "org-first", entry.OrgID, "a failed refresh must leave the existing entry in place")
 }
 
-func TestCachingResolver_StaleCacheHit_RefreshDoesNotRetryNotFound(t *testing.T) {
+func TestCachingResolver_RefreshOwner_DoesNotRetryNotFound(t *testing.T) {
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
-		return "org-known", nil
-	})
-	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-
-	time.Sleep(2 * time.Millisecond)
-	inner.setGetFunc(func(_ context.Context, _ string) (string, error) {
 		return "", status.Error(codes.NotFound, "not found")
 	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-known", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
 
-	orgID, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	assert.Equal(t, "org-known", orgID)
+	c.refreshOwner(context.Background(), "owner-a")
 
-	require.Eventually(t, func() bool {
-		return inner.calls.Load() == 2 // initial + one refresh attempt, no retry for NotFound
-	}, eventuallyTimeout, eventuallyTick)
-
+	assert.Equal(t, int32(1), inner.calls.Load(), "no retry for NotFound")
 	entry, ok, err := cache.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
 	require.True(t, ok)
 	assert.Equal(t, "org-known", entry.OrgID)
 }
 
-func TestCachingResolver_StaleCacheHit_RefreshFailsWithNonGRPCError_KeepsCachedValue(t *testing.T) {
-	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
-		return "org-good", nil
-	})
-	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-
-	time.Sleep(2 * time.Millisecond)
+func TestCachingResolver_RefreshOwner_NonGRPCError_KeepsCachedValue(t *testing.T) {
 	jwtErr := errors.New("JWT generation failed")
-	inner.setGetFunc(func(_ context.Context, _ string) (string, error) {
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		return "", jwtErr
 	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-good", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
 
-	orgID, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	assert.Equal(t, "org-good", orgID)
+	c.refreshOwner(context.Background(), "owner-a")
 
-	require.Eventually(t, func() bool { return inner.calls.Load() == 2 }, eventuallyTimeout, eventuallyTick)
-
+	assert.Equal(t, int32(1), inner.calls.Load(), "non-retriable error should not be retried")
 	entry, ok, err := cache.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
 	require.True(t, ok)
 	assert.Equal(t, "org-good", entry.OrgID)
 }
 
-func TestCachingResolver_StaleCacheHit_RefreshDetectsWrappedGRPCErrors(t *testing.T) {
+func TestCachingResolver_RefreshOwner_DetectsWrappedGRPCErrors(t *testing.T) {
 	// Simulate the wrapping done in linking.go: fmt.Errorf("failed to fetch ...: %w", grpcErr)
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
-		return "org-good", nil
-	})
-	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-
-	time.Sleep(2 * time.Millisecond)
-	inner.setGetFunc(func(_ context.Context, _ string) (string, error) {
 		return "", fmt.Errorf("failed to fetch organization from workflow owner: %w",
 			status.Error(codes.NotFound, "owner not linked"))
 	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-good", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
 
-	orgID, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	assert.Equal(t, "org-good", orgID)
+	c.refreshOwner(context.Background(), "owner-a")
 
-	require.Eventually(t, func() bool { return inner.calls.Load() == 2 }, eventuallyTimeout, eventuallyTick,
-		"wrapped NotFound should be detected and not retried")
+	assert.Equal(t, int32(1), inner.calls.Load(), "wrapped NotFound should be detected and not retried")
 }
 
-func TestCachingResolver_StaleCacheHit_RefreshUpdatesCacheAndLogsMappingChange(t *testing.T) {
+func TestCachingResolver_RefreshOwner_RecordsMappingChangedMetric(t *testing.T) {
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
+
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
+		return "org-new", nil
+	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-old", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache, Meter: provider.Meter("test")})
+
+	c.refreshOwner(context.Background(), "owner-a")
+
+	assert.Equal(t, map[string]int64{"owner-a": 1}, counterCountsByAttr(t, reader, "org_resolver_mapping_changed", "owner"))
+}
+
+func TestCachingResolver_RefreshOwner_NoMeter_MappingChangeDoesNotPanic(t *testing.T) {
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
+		return "org-new", nil
+	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-old", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
+
+	assert.NotPanics(t, func() {
+		c.refreshOwner(context.Background(), "owner-a")
+	})
+}
+
+// -- refreshAllOwners tests --
+
+func TestCachingResolver_RefreshAllOwners_RefreshesEveryRememberedOwner(t *testing.T) {
+	inner := newMockInner(func(_ context.Context, owner string) (string, error) {
+		return "org-refreshed-" + owner, nil
+	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-old-a", RefreshedAt: time.Now()}))
+	require.NoError(t, cache.Set(context.Background(), "owner-b", CacheEntry{OrgID: "org-old-b", RefreshedAt: time.Now()}))
+	c := newTestCachingResolver(t, inner, CachingResolverConfig{Cache: cache})
+	c.rememberOwner("owner-a")
+	c.rememberOwner("owner-b")
+
+	c.refreshAllOwners(context.Background())
+
+	for _, owner := range []string{"owner-a", "owner-b"} {
+		entry, ok, err := cache.Get(context.Background(), owner)
+		require.NoError(t, err)
+		require.True(t, ok)
+		assert.Equal(t, "org-refreshed-"+owner, entry.OrgID)
+	}
+}
+
+// -- Background loop tests: exercise Start's ticker end to end --
+
+func TestCachingResolver_BackgroundLoop_PeriodicallyRefreshesKnownOwners(t *testing.T) {
 	callCount := atomic.Int32{}
 	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
 		n := callCount.Add(1)
@@ -400,28 +364,34 @@ func TestCachingResolver_StaleCacheHit_RefreshUpdatesCacheAndLogsMappingChange(t
 		return "org-new", nil
 	})
 	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-old", RefreshedAt: time.Now()}))
+	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: 5 * time.Millisecond})
 
+	// The stale value is served immediately, from cache; the loop hasn't
+	// necessarily ticked yet.
 	orgID, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	assert.Equal(t, "org-old", orgID)
-
-	time.Sleep(2 * time.Millisecond)
-
-	// Triggers an async refresh; still returns the (currently cached) old value.
-	orgID, err = c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
 	assert.Equal(t, "org-old", orgID)
 
 	require.Eventually(t, func() bool {
 		entry, ok, err := cache.Get(context.Background(), "owner-a")
 		return err == nil && ok && entry.OrgID == "org-new"
-	}, eventuallyTimeout, eventuallyTick)
+	}, eventuallyTimeout, eventuallyTick, "the background loop must eventually refresh a known owner")
+}
 
-	// A subsequent call now observes the refreshed value, still from cache.
-	orgID, err = c.Get(context.Background(), "owner-a")
+func TestCachingResolver_BackgroundLoop_DoesNotRefreshBeforeIntervalElapses(t *testing.T) {
+	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
+		return "org-refreshed", nil
+	})
+	cache := NewInMemoryCache()
+	require.NoError(t, cache.Set(context.Background(), "owner-a", CacheEntry{OrgID: "org-old", RefreshedAt: time.Now()}))
+	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Hour})
+
+	_, err := c.Get(context.Background(), "owner-a")
 	require.NoError(t, err)
-	assert.Equal(t, "org-new", orgID)
+
+	time.Sleep(20 * time.Millisecond)
+	assert.Equal(t, int32(0), inner.calls.Load(), "the loop must not refresh before RefreshInterval elapses")
 }
 
 // -- Cache-miss tests: only path where Get blocks on the underlying resolver --
@@ -594,69 +564,6 @@ func TestCachingResolver_RecordsCacheLookupMetrics(t *testing.T) {
 		cacheResultHit:   1,
 		cacheResultError: 1,
 	}, cacheLookupCounts(t, reader))
-}
-
-func TestCachingResolver_RecordsMappingChangedMetric(t *testing.T) {
-	reader := sdkmetric.NewManualReader()
-	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
-	t.Cleanup(func() { require.NoError(t, provider.Shutdown(context.Background())) })
-
-	callCount := atomic.Int32{}
-	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
-		n := callCount.Add(1)
-		if n == 1 {
-			return "org-old", nil
-		}
-		return "org-new", nil
-	})
-	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{
-		Cache:           cache,
-		RefreshInterval: time.Millisecond,
-		Meter:           provider.Meter("test"),
-	})
-
-	_, err := c.Get(context.Background(), "owner-a") // populates the cache with org-old
-	require.NoError(t, err)
-
-	time.Sleep(2 * time.Millisecond)
-
-	_, err = c.Get(context.Background(), "owner-a") // triggers the async refresh that observes org-new
-	require.NoError(t, err)
-
-	require.Eventually(t, func() bool {
-		counts := counterCountsByAttr(t, reader, "org_resolver_mapping_changed", "owner")
-		return counts["owner-a"] == 1
-	}, eventuallyTimeout, eventuallyTick)
-
-	assert.Equal(t, map[string]int64{"owner-a": 1}, counterCountsByAttr(t, reader, "org_resolver_mapping_changed", "owner"))
-}
-
-func TestCachingResolver_NoMeter_MappingChangeDoesNotPanic(t *testing.T) {
-	callCount := atomic.Int32{}
-	inner := newMockInner(func(_ context.Context, _ string) (string, error) {
-		n := callCount.Add(1)
-		if n == 1 {
-			return "org-old", nil
-		}
-		return "org-new", nil
-	})
-	cache := NewInMemoryCache()
-	c := newTestCachingResolverStarted(t, inner, CachingResolverConfig{Cache: cache, RefreshInterval: time.Millisecond})
-
-	_, err := c.Get(context.Background(), "owner-a")
-	require.NoError(t, err)
-	time.Sleep(2 * time.Millisecond)
-
-	assert.NotPanics(t, func() {
-		_, err = c.Get(context.Background(), "owner-a")
-		require.NoError(t, err)
-	})
-
-	require.Eventually(t, func() bool {
-		entry, ok, err := cache.Get(context.Background(), "owner-a")
-		return err == nil && ok && entry.OrgID == "org-new"
-	}, eventuallyTimeout, eventuallyTick)
 }
 
 func TestCachingResolver_NoMeter_DoesNotPanic(t *testing.T) {

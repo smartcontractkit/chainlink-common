@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788427322803,
+  "lastUpdate": 1788442258366,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -59280,6 +59280,66 @@ window.BENCHMARK_DATA = {
             "value": 126350,
             "unit": "ns/op",
             "extra": "9381 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "vreff",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "eb4e3f87b067289c36f6d5329382baf7bdc14037",
+          "message": "[PRIV-644] add confidential relay memo settings to cresettings (#2354)",
+          "timestamp": "2026-09-03T13:18:21Z",
+          "tree_id": "4d91d2c1bf46404b548a120e29f1bd32f2ed33b1",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/eb4e3f87b067289c36f6d5329382baf7bdc14037"
+        },
+        "date": 1788442253619,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 372,
+            "unit": "ns/op",
+            "extra": "3141843 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90444,
+            "unit": "ns/op",
+            "extra": "13266 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 415.1,
+            "unit": "ns/op",
+            "extra": "2856141 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91190,
+            "unit": "ns/op",
+            "extra": "13058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25889,
+            "unit": "ns/op",
+            "extra": "46460 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 142827,
+            "unit": "ns/op",
+            "extra": "8535 times\n4 procs"
           }
         ]
       }

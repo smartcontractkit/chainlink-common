@@ -63,8 +63,6 @@ type fakeMeterable struct {
 	entries []SnapshotEntry
 }
 
-func (f *fakeMeterable) ResourceIdentity() ResourceIdentity { return f.identity }
-
 func (f *fakeMeterable) GetUtilization(_ context.Context) []SnapshotEntry {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -146,7 +144,7 @@ func TestEmitDelta_Success(t *testing.T) {
 	call := emitter.calls[0]
 	attrs := attrMap(t, call.attrKVs)
 	assert.Equal(t, "metering.v1.meter_record", attrs[beholder.AttrKeyDataSchema])
-	assert.Equal(t, "cll-meter", attrs[beholder.AttrKeyDomain])
+	assert.Equal(t, "cll.meter", attrs[beholder.AttrKeyDomain])
 	assert.Equal(t, "metering.v1.MeterRecord", attrs[beholder.AttrKeyEntity])
 
 	var record meteringpb.MeterRecord
@@ -265,8 +263,8 @@ func decodeSnapshots(t *testing.T, calls []emitCall) []*meteringpb.MeterSnapshot
 		if attrs[beholder.AttrKeyEntity] != "metering.v1.MeterSnapshot" {
 			continue
 		}
-		// Snapshots route on the cll-meter beholder domain, same as records.
-		assert.Equal(t, "cll-meter", attrs[beholder.AttrKeyDomain])
+		// Snapshots route on the cll.meter beholder domain, same as records.
+		assert.Equal(t, "cll.meter", attrs[beholder.AttrKeyDomain])
 		var s meteringpb.MeterSnapshot
 		require.NoError(t, proto.Unmarshal(c.body, &s))
 		snaps = append(snaps, &s)

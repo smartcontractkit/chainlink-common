@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"slices"
 	"sync"
 )
 
@@ -43,8 +44,8 @@ func (m *MultiStart) start(ctx context.Context, s StartClose) (err error) {
 
 // Close closes all started services, in reverse order.
 func (m *MultiStart) Close() (err error) {
-	for i := len(m.started) - 1; i >= 0; i-- {
-		s := m.started[i]
+	for _, s := range slices.Backward(m.started) {
+
 		err = errors.Join(err, s.Close())
 	}
 	return

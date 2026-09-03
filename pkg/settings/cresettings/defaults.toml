@@ -14,6 +14,9 @@ VaultOptimizationsEnabled = 'false'
 VaultGetSecretsShareAggregationIncludesPublicKeys = 'false'
 VaultOwnerAddressCanonicalizationEnabled = 'false'
 VaultJSONOmitUnpopulatedEnabled = 'false'
+VaultGetSecretsRelaxedConsensusEnabled = 'false'
+VaultIncludeInvalidPendingItemsEnabled = 'false'
+VaultPendingQueueStallThreshold = '0'
 VaultSignedResponseRequestIDEnabled = 'false'
 VaultZoneBWorkflowGetSecretsRestrictEnabled = 'false'
 GatewayHTTPGlobalRate = '500rps:500'
@@ -27,6 +30,7 @@ BaseTriggerRetryInterval = '30s'
 BaseTriggerMaxRetries = '20'
 BaseTriggerPruneAge = '24h0m0s'
 BaseTriggerMaxSendsPerTick = '20'
+WASMPollOneoffSubscriptionLimit = '128'
 VaultCiphertextSizeLimit = '2kb'
 VaultShareSizeLimit = '600b'
 VaultIdentifierKeySizeLimit = '64b'
@@ -53,8 +57,15 @@ RetryBackoff = '2s'
 SecretsCacheEnabled = 'false'
 EnclaveRequestTimeout = '30s'
 PublicKeyRequestTimeout = '5s'
+ConfidentialRelayHandlerTimeout = '1m0s'
 InsecureSkipTLSVerify = 'false'
 EnclaveRefreshInterval = '10s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
+
+[ConfidentialCompute.RelayResponseCache]
+TTL = '10m0s'
+CleanupInterval = '1m0s'
 
 [ConfidentialCompute.PublicKeyCache]
 Enabled = 'true'
@@ -121,6 +132,8 @@ FeatureUseSingleDONTimeProviderPerExecutionActivePeriod = '[2100-01-01 00:00:00 
 FeatureChainCapabilityHashBasedOCRActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureEVMWriteReportL1FeeActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureAptosWriteReportBlockTimestampActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureRequestHashIncludeWorkflowTagActivePeriod = '[0001-01-01 00:00:00 +0000 UTC,2100-01-01 00:00:00 +0000 UTC]'
+FeatureWorkflowTagBackfillActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'
@@ -173,9 +186,21 @@ Default = '2000000'
 
 [PerWorkflow.ChainWrite.Aptos.GasLimit.Values]
 
+[PerWorkflow.ChainWrite.Stellar]
+ReportSizeLimit = '5kb'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee]
+Default = '1000000'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee.Values]
+
 [PerWorkflow.ChainRead]
 CallLimit = '15'
 LogQueryBlockLimit = '100'
+PayloadSizeLimit = '5kb'
+
+[PerWorkflow.ChainRead.Solana]
+BatchItemLimit = '100'
 PayloadSizeLimit = '5kb'
 
 [PerWorkflow.Consensus]

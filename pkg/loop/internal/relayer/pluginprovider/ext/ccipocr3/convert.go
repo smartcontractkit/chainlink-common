@@ -713,6 +713,9 @@ func messageToPb(msg ccipocr3.Message) *ccipocr3pb.Message {
 
 // Convert protobuf Message to ccipocr3.Message
 func pbToMessage(pb *ccipocr3pb.Message) ccipocr3.Message {
+	if pb == nil || pb.Header == nil {
+		return ccipocr3.Message{}
+	}
 	// Convert header with proper Bytes32 conversion
 	var messageID, msgHash ccipocr3.Bytes32
 	copy(messageID[:], pb.Header.MessageId)
@@ -757,10 +760,10 @@ func pbToTokenAmounts(pbAmounts []*ccipocr3pb.RampTokenAmount) []ccipocr3.RampTo
 func pbToCurseInfo(pb *ccipocr3pb.CurseInfo) ccipocr3.CurseInfo {
 	result := ccipocr3.CurseInfo{
 		CursedSourceChains: make(map[ccipocr3.ChainSelector]bool),
-		CursedDestination:  pb.CursedDestination,
-		GlobalCurse:        pb.GlobalCurse,
+		CursedDestination:  pb.GetCursedDestination(),
+		GlobalCurse:        pb.GetGlobalCurse(),
 	}
-	for chainSel, cursed := range pb.CursedSourceChains {
+	for chainSel, cursed := range pb.GetCursedSourceChains() {
 		result.CursedSourceChains[ccipocr3.ChainSelector(chainSel)] = cursed
 	}
 	return result

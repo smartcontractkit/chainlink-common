@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -161,6 +162,7 @@ type DurableEmitter struct {
 	eng *services.Engine
 
 	store        DurableEventStore
+	isStoreQueue bool // whether the innermost DurableEventStore is a DurableQueueObserver, since the metrics wrapper always passes a cast
 	batchEmitter BatchEmitter
 	// retransmitEnabled controls whether this instance runs the retransmit and
 	// cleanup loops. Should be set to false when initialized inside LOOP plugins.
@@ -234,6 +236,8 @@ func NewDurableEmitter(
 	if lggr == nil {
 		return nil, errors.New("logger is nil")
 	}
+	bi, isStoreBatch := store.(BatchInserter)
+	_, isQueue := store.(DurableQueueObserver)
 	var m *durableEmitterMetrics
 	if cfg.Metrics != nil {
 		if meter == nil {
@@ -248,6 +252,7 @@ func NewDurableEmitter(
 	}
 	d := &DurableEmitter{
 		store:             store,
+		isStoreQueue:      isQueue,
 		batchEmitter:      batchEmitter,
 		retransmitEnabled: retransmitEnabled,
 		cfg:               cfg,
@@ -260,16 +265,14 @@ func NewDurableEmitter(
 		Close: d.stop,
 	}.NewServiceEngine(lggr)
 
-	if cfg.InsertBatchSize > 0 {
-		if bi, ok := store.(BatchInserter); ok {
-			d.batchInserter = bi
-			chanSize := max(cfg.InsertBatchSize*200, 10_000)
-			d.insertCh = make(chan *insertRequest, chanSize)
-			d.eng.Infow("DurableEmitter: write coalescing enabled",
-				"insertBatchSize", cfg.InsertBatchSize,
-				"insertBatchWorkers", cfg.InsertBatchWorkers,
-				"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
-		}
+	if cfg.InsertBatchSize > 0 && isStoreBatch {
+		d.batchInserter = bi
+		chanSize := max(cfg.InsertBatchSize*200, 10_000)
+		d.insertCh = make(chan *insertRequest, chanSize)
+		d.eng.Infow("DurableEmitter: write coalescing enabled",
+			"insertBatchSize", cfg.InsertBatchSize,
+			"insertBatchWorkers", cfg.InsertBatchWorkers,
+			"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
 	}
 
 	if cfg.DeleteBatchSize > 0 {
@@ -352,7 +355,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				d.metrics.emitFail.Add(ctx, 1)
 			}
 		}
-		sourceDomain, entityType, err := extractSourceAndType(attrKVs...)
+		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
 		if err != nil {
 			emitFail()
 			return err
@@ -804,7 +807,7 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			if obs, ok := d.store.(DurableQueueObserver); ok {
+			if obs, ok := d.store.(DurableQueueObserver); ok && d.isStoreQueue {
 				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
 				if err != nil {
 					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
@@ -873,24 +876,4 @@ func parseAttrs(attrKVs ...any) map[string]any {
 		}
 	}
 	return a
-}
-
-// extractSourceAndType returns the CloudEvent source domain and entity type
-// from the supplied attributes. Callers must provide the canonical CloudEvents
-// keys "source" and "type". Both must be non-empty strings.
-func extractSourceAndType(attrKVs ...any) (sourceDomain, entityType string, err error) {
-	attrs := parseAttrs(attrKVs...)
-	if v, ok := attrs["source"].(string); ok {
-		sourceDomain = v
-	}
-	if v, ok := attrs["type"].(string); ok {
-		entityType = v
-	}
-	if sourceDomain == "" {
-		return "", "", errors.New(`"source" not found in provided key/value attributes`)
-	}
-	if entityType == "" {
-		return "", "", errors.New(`"type" not found in provided key/value attributes`)
-	}
-	return sourceDomain, entityType, nil
 }

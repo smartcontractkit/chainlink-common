@@ -70,11 +70,15 @@ func MustNewStartedServer(loggerName string, opts ...ServerOpt) *Server {
 }
 
 // Deprecated: use NewStartedServer(loggerName, WithOtelViews(otelViews))
+//
+//go:fix inline
 func NewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) (*Server, error) {
 	return NewStartedServer(loggerName, WithOtelViews(otelViews))
 }
 
 // Deprecated: use MustNewStartedServer(loggerName, WithOtelViews(otelViews))
+//
+//go:fix inline
 func MustNewStartedServerWithOtelViews(loggerName string, otelViews []sdkmetric.View) *Server {
 	return MustNewStartedServer(loggerName, WithOtelViews(otelViews))
 }
@@ -200,7 +204,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
 			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
-			MetricViewsDenyAttributes:    s.EnvConfig.TelemetryMetricViewsDenyAttributes,
+			MetricViewsDenyAttributes:      s.EnvConfig.TelemetryMetricViewsDenyAttributes,
 		}
 
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {

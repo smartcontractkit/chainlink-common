@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
@@ -24,6 +25,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipmocks "github.com/smartcontractkit/chainlink-common/pkg/chipingress/mocks"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -155,18 +157,17 @@ func TestClient(t *testing.T) {
 						records := args.Get(1).([]sdklog.Record)
 						assert.Len(t, records, 1, "batching is disabled, expecte 1 record")
 						record := records[0]
-						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
+						assert.Equal(t, tc.messageBody, record.Body().AsByteSlice(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
-						record.WalkAttributes(func(kv otellog.KeyValue) bool {
-							key := kv.Key
+						record.WalkAttributes(func(kv attribute.KeyValue) bool {
+							key := string(kv.Key)
 							actualAttributeKeys[key] = struct{}{}
 							expectedValue, ok := customAttributes[key]
 							if !ok {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
 							expectedKv := beholder.OtelAttr(key, expectedValue)
-							equal := kv.Value.Equal(expectedKv.Value)
-							assert.True(t, equal, "Record attributes mismatch for key %v", key)
+							assert.Equal(t, expectedKv.Value, kv.Value, "Record attributes mismatch for key %v", key)
 							return true
 						})
 						for key := range customAttributes {
@@ -947,7 +948,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 			ChipIngressEmitterGRPCEndpoint: "localhost:9090",
 			ChipIngressInsecureConnection:  true,
 			ChipIngressBatchEmitterEnabled: true,
-			ChipIngressLogger:              newTestLogger(t),
+			ChipIngressLogger:              logger.Test(t),
 			ChipIngressBufferSize:          10,
 			ChipIngressMaxBatchSize:        5,
 			ChipIngressSendInterval:        50 * time.Millisecond,
@@ -963,7 +964,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 		client := newBatchClient(t)
 
 		// Before Start: service is unready and incomplete emit fails validation.
-		assert.ErrorContains(t, client.Service.Ready(), "not started")
+		assert.ErrorContains(t, client.Ready(), "not started")
 		err := client.Emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
 			beholder.AttrKeyEntity, "TestEvent",
@@ -971,8 +972,8 @@ func TestClient_batchEmitterService(t *testing.T) {
 		)
 		assert.ErrorContains(t, err, "BeholderDataSchema")
 
-		require.NoError(t, client.Service.Start(t.Context()))
-		assert.NoError(t, client.Service.Ready())
+		require.NoError(t, client.Start(t.Context()))
+		assert.NoError(t, client.Ready())
 		_ = client.Close()
 	})
 
@@ -982,7 +983,7 @@ func TestClient_batchEmitterService(t *testing.T) {
 	t.Run("emit succeeds before start", func(t *testing.T) {
 		client := newBatchClient(t)
 
-		assert.ErrorContains(t, client.Service.Ready(), "not started")
+		assert.ErrorContains(t, client.Ready(), "not started")
 
 		err := client.Emitter.Emit(t.Context(), []byte("body"),
 			beholder.AttrKeyDomain, "platform",
@@ -991,8 +992,8 @@ func TestClient_batchEmitterService(t *testing.T) {
 		)
 		assert.NoError(t, err, "emit must not fail when service is not yet started")
 
-		require.NoError(t, client.Service.Start(t.Context()))
-		assert.NoError(t, client.Service.Ready())
+		require.NoError(t, client.Start(t.Context()))
+		assert.NoError(t, client.Ready())
 		_ = client.Close()
 	})
 

@@ -5,6 +5,8 @@ import (
 )
 
 // Deprecated: use services.Service
+//
+//go:fix inline
 type Service interface {
 	Name() string
 	Start(context.Context) error

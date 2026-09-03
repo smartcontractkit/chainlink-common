@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -24,6 +25,14 @@ func (m *mockLinkingClient) GetOrganizationFromWorkflowOwner(ctx context.Context
 	return &linkingclient.GetOrganizationFromWorkflowOwnerResponse{
 		OrganizationId: orgID,
 	}, nil
+}
+
+// mockHangingLinkingClient blocks until the call context is done, simulating a blackholed connection
+type mockHangingLinkingClient struct{}
+
+func (m *mockHangingLinkingClient) GetOrganizationFromWorkflowOwner(ctx context.Context, req *linkingclient.GetOrganizationFromWorkflowOwnerRequest, opts ...grpc.CallOption) (*linkingclient.GetOrganizationFromWorkflowOwnerResponse, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
 }
 
 // mockJWTGenerator implements the JWTGenerator interface for testing
@@ -87,6 +96,39 @@ func TestOrgResolver_Get(t *testing.T) {
 	orgID, err := resolver.Get(ctx, workflowOwner)
 	require.NoError(t, err)
 	require.Equal(t, "org-"+workflowOwner, orgID)
+}
+
+func TestOrgResolver_Get_TimesOutWhenServiceHangs(t *testing.T) {
+	cfg := Config{
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		RequestTimeout:                50 * time.Millisecond,
+		Client:                        &mockHangingLinkingClient{},
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+
+	start := time.Now()
+	_, err = resolver.Get(t.Context(), "0xabcdef1234567890")
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.Less(t, time.Since(start), 5*time.Second)
+}
+
+func TestOrgResolver_Get_DefaultTimeoutApplied(t *testing.T) {
+	cfg := Config{
+		WorkflowRegistryAddress:       "0x1234567890abcdef",
+		WorkflowRegistryChainSelector: 1,
+		Client:                        &mockLinkingClient{},
+	}
+
+	resolver, err := cfg.New(logger.Test(t))
+	require.NoError(t, err)
+	require.Equal(t, defaultRequestTimeout, resolver.requestTimeout)
+
+	orgID, err := resolver.Get(t.Context(), "0xabcdef1234567890")
+	require.NoError(t, err)
+	require.Equal(t, "org-0xabcdef1234567890", orgID)
 }
 
 func TestOrgResolver_NewOrgResolver_RequiresClientOrURL(t *testing.T) {

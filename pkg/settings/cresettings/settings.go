@@ -52,36 +52,47 @@ var DefaultGetter Getter
 var Config Schema
 
 var Default = Schema{
-	WorkflowLimit:                               Int(1000),
-	WorkflowExecutionConcurrencyLimit:           Int(1000),
-	GatewayIncomingPayloadSizeLimit:             Size(1 * config.MByte),
-	GatewayVaultManagementEnabled:               Bool(true),
+	WorkflowLimit:                     Int(1000),
+	WorkflowExecutionConcurrencyLimit: Int(1000),
+	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
+	GatewayVaultManagementEnabled:     Bool(true),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
 	TenantID: Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
-	VaultOrgIdAsSecretOwnerEnabled:                    Bool(false),
-	PropagateOrgIDInRequestMetadata:                   Bool(false),
-	VaultBase64EncodingEnabled:                        Bool(false),
-	VaultForceEmptyOCRRounds:                          Bool(false),
-	VaultOptimizationsEnabled:                         Bool(false),
+	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
+	PropagateOrgIDInRequestMetadata: Bool(false),
+	VaultBase64EncodingEnabled:      Bool(false),
+	VaultForceEmptyOCRRounds:        Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultOptimizationsEnabled: Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys: Bool(false),
 	VaultOwnerAddressCanonicalizationEnabled:          Bool(false),
-	VaultJSONOmitUnpopulatedEnabled:                   Bool(false),
-	VaultSignedResponseRequestIDEnabled:               Bool(false),
-	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
-	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
-	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
-	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
-	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
-	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
-	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
-	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
-	BaseTriggerRetryInterval:                          Duration(30 * time.Second),
-	BaseTriggerMaxRetries:                             Int(20),
-	BaseTriggerPruneAge:                               Duration(24 * time.Hour),
-	BaseTriggerMaxSendsPerTick:                        Int(20),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultJSONOmitUnpopulatedEnabled: Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultGetSecretsRelaxedConsensusEnabled: Bool(false),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultIncludeInvalidPendingItemsEnabled: Bool(false),
+	VaultPendingQueueStallThreshold:        Int(0),
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultSignedResponseRequestIDEnabled:         Bool(false),
+	VaultZoneBWorkflowGetSecretsRestrictEnabled: Bool(false),
+	GatewayHTTPGlobalRate:                       Rate(rate.Limit(500), 500),
+	GatewayHTTPPerNodeRate:                      Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:          Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:         Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:            Rate(rate.Every(30*time.Second), 0),
+	GatewayHTTPActionMtlsConcurrencyLimit:       Int(50),
+	TriggerRegistrationStatusUpdateTimeout:      Duration(0 * time.Second),
+	BaseTriggerRetryInterval:                    Duration(30 * time.Second),
+	BaseTriggerMaxRetries:                       Int(20),
+	BaseTriggerPruneAge:                         Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:                  Int(20),
+	WASMPollOneoffSubscriptionLimit:             Int(128),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -142,14 +153,21 @@ var Default = Schema{
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
 	ConfidentialCompute: confidentialCompute{
-		GlobalRate:              Rate(rate.Limit(1000), 1000),
-		MaxRetries:              Int(3),
-		RetryBackoff:            Duration(2 * time.Second),
-		SecretsCacheEnabled:     Bool(false),
-		EnclaveRequestTimeout:   Duration(30 * time.Second),
-		PublicKeyRequestTimeout: Duration(5 * time.Second),
+		GlobalRate:                      Rate(rate.Limit(1000), 1000),
+		MaxRetries:                      Int(3),
+		RetryBackoff:                    Duration(2 * time.Second),
+		SecretsCacheEnabled:             Bool(false),
+		EnclaveRequestTimeout:           Duration(30 * time.Second),
+		PublicKeyRequestTimeout:         Duration(5 * time.Second),
+		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
+		RelayResponseCache: ccRelayResponseCache{
+			TTL:             Duration(10 * time.Minute),
+			CleanupInterval: Duration(1 * time.Minute),
+		},
 		InsecureSkipTLSVerify:   Bool(false),
 		EnclaveRefreshInterval:  Duration(10 * time.Second),
+		PublicKeyRetriesMax:     Int(2),
+		PublicKeyRetriesBackoff: Duration(5 * time.Second),
 		PublicKeyCache: ccPublicKeyCache{
 			Enabled:                 Bool(true),
 			TTL:                     Duration(5 * time.Minute),
@@ -264,11 +282,19 @@ var Default = Schema{
 				ReportSizeLimit: Size(5 * config.KByte),
 				GasLimit:        PerChainSelector(Uint64(2_000_000), map[string]uint64{}),
 			},
+			Stellar: stellarChainWrite{
+				ReportSizeLimit: Size(5 * config.KByte),
+				MaxResourceFee:  PerChainSelector(Uint64(1_000_000), map[string]uint64{}),
+			},
 		},
 		ChainRead: chainRead{
 			CallLimit:          Int(15),
 			LogQueryBlockLimit: Uint64(100),
 			PayloadSizeLimit:   Size(5 * config.KByte),
+			Solana: solanaChainRead{
+				BatchItemLimit:   Int(100),
+				PayloadSizeLimit: Size(5 * config.KByte),
+			},
 		},
 		Consensus: consensus{
 			ObservationSizeLimit: Size(100 * config.KByte),
@@ -317,14 +343,29 @@ var Default = Schema{
 		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// ON by default: covers all possible timestamps including zero time.Time{},
+		// so WorkflowTag is included in the hash matching current prod behavior.
+		// After rollout, set to far-future window to exclude WorkflowTag.
+		FeatureRequestHashIncludeWorkflowTagActivePeriod: TimeRange(
+			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+		// OFF by default: the workflow_specs_v2.workflow_tag reconcile backfill
+		// is intentionally disabled on a fresh deploy. Ops narrows the range to
+		// cover "now" only after FeatureRequestHashIncludeWorkflowTag is muted
+		// on every DON member, so DBs can heal without producing tag-driven
+		// hash divergence during the fill window.
+		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
 type Schema struct {
-	WorkflowLimit                               Setting[int] `unit:"{workflow}"`
-	WorkflowExecutionConcurrencyLimit           Setting[int] `unit:"{workflow}"`
-	GatewayIncomingPayloadSizeLimit             Setting[config.Size]
-	GatewayVaultManagementEnabled               Setting[bool]
+	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
+	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
+	GatewayVaultManagementEnabled     Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled                         Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
@@ -332,30 +373,45 @@ type Schema struct {
 	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
-	RemoteExecutableWorkflowDONBindingEnabled         Setting[bool]
-	TenantID                                          Setting[uint64]
-	VaultOrgIdAsSecretOwnerEnabled                    Setting[bool] // Deprecated
-	PropagateOrgIDInRequestMetadata                   Setting[bool]
-	VaultBase64EncodingEnabled                        Setting[bool]
-	VaultForceEmptyOCRRounds                          Setting[bool]
-	VaultOptimizationsEnabled                         Setting[bool]
+	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
+	TenantID                                  Setting[uint64]
+	VaultOrgIdAsSecretOwnerEnabled            Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata           Setting[bool]
+	VaultBase64EncodingEnabled                Setting[bool]
+	VaultForceEmptyOCRRounds                  Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultOptimizationsEnabled Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
 	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
-	VaultJSONOmitUnpopulatedEnabled                   Setting[bool]
-	VaultSignedResponseRequestIDEnabled               Setting[bool]
-	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
-	GatewayHTTPGlobalRate                             Setting[config.Rate]
-	GatewayHTTPPerNodeRate                            Setting[config.Rate]
-	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
-	GatewayConfidentialRelayPerNodeRate               Setting[config.Rate]
-	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
-	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
-	TriggerRegistrationStatusUpdateTimeout            Setting[time.Duration]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultJSONOmitUnpopulatedEnabled Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultGetSecretsRelaxedConsensusEnabled Setting[bool]
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultIncludeInvalidPendingItemsEnabled Setting[bool]
+	VaultPendingQueueStallThreshold        Setting[int] `unit:"{observation}"`
+	// Deprecated: feature flag has been retired; behavior is now always enabled.
+	VaultSignedResponseRequestIDEnabled         Setting[bool]
+	VaultZoneBWorkflowGetSecretsRestrictEnabled Setting[bool]
+	GatewayHTTPGlobalRate                       Setting[config.Rate]
+	GatewayHTTPPerNodeRate                      Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate          Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate         Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate            Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit       Setting[int] `unit:"{request}"`
+	TriggerRegistrationStatusUpdateTimeout      Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
 	BaseTriggerPruneAge        Setting[time.Duration]
 	BaseTriggerMaxSendsPerTick Setting[int] `unit:"{event}"`
+
+	// WASMPollOneoffSubscriptionLimit bounds nsubscriptions in the WASI
+	// poll_oneoff host call. Checked against the Go wasip1 runtime
+	// (https://cs.opensource.google/go/go/+/refs/tags/go1.26.2:src/runtime/netpoll_wasip1.go),
+	// which never needs more than one.
+	WASMPollOneoffSubscriptionLimit Setting[int] `unit:"{subscription}"`
 
 	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit          Setting[config.Size]
@@ -462,6 +518,8 @@ type Workflows struct {
 	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
+	FeatureRequestHashIncludeWorkflowTagActivePeriod        Setting[Range[config.Timestamp]]
+	FeatureWorkflowTagBackfillActivePeriod                  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {
@@ -480,9 +538,10 @@ type chainWrite struct {
 	TargetsLimit    Setting[int]         `unit:"{target}"`
 	ReportSizeLimit Setting[config.Size] // Deprecated
 
-	EVM    evmChainWrite
-	Solana solanaChainWrite
-	Aptos  aptosChainWrite
+	EVM     evmChainWrite
+	Solana  solanaChainWrite
+	Aptos   aptosChainWrite
+	Stellar stellarChainWrite
 }
 type solanaChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
@@ -491,6 +550,10 @@ type solanaChainWrite struct {
 type aptosChainWrite struct {
 	ReportSizeLimit Setting[config.Size]
 	GasLimit        SettingMap[uint64] `unit:"{gas}"`
+}
+type stellarChainWrite struct {
+	ReportSizeLimit Setting[config.Size]
+	MaxResourceFee  SettingMap[uint64] `unit:"{stroop}"`
 }
 type evmChainWrite struct {
 	TransactionGasLimit Setting[uint64]    `unit:"{gas}"` // Deprecated
@@ -501,6 +564,11 @@ type chainRead struct {
 	CallLimit          Setting[int]    `unit:"{call}"`
 	LogQueryBlockLimit Setting[uint64] `unit:"{block}"`
 	PayloadSizeLimit   Setting[config.Size]
+	Solana             solanaChainRead
+}
+type solanaChainRead struct {
+	BatchItemLimit   Setting[int] `unit:"{item}"`
+	PayloadSizeLimit Setting[config.Size]
 }
 type httpAction struct {
 	CallLimit         Setting[int] `unit:"{call}"`
@@ -531,10 +599,41 @@ type confidentialCompute struct {
 	EnclaveRequestTimeout   Setting[time.Duration]
 	PublicKeyRequestTimeout Setting[time.Duration]
 
-	InsecureSkipTLSVerify  Setting[bool]
-	EnclaveRefreshInterval Setting[time.Duration]
-	PublicKeyCache         ccPublicKeyCache
-	Session                ccSession
+	// ConfidentialRelayHandlerTimeout bounds how long a relay-DON node may spend
+	// serving one confidential relay request from the gateway: attestation
+	// validation, the DON authorization checks, and the vault or capability call
+	// it proxies.
+	//
+	// This is the server side of the exchange EnclaveRequestTimeout bounds on the
+	// client side, so it should not exceed that value. The enclave derives its
+	// gateway HTTP timeout from EnclaveRequestTimeout, so a node still working
+	// past that point can only produce a response nobody is waiting for.
+	ConfidentialRelayHandlerTimeout Setting[time.Duration]
+
+	// RelayResponseCache configures the relay-DON node's completed-response memo.
+	RelayResponseCache ccRelayResponseCache
+
+	InsecureSkipTLSVerify   Setting[bool]
+	EnclaveRefreshInterval  Setting[time.Duration]
+	PublicKeyRetriesMax     Setting[int] `unit:"{attempt}"`
+	PublicKeyRetriesBackoff Setting[time.Duration]
+	PublicKeyCache          ccPublicKeyCache
+	Session                 ccSession
+}
+
+// ccRelayResponseCache holds the relay-DON node's completed-response memo
+// settings. The memo lets an enclave retry — a re-fan-out after a gateway
+// rotation or per-request timeout — return the already-computed signed result
+// instead of re-executing the capability or re-fetching from the vault.
+type ccRelayResponseCache struct {
+	// TTL bounds how long a completed signed result stays in the memo. It should
+	// exceed EnclaveRequestTimeout so a retry issued within the enclave's own
+	// deadline still hits the memo, but it need not live longer: the enclave
+	// stops retrying once it has quorum.
+	TTL Setting[time.Duration]
+
+	// CleanupInterval is how often expired entries are swept from the memo.
+	CleanupInterval Setting[time.Duration]
 }
 
 // ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.

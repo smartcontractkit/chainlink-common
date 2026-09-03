@@ -272,7 +272,7 @@ func serializeExpressionValues(expr Expression, depth int) (Expression, error) {
 	if expr.Primitive != nil {
 		if comp, ok := expr.Primitive.(*primitives.Comparator); ok {
 			if comp == nil {
-				return expr, fmt.Errorf("invalid Expression: Primitive is *primitives.Comparator but pointer is nil")
+				return expr, errors.New("invalid Expression: Primitive is *primitives.Comparator but pointer is nil")
 			}
 			newComp := &primitives.Comparator{
 				Name:             comp.Name,
@@ -325,7 +325,7 @@ func deserializeExpressionValues(expr Expression, depth int) (Expression, error)
 	if expr.Primitive != nil {
 		if comp, ok := expr.Primitive.(*primitives.Comparator); ok {
 			if comp == nil {
-				return expr, fmt.Errorf("invalid Expression: Primitive is *primitives.Comparator but pointer is nil")
+				return expr, errors.New("invalid Expression: Primitive is *primitives.Comparator but pointer is nil")
 			}
 			newComp := &primitives.Comparator{
 				Name:             comp.Name,

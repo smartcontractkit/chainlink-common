@@ -13,6 +13,7 @@ service Solana {
   rpc GetBlock(GetBlockRequest) returns (GetBlockReply);
   rpc GetFeeForMessage(GetFeeForMessageRequest) returns (GetFeeForMessageReply);
   rpc GetMultipleAccountsWithOpts(GetMultipleAccountsWithOptsRequest) returns (GetMultipleAccountsWithOptsReply);
+  rpc GetProgramAccounts(GetProgramAccountsRequest) returns (GetProgramAccountsReply);
   rpc GetSignatureStatuses(GetSignatureStatusesRequest) returns (GetSignatureStatusesReply);
   rpc GetSlotHeight(GetSlotHeightRequest) returns (GetSlotHeightReply);
   rpc GetTransaction(GetTransactionRequest) returns (GetTransactionReply);
@@ -107,11 +108,13 @@ message GetAccountInfoWithOptsReply {
 message GetAccountInfoWithOptsRequest {
   bytes account = 1;        // 32-byte Pubkey
   GetAccountInfoOpts opts = 2;
+  bool is_external = 3; // if true, limits like response size limit may be applied
 }
 
 // Reply for GetBalance.
 message GetBalanceReply {
   uint64 value = 1; // lamports
+  uint64 slot = 2;  // processed slot
 }
 
 // Request for GetBalance.
@@ -142,7 +145,8 @@ message GetBlockRequest {
 
 // Fee quote for a base58-encoded Message.
 message GetFeeForMessageReply {
-  uint64 fee = 1; // lamports
+  uint64 fee = 1;  // lamports
+  uint64 slot = 2; // processed slot
 }
 
 message GetFeeForMessageRequest {
@@ -172,6 +176,45 @@ message GetMultipleAccountsWithOptsReply {
 message GetMultipleAccountsWithOptsRequest {
   repeated bytes accounts = 1; // list of 32-byte Pubkeys
   GetMultipleAccountsOpts opts = 2;
+  bool is_external = 3; // if true, limits like response size limit may be applied
+}
+
+// Memcmp filter for getProgramAccounts.
+message RPCFilterMemcmp {
+  uint64 offset = 1; // byte offset into account data
+  bytes bytes = 2;   // data to match (RPC encodes as base58)
+}
+
+// Account filter for getProgramAccounts (memcmp or data size).
+message RPCFilter {
+  RPCFilterMemcmp memcmp = 1;
+  uint64 data_size = 2; // match accounts with this data length
+}
+
+// Options for GetProgramAccounts.
+message GetProgramAccountsOpts {
+  EncodingType encoding = 1;
+  CommitmentType commitment = 2;
+  DataSlice data_slice = 3;
+  repeated RPCFilter filters = 4;
+}
+
+// Program-owned account with its pubkey.
+message KeyedAccount {
+  bytes pubkey = 1;   // 32-byte Pubkey
+  Account account = 2;
+}
+
+// Reply for GetProgramAccounts.
+message GetProgramAccountsReply {
+  repeated KeyedAccount value = 1;
+}
+
+// Request for GetProgramAccounts.
+message GetProgramAccountsRequest {
+  bytes program = 1;              // 32-byte program Pubkey
+  GetProgramAccountsOpts opts = 2;
+  bool is_external = 3; // if true, limits like response size limit may be applied
 }
 
 // Reply for GetSignatureStatuses.
@@ -304,6 +347,7 @@ message GetTransactionReply {
 // GetTransaction request.
 message GetTransactionRequest {
   bytes signature = 1; // 64-byte signature
+  bool is_external = 2; // if true, limits like response size limit may be applied
 }
 
 // RPC read context.
@@ -332,6 +376,7 @@ message SimulateTXRequest {
   bytes receiver = 1;            // 32-byte program id (target)
   string encoded_transaction = 2; // base64/base58 tx
   SimulateTXOpts opts = 3;
+  bool is_external = 4; // if true, limits like response size limit may be applied
 }
 
 // Accounts to return during simulation.

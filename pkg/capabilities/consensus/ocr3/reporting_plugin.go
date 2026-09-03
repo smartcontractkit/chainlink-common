@@ -13,10 +13,11 @@ import (
 
 	"github.com/smartcontractkit/libocr/quorumhelper"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -281,6 +282,9 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 				r.lggr.Errorw("observations are not a list", "weID", weid, "oracleID", attributedObservation.Observer, "err", innerErr)
 				continue
 			}
+			obsList.Underlying = slices.DeleteFunc(obsList.Underlying, func(v values.Value) bool {
+				return v == nil
+			})
 
 			if _, ok := execIDToOracleObservations[weid]; !ok {
 				execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)

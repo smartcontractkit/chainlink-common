@@ -26,7 +26,7 @@ func TestRegressionPollOneoffRejectsExcessiveSubscriptions(t *testing.T) {
 
 	cfg := &ModuleConfig{MaxSubscriptionsLimiter: limiter}
 	exec := &execution[*sdkpb.ExecutionResult]{ctx: t.Context(), module: &module{cfg: cfg}}
-	legacyPollOneoff := createPollOneoff(t.Context(), cfg)
+	legacyPollOneoff := createPollOneoff(t.Context(), limiter)
 
 	tests := []struct {
 		name           string

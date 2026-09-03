@@ -10,6 +10,7 @@ import (
 	"hash"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
@@ -19,6 +20,12 @@ const (
 	MethodSecretsGet     = "confidential.secrets.get"
 	MethodCapabilityExec = "confidential.capability.execute"
 
+	// asyncSuffix marks the asynchronous (enclave-polled) variants of the relay methods
+	asyncSuffix = ".async"
+
+	MethodSecretsGetAsync     = MethodSecretsGet + asyncSuffix
+	MethodCapabilityExecAsync = MethodCapabilityExec + asyncSuffix
+
 	DomainSecretsGet     = "ConfidentialSecretsGet"
 	DomainCapabilityExec = "ConfidentialCapabilityExecute"
 
@@ -26,6 +33,18 @@ const (
 	// response hashes from other ed25519 payloads in the system.
 	RelayResponseSignaturePrefix = "CONFIDENTIAL_RELAY_PAYLOAD_"
 )
+
+// IsAsyncMethod reports whether method is an asynchronous (enclave-polled) relay route,
+// identified by the ".async" suffix.
+func IsAsyncMethod(method string) bool {
+	return strings.HasSuffix(method, asyncSuffix)
+}
+
+// SyncMethod returns the synchronous route for method, stripping the async
+// suffix if present. Non-async methods are returned unchanged.
+func SyncMethod(method string) string {
+	return strings.TrimSuffix(method, asyncSuffix)
+}
 
 // EnclaveConfig mirrors the confidential-compute EnclaveConfig fields the
 // relay needs to verify against onchain DON state. The enclave fills this

@@ -22,6 +22,10 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/kms"
 )
 
+// cryptoKeyVersionsSegment separates a CryptoKey resource name from its version number in a
+// CryptoKeyVersion resource name.
+const cryptoKeyVersionsSegment = "/cryptoKeyVersions/"
+
 // Key identifies one in-memory CryptoKeyVersion held by FakeGCPKMSClient. KeyID is a CryptoKey
 // resource name (projects/<p>/locations/<l>/keyRings/<r>/cryptoKeys/<k>); several Keys may share a
 // KeyID to emulate a rotated key with multiple versions.
@@ -34,15 +38,9 @@ type Key struct {
 	VersionNumber uint64
 	// State is the version state. Defaults to ENABLED.
 	State kmspb.CryptoKeyVersion_CryptoKeyVersionState
-	// Purpose is the purpose reported for the parent CryptoKey. Defaults to ASYMMETRIC_SIGN; set it
-	// to emulate an unrelated key sharing the key ring.
-	Purpose kmspb.CryptoKey_CryptoKeyPurpose
-	// Algorithm is the algorithm reported for this version and for the parent CryptoKey's version
-	// template. Defaults to the algorithm matching KeyType; set it to emulate an unsupported one.
+	// Algorithm is the algorithm reported for this version. Defaults to the algorithm matching
+	// KeyType; set it to emulate an unsupported one.
 	Algorithm kmspb.CryptoKeyVersion_CryptoKeyVersionAlgorithm
-	// OmitVersionTemplate drops VersionTemplate from the parent CryptoKey in ListCryptoKeys. The
-	// field is optional in the API, so a listing can arrive without it.
-	OmitVersionTemplate bool
 }
 
 // FakeGCPKMSClient is an in-memory implementation of Client for tests. It emulates the parts of
@@ -90,9 +88,6 @@ func normalizeKey(key *Key) error {
 	}
 	if key.State == kmspb.CryptoKeyVersion_CRYPTO_KEY_VERSION_STATE_UNSPECIFIED {
 		key.State = kmspb.CryptoKeyVersion_ENABLED
-	}
-	if key.Purpose == kmspb.CryptoKey_CRYPTO_KEY_PURPOSE_UNSPECIFIED {
-		key.Purpose = kmspb.CryptoKey_ASYMMETRIC_SIGN
 	}
 	if key.Algorithm == kmspb.CryptoKeyVersion_CRYPTO_KEY_VERSION_ALGORITHM_UNSPECIFIED {
 		algorithm, err := keyTypeToAlgorithm(key.KeyType)
@@ -152,49 +147,6 @@ func (m *FakeGCPKMSClient) GetCryptoKeyVersion(ctx context.Context, req *kmspb.G
 		return nil, err
 	}
 	return m.toCryptoKeyVersion(key), nil
-}
-
-func (m *FakeGCPKMSClient) ListCryptoKeyVersions(ctx context.Context, cryptoKeyName string) ([]*kmspb.CryptoKeyVersion, error) {
-	if cryptoKeyName == "" {
-		return nil, errors.New("crypto key name is required")
-	}
-	versions := make([]*kmspb.CryptoKeyVersion, 0, len(m.keys))
-	for i := range m.keys {
-		if m.keys[i].KeyID != cryptoKeyName {
-			continue
-		}
-		versions = append(versions, m.toCryptoKeyVersion(&m.keys[i]))
-	}
-	if len(versions) == 0 {
-		return nil, errors.New("key not found")
-	}
-	return versions, nil
-}
-
-func (m *FakeGCPKMSClient) ListCryptoKeys(ctx context.Context, keyRingName string) ([]*kmspb.CryptoKey, error) {
-	keys := make([]*kmspb.CryptoKey, 0, len(m.keys))
-	seen := make(map[string]struct{}, len(m.keys))
-	for i := range m.keys {
-		key := &m.keys[i]
-		if !strings.HasPrefix(key.KeyID, keyRingName+"/cryptoKeys/") {
-			continue
-		}
-		if _, ok := seen[key.KeyID]; ok {
-			continue
-		}
-		seen[key.KeyID] = struct{}{}
-		// Note: no Primary — Cloud KMS only sets it for ENCRYPT_DECRYPT keys.
-		cryptoKey := &kmspb.CryptoKey{
-			Name:       key.KeyID,
-			Purpose:    key.Purpose,
-			CreateTime: timestamppb.New(m.createdAt),
-		}
-		if !key.OmitVersionTemplate {
-			cryptoKey.VersionTemplate = &kmspb.CryptoKeyVersionTemplate{Algorithm: key.Algorithm}
-		}
-		keys = append(keys, cryptoKey)
-	}
-	return keys, nil
 }
 
 func (m *FakeGCPKMSClient) GetPublicKey(ctx context.Context, req *kmspb.GetPublicKeyRequest, opts ...gax.CallOption) (*kmspb.PublicKey, error) {

@@ -17,6 +17,10 @@ const (
 	keyRingName = "projects/test-project/locations/us-central1/keyRings/test-ring"
 	keyName     = keyRingName + "/cryptoKeys/test-key"
 	keyName2    = keyRingName + "/cryptoKeys/test-key-2"
+
+	// Key names are CryptoKeyVersion resource names: a name always names exactly one version.
+	keyVersion1  = keyName + "/cryptoKeyVersions/1"
+	key2Version1 = keyName2 + "/cryptoKeyVersions/1"
 )
 
 func TestGCPKMSKeystore(t *testing.T) {
@@ -37,51 +41,44 @@ func TestGCPKMSKeystore(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	ks, err := gcpkms.NewKeystore(fakeClient)
 	require.NoError(t, err)
 	ctx := t.Context()
 
 	t.Run("GetKeys", func(t *testing.T) {
-		t.Run("listing all keys", func(t *testing.T) {
-			resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
-			require.NoError(t, err)
-			require.Len(t, resp.Keys, 2)
-			require.Equal(t, keyName, resp.Keys[0].KeyInfo.Name)
-			require.Equal(t, keyName2, resp.Keys[1].KeyInfo.Name)
+		t.Run("no key names is rejected", func(t *testing.T) {
+			_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
+			require.ErrorContains(t, err, "does not list key rings")
 		})
 		t.Run("specific keys are sorted by name", func(t *testing.T) {
-			// keystore.Reader specifies lexicographic order regardless of request order.
 			resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
-				KeyNames: []string{keyName2, keyName},
+				KeyNames: []string{keyVersion1, key2Version1},
 			})
 			require.NoError(t, err)
 			require.Len(t, resp.Keys, 2)
-			require.Equal(t, keyName, resp.Keys[0].KeyInfo.Name)
-			require.Equal(t, keyName2, resp.Keys[1].KeyInfo.Name)
-			require.Equal(t, keystore.ECDSA_S256, resp.Keys[0].KeyInfo.KeyType)
-			require.Equal(t, crypto.FromECDSAPub(&key.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
-		})
-		t.Run("explicit key version", func(t *testing.T) {
-			resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
-				KeyNames: []string{keyName + "/cryptoKeyVersions/1"},
-			})
-			require.NoError(t, err)
-			require.Len(t, resp.Keys, 1)
-			require.Equal(t, keyName+"/cryptoKeyVersions/1", resp.Keys[0].KeyInfo.Name)
-			require.Equal(t, crypto.FromECDSAPub(&key.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
+			require.Equal(t, key2Version1, resp.Keys[0].KeyInfo.Name)
+			require.Equal(t, keyVersion1, resp.Keys[1].KeyInfo.Name)
+			require.Equal(t, keystore.ECDSA_S256, resp.Keys[1].KeyInfo.KeyType)
+			require.Equal(t, crypto.FromECDSAPub(&key.PublicKey), resp.Keys[1].KeyInfo.PublicKey)
 		})
 		t.Run("no such key", func(t *testing.T) {
 			_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
-				KeyNames: []string{"projects/p/locations/l/keyRings/r/cryptoKeys/nope"},
+				KeyNames: []string{"projects/p/locations/l/keyRings/r/cryptoKeys/nope/cryptoKeyVersions/1"},
 			})
 			require.Error(t, err)
+		})
+		t.Run("bare crypto key name is rejected", func(t *testing.T) {
+			_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
+				KeyNames: []string{keyName},
+			})
+			require.ErrorContains(t, err, "not a CryptoKeyVersion resource name")
 		})
 	})
 
 	t.Run("SignVerify", func(t *testing.T) {
 		t.Run("invalid sign request", func(t *testing.T) {
 			_, err := ks.Sign(ctx, keystore.SignRequest{
-				KeyName: keyName,
+				KeyName: keyVersion1,
 				Data:    make([]byte, 31), // 31 byte digest
 			})
 			require.Error(t, err)
@@ -89,14 +86,21 @@ func TestGCPKMSKeystore(t *testing.T) {
 		})
 		t.Run("no such key", func(t *testing.T) {
 			_, err := ks.Sign(ctx, keystore.SignRequest{
-				KeyName: "projects/p/locations/l/keyRings/r/cryptoKeys/nope",
+				KeyName: "projects/p/locations/l/keyRings/r/cryptoKeys/nope/cryptoKeyVersions/1",
 				Data:    make([]byte, 32), // 32 byte digest
 			})
 			require.Error(t, err)
 		})
+		t.Run("bare crypto key name is rejected", func(t *testing.T) {
+			_, err := ks.Sign(ctx, keystore.SignRequest{
+				KeyName: keyName,
+				Data:    make([]byte, 32),
+			})
+			require.ErrorContains(t, err, "not a CryptoKeyVersion resource name")
+		})
 		t.Run("success", func(t *testing.T) {
 			signResp, err := ks.Sign(ctx, keystore.SignRequest{
-				KeyName: keyName,
+				KeyName: keyVersion1,
 				Data:    make([]byte, 32), // 32 byte digest
 			})
 			require.NoError(t, err)
@@ -126,17 +130,17 @@ func TestGCPKMSKeystore_Ed25519(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	ks, err := gcpkms.NewKeystore(fakeClient)
 	require.NoError(t, err)
 	ctx := t.Context()
 
 	t.Run("GetKeys", func(t *testing.T) {
 		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{
-			KeyNames: []string{keyName},
+			KeyNames: []string{keyVersion1},
 		})
 		require.NoError(t, err)
 		require.Len(t, resp.Keys, 1)
-		require.Equal(t, keyName, resp.Keys[0].KeyInfo.Name)
+		require.Equal(t, keyVersion1, resp.Keys[0].KeyInfo.Name)
 		require.Equal(t, keystore.Ed25519, resp.Keys[0].KeyInfo.KeyType)
 		require.Equal(t, []byte(ed25519PubKey), resp.Keys[0].KeyInfo.PublicKey)
 	})
@@ -145,7 +149,7 @@ func TestGCPKMSKeystore_Ed25519(t *testing.T) {
 		// Ed25519 can sign arbitrary length messages
 		testData := []byte("hello, world")
 		signResp, err := ks.Sign(ctx, keystore.SignRequest{
-			KeyName: keyName,
+			KeyName: keyVersion1,
 			Data:    testData,
 		})
 		require.NoError(t, err)
@@ -163,130 +167,43 @@ func TestGCPKMSKeystore_Ed25519(t *testing.T) {
 	})
 }
 
-// The keystore must never rely on CryptoKey.Primary: Cloud KMS only populates it for
-// ENCRYPT_DECRYPT keys, so an asymmetric signing key's version has to be resolved by listing.
-func TestGCPKMSKeystore_ResolvesLatestEnabledVersion(t *testing.T) {
-	oldKey, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	newKey, err := crypto.GenerateKey()
+// Requesting a version this keystore cannot use e.g. an unsupported algorithm or a disabled
+// version surfaces the error from both GetKeys and Sign.
+func TestGCPKMSKeystore_UnusableVersions(t *testing.T) {
+	p256Key, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	disabledKey, err := crypto.GenerateKey()
 	require.NoError(t, err)
 
 	fakeClient, err := gcpkms.NewFakeGCPKMSClient([]gcpkms.Key{
-		{KeyType: keystore.ECDSA_S256, KeyID: keyName, VersionNumber: 1, PrivateKey: internal.NewRaw(crypto.FromECDSA(oldKey))},
-		{KeyType: keystore.ECDSA_S256, KeyID: keyName, VersionNumber: 2, PrivateKey: internal.NewRaw(crypto.FromECDSA(newKey))},
-		{
-			KeyType:       keystore.ECDSA_S256,
-			KeyID:         keyName,
-			VersionNumber: 3,
-			State:         kmspb.CryptoKeyVersion_DISABLED,
-			PrivateKey:    internal.NewRaw(crypto.FromECDSA(disabledKey)),
-		},
-	})
-	require.NoError(t, err)
-	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
-	require.NoError(t, err)
-	ctx := t.Context()
-
-	t.Run("highest enabled version wins", func(t *testing.T) {
-		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
-		require.NoError(t, err)
-		require.Len(t, resp.Keys, 1)
-		require.Equal(t, crypto.FromECDSAPub(&newKey.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
-	})
-	t.Run("signing uses the same version", func(t *testing.T) {
-		signResp, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyName, Data: make([]byte, 32)})
-		require.NoError(t, err)
-		verifyResp, err := ks.Verify(ctx, keystore.VerifyRequest{
-			KeyType:   keystore.ECDSA_S256,
-			PublicKey: crypto.FromECDSAPub(&newKey.PublicKey),
-			Data:      make([]byte, 32),
-			Signature: signResp.Signature,
-		})
-		require.NoError(t, err)
-		require.True(t, verifyResp.Valid)
-	})
-	t.Run("pinning an older version", func(t *testing.T) {
-		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName + "/cryptoKeyVersions/1"}})
-		require.NoError(t, err)
-		require.Len(t, resp.Keys, 1)
-		require.Equal(t, crypto.FromECDSAPub(&oldKey.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
-	})
-	t.Run("pinning a disabled version fails", func(t *testing.T) {
-		_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName + "/cryptoKeyVersions/3"}})
-		require.ErrorContains(t, err, "is not enabled")
-	})
-}
-
-// A key ring is commonly shared, so listing it must skip keys this keystore cannot use instead of
-// failing the whole call.
-func TestGCPKMSKeystore_ListSkipsUnusableKeys(t *testing.T) {
-	signingKey, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	otherKey, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	unsupportedKey, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	disabledKey, err := crypto.GenerateKey()
-	require.NoError(t, err)
-
-	fakeClient, err := gcpkms.NewFakeGCPKMSClient([]gcpkms.Key{
-		{KeyType: keystore.ECDSA_S256, KeyID: keyName, PrivateKey: internal.NewRaw(crypto.FromECDSA(signingKey))},
-		{
-			// An encryption key that happens to live in the same key ring.
-			KeyType:    keystore.ECDSA_S256,
-			KeyID:      keyRingName + "/cryptoKeys/encrypt-key",
-			Purpose:    kmspb.CryptoKey_ENCRYPT_DECRYPT,
-			PrivateKey: internal.NewRaw(crypto.FromECDSA(otherKey)),
-		},
 		{
 			// A signing key on a curve this keystore does not support.
 			KeyType:    keystore.ECDSA_S256,
-			KeyID:      keyRingName + "/cryptoKeys/p256-key",
+			KeyID:      keyName,
 			Algorithm:  kmspb.CryptoKeyVersion_EC_SIGN_P256_SHA256,
-			PrivateKey: internal.NewRaw(crypto.FromECDSA(unsupportedKey)),
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(p256Key)),
 		},
 		{
-			// A supported key whose only version has been disabled.
 			KeyType:    keystore.ECDSA_S256,
-			KeyID:      keyRingName + "/cryptoKeys/disabled-key",
+			KeyID:      keyName2,
 			State:      kmspb.CryptoKeyVersion_DISABLED,
-			PrivateKey: internal.NewRaw(crypto.FromECDSA(unsupportedKey)),
-		},
-		{
-			// An unsupported key that reports no VersionTemplate, so the cheap pre-filter cannot
-			// see its algorithm and the skip has to happen after the version is resolved.
-			KeyType:             keystore.ECDSA_S256,
-			KeyID:               keyRingName + "/cryptoKeys/p256-key-no-template",
-			Algorithm:           kmspb.CryptoKeyVersion_EC_SIGN_P256_SHA256,
-			OmitVersionTemplate: true,
-			PrivateKey:          internal.NewRaw(crypto.FromECDSA(disabledKey)),
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(disabledKey)),
 		},
 	})
 	require.NoError(t, err)
-	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	ks, err := gcpkms.NewKeystore(fakeClient)
 	require.NoError(t, err)
 	ctx := t.Context()
 
-	resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
-	require.NoError(t, err)
-	require.Len(t, resp.Keys, 1)
-	require.Equal(t, keyName, resp.Keys[0].KeyInfo.Name)
+	_, err = ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyVersion1}})
+	require.ErrorContains(t, err, "unsupported Cloud KMS key algorithm")
+	_, err = ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: make([]byte, 32)})
+	require.ErrorContains(t, err, "unsupported Cloud KMS key algorithm")
 
-	// Explicitly requesting an unusable key still surfaces the error.
-	_, err = ks.GetKeys(ctx, keystore.GetKeysRequest{
-		KeyNames: []string{keyRingName + "/cryptoKeys/p256-key"},
-	})
-	require.ErrorContains(t, err, "unsupported Cloud KMS key algorithm")
-	_, err = ks.GetKeys(ctx, keystore.GetKeysRequest{
-		KeyNames: []string{keyRingName + "/cryptoKeys/disabled-key"},
-	})
-	require.ErrorContains(t, err, "has no enabled version")
-	_, err = ks.GetKeys(ctx, keystore.GetKeysRequest{
-		KeyNames: []string{keyRingName + "/cryptoKeys/p256-key-no-template"},
-	})
-	require.ErrorContains(t, err, "unsupported Cloud KMS key algorithm")
+	_, err = ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{key2Version1}})
+	require.ErrorContains(t, err, "is not enabled")
+	_, err = ks.Sign(ctx, keystore.SignRequest{KeyName: key2Version1, Data: make([]byte, 32)})
+	require.ErrorContains(t, err, "is not enabled")
 }
 
 func TestGCPKMSKeystore_InvalidEd25519Key(t *testing.T) {
@@ -298,64 +215,18 @@ func TestGCPKMSKeystore_InvalidEd25519Key(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	ks, err := gcpkms.NewKeystore(fakeClient)
 	require.NoError(t, err)
 
 	// Must error rather than panic inside crypto/ed25519.
-	_, err = ks.Sign(t.Context(), keystore.SignRequest{KeyName: keyName, Data: []byte("hello")})
+	_, err = ks.Sign(t.Context(), keystore.SignRequest{KeyName: keyVersion1, Data: []byte("hello")})
 	require.ErrorContains(t, err, "invalid Ed25519 private key length")
 }
 
-// A least-privilege deployment holds per-CryptoKey permissions only, with no ring-wide
-// cloudkms.cryptoKeys.list. Such a client implements Client but not KeyRingLister, and must still be
-// able to do everything except enumerate the ring.
-type noListClient struct {
-	gcpkms.Client // embedded as an interface: promotes only Client's methods, not ListCryptoKeys
-}
-
-func TestGCPKMSKeystore_ClientWithoutKeyRingLister(t *testing.T) {
-	key, err := crypto.GenerateKey()
-	require.NoError(t, err)
-	fakeClient, err := gcpkms.NewFakeGCPKMSClient([]gcpkms.Key{
-		{KeyType: keystore.ECDSA_S256, KeyID: keyName, PrivateKey: internal.NewRaw(crypto.FromECDSA(key))},
-	})
-	require.NoError(t, err)
-
-	var client gcpkms.Client = noListClient{Client: fakeClient}
-	_, isLister := client.(gcpkms.KeyRingLister)
-	require.False(t, isLister, "test double must not expose ListCryptoKeys")
-
-	ks, err := gcpkms.NewKeystore(client, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
-	require.NoError(t, err)
-	ctx := t.Context()
-
-	t.Run("explicit key names work", func(t *testing.T) {
-		resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
-		require.NoError(t, err)
-		require.Len(t, resp.Keys, 1)
-		require.Equal(t, crypto.FromECDSAPub(&key.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
-	})
-	t.Run("signing works", func(t *testing.T) {
-		signResp, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyName, Data: make([]byte, 32)})
-		require.NoError(t, err)
-		verifyResp, err := ks.Verify(ctx, keystore.VerifyRequest{
-			KeyType:   keystore.ECDSA_S256,
-			PublicKey: crypto.FromECDSAPub(&key.PublicKey),
-			Data:      make([]byte, 32),
-			Signature: signResp.Signature,
-		})
-		require.NoError(t, err)
-		require.True(t, verifyResp.Valid)
-	})
-	t.Run("listing reports a clear error", func(t *testing.T) {
-		_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{})
-		require.ErrorContains(t, err, "does not implement KeyRingLister")
-	})
-}
-
-// A rotation landing between GetKeys and Sign must not change which version signs: the public key a
-// caller already holds has to stay the one that verifies its signatures.
-func TestGCPKMSKeystore_PinsVersionAcrossRotation(t *testing.T) {
+// A CryptoKeyVersion name names one version forever, so a rotation can never change which key a
+// configured name signs with: the public key a caller already holds stays the one that verifies
+// its signatures. Adopting a rotation means configuring the new version's name.
+func TestGCPKMSKeystore_Rotation(t *testing.T) {
 	originalKey, err := crypto.GenerateKey()
 	require.NoError(t, err)
 	rotatedKey, err := crypto.GenerateKey()
@@ -365,11 +236,11 @@ func TestGCPKMSKeystore_PinsVersionAcrossRotation(t *testing.T) {
 		{KeyType: keystore.ECDSA_S256, KeyID: keyName, VersionNumber: 1, PrivateKey: internal.NewRaw(crypto.FromECDSA(originalKey))},
 	})
 	require.NoError(t, err)
-	ks, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
+	ks, err := gcpkms.NewKeystore(fakeClient)
 	require.NoError(t, err)
 	ctx := t.Context()
 
-	resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
+	resp, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyVersion1}})
 	require.NoError(t, err)
 	require.Len(t, resp.Keys, 1)
 	publicKey := resp.Keys[0].KeyInfo.PublicKey
@@ -383,7 +254,7 @@ func TestGCPKMSKeystore_PinsVersionAcrossRotation(t *testing.T) {
 		PrivateKey:    internal.NewRaw(crypto.FromECDSA(rotatedKey)),
 	}))
 
-	signResp, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyName, Data: make([]byte, 32)})
+	signResp, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: make([]byte, 32)})
 	require.NoError(t, err)
 
 	verifyResp, err := ks.Verify(ctx, keystore.VerifyRequest{
@@ -395,15 +266,8 @@ func TestGCPKMSKeystore_PinsVersionAcrossRotation(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, verifyResp.Valid, "signature must verify against the public key GetKeys reported")
 
-	// GetKeys keeps reporting the pinned version too, so the two never diverge.
-	resp, err = ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
+	// GetKeys keeps reporting the configured version too, so the two never diverge.
+	resp, err = ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyVersion1}})
 	require.NoError(t, err)
 	require.Equal(t, publicKey, resp.Keys[0].KeyInfo.PublicKey)
-
-	// A keystore started after the rotation picks up the newer version.
-	fresh, err := gcpkms.NewKeystore(fakeClient, gcpkms.KeystoreOptions{KeyRingName: keyRingName})
-	require.NoError(t, err)
-	resp, err = fresh.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyName}})
-	require.NoError(t, err)
-	require.Equal(t, crypto.FromECDSAPub(&rotatedKey.PublicKey), resp.Keys[0].KeyInfo.PublicKey)
 }

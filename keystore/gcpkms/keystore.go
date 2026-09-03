@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"hash/crc32"
 	"sort"
-	"sync"
-	"time"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -52,12 +50,6 @@ func checkCrc32c(data []byte, received *wrapperspb.Int64Value) error {
 
 type keystoreSignerReader struct {
 	client Client
-
-	mu sync.RWMutex
-	// versions caches everything the keystore needs for one CryptoKeyVersion: its key type,
-	// creation time, and public key. It is keyed by CryptoKeyVersion resource name, whose
-	// algorithm and public key are immutable, so entries never need invalidating.
-	versions map[string]*keyVersion
 }
 
 func NewKeystore(client Client) (interface {
@@ -67,10 +59,7 @@ func NewKeystore(client Client) (interface {
 	if client == nil {
 		return nil, errors.New("GCP KMS client is required")
 	}
-	return &keystoreSignerReader{
-		client:   client,
-		versions: make(map[string]*keyVersion),
-	}, nil
+	return &keystoreSignerReader{client: client}, nil
 }
 
 // cryptoKeyVersionAlgorithmToKeyType converts a Cloud KMS CryptoKeyVersionAlgorithm to a keystore
@@ -88,57 +77,30 @@ func cryptoKeyVersionAlgorithmToKeyType(algo kmspb.CryptoKeyVersion_CryptoKeyVer
 	}
 }
 
-// keyVersion is the cached per-version data: the keystore key type, the version's creation
-// time, and its public key in the keystore's native format.
-type keyVersion struct {
-	keyType   keystore.KeyType
-	createdAt time.Time
-	publicKey []byte
-}
-
-// getKeyVersion returns the cached data for a CryptoKeyVersion resource name, fetching and
-// validating the version and its public key from Cloud KMS on first use. A version can still be
-// disabled after being cached; the next AsymmetricSign then fails server-side, surfacing the
-// error at sign time.
-func (k *keystoreSignerReader) getKeyVersion(ctx context.Context, versionName string) (*keyVersion, error) {
-	k.mu.RLock()
-	cached, ok := k.versions[versionName]
-	k.mu.RUnlock()
-	if ok {
-		return cached, nil
-	}
-
+// getKeyVersion fetches a CryptoKeyVersion from Cloud KMS and validates that it is enabled and
+// uses a supported algorithm.
+func (k *keystoreSignerReader) getKeyVersion(ctx context.Context, versionName string) (*kmspb.CryptoKeyVersion, keystore.KeyType, error) {
 	version, err := k.client.GetCryptoKeyVersion(ctx, &kmspb.GetCryptoKeyVersionRequest{Name: versionName})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get crypto key version %s: %w", versionName, err)
+		return nil, "", fmt.Errorf("failed to get crypto key version %s: %w", versionName, err)
 	}
 	if version == nil {
-		return nil, fmt.Errorf("empty crypto key version response from Cloud KMS for %s", versionName)
+		return nil, "", fmt.Errorf("empty crypto key version response from Cloud KMS for %s", versionName)
 	}
 	if version.Name != versionName {
-		return nil, fmt.Errorf("crypto key version response has name %q, expected %q", version.Name, versionName)
+		return nil, "", fmt.Errorf("crypto key version response has name %q, expected %q", version.Name, versionName)
 	}
 	if version.State != kmspb.CryptoKeyVersion_ENABLED {
-		return nil, fmt.Errorf("crypto key version %s is not enabled (state=%s)", version.Name, version.State)
+		return nil, "", fmt.Errorf("crypto key version %s is not enabled (state=%s)", version.Name, version.State)
 	}
 	if version.CreateTime == nil {
-		return nil, fmt.Errorf("crypto key version %s has no creation time", version.Name)
+		return nil, "", fmt.Errorf("crypto key version %s has no creation time", version.Name)
 	}
 	keyType, err := cryptoKeyVersionAlgorithmToKeyType(version.Algorithm)
 	if err != nil {
-		return nil, fmt.Errorf("crypto key version %s: %w", version.Name, err)
+		return nil, "", fmt.Errorf("crypto key version %s: %w", version.Name, err)
 	}
-	publicKey, err := k.publicKeyBytes(ctx, versionName, keyType)
-	if err != nil {
-		return nil, err
-	}
-
-	info := &keyVersion{keyType: keyType, createdAt: version.CreateTime.AsTime(), publicKey: publicKey}
-	k.mu.Lock()
-	// A concurrent fill of the same version stores equivalent data, so a plain store is fine.
-	k.versions[versionName] = info
-	k.mu.Unlock()
-	return info, nil
+	return version, keyType, nil
 }
 
 // publicKeyBytes fetches the public key for a crypto key version and converts it to the
@@ -202,12 +164,16 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 			return keystore.GetKeysResponse{}, fmt.Errorf("key %s provided multiple times", versionName)
 		}
 		seen[versionName] = struct{}{}
-		info, err := k.getKeyVersion(ctx, versionName)
+		version, keyType, err := k.getKeyVersion(ctx, versionName)
+		if err != nil {
+			return keystore.GetKeysResponse{}, err
+		}
+		publicKey, err := k.publicKeyBytes(ctx, versionName, keyType)
 		if err != nil {
 			return keystore.GetKeysResponse{}, err
 		}
 		keys = append(keys, keystore.GetKeyResponse{
-			KeyInfo: keystore.NewKeyInfo(versionName, info.keyType, info.createdAt, info.publicKey, []byte{}),
+			KeyInfo: keystore.NewKeyInfo(versionName, keyType, version.CreateTime.AsTime(), publicKey, []byte{}),
 		})
 	}
 	return keystore.GetKeysResponse{Keys: keys}, nil
@@ -218,16 +184,21 @@ func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeys
 // The key name must be a CryptoKeyVersion resource name: Cloud KMS rejects bare CryptoKey names
 // on AsymmetricSign, so a rotation can never change which version a configured name signs with.
 func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignRequest) (keystore.SignResponse, error) {
-	info, err := k.getKeyVersion(ctx, req.KeyName)
+	_, keyType, err := k.getKeyVersion(ctx, req.KeyName)
 	if err != nil {
 		return keystore.SignResponse{}, err
 	}
 	versionName := req.KeyName
 
-	switch info.keyType {
+	switch keyType {
 	case keystore.ECDSA_S256:
 		if len(req.Data) != 32 {
 			return keystore.SignResponse{}, fmt.Errorf("data must be 32 bytes for ECDSA_S256, got %d: %w", len(req.Data), keystore.ErrInvalidSignRequest)
+		}
+		// Needed to recover the SEC1 `v` byte from the ASN.1 signature below.
+		pubKeyBytes, err := k.publicKeyBytes(ctx, versionName, keyType)
+		if err != nil {
+			return keystore.SignResponse{}, fmt.Errorf("failed to get public key for key %s: %w", req.KeyName, err)
 		}
 
 		// The data is a pre-hashed 32-byte digest. For EC_SIGN_SECP256K1_SHA256 the digest field is
@@ -253,9 +224,8 @@ func (k *keystoreSignerReader) Sign(ctx context.Context, req keystore.SignReques
 			return keystore.SignResponse{}, fmt.Errorf("signature for key %s: %w", req.KeyName, err)
 		}
 		// Cloud KMS returns the ECDSA signature in ASN.1 DER format, identical to AWS. Reuse the
-		// shared conversion to SEC1 (R || S || V); the cached public key is needed to recover the
-		// `v` byte.
-		signature, err := kms.ASN1ToSEC1Sig(sig.Signature, info.publicKey, req.Data)
+		// shared conversion to SEC1 (R || S || V).
+		signature, err := kms.ASN1ToSEC1Sig(sig.Signature, pubKeyBytes, req.Data)
 		if err != nil {
 			return keystore.SignResponse{}, fmt.Errorf("failed to convert Cloud KMS signature to SEC1 signature: %w", err)
 		}

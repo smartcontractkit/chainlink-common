@@ -50,6 +50,37 @@ type Key struct {
 type FakeGCPKMSClient struct {
 	keys      []Key
 	createdAt time.Time
+
+	// CorruptPublicKeyCrc reports a wrong PemCrc32C from GetPublicKey so the keystore's
+	// CRC32C integrity check fails.
+	CorruptPublicKeyCrc bool
+	// OmitPublicKeyCrc omits PemCrc32C from GetPublicKey so the keystore treats the response
+	// as having no checksum.
+	OmitPublicKeyCrc bool
+	// CorruptSignatureCrc reports a wrong SignatureCrc32C from AsymmetricSign so the keystore's
+	// CRC32C integrity check fails.
+	CorruptSignatureCrc bool
+	// OmitSignatureCrc omits SignatureCrc32C from AsymmetricSign so the keystore treats the
+	// response as having no checksum.
+	OmitSignatureCrc bool
+	// SkipVerifiedDigestCrc32C reports VerifiedDigestCrc32C=false on ECDSA AsymmetricSign
+	// responses, exercising the keystore's rejection of an unverified digest.
+	SkipVerifiedDigestCrc32C bool
+	// SkipVerifiedDataCrc32C reports VerifiedDataCrc32C=false on Ed25519 AsymmetricSign
+	// responses, exercising the keystore's rejection of an unverified data payload.
+	SkipVerifiedDataCrc32C bool
+}
+
+// crc32cField builds the *_crc32c integrity field, honoring the fake's corruption/omission knobs.
+func (m *FakeGCPKMSClient) crc32cField(correct int64, corrupt, omit bool) *wrapperspb.Int64Value {
+	if omit {
+		return nil
+	}
+	value := correct
+	if corrupt {
+		value++
+	}
+	return wrapperspb.Int64(value)
 }
 
 func NewFakeGCPKMSClient(keys []Key) (*FakeGCPKMSClient, error) {
@@ -188,7 +219,7 @@ func (m *FakeGCPKMSClient) GetPublicKey(ctx context.Context, req *kmspb.GetPubli
 		Name:            req.Name,
 		Algorithm:       key.Algorithm,
 		Pem:             string(pemBytes),
-		PemCrc32C:       wrapperspb.Int64(crc32c(pemBytes)),
+		PemCrc32C:       m.crc32cField(crc32c(pemBytes), m.CorruptPublicKeyCrc, m.OmitPublicKeyCrc),
 		PublicKeyFormat: kmspb.PublicKey_PEM,
 	}, nil
 }
@@ -222,8 +253,8 @@ func (m *FakeGCPKMSClient) AsymmetricSign(ctx context.Context, req *kmspb.Asymme
 		return &kmspb.AsymmetricSignResponse{
 			Name:                 req.Name,
 			Signature:            derSig,
-			SignatureCrc32C:      wrapperspb.Int64(crc32c(derSig)),
-			VerifiedDigestCrc32C: true,
+			SignatureCrc32C:      m.crc32cField(crc32c(derSig), m.CorruptSignatureCrc, m.OmitSignatureCrc),
+			VerifiedDigestCrc32C: !m.SkipVerifiedDigestCrc32C,
 		}, nil
 	case keystore.Ed25519:
 		ed25519PrivKey, err := ed25519PrivateKey(key)
@@ -234,8 +265,8 @@ func (m *FakeGCPKMSClient) AsymmetricSign(ctx context.Context, req *kmspb.Asymme
 		return &kmspb.AsymmetricSignResponse{
 			Name:               req.Name,
 			Signature:          signature,
-			SignatureCrc32C:    wrapperspb.Int64(crc32c(signature)),
-			VerifiedDataCrc32C: true,
+			SignatureCrc32C:    m.crc32cField(crc32c(signature), m.CorruptSignatureCrc, m.OmitSignatureCrc),
+			VerifiedDataCrc32C: !m.SkipVerifiedDataCrc32C,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported key type: %s", key.KeyType)

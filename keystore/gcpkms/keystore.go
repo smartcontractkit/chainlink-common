@@ -52,6 +52,13 @@ type keystoreSignerReader struct {
 	client Client
 }
 
+// NewKeystore wraps a Cloud KMS client as a keystore.Reader and keystore.Signer.
+//
+// Unlike the file/DB and AWS KMS backends, this keystore does not support listing key rings:
+// GetKeys requires every key name to be provided explicitly (each a CryptoKeyVersion resource
+// name) and returns an error if none are. Callers that expect the documented "GetKeys returns all keys when
+// no names are provided" behavior (e.g. keystore.CoreKeystore.Accounts) must be configured with
+// explicit key names before wiring them to a GCP-backed keystore.
 func NewKeystore(client Client) (interface {
 	keystore.Reader
 	keystore.Signer
@@ -150,6 +157,10 @@ func (k *keystoreSignerReader) publicKeyBytes(ctx context.Context, versionName s
 // Key names are CryptoKeyVersion resource names
 // (projects/<p>/locations/<l>/keyRings/<r>/cryptoKeys/<k>/cryptoKeyVersions/<n>): a key name
 // always names exactly one version, so rotating a key means configuring the new version's name.
+//
+// This deviates from keystore.Reader's documented contract ("GetKeys returns all keys in the
+// keystore if no names are provided"): this backend does not list key rings, so an empty
+// KeyNames request errors. See [NewKeystore].
 func (k *keystoreSignerReader) GetKeys(ctx context.Context, req keystore.GetKeysRequest) (keystore.GetKeysResponse, error) {
 	if len(req.KeyNames) == 0 {
 		return keystore.GetKeysResponse{}, errors.New("key names are required: this keystore does not list key rings")

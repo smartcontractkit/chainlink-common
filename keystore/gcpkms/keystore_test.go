@@ -271,3 +271,94 @@ func TestGCPKMSKeystore_Rotation(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, publicKey, resp.Keys[0].KeyInfo.PublicKey)
 }
+
+// TestGCPKMSKeystore_CRC32CIntegrityChecks exercises the keystore's defense-in-depth against
+// transport corruption: it must reject a public key or signature whose CRC32C checksum is missing
+// or wrong, and reject signatures Cloud KMS reports it did not verify.
+func TestGCPKMSKeystore_CRC32CIntegrityChecks(t *testing.T) {
+	ctx := t.Context()
+
+	key, err := crypto.GenerateKey()
+	require.NoError(t, err)
+
+	newECDSAKeystore := func(mutate func(*gcpkms.FakeGCPKMSClient)) interface {
+		keystore.Reader
+		keystore.Signer
+	} {
+		c, err := gcpkms.NewFakeGCPKMSClient([]gcpkms.Key{{
+			KeyType:    keystore.ECDSA_S256,
+			KeyID:      keyName,
+			PrivateKey: internal.NewRaw(crypto.FromECDSA(key)),
+		}})
+		require.NoError(t, err)
+		mutate(c)
+		ks, err := gcpkms.NewKeystore(c)
+		require.NoError(t, err)
+		return ks
+	}
+
+	t.Run("public key wrong checksum", func(t *testing.T) {
+		ks := newECDSAKeystore(func(c *gcpkms.FakeGCPKMSClient) { c.CorruptPublicKeyCrc = true })
+		_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyVersion1}})
+		require.ErrorContains(t, err, "CRC32C integrity check failed")
+	})
+	t.Run("public key missing checksum", func(t *testing.T) {
+		ks := newECDSAKeystore(func(c *gcpkms.FakeGCPKMSClient) { c.OmitPublicKeyCrc = true })
+		_, err := ks.GetKeys(ctx, keystore.GetKeysRequest{KeyNames: []string{keyVersion1}})
+		require.ErrorContains(t, err, "CRC32C integrity check failed")
+	})
+	t.Run("signature wrong checksum", func(t *testing.T) {
+		ks := newECDSAKeystore(func(c *gcpkms.FakeGCPKMSClient) { c.CorruptSignatureCrc = true })
+		_, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: make([]byte, 32)})
+		require.ErrorContains(t, err, "CRC32C integrity check failed")
+	})
+	t.Run("signature missing checksum", func(t *testing.T) {
+		ks := newECDSAKeystore(func(c *gcpkms.FakeGCPKMSClient) { c.OmitSignatureCrc = true })
+		_, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: make([]byte, 32)})
+		require.ErrorContains(t, err, "CRC32C integrity check failed")
+	})
+	t.Run("digest not verified by KMS", func(t *testing.T) {
+		ks := newECDSAKeystore(func(c *gcpkms.FakeGCPKMSClient) { c.SkipVerifiedDigestCrc32C = true })
+		_, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: make([]byte, 32)})
+		require.ErrorContains(t, err, "digest CRC32C checksum was not verified")
+	})
+}
+
+func TestGCPKMSKeystore_Ed25519CRC32CIntegrityChecks(t *testing.T) {
+	ctx := t.Context()
+
+	_, privKey, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	newEd25519Keystore := func(mutate func(*gcpkms.FakeGCPKMSClient)) interface {
+		keystore.Reader
+		keystore.Signer
+	} {
+		c, err := gcpkms.NewFakeGCPKMSClient([]gcpkms.Key{{
+			KeyType:    keystore.Ed25519,
+			KeyID:      keyName,
+			PrivateKey: internal.NewRaw(privKey),
+		}})
+		require.NoError(t, err)
+		mutate(c)
+		ks, err := gcpkms.NewKeystore(c)
+		require.NoError(t, err)
+		return ks
+	}
+
+	t.Run("signature wrong checksum", func(t *testing.T) {
+		ks := newEd25519Keystore(func(c *gcpkms.FakeGCPKMSClient) { c.CorruptSignatureCrc = true })
+		_, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: []byte("hello")})
+		require.ErrorContains(t, err, "CRC32C integrity check failed")
+	})
+	t.Run("signature missing checksum", func(t *testing.T) {
+		ks := newEd25519Keystore(func(c *gcpkms.FakeGCPKMSClient) { c.OmitSignatureCrc = true })
+		_, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: []byte("hello")})
+		require.ErrorContains(t, err, "CRC32C integrity check failed")
+	})
+	t.Run("data not verified by KMS", func(t *testing.T) {
+		ks := newEd25519Keystore(func(c *gcpkms.FakeGCPKMSClient) { c.SkipVerifiedDataCrc32C = true })
+		_, err := ks.Sign(ctx, keystore.SignRequest{KeyName: keyVersion1, Data: []byte("hello")})
+		require.ErrorContains(t, err, "data CRC32C checksum was not verified")
+	})
+}

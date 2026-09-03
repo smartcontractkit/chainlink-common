@@ -2721,7 +2721,7 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\n" +
 	"request_id\x18\x04 \x01(\tR\trequestId\",\n" +
 	"\x10ObservationError\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage\"\xd5\x03\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\xcf\x03\n" +
 	"\fNodeSettings\x12D\n" +
 	"\x1fmax_identifier_key_length_bytes\x18\x01 \x01(\x04R\x1bmaxIdentifierKeyLengthBytes\x12H\n" +
 	"!max_identifier_owner_length_bytes\x18\x02 \x01(\x04R\x1dmaxIdentifierOwnerLengthBytes\x12P\n" +
@@ -2729,8 +2729,7 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x16max_share_length_bytes\x18\x04 \x01(\x04R\x13maxShareLengthBytes\x123\n" +
 	"\x16max_blob_payload_bytes\x18\x05 \x01(\x04R\x13maxBlobPayloadBytes\x12>\n" +
 	"\x1cmax_pending_queue_write_size\x18\x06 \x01(\x04R\x18maxPendingQueueWriteSize\x123\n" +
-	"\x16max_request_batch_size\x18\a \x01(\x04R\x13maxRequestBatchSizeJ\x04\b\b\x10\n" +
-	"\"\x9b\b\n" +
+	"\x16max_request_batch_size\x18\a \x01(\x04R\x13maxRequestBatchSize\"\x9b\b\n" +
 	"\vObservation\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +

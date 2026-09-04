@@ -5,13 +5,17 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -215,11 +219,51 @@ func WithHeaderProvider(provider HeaderProvider) Opt {
 	return func(c *clientConfig) { c.headerProvider = provider }
 }
 
-// WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes
-// as sanitized gRPC metadata headers. It combines SanitizeMetadataHeaders with
-// NewStaticHeaderProvider so the safe, validated path is used by default.
+// resourceAttributeLogger receives one warning per dropped resource attribute. It defaults to a
+// no-op so library consumers who don't configure a logger see no output; tests substitute their own
+// via setResourceAttributeLogger.
+var resourceAttributeLogger atomic.Pointer[zap.Logger]
+
+func init() {
+	resourceAttributeLogger.Store(zap.NewNop())
+}
+
+// SetResourceAttributeLogger overrides the logger WithResourceAttributeHeaders warns through when it
+// drops a resource attribute. Intended for host applications that want dropped attributes surfaced
+// in their own logs; the default is a no-op logger.
+func SetResourceAttributeLogger(logger *zap.Logger) {
+	resourceAttributeLogger.Store(logger)
+}
+
+// resourceAttributeDropsCounter counts resource attributes SanitizeMetadataHeaders omitted, by
+// reason, against the global otel MeterProvider. It is created lazily against the global provider
+// (rather than a per-client one from WithMeterProvider) because WithResourceAttributeHeaders runs at
+// Opt-construction time, before any client-level configuration is wired.
+var resourceAttributeDropsCounter = sync.OnceValue(func() metric.Int64Counter {
+	c, _ := otel.Meter("github.com/smartcontractkit/chainlink-common/pkg/chipingress").
+		Int64Counter("chipingress.resource_attribute.dropped",
+			metric.WithDescription("Resource attributes omitted by SanitizeMetadataHeaders, by reason."))
+	return c
+})
+
+// WithResourceAttributeHeaders returns an Opt that attaches the provided resource attributes as
+// gRPC metadata on every request, under ResourceHeaderPrefix. It combines SanitizeMetadataHeaders
+// with NewStaticHeaderProvider so the safe, validated path is used by default, and warns + meters
+// every attribute SanitizeMetadataHeaders had to omit.
+//
+// Attributes are attached once per request rather than to individual events because they describe the
+// producer, not any one event. Chip-ingress fans them out onto every Kafka record the request
+// produces.
 func WithResourceAttributeHeaders(attrs map[string]string) Opt {
-	return WithHeaderProvider(NewStaticHeaderProvider(SanitizeMetadataHeaders(attrs)))
+	sanitized, dropped := SanitizeMetadataHeaders(attrs)
+	for _, d := range dropped {
+		resourceAttributeLogger.Load().Warn("dropping invalid resource attribute",
+			zap.String("key", d.Key), zap.String("reason", d.Reason))
+		if counter := resourceAttributeDropsCounter(); counter != nil {
+			counter.Add(context.Background(), 1, metric.WithAttributes(attribute.String("reason", d.Reason)))
+		}
+	}
+	return WithHeaderProvider(NewStaticHeaderProvider(sanitized))
 }
 
 // WithInsecureConnection configures the client to use an insecure connection (no TLS).
@@ -254,11 +298,15 @@ func WithTracerProvider(provider trace.TracerProvider) Opt {
 	return func(c *clientConfig) { c.tracerProvider = provider }
 }
 
+// nopInfoHeaderKey is the metadata key WithNOPLookup sets, asking chip-ingress to look up NOP info
+// for the authenticated CSA key.
+const nopInfoHeaderKey = "x-include-nop-info"
+
 func WithNOPLookup() Opt {
 	return func(c *clientConfig) {
 		c.nopInfoHeaderProvider = headerProviderFunc(func(ctx context.Context) (map[string]string, error) {
 			return map[string]string{
-				"x-include-nop-info": "true",
+				nopInfoHeaderKey: "true",
 			}, nil
 		})
 	}
@@ -283,42 +331,12 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 	}
 }
 
-// EventOpt configures a CloudEvent after its well-known attributes have been set by NewEvent.
-type EventOpt func(*ce.Event)
-
-// sanitizeExtensionName lower-cases name and strips every rune outside [a-z0-9], the character
-// set the CloudEvents spec requires for extension attribute names.
-func sanitizeExtensionName(name string) string {
-	var b strings.Builder
-	for _, r := range strings.ToLower(name) {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
-
-// WithResourceAttributeExtensions returns an EventOpt that sets a CloudEvent extension for each
-// entry in attrs, sanitizing keys via sanitizeExtensionName so they satisfy the CloudEvents
-// extension-name character set. Entries that sanitize to an empty string, or that collide with a
-// reserved extension name (see reservedExtensionNames), are skipped. Keys are applied in sorted
-// order so that if two distinct keys sanitize to the same name, the result is deterministic.
-func WithResourceAttributeExtensions(attrs map[string]string) EventOpt {
-	return func(event *ce.Event) {
-		for _, pair := range sanitizeResourceAttributeKeys(attrs, nil) {
-			event.SetExtension(pair.name, attrs[pair.key])
-		}
-	}
-}
-
 // NewEvent creates a new CloudEvent with the specified domain, entity, payload, and optional attributes.
+//
+// Resource attributes are deliberately not stamped here. They describe the producer rather than any
+// individual event, so they travel once per request as gRPC metadata (see
+// WithResourceAttributeHeaders) instead of being repeated on every event in a batch.
 func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
-	return NewEventWithOpts(domain, entity, payload, attributes)
-}
-
-// NewEventWithOpts creates a new CloudEvent like NewEvent, additionally applying opts (e.g.
-// WithResourceAttributeExtensions) to the event before its data is set.
-func NewEventWithOpts(domain, entity string, payload []byte, attributes map[string]any, opts ...EventOpt) (CloudEvent, error) {
 	event := ce.NewEvent()
 	event.SetSource(domain)
 	event.SetType(entity)
@@ -350,10 +368,6 @@ func NewEventWithOpts(domain, entity string, payload []byte, attributes map[stri
 	}
 	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
 		event.SetExtension(IdempotencyKeyAttr, val)
-	}
-
-	for _, opt := range opts {
-		opt(&event)
 	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)

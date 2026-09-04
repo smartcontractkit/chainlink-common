@@ -29,7 +29,7 @@ type Number interface {
 
 type Limiter[N any] interface {
 	io.Closer // Limiters spawn background goroutines and must be closed.
-	// Limit returns the current limit.
+	// Limit returns the current limit, or an error along with a usable fallback value.
 	Limit(context.Context) (N, error)
 }
 

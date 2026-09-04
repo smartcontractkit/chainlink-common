@@ -175,11 +175,7 @@ func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {
 	defer g.wg.Done()
 
 	_, limit, err := g.get(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	return limit, nil
+	return limit, err // limit is get()'s resolved value; false if no tenant, or default on error
 }
 
 func (g *gateLimiter) AllowErr(ctx context.Context) error {

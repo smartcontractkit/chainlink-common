@@ -191,12 +191,6 @@ func (l *timeLimiter) WithTimeout(ctx context.Context) (context.Context, func(),
 	defer l.wg.Done()
 
 	tenant, timeout, err := l.get(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-	if tenant == "" && l.scope != settings.ScopeGlobal {
-		return ctx, func() {}, nil // fail open
-	}
 
 	countTimeout := func() { l.countTimeout(ctx) } // constructing this first to reference the original ctx
 	ctx, cancel := context.WithTimeoutCause(ctx, timeout, ErrorTimeLimited{Key: l.key, Scope: l.scope, Tenant: tenant, Timeout: timeout})
@@ -211,33 +205,29 @@ func (l *timeLimiter) WithTimeout(ctx context.Context) (context.Context, func(),
 			l.countSuccess(ctx)
 		}
 		cancel()
-	}, nil
+	}, err // timeout is get()'s resolved value, or the compiled default; err is advisory
 }
 
 func (l *timeLimiter) Limit(ctx context.Context) (time.Duration, error) {
 	if err := l.wg.TryAdd(1); err != nil {
-		return -1, err
+		return 0, err
 	}
 	defer l.wg.Done()
 
-	tenant, timeout, err := l.get(ctx)
-	if err != nil {
-		return -1, err
-	}
-	if tenant == "" && l.scope != settings.ScopeGlobal {
-		return -1, nil // fail open
-	}
-
-	return timeout, nil
+	_, timeout, err := l.get(ctx)
+	return timeout, err // timeout is get()'s resolved value, or the compiled default; err is advisory
 }
 
 func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Duration, err error) {
 	if l.scope != settings.ScopeGlobal {
 		tenant = l.scope.Value(ctx)
 		if tenant == "" {
+			// The timeout doesn't depend on the tenant, so fall back to the compiled default
+			// rather than leaving it at zero, which would mean an already-expired context.
+			timeout = l.defaultTimeout
 			if !l.scope.IsTenantRequired() {
 				kvs := contexts.CREValue(ctx).LoggerKVs()
-				l.lggr.Errorw("Unable to get scoped time limit due to missing tenant: failing open", append([]any{"scope", l.scope}, kvs...)...)
+				l.lggr.Errorw("Unable to get scoped time limit due to missing tenant: using default value", append([]any{"scope", l.scope, "default", timeout}, kvs...)...)
 				return
 			}
 			err = fmt.Errorf("unable to get scoped time limit due to missing tenant for scope: %s", l.scope)

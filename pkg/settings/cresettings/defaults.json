@@ -60,6 +60,10 @@
 		"EnclaveRequestTimeout": "30s",
 		"PublicKeyRequestTimeout": "5s",
 		"ConfidentialRelayHandlerTimeout": "1m0s",
+		"RelayResponseCache": {
+			"TTL": "10m0s",
+			"CleanupInterval": "1m0s"
+		},
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
 		"PublicKeyRetriesMax": "2",

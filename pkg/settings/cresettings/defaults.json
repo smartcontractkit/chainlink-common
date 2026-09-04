@@ -26,6 +26,8 @@
 	"GatewayConfidentialRelayPerNodeRate": "10rps:10",
 	"GatewayHTTPActionMtlsRequestRate": "every30s:0",
 	"GatewayHTTPActionMtlsConcurrencyLimit": "50",
+	"GatewayHTTPActionOutboundConcurrencyLimit": "875",
+	"GatewayHTTPActionOutboundPerNodeConcurrencyLimit": "175",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",

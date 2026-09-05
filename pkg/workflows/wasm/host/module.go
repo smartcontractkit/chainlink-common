@@ -1181,9 +1181,12 @@ func logRawMessage(logger logger.Logger, b []byte) error {
 		logger.Warnw(sanitizedMsg, args...)
 	case "error":
 		logger.Errorw(sanitizedMsg, args...)
-	case "panic", "fatal":
+	case "panic":
 		// The guest should never be able to panic/exit the host
-		logger.Errorw(sanitizedMsg, args...)
+		logger.Errorw("[panic] "+sanitizedMsg, args...)
+	case "fatal":
+		// The guest should never be able to panic/exit the host
+		logger.Errorw("[fatal] "+sanitizedMsg, args...)
 	default:
 		logger.Infow(sanitizedMsg, args...)
 	}

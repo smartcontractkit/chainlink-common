@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
@@ -207,9 +208,18 @@ func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Trig
 var _ pb.TriggerExecutableServer = (*triggerExecutableServer)(nil)
 
 func (t *triggerExecutableServer) AckEvent(ctx context.Context, req *pb.AckEventRequest) (*emptypb.Empty, error) {
+	// Temporary instrumentation for the AckEvent stall investigation. Pair on eventId
+	// with the client-side lines to split total AckEvent latency into three segments:
+	// outbound transport, handler, and return transport.
+	t.Logger.Infow("grpc AckEvent server: entered", "eventId", req.EventId, "triggerId", req.TriggerId)
+	handlerStart := time.Now()
 	if err := t.impl.AckEvent(ctx, req.TriggerId, req.EventId, req.Method); err != nil {
+		t.Logger.Infow("grpc AckEvent server: failed", "eventId", req.EventId,
+			"handlerMs", time.Since(handlerStart).Milliseconds(), "err", err)
 		return nil, fmt.Errorf("error acking event: %w", err)
 	}
+	t.Logger.Infow("grpc AckEvent server: done", "eventId", req.EventId,
+		"handlerMs", time.Since(handlerStart).Milliseconds())
 	return &emptypb.Empty{}, nil
 }
 
@@ -305,7 +315,13 @@ func (t *triggerExecutableClient) AckEvent(ctx context.Context, triggerId string
 		EventId:   eventId,
 		Method:    method,
 	}
+	// Temporary instrumentation: brackets the node->plugin gRPC hop. The gap between
+	// this line and "grpc AckEvent server: entered" is pure outbound transport time.
+	t.Logger.Infow("grpc AckEvent client: sending", "eventId", eventId, "triggerId", triggerId, "method", method)
+	callStart := time.Now()
 	_, err := t.grpc.AckEvent(ctx, req)
+	t.Logger.Infow("grpc AckEvent client: returned", "eventId", eventId,
+		"callMs", time.Since(callStart).Milliseconds(), "err", err)
 	if err != nil {
 		return fmt.Errorf("failed to call AckEvent: %w", err)
 	}

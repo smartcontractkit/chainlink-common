@@ -384,6 +384,12 @@ func (a *atomicTriggerCapability) GetState() connectivity.State {
 	return connectivity.State(-1) // unknown
 }
 
+// AckEvent reads a.cap only; unlike RegisterTrigger/UnregisterTrigger it does not
+// touch a.registrations, so it takes a read lock and releases it before the call.
+// Holding the write lock across the call serialises every ACK for this capability:
+// the downstream call crosses gRPC to the LOOP plugin and hits Postgres, so a single
+// in-flight ACK blocks all others regardless of how much parallelism the caller has.
+// Mirrors Execute.
 func (a *atomicTriggerCapability) AckEvent(ctx context.Context, triggerID string, eventID string, method string) error {
 	a.mu.RLock()
 	cap := a.cap
@@ -561,6 +567,9 @@ func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 	return connectivity.State(-1) // unknown
 }
 
+// AckEvent reads a.cap only; unlike RegisterTrigger/UnregisterTrigger it does not
+// touch a.registrations, so it takes a read lock and releases it before the call.
+// See atomicTriggerCapability.AckEvent. Mirrors Execute.
 func (a *atomicExecuteAndTriggerCapability) AckEvent(ctx context.Context, triggerID string, eventID string, method string) error {
 	a.mu.RLock()
 	cap := a.cap

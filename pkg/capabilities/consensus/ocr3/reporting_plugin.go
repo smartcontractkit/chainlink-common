@@ -195,7 +195,48 @@ func (r *reportingPlugin) Observation(ctx context.Context, outctx ocr3types.Outc
 }
 
 func (r *reportingPlugin) ValidateObservation(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, ao types.AttributedObservation) error {
+	q := &pbtypes.Query{}
+	if err := proto.Unmarshal(query, q); err != nil {
+		return err
+	}
+
+	obs := &pbtypes.Observations{}
+	if err := proto.Unmarshal(ao.Observation, obs); err != nil {
+		return err
+	}
+
+	for _, request := range obs.Observations {
+		if request == nil || request.Id == nil {
+			continue
+		}
+		for _, qid := range q.Ids {
+			if qid == nil {
+				continue
+			}
+			if request.Id.WorkflowExecutionId != qid.WorkflowExecutionId {
+				continue
+			}
+			if !idMatches(request.Id, qid) {
+				return fmt.Errorf("observation identity does not match query identity for execution ID %s: observation workflow ID %s, query workflow ID %s",
+					request.Id.WorkflowExecutionId, request.Id.WorkflowId, qid.WorkflowId)
+			}
+			break
+		}
+	}
 	return nil
+}
+
+func idMatches(a, b *pbtypes.Id) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	return a.WorkflowId == b.WorkflowId &&
+		a.WorkflowOwner == b.WorkflowOwner &&
+		a.WorkflowName == b.WorkflowName &&
+		a.ReportId == b.ReportId &&
+		a.KeyId == b.KeyId &&
+		a.WorkflowDonId == b.WorkflowDonId &&
+		a.WorkflowDonConfigVersion == b.WorkflowDonConfigVersion
 }
 
 func (r *reportingPlugin) ObservationQuorum(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, aos []types.AttributedObservation) (bool, error) {
@@ -230,6 +271,8 @@ type encoderConfig struct {
 func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, query types.Query, attributedObservations []types.AttributedObservation) (ocr3types.Outcome, error) {
 	// execution ID -> oracle ID -> list of observations
 	execIDToOracleObservations := map[string]map[ocrcommon.OracleID][]values.Value{}
+	// execution ID -> oracle ID -> observation identity
+	execIDToObsIDs := map[string]map[ocrcommon.OracleID]*pbtypes.Id{}
 	seenWorkflowIDs := map[string]int{}
 	var sortedTimestamps []*timestamppb.Timestamp
 	var finalTimestamp *timestamppb.Timestamp
@@ -286,10 +329,15 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 				return v == nil
 			})
 
-			if _, ok := execIDToOracleObservations[weid]; !ok {
-				execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)
-			}
-			execIDToOracleObservations[weid][attributedObservation.Observer] = obsList.Underlying
+		if _, ok := execIDToOracleObservations[weid]; !ok {
+			execIDToOracleObservations[weid] = make(map[ocrcommon.OracleID][]values.Value)
+		}
+		execIDToOracleObservations[weid][attributedObservation.Observer] = obsList.Underlying
+
+		if _, ok := execIDToObsIDs[weid]; !ok {
+			execIDToObsIDs[weid] = make(map[ocrcommon.OracleID]*pbtypes.Id)
+		}
+		execIDToObsIDs[weid][attributedObservation.Observer] = request.Id
 
 			sha, err := shaForOverriddenEncoder(request)
 			if err != nil {
@@ -368,8 +416,19 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			lggr.Debugw("could not find existing outcome for workflow, aggregator will create a new one")
 		}
 
-		if len(obs) < (2*r.config.F + 1) {
-			lggr.Debugw("insufficient observations for workflow execution id")
+		matchingObs := make(map[ocrcommon.OracleID][]values.Value)
+		if obsIDs, ok := execIDToObsIDs[weid.WorkflowExecutionId]; ok {
+			for observer, obsValues := range obs {
+				if obsID, ok := obsIDs[observer]; ok && idMatches(obsID, weid) {
+					matchingObs[observer] = obsValues
+				}
+			}
+		} else {
+			matchingObs = obs
+		}
+
+		if len(matchingObs) < (2*r.config.F + 1) {
+			lggr.Debugw("insufficient observations with matching identity for workflow execution id")
 			continue
 		}
 
@@ -379,7 +438,7 @@ func (r *reportingPlugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeC
 			continue
 		}
 
-		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, obs, r.config.F)
+		outcome, err2 := agg.Aggregate(lggr, workflowOutcome, matchingObs, r.config.F)
 		if err2 != nil {
 			lggr.Errorw("error aggregating outcome", "error", err2)
 			continue

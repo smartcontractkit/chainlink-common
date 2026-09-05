@@ -723,24 +723,23 @@ func TestReportingPlugin_Outcome_ShouldPruneOldOutcomes(t *testing.T) {
 	rp, err := NewReportingPlugin(s, mcap, defaultBatchSize, ocr3types.ReportingPluginConfig{}, defaultLimits(), lggr)
 	require.NoError(t, err)
 
-	weid := uuid.New().String()
 	wowner := uuid.New().String()
 	id := &pbtypes.Id{
-		WorkflowExecutionId: weid,
+		WorkflowExecutionId: uuid.New().String(),
 		WorkflowId:          workflowTestID,
 		WorkflowOwner:       wowner,
 		WorkflowName:        workflowTestName,
 		ReportId:            reportTestID,
 	}
 	id2 := &pbtypes.Id{
-		WorkflowExecutionId: weid,
+		WorkflowExecutionId: uuid.New().String(),
 		WorkflowId:          workflowTestID2,
 		WorkflowOwner:       wowner,
 		WorkflowName:        workflowTestName,
 		ReportId:            reportTestID,
 	}
 	id3 := &pbtypes.Id{
-		WorkflowExecutionId: weid,
+		WorkflowExecutionId: uuid.New().String(),
 		WorkflowId:          workflowTestID3,
 		WorkflowOwner:       wowner,
 		WorkflowName:        workflowTestName,
@@ -841,6 +840,8 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 	require.NoError(t, err)
 
 	weid := uuid.New().String()
+	weid2 := uuid.New().String()
+	weid3 := uuid.New().String()
 	wowner := uuid.New().String()
 	id := &pbtypes.Id{
 		WorkflowExecutionId: weid,
@@ -850,14 +851,14 @@ func TestReportPlugin_Outcome_ShouldReturnMedianTimestamp(t *testing.T) {
 		ReportId:            reportTestID,
 	}
 	id2 := &pbtypes.Id{
-		WorkflowExecutionId: weid,
+		WorkflowExecutionId: weid2,
 		WorkflowId:          workflowTestID2,
 		WorkflowOwner:       wowner,
 		WorkflowName:        workflowTestName,
 		ReportId:            reportTestID,
 	}
 	id3 := &pbtypes.Id{
-		WorkflowExecutionId: weid,
+		WorkflowExecutionId: weid3,
 		WorkflowId:          workflowTestID3,
 		WorkflowOwner:       wowner,
 		WorkflowName:        workflowTestName,

@@ -16,14 +16,6 @@ message RemoteTriggerConfig {
   google.protobuf.Duration batchCollectionPeriod = 6;
 }
 
-// deprecated - v1 only
-message RemoteTargetConfig {
-  // A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote target
-  // when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
-  // that the hash of logically identical requests is consistent.
-  repeated string requestHashExcludedAttributes = 1;
-}
-
 enum TransmissionSchedule {
   AllAtOnce = 0;
   OneAtATime = 1;
@@ -40,12 +32,7 @@ enum AggregatorType {
 }
 
 message RemoteExecutableConfig {
-  // A collection of dot seperated paths to attributes that should be excluded from the request sent to the remote executable capability
-  // when calculating the hash of the request.  This is useful for excluding attributes that are not deterministic to ensure
-  // that the hash of logically identical requests is consistent.
-  repeated string requestHashExcludedAttributes = 1; // deprecated - v1 only
-  reserved 2;  // unused registrationRefresh
-  reserved 3;  // unused registrationExpiry
+  reserved 1,2,3; // deprecated v1 fields
 
   TransmissionSchedule transmission_schedule = 4;
   google.protobuf.Duration delta_stage = 5;
@@ -88,16 +75,7 @@ message OCR3Config {
 }
 
 message CapabilityConfig {
-  values.v1.Map default_config = 1;
-
-  oneof remote_config {
-    RemoteTriggerConfig remote_trigger_config = 2;
-    RemoteTargetConfig remote_target_config = 3;
-    RemoteExecutableConfig remote_executable_config = 4;
-  }
-
-  values.v1.Map restricted_config = 5;
-  repeated string restricted_keys = 6;
+  reserved 1,2,3,4,5,6; // deprecated v1 fields
 
   // v2 ("NoDAG") capabilities - config for Don2Don framework.
   map<string, CapabilityMethodConfig> method_configs = 7;

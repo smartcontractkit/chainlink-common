@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788565766624,
+  "lastUpdate": 1788796530306,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -59640,6 +59640,66 @@ window.BENCHMARK_DATA = {
             "value": 123262,
             "unit": "ns/op",
             "extra": "8400 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b4860dd146d6e3e38b21455f02ed1d8245909f7c",
+          "message": "Optimize DeployToGrafana (#2359)\n\n* Add parallelism\n\n* Add parallelism to DeployToGrafana\n\nAddresses two inefficiencies in the current implementation of DeployToGrafana:\n* Previously, each alert generated a call to UpdateAlertRule, serially. Now this happens in parallel according to the defined concurrency factor.\n* getAlertRules had N+1 calls to grafana to fetch the alert rules. The current implementation fetches all the alert rules up front and does in-memory filtering instead.\n* Add a DeployCache to memoize fetching of folders and alert rules.\n\nBoth of these improvements have reduced the latency for the CRE observability dashboards by 50%.\n\n* Linting\n\n* Less comments",
+          "timestamp": "2026-09-07T15:44:01Z",
+          "tree_id": "e8ed312726276ca609437dd9e0338a0f6ebb67d9",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b4860dd146d6e3e38b21455f02ed1d8245909f7c"
+        },
+        "date": 1788796526262,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 268.5,
+            "unit": "ns/op",
+            "extra": "4476681 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 58175,
+            "unit": "ns/op",
+            "extra": "20466 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 288.6,
+            "unit": "ns/op",
+            "extra": "4152045 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58254,
+            "unit": "ns/op",
+            "extra": "20540 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21796,
+            "unit": "ns/op",
+            "extra": "55034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 100103,
+            "unit": "ns/op",
+            "extra": "12004 times\n4 procs"
           }
         ]
       }

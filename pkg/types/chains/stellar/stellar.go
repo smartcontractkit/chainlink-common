@@ -203,6 +203,8 @@ type SubmitTransactionRequest struct {
 	// LedgerBoundsOffset overrides the TXM's configured ledger bounds for this transaction.
 	// Zero means use the TXM default.
 	LedgerBoundsOffset uint32
+	// MaxResourceFee is an optional per-request Soroban resource-fee ceiling, in stroops.
+	MaxResourceFee uint64
 }
 
 // TransactionStatus is the outcome of a submitted transaction.

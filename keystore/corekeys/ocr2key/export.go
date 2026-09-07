@@ -7,7 +7,6 @@ import (
 
 	commonkeystore "github.com/smartcontractkit/chainlink-common/keystore"
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
-	"github.com/smartcontractkit/chainlink-common/keystore/corekeys/starkkey"
 	"github.com/smartcontractkit/chainlink-common/keystore/internal"
 )
 
@@ -36,29 +35,11 @@ func FromEncryptedJSON(keyJSON []byte, password string) (KeyBundle, error) {
 		password,
 		adulteratedPassword,
 		func(export EncryptedOCRKeyExport, rawPrivKey internal.Raw) (KeyBundle, error) {
-			var kb KeyBundle
-			switch export.ChainType {
-			case corekeys.EVM:
-				kb = newKeyBundle(new(evmKeyring))
-			case corekeys.Cosmos:
-				kb = newKeyBundle(new(cosmosKeyring))
-			case corekeys.Solana:
-				kb = newKeyBundle(new(solanaKeyring))
-			case corekeys.StarkNet:
-				kb = newKeyBundle(new(starkkey.OCR2Key))
-			case corekeys.Aptos:
-				kb = newKeyBundle(new(ed25519Keyring))
-			case corekeys.Tron:
-				kb = newKeyBundle(new(evmKeyring))
-			case corekeys.TON:
-				kb = newKeyBundle(new(tonKeyring))
-			case corekeys.Sui:
-				kb = newKeyBundle(new(ed25519Keyring))
-			case corekeys.Stellar:
-				kb = newKeyBundle(new(ed25519Keyring))
-			default:
+			factory, ok := keyBundleFactories[export.ChainType]
+			if !ok {
 				return nil, corekeys.NewErrInvalidChainType(export.ChainType)
 			}
+			kb := factory.empty()
 			if err := kb.Unmarshal(internal.Bytes(rawPrivKey)); err != nil {
 				return nil, err
 			}

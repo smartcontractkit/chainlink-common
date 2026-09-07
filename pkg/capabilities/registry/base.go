@@ -385,12 +385,13 @@ func (a *atomicTriggerCapability) GetState() connectivity.State {
 }
 
 func (a *atomicTriggerCapability) AckEvent(ctx context.Context, triggerID string, eventID string, method string) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.cap == nil {
+	a.mu.RLock()
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return a.cap.AckEvent(ctx, triggerID, eventID, method)
+	return cap.AckEvent(ctx, triggerID, eventID, method)
 }
 
 func (a *atomicTriggerCapability) Load() *capabilities.TriggerCapability {
@@ -561,12 +562,13 @@ func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 }
 
 func (a *atomicExecuteAndTriggerCapability) AckEvent(ctx context.Context, triggerID string, eventID string, method string) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.cap == nil {
+	a.mu.RLock()
+	cap := a.cap
+	a.mu.RUnlock()
+	if cap == nil {
 		return errors.New("capability unavailable")
 	}
-	return a.cap.AckEvent(ctx, triggerID, eventID, method)
+	return cap.AckEvent(ctx, triggerID, eventID, method)
 }
 
 func (a *atomicExecuteAndTriggerCapability) Load() *capabilities.ExecutableAndTriggerCapability {

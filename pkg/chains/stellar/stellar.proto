@@ -206,6 +206,7 @@ message SubmitTransactionRequest {
   string function            = 4;  // Soroban function name
   repeated capabilities.blockchain.stellar.v1alpha.ScVal args = 5;  // Typed Soroban arguments
   uint32 ledger_bounds_offset = 6; // Per-tx ledger-bounds override; 0 = use TXM default
+  uint64 max_resource_fee   = 7;  // Optional per-request Soroban resource-fee ceiling (stroops); 0 = use TXM default
 }
 
 enum TxStatus {

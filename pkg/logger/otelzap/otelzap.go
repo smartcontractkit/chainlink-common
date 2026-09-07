@@ -133,16 +133,16 @@ func (o OtelZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	}
 
 	// Convert to OpenTelemetry KeyValues and emit
-	otelAttrs := make([]otellog.KeyValue, len(attributes))
+	otelAttrs := make([]attribute.KeyValue, len(attributes))
 	for i, attr := range attributes {
-		otelAttrs[i] = otellog.KeyValue{
-			Key:   string(attr.Key),
+		otelAttrs[i] = attribute.KeyValue{
+			Key:   attr.Key,
 			Value: mapAttrValueToLogAttrValue(attr.Value),
 		}
 	}
 
 	logRecord := otellog.Record{}
-	logRecord.SetBody(otellog.StringValue(entry.Message))
+	logRecord.SetBody(attribute.StringValue(entry.Message))
 	logRecord.SetSeverity(mapZapSeverity(entry.Level))
 	logRecord.SetSeverityText(entry.Level.String())
 	logRecord.SetTimestamp(entry.Time)
@@ -175,21 +175,21 @@ func mapZapSeverity(level zapcore.Level) otellog.Severity {
 	}
 }
 
-func mapAttrValueToLogAttrValue(v attribute.Value) otellog.Value {
+func mapAttrValueToLogAttrValue(v attribute.Value) attribute.Value {
 	switch v.Type() {
 	case attribute.STRING:
-		return otellog.StringValue(v.AsString())
+		return attribute.StringValue(v.AsString())
 	case attribute.BOOL:
-		return otellog.BoolValue(v.AsBool())
+		return attribute.BoolValue(v.AsBool())
 	case attribute.INT64:
-		return otellog.Int64Value(v.AsInt64())
+		return attribute.Int64Value(v.AsInt64())
 	case attribute.FLOAT64:
-		return otellog.Float64Value(v.AsFloat64())
+		return attribute.Float64Value(v.AsFloat64())
 	case attribute.INVALID:
-		return otellog.StringValue("invalid")
+		return attribute.StringValue("invalid")
 	case attribute.STRINGSLICE, attribute.BOOLSLICE, attribute.INT64SLICE, attribute.FLOAT64SLICE:
-		return otellog.StringValue(fmt.Sprintf("%v", v.AsInterface()))
+		return attribute.StringValue(fmt.Sprintf("%v", v.AsInterface()))
 	default:
-		return otellog.StringValue(fmt.Sprintf("%v", v.AsInterface()))
+		return attribute.StringValue(fmt.Sprintf("%v", v.AsInterface()))
 	}
 }

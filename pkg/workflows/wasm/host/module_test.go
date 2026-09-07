@@ -1,9 +1,11 @@
 package host
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"math"
+	"runtime/pprof"
 	"strings"
 	"sync"
 	"testing"
@@ -17,6 +19,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
+	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
@@ -28,6 +31,158 @@ import (
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
+
+func countLimiterUpdaterGoroutines(t *testing.T) int {
+	t.Helper()
+
+	var profile bytes.Buffer
+	require.NoError(t, pprof.Lookup("goroutine").WriteTo(&profile, 2))
+	count := 0
+	for _, goroutine := range strings.Split(profile.String(), "\n\n") {
+		if strings.Contains(goroutine, "pkg/settings/limits.(*updater") && strings.Contains(goroutine, ").updateLoop(") {
+			count++
+		}
+	}
+	return count
+}
+
+// This test inspects the process-wide goroutine profile and must remain serial.
+func TestNewModuleClosesDefaultLimiters(t *testing.T) {
+	t.Run("constructor error", func(t *testing.T) {
+		before := countLimiterUpdaterGoroutines(t)
+		cfg := &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		}
+
+		_, err := NewModule(t.Context(), cfg, []byte("invalid wasm"))
+		require.Error(t, err)
+		require.Equal(t, before, countLimiterUpdaterGoroutines(t))
+		require.Nil(t, cfg.PendingCallsLimiter)
+		require.Nil(t, cfg.MemoryLimiter)
+	})
+
+	t.Run("module close", func(t *testing.T) {
+		binary, err := wasmtime.Wat2Wasm(`(module (memory (export "memory") 1))`)
+		require.NoError(t, err)
+
+		before := countLimiterUpdaterGoroutines(t)
+		mod, err := NewModule(t.Context(), &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		}, binary)
+		require.NoError(t, err)
+		require.Equal(t, before, countLimiterUpdaterGoroutines(t))
+		free, err := limiterOrDefault(mod.cfg.PendingCallsLimiter, mod.defaultLimiters.pendingCalls).Wait(contexts.WithCRE(t.Context(), contexts.CRE{Workflow: "workflow-id"}), 1)
+		require.NoError(t, err)
+		free()
+		require.Eventually(t, func() bool {
+			return before+1 == countLimiterUpdaterGoroutines(t)
+		}, time.Second, time.Millisecond)
+		mod.Start()
+		mod.Close()
+		require.Eventually(t, func() bool {
+			return before == countLimiterUpdaterGoroutines(t)
+		}, time.Second, time.Millisecond)
+	})
+
+	t.Run("reused config", func(t *testing.T) {
+		binary, err := wasmtime.Wat2Wasm(`(module (memory (export "memory") 1))`)
+		require.NoError(t, err)
+		cfg := &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		}
+		before := countLimiterUpdaterGoroutines(t)
+
+		for range 2 {
+			mod, err := NewModule(t.Context(), cfg, binary)
+			require.NoError(t, err)
+			mod.Close()
+			require.Nil(t, cfg.PendingCallsLimiter)
+			require.Nil(t, cfg.MaxResponseSizeLimiter)
+		}
+		require.Equal(t, before, countLimiterUpdaterGoroutines(t))
+	})
+
+	t.Run("simultaneous modules sharing config", func(t *testing.T) {
+		binary, err := wasmtime.Wat2Wasm(`(module (memory (export "memory") 1) (func (export "_start")))`)
+		require.NoError(t, err)
+		cfg := &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		}
+
+		first, err := NewModule(t.Context(), cfg, binary)
+		require.NoError(t, err)
+		second, err := NewModule(t.Context(), cfg, binary)
+		require.NoError(t, err)
+		t.Cleanup(second.Close)
+
+		first.Close()
+		request := &wasmpb.Request{Id: "request-id"}
+		var runErr error
+		var subscriptionErr error
+		require.NotPanics(t, func() {
+			_, runErr = second.Run(t.Context(), request)
+			subscriptionErr = limiterOrDefault(second.cfg.MaxSubscriptionsLimiter, second.defaultLimiters.maxSubscriptions).Check(t.Context(), 1)
+		})
+		require.NoError(t, runErr)
+		require.NoError(t, subscriptionErr)
+	})
+
+	t.Run("caller-provided limiter", func(t *testing.T) {
+		binary, err := wasmtime.Wat2Wasm(`(module (memory (export "memory") 1))`)
+		require.NoError(t, err)
+		limiter := limits.NewUpperBoundLimiter(1)
+		t.Cleanup(func() { require.NoError(t, limiter.Close()) })
+
+		mod, err := NewModule(t.Context(), &ModuleConfig{
+			Logger:                  logger.Test(t),
+			IsUncompressed:          true,
+			MaxSubscriptionsLimiter: limiter,
+		}, binary)
+		require.NoError(t, err)
+		mod.Close()
+		require.NoError(t, limiter.Check(t.Context(), 1))
+	})
+
+	t.Run("caller-replaced limiter", func(t *testing.T) {
+		binary, err := wasmtime.Wat2Wasm(`(module (memory (export "memory") 1))`)
+		require.NoError(t, err)
+		cfg := &ModuleConfig{
+			Logger:         logger.Test(t),
+			IsUncompressed: true,
+		}
+		mod, err := NewModule(t.Context(), cfg, binary)
+		require.NoError(t, err)
+
+		limiter := &closeTrackingGateLimiter{}
+		cfg.EnableUserMetricsLimiter = limiter
+		require.NoError(t, limiterOrDefault(mod.cfg.EnableUserMetricsLimiter, mod.defaultLimiters.enableUserMetrics).AllowErr(t.Context()))
+
+		mod.Close()
+		require.Same(t, limiter, cfg.EnableUserMetricsLimiter)
+		require.Zero(t, limiter.closeCalls)
+	})
+}
+
+type closeTrackingGateLimiter struct {
+	closeCalls int
+}
+
+func (l *closeTrackingGateLimiter) Close() error {
+	l.closeCalls++
+	return nil
+}
+
+func (*closeTrackingGateLimiter) Limit(context.Context) (bool, error) {
+	return true, nil
+}
+
+func (*closeTrackingGateLimiter) AllowErr(context.Context) error {
+	return nil
+}
 
 type mockMessageEmitter struct {
 	e      func(context.Context, string, map[string]string) error

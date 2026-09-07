@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"hash"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
@@ -18,6 +20,12 @@ const (
 	MethodSecretsGet     = "confidential.secrets.get"
 	MethodCapabilityExec = "confidential.capability.execute"
 
+	// asyncSuffix marks the asynchronous (enclave-polled) variants of the relay methods
+	asyncSuffix = ".async"
+
+	MethodSecretsGetAsync     = MethodSecretsGet + asyncSuffix
+	MethodCapabilityExecAsync = MethodCapabilityExec + asyncSuffix
+
 	DomainSecretsGet     = "ConfidentialSecretsGet"
 	DomainCapabilityExec = "ConfidentialCapabilityExecute"
 
@@ -25,6 +33,18 @@ const (
 	// response hashes from other ed25519 payloads in the system.
 	RelayResponseSignaturePrefix = "CONFIDENTIAL_RELAY_PAYLOAD_"
 )
+
+// IsAsyncMethod reports whether method is an asynchronous (enclave-polled) relay route,
+// identified by the ".async" suffix.
+func IsAsyncMethod(method string) bool {
+	return strings.HasSuffix(method, asyncSuffix)
+}
+
+// SyncMethod returns the synchronous route for method, stripping the async
+// suffix if present. Non-async methods are returned unchanged.
+func SyncMethod(method string) string {
+	return strings.TrimSuffix(method, asyncSuffix)
+}
 
 // EnclaveConfig mirrors the confidential-compute EnclaveConfig fields the
 // relay needs to verify against onchain DON state. The enclave fills this
@@ -54,6 +74,7 @@ type SecretsRequestParams struct {
 	Owner            string             `json:"owner"`            // Ethereum address (hex, 0x-prefixed)
 	ExecutionID      string             `json:"execution_id"`     // 32 bytes, hex-encoded
 	OrgID            string             `json:"org_id,omitempty"` // Organization identifier for org-based secret ownership
+	CallbackID       int32              `json:"callback_id,omitempty"`
 	Secrets          []SecretIdentifier `json:"secrets"`
 	EnclavePublicKey string             `json:"enclave_public_key"`
 	// EnclaveConfig is the enclave's current config, included so the relay can
@@ -393,6 +414,10 @@ func writeSecretsRequestParams(h hash.Hash, params SecretsRequestParams) {
 	writeString(h, params.ExecutionID)
 	writeString(h, params.OrgID)
 
+	if params.CallbackID != 0 {
+		writeInt32(h, params.CallbackID)
+	}
+
 	secrets := append([]SecretIdentifier(nil), params.Secrets...)
 	sortSecretIdentifiers(secrets)
 
@@ -454,6 +479,10 @@ func sortSecretEntries(secrets []SecretEntry) {
 
 func writeString(h hash.Hash, s string) {
 	writeBytes(h, []byte(s))
+}
+
+func writeInt32(h hash.Hash, i int32) {
+	writeBytes(h, []byte(strconv.FormatInt(int64(i), 10)))
 }
 
 func writeBytes(h hash.Hash, b []byte) {

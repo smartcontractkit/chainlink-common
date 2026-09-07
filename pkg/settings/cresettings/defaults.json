@@ -26,6 +26,8 @@
 	"GatewayConfidentialRelayPerNodeRate": "10rps:10",
 	"GatewayHTTPActionMtlsRequestRate": "every30s:0",
 	"GatewayHTTPActionMtlsConcurrencyLimit": "50",
+	"GatewayHTTPActionOutboundConcurrencyLimit": "875",
+	"GatewayHTTPActionOutboundPerNodeConcurrencyLimit": "175",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",
@@ -58,8 +60,14 @@
 		"EnclaveRequestTimeout": "30s",
 		"PublicKeyRequestTimeout": "5s",
 		"ConfidentialRelayHandlerTimeout": "1m0s",
+		"RelayResponseCache": {
+			"TTL": "10m0s",
+			"CleanupInterval": "1m0s"
+		},
 		"InsecureSkipTLSVerify": "false",
 		"EnclaveRefreshInterval": "10s",
+		"PublicKeyRetriesMax": "2",
+		"PublicKeyRetriesBackoff": "5s",
 		"PublicKeyCache": {
 			"Enabled": "true",
 			"TTL": "5m0s",
@@ -164,6 +172,13 @@
 				"ReportSizeLimit": "5kb",
 				"GasLimit": {
 					"Default": "2000000",
+					"Values": {}
+				}
+			},
+			"Stellar": {
+				"ReportSizeLimit": "5kb",
+				"MaxResourceFee": {
+					"Default": "1000000",
 					"Values": {}
 				}
 			}

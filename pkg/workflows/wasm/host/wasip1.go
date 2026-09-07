@@ -11,6 +11,8 @@ import (
 
 	"github.com/bytecodealliance/wasmtime-go/v48"
 	"github.com/jonboulle/clockwork"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 )
 
 var (
@@ -21,6 +23,12 @@ var (
 
 func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtime.Linker, error) {
 	linker := wasmtime.NewLinker(engine)
+	cleanupLinker := true
+	defer func() {
+		if cleanupLinker {
+			linker.Close()
+		}
+	}()
 	linker.AllowShadowing(true)
 
 	err := linker.DefineWasi()
@@ -49,11 +57,18 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 		return nil, err
 	}
 
+	cleanupLinker = false
 	return linker, nil
 }
 
-func newDagWasiLinker(ctx context.Context, modCfg *ModuleConfig, engine *wasmtime.Engine) (*wasmtime.Linker, error) {
-	linker := wasmtime.NewLinker(engine)
+func newDagWasiLinker(ctx context.Context, m *module) (*wasmtime.Linker, error) {
+	linker := wasmtime.NewLinker(m.engine)
+	cleanupLinker := true
+	defer func() {
+		if cleanupLinker {
+			linker.Close()
+		}
+	}()
 	linker.AllowShadowing(true)
 
 	err := linker.DefineWasi()
@@ -64,7 +79,7 @@ func newDagWasiLinker(ctx context.Context, modCfg *ModuleConfig, engine *wasmtim
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"poll_oneoff",
-		createPollOneoff(ctx, modCfg),
+		createPollOneoff(ctx, limiterOrDefault(m.cfg.MaxSubscriptionsLimiter, m.defaultLimiters.maxSubscriptions)),
 	)
 	if err != nil {
 		return nil, err
@@ -79,17 +94,18 @@ func newDagWasiLinker(ctx context.Context, modCfg *ModuleConfig, engine *wasmtim
 		return nil, err
 	}
 
-	if modCfg.Determinism != nil {
+	if m.cfg.Determinism != nil {
 		err = linker.FuncWrap(
 			"wasi_snapshot_preview1",
 			"random_get",
-			createRandomGet(modCfg),
+			createRandomGet(m.cfg),
 		)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	cleanupLinker = false
 	return linker, nil
 }
 
@@ -138,12 +154,12 @@ const (
 // https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It doesn't actually sleep though, and will instead advance our fake clock by the sleep duration.
-func createPollOneoff(ctx context.Context, cfg *ModuleConfig) func(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
+func createPollOneoff(ctx context.Context, limiter limits.BoundLimiter[int]) func(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 	return func(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
 		if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 			return ErrnoInval
 		}
-		if err := cfg.MaxSubscriptionsLimiter.Check(ctx, int(nsubscriptions)); err != nil {
+		if err := limiter.Check(ctx, int(nsubscriptions)); err != nil {
 			return ErrnoInval
 		}
 

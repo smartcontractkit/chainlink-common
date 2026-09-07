@@ -3,58 +3,21 @@ package orgresolver
 import (
 	"context"
 	"errors"
-	"slices"
 	"sync"
-	"time"
 
-	"github.com/jpillora/backoff"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	log "github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/utils/retry"
 )
 
-const (
-	maxGetRetries       = 3
-	initialRetryBackoff = 100 * time.Millisecond
-	maxRetryBackoff     = 1 * time.Second
-)
-
-var getRetryBackoff = backoff.Backoff{
-	Min:    initialRetryBackoff,
-	Max:    maxRetryBackoff,
-	Factor: 2,
-}
-
-func getRetryStrategy() *retry.Strategy[getResult] {
-	return &retry.Strategy[getResult]{
-		MaxRetries: maxGetRetries,
-		Backoff:    getRetryBackoff.Copy(),
-	}
-}
-
-// getResult carries the outcome of a single Get attempt. When err is non-nil the
-// attempt is terminal; the retry loop must receive a nil error to stop.
-type getResult struct {
-	orgID string
-	err   error
-}
-
-// OrgResolverFallback wraps an OrgResolver and maintains an in-memory cache of
-// owner->orgID mappings. On successful resolution the cache is updated. When
-// the inner resolver returns NotFound or a retriable gRPC error, the cache is
-// consulted as a fallback (after bounded retries for retriable errors).
-//
-// This addresses a race condition where a workflow owner can be unlinked from
-// an org just before a WorkflowDeleted event is processed, causing the
-// resolver to return NotFound for an owner whose org was previously known.
+// Deprecated: Use CachingResolver
 type OrgResolverFallback struct {
 	inner  OrgResolver
 	cache  sync.Map // owner (string) -> orgID (string)
 	logger log.SugaredLogger
 }
 
+// Deprecated: Use NewCachingResolver
 func NewOrgResolverWithFallback(inner OrgResolver, logger log.Logger) *OrgResolverFallback {
 	return &OrgResolverFallback{
 		inner:  inner,
@@ -96,11 +59,6 @@ func (c *OrgResolverFallback) Get(ctx context.Context, owner string) (string, er
 	return c.fallbackToCache(owner, errors.Unwrap(err))
 }
 
-func isRetriableGRPCCode(code codes.Code) bool {
-	return slices.Contains([]codes.Code{codes.Unavailable, codes.DeadlineExceeded, codes.ResourceExhausted, codes.Aborted, codes.Unknown},
-		code)
-}
-
 func (c *OrgResolverFallback) fallbackToCache(owner string, originalErr error) (string, error) {
 	if cached, ok := c.cache.Load(owner); ok {
 		orgID := cached.(string)
@@ -108,41 +66,6 @@ func (c *OrgResolverFallback) fallbackToCache(owner string, originalErr error) (
 		return orgID, nil
 	}
 	return "", originalErr
-}
-
-// grpcStatusCode extracts the gRPC status code from an error, handling
-// wrapped errors from fmt.Errorf("%w", ...) chains.
-func grpcStatusCode(err error) codes.Code {
-	type grpcStatus interface {
-		GRPCStatus() *status.Status
-	}
-	var se grpcStatus
-	if ok := errorAs(err, &se); ok {
-		return se.GRPCStatus().Code()
-	}
-	return codes.OK
-}
-
-// errorAs is a typed wrapper for the standard errors.As, allowing interface targets.
-// Go's errors.As requires a pointer to a concrete or interface type; this helper
-// keeps the call site at grpcStatusCode clean.
-func errorAs[T any](err error, target *T) bool {
-	for err != nil {
-		if t, ok := err.(T); ok {
-			*target = t
-			return true
-		}
-		err = unwrapErr(err)
-	}
-	return false
-}
-
-func unwrapErr(err error) error {
-	type wrapper interface{ Unwrap() error }
-	if w, ok := err.(wrapper); ok {
-		return w.Unwrap()
-	}
-	return nil
 }
 
 func (c *OrgResolverFallback) Start(ctx context.Context) error { return c.inner.Start(ctx) }

@@ -27,7 +27,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	dagsdk "github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
@@ -96,7 +95,8 @@ type ModuleConfig struct {
 	MaxResponseSizeLimiter       limits.BoundLimiter[config.Size] // supersedes MaxResponseSizeBytes if set
 
 	// MaxSubscriptionsLimiter bounds nsubscriptions in the WASI poll_oneoff host
-	// call. Defaults to cresettings.Default.WASMPollOneoffSubscriptionLimit.
+	// call. It uses the default value of cresettings.Default.WASMPollOneoffSubscriptionLimit;
+	// inject a limiter to provide dynamic settings.
 	MaxSubscriptionsLimiter limits.BoundLimiter[int]
 
 	MaxLogLenBytes      uint32
@@ -150,7 +150,8 @@ type module struct {
 	module  *wasmtime.Module
 	wconfig *wasmtime.Config
 
-	cfg *ModuleConfig
+	cfg             *ModuleConfig
+	defaultLimiters moduleLimiters
 
 	metrics moduleMetrics
 
@@ -175,6 +176,48 @@ var _ ModuleV1 = (*module)(nil)
 
 type linkFn[T any] func(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[T]) (*wasmtime.Instance, error)
 
+type moduleLimiters struct {
+	pendingCalls                  limits.ResourcePoolLimiter[int]
+	enableUserMetrics             limits.GateLimiter
+	maxUserMetricPayload          limits.BoundLimiter[config.Size]
+	maxUserMetricNameLength       limits.BoundLimiter[int]
+	maxUserMetricLabelsPerMetric  limits.BoundLimiter[int]
+	maxUserMetricLabelValueLength limits.BoundLimiter[int]
+	memory                        limits.BoundLimiter[config.Size]
+	maxCompressedBinary           limits.BoundLimiter[config.Size]
+	maxDecompressedBinary         limits.BoundLimiter[config.Size]
+	maxResponseSize               limits.BoundLimiter[config.Size]
+	maxSubscriptions              limits.BoundLimiter[int]
+}
+
+func (l *moduleLimiters) close() {
+	closers := [...]io.Closer{
+		l.pendingCalls,
+		l.enableUserMetrics,
+		l.maxUserMetricPayload,
+		l.maxUserMetricNameLength,
+		l.maxUserMetricLabelsPerMetric,
+		l.maxUserMetricLabelValueLength,
+		l.memory,
+		l.maxCompressedBinary,
+		l.maxDecompressedBinary,
+		l.maxResponseSize,
+		l.maxSubscriptions,
+	}
+	for i := len(closers) - 1; i >= 0; i-- {
+		if closers[i] != nil {
+			_ = closers[i].Close()
+		}
+	}
+}
+
+func limiterOrDefault[T io.Closer](configured, defaultLimiter T) T {
+	if any(configured) != nil {
+		return configured
+	}
+	return defaultLimiter
+}
+
 // WithDeterminism sets the Determinism field to a deterministic seed from a known time.
 //
 // "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
@@ -189,7 +232,20 @@ func WithDeterminism() func(*ModuleConfig) {
 	}
 }
 
+// NewModule creates a WASM module. Limiters omitted from modCfg are created
+// internally, owned by the returned module, and not written back to modCfg.
+// Caller-provided or subsequently configured limiters remain caller-owned.
+// Limiter fields may be set or replaced after construction, but must not be
+// reset to nil.
 func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
+	var defaultLimiters moduleLimiters
+	cleanupLimiters := true
+	defer func() {
+		if cleanupLimiters {
+			defaultLimiters.close()
+		}
+	}()
+
 	// Apply options to the module config.
 	for _, opt := range opts {
 		opt(modCfg)
@@ -207,15 +263,6 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.MaxFetchRequests == 0 {
 		modCfg.MaxFetchRequests = defaultMaxFetchRequests
-	}
-
-	if modCfg.PendingCallsLimiter == nil {
-		lf := limits.Factory{Logger: modCfg.Logger}
-		var err error
-		modCfg.PendingCallsLimiter, err = limits.MakeResourcePoolLimiter(lf, cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make pending calls limiter: %w", err)
-		}
 	}
 
 	if modCfg.Labeler == nil {
@@ -286,41 +333,29 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	lf := limits.Factory{Logger: modCfg.Logger}
 
+	if modCfg.PendingCallsLimiter == nil {
+		limiter, err := limits.MakeResourcePoolLimiter(lf, cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit)
+		if err != nil {
+			return nil, fmt.Errorf("failed to make pending calls limiter: %w", err)
+		}
+		defaultLimiters.pendingCalls = limiter
+	}
+
 	if modCfg.EnableUserMetricsLimiter == nil {
-		modCfg.EnableUserMetricsLimiter = limits.NewGateLimiter(false)
+		defaultLimiters.enableUserMetrics = limits.NewGateLimiter(false)
 	}
 
 	if modCfg.MaxUserMetricPayloadLimiter == nil {
-		limit := settings.Size(config.Size(modCfg.MaxUserMetricPayloadBytes))
-		var err error
-		modCfg.MaxUserMetricPayloadLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make metric payload size limiter: %w", err)
-		}
+		defaultLimiters.maxUserMetricPayload = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxUserMetricPayloadBytes))
 	}
 	if modCfg.MaxUserMetricNameLengthLimiter == nil {
-		limit := settings.Int(int(modCfg.MaxUserMetricNameLength))
-		var err error
-		modCfg.MaxUserMetricNameLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make metric name length limiter: %w", err)
-		}
+		defaultLimiters.maxUserMetricNameLength = limits.NewUpperBoundLimiter(int(modCfg.MaxUserMetricNameLength))
 	}
 	if modCfg.MaxUserMetricLabelsPerMetricLimiter == nil {
-		limit := settings.Int(int(modCfg.MaxUserMetricLabelsPerMetric))
-		var err error
-		modCfg.MaxUserMetricLabelsPerMetricLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make labels per metric limiter: %w", err)
-		}
+		defaultLimiters.maxUserMetricLabelsPerMetric = limits.NewUpperBoundLimiter(int(modCfg.MaxUserMetricLabelsPerMetric))
 	}
 	if modCfg.MaxUserMetricLabelValueLengthLimiter == nil {
-		limit := settings.Int(int(modCfg.MaxUserMetricLabelValueLength))
-		var err error
-		modCfg.MaxUserMetricLabelValueLengthLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make label value length limiter: %w", err)
-		}
+		defaultLimiters.maxUserMetricLabelValueLength = limits.NewUpperBoundLimiter(int(modCfg.MaxUserMetricLabelValueLength))
 	}
 	if modCfg.MemoryLimiter == nil {
 		// Take the max of the min and the configured max memory mbs.
@@ -328,55 +363,34 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		// and local testing has shown that with less than the min, some
 		// binaries may error sporadically.
 		modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
-		limit := settings.Size(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
-		var err error
-		modCfg.MemoryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make memory limiter: %w", err)
-		}
+		defaultLimiters.memory = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
 	}
 	if modCfg.MaxCompressedBinaryLimiter == nil {
-		limit := settings.Size(config.Size(modCfg.MaxCompressedBinarySize))
-		var err error
-		modCfg.MaxCompressedBinaryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make compressed binary size limiter: %w", err)
-		}
+		defaultLimiters.maxCompressedBinary = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxCompressedBinarySize))
 	}
 	if modCfg.MaxDecompressedBinaryLimiter == nil {
-		limit := settings.Size(config.Size(modCfg.MaxDecompressedBinarySize))
-		var err error
-		modCfg.MaxDecompressedBinaryLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make  decompressed binary size limiter: %w", err)
-		}
+		defaultLimiters.maxDecompressedBinary = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxDecompressedBinarySize))
 	}
 	if modCfg.MaxResponseSizeLimiter == nil {
-		limit := settings.Size(config.Size(modCfg.MaxResponseSizeBytes))
-		var err error
-		modCfg.MaxResponseSizeLimiter, err = limits.MakeUpperBoundLimiter(lf, limit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make response size limiter: %w", err)
-		}
+		defaultLimiters.maxResponseSize = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxResponseSizeBytes))
 	}
 	if modCfg.MaxSubscriptionsLimiter == nil {
-		var err error
-		modCfg.MaxSubscriptionsLimiter, err = limits.MakeUpperBoundLimiter(lf, cresettings.Default.WASMPollOneoffSubscriptionLimit)
-		if err != nil {
-			return nil, fmt.Errorf("failed to make poll_oneoff subscription limiter: %w", err)
-		}
+		defaultLimiters.maxSubscriptions = limits.NewUpperBoundLimiter(cresettings.Default.WASMPollOneoffSubscriptionLimit.DefaultValue)
 	}
+
+	maxCompressedBinaryLimiter := limiterOrDefault(modCfg.MaxCompressedBinaryLimiter, defaultLimiters.maxCompressedBinary)
+	maxDecompressedBinaryLimiter := limiterOrDefault(modCfg.MaxDecompressedBinaryLimiter, defaultLimiters.maxDecompressedBinary)
 
 	if !modCfg.IsUncompressed {
 		// validate the binary size before decompressing
 		// this is to prevent decompression bombs
-		if err := modCfg.MaxCompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
+		if err := maxCompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
 			if errors.Is(err, limits.ErrorBoundLimited[config.Size]{}) {
 				return nil, fmt.Errorf("compressed binary size exceeds the maximum allowed size: %w", err)
 			}
 			return nil, fmt.Errorf("failed to check compressed binary size limit: %w", err)
 		}
-		maxDecompressedBinarySize, err := modCfg.MaxDecompressedBinaryLimiter.Limit(ctx)
+		maxDecompressedBinarySize, err := maxDecompressedBinaryLimiter.Limit(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get decompressed binary size limit: %w", err)
 		}
@@ -392,7 +406,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 	// Validate the decompressed binary size.
 	// io.LimitReader prevents decompression bombs by reading up to a set limit, but it will not return an error if the limit is reached.
 	// The Read() method will return io.EOF, and ReadAll will gracefully handle it and return nil.
-	if err := modCfg.MaxDecompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
+	if err := maxDecompressedBinaryLimiter.Check(ctx, config.SizeOf(binary)); err != nil {
 		if errors.Is(err, limits.ErrorBoundLimited[config.Size]{}) {
 			return nil, fmt.Errorf("decompressed binary size reached the maximum allowed size: %w", err)
 		}
@@ -404,7 +418,13 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		return nil, fmt.Errorf("failed to create module metrics: %w", err)
 	}
 
-	return newModule(modCfg, binary, metrics)
+	m, err := newModule(modCfg, binary, metrics)
+	if err != nil {
+		return nil, err
+	}
+	m.defaultLimiters = defaultLimiters
+	cleanupLimiters = false
+	return m, nil
 }
 
 func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
@@ -423,6 +443,7 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 
 	mod, err := wasmtime.NewModule(engine, binary)
 	if err != nil {
+		engine.Close()
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
@@ -431,6 +452,8 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 	// at all. Reject it here rather than letting the first callback dereference
 	// a missing or wrong-typed export.
 	if err = requireMemoryExport(mod); err != nil {
+		mod.Close()
+		engine.Close()
 		return nil, err
 	}
 
@@ -470,6 +493,7 @@ func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execut
 	if err != nil {
 		return nil, err
 	}
+	defer linker.Close()
 
 	if err = linker.FuncWrap(
 		"env",
@@ -562,10 +586,11 @@ func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execut
 }
 
 func linkLegacyDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *execution[*wasmdagpb.Response]) (*wasmtime.Instance, error) {
-	linker, err := newDagWasiLinker(ctx, m.cfg, m.engine)
+	linker, err := newDagWasiLinker(ctx, m)
 	if err != nil {
 		return nil, err
 	}
+	defer linker.Close()
 
 	logger := m.cfg.Logger
 
@@ -611,6 +636,7 @@ func linkLegacyDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *
 func (m *module) Start() {
 	m.wg.Go(func() {
 		ticker := time.NewTicker(m.cfg.TickInterval)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-m.stopCh:
@@ -622,10 +648,13 @@ func (m *module) Start() {
 	})
 }
 
+// Close may wait for a blocked acquisition from the internally owned pending
+// calls limiter.
 func (m *module) Close() {
 	close(m.stopCh)
 	m.wg.Wait()
 
+	m.defaultLimiters.close()
 	m.engine.Close()
 	m.module.Close()
 	m.wconfig.Close()
@@ -736,7 +765,7 @@ func runWasm[I, O proto.Message](
 
 	defer store.Close()
 
-	maxResponseSizeBytes, err := m.cfg.MaxResponseSizeLimiter.Limit(ctx)
+	maxResponseSizeBytes, err := limiterOrDefault(m.cfg.MaxResponseSizeLimiter, m.defaultLimiters.maxResponseSize).Limit(ctx)
 	if err != nil {
 		return o, fmt.Errorf("failed to get response size limit: %w", err)
 	}
@@ -749,14 +778,13 @@ func runWasm[I, O proto.Message](
 	reqstr := base64.StdEncoding.EncodeToString(reqpb)
 
 	wasi := wasmtime.NewWasiConfig()
+	defer wasi.Close()
 	if err := wasi.SetStdoutFile(m.cfg.guestStdoutFile); err != nil {
 		return o, fmt.Errorf("error setting guest stdout file: %w", err)
 	}
 	if err := wasi.SetStderrFile(m.cfg.guestStderrFile); err != nil {
 		return o, fmt.Errorf("error setting guest stderr file: %w", err)
 	}
-	defer wasi.Close()
-
 	wasi.SetArgv([]string{"wasi", reqstr})
 
 	store.SetWasi(wasi)
@@ -769,7 +797,7 @@ func runWasm[I, O proto.Message](
 	}
 
 	// Limit memory to max memory megabytes per instance.
-	maxMemoryBytes, err := m.cfg.MemoryLimiter.Limit(ctx)
+	maxMemoryBytes, err := limiterOrDefault(m.cfg.MemoryLimiter, m.defaultLimiters.memory).Limit(ctx)
 	if err != nil {
 		return o, fmt.Errorf("failed to get memory limit: %w", err)
 	}
@@ -797,7 +825,7 @@ func runWasm[I, O proto.Message](
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		secretsResponses:    map[int32]<-chan *secretsResponse{},
 		usedCallbackIDs:     map[string]bool{},
-		pendingCallsLimiter: m.cfg.PendingCallsLimiter,
+		pendingCallsLimiter: limiterOrDefault(m.cfg.PendingCallsLimiter, m.defaultLimiters.pendingCalls),
 		module:              m,
 		executor:            helper,
 		donSeed:             donSeed,

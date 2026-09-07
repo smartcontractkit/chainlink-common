@@ -407,6 +407,7 @@ func ConvertSubmitTransactionRequestToProto(req stellar.SubmitTransactionRequest
 		Function:           req.Function,
 		Args:               args,
 		LedgerBoundsOffset: req.LedgerBoundsOffset,
+		MaxResourceFee:     req.MaxResourceFee,
 	}, nil
 }
 
@@ -433,6 +434,7 @@ func ConvertSubmitTransactionRequestFromProto(p *SubmitTransactionRequest) (stel
 		Function:           p.GetFunction(),
 		Args:               args,
 		LedgerBoundsOffset: p.GetLedgerBoundsOffset(),
+		MaxResourceFee:     p.GetMaxResourceFee(),
 	}, nil
 }
 

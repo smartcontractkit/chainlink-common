@@ -48,7 +48,7 @@ func TestGetMapsFromPath(t *testing.T) {
 		{
 			"A": map[string]any{"IntSlice": []int(nil)},
 			"B": map[string]any{"TestASlice": []testA{{IntSlice: []int{3, 2, 0}}, {IntSlice: []int{0, 1, 2}}}},
-			"C": map[string]any{"TestAPtrSlice": ptrSlice}, "D": 10, "F": 100},
+			"C": map[string]any{"TestAPtrSlice": *ptrSlice}, "D": 10, "F": 100},
 		{
 			"A": map[string]any{"IntSlice": []int(nil)},
 			"B": map[string]any{"TestASlice": []testA(nil)}, "C": map[string]any{"TestAPtrSlice": (*[]testA)(nil)}, "D": 20, "F": 200,

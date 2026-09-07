@@ -21,6 +21,7 @@ import (
 type fakeGrafana struct {
 	mu sync.Mutex
 
+	folderGets     int
 	alertRuleGets  int
 	alertRulePosts int
 	inFlightPosts  int
@@ -31,6 +32,9 @@ func (f *fakeGrafana) handler(t *testing.T) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/folders", func(w http.ResponseWriter, _ *http.Request) {
+		f.mu.Lock()
+		f.folderGets++
+		f.mu.Unlock()
 		writeJSON(t, w, []map[string]any{{"id": 1, "uid": "folder-uid", "title": "Folder"}})
 	})
 	mux.HandleFunc("GET /api/search", func(w http.ResponseWriter, _ *http.Request) {
@@ -120,4 +124,64 @@ func TestDeployToGrafanaFetchesRulesOnceAndWritesConcurrently(t *testing.T) {
 	require.Equal(t, numAlerts, fake.alertRulePosts)
 	require.Greater(t, fake.maxInFlight, 1, "alert rule writes should overlap")
 	require.LessOrEqual(t, fake.maxInFlight, 8, "alert rule writes must respect the default concurrency bound")
+}
+
+// deployOne deploys a single-dashboard observability with the given options,
+// failing the test on any error.
+func deployOne(t *testing.T, title string, opts *grafana.DeployOptions) {
+	t.Helper()
+	o := &grafana.Observability{
+		Dashboard: &dashboard.Dashboard{Title: &title},
+		Alerts: []alerting.Rule{{
+			Title:     "alert-" + title,
+			RuleGroup: "group",
+			Condition: "A",
+			Data:      []alerting.Query{},
+		}},
+	}
+	group, err := grafana.NewAlertGroup(&grafana.AlertGroupOptions{Title: "group", Interval: 60}).Build()
+	require.NoError(t, err)
+	o.AlertGroups = []alerting.RuleGroup{group}
+
+	require.NoError(t, o.DeployToGrafana(opts))
+}
+
+func TestDeployToGrafanaSharesCacheAcrossDeploys(t *testing.T) {
+	fake := &fakeGrafana{}
+	server := httptest.NewServer(fake.handler(t))
+	t.Cleanup(server.Close)
+
+	cache := &grafana.DeployCache{}
+	for _, title := range []string{"Dashboard A", "Dashboard B"} {
+		deployOne(t, title, &grafana.DeployOptions{
+			GrafanaURL:             server.URL,
+			GrafanaToken:           "test-token",
+			FolderName:             "Folder",
+			EnableAlerts:           true,
+			RuleGroupFromDashboard: true,
+			Cache:                  cache,
+		})
+	}
+
+	require.Equal(t, 1, fake.folderGets, "shared cache must resolve the folder once across deploys")
+	require.Equal(t, 1, fake.alertRuleGets, "shared cache must fetch the full alert rule list once across deploys")
+}
+
+func TestDeployToGrafanaWithoutCacheFetchesPerDeploy(t *testing.T) {
+	fake := &fakeGrafana{}
+	server := httptest.NewServer(fake.handler(t))
+	t.Cleanup(server.Close)
+
+	for _, title := range []string{"Dashboard A", "Dashboard B"} {
+		deployOne(t, title, &grafana.DeployOptions{
+			GrafanaURL:             server.URL,
+			GrafanaToken:           "test-token",
+			FolderName:             "Folder",
+			EnableAlerts:           true,
+			RuleGroupFromDashboard: true,
+		})
+	}
+
+	require.Equal(t, 2, fake.folderGets, "without a cache each deploy resolves the folder")
+	require.Equal(t, 2, fake.alertRuleGets, "without a cache each deploy fetches the full alert rule list")
 }

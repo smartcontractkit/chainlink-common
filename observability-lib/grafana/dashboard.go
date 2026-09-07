@@ -53,6 +53,11 @@ type DeployOptions struct {
 	// is addressed by UID, so rules deploy independently). 0 uses
 	// defaultConcurrency; 1 restores the previous serial behavior.
 	Concurrency int
+	// Cache, when set, memoizes folder resolution and the full alert-rule
+	// fetch across the DeployToGrafana calls sharing it, so composite deploys
+	// pay those lookups once instead of once per dashboard. See DeployCache
+	// for scoping rules.
+	Cache *DeployCache
 }
 
 func (o *DeployOptions) concurrency() int {
@@ -62,8 +67,12 @@ func (o *DeployOptions) concurrency() int {
 	return o.Concurrency
 }
 
-func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folder, error) {
+func resolveDeployFolder(client *api.Client, cache deployCache, options *DeployOptions) (*api.Folder, error) {
 	if options.FolderUID != "" {
+		key := "uid_" + options.FolderUID
+		if folder, ok := cache.folder(key); ok {
+			return folder, nil
+		}
 		folder, err := client.GetFolderByUID(options.FolderUID)
 		if err != nil {
 			return nil, err
@@ -71,10 +80,20 @@ func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folde
 		if folder == nil {
 			return nil, fmt.Errorf("folder with UID %q not found", options.FolderUID)
 		}
+		cache.setFolder(key, folder)
 		return folder, nil
 	}
 	if options.FolderName != "" {
-		return client.FindOrCreateFolder(options.FolderName)
+		key := "name_" + options.FolderName
+		if folder, ok := cache.folder(key); ok {
+			return folder, nil
+		}
+		folder, err := client.FindOrCreateFolder(options.FolderName)
+		if err != nil {
+			return nil, err
+		}
+		cache.setFolder(key, folder)
+		return folder, nil
 	}
 	return nil, nil
 }
@@ -97,15 +116,22 @@ func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
 	return nil
 }
 
-func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
-	// Fetch the full rule list exactly once. The per-lookup client helpers
-	// (GetAlertRulesByDashboardUID, GetAlertRulesByFolderUIDAndGroupName) each
-	// re-download every alert rule in the Grafana instance and filter
-	// client-side, which dominated deploy latency on large instances when
-	// called once per dashboard UID plus once per alert group.
-	allRules, _, errGetAlertRules := grafanaClient.GetAlertRules()
-	if errGetAlertRules != nil {
-		return nil, errGetAlertRules
+func getAlertRules(grafanaClient *api.Client, cache deployCache, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
+	// Fetch the full rule list exactly once (per DeployCache, so composite
+	// deploys sharing a cache fetch once per run, not once per dashboard).
+	// The per-lookup client helpers (GetAlertRulesByDashboardUID,
+	// GetAlertRulesByFolderUIDAndGroupName) each re-download every alert rule
+	// in the Grafana instance and filter client-side, which dominated deploy
+	// latency on large instances when called once per dashboard UID plus once
+	// per alert group.
+	allRules, cached := cache.alertRules()
+	if !cached {
+		var errGetAlertRules error
+		allRules, _, errGetAlertRules = grafanaClient.GetAlertRules()
+		if errGetAlertRules != nil {
+			return nil, errGetAlertRules
+		}
+		cache.setAlertRules(allRules)
 	}
 
 	var alertsRule []alerting.Rule
@@ -143,8 +169,15 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 		options.GrafanaToken,
 	)
 
+	// Substitute a no-op cache when the caller didn't configure one, so the
+	// rest of the deploy path never handles a nil cache.
+	cache := deployCache(noopDeployCache{})
+	if options.Cache != nil {
+		cache = options.Cache
+	}
+
 	// Create or update folder
-	folder, errFolder := resolveDeployFolder(grafanaClient, options)
+	folder, errFolder := resolveDeployFolder(grafanaClient, cache, options)
 	if errFolder != nil {
 		return errFolder
 	}
@@ -181,7 +214,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 
 	// If disabling alerts delete alerts for the folder and alert groups scope
 	if folder != nil && !options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
-		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, newDashboard.UID, folder.UID, o.AlertGroups)
+		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, cache, newDashboard.UID, folder.UID, o.AlertGroups)
 		if errGetAlertRules != nil {
 			return errGetAlertRules
 		}
@@ -196,7 +229,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 
 	// Create or update alerts
 	if folder != nil && options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
-		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, newDashboard.UID, folder.UID, o.AlertGroups)
+		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, cache, newDashboard.UID, folder.UID, o.AlertGroups)
 		if errGetAlertRules != nil {
 			return errGetAlertRules
 		}

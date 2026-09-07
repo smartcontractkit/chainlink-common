@@ -1,9 +1,9 @@
 package grafana
 
-import "sync"
+import "golang.org/x/sync/errgroup"
 
 // parallelFor runs fn for each item with at most limit calls in flight and
-// returns the first error encountered. In-flight calls are allowed to finish;
+// returns the first non-nil error returned by any invocation. In-flight calls are allowed to finish;
 // items whose fn has not started yet may still run after an error occurs, which
 // matches the pre-existing partial-apply behavior of the serial loops (a
 // failure mid-loop leaves earlier items applied).
@@ -15,27 +15,15 @@ func parallelFor[T any](items []T, limit int, fn func(T) error) error {
 		limit = 1
 	}
 
-	sem := make(chan struct{}, limit)
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var firstErr error
+	var g errgroup.Group
+	g.SetLimit(limit)
 
 	for _, item := range items {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			if err := fn(item); err != nil {
-				mu.Lock()
-				if firstErr == nil {
-					firstErr = err
-				}
-				mu.Unlock()
-			}
-		}()
+		i := item
+		g.Go(func() error {
+			return fn(i)
+		})
 	}
-	wg.Wait()
 
-	return firstErr
+	return g.Wait()
 }

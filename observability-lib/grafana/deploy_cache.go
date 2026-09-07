@@ -8,10 +8,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/observability-lib/api"
 )
 
-// deployCache is the cache DeployToGrafana consults for folder resolution and
-// the full alert-rule list. DeployCache is the real implementation;
-// noopDeployCache is substituted when DeployOptions.Cache is unset, so the
-// deploy path never handles a nil cache.
 type deployCache interface {
 	folder(key string) (*api.Folder, bool)
 	setFolder(key string, f *api.Folder)
@@ -19,9 +15,6 @@ type deployCache interface {
 	setAlertRules(rules []alerting.Rule)
 }
 
-// noopDeployCache is used when DeployOptions.Cache is unset: lookups always
-// miss and stores are dropped, so every deploy resolves the folder and fetches
-// the rule list for itself, as before.
 type noopDeployCache struct{}
 
 func (noopDeployCache) folder(string) (*api.Folder, bool)   { return nil, false }
@@ -32,9 +25,7 @@ func (noopDeployCache) setAlertRules([]alerting.Rule)       {}
 // DeployCache memoizes values that are invariant across the dashboard deploys
 // of a single run — folder resolution and the full alert-rule list — so a
 // composite deploy pays those Grafana lookups once instead of once per
-// dashboard. The zero value is ready to use; share one instance across
-// DeployToGrafana calls via DeployOptions.Cache.
-//
+// dashboard.//
 // Scoping rules:
 //   - A DeployCache is bound to one Grafana instance: do not share it across
 //     DeployOptions with different GrafanaURL/GrafanaToken.

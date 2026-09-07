@@ -117,13 +117,8 @@ func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
 }
 
 func getAlertRules(grafanaClient *api.Client, cache deployCache, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
-	// Fetch the full rule list exactly once (per DeployCache, so composite
-	// deploys sharing a cache fetch once per run, not once per dashboard).
-	// The per-lookup client helpers (GetAlertRulesByDashboardUID,
-	// GetAlertRulesByFolderUIDAndGroupName) each re-download every alert rule
-	// in the Grafana instance and filter client-side, which dominated deploy
-	// latency on large instances when called once per dashboard UID plus once
-	// per alert group.
+	// Fetch the full rule list exactly once to amortize the cost of
+	// fetching alert rules.
 	allRules, cached := cache.alertRules()
 	if !cached {
 		var errGetAlertRules error
@@ -244,11 +239,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 			}
 		}
 
-		// Create alert rules. Rules are addressed by UID and therefore
-		// independent, so writes fan out with bounded concurrency instead of
-		// one serial round trip per rule. The loop body receives its own copy
-		// of the alert; shared state (folder, o.Dashboard, alertsRule,
-		// newDashboard) is only read.
+		// Create alert rules
 		errUpsertAlerts := parallelFor(o.Alerts, options.concurrency(), func(alert alerting.Rule) error {
 			if folder.UID != "" {
 				alert.FolderUID = folder.UID

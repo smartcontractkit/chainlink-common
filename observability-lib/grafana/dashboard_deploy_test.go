@@ -90,7 +90,7 @@ func TestDeployToGrafanaFetchesRulesOnceAndWritesConcurrently(t *testing.T) {
 
 	title := "Test Dashboard"
 	o := &grafana.Observability{
-		Dashboard: &dashboard.Dashboard{
+		Dashboard: &dashboard.Dashboard{ //nolint:staticcheck
 			Title: &title,
 		},
 		Alerts:      make([]alerting.Rule, numAlerts),
@@ -131,7 +131,7 @@ func TestDeployToGrafanaFetchesRulesOnceAndWritesConcurrently(t *testing.T) {
 func deployOne(t *testing.T, title string, opts *grafana.DeployOptions) {
 	t.Helper()
 	o := &grafana.Observability{
-		Dashboard: &dashboard.Dashboard{Title: &title},
+		Dashboard: &dashboard.Dashboard{Title: &title}, //nolint:staticcheck
 		Alerts: []alerting.Rule{{
 			Title:     "alert-" + title,
 			RuleGroup: "group",

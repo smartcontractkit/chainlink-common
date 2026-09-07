@@ -37,6 +37,10 @@ func (o *Observability) GenerateJSON() ([]byte, error) {
 	return output, nil
 }
 
+// defaultConcurrency is the default bound on in-flight HTTP calls for
+// alert-rule writes when DeployOptions.Concurrency is unset.
+const defaultConcurrency = 8
+
 type DeployOptions struct {
 	GrafanaURL             string
 	GrafanaToken           string
@@ -45,10 +49,30 @@ type DeployOptions struct {
 	EnableAlerts           bool
 	RuleGroupFromDashboard bool // if true, set the alert rule group to the dashboard title on all alerts
 	NotificationTemplates  string
+	// Concurrency bounds in-flight HTTP calls for alert-rule writes (each rule
+	// is addressed by UID, so rules deploy independently). 0 uses
+	// defaultConcurrency; 1 restores the previous serial behavior.
+	Concurrency int
+	// Cache, when set, memoizes folder resolution and the full alert-rule
+	// fetch across the DeployToGrafana calls sharing it, so composite deploys
+	// pay those lookups once instead of once per dashboard. See DeployCache
+	// for scoping rules.
+	Cache *DeployCache
 }
 
-func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folder, error) {
+func (o *DeployOptions) concurrency() int {
+	if o.Concurrency <= 0 {
+		return defaultConcurrency
+	}
+	return o.Concurrency
+}
+
+func resolveDeployFolder(client *api.Client, cache deployCache, options *DeployOptions) (*api.Folder, error) {
 	if options.FolderUID != "" {
+		key := "uid_" + options.FolderUID
+		if folder, ok := cache.folder(key); ok {
+			return folder, nil
+		}
 		folder, err := client.GetFolderByUID(options.FolderUID)
 		if err != nil {
 			return nil, err
@@ -56,10 +80,20 @@ func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folde
 		if folder == nil {
 			return nil, fmt.Errorf("folder with UID %q not found", options.FolderUID)
 		}
+		cache.setFolder(key, folder)
 		return folder, nil
 	}
 	if options.FolderName != "" {
-		return client.FindOrCreateFolder(options.FolderName)
+		key := "name_" + options.FolderName
+		if folder, ok := cache.folder(key); ok {
+			return folder, nil
+		}
+		folder, err := client.FindOrCreateFolder(options.FolderName)
+		if err != nil {
+			return nil, err
+		}
+		cache.setFolder(key, folder)
+		return folder, nil
 	}
 	return nil, nil
 }
@@ -82,26 +116,42 @@ func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
 	return nil
 }
 
-func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
+func getAlertRules(grafanaClient *api.Client, cache deployCache, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
+	// Fetch the full rule list exactly once to amortize the cost of
+	// fetching alert rules.
+	allRules, cached := cache.alertRules()
+	if !cached {
+		var errGetAlertRules error
+		allRules, _, errGetAlertRules = grafanaClient.GetAlertRules()
+		if errGetAlertRules != nil {
+			return nil, errGetAlertRules
+		}
+		cache.setAlertRules(allRules)
+	}
+
 	var alertsRule []alerting.Rule
-	var errGetAlertRules error
 
 	// check for alert rules by dashboard UID
 	if dashboardUID != nil {
-		alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*dashboardUID)
-		if errGetAlertRules != nil {
-			return nil, errGetAlertRules
+		for _, rule := range allRules {
+			if rule.Annotations["__dashboardUid__"] == *dashboardUID {
+				alertsRule = append(alertsRule, rule)
+			}
 		}
 	}
 
 	// check for alert rules by folder UID and group name
 	if len(alertGroups) > 0 {
+		groupNames := make(map[string]bool, len(alertGroups))
 		for _, alertGroup := range alertGroups {
-			alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
-			if errGetAlertRulesPerGroup != nil {
-				return nil, errGetAlertRulesPerGroup
+			if alertGroup.Title != nil {
+				groupNames[*alertGroup.Title] = true
 			}
-			alertsRule = append(alertsRule, alertsRulePerGroup...)
+		}
+		for _, rule := range allRules {
+			if rule.FolderUID != "" && rule.FolderUID == folderUID && groupNames[rule.RuleGroup] {
+				alertsRule = append(alertsRule, rule)
+			}
 		}
 	}
 
@@ -114,8 +164,15 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 		options.GrafanaToken,
 	)
 
+	// Substitute a no-op cache when the caller didn't configure one, so the
+	// rest of the deploy path never handles a nil cache.
+	cache := deployCache(noopDeployCache{})
+	if options.Cache != nil {
+		cache = options.Cache
+	}
+
 	// Create or update folder
-	folder, errFolder := resolveDeployFolder(grafanaClient, options)
+	folder, errFolder := resolveDeployFolder(grafanaClient, cache, options)
 	if errFolder != nil {
 		return errFolder
 	}
@@ -152,7 +209,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 
 	// If disabling alerts delete alerts for the folder and alert groups scope
 	if folder != nil && !options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
-		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, newDashboard.UID, folder.UID, o.AlertGroups)
+		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, cache, newDashboard.UID, folder.UID, o.AlertGroups)
 		if errGetAlertRules != nil {
 			return errGetAlertRules
 		}
@@ -167,7 +224,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 
 	// Create or update alerts
 	if folder != nil && options.EnableAlerts && o.Alerts != nil && len(o.Alerts) > 0 {
-		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, newDashboard.UID, folder.UID, o.AlertGroups)
+		alertsRule, errGetAlertRules := getAlertRules(grafanaClient, cache, newDashboard.UID, folder.UID, o.AlertGroups)
 		if errGetAlertRules != nil {
 			return errGetAlertRules
 		}
@@ -183,7 +240,7 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 		}
 
 		// Create alert rules
-		for _, alert := range o.Alerts {
+		errUpsertAlerts := parallelFor(o.Alerts, options.concurrency(), func(alert alerting.Rule) error {
 			if folder.UID != "" {
 				alert.FolderUID = folder.UID
 			}
@@ -235,6 +292,10 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 					return errPostAlertRule
 				}
 			}
+			return nil
+		})
+		if errUpsertAlerts != nil {
+			return errUpsertAlerts
 		}
 	}
 

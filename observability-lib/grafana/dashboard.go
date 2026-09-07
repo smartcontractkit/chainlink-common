@@ -37,6 +37,10 @@ func (o *Observability) GenerateJSON() ([]byte, error) {
 	return output, nil
 }
 
+// defaultConcurrency is the default bound on in-flight HTTP calls for
+// alert-rule writes when DeployOptions.Concurrency is unset.
+const defaultConcurrency = 8
+
 type DeployOptions struct {
 	GrafanaURL             string
 	GrafanaToken           string
@@ -45,6 +49,17 @@ type DeployOptions struct {
 	EnableAlerts           bool
 	RuleGroupFromDashboard bool // if true, set the alert rule group to the dashboard title on all alerts
 	NotificationTemplates  string
+	// Concurrency bounds in-flight HTTP calls for alert-rule writes (each rule
+	// is addressed by UID, so rules deploy independently). 0 uses
+	// defaultConcurrency; 1 restores the previous serial behavior.
+	Concurrency int
+}
+
+func (o *DeployOptions) concurrency() int {
+	if o.Concurrency <= 0 {
+		return defaultConcurrency
+	}
+	return o.Concurrency
 }
 
 func resolveDeployFolder(client *api.Client, options *DeployOptions) (*api.Folder, error) {
@@ -83,25 +98,39 @@ func getAlertRuleByTitle(alerts []alerting.Rule, title string) *alerting.Rule {
 }
 
 func getAlertRules(grafanaClient *api.Client, dashboardUID *string, folderUID string, alertGroups []alerting.RuleGroup) ([]alerting.Rule, error) {
+	// Fetch the full rule list exactly once. The per-lookup client helpers
+	// (GetAlertRulesByDashboardUID, GetAlertRulesByFolderUIDAndGroupName) each
+	// re-download every alert rule in the Grafana instance and filter
+	// client-side, which dominated deploy latency on large instances when
+	// called once per dashboard UID plus once per alert group.
+	allRules, _, errGetAlertRules := grafanaClient.GetAlertRules()
+	if errGetAlertRules != nil {
+		return nil, errGetAlertRules
+	}
+
 	var alertsRule []alerting.Rule
-	var errGetAlertRules error
 
 	// check for alert rules by dashboard UID
 	if dashboardUID != nil {
-		alertsRule, errGetAlertRules = grafanaClient.GetAlertRulesByDashboardUID(*dashboardUID)
-		if errGetAlertRules != nil {
-			return nil, errGetAlertRules
+		for _, rule := range allRules {
+			if rule.Annotations["__dashboardUid__"] == *dashboardUID {
+				alertsRule = append(alertsRule, rule)
+			}
 		}
 	}
 
 	// check for alert rules by folder UID and group name
 	if len(alertGroups) > 0 {
+		groupNames := make(map[string]bool, len(alertGroups))
 		for _, alertGroup := range alertGroups {
-			alertsRulePerGroup, errGetAlertRulesPerGroup := grafanaClient.GetAlertRulesByFolderUIDAndGroupName(folderUID, *alertGroup.Title)
-			if errGetAlertRulesPerGroup != nil {
-				return nil, errGetAlertRulesPerGroup
+			if alertGroup.Title != nil {
+				groupNames[*alertGroup.Title] = true
 			}
-			alertsRule = append(alertsRule, alertsRulePerGroup...)
+		}
+		for _, rule := range allRules {
+			if rule.FolderUID != "" && rule.FolderUID == folderUID && groupNames[rule.RuleGroup] {
+				alertsRule = append(alertsRule, rule)
+			}
 		}
 	}
 
@@ -182,8 +211,12 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 			}
 		}
 
-		// Create alert rules
-		for _, alert := range o.Alerts {
+		// Create alert rules. Rules are addressed by UID and therefore
+		// independent, so writes fan out with bounded concurrency instead of
+		// one serial round trip per rule. The loop body receives its own copy
+		// of the alert; shared state (folder, o.Dashboard, alertsRule,
+		// newDashboard) is only read.
+		errUpsertAlerts := parallelFor(o.Alerts, options.concurrency(), func(alert alerting.Rule) error {
 			if folder.UID != "" {
 				alert.FolderUID = folder.UID
 			}
@@ -235,6 +268,10 @@ func (o *Observability) DeployToGrafana(options *DeployOptions) error {
 					return errPostAlertRule
 				}
 			}
+			return nil
+		})
+		if errUpsertAlerts != nil {
+			return errUpsertAlerts
 		}
 	}
 

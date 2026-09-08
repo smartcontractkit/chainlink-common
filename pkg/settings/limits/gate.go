@@ -17,7 +17,27 @@ import (
 
 type GateLimiter interface {
 	Limiter[bool]
+	// AllowErr returns ErrorNotAllowed if the gate is closed.
 	AllowErr(context.Context) error
+	// Open reports whether the gate is open. Prefer this over Limit: Limit hands out a raw
+	// value and only records the limit gauge, whereas Open goes through the enforcement path
+	// and records the usage/denied metrics. A closed gate is (false, nil), so a non-nil error
+	// means the gate could not be evaluated and callers that fail closed can tell them apart.
+	Open(context.Context) (bool, error)
+}
+
+// gateOpen adapts an AllowErr result to (open, error): a closed gate is (false, nil) and
+// only a genuine evaluation failure returns a non-nil error.
+func gateOpen(ctx context.Context, allowErr func(context.Context) error) (bool, error) {
+	err := allowErr(ctx)
+	switch {
+	case err == nil:
+		return true, nil
+	case errors.Is(err, ErrorNotAllowed{}):
+		return false, nil
+	default:
+		return false, err
+	}
 }
 
 func NewGateLimiter(open bool) GateLimiter {
@@ -33,6 +53,10 @@ func (s *simpleGateLimiter) Close() error { s.closed.Store(true); return nil }
 
 func (s *simpleGateLimiter) Limit(ctx context.Context) (bool, error) {
 	return s.open, nil
+}
+
+func (s *simpleGateLimiter) Open(ctx context.Context) (bool, error) {
+	return gateOpen(ctx, s.AllowErr)
 }
 
 func (s *simpleGateLimiter) AllowErr(ctx context.Context) error {
@@ -176,6 +200,10 @@ func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {
 
 	_, limit, err := g.get(ctx)
 	return limit, err // limit is get()'s resolved value; false if no tenant, or default on error
+}
+
+func (g *gateLimiter) Open(ctx context.Context) (bool, error) {
+	return gateOpen(ctx, g.AllowErr)
 }
 
 func (g *gateLimiter) AllowErr(ctx context.Context) error {

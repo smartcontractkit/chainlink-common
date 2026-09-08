@@ -47,6 +47,39 @@ func ExampleGateLimiter_AllowErr() {
 	// allow: limited: not allowed
 }
 
+// TestGateLimiter_Open covers the property fail-closed callers depend on: a closed gate
+// must not look like an evaluation failure, and vice versa.
+func TestGateLimiter_Open(t *testing.T) {
+	t.Parallel()
+
+	t.Run("open gate", func(t *testing.T) {
+		t.Parallel()
+		open, err := NewGateLimiter(true).Open(t.Context())
+		require.NoError(t, err)
+		assert.True(t, open)
+	})
+
+	t.Run("closed gate is not an error", func(t *testing.T) {
+		t.Parallel()
+		open, err := NewGateLimiter(false).Open(t.Context())
+		require.NoError(t, err, "a closed gate is a normal outcome, not a failure")
+		assert.False(t, open)
+	})
+
+	t.Run("read failure is distinguishable from closed", func(t *testing.T) {
+		t.Parallel()
+		setting := settings.Bool(true)
+		setting.Key, setting.Scope = "test.gate.open", settings.ScopeGlobal
+		gl, err := MakeGateLimiter(Factory{Settings: failingGetter{}}, setting)
+		require.NoError(t, err)
+		t.Cleanup(func() { assert.NoError(t, gl.Close()) })
+
+		open, err := gl.Open(t.Context())
+		require.ErrorIs(t, err, errGetterUnavailable, "an unevaluatable gate must surface the error")
+		assert.False(t, open)
+	})
+}
+
 func TestMakeGateLimiter(t *testing.T) {
 	t.Parallel()
 

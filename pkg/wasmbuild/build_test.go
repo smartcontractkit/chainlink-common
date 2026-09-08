@@ -271,8 +271,6 @@ func TestFingerprintStableWhenUnchanged(t *testing.T) {
 	assert.Equal(t, first, second)
 }
 
-
-
 func TestFingerprintCacheKeySeparatesByBuildFlags(t *testing.T) {
 	t.Parallel()
 
@@ -463,6 +461,3 @@ func TestBuildInvalidatesCacheOnSourceEdit(t *testing.T) {
 
 	assert.NotEqual(t, fp1, fp2, "source edit must produce new build fingerprint")
 }
-
-
-

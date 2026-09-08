@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788874599473,
+  "lastUpdate": 1788891401535,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -59760,6 +59760,66 @@ window.BENCHMARK_DATA = {
             "value": 94886,
             "unit": "ns/op",
             "extra": "12663 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tar-2008.ferraz@hotmail.com",
+            "name": "Tarcísio Zotelli Ferraz",
+            "username": "tarcisiozf"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9817b90d2f687978a138ed9221ff11f28736d4a2",
+          "message": "add Open method to GateLimiter (#2360)\n\n* add open method to GateLimiter\n\n* fail open when tenant context is missing",
+          "timestamp": "2026-09-08T18:04:34Z",
+          "tree_id": "ad4b1cdd7f598d2cd38faf25aca01947282e7c02",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9817b90d2f687978a138ed9221ff11f28736d4a2"
+        },
+        "date": 1788891397203,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 350.7,
+            "unit": "ns/op",
+            "extra": "3412917 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 87149,
+            "unit": "ns/op",
+            "extra": "13711 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.3,
+            "unit": "ns/op",
+            "extra": "3032259 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 86791,
+            "unit": "ns/op",
+            "extra": "13851 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25683,
+            "unit": "ns/op",
+            "extra": "46689 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 133108,
+            "unit": "ns/op",
+            "extra": "8846 times\n4 procs"
           }
         ]
       }

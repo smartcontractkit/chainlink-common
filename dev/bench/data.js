@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788891401535,
+  "lastUpdate": 1788909688122,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -59820,6 +59820,66 @@ window.BENCHMARK_DATA = {
             "value": 133108,
             "unit": "ns/op",
             "extra": "8846 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "justinkaseman@live.com",
+            "name": "Justin Kaseman",
+            "username": "justinkaseman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2bf5c16fbb457bf7608711f2e9187cc97875a12e",
+          "message": "Revert to wasm-time v47 (#2363)\n\n* Revert wasmtime to v47 for 2.63.1 hotfix\n\nReverts the wasmtime-go v47->v48 bump (and one follow-up import) so\nchainlink hotfix 2.63.1 can pin wasmtime v47.\n\n* Cleanup newlines\n\n---------\n\nCo-authored-by: Cedric Cordenier <cedric.cordenier@smartcontract.com>",
+          "timestamp": "2026-09-08T23:07:49Z",
+          "tree_id": "f9a07e3f6436136e878d791c409915184baaa595",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2bf5c16fbb457bf7608711f2e9187cc97875a12e"
+        },
+        "date": 1788909683836,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 706,
+            "unit": "ns/op",
+            "extra": "1702083 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92715,
+            "unit": "ns/op",
+            "extra": "12956 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 706.8,
+            "unit": "ns/op",
+            "extra": "1504317 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79594,
+            "unit": "ns/op",
+            "extra": "14936 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28110,
+            "unit": "ns/op",
+            "extra": "42741 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 128336,
+            "unit": "ns/op",
+            "extra": "8782 times\n4 procs"
           }
         ]
       }

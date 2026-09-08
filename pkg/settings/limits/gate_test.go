@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
@@ -78,6 +79,28 @@ func TestGateLimiter_Open(t *testing.T) {
 		require.ErrorIs(t, err, errGetterUnavailable, "an unevaluatable gate must surface the error")
 		assert.False(t, open)
 	})
+}
+
+// TestGateLimiter_NoTenantFailsOpen pins the missing-tenant behaviour for a scope that
+// does not require one (ScopeOrg). get() returns before resolving a value, so AllowErr
+// used to read the unset `open` as a denial and report ErrorNotAllowed, contradicting its
+// own "failing open" log. It now fails open, matching boundLimiter/rangeLimiter Check.
+func TestGateLimiter_NoTenantFailsOpen(t *testing.T) {
+	t.Parallel()
+
+	setting := settings.Bool(true)
+	setting.Key, setting.Scope = "test.gate.no-tenant", settings.ScopeOrg
+	gl, err := MakeGateLimiter(Factory{Logger: logger.Test(t)}, setting)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, gl.Close()) })
+
+	ctx := t.Context() // no contexts.WithCRE, so no org tenant
+
+	require.NoError(t, gl.AllowErr(ctx), "an org gate with no org in context must not deny")
+
+	open, err := gl.Open(ctx)
+	require.NoError(t, err)
+	assert.True(t, open, "Open must not report a closed gate when the gate was never evaluated")
 }
 
 func TestMakeGateLimiter(t *testing.T) {

@@ -215,7 +215,11 @@ func (g *gateLimiter) AllowErr(ctx context.Context) error {
 	tenant, open, err := g.get(ctx)
 	if err != nil {
 		return err
-	} else if !open {
+	}
+	if tenant == "" && g.scope != settings.ScopeGlobal {
+		return nil // fail open
+	}
+	if !open {
 		g.recordDenied(ctx, withScope(ctx, g.scope))
 		return ErrorNotAllowed{Key: g.key, Scope: g.scope, Tenant: tenant}
 	}

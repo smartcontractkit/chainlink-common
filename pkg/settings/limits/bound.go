@@ -206,21 +206,14 @@ func (b *boundLimiter[N]) Check(ctx context.Context, amount N) error {
 }
 
 func (b *boundLimiter[N]) Limit(ctx context.Context) (N, error) {
-	var zero N
 	if err := b.wg.TryAdd(1); err != nil {
+		var zero N
 		return zero, err
 	}
 	defer b.wg.Done()
 
-	tenant, bound, err := b.get(ctx)
-	if err != nil {
-		return zero, err
-	}
-	if tenant == "" && b.scope != settings.ScopeGlobal {
-		return zero, nil // fail open
-	}
-
-	return bound, nil
+	_, bound, err := b.get(ctx)
+	return bound, err // bound is get()'s resolved value; zero if no tenant, or default on error
 }
 
 func (b *boundLimiter[N]) get(ctx context.Context) (tenant string, bound N, err error) {

@@ -180,6 +180,10 @@ func (*closeTrackingGateLimiter) Limit(context.Context) (bool, error) {
 	return true, nil
 }
 
+func (*closeTrackingGateLimiter) Open(context.Context) (bool, error) {
+	return true, nil
+}
+
 func (*closeTrackingGateLimiter) AllowErr(context.Context) error {
 	return nil
 }

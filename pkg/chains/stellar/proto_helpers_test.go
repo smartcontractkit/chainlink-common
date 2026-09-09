@@ -710,6 +710,24 @@ func TestConvertSubmitTransactionResponseToProto_InvalidResultMetaXDR(t *testing
 	require.Contains(t, err.Error(), "invalid result meta xdr")
 }
 
+func TestConvertSubmitTransactionResponseToProto_UnsupportedTxStatus(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseToProto(&stellartypes.SubmitTransactionResponse{
+		TxStatus: stellartypes.TransactionStatus(99),
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "txStatus")
+	require.Contains(t, err.Error(), "unsupported tx status")
+}
+
+func TestConvertSubmitTransactionResponseFromProto_UnsupportedTxStatus(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseFromProto(&conv.SubmitTransactionResponse{
+		TxStatus: conv.TxStatus(99),
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "txStatus")
+	require.Contains(t, err.Error(), "unsupported proto tx status")
+}
+
 func TestConvertSubmitTransactionRequestFromProto_BadArg(t *testing.T) {
 	_, err := conv.ConvertSubmitTransactionRequestFromProto(&conv.SubmitTransactionRequest{
 		ContractId: "C_X",
@@ -1099,6 +1117,28 @@ func TestConvertGetEventsResponseFromProto_MissingValue(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "events[0]")
 	require.Contains(t, err.Error(), "value is required")
+}
+
+func TestConvertGetEventsResponseFromProto_UnsupportedEventType(t *testing.T) {
+	u64 := uint64(1)
+	value, err := stellarcap.ScValToProto(stellartypes.ScVal{
+		Type: stellartypes.ScValTypeU64,
+		U64:  &u64,
+	})
+	require.NoError(t, err)
+
+	_, err = conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
+		Events: []*conv.EventInfo{
+			{
+				EventType: conv.EventType(99),
+				Value:     value,
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "eventType")
+	require.Contains(t, err.Error(), "unsupported proto event type")
 }
 
 func TestConvertGetEventsResponseToProto_BadValue(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/stellar/go-stellar-sdk/xdr"
 	"github.com/stretchr/testify/require"
 
 	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
@@ -14,8 +15,8 @@ import (
 )
 
 func TestConvertGetLedgerEntriesRequest_RoundTrip(t *testing.T) {
-	key1 := base64.StdEncoding.EncodeToString([]byte("key-one"))
-	key2 := base64.StdEncoding.EncodeToString([]byte("key-two"))
+	key1 := validLedgerKeyXDRBase64(1)
+	key2 := validLedgerKeyXDRBase64(2)
 	domain := stellartypes.GetLedgerEntriesRequest{Keys: []string{key1, key2}}
 
 	proto, err := conv.ConvertGetLedgerEntriesRequestToProto(domain)
@@ -34,6 +35,38 @@ func TestConvertGetLedgerEntriesRequestToProto_InvalidBase64(t *testing.T) {
 	require.Contains(t, err.Error(), "key[0]")
 }
 
+func TestConvertGetLedgerEntriesRequestToProto_EmptyKeys(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{})
+	require.EqualError(t, err, "ledger entry keys are empty")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_EmptyKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{""},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "empty XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_TruncatedKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{base64.StdEncoding.EncodeToString([]byte{0, 0, 0, 0})},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_UnsupportedLedgerKeyType(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{base64.StdEncoding.EncodeToString([]byte{0, 0, 0, 99})},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
 func TestConvertGetLedgerEntriesRequestFromProto_Nil(t *testing.T) {
 	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(nil)
 	require.EqualError(t, err, "get ledger entries request is nil")
@@ -42,6 +75,33 @@ func TestConvertGetLedgerEntriesRequestFromProto_Nil(t *testing.T) {
 func TestConvertGetLedgerEntriesRequestFromProto_EmptyKeys(t *testing.T) {
 	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{})
 	require.EqualError(t, err, "ledger entry keys are empty")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_EmptyKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{{}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "empty XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_TruncatedKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{{0, 0, 0, 0}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_UnsupportedLedgerKeyType(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{{0, 0, 0, 99}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
 }
 
 func TestConvertLedgerEntryResult_RoundTrip(t *testing.T) {
@@ -62,6 +122,24 @@ func TestConvertLedgerEntryResult_RoundTrip(t *testing.T) {
 	got, err := conv.ConvertLedgerEntryResultFromProto(proto)
 	require.NoError(t, err)
 	require.Equal(t, domain, got)
+}
+
+func validLedgerKeyXDRBase64(seed byte) string {
+	var accountID xdr.Uint256
+	accountID[31] = seed
+	publicKey, err := xdr.NewPublicKey(xdr.PublicKeyTypePublicKeyTypeEd25519, accountID)
+	if err != nil {
+		panic(err)
+	}
+	key, err := xdr.NewLedgerKey(xdr.LedgerEntryTypeAccount, xdr.LedgerKeyAccount{AccountId: xdr.AccountId(publicKey)})
+	if err != nil {
+		panic(err)
+	}
+	raw, err := key.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	return base64.StdEncoding.EncodeToString(raw)
 }
 
 func TestConvertLedgerEntryResult_NoLiveUntil(t *testing.T) {

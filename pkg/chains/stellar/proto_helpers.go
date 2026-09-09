@@ -13,12 +13,20 @@ import (
 
 // ConvertGetLedgerEntriesRequestToProto converts a domain GetLedgerEntriesRequest to its proto representation.
 func ConvertGetLedgerEntriesRequestToProto(req stellar.GetLedgerEntriesRequest) (*GetLedgerEntriesRequest, error) {
+	if len(req.Keys) == 0 {
+		return nil, errors.New("ledger entry keys are empty")
+	}
+
 	keys := make([][]byte, len(req.Keys))
 	var errs []error
 	for i, k := range req.Keys {
 		b, err := base64.StdEncoding.DecodeString(k)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("key[%d]: invalid base64 XDR %q: %w", i, k, err))
+			continue
+		}
+		if err := validateLedgerKeyXDR(b); err != nil {
+			errs = append(errs, fmt.Errorf("key[%d]: invalid LedgerKey XDR: %w", i, err))
 			continue
 		}
 		keys[i] = b
@@ -40,6 +48,9 @@ func ConvertGetLedgerEntriesRequestFromProto(p *GetLedgerEntriesRequest) (stella
 	rawKeys := p.GetKeys()
 	keys := make([]string, len(rawKeys))
 	for i, k := range rawKeys {
+		if err := validateLedgerKeyXDR(k); err != nil {
+			return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("key[%d]: invalid LedgerKey XDR: %w", i, err)
+		}
 		keys[i] = base64.StdEncoding.EncodeToString(k)
 	}
 	return stellar.GetLedgerEntriesRequest{Keys: keys}, nil

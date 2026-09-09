@@ -781,23 +781,103 @@ func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (stellar.Ge
 	return stellar.GetTransactionRequest{TxHash: p.GetTxHash()}, nil
 }
 
-func ConvertGetTransactionResponseToProto(resp stellar.GetTransactionResponse) *GetTransactionResponse {
+func ConvertGetTransactionResponseToProto(resp stellar.GetTransactionResponse) (*GetTransactionResponse, error) {
+	status, err := convertGetTransactionStatusToProto(resp.Status)
+	if err != nil {
+		return nil, fmt.Errorf("status: %w", err)
+	}
+	if err := validateGetTransactionResponse(resp); err != nil {
+		return nil, err
+	}
+
+	var resultXDR, resultMetaXDR []byte
+	if resp.ResultXDR != "" {
+		resultXDR, err = base64.StdEncoding.DecodeString(resp.ResultXDR)
+		if err != nil {
+			return nil, fmt.Errorf("invalid result xdr %q: %w", resp.ResultXDR, err)
+		}
+	}
+	if resp.ResultMetaXDR != "" {
+		resultMetaXDR, err = base64.StdEncoding.DecodeString(resp.ResultMetaXDR)
+		if err != nil {
+			return nil, fmt.Errorf("invalid result meta xdr %q: %w", resp.ResultMetaXDR, err)
+		}
+	}
+
 	return &GetTransactionResponse{
+		Status:          status,
+		TxHash:          resp.TxHash,
+		ResultXdr:       resultXDR,
+		ResultMetaXdr:   resultMetaXDR,
 		FeeStroops:      resp.FeeStroops,
 		LedgerSequence:  resp.LedgerSequence,
 		LedgerCloseTime: resp.LedgerCloseTime,
+	}, nil
+}
+
+func validateGetTransactionResponse(resp stellar.GetTransactionResponse) error {
+	if resp.TxHash == "" {
+		return errors.New("txHash is required")
 	}
+
+	switch resp.Status {
+	case stellar.GetTransactionStatusNotFound:
+		switch {
+		case resp.FeeStroops != nil:
+			return errors.New("feeStroops must be unset when transaction is not found")
+		case resp.LedgerSequence != nil:
+			return errors.New("ledgerSequence must be unset when transaction is not found")
+		case resp.LedgerCloseTime != nil:
+			return errors.New("ledgerCloseTime must be unset when transaction is not found")
+		case resp.ResultXDR != "":
+			return errors.New("resultXDR must be empty when transaction is not found")
+		case resp.ResultMetaXDR != "":
+			return errors.New("resultMetaXDR must be empty when transaction is not found")
+		}
+	case stellar.GetTransactionStatusFailed, stellar.GetTransactionStatusSuccess:
+		switch {
+		case resp.LedgerSequence == nil:
+			return errors.New("ledgerSequence is required")
+		case resp.LedgerCloseTime == nil:
+			return errors.New("ledgerCloseTime is required")
+		case resp.ResultXDR == "":
+			return errors.New("resultXDR is required")
+		}
+	}
+	return nil
 }
 
 func ConvertGetTransactionResponseFromProto(p *GetTransactionResponse) (stellar.GetTransactionResponse, error) {
 	if p == nil {
 		return stellar.GetTransactionResponse{}, errors.New("get transaction response is nil")
 	}
-	return stellar.GetTransactionResponse{
-		FeeStroops:      p.GetFeeStroops(),
-		LedgerSequence:  p.GetLedgerSequence(),
-		LedgerCloseTime: p.GetLedgerCloseTime(),
-	}, nil
+	status, err := convertGetTransactionStatusFromProto(p.GetStatus())
+	if err != nil {
+		return stellar.GetTransactionResponse{}, fmt.Errorf("status: %w", err)
+	}
+
+	resp := stellar.GetTransactionResponse{
+		Status:        status,
+		TxHash:        p.GetTxHash(),
+		ResultXDR:     base64.StdEncoding.EncodeToString(p.GetResultXdr()),
+		ResultMetaXDR: base64.StdEncoding.EncodeToString(p.GetResultMetaXdr()),
+	}
+	if p.FeeStroops != nil {
+		fee := p.GetFeeStroops()
+		resp.FeeStroops = &fee
+	}
+	if p.LedgerSequence != nil {
+		ledger := p.GetLedgerSequence()
+		resp.LedgerSequence = &ledger
+	}
+	if p.LedgerCloseTime != nil {
+		closeTime := p.GetLedgerCloseTime()
+		resp.LedgerCloseTime = &closeTime
+	}
+	if err := validateGetTransactionResponse(resp); err != nil {
+		return stellar.GetTransactionResponse{}, err
+	}
+	return resp, nil
 }
 
 func ConvertGetSigningAccountResponseToProto(resp stellar.GetSigningAccountResponse) *GetSigningAccountResponse {
@@ -920,6 +1000,32 @@ func convertTxStatusFromProto(s TxStatus) (stellar.TransactionStatus, error) {
 		return stellar.TxSuccess, nil
 	default:
 		return 0, fmt.Errorf("unsupported proto tx status: %d", s)
+	}
+}
+
+func convertGetTransactionStatusToProto(s stellar.GetTransactionStatus) (GetTransactionStatus, error) {
+	switch s {
+	case stellar.GetTransactionStatusNotFound:
+		return GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND, nil
+	case stellar.GetTransactionStatusFailed:
+		return GetTransactionStatus_GET_TRANSACTION_STATUS_FAILED, nil
+	case stellar.GetTransactionStatusSuccess:
+		return GetTransactionStatus_GET_TRANSACTION_STATUS_SUCCESS, nil
+	default:
+		return 0, fmt.Errorf("unsupported get transaction status: %d", s)
+	}
+}
+
+func convertGetTransactionStatusFromProto(s GetTransactionStatus) (stellar.GetTransactionStatus, error) {
+	switch s {
+	case GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND:
+		return stellar.GetTransactionStatusNotFound, nil
+	case GetTransactionStatus_GET_TRANSACTION_STATUS_FAILED:
+		return stellar.GetTransactionStatusFailed, nil
+	case GetTransactionStatus_GET_TRANSACTION_STATUS_SUCCESS:
+		return stellar.GetTransactionStatusSuccess, nil
+	default:
+		return 0, fmt.Errorf("unsupported proto get transaction status: %d", s)
 	}
 }
 

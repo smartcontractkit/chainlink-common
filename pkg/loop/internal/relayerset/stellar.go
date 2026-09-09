@@ -190,7 +190,11 @@ func (ss *stellarServer) GetTransaction(ctx context.Context, req *stelpb.GetTran
 	if err != nil {
 		return nil, net.WrapRPCErr(err)
 	}
-	return stelpb.ConvertGetTransactionResponseToProto(dResp), nil
+	pResp, err := stelpb.ConvertGetTransactionResponseToProto(dResp)
+	if err != nil {
+		return nil, fmt.Errorf("invalid GetTransaction response: %w", err)
+	}
+	return pResp, nil
 }
 
 func (ss *stellarServer) GetSigningAccount(ctx context.Context, _ *emptypb.Empty) (*stelpb.GetSigningAccountResponse, error) {

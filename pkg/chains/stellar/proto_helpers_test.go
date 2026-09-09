@@ -58,6 +58,18 @@ func TestConvertGetLedgerEntriesRequestToProto_TruncatedKey(t *testing.T) {
 	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
 }
 
+func TestConvertGetLedgerEntriesRequestToProto_TrailingBytes(t *testing.T) {
+	key := validLedgerKeyXDR(1)
+	key = append(key, 0xff)
+
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{base64.StdEncoding.EncodeToString(key)},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "trailing")
+}
+
 func TestConvertGetLedgerEntriesRequestToProto_UnsupportedLedgerKeyType(t *testing.T) {
 	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
 		Keys: []string{base64.StdEncoding.EncodeToString([]byte{0, 0, 0, 99})},
@@ -104,6 +116,18 @@ func TestConvertGetLedgerEntriesRequestFromProto_UnsupportedLedgerKeyType(t *tes
 	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
 }
 
+func TestConvertGetLedgerEntriesRequestFromProto_TrailingBytes(t *testing.T) {
+	key := validLedgerKeyXDR(1)
+	key = append(key, 0xff)
+
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{key},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "trailing")
+}
+
 func TestConvertLedgerEntryResult_RoundTrip(t *testing.T) {
 	liveUntil := uint32(9999)
 	domain := stellartypes.LedgerEntryResult{
@@ -125,6 +149,10 @@ func TestConvertLedgerEntryResult_RoundTrip(t *testing.T) {
 }
 
 func validLedgerKeyXDRBase64(seed byte) string {
+	return base64.StdEncoding.EncodeToString(validLedgerKeyXDR(seed))
+}
+
+func validLedgerKeyXDR(seed byte) []byte {
 	var accountID xdr.Uint256
 	accountID[31] = seed
 	publicKey, err := xdr.NewPublicKey(xdr.PublicKeyTypePublicKeyTypeEd25519, accountID)
@@ -139,7 +167,7 @@ func validLedgerKeyXDRBase64(seed byte) string {
 	if err != nil {
 		panic(err)
 	}
-	return base64.StdEncoding.EncodeToString(raw)
+	return raw
 }
 
 func TestConvertLedgerEntryResult_NoLiveUntil(t *testing.T) {

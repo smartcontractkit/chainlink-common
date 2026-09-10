@@ -1005,6 +1005,8 @@ func convertTxStatusFromProto(s TxStatus) (stellar.TransactionStatus, error) {
 
 func convertGetTransactionStatusToProto(s stellar.GetTransactionStatus) (GetTransactionStatus, error) {
 	switch s {
+	case stellar.GetTransactionStatusUnspecified:
+		return 0, errors.New("get transaction status is required")
 	case stellar.GetTransactionStatusNotFound:
 		return GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND, nil
 	case stellar.GetTransactionStatusFailed:
@@ -1018,6 +1020,8 @@ func convertGetTransactionStatusToProto(s stellar.GetTransactionStatus) (GetTran
 
 func convertGetTransactionStatusFromProto(s GetTransactionStatus) (stellar.GetTransactionStatus, error) {
 	switch s {
+	case GetTransactionStatus_GET_TRANSACTION_STATUS_UNSPECIFIED:
+		return 0, errors.New("get transaction status is required")
 	case GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND:
 		return stellar.GetTransactionStatusNotFound, nil
 	case GetTransactionStatus_GET_TRANSACTION_STATUS_FAILED:

@@ -1417,6 +1417,15 @@ func TestConvertGetTransactionResponseFromProto_Nil(t *testing.T) {
 	require.Contains(t, err.Error(), "nil")
 }
 
+func TestConvertGetTransactionResponseToProto_UnspecifiedStatus(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseToProto(stellartypes.GetTransactionResponse{
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "status")
+	require.Contains(t, err.Error(), "get transaction status is required")
+}
+
 func TestConvertGetTransactionResponseToProto_UnsupportedStatus(t *testing.T) {
 	_, err := conv.ConvertGetTransactionResponseToProto(stellartypes.GetTransactionResponse{
 		Status: stellartypes.GetTransactionStatus(99),
@@ -1425,6 +1434,15 @@ func TestConvertGetTransactionResponseToProto_UnsupportedStatus(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "status")
 	require.Contains(t, err.Error(), "unsupported get transaction status")
+}
+
+func TestConvertGetTransactionResponseFromProto_UnspecifiedStatus(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseFromProto(&conv.GetTransactionResponse{
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "status")
+	require.Contains(t, err.Error(), "get transaction status is required")
 }
 
 func TestConvertGetTransactionResponseFromProto_UnsupportedStatus(t *testing.T) {

@@ -784,7 +784,7 @@ func ConvertGetTransactionRequestFromProto(p *GetTransactionRequest) (stellar.Ge
 func ConvertGetTransactionResponseToProto(resp stellar.GetTransactionResponse) (*GetTransactionResponse, error) {
 	status, err := convertGetTransactionStatusToProto(resp.Status)
 	if err != nil {
-		return nil, fmt.Errorf("status: %w", err)
+		return nil, err
 	}
 	if err := validateGetTransactionResponse(resp); err != nil {
 		return nil, err

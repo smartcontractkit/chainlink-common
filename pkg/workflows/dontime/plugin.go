@@ -293,22 +293,51 @@ func (p *Plugin) ObservationQuorum(_ context.Context, _ ocr3types.OutcomeContext
 }
 
 func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	if p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.Now())) == nil { //TODO inspect error
-		return p.sequencedOutcome(ctx, outctx, nil, aos)
-	}
-
-	return p.unsequencedOutcome(ctx, outctx, nil, aos)
-}
-
-// unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
-func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
-	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	type timestampNodePair struct {
 		Timestamp        int64
 		NodeID           int
 		OffsetFromMedian int64
 	}
 	var timestampNodePairs []timestampNodePair
+	for idx, ao := range aos {
+		observation := &pb.Observation{}
+		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
+			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
+			continue
+		}
+
+		timestampNodePairs = append(timestampNodePairs, timestampNodePair{Timestamp: observation.Timestamp, NodeID: idx})
+	}
+
+	if len(timestampNodePairs) == 0 {
+		return nil, errors.New("no observation contains a valid timestamp")
+	}
+
+	slices.SortFunc(timestampNodePairs, func(a, b timestampNodePair) int {
+		return cmp.Compare(a.Timestamp, b.Timestamp)
+	})
+	donTime := timestampNodePairs[len(timestampNodePairs)/2].Timestamp
+	for i := range timestampNodePairs {
+		timestampNodePairs[i].OffsetFromMedian = timestampNodePairs[i].Timestamp - donTime
+	}
+	p.lggr.Debugw("Observed Node Timestamps",
+		"timestampNodePairs", timestampNodePairs,
+		"median", donTime,
+		"collectedDataPoints", len(timestampNodePairs),
+		"minOffsetFromMedian", timestampNodePairs[0].OffsetFromMedian,
+		"maxOffsetFromMedian", timestampNodePairs[len(timestampNodePairs)-1].OffsetFromMedian,
+	)
+
+	if p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))) == nil { //TODO inspect error
+		return p.sequencedOutcome(ctx, outctx, nil, aos, donTime)
+	}
+
+	return p.unsequencedOutcome(ctx, outctx, nil, aos, donTime)
+}
+
+// unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
+func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, donTime int64) (ocr3types.Outcome, error) {
+	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
 	limitByBatchSizeFlagEnabled := true
 
 	prevOutcome := &pb.Outcome{}
@@ -319,7 +348,7 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 		prevOutcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
 	}
 
-	for idx, ao := range aos {
+	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
@@ -344,27 +373,7 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 					requestSeqNum, id, currSeqNum)
 			}
 		}
-
-		timestampNodePairs = append(timestampNodePairs, timestampNodePair{Timestamp: observation.Timestamp, NodeID: idx})
 	}
-	if len(timestampNodePairs) == 0 {
-		return nil, errors.New("no observation contains a valid timestamp")
-	}
-
-	slices.SortFunc(timestampNodePairs, func(a, b timestampNodePair) int {
-		return cmp.Compare(a.Timestamp, b.Timestamp)
-	})
-	donTime := timestampNodePairs[len(timestampNodePairs)/2].Timestamp
-	for i := range timestampNodePairs {
-		timestampNodePairs[i].OffsetFromMedian = timestampNodePairs[i].Timestamp - donTime
-	}
-	p.lggr.Debugw("Observed Node Timestamps",
-		"timestampNodePairs", timestampNodePairs,
-		"median", donTime,
-		"collectedDataPoints", len(timestampNodePairs),
-		"minOffsetFromMedian", timestampNodePairs[0].OffsetFromMedian,
-		"maxOffsetFromMedian", timestampNodePairs[len(timestampNodePairs)-1].OffsetFromMedian,
-	)
 
 	outcome := prevOutcome
 
@@ -431,14 +440,8 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 }
 
 // sequencedOutcome executed the updated outcome logic to produce a sequenced map of [pb.ObservedDonTimes.TimestampsBySequence].
-func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation) (ocr3types.Outcome, error) {
+func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, donTime int64) (ocr3types.Outcome, error) {
 	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-	type timestampNodePair struct {
-		Timestamp        int64
-		NodeID           int
-		OffsetFromMedian int64
-	}
-	var timestampNodePairs []timestampNodePair
 	limitByBatchSizeFlagEnabled := true
 
 	prevOutcome := &pb.Outcome{}
@@ -459,7 +462,7 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 		}
 	}
 
-	for idx, ao := range aos {
+	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
@@ -484,27 +487,7 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 					requestSeqNum, id, currSeqNum)
 			}
 		}
-
-		timestampNodePairs = append(timestampNodePairs, timestampNodePair{Timestamp: observation.Timestamp, NodeID: idx})
 	}
-	if len(timestampNodePairs) == 0 {
-		return nil, errors.New("no observation contains a valid timestamp")
-	}
-
-	slices.SortFunc(timestampNodePairs, func(a, b timestampNodePair) int {
-		return cmp.Compare(a.Timestamp, b.Timestamp)
-	})
-	donTime := timestampNodePairs[len(timestampNodePairs)/2].Timestamp
-	for i := range timestampNodePairs {
-		timestampNodePairs[i].OffsetFromMedian = timestampNodePairs[i].Timestamp - donTime
-	}
-	p.lggr.Debugw("Observed Node Timestamps",
-		"timestampNodePairs", timestampNodePairs,
-		"median", donTime,
-		"collectedDataPoints", len(timestampNodePairs),
-		"minOffsetFromMedian", timestampNodePairs[0].OffsetFromMedian,
-		"maxOffsetFromMedian", timestampNodePairs[len(timestampNodePairs)-1].OffsetFromMedian,
-	)
 
 	outcome := prevOutcome
 

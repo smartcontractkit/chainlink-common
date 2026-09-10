@@ -8,14 +8,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/solana"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/solana"
+
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
+	"go.opentelemetry.io/otel/attribute"
+
 	capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 // Avoid unused imports if there is configuration type

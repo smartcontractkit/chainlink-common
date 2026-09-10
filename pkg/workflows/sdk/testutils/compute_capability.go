@@ -3,7 +3,8 @@ package testutils
 import (
 	"context"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 

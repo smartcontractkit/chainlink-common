@@ -3,7 +3,8 @@
 package externalreferenceaction
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )

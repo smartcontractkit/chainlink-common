@@ -3,7 +3,7 @@ package wasm
 import (
 	"testing"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 
 	"github.com/stretchr/testify/assert"
 )

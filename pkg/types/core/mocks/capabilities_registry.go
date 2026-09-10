@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	capabilities "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	capabilities "github.com/smartcontractkit/capabilities/libs/capabilities"
 
 	mock "github.com/stretchr/testify/mock"
 

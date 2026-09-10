@@ -24,7 +24,6 @@ packages:
       StellarService:
   github.com/smartcontractkit/chainlink-common/pkg/types/core:
     interfaces:
-      CapabilitiesRegistry:
       Relayer:
       GatewayConnector:
       MultiGatewayConnector:
@@ -65,3 +64,8 @@ packages:
       outpkg: limits
     interfaces:
       Getter:
+  github.com/smartcontractkit/capabilities/libs/capabilities:
+    interfaces:
+      CapabilitiesRegistry:
+        config:
+          dir: "pkg/types/core/mocks"

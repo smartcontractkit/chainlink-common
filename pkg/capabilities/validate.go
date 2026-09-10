@@ -9,6 +9,8 @@ import (
 	jsonvalidate "github.com/santhosh-tekuri/jsonschema/v5"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 )
 
 // A Validator can validate the config, inputs, and outputs of a capability.
@@ -34,8 +36,17 @@ var uriPrefix = "https://github.com/smartcontractkit/chainlink/capabilities/"
 
 var _ Validatable = (*Validator[any, any, any])(nil)
 
+// Validatable is implemented by types that can return a JSON schema describing
+// the configuration, input and output of a capability.
+type Validatable interface {
+	// ValidateSchema returns the JSON schema for the capability.
+	//
+	// This schema includes the configuration, input and output schemas.
+	Schema() (string, error)
+}
+
 type ValidatorArgs struct {
-	Info CapabilityInfo
+	Info capabilities.CapabilityInfo
 
 	// You can customize each one of the reflectors
 	// or leave them nil to use the default reflector.
@@ -190,7 +201,7 @@ func validateAgainstSchema[DecodedValue any](value *values.Map, schema string) (
 	return decodedValue, err
 }
 
-func schemaWith(reflector jsonschema.Reflector, schemaType any, schemaCache map[string]string, key string, info CapabilityInfo) (string, error) {
+func schemaWith(reflector jsonschema.Reflector, schemaType any, schemaCache map[string]string, key string, info capabilities.CapabilityInfo) (string, error) {
 	if schema, ok := schemaCache[key]; ok {
 		return schema, nil
 	}

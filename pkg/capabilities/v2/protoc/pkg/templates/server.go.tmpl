@@ -19,8 +19,8 @@ import (
     {{- end }}
 
     "github.com/smartcontractkit/chainlink-common/pkg/types/core"
-    "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-    caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+    "github.com/smartcontractkit/capabilities/libs/capabilities"
+    caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
     {{- if $.WithMonitoring }}
     capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
     "go.opentelemetry.io/otel/attribute"

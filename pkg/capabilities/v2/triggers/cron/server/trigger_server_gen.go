@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/triggers/cron"
+
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 

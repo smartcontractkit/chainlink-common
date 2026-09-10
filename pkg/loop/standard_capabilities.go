@@ -8,7 +8,8 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	standardcapability "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"

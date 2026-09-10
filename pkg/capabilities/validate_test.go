@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 )
 
 type TestConfig struct {
@@ -199,9 +201,9 @@ func TestValidator_ValidateOutputs(t *testing.T) {
 }
 
 func TestValidator_GenerateSchema(t *testing.T) {
-	capInfo := CapabilityInfo{
+	capInfo := capabilities.CapabilityInfo{
 		ID:             "test@1.0.0",
-		CapabilityType: CapabilityTypeTrigger,
+		CapabilityType: capabilities.CapabilityTypeTrigger,
 		Description:    "test description",
 	}
 	v := NewValidator[TestConfig, TestInputs, TestOutputs](ValidatorArgs{Info: capInfo})

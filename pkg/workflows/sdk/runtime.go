@@ -1,7 +1,7 @@
 package sdk
 
 import (
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 )
 
 // BreakErr can be used inside the compute capability function to stop the execution of the workflow.

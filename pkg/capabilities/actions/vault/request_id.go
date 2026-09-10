@@ -3,7 +3,7 @@ package vault
 import (
 	"fmt"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 )
 
 const subscriptionPhaseKey = "subscription"

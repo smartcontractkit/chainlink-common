@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	validator "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -21,7 +23,7 @@ type onDemandTriggerConfig struct{}
 
 type OnDemand struct {
 	log logger.Logger
-	capabilities.Validator[onDemandTriggerConfig, any, capabilities.TriggerResponse]
+	validator.Validator[onDemandTriggerConfig, any, capabilities.TriggerResponse]
 	capabilities.CapabilityInfo
 	chans map[workflowID]chan<- capabilities.TriggerResponse
 	mu    sync.Mutex
@@ -35,7 +37,7 @@ func NewOnDemand(log logger.Logger) *OnDemand {
 	return &OnDemand{
 		log:            log,
 		CapabilityInfo: info,
-		Validator:      capabilities.NewValidator[onDemandTriggerConfig, any, capabilities.TriggerResponse](capabilities.ValidatorArgs{Info: info}),
+		Validator:      validator.NewValidator[onDemandTriggerConfig, any, capabilities.TriggerResponse](validator.ValidatorArgs{Info: info}),
 		chans:          map[workflowID]chan<- capabilities.TriggerResponse{},
 	}
 }

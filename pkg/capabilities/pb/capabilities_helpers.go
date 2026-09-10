@@ -8,9 +8,10 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	meter "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
+	meter "github.com/smartcontractkit/chainlink-common/pkg/metering/pb"
 )
 
 const (

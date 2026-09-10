@@ -12,7 +12,8 @@ import (
 	"github.com/atombender/go-jsonschema/pkg/schemas"
 	"github.com/iancoleman/strcase"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
 )
 

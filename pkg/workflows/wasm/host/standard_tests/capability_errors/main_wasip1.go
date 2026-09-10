@@ -3,10 +3,11 @@ package main
 import (
 	"fmt"
 
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/host/internal/rawsdk"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 func main() {

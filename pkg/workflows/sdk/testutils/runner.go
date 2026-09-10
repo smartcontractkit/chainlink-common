@@ -7,12 +7,13 @@ import (
 
 	"github.com/dominikbraun/graph"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/exec"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 func NewRunner(ctx context.Context, runtime sdk.Runtime) *Runner {

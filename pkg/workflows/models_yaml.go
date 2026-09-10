@@ -13,7 +13,8 @@ import (
 	validate "github.com/santhosh-tekuri/jsonschema/v5"
 	"sigs.k8s.io/yaml"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 )
 

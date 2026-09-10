@@ -10,13 +10,15 @@ import (
 	"github.com/jonboulle/clockwork"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	validator "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/requests"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/metering"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
 const (
@@ -40,7 +42,7 @@ type capability struct {
 	eng *services.Engine
 
 	capabilities.CapabilityInfo
-	capabilities.Validator[config, inputs, ReportResponse]
+	validator.Validator[config, inputs, ReportResponse]
 
 	reqHandler *requests.Handler[*ReportRequest, ReportResponse]
 
@@ -68,7 +70,7 @@ func NewCapability(s *requests.Store[*ReportRequest], clock clockwork.Clock, req
 	callbackChannelBufferSize int) *capability {
 	o := &capability{
 		CapabilityInfo:    info,
-		Validator:         capabilities.NewValidator[config, inputs, ReportResponse](capabilities.ValidatorArgs{Info: info}),
+		Validator:         validator.NewValidator[config, inputs, ReportResponse](validator.ValidatorArgs{Info: info}),
 		clock:             clock,
 		requestTimeout:    requestTimeout,
 		aggregatorFactory: aggregatorFactory,

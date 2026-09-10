@@ -12,13 +12,14 @@ import (
 
 	"google.golang.org/protobuf/types/known/anypb"
 
+	caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/actions/vault"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/actions/confidentialhttp"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
 // stubEncryptionKeyFetcher is a no-op EncryptionKeyFetcher used to verify the fetcher is

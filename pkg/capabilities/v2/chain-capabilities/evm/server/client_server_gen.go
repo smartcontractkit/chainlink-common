@@ -8,11 +8,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/evm"
+
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 

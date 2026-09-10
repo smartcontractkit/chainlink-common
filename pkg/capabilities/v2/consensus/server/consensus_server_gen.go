@@ -11,8 +11,9 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
+	caperrors "github.com/smartcontractkit/capabilities/libs/capabilities/errors"
+
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 

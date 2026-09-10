@@ -458,8 +458,13 @@ func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionRes
 			return nil, fmt.Errorf("invalid result meta xdr %q: %w", reply.ResultMetaXDR, err)
 		}
 	}
+	txStatus, err := convertTxStatusToProto(reply.TxStatus)
+	if err != nil {
+		return nil, fmt.Errorf("txStatus: %w", err)
+	}
+
 	resp := &SubmitTransactionResponse{
-		TxStatus:         TxStatus(reply.TxStatus),
+		TxStatus:         txStatus,
 		TxHash:           reply.TxHash,
 		TxIdempotencyKey: reply.TxIdempotencyKey,
 		ResultXdr:        resultXDR,
@@ -480,8 +485,13 @@ func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*s
 	if p == nil {
 		return nil, errors.New("submit transaction reply is nil")
 	}
+	txStatus, err := convertTxStatusFromProto(p.GetTxStatus())
+	if err != nil {
+		return nil, fmt.Errorf("txStatus: %w", err)
+	}
+
 	resp := &stellar.SubmitTransactionResponse{
-		TxStatus:         stellar.TransactionStatus(p.GetTxStatus()),
+		TxStatus:         txStatus,
 		TxHash:           p.GetTxHash(),
 		TxIdempotencyKey: p.GetTxIdempotencyKey(),
 		ResultXDR:        base64.StdEncoding.EncodeToString(p.GetResultXdr()),
@@ -848,6 +858,32 @@ func convertEventTypeFromProto(t EventType) (stellar.EventType, error) {
 		return stellar.EventTypeContract, nil
 	default:
 		return 0, fmt.Errorf("unsupported proto event type: %d", t)
+	}
+}
+
+func convertTxStatusToProto(s stellar.TransactionStatus) (TxStatus, error) {
+	switch s {
+	case stellar.TxFatal:
+		return TxStatus_TX_STATUS_FATAL, nil
+	case stellar.TxFailed:
+		return TxStatus_TX_STATUS_FAILED, nil
+	case stellar.TxSuccess:
+		return TxStatus_TX_STATUS_SUCCESS, nil
+	default:
+		return 0, fmt.Errorf("unsupported tx status: %d", s)
+	}
+}
+
+func convertTxStatusFromProto(s TxStatus) (stellar.TransactionStatus, error) {
+	switch s {
+	case TxStatus_TX_STATUS_FATAL:
+		return stellar.TxFatal, nil
+	case TxStatus_TX_STATUS_FAILED:
+		return stellar.TxFailed, nil
+	case TxStatus_TX_STATUS_SUCCESS:
+		return stellar.TxSuccess, nil
+	default:
+		return 0, fmt.Errorf("unsupported proto tx status: %d", s)
 	}
 }
 

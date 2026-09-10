@@ -146,6 +146,11 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
+	defaultConfig, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
+	if err != nil {
+		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode default config: %w", err)
+	}
+
 	var methodConfig map[string]capabilities.CapabilityMethodConfig
 	if res.CapabilityConfig.MethodConfigs != nil {
 		methodConfig = make(map[string]capabilities.CapabilityMethodConfig, len(res.CapabilityConfig.MethodConfigs))
@@ -192,6 +197,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	}
 
 	return capabilities.CapabilityConfiguration{
+		DefaultConfig:          defaultConfig,
 		CapabilityMethodConfig: methodConfig,
 		LocalOnly:              res.CapabilityConfig.LocalOnly,
 		Ocr3Configs:            ocr3Configs,
@@ -400,6 +406,10 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	}
 
 	ccp := &capabilitiespb.CapabilityConfig{}
+
+	if cc.DefaultConfig != nil {
+		ccp.DefaultConfig = values.Proto(cc.DefaultConfig).GetMapValue()
+	}
 
 	// Handle method configs
 	if cc.CapabilityMethodConfig != nil {

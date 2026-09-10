@@ -1748,10 +1748,16 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 			name: "GetTransaction",
 			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
 				req := stellartypes.GetTransactionRequest{TxHash: "abc123hash"}
+				fee := uint64(42)
+				ledger := uint32(100)
+				closeTime := int64(1_700_000_000)
 				expected := stellartypes.GetTransactionResponse{
-					FeeStroops:      42,
-					LedgerSequence:  100,
-					LedgerCloseTime: 1_700_000_000,
+					Status:          stellartypes.GetTransactionStatusSuccess,
+					TxHash:          "abc123hash",
+					ResultXDR:       "cmVzdWx0",
+					FeeStroops:      &fee,
+					LedgerSequence:  &ledger,
+					LedgerCloseTime: &closeTime,
 				}
 				mockSvc.EXPECT().GetTransaction(mock.Anything, req).Return(expected, nil)
 

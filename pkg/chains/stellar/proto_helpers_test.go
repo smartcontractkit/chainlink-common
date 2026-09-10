@@ -826,12 +826,19 @@ func TestConvertSubmitTransactionResponseToProto_UnsupportedTxStatus(t *testing.
 }
 
 func TestConvertSubmitTransactionResponseFromProto_UnsupportedTxStatus(t *testing.T) {
+	txStatus := conv.TxStatus(99)
 	_, err := conv.ConvertSubmitTransactionResponseFromProto(&conv.SubmitTransactionResponse{
-		TxStatus: conv.TxStatus(99),
+		TxStatus: &txStatus,
 	})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "txStatus")
 	require.Contains(t, err.Error(), "unsupported proto tx status")
+}
+
+func TestConvertSubmitTransactionResponseFromProto_MissingTxStatus(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseFromProto(&conv.SubmitTransactionResponse{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "txStatus is required")
 }
 
 func TestConvertSubmitTransactionRequestFromProto_BadArg(t *testing.T) {
@@ -1213,10 +1220,11 @@ func TestConvertGetEventsResponseFromProto_NilEvent(t *testing.T) {
 }
 
 func TestConvertGetEventsResponseFromProto_MissingValue(t *testing.T) {
+	eventType := conv.EventType_EVENT_TYPE_CONTRACT
 	_, err := conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
 		Events: []*conv.EventInfo{
 			{
-				EventType: conv.EventType_EVENT_TYPE_CONTRACT,
+				EventType: &eventType,
 			},
 		},
 	})
@@ -1226,6 +1234,7 @@ func TestConvertGetEventsResponseFromProto_MissingValue(t *testing.T) {
 }
 
 func TestConvertGetEventsResponseFromProto_UnsupportedEventType(t *testing.T) {
+	eventType := conv.EventType(99)
 	u64 := uint64(1)
 	value, err := stellarcap.ScValToProto(stellartypes.ScVal{
 		Type: stellartypes.ScValTypeU64,
@@ -1236,7 +1245,7 @@ func TestConvertGetEventsResponseFromProto_UnsupportedEventType(t *testing.T) {
 	_, err = conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
 		Events: []*conv.EventInfo{
 			{
-				EventType: conv.EventType(99),
+				EventType: &eventType,
 				Value:     value,
 			},
 		},
@@ -1245,6 +1254,26 @@ func TestConvertGetEventsResponseFromProto_UnsupportedEventType(t *testing.T) {
 	require.Contains(t, err.Error(), "events[0]")
 	require.Contains(t, err.Error(), "eventType")
 	require.Contains(t, err.Error(), "unsupported proto event type")
+}
+
+func TestConvertGetEventsResponseFromProto_MissingEventType(t *testing.T) {
+	u64 := uint64(1)
+	value, err := stellarcap.ScValToProto(stellartypes.ScVal{
+		Type: stellartypes.ScValTypeU64,
+		U64:  &u64,
+	})
+	require.NoError(t, err)
+
+	_, err = conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
+		Events: []*conv.EventInfo{
+			{
+				Value: value,
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "eventType is required")
 }
 
 func TestConvertGetEventsResponseToProto_BadValue(t *testing.T) {
@@ -1286,6 +1315,7 @@ func TestConvertGetEventsResponseToProto_BadTopic(t *testing.T) {
 }
 
 func TestConvertGetEventsResponseFromProto_BadTopic(t *testing.T) {
+	eventType := conv.EventType_EVENT_TYPE_CONTRACT
 	u64 := uint64(1)
 	value, err := stellarcap.ScValToProto(stellartypes.ScVal{
 		Type: stellartypes.ScValTypeU64,
@@ -1296,7 +1326,7 @@ func TestConvertGetEventsResponseFromProto_BadTopic(t *testing.T) {
 	_, err = conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
 		Events: []*conv.EventInfo{
 			{
-				EventType: conv.EventType_EVENT_TYPE_CONTRACT,
+				EventType: &eventType,
 				Topics: []*scval.ScVal{
 					{},
 				},

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	aptospb "github.com/smartcontractkit/chainlink-common/pkg/chains/aptos"
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
@@ -56,7 +57,7 @@ func NewPluginRelayerClient(brokerCfg net.BrokerConfig) *PluginRelayerClient {
 	return &PluginRelayerClient{PluginClient: pc, pluginRelayer: pb.NewPluginRelayerClient(pc), ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
 }
 
-func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (looptypes.Relayer, error) {
+func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry capabilities.CapabilitiesRegistry) (looptypes.Relayer, error) {
 	cc := p.NewClientConn("Relayer", func(ctx context.Context) (relayerID uint32, deps net.Resources, err error) {
 		var ksRes net.Resource
 		ksID, ksRes, err := p.ServeNew("Keystore", func(s *grpc.Server) {

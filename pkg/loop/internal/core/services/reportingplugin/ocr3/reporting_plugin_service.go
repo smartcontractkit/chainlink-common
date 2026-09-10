@@ -12,6 +12,7 @@ import (
 	relayersetpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
@@ -45,7 +46,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 	pipelineRunner core.PipelineRunnerService,
 	telemetryService core.TelemetryService,
 	errorLog core.ErrorLog,
-	capRegistry core.CapabilitiesRegistry,
+	capRegistry capabilities.CapabilitiesRegistry,
 	keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet,
 ) (core.OCR3ReportingPluginFactory, error) {

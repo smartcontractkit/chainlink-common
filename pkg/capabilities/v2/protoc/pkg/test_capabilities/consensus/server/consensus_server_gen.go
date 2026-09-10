@@ -44,7 +44,7 @@ func NewConsensusServer(capability ConsensusCapability) *ConsensusServer {
 
 type ConsensusServer struct {
 	consensusCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry capabilities.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 

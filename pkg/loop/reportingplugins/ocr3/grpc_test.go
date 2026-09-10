@@ -17,6 +17,7 @@ import (
 	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -39,7 +40,7 @@ func PluginGenericTest(t *testing.T, p core.OCR3ReportingPluginClient) {
 			pipelinetest.PipelineRunner,
 			telemetrytest.Telemetry,
 			errorlogtest.ErrorLog,
-			core.CapabilitiesRegistry(nil),
+			capabilities.CapabilitiesRegistry(nil),
 			keyvaluestoretest.KeyValueStore{},
 			relayersettest.RelayerSet{})
 		require.NoError(t, err)

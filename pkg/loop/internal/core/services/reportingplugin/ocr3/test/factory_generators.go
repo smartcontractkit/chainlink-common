@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
@@ -62,7 +63,7 @@ func (s medianServer) ConnToProvider(conn grpc.ClientConnInterface, broker net.B
 
 func (s medianServer) NewReportingPluginFactory(ctx context.Context, config core.ReportingPluginServiceConfig,
 	provider types.MedianProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
-	errorLog core.ErrorLog, capRegistry core.CapabilitiesRegistry,
+	errorLog core.ErrorLog, capRegistry capabilities.CapabilitiesRegistry,
 	keyValueStore core.KeyValueStore, relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
 	err := s.medianProvider.Evaluate(ctx, provider)
 	if err != nil {
@@ -113,7 +114,7 @@ func (s agnosticPluginServer) ConnToProvider(conn grpc.ClientConnInterface, brok
 
 func (s agnosticPluginServer) NewReportingPluginFactory(ctx context.Context, config core.ReportingPluginServiceConfig,
 	provider types.PluginProvider, pipelineRunner core.PipelineRunnerService, telemetry core.TelemetryClient,
-	errorLog core.ErrorLog, capRegistry core.CapabilitiesRegistry,
+	errorLog core.ErrorLog, capRegistry capabilities.CapabilitiesRegistry,
 	keyValueStore core.KeyValueStore, relayerSet core.RelayerSet) (core.OCR3ReportingPluginFactory, error) {
 	err := s.provider.Evaluate(ctx, provider)
 	if err != nil {

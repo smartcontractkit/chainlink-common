@@ -13,7 +13,7 @@ type StandardCapabilitiesDependencies struct {
 	Config             string
 	TelemetryService   TelemetryService
 	Store              KeyValueStore
-	CapabilityRegistry CapabilitiesRegistry
+	CapabilityRegistry capabilities.CapabilitiesRegistry
 	ErrorLog           ErrorLog
 	PipelineRunner     PipelineRunnerService
 	RelayerSet         RelayerSet

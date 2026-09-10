@@ -43,7 +43,7 @@ func NewBasicActionServer(capability BasicActionCapability) *BasicActionServer {
 
 type BasicActionServer struct {
 	basicActionCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry capabilities.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 

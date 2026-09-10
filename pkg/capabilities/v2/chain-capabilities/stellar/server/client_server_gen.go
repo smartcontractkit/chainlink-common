@@ -49,7 +49,7 @@ func NewClientServer(capability ClientCapability) *ClientServer {
 
 type ClientServer struct {
 	clientCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry capabilities.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 

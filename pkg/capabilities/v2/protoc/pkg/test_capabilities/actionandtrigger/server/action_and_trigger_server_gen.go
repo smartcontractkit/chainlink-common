@@ -46,7 +46,7 @@ func NewBasicServer(capability BasicCapability) *BasicServer {
 
 type BasicServer struct {
 	basicCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry capabilities.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 

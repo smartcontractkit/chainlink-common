@@ -44,7 +44,7 @@ func NewHTTPServer(capability HTTPCapability) *HTTPServer {
 
 type HTTPServer struct {
 	hTTPCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry capabilities.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
@@ -64,7 +65,7 @@ func TestLOOPPService(t *testing.T) {
 				pipelinetest.PipelineRunner,
 				telemetrytest.Telemetry,
 				errorlogtest.ErrorLog,
-				core.CapabilitiesRegistry(nil),
+				capabilities.CapabilitiesRegistry(nil),
 				keyvaluestoretest.KeyValueStore{},
 				relayersettest.RelayerSet{})
 			hook := looppSvc.XXXTestHook()
@@ -110,7 +111,7 @@ func TestLOOPPService_recovery(t *testing.T) {
 		pipelinetest.PipelineRunner,
 		telemetrytest.Telemetry,
 		errorlogtest.ErrorLog,
-		core.CapabilitiesRegistry(nil),
+		capabilities.CapabilitiesRegistry(nil),
 		keyvaluestoretest.KeyValueStore{},
 		relayersettest.RelayerSet{})
 	servicetest.Run(t, looppSvc)

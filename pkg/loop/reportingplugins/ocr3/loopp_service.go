@@ -9,6 +9,7 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
@@ -32,7 +33,7 @@ func NewLOOPPService(
 	pipelineRunner core.PipelineRunnerService,
 	telemetryService core.TelemetryService,
 	errorLog core.ErrorLog,
-	capRegistry core.CapabilitiesRegistry,
+	capRegistry capabilities.CapabilitiesRegistry,
 	keyValueStore core.KeyValueStore,
 	relayerSet core.RelayerSet,
 ) *LOOPPService {

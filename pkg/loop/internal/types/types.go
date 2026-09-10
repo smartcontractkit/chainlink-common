@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
@@ -11,7 +12,7 @@ import (
 
 type PluginRelayer interface {
 	services.Service
-	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) (Relayer, error)
+	NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, capabilityRegistry capabilities.CapabilitiesRegistry) (Relayer, error)
 }
 
 type MedianProvider interface {

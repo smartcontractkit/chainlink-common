@@ -47,7 +47,7 @@ func NewCronServer(capability CronCapability) *CronServer {
 
 type CronServer struct {
 	cronCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry capabilities.CapabilitiesRegistry
 	stopCh             chan struct{}
 }
 

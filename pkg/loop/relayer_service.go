@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"os/exec"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -22,7 +23,7 @@ type RelayerService struct {
 
 // NewRelayerService returns a new [*RelayerService].
 // cmd must return a new exec.Cmd each time it is called.
-func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, csaKeystore core.Keystore, capabilityRegistry core.CapabilitiesRegistry) *RelayerService {
+func NewRelayerService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd, config string, keystore core.Keystore, csaKeystore core.Keystore, capabilityRegistry capabilities.CapabilitiesRegistry) *RelayerService {
 	newService := func(ctx context.Context, instance any) (Relayer, services.HealthReporter, error) {
 		plug, ok := instance.(PluginRelayer)
 		if !ok {

@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/capabilities/libs/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/reportingplugin/ocr3"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
@@ -41,7 +42,7 @@ type serverAdapter struct {
 		core.PipelineRunnerService,
 		core.TelemetryService,
 		core.ErrorLog,
-		core.CapabilitiesRegistry,
+		capabilities.CapabilitiesRegistry,
 		core.KeyValueStore,
 		core.RelayerSet,
 	) (core.OCR3ReportingPluginFactory, error)
@@ -65,7 +66,7 @@ func (s serverAdapter) NewReportingPluginFactory(
 	pr core.PipelineRunnerService,
 	ts core.TelemetryService,
 	errorLog core.ErrorLog,
-	capRegistry core.CapabilitiesRegistry,
+	capRegistry capabilities.CapabilitiesRegistry,
 	kv core.KeyValueStore,
 	rs core.RelayerSet,
 ) (core.OCR3ReportingPluginFactory, error) {
@@ -80,7 +81,7 @@ func (g *GRPCService[T]) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Serv
 		pr core.PipelineRunnerService,
 		ts core.TelemetryService,
 		el core.ErrorLog,
-		capRegistry core.CapabilitiesRegistry,
+		capRegistry capabilities.CapabilitiesRegistry,
 		kv core.KeyValueStore,
 		rs core.RelayerSet,
 	) (core.OCR3ReportingPluginFactory, error) {

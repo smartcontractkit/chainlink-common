@@ -79,22 +79,22 @@ var Default = Schema{
 	VaultIncludeInvalidPendingItemsEnabled: Bool(false),
 	VaultPendingQueueStallThreshold:        Int(0),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultSignedResponseRequestIDEnabled:               Bool(false),
-	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
-	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
-	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
-	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
-	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
-	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
-	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
-	GatewayHTTPActionOutboundConcurrencyLimit:         Int(875),
-	GatewayHTTPActionOutboundPerNodeConcurrencyLimit:  Int(175),
-	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
-	BaseTriggerRetryInterval:                          Duration(30 * time.Second),
-	BaseTriggerMaxRetries:                             Int(20),
-	BaseTriggerPruneAge:                               Duration(24 * time.Hour),
-	BaseTriggerMaxSendsPerTick:                        Int(20),
-	WASMPollOneoffSubscriptionLimit:                   Int(128),
+	VaultSignedResponseRequestIDEnabled:              Bool(false),
+	VaultZoneBWorkflowGetSecretsRestrictEnabled:      Bool(false),
+	GatewayHTTPGlobalRate:                            Rate(rate.Limit(500), 500),
+	GatewayHTTPPerNodeRate:                           Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:               Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:              Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:                 Rate(rate.Every(30*time.Second), 0),
+	GatewayHTTPActionMtlsConcurrencyLimit:            Int(50),
+	GatewayHTTPActionOutboundConcurrencyLimit:        Int(875),
+	GatewayHTTPActionOutboundPerNodeConcurrencyLimit: Int(175),
+	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
+	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
+	BaseTriggerMaxRetries:                            Int(20),
+	BaseTriggerPruneAge:                              Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:                       Int(20),
+	WASMPollOneoffSubscriptionLimit:                  Int(128),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -394,14 +394,14 @@ type Schema struct {
 	VaultIncludeInvalidPendingItemsEnabled Setting[bool]
 	VaultPendingQueueStallThreshold        Setting[int] `unit:"{observation}"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultSignedResponseRequestIDEnabled               Setting[bool]
-	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
-	GatewayHTTPGlobalRate                             Setting[config.Rate]
-	GatewayHTTPPerNodeRate                            Setting[config.Rate]
-	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
-	GatewayConfidentialRelayPerNodeRate               Setting[config.Rate]
-	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
-	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
+	VaultSignedResponseRequestIDEnabled         Setting[bool]
+	VaultZoneBWorkflowGetSecretsRestrictEnabled Setting[bool]
+	GatewayHTTPGlobalRate                       Setting[config.Rate]
+	GatewayHTTPPerNodeRate                      Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate          Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate         Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate            Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit       Setting[int] `unit:"{request}"`
 	// GatewayHTTPActionOutboundConcurrencyLimit bounds the number of outbound HTTP action
 	// requests the gateway will have in flight at once, across all nodes. Sized to
 	// GatewayHTTPGlobalRate's ceiling (500rps burst) times observed p99.9 outbound latency

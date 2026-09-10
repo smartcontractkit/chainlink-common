@@ -677,3 +677,97 @@ func ensureEqual(t *testing.T, expectedNode, actualNode capabilities.Node) {
 		require.Equal(t, expectedNode.CapabilityDONs[i].Config, actualNode.CapabilityDONs[i].Config)
 	}
 }
+
+func TestCapabilitiesRegistry_ConfigForCapability_DefaultConfig(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+	donID := uint32(1)
+
+	defaultConfig, err := values.NewMap(map[string]any{
+		"enclaves": []any{
+			map[string]any{"region": "us-east-2", "enclaveType": "nitro"},
+			map[string]any{"region": "us-west-2", "enclaveType": "nitro"},
+		},
+	})
+	require.NoError(t, err)
+
+	expectedCapConfig := capabilities.CapabilityConfiguration{
+		DefaultConfig: defaultConfig,
+	}
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(expectedCapConfig, nil)
+
+	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
+	require.NoError(t, err)
+	require.NotNil(t, capConf.DefaultConfig)
+	assert.Equal(t, defaultConfig.Underlying, capConf.DefaultConfig.Underlying)
+}
+
+func TestCapabilitiesRegistry_ConfigForCapability_NilDefaultConfig(t *testing.T) {
+	stopCh := make(chan struct{})
+	logger := logger.Test(t)
+	reg := mocks.NewCapabilitiesRegistry(t)
+
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(
+		t,
+		true,
+		map[string]plugin.Plugin{
+			pluginName: &testRegistryPlugin{
+				impl: reg,
+				brokerExt: &net.BrokerExt{
+					BrokerConfig: net.BrokerConfig{
+						StopCh: stopCh,
+						Logger: logger,
+					},
+				},
+			},
+		},
+	)
+
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+
+	rc, ok := regClient.(*capabilitiesRegistryClient)
+	require.True(t, ok)
+
+	capID := "some-cap@1.0.0"
+	donID := uint32(1)
+
+	reg.On("ConfigForCapability", mock.Anything, capID, donID).Once().Return(capabilities.CapabilityConfiguration{}, nil)
+
+	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
+	require.NoError(t, err)
+	assert.Nil(t, capConf.DefaultConfig)
+}

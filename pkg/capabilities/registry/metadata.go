@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -370,6 +371,102 @@ func (l *MetadataRegistry) ensureNotEmpty() error {
 	if len(l.IDsToCapabilities) == 0 {
 		return errors.New("empty local registry. no capabilities registered in the local registry")
 	}
+	return nil
+}
+
+func (l *MetadataRegistry) MarshalJSON() ([]byte, error) {
+	idsToNodes := make(map[types.PeerID]capabilitiesRegistryNodeInfo)
+	for k, v := range l.IDsToNodes {
+		hashedCapabilityIDs := make([]types.PeerID, len(v.HashedCapabilityIDs))
+		for i, id := range v.HashedCapabilityIDs {
+			hashedCapabilityIDs[i] = types.PeerID(id[:])
+		}
+		capabilitiesDONIds := make([]string, len(v.CapabilitiesDONIds))
+		for i, id := range v.CapabilitiesDONIds {
+			capabilitiesDONIds[i] = id.String()
+		}
+		idsToNodes[k] = capabilitiesRegistryNodeInfo{
+			NodeOperatorId:      v.NodeOperatorID,
+			ConfigCount:         v.ConfigCount,
+			WorkflowDONId:       v.WorkflowDONId,
+			Signer:              types.PeerID(v.Signer[:]),
+			P2pId:               types.PeerID(v.P2pID[:]),
+			EncryptionPublicKey: v.EncryptionPublicKey,
+			HashedCapabilityIds: hashedCapabilityIDs,
+			CapabilitiesDONIds:  capabilitiesDONIds,
+		}
+	}
+
+	b, err := json.Marshal(&struct {
+		IDsToDONs         map[DonID]DON
+		IDsToNodes        map[types.PeerID]capabilitiesRegistryNodeInfo
+		IDsToCapabilities map[string]Capability
+	}{
+		IDsToDONs:         l.IDsToDONs,
+		IDsToNodes:        idsToNodes,
+		IDsToCapabilities: l.IDsToCapabilities,
+	})
+	if err != nil {
+		return []byte{}, err
+	}
+	return b, nil
+}
+
+type capabilitiesRegistryNodeInfo struct {
+	NodeOperatorId      uint32         `json:"nodeOperatorId"`
+	ConfigCount         uint32         `json:"configCount"`
+	WorkflowDONId       uint32         `json:"workflowDONId"`
+	Signer              types.PeerID   `json:"signer"`
+	P2pId               types.PeerID   `json:"p2pId"`
+	EncryptionPublicKey [32]byte       `json:"encryptionPublicKey"`
+	HashedCapabilityIds []types.PeerID `json:"hashedCapabilityIds"`
+	CapabilitiesDONIds  []string       `json:"capabilitiesDONIds"`
+}
+
+func (l *MetadataRegistry) UnmarshalJSON(data []byte) error {
+	temp := struct {
+		IDsToDONs         map[DonID]DON
+		IDsToNodes        map[types.PeerID]capabilitiesRegistryNodeInfo
+		IDsToCapabilities map[string]Capability
+	}{
+		IDsToDONs:         make(map[DonID]DON),
+		IDsToNodes:        make(map[types.PeerID]capabilitiesRegistryNodeInfo),
+		IDsToCapabilities: make(map[string]Capability),
+	}
+
+	if err := json.Unmarshal(data, &temp); err != nil {
+		return fmt.Errorf("failed to unmarshal state: %w", err)
+	}
+
+	l.IDsToDONs = temp.IDsToDONs
+
+	l.IDsToNodes = make(map[types.PeerID]NodeInfo)
+	for peerID, v := range temp.IDsToNodes {
+		hashedCapabilityIds := make([][32]byte, len(v.HashedCapabilityIds))
+		for i, id := range v.HashedCapabilityIds {
+			copy(hashedCapabilityIds[i][:], id[:])
+		}
+
+		capabilitiesDONIds := make([]*big.Int, len(v.CapabilitiesDONIds))
+		for i, id := range v.CapabilitiesDONIds {
+			bigInt := new(big.Int)
+			bigInt.SetString(id, 10)
+			capabilitiesDONIds[i] = bigInt
+		}
+		l.IDsToNodes[peerID] = NodeInfo{
+			NodeOperatorID:      v.NodeOperatorId,
+			ConfigCount:         v.ConfigCount,
+			WorkflowDONId:       v.WorkflowDONId,
+			Signer:              v.Signer,
+			P2pID:               v.P2pId,
+			EncryptionPublicKey: v.EncryptionPublicKey,
+			HashedCapabilityIDs: hashedCapabilityIds,
+			CapabilitiesDONIds:  capabilitiesDONIds,
+		}
+	}
+
+	l.IDsToCapabilities = temp.IDsToCapabilities
+
 	return nil
 }
 

@@ -99,9 +99,9 @@ func (r *Registry) DONByID(ctx context.Context, donID uint32) (capabilities.DON,
 	return r.metadataRegistry.DONByID(ctx, donID)
 }
 
-// SetLocalRegistry sets a local copy of the offchain registry for the registry to use.
+// SetMetadataRegistry sets a local copy of the offchain registry for the registry to use.
 // This is only public for testing purposes; the only production use should be from the CapabilitiesLauncher.
-func (r *Registry) SetLocalRegistry(lr CapabilitiesRegistryMetadata) {
+func (r *Registry) SetMetadataRegistry(lr CapabilitiesRegistryMetadata) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.metadataRegistry = lr

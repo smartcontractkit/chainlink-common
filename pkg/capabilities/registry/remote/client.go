@@ -316,3 +316,17 @@ func Wrap(lggr logger.Logger, conn grpc.ClientConnInterface, capType capabilitie
 		panic(fmt.Sprintf("unknown capability type %s", capType))
 	}
 }
+
+// Resolve wraps the capability served on conn as capType and asserts it serves
+// the T surface. id and surface name the capability and the API it failed to
+// serve, for the error message. Both registry transports resolve through here
+// so they cannot disagree about what a type implies.
+func Resolve[T capabilities.BaseCapability](lggr logger.Logger, conn grpc.ClientConnInterface, capType capabilities.CapabilityType, id, surface string) (T, error) {
+	var zero T
+	wrapped := Wrap(lggr, conn, capType)
+	typed, ok := wrapped.(T)
+	if !ok {
+		return zero, fmt.Errorf("capability %s is a %s, so it does not serve the %s API", id, capType, surface)
+	}
+	return typed, nil
+}

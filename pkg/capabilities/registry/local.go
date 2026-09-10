@@ -11,6 +11,7 @@ import (
 	ragetypes "github.com/smartcontractkit/libocr/ragep2p/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	registryremote "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -138,7 +139,7 @@ func (r *LocalRegistry) WithRemote(conn grpc.ClientConnInterface, addresses map[
 	return &proxiedRegistry{
 		lggr:      logger.Named(r.lggr, "ProxiedRegistry"),
 		local:     r,
-		remote:    newRemote(r.lggr, conn, capabilityDialOpts...),
+		remote:    registryremote.NewTargetClient(r.lggr, conn, capabilityDialOpts...),
 		addresses: addresses,
 	}
 }
@@ -147,7 +148,7 @@ func (r *LocalRegistry) WithRemote(conn grpc.ClientConnInterface, addresses map[
 type proxiedRegistry struct {
 	lggr      logger.Logger
 	local     *LocalRegistry
-	remote    *remote
+	remote    *registryremote.TargetClient
 	addresses map[string]string
 }
 

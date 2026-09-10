@@ -2,12 +2,10 @@ package capability
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -17,10 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
-	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
-	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
@@ -29,23 +24,6 @@ var _ core.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
 type capabilitiesRegistryClient struct {
 	*net.BrokerExt
 	grpc pb.CapabilitiesRegistryClient
-}
-
-func toDON(don *pb.DON) capabilities.DON {
-	var members []p2ptypes.PeerID
-	for _, m := range don.Members {
-		members = append(members, p2ptypes.PeerID(m))
-	}
-
-	return capabilities.DON{
-		ID:            don.Id,
-		Name:          don.Name,
-		Members:       members,
-		F:             uint8(don.F),
-		ConfigVersion: don.ConfigVersion,
-		Families:      don.Families,
-		Config:        don.Config,
-	}
 }
 
 func toPbDON(don capabilities.DON) *pb.DON {
@@ -71,7 +49,7 @@ func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabiliti
 		return capabilities.Node{}, err
 	}
 
-	return cr.nodeFromNodeReply(res), nil
+	return registryremote.NodeFromProto(res, res.WorkflowDON, res.CapabilityDONs)
 }
 
 func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p2ptypes.PeerID) (capabilities.Node, error) {
@@ -80,7 +58,7 @@ func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p
 		return capabilities.Node{}, err
 	}
 
-	return cr.nodeFromNodeReply(res), nil
+	return registryremote.NodeFromProto(res, res.WorkflowDON, res.CapabilityDONs)
 }
 
 func (cr *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
@@ -91,13 +69,16 @@ func (cr *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, cap
 
 	donsWithNodes := []capabilities.DONWithNodes{}
 	for _, d := range res.Dons {
-		don := toDON(d.Don)
 		var nodes []capabilities.Node
 		for _, n := range d.Nodes {
-			nodes = append(nodes, cr.nodeFromNodeReply(n))
+			node, err := registryremote.NodeFromProto(n, n.WorkflowDON, n.CapabilityDONs)
+			if err != nil {
+				return nil, err
+			}
+			nodes = append(nodes, node)
 		}
 		donsWithNodes = append(donsWithNodes, capabilities.DONWithNodes{
-			DON:   don,
+			DON:   registryremote.DONFromProto(d.Don),
 			Nodes: nodes,
 		})
 	}
@@ -109,33 +90,7 @@ func (cr *capabilitiesRegistryClient) DONByID(ctx context.Context, donID uint32)
 	if err != nil {
 		return capabilities.DON{}, err
 	}
-	return toDON(res.Don), nil
-}
-
-func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
-	var pid *p2ptypes.PeerID
-	if len(nodeReply.PeerID) > 0 {
-		p := p2ptypes.PeerID(nodeReply.PeerID)
-		pid = &p
-	}
-
-	cDONs := make([]capabilities.DON, len(nodeReply.CapabilityDONs))
-	for i, don := range nodeReply.CapabilityDONs {
-		cDONs[i] = toDON(don)
-	}
-
-	var signer32 [32]byte
-	copy(signer32[:], nodeReply.Signer)
-	var encryptionPublicKey32 [32]byte
-	copy(encryptionPublicKey32[:], nodeReply.EncryptionPublicKey)
-	return capabilities.Node{
-		PeerID:              pid,
-		NodeOperatorID:      nodeReply.NodeOperatorID,
-		Signer:              signer32,
-		EncryptionPublicKey: encryptionPublicKey32,
-		WorkflowDON:         toDON(nodeReply.WorkflowDON),
-		CapabilityDONs:      cDONs,
-	}
+	return registryremote.DONFromProto(res.Don), nil
 }
 
 func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
@@ -147,126 +102,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		return capabilities.CapabilityConfiguration{}, err
 	}
 
-	mc, err := values.FromMapValueProto(res.CapabilityConfig.DefaultConfig)
-	if err != nil {
-		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert map valueproto to map: %w", err)
-	}
-
-	var remoteTriggerConfig *capabilities.RemoteTriggerConfig
-	var remoteTargetConfig *capabilities.RemoteTargetConfig
-	var remoteExecutableConfig *capabilities.RemoteExecutableConfig
-
-	switch res.CapabilityConfig.RemoteConfig.(type) {
-	case *capabilitiespb.CapabilityConfig_RemoteTriggerConfig:
-		remoteTriggerConfig = decodeRemoteTriggerConfig(res.CapabilityConfig.GetRemoteTriggerConfig())
-	case *capabilitiespb.CapabilityConfig_RemoteTargetConfig:
-		prtc := res.CapabilityConfig.GetRemoteTargetConfig()
-		remoteTargetConfig = &capabilities.RemoteTargetConfig{}
-		remoteTargetConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
-	case *capabilitiespb.CapabilityConfig_RemoteExecutableConfig:
-		remoteExecutableConfig = decodeRemoteExecutableConfig(res.CapabilityConfig.GetRemoteExecutableConfig())
-	}
-
-	var methodConfig map[string]capabilities.CapabilityMethodConfig
-	if res.CapabilityConfig.MethodConfigs != nil {
-		methodConfig = make(map[string]capabilities.CapabilityMethodConfig, len(res.CapabilityConfig.MethodConfigs))
-		for mName, mConfig := range res.CapabilityConfig.MethodConfigs {
-			newCapCfg := capabilities.CapabilityMethodConfig{}
-			switch mConfig.RemoteConfig.(type) {
-			case *capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig:
-				newCapCfg.RemoteTriggerConfig = decodeRemoteTriggerConfig(mConfig.GetRemoteTriggerConfig())
-			case *capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig:
-				newCapCfg.RemoteExecutableConfig = decodeRemoteExecutableConfig(mConfig.GetRemoteExecutableConfig())
-			}
-			if mConfig.AggregatorConfig != nil {
-				newCapCfg.AggregatorConfig = &capabilities.AggregatorConfig{AggregatorType: capabilities.AggregatorType(mConfig.AggregatorConfig.AggregatorType)}
-			}
-			methodConfig[mName] = newCapCfg
-		}
-	}
-
-	var ocr3Configs map[string]ocrtypes.ContractConfig
-	if res.CapabilityConfig.Ocr3Configs != nil {
-		ocr3Configs = make(map[string]ocrtypes.ContractConfig, len(res.CapabilityConfig.Ocr3Configs))
-		for key, pbCfg := range res.CapabilityConfig.Ocr3Configs {
-			ocr3Configs[key] = decodeOcr3Config(pbCfg)
-		}
-	}
-
-	var oracleFactoryConfigs map[string]values.Map
-	if res.CapabilityConfig.OracleFactoryConfigs != nil {
-		oracleFactoryConfigs = make(map[string]values.Map, len(res.CapabilityConfig.OracleFactoryConfigs))
-		for key, pbMap := range res.CapabilityConfig.OracleFactoryConfigs {
-			m, err := values.FromMapValueProto(pbMap)
-			if err != nil {
-				return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode oracle factory config for key %s: %w", key, err)
-			}
-			if m != nil {
-				oracleFactoryConfigs[key] = *m
-			}
-		}
-	}
-
-	specConfig, err := values.FromMapValueProto(res.CapabilityConfig.SpecConfig)
-	if err != nil {
-		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode spec config: %w", err)
-	}
-
-	return capabilities.CapabilityConfiguration{
-		DefaultConfig:          mc,
-		RemoteTriggerConfig:    remoteTriggerConfig,
-		RemoteTargetConfig:     remoteTargetConfig,
-		RemoteExecutableConfig: remoteExecutableConfig,
-		CapabilityMethodConfig: methodConfig,
-		LocalOnly:              res.CapabilityConfig.LocalOnly,
-		Ocr3Configs:            ocr3Configs,
-		OracleFactoryConfigs:   oracleFactoryConfigs,
-		SpecConfig:             specConfig,
-	}, nil
-}
-
-func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabilities.RemoteTriggerConfig {
-	remoteTriggerConfig := &capabilities.RemoteTriggerConfig{}
-	remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
-	remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
-	remoteTriggerConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-	remoteTriggerConfig.MessageExpiry = prtc.MessageExpiry.AsDuration()
-	remoteTriggerConfig.MaxBatchSize = prtc.MaxBatchSize
-	remoteTriggerConfig.BatchCollectionPeriod = prtc.BatchCollectionPeriod.AsDuration()
-	return remoteTriggerConfig
-}
-
-func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *capabilities.RemoteExecutableConfig {
-	remoteExecutableConfig := &capabilities.RemoteExecutableConfig{}
-	remoteExecutableConfig.RequestHashExcludedAttributes = prtc.RequestHashExcludedAttributes
-	remoteExecutableConfig.TransmissionSchedule = capabilities.TransmissionSchedule(prtc.TransmissionSchedule)
-	remoteExecutableConfig.DeltaStage = prtc.DeltaStage.AsDuration()
-	remoteExecutableConfig.RequestTimeout = prtc.RequestTimeout.AsDuration()
-	remoteExecutableConfig.ServerMaxParallelRequests = prtc.ServerMaxParallelRequests
-	remoteExecutableConfig.RequestHasherType = capabilities.RequestHasherType(prtc.RequestHasherType)
-	remoteExecutableConfig.MinResponsesToAggregate = prtc.MinResponsesToAggregate
-	return remoteExecutableConfig
-}
-
-func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig {
-	signers := make([]ocrtypes.OnchainPublicKey, len(pbCfg.Signers))
-	for i, s := range pbCfg.Signers {
-		signers[i] = ocrtypes.OnchainPublicKey(s)
-	}
-	transmitters := make([]ocrtypes.Account, len(pbCfg.Transmitters))
-	for i, t := range pbCfg.Transmitters {
-		transmitters[i] = ocrtypes.Account(hex.EncodeToString(t))
-	}
-	return ocrtypes.ContractConfig{
-		ConfigCount:           pbCfg.ConfigCount,
-		Signers:               signers,
-		Transmitters:          transmitters,
-		F:                     uint8(pbCfg.F),
-		OnchainConfig:         pbCfg.OnchainConfig,
-		OffchainConfigVersion: pbCfg.OffchainConfigVersion,
-		OffchainConfig:        pbCfg.OffchainConfig,
-		// NOTE: ConfigDigest will be appended later by ContractConfigTracker.
-	}
+	return capabilitiespb.CapabilityConfigFromProto(res.CapabilityConfig)
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
@@ -429,134 +265,9 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		return nil, err
 	}
 
-	ecm := values.Proto(cc.DefaultConfig).GetMapValue()
-
-	ccp := &capabilitiespb.CapabilityConfig{
-		DefaultConfig: ecm,
-	}
-
-	if cc.RemoteTriggerConfig != nil {
-		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTriggerConfig{
-			RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-				RegistrationRefresh:     durationpb.New(cc.RemoteTriggerConfig.RegistrationRefresh),
-				RegistrationExpiry:      durationpb.New(cc.RemoteTriggerConfig.RegistrationExpiry),
-				MinResponsesToAggregate: cc.RemoteTriggerConfig.MinResponsesToAggregate,
-				MessageExpiry:           durationpb.New(cc.RemoteTriggerConfig.MessageExpiry),
-				MaxBatchSize:            cc.RemoteTriggerConfig.MaxBatchSize,
-				BatchCollectionPeriod:   durationpb.New(cc.RemoteTriggerConfig.BatchCollectionPeriod),
-			},
-		}
-	}
-
-	if cc.RemoteTargetConfig != nil {
-		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteTargetConfig{
-			RemoteTargetConfig: &capabilitiespb.RemoteTargetConfig{
-				RequestHashExcludedAttributes: cc.RemoteTargetConfig.RequestHashExcludedAttributes,
-			},
-		}
-	}
-
-	if cc.RemoteExecutableConfig != nil {
-		ccp.RemoteConfig = &capabilitiespb.CapabilityConfig_RemoteExecutableConfig{
-			RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
-				RequestHashExcludedAttributes: cc.RemoteExecutableConfig.RequestHashExcludedAttributes,
-				TransmissionSchedule:          capabilitiespb.TransmissionSchedule(cc.RemoteExecutableConfig.TransmissionSchedule),
-				DeltaStage:                    durationpb.New(cc.RemoteExecutableConfig.DeltaStage),
-				RequestTimeout:                durationpb.New(cc.RemoteExecutableConfig.RequestTimeout),
-				ServerMaxParallelRequests:     cc.RemoteExecutableConfig.ServerMaxParallelRequests,
-				RequestHasherType:             capabilitiespb.RequestHasherType(cc.RemoteExecutableConfig.RequestHasherType),
-				MinResponsesToAggregate:       cc.RemoteExecutableConfig.MinResponsesToAggregate,
-			},
-		}
-	}
-
-	// Handle method configs
-	if cc.CapabilityMethodConfig != nil {
-		ccp.MethodConfigs = make(map[string]*capabilitiespb.CapabilityMethodConfig, len(cc.CapabilityMethodConfig))
-		for mName, mConfig := range cc.CapabilityMethodConfig {
-			pbMethodConfig := &capabilitiespb.CapabilityMethodConfig{}
-
-			// Handle remote trigger config for method
-			if mConfig.RemoteTriggerConfig != nil {
-				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig{
-					RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
-						RegistrationRefresh:     durationpb.New(mConfig.RemoteTriggerConfig.RegistrationRefresh),
-						RegistrationExpiry:      durationpb.New(mConfig.RemoteTriggerConfig.RegistrationExpiry),
-						MinResponsesToAggregate: mConfig.RemoteTriggerConfig.MinResponsesToAggregate,
-						MessageExpiry:           durationpb.New(mConfig.RemoteTriggerConfig.MessageExpiry),
-						MaxBatchSize:            mConfig.RemoteTriggerConfig.MaxBatchSize,
-						BatchCollectionPeriod:   durationpb.New(mConfig.RemoteTriggerConfig.BatchCollectionPeriod),
-					},
-				}
-			}
-
-			// Handle remote executable config for method
-			if mConfig.RemoteExecutableConfig != nil {
-				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig{
-					RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
-						RequestHashExcludedAttributes: mConfig.RemoteExecutableConfig.RequestHashExcludedAttributes,
-						TransmissionSchedule:          capabilitiespb.TransmissionSchedule(mConfig.RemoteExecutableConfig.TransmissionSchedule),
-						DeltaStage:                    durationpb.New(mConfig.RemoteExecutableConfig.DeltaStage),
-						RequestTimeout:                durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
-						ServerMaxParallelRequests:     mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
-						RequestHasherType:             capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
-						MinResponsesToAggregate:       mConfig.RemoteExecutableConfig.MinResponsesToAggregate,
-					},
-				}
-			}
-
-			// Handle aggregator config for method
-			if mConfig.AggregatorConfig != nil {
-				pbMethodConfig.AggregatorConfig = &capabilitiespb.AggregatorConfig{
-					AggregatorType: capabilitiespb.AggregatorType(mConfig.AggregatorConfig.AggregatorType),
-				}
-			}
-
-			ccp.MethodConfigs[mName] = pbMethodConfig
-		}
-	}
-
-	ccp.LocalOnly = cc.LocalOnly
-
-	// Handle OCR3 configs
-	if cc.Ocr3Configs != nil {
-		ccp.Ocr3Configs = make(map[string]*capabilitiespb.OCR3Config, len(cc.Ocr3Configs))
-		for key, cfg := range cc.Ocr3Configs {
-			signers := make([][]byte, len(cfg.Signers))
-			for i, s := range cfg.Signers {
-				signers[i] = []byte(s)
-			}
-			transmitters := make([][]byte, len(cfg.Transmitters))
-			for i, t := range cfg.Transmitters {
-				transmitters[i], err = hex.DecodeString(string(t))
-				if err != nil {
-					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
-				}
-			}
-			ccp.Ocr3Configs[key] = &capabilitiespb.OCR3Config{
-				ConfigCount:           cfg.ConfigCount,
-				Signers:               signers,
-				Transmitters:          transmitters,
-				F:                     uint32(cfg.F),
-				OnchainConfig:         cfg.OnchainConfig,
-				OffchainConfigVersion: cfg.OffchainConfigVersion,
-				OffchainConfig:        cfg.OffchainConfig,
-				// NOTE: ConfigDigest is not passed in the proto, nor stored directly onchain.
-			}
-		}
-	}
-
-	// Handle Oracle factory configs
-	if cc.OracleFactoryConfigs != nil {
-		ccp.OracleFactoryConfigs = make(map[string]*valuespb.Map, len(cc.OracleFactoryConfigs))
-		for key, m := range cc.OracleFactoryConfigs {
-			ccp.OracleFactoryConfigs[key] = values.Proto(&m).GetMapValue()
-		}
-	}
-
-	// Handle Spec config
-	if cc.SpecConfig != nil {
-		ccp.SpecConfig = values.Proto(cc.SpecConfig).GetMapValue()
+	ccp, err := capabilitiespb.CapabilityConfigToProto(cc)
+	if err != nil {
+		return nil, err
 	}
 
 	return &pb.ConfigForCapabilityReply{

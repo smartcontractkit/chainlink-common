@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"math"
 
+	"google.golang.org/protobuf/types/known/durationpb"
+
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
+	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 // CapabilityConfigFromProto decodes a wire CapabilityConfig into the Go type.
@@ -190,4 +193,128 @@ func decodeOcr3Config(pbCfg *OCR3Config) (ocrtypes.ContractConfig, error) {
 		OffchainConfig:        pbCfg.OffchainConfig,
 		// NOTE: ConfigDigest is appended later by ContractConfigTracker.
 	}, nil
+}
+
+// CapabilityConfigToProto encodes a capability configuration to its wire form.
+//
+// The counterpart of [CapabilityConfigFromProto] and the single encoder: both
+// registry transports carry the same message, so a second encoder anywhere
+// could only drift from this one.
+func CapabilityConfigToProto(cc capabilities.CapabilityConfiguration) (*CapabilityConfig, error) {
+	ccp := &CapabilityConfig{
+		DefaultConfig: values.Proto(cc.DefaultConfig).GetMapValue(),
+		LocalOnly:     cc.LocalOnly,
+	}
+
+	if cc.RestrictedConfig != nil {
+		ccp.RestrictedConfig = values.ProtoMap(cc.RestrictedConfig)
+	}
+	ccp.RestrictedKeys = cc.RestrictedKeys
+
+	if cc.RemoteTriggerConfig != nil {
+		ccp.RemoteConfig = &CapabilityConfig_RemoteTriggerConfig{
+			RemoteTriggerConfig: encodeRemoteTriggerConfig(cc.RemoteTriggerConfig),
+		}
+	}
+
+	if cc.RemoteTargetConfig != nil {
+		ccp.RemoteConfig = &CapabilityConfig_RemoteTargetConfig{
+			RemoteTargetConfig: &RemoteTargetConfig{
+				RequestHashExcludedAttributes: cc.RemoteTargetConfig.RequestHashExcludedAttributes,
+			},
+		}
+	}
+
+	if cc.RemoteExecutableConfig != nil {
+		ccp.RemoteConfig = &CapabilityConfig_RemoteExecutableConfig{
+			RemoteExecutableConfig: encodeRemoteExecutableConfig(cc.RemoteExecutableConfig),
+		}
+	}
+
+	if cc.CapabilityMethodConfig != nil {
+		ccp.MethodConfigs = make(map[string]*CapabilityMethodConfig, len(cc.CapabilityMethodConfig))
+		for name, mCfg := range cc.CapabilityMethodConfig {
+			pbMethodConfig := &CapabilityMethodConfig{}
+			if mCfg.RemoteTriggerConfig != nil {
+				pbMethodConfig.RemoteConfig = &CapabilityMethodConfig_RemoteTriggerConfig{
+					RemoteTriggerConfig: encodeRemoteTriggerConfig(mCfg.RemoteTriggerConfig),
+				}
+			}
+			if mCfg.RemoteExecutableConfig != nil {
+				pbMethodConfig.RemoteConfig = &CapabilityMethodConfig_RemoteExecutableConfig{
+					RemoteExecutableConfig: encodeRemoteExecutableConfig(mCfg.RemoteExecutableConfig),
+				}
+			}
+			if mCfg.AggregatorConfig != nil {
+				pbMethodConfig.AggregatorConfig = &AggregatorConfig{
+					AggregatorType: AggregatorType(mCfg.AggregatorConfig.AggregatorType),
+				}
+			}
+			ccp.MethodConfigs[name] = pbMethodConfig
+		}
+	}
+
+	if cc.Ocr3Configs != nil {
+		ccp.Ocr3Configs = make(map[string]*OCR3Config, len(cc.Ocr3Configs))
+		for key, cfg := range cc.Ocr3Configs {
+			signers := make([][]byte, len(cfg.Signers))
+			for i, s := range cfg.Signers {
+				signers[i] = []byte(s)
+			}
+			transmitters := make([][]byte, len(cfg.Transmitters))
+			for i, t := range cfg.Transmitters {
+				decoded, err := hex.DecodeString(string(t))
+				if err != nil {
+					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
+				}
+				transmitters[i] = decoded
+			}
+			ccp.Ocr3Configs[key] = &OCR3Config{
+				ConfigCount:           cfg.ConfigCount,
+				Signers:               signers,
+				Transmitters:          transmitters,
+				F:                     uint32(cfg.F), //#nosec G115 - ContractConfig.F is a uint8
+				OnchainConfig:         cfg.OnchainConfig,
+				OffchainConfigVersion: cfg.OffchainConfigVersion,
+				OffchainConfig:        cfg.OffchainConfig,
+				// NOTE: ConfigDigest is not passed in the proto, nor stored directly onchain.
+			}
+		}
+	}
+
+	if cc.OracleFactoryConfigs != nil {
+		ccp.OracleFactoryConfigs = make(map[string]*valuespb.Map, len(cc.OracleFactoryConfigs))
+		for key, m := range cc.OracleFactoryConfigs {
+			ccp.OracleFactoryConfigs[key] = values.Proto(&m).GetMapValue()
+		}
+	}
+
+	if cc.SpecConfig != nil {
+		ccp.SpecConfig = values.Proto(cc.SpecConfig).GetMapValue()
+	}
+
+	return ccp, nil
+}
+
+func encodeRemoteTriggerConfig(cfg *capabilities.RemoteTriggerConfig) *RemoteTriggerConfig {
+	return &RemoteTriggerConfig{
+		RegistrationRefresh:     durationpb.New(cfg.RegistrationRefresh),
+		RegistrationExpiry:      durationpb.New(cfg.RegistrationExpiry),
+		MinResponsesToAggregate: cfg.MinResponsesToAggregate,
+		MessageExpiry:           durationpb.New(cfg.MessageExpiry),
+		MaxBatchSize:            cfg.MaxBatchSize,
+		BatchCollectionPeriod:   durationpb.New(cfg.BatchCollectionPeriod),
+	}
+}
+
+func encodeRemoteExecutableConfig(cfg *capabilities.RemoteExecutableConfig) *RemoteExecutableConfig {
+	return &RemoteExecutableConfig{
+		RequestHashExcludedAttributes: cfg.RequestHashExcludedAttributes,
+		TransmissionSchedule:          TransmissionSchedule(cfg.TransmissionSchedule),
+		DeltaStage:                    durationpb.New(cfg.DeltaStage),
+		RequestTimeout:                durationpb.New(cfg.RequestTimeout),
+		ServerMaxParallelRequests:     cfg.ServerMaxParallelRequests,
+		RequestHasherType:             RequestHasherType(cfg.RequestHasherType),
+		MinResponsesToAggregate:       cfg.MinResponsesToAggregate,
+	}
 }

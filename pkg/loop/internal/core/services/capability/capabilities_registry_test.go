@@ -18,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -396,7 +397,7 @@ func TestToDON(t *testing.T) {
 		Config:        []byte("test-config"),
 	}
 
-	actual := toDON(don)
+	actual := remote.DONFromProto(don)
 
 	require.Equal(t, expected, actual)
 }

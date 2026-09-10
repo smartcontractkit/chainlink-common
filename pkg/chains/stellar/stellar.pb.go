@@ -696,7 +696,7 @@ func (x *GetEventsRequest) GetPagination() *PaginationOptions {
 
 type EventInfo struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	EventType        EventType              `protobuf:"varint,1,opt,name=event_type,json=eventType,proto3,enum=loop.stellar.EventType" json:"event_type,omitempty"`
+	EventType        *EventType             `protobuf:"varint,1,opt,name=event_type,json=eventType,proto3,enum=loop.stellar.EventType,oneof" json:"event_type,omitempty"`
 	Ledger           uint32                 `protobuf:"varint,2,opt,name=ledger,proto3" json:"ledger,omitempty"`
 	LedgerClosedAt   string                 `protobuf:"bytes,3,opt,name=ledger_closed_at,json=ledgerClosedAt,proto3" json:"ledger_closed_at,omitempty"`
 	ContractId       string                 `protobuf:"bytes,4,opt,name=contract_id,json=contractId,proto3" json:"contract_id,omitempty"`
@@ -741,8 +741,8 @@ func (*EventInfo) Descriptor() ([]byte, []int) {
 }
 
 func (x *EventInfo) GetEventType() EventType {
-	if x != nil {
-		return x.EventType
+	if x != nil && x.EventType != nil {
+		return *x.EventType
 	}
 	return EventType_EVENT_TYPE_SYSTEM
 }
@@ -1382,7 +1382,7 @@ func (x *SubmitTransactionRequest) GetMaxResourceFee() uint64 {
 // SubmitTransactionResponse carries the outcome of a transaction submission.
 type SubmitTransactionResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	TxStatus         TxStatus               `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.stellar.TxStatus" json:"tx_status,omitempty"`
+	TxStatus         *TxStatus              `protobuf:"varint,1,opt,name=tx_status,json=txStatus,proto3,enum=loop.stellar.TxStatus,oneof" json:"tx_status,omitempty"`
 	TxHash           string                 `protobuf:"bytes,2,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
 	TxIdempotencyKey string                 `protobuf:"bytes,3,opt,name=tx_idempotency_key,json=txIdempotencyKey,proto3" json:"tx_idempotency_key,omitempty"` // Assigned key (caller-supplied or TXM-generated)
 	ResultXdr        []byte                 `protobuf:"bytes,4,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`                        // TransactionResult binary XDR; empty if unavailable
@@ -1425,8 +1425,8 @@ func (*SubmitTransactionResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *SubmitTransactionResponse) GetTxStatus() TxStatus {
-	if x != nil {
-		return x.TxStatus
+	if x != nil && x.TxStatus != nil {
+		return *x.TxStatus
 	}
 	return TxStatus_TX_STATUS_FATAL
 }
@@ -1886,10 +1886,10 @@ const file_stellar_proto_rawDesc = "" +
 	"\afilters\x18\x03 \x03(\v2\x19.loop.stellar.EventFilterR\afilters\x12?\n" +
 	"\n" +
 	"pagination\x18\x04 \x01(\v2\x1f.loop.stellar.PaginationOptionsR\n" +
-	"pagination\"\xc5\x03\n" +
-	"\tEventInfo\x126\n" +
+	"pagination\"\xd9\x03\n" +
+	"\tEventInfo\x12;\n" +
 	"\n" +
-	"event_type\x18\x01 \x01(\x0e2\x17.loop.stellar.EventTypeR\teventType\x12\x16\n" +
+	"event_type\x18\x01 \x01(\x0e2\x17.loop.stellar.EventTypeH\x00R\teventType\x88\x01\x01\x12\x16\n" +
 	"\x06ledger\x18\x02 \x01(\rR\x06ledger\x12(\n" +
 	"\x10ledger_closed_at\x18\x03 \x01(\tR\x0eledgerClosedAt\x12\x1f\n" +
 	"\vcontract_id\x18\x04 \x01(\tR\n" +
@@ -1900,7 +1900,8 @@ const file_stellar_proto_rawDesc = "" +
 	"\x10transaction_hash\x18\b \x01(\tR\x0ftransactionHash\x12F\n" +
 	"\x06topics\x18\t \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x06topics\x12D\n" +
 	"\x05value\x18\n" +
-	" \x01(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x05value\"\x98\x02\n" +
+	" \x01(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x05valueB\r\n" +
+	"\v_event_type\"\x98\x02\n" +
 	"\x11GetEventsResponse\x12/\n" +
 	"\x06events\x18\x01 \x03(\v2\x17.loop.stellar.EventInfoR\x06events\x12\x16\n" +
 	"\x06cursor\x18\x02 \x01(\tR\x06cursor\x12#\n" +
@@ -1939,17 +1940,19 @@ const file_stellar_proto_rawDesc = "" +
 	"\bfunction\x18\x04 \x01(\tR\bfunction\x12B\n" +
 	"\x04args\x18\x05 \x03(\v2..capabilities.blockchain.stellar.v1alpha.ScValR\x04args\x120\n" +
 	"\x14ledger_bounds_offset\x18\x06 \x01(\rR\x12ledgerBoundsOffset\x12(\n" +
-	"\x10max_resource_fee\x18\a \x01(\x04R\x0emaxResourceFee\"\xf8\x02\n" +
-	"\x19SubmitTransactionResponse\x123\n" +
-	"\ttx_status\x18\x01 \x01(\x0e2\x16.loop.stellar.TxStatusR\btxStatus\x12\x17\n" +
+	"\x10max_resource_fee\x18\a \x01(\x04R\x0emaxResourceFee\"\x8b\x03\n" +
+	"\x19SubmitTransactionResponse\x128\n" +
+	"\ttx_status\x18\x01 \x01(\x0e2\x16.loop.stellar.TxStatusH\x00R\btxStatus\x88\x01\x01\x12\x17\n" +
 	"\atx_hash\x18\x02 \x01(\tR\x06txHash\x12,\n" +
 	"\x12tx_idempotency_key\x18\x03 \x01(\tR\x10txIdempotencyKey\x12\x1d\n" +
 	"\n" +
 	"result_xdr\x18\x04 \x01(\fR\tresultXdr\x12&\n" +
 	"\x0fresult_meta_xdr\x18\x05 \x01(\fR\rresultMetaXdr\x12\x14\n" +
 	"\x05error\x18\x06 \x01(\tR\x05error\x12,\n" +
-	"\x0ftransaction_fee\x18\a \x01(\x04H\x00R\x0etransactionFee\x88\x01\x01\x12,\n" +
-	"\x0fblock_timestamp\x18\b \x01(\x04H\x01R\x0eblockTimestamp\x88\x01\x01B\x12\n" +
+	"\x0ftransaction_fee\x18\a \x01(\x04H\x01R\x0etransactionFee\x88\x01\x01\x12,\n" +
+	"\x0fblock_timestamp\x18\b \x01(\x04H\x02R\x0eblockTimestamp\x88\x01\x01B\f\n" +
+	"\n" +
+	"_tx_statusB\x12\n" +
 	"\x10_transaction_feeB\x12\n" +
 	"\x10_block_timestamp\"\xfc\x01\n" +
 	"\x17GetLatestLedgerResponse\x12\x12\n" +
@@ -2090,6 +2093,7 @@ func file_stellar_proto_init() {
 	if File_stellar_proto != nil {
 		return
 	}
+	file_stellar_proto_msgTypes[8].OneofWrappers = []any{}
 	file_stellar_proto_msgTypes[16].OneofWrappers = []any{
 		(*TopicSegment_Wildcard)(nil),
 		(*TopicSegment_Scval)(nil),

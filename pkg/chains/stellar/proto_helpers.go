@@ -73,7 +73,10 @@ func validateLedgerKeyXDR(b []byte) error {
 		return err
 	}
 	if !bytes.Equal(encoded, b) {
-		return fmt.Errorf("trailing %d bytes", len(b)-len(encoded))
+		if len(b) > len(encoded) {
+			return fmt.Errorf("trailing %d bytes", len(b)-len(encoded))
+		}
+		return fmt.Errorf("non-canonical LedgerKey XDR encoding")
 	}
 	return nil
 }

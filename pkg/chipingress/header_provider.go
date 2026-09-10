@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -111,50 +113,154 @@ func newStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderP
 // NewStaticHeaderProvider returns a HeaderProvider that always returns the given headers,
 // for use with WithHeaderProvider to attach fixed, non-auth gRPC metadata (e.g. resource
 // attributes) to every request.
+//
+// This is for the non-auth interceptor path only. It reports RequireTransportSecurity() == false,
+// which WithHeaderProvider never consults — the HeaderProvider interface declares only Headers,
+// and grpc asks only credentials.PerRPCCredentials about transport security. Do not pass the
+// result to WithTokenAuth: that path takes its TLS requirement from the client config
+// (!c.insecureConnection), not from the provider, so the false here would be silently ignored
+// rather than honoured. Use NewHeaderProvider for auth headers.
 func NewStaticHeaderProvider(headers map[string]string) HeaderProvider {
 	return newStaticHeaderProvider(headers, false)
 }
 
-// SanitizeMetadataValue replaces any byte outside the printable ASCII range [0x20-0x7E]
-// with '?'. grpc-go hard-fails the entire RPC when an outgoing metadata value fails this
-// check (unlike the CE-extension path, where an invalid entry is simply dropped), so
-// values headed for gRPC metadata must be normalized before being sent.
-func SanitizeMetadataValue(val string) string {
-	b := []byte(val)
-	out := make([]byte, len(b))
-	for i, c := range b {
-		if c >= 0x20 && c <= 0x7E {
-			out[i] = c
-		} else {
-			out[i] = '?'
+// Limits on resource attributes accepted by SanitizeMetadataHeaders. They reserve headroom in the
+// gRPC HEADERS frame for authentication and normal gRPC metadata, and bound how much of every Kafka
+// record's header space a producer's resource attributes can consume.
+const (
+	maxResourceAttributes          = 32
+	maxResourceAttributeKeyBytes   = 128
+	maxResourceAttributeValueBytes = 512
+	maxResourceAttributeTotalBytes = 4096 // sum of accepted key + value bytes, prefix excluded
+)
+
+// isPrintableASCII reports whether every byte of val is in the printable ASCII range [0x20, 0x7E].
+// grpc-go hard-fails the entire RPC — auth header included — when an outgoing metadata value fails
+// this check, so a value that does not pass is omitted rather than rewritten: a byte-mangled value
+// is a worse outcome than a dropped attribute for an operator-facing routing/observability field.
+func isPrintableASCII(val string) bool {
+	for i := 0; i < len(val); i++ {
+		if c := val[i]; c < 0x20 || c > 0x7E {
+			return false
 		}
 	}
-	return string(out)
+	return true
 }
 
-// SanitizeMetadataHeaders sanitizes a map of resource-attribute headers for use as outgoing
-// gRPC metadata (e.g. via NewStaticHeaderProvider). Keys are sanitized with
-// sanitizeExtensionName — the same strict [a-z0-9] charset used for CloudEvent extensions —
-// which is a subset of grpc's allowed metadata-key charset, so a sanitized key can never trip
-// grpc's key validation or the reserved "-bin" suffix, and produces the same key stem as the
-// corresponding CE extension (differing only by the CloudEvents Kafka binding's "ce_" prefix
-// once on the wire). Values are sanitized via SanitizeMetadataValue, since grpc-go fails the
-// whole RPC on a non-printable value. Entries that sanitize to an empty key, or that collide
-// with a reserved extension name (see reservedExtensionNames) or a gRPC-reserved header name
-// (see reservedMetadataKeys), are skipped. Keys are applied in sorted order so duplicate
-// sanitized keys resolve deterministically (first in sorted order wins), matching
-// WithResourceAttributeExtensions' collision handling.
+// DroppedAttribute records a resource attribute SanitizeMetadataHeaders omitted, and why.
+type DroppedAttribute struct {
+	Key    string
+	Reason string
+}
+
+// Reasons a resource attribute can be omitted by SanitizeMetadataHeaders. Exposed as strings (not
+// an enum type) so callers can attach them to a log field or a metric attribute directly.
+const (
+	reasonInvalidKey    = "invalid_key"
+	reasonInvalidValue  = "invalid_value"
+	reasonDuplicateKey  = "duplicate_key"
+	reasonLimitExceeded = "limit_exceeded"
+)
+
+// isValidMetadataKeyChar reports whether r is allowed in an outgoing gRPC metadata key. grpc-go
+// accepts [0-9a-z-_.] (see internal/metadata.ValidateKey); upper-case is handled by lower-casing
+// before this is called.
+func isValidMetadataKeyChar(r rune) bool {
+	return (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '-' || r == '_'
+}
+
+// sanitizeMetadataKey validates a resource-attribute key as a valid outgoing gRPC metadata key,
+// without the ResourceHeaderPrefix that SanitizeMetadataHeaders adds, and reports whether it is
+// valid. It never rewrites: a key that fails validation is omitted by the caller rather than
+// mutated, so two distinct configured keys can never collapse into one gRPC metadata key.
 //
-// Note: unlike the CloudEvents Kafka binding, gRPC metadata keys are NOT prefixed with "ce_" —
-// that prefix is a CloudEvents-binding concept, not a metadata one, and reusing it here would
-// collide with the CE binding's own "ce_<name>" Kafka header if the server ever forwards gRPC
-// metadata verbatim onto Kafka.
-func SanitizeMetadataHeaders(in map[string]string) map[string]string {
-	out := make(map[string]string, len(in))
-	for _, pair := range sanitizeResourceAttributeKeys(in, reservedMetadataKeys) {
-		out[pair.name] = SanitizeMetadataValue(in[pair.key])
+// Valid keys, once lower-cased, match [0-9a-z-_.]+ (grpc's own key charset — see
+// internal/metadata.ValidateKey) and do not end in "-bin", which grpc treats as declaring a
+// base64-encoded binary value. A valid key's structure survives untouched: "csa_public_key" stays
+// "csa_public_key" and "service.name" stays "service.name", which is what lets chip-ingress emit the
+// forwarded header verbatim.
+func sanitizeMetadataKey(key string) (string, bool) {
+	if key == "" {
+		return "", false
 	}
-	return out
+	lower := strings.ToLower(key)
+	for _, r := range lower {
+		if !isValidMetadataKeyChar(r) {
+			return "", false
+		}
+	}
+	if strings.HasSuffix(lower, "-bin") {
+		return "", false
+	}
+	return lower, true
+}
+
+// SanitizeMetadataHeaders validates a map of resource attributes for use as outgoing gRPC metadata
+// (e.g. via NewStaticHeaderProvider). Every emitted key is ResourceHeaderPrefix followed by the
+// validated key, unchanged, so service.name becomes resource_service.name and csa_public_key becomes
+// resource_csa_public_key. Chip-ingress forwards keys carrying that prefix onto every Kafka record a
+// request produces, emitting the key unchanged.
+//
+// The prefix is what makes this safe without a deny-list. The header interceptor appends to outgoing
+// metadata rather than replacing it, so an attribute landing on an existing header name would send
+// two values under one key — an attribute named X-Beholder-Node-Auth-Token would have broken
+// authentication that way. Because every emitted key is prefixed, no attribute can reach a reserved
+// gRPC key: that one becomes resource_x-beholder-node-auth-token, which collides with nothing, and
+// the same holds for authorization, te, content-type, the grpc- prefix and pseudo-headers.
+//
+// An attribute is omitted, rather than rewritten, when: its key is empty, exceeds
+// maxResourceAttributeKeyBytes, fails sanitizeMetadataKey's charset/[-bin] validation, or duplicates
+// an already-accepted key (first in sorted order of the original keys wins); its value exceeds
+// maxResourceAttributeValueBytes or is not printable ASCII (isPrintableASCII); or accepting it would
+// push the accepted count past maxResourceAttributes or the accepted key+value byte total past
+// maxResourceAttributeTotalBytes. Keys are processed in sorted order so every omission is
+// deterministic. dropped records each omission and why, for the caller to warn and meter.
+func SanitizeMetadataHeaders(in map[string]string) (map[string]string, []DroppedAttribute) {
+	keys := make([]string, 0, len(in))
+	for k := range in {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys) // deterministic: first in sorted order wins, and excess entries drop from the tail
+
+	out := make(map[string]string, len(in))
+	var dropped []DroppedAttribute
+	totalBytes := 0
+	for _, k := range keys {
+		if len(out) >= maxResourceAttributes {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonLimitExceeded})
+			continue
+		}
+		if len(k) > maxResourceAttributeKeyBytes {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidKey})
+			continue
+		}
+		name, ok := sanitizeMetadataKey(k)
+		if !ok {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidKey})
+			continue
+		}
+		name = ResourceHeaderPrefix + name
+		if _, dup := out[name]; dup {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonDuplicateKey})
+			continue
+		}
+		val := in[k]
+		if len(val) > maxResourceAttributeValueBytes {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidValue})
+			continue
+		}
+		if !isPrintableASCII(val) {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidValue})
+			continue
+		}
+		if totalBytes+len(name)-len(ResourceHeaderPrefix)+len(val) > maxResourceAttributeTotalBytes {
+			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonLimitExceeded})
+			continue
+		}
+		totalBytes += len(name) - len(ResourceHeaderPrefix) + len(val)
+		out[name] = val
+	}
+	return out, dropped
 }
 
 // newRotatingHeaderProvider returns a HeaderProvider that refreshes its

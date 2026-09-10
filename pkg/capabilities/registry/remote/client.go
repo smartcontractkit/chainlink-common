@@ -1,4 +1,4 @@
-package registry
+package remote
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
@@ -19,6 +20,7 @@ import (
 
 type baseCapabilityClient struct {
 	grpc pb.BaseCapabilityClient
+	conn grpc.ClientConnInterface
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
@@ -29,6 +31,17 @@ func (c *baseCapabilityClient) Info(ctx context.Context) (capabilities.Capabilit
 		return capabilities.CapabilityInfo{}, err
 	}
 	return pb.InfoReplyToInfo(reply)
+}
+
+// GetState reports the state of the underlying connection when it exposes one
+// (a [grpc.ClientConn] or the go-plugin broker's conn wrapper both do). The
+// registry's atomic capability wrappers use it to decide whether a registered
+// capability may be replaced.
+func (c *baseCapabilityClient) GetState() connectivity.State {
+	if sg, ok := c.conn.(interface{ GetState() connectivity.State }); ok {
+		return sg.GetState()
+	}
+	return connectivity.Shutdown
 }
 
 type executableClient struct {
@@ -225,7 +238,7 @@ func forwardTriggerResponseStream(ctx context.Context, receive func() (*pb.Trigg
 }
 
 func newBaseCapabilityClient(cc grpc.ClientConnInterface) *baseCapabilityClient {
-	return &baseCapabilityClient{grpc: pb.NewBaseCapabilityClient(cc)}
+	return &baseCapabilityClient{grpc: pb.NewBaseCapabilityClient(cc), conn: cc}
 }
 
 func newExecutableClient(cc grpc.ClientConnInterface) *executableClient {
@@ -237,5 +250,69 @@ func newTriggerExecutableClient(lggr logger.Logger, cc grpc.ClientConnInterface)
 		grpc:        pb.NewTriggerExecutableClient(cc),
 		lggr:        lggr,
 		cancelFuncs: map[string]func(){},
+	}
+}
+
+// TriggerCapabilityClient serves BaseCapability + TriggerExecutable over conn.
+type TriggerCapabilityClient struct {
+	*baseCapabilityClient
+	*triggerExecutableClient
+}
+
+var _ capabilities.TriggerCapability = (*TriggerCapabilityClient)(nil)
+
+// ExecutableCapabilityClient serves BaseCapability + Executable over conn.
+type ExecutableCapabilityClient struct {
+	*baseCapabilityClient
+	*executableClient
+}
+
+var _ capabilities.ExecutableCapability = (*ExecutableCapabilityClient)(nil)
+
+// CombinedCapabilityClient serves all three surfaces over conn.
+type CombinedCapabilityClient struct {
+	*baseCapabilityClient
+	*executableClient
+	*triggerExecutableClient
+}
+
+var _ capabilities.ExecutableAndTriggerCapability = (*CombinedCapabilityClient)(nil)
+
+// Wrap builds the capability surface capType promises, served over conn.
+//
+// Exported so a registry holding a Handle (an ID, a type and a callback
+// address) can dial that address itself and get back a real
+// capabilities.BaseCapability, and so the go-plugin registry client
+// (pkg/loop/internal/core/services/capability) can build the same surfaces over
+// its broker connections.
+//
+// Mirrors RegisterCapability on the serving side: same type, same services.
+func Wrap(lggr logger.Logger, conn grpc.ClientConnInterface, capType capabilities.CapabilityType) capabilities.BaseCapability {
+	base := newBaseCapabilityClient(conn)
+	switch capType {
+	case capabilities.CapabilityTypeTrigger:
+		return &TriggerCapabilityClient{
+			baseCapabilityClient:    base,
+			triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
+		}
+	case capabilities.CapabilityTypeAction,
+		capabilities.CapabilityTypeTarget,
+		capabilities.CapabilityTypeConsensus:
+		return &ExecutableCapabilityClient{
+			baseCapabilityClient: base,
+			executableClient:     newExecutableClient(conn),
+		}
+	case capabilities.CapabilityTypeCombined:
+		return &CombinedCapabilityClient{
+			baseCapabilityClient:    base,
+			executableClient:        newExecutableClient(conn),
+			triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
+		}
+	case capabilities.CapabilityTypeUnknown:
+		// Only the base capability service is registered, so only the base
+		// surface exists to wrap.
+		return base
+	default:
+		panic(fmt.Sprintf("unknown capability type %s", capType))
 	}
 }

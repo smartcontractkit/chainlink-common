@@ -1,4 +1,4 @@
-package registry
+package remote
 
 import (
 	"context"
@@ -35,23 +35,7 @@ func (s *baseCapabilityServer) Info(ctx context.Context, _ *emptypb.Empty) (*cap
 		return nil, err
 	}
 
-	ct, err := capabilitiespb.CapabilityTypeToProto(info.CapabilityType)
-	if err != nil {
-		return nil, err
-	}
-
-	spendTypes := make([]string, len(info.SpendTypes))
-	for i, t := range info.SpendTypes {
-		spendTypes[i] = string(t)
-	}
-
-	return &capabilitiespb.CapabilityInfoReply{
-		Id:             info.ID,
-		CapabilityType: ct,
-		Description:    info.Description,
-		IsLocal:        info.IsLocal,
-		SpendTypes:     spendTypes,
-	}, nil
+	return capabilitiespb.InfoToReply(info)
 }
 
 type executableServer struct {

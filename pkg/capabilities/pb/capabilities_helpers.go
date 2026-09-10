@@ -511,6 +511,27 @@ func TriggerResponseFromProto(resp *TriggerResponse) (capabilities.TriggerRespon
 	}, nil
 }
 
+// InfoToReply converts a capability info to its wire form.
+func InfoToReply(info capabilities.CapabilityInfo) (*CapabilityInfoReply, error) {
+	ct, err := CapabilityTypeToProto(info.CapabilityType)
+	if err != nil {
+		return nil, err
+	}
+
+	spendTypes := make([]string, len(info.SpendTypes))
+	for i, t := range info.SpendTypes {
+		spendTypes[i] = string(t)
+	}
+
+	return &CapabilityInfoReply{
+		Id:             info.ID,
+		CapabilityType: ct,
+		Description:    info.Description,
+		IsLocal:        info.IsLocal,
+		SpendTypes:     spendTypes,
+	}, nil
+}
+
 func InfoReplyToInfo(resp *CapabilityInfoReply) (capabilities.CapabilityInfo, error) {
 	var ct capabilities.CapabilityType
 	switch resp.CapabilityType {

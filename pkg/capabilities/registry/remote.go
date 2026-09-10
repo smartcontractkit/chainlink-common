@@ -15,6 +15,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
 	registrypb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/pb"
+	registryremote "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -87,44 +88,7 @@ func (c *remote) wrap(h *registrypb.CapabilityHandle) (capabilities.BaseCapabili
 		return nil, capType, err
 	}
 
-	wrapped, err := Wrap(c.lggr, conn, capType)
-	if err != nil {
-		return nil, capType, fmt.Errorf("capability %s: %w", h.GetCapabilityId(), err)
-	}
-	return wrapped, capType, nil
-}
-
-// Wrap builds the capability surface capType promises, served over conn.
-//
-// Exported so a registry holding a Handle (an ID, a type and a callback address) can dial that
-// address itself and get back a real capabilities.BaseCapability, the same way this remote does for
-// its own callers - server.Registry uses this to back Add with an actual value instead of only the
-// address.
-func Wrap(lggr logger.Logger, conn grpc.ClientConnInterface, capType capabilities.CapabilityType) (capabilities.BaseCapability, error) {
-	base := newBaseCapabilityClient(conn)
-	// Mirrors RegisterCapability on the serving side: same type, same services.
-	switch capType {
-	case capabilities.CapabilityTypeTrigger:
-		return &triggerCapabilityClient{
-			baseCapabilityClient:    base,
-			triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
-		}, nil
-	case capabilities.CapabilityTypeAction,
-		capabilities.CapabilityTypeTarget,
-		capabilities.CapabilityTypeConsensus:
-		return &executableCapabilityClient{
-			baseCapabilityClient: base,
-			executableClient:     newExecutableClient(conn),
-		}, nil
-	case capabilities.CapabilityTypeCombined:
-		return &combinedCapabilityClient{
-			baseCapabilityClient:    base,
-			executableClient:        newExecutableClient(conn),
-			triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
-		}, nil
-	default:
-		return nil, fmt.Errorf("no usable capability type (%s)", capType)
-	}
+	return registryremote.Wrap(c.lggr, conn, capType), capType, nil
 }
 
 // lookupFn is the shape of the registry's three handle-resolving RPCs.
@@ -301,33 +265,6 @@ func (c *remote) DONByID(ctx context.Context, donID uint32) (capabilities.DON, e
 	}
 	return DONFromProto(reply.GetDon()), nil
 }
-
-// --- capability surfaces ---
-
-// triggerCapabilityClient serves BaseCapability + TriggerExecutable.
-type triggerCapabilityClient struct {
-	*baseCapabilityClient
-	*triggerExecutableClient
-}
-
-var _ capabilities.TriggerCapability = (*triggerCapabilityClient)(nil)
-
-// executableCapabilityClient serves BaseCapability + Executable.
-type executableCapabilityClient struct {
-	*baseCapabilityClient
-	*executableClient
-}
-
-var _ capabilities.ExecutableCapability = (*executableCapabilityClient)(nil)
-
-// combinedCapabilityClient serves all three.
-type combinedCapabilityClient struct {
-	*baseCapabilityClient
-	*executableClient
-	*triggerExecutableClient
-}
-
-var _ capabilities.ExecutableAndTriggerCapability = (*combinedCapabilityClient)(nil)
 
 // --- conversions ---
 

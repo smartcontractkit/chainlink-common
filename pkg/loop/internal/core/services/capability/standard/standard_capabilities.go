@@ -248,7 +248,7 @@ func (c *StandardCapabilitiesClient) Infos(ctx context.Context) ([]capabilities.
 
 	var infos []capabilities.CapabilityInfo
 	for _, infoResponse := range infosResponse.Infos {
-		info, err := capability.InfoReplyToInfo(infoResponse)
+		info, err := capabilitiespb.InfoReplyToInfo(infoResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert capability info: %w", err)
 		}
@@ -440,7 +440,11 @@ func (s *standardCapabilitiesServer) Infos(ctx context.Context, request *emptypb
 
 	var infosReply []*capabilitiespb.CapabilityInfoReply
 	for _, info := range infos {
-		infosReply = append(infosReply, capability.InfoToReply(info))
+		reply, err := capabilitiespb.InfoToReply(info)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert capability info: %w", err)
+		}
+		infosReply = append(infosReply, reply)
 	}
 
 	return &capabilitiespb.CapabilityInfosReply{Infos: infosReply}, nil

@@ -65,6 +65,15 @@ type leafKey struct {
 	relPath  []string
 	viperKey string
 	flagName string
+
+	// listKey is the relative key path of the outermost list of structs this key sits inside,
+	// empty for an ordinary key. Everything under it is assembled column-wise rather than
+	// written straight into the settings map - see nested.go.
+	listKey []string
+	// aggregate marks the key of a list of structs itself. It carries no flag: it exists so a
+	// config file's array of tables reaches the decoder, to be merged with the columns that
+	// flags and env vars supply for the same field.
+	aggregate bool
 }
 
 type commandMetaData struct {
@@ -135,6 +144,21 @@ func getMeta(cmd *cobra.Command) *commandMetaData {
 //
 // Registering a non-pointer struct with such a rule is an error, since a value struct is never
 // absent and the rule could not work.
+//
+// A list field is bound as a repeatable flag: --tags a,b and --tags a --tags b are the same
+// value, and a list of lists takes one inner list per occurrence (--urls a,b --urls c) or the
+// whole value at once (--urls '[a,b],[c]'), which is also how an env var writes it. A list of
+// structs has no such form, so it is bound one flag per field of the element struct, each
+// holding a list that lines up by position:
+//
+//	Nodes []Node   =>   --nodes.name a,b --nodes.url ua,ub
+//
+// and a config file still writes it row-wise as an array of tables, which merges with those
+// flags per field. Nesting adds a list level rather than a new kind of key, so a list inside a
+// list of structs is a list of lists. See nested.go and listflag.go.
+//
+// A field with no text form - a map of structs, an interface, a list of either - gets no flag
+// and can only be set from a config file.
 //
 // opts controls the tag conventions, decoding, env prefixes, and doc generation; see
 // DefaultTOMLOptions.
@@ -221,6 +245,10 @@ func (e *targetEntry) bindEnv(v *viper.Viper, prefixes []string) {
 		return
 	}
 	for _, k := range e.keys {
+		if k.aggregate {
+			// A whole array of tables has no env var form; its columns each have one.
+			continue
+		}
 		envSuffix := strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(k.viperKey, ".", "_"), "-", "_"))
 		bindArgs := []string{k.viperKey}
 		for _, prefix := range prefixes {
@@ -353,7 +381,20 @@ func decodeEntry(cmd *cobra.Command, entry *targetEntry, v *viper.Viper) error {
 		if val == nil {
 			continue
 		}
-		setPath(settings, k.relPath, val)
+		if len(k.listKey) == 0 {
+			setPath(settings, k.relPath, val)
+			continue
+		}
+		// Everything under a list of structs is gathered per field rather than written straight
+		// into the tree: the config file supplies whole rows while flags and env vars supply one
+		// column each, and the two are only reconcilable once both have been collected. See
+		// nested.go.
+		c := columnsAt(settings, k.listKey)
+		if k.aggregate {
+			c.rows = val
+			continue
+		}
+		setPath(c.cols, k.relPath[len(k.listKey):], val)
 	}
 
 	decoder, err := mapstructure.NewDecoder(entry.opts.decoderConfigFor(entry.target))
@@ -361,6 +402,26 @@ func decodeEntry(cmd *cobra.Command, entry *targetEntry, v *viper.Viper) error {
 		return err
 	}
 	return decoder.Decode(settings)
+}
+
+// columnsAt returns the columns collected for the list of structs at the nested path within m,
+// creating it (and any intermediate maps) on first use.
+func columnsAt(m map[string]any, path []string) *columns {
+	for _, p := range path[:len(path)-1] {
+		next, ok := m[p].(map[string]any)
+		if !ok {
+			next = map[string]any{}
+			m[p] = next
+		}
+		m = next
+	}
+	last := path[len(path)-1]
+	c, ok := m[last].(*columns)
+	if !ok {
+		c = newColumns()
+		m[last] = c
+	}
+	return c
 }
 
 // setPath assigns val at the nested path within m, creating intermediate maps as needed.
@@ -680,10 +741,34 @@ func copyDefaultsRecursive(cmd *cobra.Command, entry *targetEntry, opts Options,
 			continue
 		}
 
+		// A list of structs has no flag of its own - its fields are bound column-wise
+		// underneath it (see nested.go) - so "did the user set this?" has to ask about every
+		// key under the list, not about a flag named after the list itself.
+		if isStructList(targetField.Type()) {
+			if !entry.anyKeySetUnder(cmd, viperKey, prefixes, v) {
+				targetField.Set(profileField)
+			}
+			continue
+		}
+
 		if !isExplicitlySet(cmd, flagNameFromViperKey(relKey), viperKey, prefixes, v) {
 			targetField.Set(profileField)
 		}
 	}
+}
+
+// anyKeySetUnder reports whether any of the entry's keys at or below viperKey was explicitly
+// set, which is what stands in for isExplicitlySet on a field bound as several keys.
+func (e *targetEntry) anyKeySetUnder(cmd *cobra.Command, viperKey string, prefixes []string, v *viper.Viper) bool {
+	for _, k := range e.keys {
+		if k.viperKey != viperKey && !strings.HasPrefix(k.viperKey, viperKey+".") {
+			continue
+		}
+		if isExplicitlySet(cmd, k.flagName, k.viperKey, prefixes, v) {
+			return true
+		}
+	}
+	return false
 }
 
 // isExplicitlySet reports whether viperKey's value came from something other than its
@@ -750,12 +835,27 @@ func registerStructFlagsInternal(cmd *cobra.Command, entry *targetEntry, isSubco
 
 	return walkStruct(entry.target, entry.opts, structVisitor{
 		branch: func(m fieldMeta) (bool, error) {
+			if err := entry.opts.checkSquashIsStructOnly(m); err != nil {
+				return false, err
+			}
+			if m.isStructList {
+				// Only the outermost list gets a key of its own. An inner one lives inside its
+				// parent's rows, where no viper key reaches it - a config file's
+				// [[chains.nodes]] is part of the value of "chains", not of a "chains.nodes".
+				if m.listDepth == 0 {
+					registerStructListKey(entry, m)
+				}
+				return false, nil
+			}
 			if err := checkExclusiveStructIsPointer(m); err != nil {
 				return false, err
 			}
 			return false, entry.opts.checkEmbeddedIsUnnamed(m)
 		},
 		leaf: func(m fieldMeta) error {
+			if err := entry.opts.checkSquashIsStructOnly(m); err != nil {
+				return err
+			}
 			bindLeafFlag(cmd, entry, isSubcommand, m, v)
 			return nil
 		},
@@ -779,27 +879,66 @@ func checkExclusiveStructIsPointer(m fieldMeta) error {
 		m.key(), strings.Join(rules, "/"), m.elemType.Name(), m.elemType.Name())
 }
 
-func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m fieldMeta, v *viper.Viper) {
-	namespace := entry.namespace
-
-	relKey := m.key()
-	viperKey := relKey
-	if namespace != "" {
-		viperKey = namespace + "." + relKey
+// entryKeyNames returns the viper key and CLI flag name a field's config key binds under, which
+// differ for a namespaced entry (see leafKey).
+func entryKeyNames(entry *targetEntry, relKey string) (viperKey, flagName string) {
+	viperKey = relKey
+	if entry.namespace != "" {
+		viperKey = entry.namespace + "." + relKey
 	}
-
 	flagKey := relKey
 	if entry.flagPrefix != "" {
 		flagKey = entry.flagPrefix + "." + relKey
 	}
-	flagName := flagNameFromViperKey(flagKey)
-	entry.keys = append(entry.keys, leafKey{relPath: m.keyPath, viperKey: viperKey, flagName: flagName})
+	return viperKey, flagNameFromViperKey(flagKey)
+}
+
+// registerStructListKey records the key of a list of structs itself, so a config file's array of
+// tables is read and merged with the columnar flags bound for the same field. It has no flag of
+// its own - an array of tables has no command line form - and no env var either, for the same
+// reason: the individual columns underneath it have both.
+func registerStructListKey(entry *targetEntry, m fieldMeta) {
+	viperKey, _ := entryKeyNames(entry, m.key())
+	entry.keys = append(entry.keys, leafKey{
+		relPath:   m.keyPath,
+		viperKey:  viperKey,
+		listKey:   m.keyPath,
+		aggregate: true,
+	})
+}
+
+func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m fieldMeta, v *viper.Viper) {
+	relKey := m.key()
+	viperKey, flagName := entryKeyNames(entry, relKey)
+	entry.keys = append(entry.keys, leafKey{
+		relPath:  m.keyPath,
+		viperKey: viperKey,
+		flagName: flagName,
+		listKey:  m.listKeyPath,
+	})
 	defaultVal := m.elem.Interface()
 	usageMsg := m.field.Tag.Get("usage")
 
 	flags := cmd.Flags()
 	if !isSubcommand {
 		flags = cmd.PersistentFlags()
+	}
+
+	// A field inside a list of structs is bound as a list of its own values, one per element of
+	// the list it lives in (and one level deeper again for every further list between) - see
+	// nested.go. Nothing else about it changes, so a duration in a list is still written "5s".
+	if m.listDepth > 0 {
+		elemDepth, ok := listDepthOf(m.elemType)
+		if !ok {
+			// A map (or an interface, or a list of either) has no text form to repeat once per
+			// element, so it stays config-file-only, the way an unsupported map does below.
+			return
+		}
+		def := collectColumn(m.listRoot, m.listPath, elemDepth)
+		v.SetDefault(viperKey, renderList(def))
+		flags.Var(newTextListValue(def, m.listDepth+elemDepth), flagName, usageMsg)
+		_ = v.BindPFlag(viperKey, flags.Lookup(flagName))
+		return
 	}
 
 	switch {
@@ -818,13 +957,27 @@ func bindLeafFlag(cmd *cobra.Command, entry *targetEntry, isSubcommand bool, m f
 	case m.elemType == durationType:
 		v.SetDefault(viperKey, defaultVal)
 		flags.Duration(flagName, time.Duration(m.elem.Int()), usageMsg)
-	case m.elemType.Kind() == reflect.Slice && m.elemType.Elem().Kind() == reflect.String:
-		var def []string
-		if !m.elem.IsNil() {
-			def = m.elem.Interface().([]string)
+	case m.elemType.Kind() == reflect.Slice && m.elemType.Elem().Kind() == reflect.Uint8:
+		// A byte slice is text - a JSON blob, a PEM key - rather than a list of numbers, and
+		// weak typing converts a string straight into one. Rendering it as a list ("[123 34]")
+		// would give the flag a default that cannot be read back.
+		text := string(m.elem.Bytes())
+		v.SetDefault(viperKey, text)
+		flags.String(flagName, text, usageMsg)
+	case m.elemType.Kind() == reflect.Slice || m.elemType.Kind() == reflect.Array:
+		depth, ok := listDepthOf(m.elemType)
+		if !ok {
+			// A list of structs is handled by the walk itself, so what is left here is a list
+			// with no text form at all - of maps, or of interfaces. Same reasoning as the
+			// unsupported map below: no flag is better than a broken one.
+			return
 		}
-		v.SetDefault(viperKey, def)
-		flags.StringSlice(flagName, def, usageMsg)
+		v.SetDefault(viperKey, defaultVal)
+		flags.Var(newTextListValue(treeOf(m.elem, depth), depth), flagName, usageMsg)
+	case m.elemType.Kind() == reflect.Interface, m.elemType.Kind() == reflect.Func, m.elemType.Kind() == reflect.Chan:
+		// No text form, so no flag - see the unsupported map below. The key stays registered, so
+		// a config file can still supply one if the decoder knows how to read it.
+		return
 	case m.elemType.Kind() == reflect.Map:
 		// Only a map whose keys are text values, and whose values are text values or lists of
 		// them, has a flag form - "k=v;k=v" (see mapflag.go). Anything else, a map of structs

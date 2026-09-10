@@ -31,6 +31,22 @@ type fieldMeta struct {
 	// encoding.TextUnmarshaler, meaning it should be treated as an opaque leaf value even
 	// though its Kind may be Struct.
 	isTextUnmarshaler bool
+	// isStructList is true for the field that opens a list of structs - the branch whose
+	// element struct the walk descends into. See nested.go.
+	isStructList bool
+	// listDepth is how many lists of structs this field sits inside: 0 for an ordinary field,
+	// 1 for a field of a []Node's element, 2 for a field of a []Node's element reached through
+	// a []Chain, and so on. It is the number of list levels the field's flag carries.
+	listDepth int
+	// listRoot is the outermost list-of-structs value this field lives inside (valid only when
+	// listDepth > 0) and listPath the chain of Go field names from that list's element struct
+	// down to the field. Together they recover the field's compiled-in defaults column-wise,
+	// through however many further lists lie between - see collectColumn.
+	listRoot reflect.Value
+	listPath []string
+	// listKeyPath is the config key path of that outermost list, which is the key the config
+	// file's array of tables arrives under.
+	listKeyPath []string
 }
 
 // key joins keyPath into a dotted key, e.g. "chain.id".
@@ -57,9 +73,15 @@ func (o Options) tagKey(field reflect.StructField) (key string, squash bool) {
 	if key == "" {
 		key = strcase.ToKebab(field.Name)
 	}
-	for _, p := range parts[1:] {
-		if p == o.squashOption() {
-			squash = true
+	// Only a struct can be squashed - mapstructure rejects the option on anything else, and a
+	// TOML encoder reads the same `,inline` as "write this value on one line", which several
+	// config structs carry on plain scalars. Honouring it there would drop those fields' key
+	// segments and collapse every one of them onto their parent's name.
+	if squashable := isSquashableType(field.Type); squashable {
+		for _, p := range parts[1:] {
+			if p == o.squashOption() {
+				squash = true
+			}
 		}
 	}
 
@@ -72,6 +94,15 @@ func (o Options) tagKey(field reflect.StructField) (key string, squash bool) {
 	}
 
 	return key, squash
+}
+
+// isSquashableType reports whether a field of type t can be flattened into its parent: a
+// struct, or a pointer to one.
+func isSquashableType(t reflect.Type) bool {
+	for t.Kind() == reflect.Pointer {
+		t = t.Elem()
+	}
+	return t.Kind() == reflect.Struct
 }
 
 // implementsTextUnmarshaler reports whether t (or *t) implements encoding.TextUnmarshaler.
@@ -140,10 +171,35 @@ func walkStruct(target any, opts Options, visitor structVisitor) error {
 	if v.Kind() != reflect.Struct {
 		return fmt.Errorf("target must be a struct or pointer to struct")
 	}
-	return walkStructValue(v, v.Type(), nil, nil, opts, visitor)
+	return walkStructValue(v, v.Type(), walkScope{ancestors: []reflect.Type{v.Type()}}, opts, visitor)
 }
 
-func walkStructValue(v reflect.Value, t reflect.Type, goPath, keyPath []string, opts Options, visitor structVisitor) error {
+// walkScope is where the walk currently is: the paths accumulated to here, plus the list-of-
+// structs context those paths run through (see fieldMeta's listDepth/listRoot/listPath).
+type walkScope struct {
+	goPath, keyPath []string
+	listDepth       int
+	listRoot        reflect.Value
+	listPath        []string
+	listKeyPath     []string
+	// ancestors is the chain of struct types the walk is currently inside. A struct that
+	// contains itself - directly, through a pointer, or through a list of itself - describes an
+	// unbounded set of keys, so the recursion stops the second time a type appears rather than
+	// running out of stack.
+	ancestors []reflect.Type
+}
+
+func (s walkScope) descendsInto(t reflect.Type) bool {
+	for _, a := range s.ancestors {
+		if a == t {
+			return true
+		}
+	}
+	return false
+}
+
+func walkStructValue(v reflect.Value, t reflect.Type, scope walkScope, opts Options, visitor structVisitor) error {
+	goPath, keyPath := scope.goPath, scope.keyPath
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		if field.PkgPath != "" {
@@ -180,9 +236,17 @@ func walkStructValue(v reflect.Value, t reflect.Type, goPath, keyPath []string, 
 			elem:              elemVal,
 			elemType:          elemType,
 			isTextUnmarshaler: isTextUnmarshaler,
+			listDepth:         scope.listDepth,
+			listRoot:          scope.listRoot,
+			listPath:          append(append([]string{}, scope.listPath...), field.Name),
+			listKeyPath:       scope.listKeyPath,
 		}
 
-		if elemType.Kind() == reflect.Struct && !isTextUnmarshaler {
+		// A list of structs is a branch like a nested struct, one list level deeper: its
+		// element struct's fields are walked, and each of their flags carries a list with one
+		// entry per element rather than a single value. See nested.go.
+		if isStructList(elemType) && !isTextUnmarshaler {
+			meta.isStructList = true
 			skip := false
 			if visitor.branch != nil {
 				var err error
@@ -194,7 +258,73 @@ func walkStructValue(v reflect.Value, t reflect.Type, goPath, keyPath []string, 
 			if skip {
 				continue
 			}
-			if err := walkStructValue(elemVal, elemType, fieldGoPath, fieldKeyPath, opts, visitor); err != nil {
+
+			inner := elemType.Elem()
+			for inner.Kind() == reflect.Pointer {
+				inner = inner.Elem()
+			}
+			if scope.descendsInto(inner) {
+				continue
+			}
+			next := walkScope{
+				goPath:      fieldGoPath,
+				keyPath:     fieldKeyPath,
+				listDepth:   scope.listDepth + 1,
+				listRoot:    scope.listRoot,
+				listPath:    meta.listPath,
+				listKeyPath: scope.listKeyPath,
+				ancestors:   append(append([]reflect.Type{}, scope.ancestors...), inner),
+			}
+			if scope.listDepth == 0 {
+				// The outermost list is where a column's defaults are read from, and the key
+				// its config file rows arrive under: collectColumn walks down through every
+				// list below it on its own.
+				next.listRoot, next.listPath, next.listKeyPath = elemVal, nil, fieldKeyPath
+			}
+			// There is no single element to read defaults from, so the walk carries the first
+			// one where there is one - it is what documentation shows as the example row - and
+			// a zero value otherwise. Per-field defaults come from the column (see
+			// collectColumn), not from this value.
+			exemplar := reflect.Zero(inner)
+			if elemVal.IsValid() && elemVal.Kind() != reflect.Pointer && elemVal.Len() > 0 {
+				first := elemVal.Index(0)
+				for first.Kind() == reflect.Pointer {
+					if first.IsNil() {
+						first = reflect.Zero(inner)
+						break
+					}
+					first = first.Elem()
+				}
+				exemplar = first
+			}
+			if err := walkStructValue(exemplar, inner, next, opts, visitor); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if elemType.Kind() == reflect.Struct && !isTextUnmarshaler {
+			skip := false
+			if visitor.branch != nil {
+				var err error
+				skip, err = visitor.branch(meta)
+				if err != nil {
+					return err
+				}
+			}
+			if skip || scope.descendsInto(elemType) {
+				continue
+			}
+			next := walkScope{
+				goPath:      fieldGoPath,
+				keyPath:     fieldKeyPath,
+				listDepth:   scope.listDepth,
+				listRoot:    scope.listRoot,
+				listPath:    meta.listPath,
+				listKeyPath: scope.listKeyPath,
+				ancestors:   append(append([]reflect.Type{}, scope.ancestors...), elemType),
+			}
+			if err := walkStructValue(elemVal, elemType, next, opts, visitor); err != nil {
 				return err
 			}
 			continue

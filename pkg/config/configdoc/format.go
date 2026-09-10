@@ -51,3 +51,22 @@ type Format interface {
 	// Name returns the markdown name for code blocks
 	Name() string
 }
+
+// ArrayOfTablesFormat is implemented by a Format whose syntax spells a repeated table - the
+// section a list of structs is written as - differently from a plain one, as TOML's [[path]]
+// does. It is optional: a Format that doesn't implement it documents such a field as an
+// ordinary table.
+type ArrayOfTablesFormat interface {
+	Format
+	// ArrayOfTables renders the opening of a repeated section, given its dotted path.
+	ArrayOfTables(path string) string
+}
+
+// ArrayOfTables renders path as a repeated section in f's syntax, falling back to a plain table
+// for a Format that does not distinguish the two.
+func ArrayOfTables(f Format, path string) string {
+	if a, ok := f.(ArrayOfTablesFormat); ok {
+		return a.ArrayOfTables(path)
+	}
+	return f.Table(path)
+}

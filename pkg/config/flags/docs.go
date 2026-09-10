@@ -71,7 +71,8 @@ func addDocsCommand(root *cobra.Command, opts Options) {
 //     placeholder value shown.
 //   - a `flagdocs` tag adjusts how the field appears in the example config; see flagDocsTag.
 //
-// Arrays/slices of structs ([[array-of-tables]] in hand-written docs) are not supported.
+// A list of structs is documented as a repeated table ([[array-of-tables]] in TOML), showing
+// one element - the first of the struct's own default, if it has one.
 //
 // Each command's block is preceded by a divider heading - "Global Configuration" for root,
 // "Command: <path>" for every subcommand - naming exactly which `myapp ...` invocation the
@@ -173,7 +174,7 @@ func exampleDoc(target any, namespace string, opts Options) (string, error) {
 				return false, nil
 			}
 			currentSection = section
-			sb.WriteString("\n" + f.Table(section) + "\n")
+			sb.WriteString("\n" + tableHeader(f, section, m.isStructList) + "\n")
 			return false, nil
 		},
 		leaf: func(m fieldMeta) error {
@@ -201,6 +202,15 @@ func exampleDoc(target any, namespace string, opts Options) (string, error) {
 	}
 
 	return sb.String(), nil
+}
+
+// tableHeader opens a section: a repeated one for a list of structs, whose table is written
+// once per element, and a plain one otherwise.
+func tableHeader(f configdoc.Format, section string, repeated bool) string {
+	if repeated {
+		return configdoc.ArrayOfTables(f, section)
+	}
+	return f.Table(section)
 }
 
 // structToDocs renders target's fields as annotated config-document lines in opts' format. If namespace is
@@ -252,8 +262,15 @@ func structToDocs(target any, namespace string, opts Options) (string, error) {
 			}
 			currentSection = section
 
-			writeComments(&sb, f, append(nonEmpty(m.field.Tag.Get("usage")), squashedUsages(m.elemType, opts)...))
-			sb.WriteString(f.Table(section) + "\n")
+			elemType := m.elemType
+			if m.isStructList {
+				elemType = elemType.Elem()
+				for elemType.Kind() == reflect.Pointer {
+					elemType = elemType.Elem()
+				}
+			}
+			writeComments(&sb, f, append(nonEmpty(m.field.Tag.Get("usage")), squashedUsages(elemType, opts)...))
+			sb.WriteString(tableHeader(f, section, m.isStructList) + "\n")
 			return false, nil
 		},
 		leaf: func(m fieldMeta) error {

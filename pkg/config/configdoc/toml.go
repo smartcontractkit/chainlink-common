@@ -23,6 +23,10 @@ func (TOML) Comment(text string) string { return "# " + text }
 
 func (TOML) Table(path string) string { return "[" + path + "]" }
 
+// ArrayOfTables opens a repeated table, which is how TOML writes a list of structs: the section
+// is repeated once per element rather than appearing a single time.
+func (TOML) ArrayOfTables(path string) string { return "[[" + path + "]]" }
+
 func (TOML) Field(key, value, marker string) string {
 	if marker == "" {
 		return fmt.Sprintf("%s = %s", key, value)

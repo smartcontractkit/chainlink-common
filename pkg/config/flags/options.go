@@ -97,6 +97,30 @@ func (o Options) checkEmbeddedIsUnnamed(m fieldMeta) error {
 		m.field.Name, m.elemType.Name(), o.tagName())
 }
 
+// checkSquashIsStructOnly rejects the squash tag option on a field that is not a struct.
+//
+// Squashing means "contribute your fields to the parent", which only a struct can do:
+// mapstructure rejects the option on anything else ("unsupported type for squash"), and the
+// walk that names the flags has to drop the field's own key segment to stay in step with it -
+// so several sibling scalars all marked squashed collapse onto one flag name. TOML's own
+// `,inline` is a different instruction ("write this value on one line") that a config struct
+// may reasonably carry on a scalar, and with SquashTagOption "inline" the two are spelled the
+// same; saying so here beats a duplicate flag or a decode failure later. Drop the option.
+func (o Options) checkSquashIsStructOnly(m fieldMeta) error {
+	if isSquashableType(m.field.Type) {
+		return nil
+	}
+	tag := m.field.Tag.Get(o.tagName())
+	for _, p := range strings.Split(tag, ",")[1:] {
+		if p != o.squashOption() {
+			continue
+		}
+		return fmt.Errorf("%s: the %q tag option flattens a struct into its parent and cannot be used on a %s; remove it from %s",
+			m.key(), o.squashOption(), m.field.Type, m.field.Name)
+	}
+	return nil
+}
+
 // hasExplicitName reports whether field's tag names it, as opposed to carrying only options
 // (`toml:",inline"`) or no tag at all.
 func (o Options) hasExplicitName(field reflect.StructField) bool {
@@ -121,19 +145,24 @@ func (o Options) format() configdoc.Format {
 // comma-separated StringSlice parsing would, and any TextUnmarshaler from its string form.
 var stringCoercionHooks = mapstructure.ComposeDecodeHookFunc(
 	mapstructure.StringToTimeDurationHookFunc(),
+	columnsToRowsHookFunc(),
 	stringToTextSliceHookFunc(),
 	stringToMapHookFunc(),
 	mapstructure.TextUnmarshallerHookFunc(),
 )
 
-// stringToTextSliceHookFunc splits a comma-separated string into the elements of a list, the
-// way pflag's own StringSlice parses one.
+// stringToTextSliceHookFunc splits the text form of a list (see listflag.go) into its elements:
+// "a,b" or the bracketed "[a,b]" a list flag writes, and, one level at a time, the "[a,b],[c]"
+// of a list of lists. Both a flag and an env var deliver a list as one string - a list flag is
+// deliberately not one of the flag types viper parses itself - so this is where every source
+// that isn't a config file becomes a list.
 //
 // mapstructure's StringToSliceHookFunc is not used because it only splits into []string
 // exactly (`t != reflect.SliceOf(f)`), so a []int or a []config.Duration - including one
 // inside a map, which is the whole point of "primary=a,b" - would arrive as a single element
-// holding the unsplit string. The elements stay strings here; the hooks after this one and
-// WeaklyTypedInput convert each to the list's real element type.
+// holding the unsplit string. The elements stay strings here; this hook fires again for each
+// one that is itself a list, and the hooks after it plus WeaklyTypedInput convert the rest to
+// the list's real element type.
 func stringToTextSliceHookFunc() mapstructure.DecodeHookFuncType {
 	return func(from, to reflect.Type, data any) (any, error) {
 		if from.Kind() != reflect.String {
@@ -144,15 +173,31 @@ func stringToTextSliceHookFunc() mapstructure.DecodeHookFuncType {
 		}
 		// A []byte is text rather than a list of numbers - weak typing converts a string
 		// straight into one - and a slice that unmarshals itself from text owns its own form.
-		if to.Elem().Kind() == reflect.Uint8 || implementsTextUnmarshaler(to) || !isTextValueType(to.Elem()) {
+		if to.Elem().Kind() == reflect.Uint8 || implementsTextUnmarshaler(to) {
+			return data, nil
+		}
+		if _, ok := listDepthOf(to.Elem()); !ok {
 			return data, nil
 		}
 
-		raw := data.(string)
-		if raw == "" {
+		raw := strings.TrimSpace(data.(string))
+		inner, _ := trimListBrackets(raw)
+		if strings.TrimSpace(inner) == "" {
 			return []string{}, nil
 		}
-		return strings.Split(raw, mapListSep), nil
+
+		parts := splitList(inner)
+		// An element that is itself a list keeps its brackets, for the next pass; only the text
+		// at the bottom is unquoted, which is what lets one hold a comma or a bracket.
+		leaf := isTextLeafType(to.Elem())
+		for i, p := range parts {
+			p = strings.TrimSpace(p)
+			if leaf {
+				p = unquoteListElem(p)
+			}
+			parts[i] = p
+		}
+		return parts, nil
 	}
 }
 

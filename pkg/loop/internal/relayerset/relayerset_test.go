@@ -1569,6 +1569,9 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 	retrievedRelayer, err := rc.Get(ctx, types.RelayID{Network: "N1", ChainID: "C1"})
 	require.NoError(t, err)
 
+	key1 := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=="
+	key2 := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAg=="
+
 	tests := []struct {
 		name string
 		run  func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService)
@@ -1578,12 +1581,12 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
 				liveUntil := uint32(9999)
 				mockSvc.EXPECT().GetLedgerEntries(mock.Anything, stellartypes.GetLedgerEntriesRequest{
-					Keys: []string{"a2V5MQ=="}, // base64("key1")
+					Keys: []string{key1},
 				}).Return(stellartypes.GetLedgerEntriesResponse{
 					LatestLedger: 80,
 					Entries: []stellartypes.LedgerEntryResult{
 						{
-							KeyXDR:             "a2V5MQ==", // base64("key1")
+							KeyXDR:             key1,
 							DataXDR:            "ZGF0YTE=", // base64("data1")
 							LastModifiedLedger: 70,
 							LiveUntilLedgerSeq: &liveUntil,
@@ -1591,25 +1594,25 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 					},
 				}, nil)
 
-				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5MQ=="}})
+				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{key1}})
 				require.NoError(t, err)
 				require.Equal(t, uint32(80), resp.LatestLedger)
 				require.Len(t, resp.Entries, 1)
 				require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)
 				require.Equal(t, liveUntil, *resp.Entries[0].LiveUntilLedgerSeq)
-				require.Equal(t, "a2V5MQ==", resp.Entries[0].KeyXDR)
+				require.Equal(t, key1, resp.Entries[0].KeyXDR)
 			},
 		},
 		{
 			name: "GetLedgerEntries_NoLiveUntil",
 			run: func(t *testing.T, svc types.StellarService, mockSvc *mocks2.StellarService) {
 				mockSvc.EXPECT().GetLedgerEntries(mock.Anything, stellartypes.GetLedgerEntriesRequest{
-					Keys: []string{"a2V5Mg=="}, // base64("key2")
+					Keys: []string{key2},
 				}).Return(stellartypes.GetLedgerEntriesResponse{
 					LatestLedger: 90,
 					Entries: []stellartypes.LedgerEntryResult{
 						{
-							KeyXDR:             "a2V5Mg==", // base64("key2")
+							KeyXDR:             key2,
 							DataXDR:            "data2XDR", // valid 8-char base64
 							LastModifiedLedger: 85,
 							LiveUntilLedgerSeq: nil,
@@ -1617,7 +1620,7 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 					},
 				}, nil)
 
-				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5Mg=="}})
+				resp, err := svc.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{key2}})
 				require.NoError(t, err)
 				require.Equal(t, uint32(90), resp.LatestLedger)
 				require.Len(t, resp.Entries, 1)

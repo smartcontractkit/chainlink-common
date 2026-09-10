@@ -1,6 +1,7 @@
 package stellar
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -9,16 +10,25 @@ import (
 	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar/scval"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/chains/stellar"
+	"github.com/stellar/go-stellar-sdk/xdr"
 )
 
 // ConvertGetLedgerEntriesRequestToProto converts a domain GetLedgerEntriesRequest to its proto representation.
 func ConvertGetLedgerEntriesRequestToProto(req stellar.GetLedgerEntriesRequest) (*GetLedgerEntriesRequest, error) {
+	if len(req.Keys) == 0 {
+		return nil, errors.New("ledger entry keys are empty")
+	}
+
 	keys := make([][]byte, len(req.Keys))
 	var errs []error
 	for i, k := range req.Keys {
 		b, err := base64.StdEncoding.DecodeString(k)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("key[%d]: invalid base64 XDR %q: %w", i, k, err))
+			continue
+		}
+		if err := validateLedgerKeyXDR(b); err != nil {
+			errs = append(errs, fmt.Errorf("key[%d]: invalid LedgerKey XDR: %w", i, err))
 			continue
 		}
 		keys[i] = b
@@ -40,9 +50,35 @@ func ConvertGetLedgerEntriesRequestFromProto(p *GetLedgerEntriesRequest) (stella
 	rawKeys := p.GetKeys()
 	keys := make([]string, len(rawKeys))
 	for i, k := range rawKeys {
+		if err := validateLedgerKeyXDR(k); err != nil {
+			return stellar.GetLedgerEntriesRequest{}, fmt.Errorf("key[%d]: invalid LedgerKey XDR: %w", i, err)
+		}
 		keys[i] = base64.StdEncoding.EncodeToString(k)
 	}
 	return stellar.GetLedgerEntriesRequest{Keys: keys}, nil
+}
+
+func validateLedgerKeyXDR(b []byte) error {
+	if len(b) == 0 {
+		return fmt.Errorf("empty XDR")
+	}
+
+	var key xdr.LedgerKey
+	if err := key.UnmarshalBinary(b); err != nil {
+		return err
+	}
+
+	encoded, err := key.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	if !bytes.Equal(encoded, b) {
+		if len(b) > len(encoded) {
+			return fmt.Errorf("trailing %d bytes", len(b)-len(encoded))
+		}
+		return fmt.Errorf("non-canonical LedgerKey XDR encoding")
+	}
+	return nil
 }
 
 // ConvertLedgerEntryResultToProto converts a domain LedgerEntryResult to its proto representation.

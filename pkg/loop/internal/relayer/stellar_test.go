@@ -46,16 +46,20 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 	defer conn.Close()
 
 	client := &StellarClient{grpcClient: stelpb.NewStellarClient(conn)}
+	key1 := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ=="
+	key2 := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAg=="
+	key3 := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAw=="
+	key4 := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABA=="
 
 	t.Run("GetLedgerEntries_WithLiveUntil", func(t *testing.T) {
 		liveUntil := uint32(500)
 		svc.getLedgerEntries = func(_ context.Context, req stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
-			require.Equal(t, []string{"a2V5MQ=="}, req.Keys) // base64("key1")
+			require.Equal(t, []string{key1}, req.Keys)
 			return stellartypes.GetLedgerEntriesResponse{
 				LatestLedger: 50,
 				Entries: []stellartypes.LedgerEntryResult{
 					{
-						KeyXDR:             "a2V5MQ==", // base64("key1")
+						KeyXDR:             key1,
 						DataXDR:            "ZGF0YTE=", // base64("data1")
 						LastModifiedLedger: 30,
 						LiveUntilLedgerSeq: &liveUntil,
@@ -64,11 +68,11 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			}, nil
 		}
 
-		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5MQ=="}})
+		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{key1}})
 		require.NoError(t, err)
 		require.Equal(t, uint32(50), resp.LatestLedger)
 		require.Len(t, resp.Entries, 1)
-		require.Equal(t, "a2V5MQ==", resp.Entries[0].KeyXDR)
+		require.Equal(t, key1, resp.Entries[0].KeyXDR)
 		require.Equal(t, "ZGF0YTE=", resp.Entries[0].DataXDR)
 		require.Equal(t, uint32(30), resp.Entries[0].LastModifiedLedger)
 		require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)
@@ -81,7 +85,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 				LatestLedger: 60,
 				Entries: []stellartypes.LedgerEntryResult{
 					{
-						KeyXDR:             "a2V5Mg==", // base64("key2")
+						KeyXDR:             key2,
 						DataXDR:            "data2XDR", // valid 8-char base64
 						LastModifiedLedger: 40,
 						LiveUntilLedgerSeq: nil,
@@ -90,7 +94,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 			}, nil
 		}
 
-		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"a2V5Mg=="}})
+		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{key2}})
 		require.NoError(t, err)
 		require.Len(t, resp.Entries, 1)
 		require.Nil(t, resp.Entries[0].LiveUntilLedgerSeq)
@@ -101,19 +105,18 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 		// Two entries in one response: one with LiveUntilLedgerSeq set, one without.
 		// Guards against the loop in ConvertGetLedgerEntriesResponseFromProto carrying
 		// the HasLiveUntilLedgerSeq bool from one entry into the next.
-		// "azE=", "azI=", "ZDE=", "ZDI=" are valid 4-char base64 values.
 		liveUntil := uint32(777)
 		svc.getLedgerEntries = func(_ context.Context, _ stellartypes.GetLedgerEntriesRequest) (stellartypes.GetLedgerEntriesResponse, error) {
 			return stellartypes.GetLedgerEntriesResponse{
 				LatestLedger: 70,
 				Entries: []stellartypes.LedgerEntryResult{
-					{KeyXDR: "azE=", DataXDR: "ZDE=", LastModifiedLedger: 10, LiveUntilLedgerSeq: &liveUntil},
-					{KeyXDR: "azI=", DataXDR: "ZDI=", LastModifiedLedger: 20, LiveUntilLedgerSeq: nil},
+					{KeyXDR: key3, DataXDR: "ZDE=", LastModifiedLedger: 10, LiveUntilLedgerSeq: &liveUntil},
+					{KeyXDR: key4, DataXDR: "ZDI=", LastModifiedLedger: 20, LiveUntilLedgerSeq: nil},
 				},
 			}, nil
 		}
 
-		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{"azE=", "azI="}})
+		resp, err := client.GetLedgerEntries(ctx, stellartypes.GetLedgerEntriesRequest{Keys: []string{key3, key4}})
 		require.NoError(t, err)
 		require.Len(t, resp.Entries, 2)
 		require.NotNil(t, resp.Entries[0].LiveUntilLedgerSeq)

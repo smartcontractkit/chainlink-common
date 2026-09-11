@@ -11,6 +11,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
+// ErrMissingTenant is returned when a scoped limiter is used without the tenant that its
+// scope requires in ctx. Unlike a settings read failure, where the limiter still resolves a
+// usable value alongside the error, no lookup is attempted here, so callers must not treat
+// the returned value as a limit. It signals that the CRE context was never populated, which
+// is a programming error rather than a degraded system. Deliberately not a [LimitError]:
+// nothing was limited.
+var ErrMissingTenant = errors.New("missing tenant")
+
 // LimitError is implemented by errors returned when a limit is exceeded.
 // Use [errors.As] to identify limit errors, for example:
 //

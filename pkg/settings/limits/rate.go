@@ -439,7 +439,7 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 			return UnlimitedRateLimiter(), s.wg.Done, nil
 		}
 		s.wg.Done()
-		return nil, nil, fmt.Errorf("failed to get rate limiter for scope %s: %w", s.scope, ErrMissingTenant)
+		return nil, nil, fmt.Errorf("failed to get rate limiter: %w", ErrMissingTenant{Scope: s.scope})
 	}
 
 	limiter := s.newRateLimiter(tenant)

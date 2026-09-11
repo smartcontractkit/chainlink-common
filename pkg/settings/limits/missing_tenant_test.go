@@ -2,6 +2,7 @@ package limits
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -14,11 +15,11 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
-// TestErrMissingTenant asserts that every scoped limiter reports a missing required tenant
-// as ErrMissingTenant. Callers need to tell this apart from a settings read failure: a read
+// TestErrorMissingTenant asserts that every scoped limiter reports a missing required tenant
+// as ErrMissingTenant, carrying the scope that was missing. Callers need to tell this apart from a settings read failure: a read
 // failure still resolves a usable value, whereas here no lookup happens at all, so the
 // returned value is meaningless (zero for most limiters) and must not be enforced as a limit.
-func TestErrMissingTenant(t *testing.T) {
+func TestErrorMissingTenant(t *testing.T) {
 	t.Parallel()
 
 	// ScopeWorkflow requires a tenant; no contexts.WithCRE below, so none is present.
@@ -86,8 +87,12 @@ func TestErrMissingTenant(t *testing.T) {
 
 			err := limit(t.Context())
 			require.Error(t, err, "a required but missing tenant must be an error")
-			assert.ErrorIs(t, err, ErrMissingTenant,
+
+			var missing ErrMissingTenant
+			require.ErrorAs(t, err, &missing,
 				"callers must be able to tell a missing tenant from a settings read failure")
+			assert.Equal(t, scope, missing.Scope, "the error must carry the scope that was missing")
+			assert.False(t, IsErrRecoverable(err), "no value was resolved, so there is nothing to fall back to")
 		})
 	}
 }
@@ -96,7 +101,7 @@ func TestErrMissingTenant(t *testing.T) {
 // missing one there is not a programming error and must not carry the sentinel. Queues are
 // the only scoped limiter with no unlimited instance to fail open to, so they still error —
 // just not as ErrMissingTenant.
-func TestErrMissingTenant_OnlyForRequiredScopes(t *testing.T) {
+func TestErrorMissingTenant_OnlyForRequiredScopes(t *testing.T) {
 	t.Parallel()
 	require.False(t, settings.ScopeOrg.IsTenantRequired(), "precondition: org scope is optional")
 
@@ -108,16 +113,31 @@ func TestErrMissingTenant_OnlyForRequiredScopes(t *testing.T) {
 
 	_, err = q.Limit(t.Context()) // no contexts.WithCRE, so no org tenant
 	require.Error(t, err)
-	assert.NotErrorIs(t, err, ErrMissingTenant,
+	assert.NotErrorIs(t, err, ErrMissingTenant{},
 		"an optional scope missing its tenant is not a programming error")
 }
 
 // TestErrMissingTenant_NotALimitError guards the categorisation: a missing tenant is a
 // programming error, not a breached limit, so it must not satisfy LimitError (which carries
 // gRPC ResourceExhausted/PermissionDenied semantics).
-func TestErrMissingTenant_NotALimitError(t *testing.T) {
+func TestErrorMissingTenant_NotALimitError(t *testing.T) {
 	t.Parallel()
 
 	var limitErr LimitError
-	assert.NotErrorAs(t, ErrMissingTenant, &limitErr)
+	assert.NotErrorAs(t, ErrMissingTenant{Scope: settings.ScopeWorkflow}, &limitErr)
+}
+
+// TestIsRecoverable pins the predicate callers are told to use instead of matching concrete
+// error types, so that adding a non-recoverable case later does not silently change meaning.
+func TestIsRecoverable(t *testing.T) {
+	t.Parallel()
+
+	assert.True(t, IsErrRecoverable(nil), "no error at all is trivially recoverable")
+	assert.True(t, IsErrRecoverable(errGetterUnavailable),
+		"a settings read failure still leaves the compiled default")
+	assert.True(t, IsErrRecoverable(fmt.Errorf("wrapped: %w", errGetterUnavailable)))
+
+	assert.False(t, IsErrRecoverable(ErrMissingTenant{Scope: settings.ScopeWorkflow}))
+	assert.False(t, IsErrRecoverable(fmt.Errorf("wrapped: %w", ErrMissingTenant{Scope: settings.ScopeOwner})),
+		"must match through wrapping, since limiters add context")
 }

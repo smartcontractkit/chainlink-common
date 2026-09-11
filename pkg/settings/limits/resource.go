@@ -679,7 +679,7 @@ func (s *scopedResourcePoolLimiter[N]) getOrCreate(ctx context.Context) (resourc
 			return unlimitedResourcePool[N]{}, s.wg.Done, nil
 		}
 		s.wg.Done()
-		return nil, nil, fmt.Errorf("failed to get resource pool for scope %s: %w", s.scope, ErrMissingTenant)
+		return nil, nil, fmt.Errorf("failed to get resource pool: %w", ErrMissingTenant{Scope: s.scope})
 	}
 
 	usage := s.newLimitUsage(tenant)

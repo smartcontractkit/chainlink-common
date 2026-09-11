@@ -214,7 +214,7 @@ func (b *rangeLimiter[N]) get(ctx context.Context) (tenant string, bound setting
 				b.lggr.Errorw("Unable to get scoped bounds limit due to missing tenant: failing open", append([]any{"scope", b.scope}, kvs...)...)
 				return
 			}
-			err = fmt.Errorf("unable to get scoped bounds limit for scope %s: %w", b.scope, ErrMissingTenant)
+			err = fmt.Errorf("unable to get scoped bounds limit: %w", ErrMissingTenant{Scope: b.scope})
 			return
 		}
 

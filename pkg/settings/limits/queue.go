@@ -357,7 +357,7 @@ func (s *scopedQueue[T]) getOrCreate(ctx context.Context) (*queue[T], func(), er
 		if !s.scope.IsTenantRequired() {
 			return nil, nil, fmt.Errorf("failed to get queue for scope %s: no tenant in context", s.scope)
 		}
-		return nil, nil, fmt.Errorf("failed to get queue for scope %s: %w", s.scope, ErrMissingTenant)
+		return nil, nil, fmt.Errorf("failed to get queue: %w", ErrMissingTenant{Scope: s.scope})
 	}
 
 	q := s.newQueue(tenant)

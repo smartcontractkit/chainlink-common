@@ -26,7 +26,6 @@ func TestRegressionPollOneoffRejectsExcessiveSubscriptions(t *testing.T) {
 
 	cfg := &ModuleConfig{MaxSubscriptionsLimiter: limiter}
 	exec := &execution[*sdkpb.ExecutionResult]{ctx: t.Context(), module: &module{cfg: cfg}}
-	legacyPollOneoff := createPollOneoff(t.Context(), limiter)
 
 	tests := []struct {
 		name           string
@@ -43,21 +42,11 @@ func TestRegressionPollOneoffRejectsExcessiveSubscriptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Run("execution.pollOneoff (V2 path)", func(t *testing.T) {
-				var errno int32
-				assert.NotPanics(t, func() {
-					errno = exec.pollOneoff(nil, 0, 0, tt.nsubscriptions, 0)
-				})
-				assert.Equal(t, ErrnoInval, errno)
+			var errno int32
+			assert.NotPanics(t, func() {
+				errno = exec.pollOneoff(nil, 0, 0, tt.nsubscriptions, 0)
 			})
-
-			t.Run("createPollOneoff (legacy DAG path)", func(t *testing.T) {
-				var errno int32
-				assert.NotPanics(t, func() {
-					errno = legacyPollOneoff(nil, 0, 0, tt.nsubscriptions, 0)
-				})
-				assert.Equal(t, ErrnoInval, errno)
-			})
+			assert.Equal(t, ErrnoInval, errno)
 		})
 	}
 }

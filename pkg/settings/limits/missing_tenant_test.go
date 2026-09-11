@@ -92,6 +92,26 @@ func TestErrMissingTenant(t *testing.T) {
 	}
 }
 
+// TestErrMissingTenant_OnlyForRequiredScopes: ScopeOrg does not require a tenant, so a
+// missing one there is not a programming error and must not carry the sentinel. Queues are
+// the only scoped limiter with no unlimited instance to fail open to, so they still error —
+// just not as ErrMissingTenant.
+func TestErrMissingTenant_OnlyForRequiredScopes(t *testing.T) {
+	t.Parallel()
+	require.False(t, settings.ScopeOrg.IsTenantRequired(), "precondition: org scope is optional")
+
+	s := settings.Int(10)
+	s.Key, s.Scope = "test.optional.queue", settings.ScopeOrg
+	q, err := MakeQueueLimiter[int](Factory{Logger: logger.Test(t)}, s)
+	require.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, q.Close()) })
+
+	_, err = q.Limit(t.Context()) // no contexts.WithCRE, so no org tenant
+	require.Error(t, err)
+	assert.NotErrorIs(t, err, ErrMissingTenant,
+		"an optional scope missing its tenant is not a programming error")
+}
+
 // TestErrMissingTenant_NotALimitError guards the categorisation: a missing tenant is a
 // programming error, not a breached limit, so it must not satisfy LimitError (which carries
 // gRPC ResourceExhausted/PermissionDenied semantics).

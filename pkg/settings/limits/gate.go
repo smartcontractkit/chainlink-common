@@ -236,7 +236,7 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 				g.lggr.Errorw("Unable to get scoped gate status due to missing tenant: failing open", append([]any{"scope", g.scope}, kvs...)...)
 				return
 			}
-			err = fmt.Errorf("unable to get scoped gate status due to missing tenant for scope: %s", g.scope)
+			err = fmt.Errorf("unable to get scoped gate status: %w", ErrMissingTenant{Scope: g.scope})
 			return
 		}
 

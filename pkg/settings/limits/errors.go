@@ -11,6 +11,36 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
+// ErrMissingTenant is returned when a scoped limiter is used without the tenant that its
+// scope requires in ctx. Unlike a settings read failure, where the limiter still resolves a
+// usable value alongside the error, no lookup is attempted here, so callers must not treat
+// the returned value as a limit. It signals that the CRE context was never populated, which
+// is a programming error rather than a degraded system.
+type ErrMissingTenant struct {
+	Scope settings.Scope
+}
+
+func (e ErrMissingTenant) Is(target error) bool {
+	var errorMissingTenant ErrMissingTenant
+	return errors.As(target, &errorMissingTenant)
+}
+
+func (e ErrMissingTenant) Error() string {
+	return fmt.Sprintf("missing tenant for scope: %s", e.Scope)
+}
+
+// IsErrRecoverable reports whether err still left the caller a usable value. Limiters fall back
+// to the compiled default when a settings read fails, so those errors are advisory and the
+// returned limit can still be enforced. It reports false when no value was resolved and
+// enforcing the zero value would be wrong.
+//
+// Unknown errors are treated as recoverable, so that a degraded settings service does not
+// cause callers to drop work. Match on this rather than on specific error types, so callers
+// pick up future non-recoverable cases automatically.
+func IsErrRecoverable(err error) bool {
+	return !errors.Is(err, ErrMissingTenant{})
+}
+
 // LimitError is implemented by errors returned when a limit is exceeded.
 // Use [errors.As] to identify limit errors, for example:
 //

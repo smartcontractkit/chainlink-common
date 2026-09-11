@@ -37,12 +37,16 @@ func writeDefaults(r io.Reader, w *io.PipeWriter) {
 			}
 			continue
 		}
+		// Indentation is ignored in TOML, and nested tables and their keys are conventionally indented.
+		trimmed := strings.TrimSpace(t)
+
 		// Skip comments and examples (which become zero values)
-		if strings.HasPrefix(t, "#") || strings.HasSuffix(t, "# Example") {
+		if strings.HasPrefix(trimmed, "#") || strings.HasSuffix(trimmed, FieldExample) {
 			continue
 		}
+
 		// Skip arrays of tables
-		if strings.HasPrefix(t, "[[") {
+		if strings.HasPrefix(trimmed, "[[") {
 			// skip fields until next empty line
 			skipUntil = func(line string) bool { return strings.TrimSpace(line) == "" }
 			continue

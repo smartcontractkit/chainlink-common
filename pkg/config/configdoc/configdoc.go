@@ -45,6 +45,20 @@ func advancedWarning(msg string) string {
 	return fmt.Sprintf(":warning: **_ADVANCED_**: _%s_\n", msg)
 }
 
+func isGeneratedPreamble(desc lines) bool {
+	return len(desc) > 0 && strings.Contains(strings.ToLower(desc[0]), "generated")
+}
+
+func tableName(line string) string {
+	for _, marker := range []string{FieldDefault, FieldExample} {
+		if rest, ok := strings.CutSuffix(line, marker); ok {
+			line = strings.TrimSpace(rest)
+			break
+		}
+	}
+	return strings.Trim(line, "[]")
+}
+
 // lines holds a set of contiguous lines
 type lines []string
 
@@ -62,7 +76,7 @@ type table struct {
 
 func newTable(line string, desc lines, extendedDescriptions map[string]string) *table {
 	t := &table{
-		name:  strings.Trim(line, "[]"),
+		name:  tableName(line),
 		codes: []string{line},
 		desc:  desc,
 	}
@@ -80,7 +94,7 @@ func newTable(line string, desc lines, extendedDescriptions map[string]string) *
 
 func newArrayOfTables(line string, desc lines, extendedDescriptions map[string]string) *table {
 	t := &table{
-		name:  strings.Trim(strings.Trim(line, FieldExample), "[]"),
+		name:  tableName(line),
 		codes: []string{line},
 		desc:  desc,
 	}
@@ -128,8 +142,13 @@ type keyval struct {
 
 func newKeyval(line string, desc lines) keyval {
 	line = strings.TrimSpace(line)
+	// A malformed line with no space after the key would otherwise panic.
+	name := line
+	if i := strings.Index(line, " "); i > -1 {
+		name = line[:i]
+	}
 	kv := keyval{
-		name: line[:strings.Index(line, " ")],
+		name: name,
 		code: line,
 		desc: desc,
 	}
@@ -168,36 +187,52 @@ func parseTOMLDocs(s string, extendedDescriptions map[string]string) (items []fm
 	items = append(items, currentTable)
 	var desc lines
 	for line := range strings.SplitSeq(s, "\n") {
-		if strings.HasPrefix(line, "#") {
+		// Indentation is insignificant in TOML, and nested tables and their keys
+		// are conventionally indented.
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(trimmed, "#"):
 			// comment
-			desc = append(desc, strings.TrimSpace(line[1:]))
-		} else if strings.TrimSpace(line) == "" {
+			desc = append(desc, strings.TrimSpace(trimmed[1:]))
+		case trimmed == "":
 			// empty
 			if len(desc) > 0 {
-				items = append(items, desc)
+				if !isGeneratedPreamble(desc) {
+					items = append(items, desc)
+				}
 				desc = nil
 			}
-		} else if strings.HasPrefix(line, "[[") {
-			currentTable = newArrayOfTables(line, desc, extendedDescriptions)
+		case strings.HasPrefix(trimmed, "[["):
+			currentTable = newArrayOfTables(trimmed, desc, extendedDescriptions)
 			items = append(items, currentTable)
 			desc = nil
-		} else if strings.HasPrefix(line, "[") {
-			currentTable = newTable(line, desc, extendedDescriptions)
+		case strings.HasPrefix(trimmed, "["):
+			currentTable = newTable(trimmed, desc, extendedDescriptions)
 			items = append(items, currentTable)
 			desc = nil
-		} else {
-			kv := newKeyval(line, desc)
+		default:
+			// A dynamic key — a map entry keyed by data, such as a chain selector
+			// or a telemetry label — has no declaring struct field, so it cannot
+			// carry a doc comment of its own.
+			inherited := false
+			if len(desc) == 0 && currentTable != &globalTable && len(currentTable.desc) > 0 {
+				desc = currentTable.desc
+				inherited = true
+			}
+			kv := newKeyval(trimmed, desc)
 			shortName := kv.name
 			if currentTable != &globalTable {
 				// update to full name
 				kv.name = currentTable.name + "." + kv.name
 			}
-			if len(kv.desc) == 0 {
+			switch {
+			case inherited:
+			case len(kv.desc) == 0:
 				err = errors.Join(err, fmt.Errorf("%s: missing description", kv.name))
-			} else if !strings.HasPrefix(kv.desc[0], shortName) {
+			case !strings.HasPrefix(kv.desc[0], shortName):
 				err = errors.Join(err, fmt.Errorf("%s: description does not begin with %q", kv.name, shortName))
 			}
-			if !strings.HasSuffix(line, FieldDefault) && !strings.HasSuffix(line, FieldExample) {
+			if !strings.HasSuffix(trimmed, FieldDefault) && !strings.HasSuffix(trimmed, FieldExample) {
 				err = errors.Join(err, fmt.Errorf(`%s: is not one of %v`, kv.name, []string{FieldDefault, FieldExample}))
 			}
 
@@ -210,7 +245,7 @@ func parseTOMLDocs(s string, extendedDescriptions map[string]string) (items []fm
 		// drop it
 		items = items[1:]
 	}
-	if len(desc) > 0 {
+	if len(desc) > 0 && !isGeneratedPreamble(desc) {
 		items = append(items, desc)
 	}
 	return

@@ -3,7 +3,6 @@ package host
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
 	"math"
 	"runtime/pprof"
 	"strings"
@@ -16,20 +15,16 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/custmsg"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/matches"
-	wasmpb "github.com/smartcontractkit/chainlink-common/pkg/workflows/wasm/pb"
 	sdkpb "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
 func countLimiterUpdaterGoroutines(t *testing.T) int {
@@ -120,11 +115,13 @@ func TestNewModuleClosesDefaultLimiters(t *testing.T) {
 		t.Cleanup(second.Close)
 
 		first.Close()
-		request := &wasmpb.Request{Id: "request-id"}
+		helper := mocks.NewMockExecutionHelper(t)
+		helper.EXPECT().GetWorkflowExecutionID().Return("request-id")
+		request := &sdkpb.ExecuteRequest{Request: &sdkpb.ExecuteRequest_Trigger{}}
 		var runErr error
 		var subscriptionErr error
 		require.NotPanics(t, func() {
-			_, runErr = second.Run(t.Context(), request)
+			_, runErr = second.Execute(t.Context(), request, helper)
 			subscriptionErr = limiterOrDefault(second.cfg.MaxSubscriptionsLimiter, second.defaultLimiters.maxSubscriptions).Check(t.Context(), 1)
 		})
 		require.NoError(t, runErr)
@@ -186,403 +183,6 @@ func (*closeTrackingGateLimiter) Open(context.Context) (bool, error) {
 
 func (*closeTrackingGateLimiter) AllowErr(context.Context) error {
 	return nil
-}
-
-type mockMessageEmitter struct {
-	e      func(context.Context, string, map[string]string) error
-	labels map[string]string
-}
-
-func (m *mockMessageEmitter) Emit(ctx context.Context, msg string) error {
-	return m.e(ctx, msg, m.labels)
-}
-
-func (m *mockMessageEmitter) WithMapLabels(labels map[string]string) custmsg.MessageEmitter {
-	m.labels = labels
-	return m
-}
-
-func (m *mockMessageEmitter) With(keyValues ...string) custmsg.MessageEmitter {
-	// do nothing
-	return m
-}
-
-func (m *mockMessageEmitter) Labels() map[string]string {
-	return m.labels
-}
-
-func newMockMessageEmitter(e func(context.Context, string, map[string]string) error) custmsg.MessageEmitter {
-	return &mockMessageEmitter{e: e}
-}
-
-// Test_createEmitFn tests that the emit function used by the module is created correctly.  Memory
-// access functions are injected as mocks.
-func Test_createEmitFn(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		ctxKey := "key"
-		ctxValue := "test-value"
-		ctx := t.Context()
-		ctx = context.WithValue(ctx, ctxKey, "test-value")
-		exec := &execution[*wasmpb.Response]{ctx: ctx}
-		reqId := "random-id"
-		emitFn := createEmitFn(
-			logger.Test(t),
-			exec,
-			newMockMessageEmitter(func(ctx context.Context, _ string, _ map[string]string) error {
-				v := ctx.Value(ctxKey)
-				assert.Equal(t, ctxValue, v)
-				return nil
-			}),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-					RequestId: reqId,
-					Message:   "hello, world",
-					Labels: &pb.Map{
-						Fields: map[string]*pb.Value{
-							"foo": {
-								Value: &pb.Value_StringValue{
-									StringValue: "bar",
-								},
-							},
-						},
-					},
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("success without labels", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-		emitFn := createEmitFn(
-			logger.Test(t),
-			exec,
-			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
-				return nil
-			}),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("successfully write error to memory on failure to read", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
-			Error: &wasmpb.Error{
-				Message: assert.AnError.Error(),
-			},
-		})
-		assert.NoError(t, err)
-
-		emitFn := createEmitFn(
-			logger.Test(t),
-			exec,
-			nil,
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				return nil, assert.AnError
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
-				return 0
-			}),
-		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, int32(len(respBytes)), 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode, "code mismatch")
-	})
-
-	t.Run("failure to emit writes error to memory", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-		reqId := "random-id"
-		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
-			Error: &wasmpb.Error{
-				Message: assert.AnError.Error(),
-			},
-		})
-		assert.NoError(t, err)
-
-		emitFn := createEmitFn(
-			logger.Test(t),
-			exec,
-			newMockMessageEmitter(func(_ context.Context, _ string, _ map[string]string) error {
-				return assert.AnError
-			}),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.EmitMessageRequest{
-					RequestId: reqId,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
-				return 0
-			}),
-		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("bad read failure to unmarshal protos", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-		badData := []byte("not proto bufs")
-		msg := &wasmpb.EmitMessageRequest{}
-		marshallErr := proto.Unmarshal(badData, msg)
-		assert.Error(t, marshallErr)
-
-		respBytes, err := proto.Marshal(&wasmpb.EmitMessageResponse{
-			Error: &wasmpb.Error{
-				Message: marshallErr.Error(),
-			},
-		})
-		assert.NoError(t, err)
-
-		emitFn := createEmitFn(
-			logger.Test(t),
-			exec,
-			nil,
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				return badData, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				assert.Equal(t, respBytes, src, "marshalled response not equal to bytes to write")
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				assert.Equal(t, uint32(len(respBytes)), val, "did not write length of response")
-				return 0
-			}),
-		)
-		gotCode := emitFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-}
-
-func TestCreateFetchFn(t *testing.T) {
-	const testID = "test-id"
-	t.Run("OK-success", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: testID,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return &FetchResponse{}, nil
-				},
-				MaxFetchRequests: 5,
-			},
-			exec,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("NOK-fetch_fails_to_read_from_store", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				return nil, assert.AnError
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				// the error is handled and written to the buffer
-				resp := &wasmpb.FetchResponse{}
-				err := proto.Unmarshal(src, resp)
-				require.NoError(t, err)
-				assert.Equal(t, assert.AnError.Error(), resp.ErrorMessage)
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return &FetchResponse{}, nil
-				},
-			},
-			exec,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("NOK-fetch_fails_to_unmarshal_request", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				return []byte("bad-request-payload"), nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				// the error is handled and written to the buffer
-				resp := &wasmpb.FetchResponse{}
-				err := proto.Unmarshal(src, resp)
-				require.NoError(t, err)
-				expectedErr := "cannot parse invalid wire-format data"
-				assert.Contains(t, resp.ErrorMessage, expectedErr)
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return &FetchResponse{}, nil
-				},
-			},
-			exec,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("NOK-fetch_returns_an_error", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: testID,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				// the error is handled and written to the buffer
-				resp := &wasmpb.FetchResponse{}
-				err := proto.Unmarshal(src, resp)
-				require.NoError(t, err)
-				expectedErr := assert.AnError.Error()
-				assert.Equal(t, expectedErr, resp.ErrorMessage)
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return nil, assert.AnError
-				},
-				MaxFetchRequests: 1,
-			},
-			exec,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoSuccess, gotCode)
-	})
-
-	t.Run("NOK-fetch_fails_to_write_response", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: testID,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				return -1
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return 0
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return &FetchResponse{}, nil
-				},
-			},
-			exec,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
-	})
-
-	t.Run("NOK-fetch_fails_to_write_response_size", func(t *testing.T) {
-		exec := &execution[*wasmpb.Response]{ctx: t.Context()}
-
-		fetchFn := createFetchFn(
-			logger.Test(t),
-			unsafeReaderFunc(func(_ *wasmtime.Caller, _, _ int32) ([]byte, error) {
-				b, err := proto.Marshal(&wasmpb.FetchRequest{
-					Id: testID,
-				})
-				assert.NoError(t, err)
-				return b, nil
-			}),
-			unsafeWriterFunc(func(c *wasmtime.Caller, src []byte, ptr, len int32) int64 {
-				return 0
-			}),
-			unsafeFixedLengthWriterFunc(func(c *wasmtime.Caller, ptr int32, val uint32) int64 {
-				return -1
-			}),
-			&ModuleConfig{
-				Logger: logger.Test(t),
-				Fetch: func(ctx context.Context, req *FetchRequest) (*FetchResponse, error) {
-					return &FetchResponse{}, nil
-				},
-			},
-			exec,
-		)
-
-		gotCode := fetchFn(new(wasmtime.Caller), 0, 0, 0, 0)
-		assert.Equal(t, ErrnoFault, gotCode)
-	})
 }
 
 func Test_read(t *testing.T) {
@@ -684,105 +284,13 @@ func Test_write(t *testing.T) {
 	})
 }
 
-// Test_writeUInt32 tests that a uint32 is written to memory correctly.
-func Test_writeUInt32(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		memory := make([]byte, 4)
-		n := writeUInt32(memory, 0, 42)
-		wantBuf := make([]byte, 4)
-		binary.LittleEndian.PutUint32(wantBuf, 42)
-		assert.Equal(t, int64(4), n)
-		assert.Equal(t, wantBuf, memory)
-	})
-}
-
-func Test_toValidatedLabels(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		msg := &wasmpb.EmitMessageRequest{
-			Labels: &pb.Map{
-				Fields: map[string]*pb.Value{
-					"test": {
-						Value: &pb.Value_StringValue{
-							StringValue: "value",
-						},
-					},
-				},
-			},
-		}
-		wantLabels := map[string]string{
-			"test": "value",
-		}
-		gotLabels, err := toValidatedLabels(msg)
-		assert.NoError(t, err)
-		assert.Equal(t, wantLabels, gotLabels)
-	})
-
-	t.Run("success with empty labels", func(t *testing.T) {
-		msg := &wasmpb.EmitMessageRequest{}
-		wantLabels := map[string]string{}
-		gotLabels, err := toValidatedLabels(msg)
-		assert.NoError(t, err)
-		assert.Equal(t, wantLabels, gotLabels)
-	})
-
-	t.Run("fails with non string", func(t *testing.T) {
-		msg := &wasmpb.EmitMessageRequest{
-			Labels: &pb.Map{
-				Fields: map[string]*pb.Value{
-					"test": {
-						Value: &pb.Value_Int64Value{
-							Int64Value: *proto.Int64(42),
-						},
-					},
-				},
-			},
-		}
-		_, err := toValidatedLabels(msg)
-		assert.Error(t, err)
-	})
-}
-
-func Test_toEmissible(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		reqID := "random-id"
-		msg := &wasmpb.EmitMessageRequest{
-			RequestId: reqID,
-			Message:   "hello, world",
-			Labels: &pb.Map{
-				Fields: map[string]*pb.Value{
-					"test": {
-						Value: &pb.Value_StringValue{
-							StringValue: "value",
-						},
-					},
-				},
-			},
-		}
-
-		b, err := proto.Marshal(msg)
-		assert.NoError(t, err)
-
-		rid, gotMsg, gotLabels, err := toEmissible(b)
-		assert.NoError(t, err)
-		assert.Equal(t, "hello, world", gotMsg)
-		assert.Equal(t, map[string]string{"test": "value"}, gotLabels)
-		assert.Equal(t, reqID, rid)
-	})
-
-	t.Run("fails with bad message", func(t *testing.T) {
-		_, _, _, err := toEmissible([]byte("not proto bufs"))
-		assert.Error(t, err)
-	})
-}
-
 func Test_SdkLabeler(t *testing.T) {
 	t.Run("defaults to no-op when nil", func(t *testing.T) {
 		// ModuleConfig with nil SdkLabeler should not panic when creating a module
-		binary := createTestBinary(successBinaryCmd, successBinaryLocation, true, t)
+		binary := createTestBinary(stdioBinaryCmd, stdioBinaryLocation, true, t)
 		mc := &ModuleConfig{
 			Logger:         logger.Test(t),
 			IsUncompressed: true,
-			Fetch:          func(context.Context, *FetchRequest) (*FetchResponse, error) { return &FetchResponse{}, nil },
 		}
 		_, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
@@ -796,9 +304,8 @@ func Test_SdkLabeler(t *testing.T) {
 		mc.SdkLabeler = func(name string) {
 			capturedName = name
 		}
-		m, err := NewModule(t.Context(), mc, binary)
+		_, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
-		require.False(t, m.IsLegacyDAG(), "expected NoDAG module")
 		require.NotEmpty(t, capturedName, "SdkLabeler should have been called with v2 import name")
 		require.True(t, strings.HasPrefix(capturedName, v2ImportPrefix), "captured name should have v2 prefix")
 	})
@@ -817,7 +324,7 @@ func Test_CallAwaitRace(t *testing.T) {
 	var wg sync.WaitGroup
 	var wantAttempts = 100
 
-	exec := &execution[*wasmpb.ExecutionResult]{
+	exec := &execution[*sdkpb.ExecutionResult]{
 		module:              m,
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		usedCallbackIDs:     map[string]bool{},

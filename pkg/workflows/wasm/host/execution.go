@@ -20,23 +20,22 @@ import (
 )
 
 type execution[T any] struct {
-	fetchRequestsCounter int
-	response             T
-	ctx                  context.Context
-	capabilityResponses  map[int32]<-chan *sdkpb.CapabilityResponse
-	secretsResponses     map[int32]<-chan *secretsResponse
-	pendingCallsLimiter  limits.ResourcePoolLimiter[int]
-	lock                 sync.RWMutex
-	module               *module
-	executor             ExecutionHelper
-	timeFetcher          *timeFetcher
-	baseTime             *time.Time
-	hasRun               bool
-	mode                 sdkpb.Mode
-	donSeed              int64
-	nodeSeed             int64
-	donLogCount          uint32
-	nodeLogCount         uint32
+	response            T
+	ctx                 context.Context //nolint:containedctx // scoped to a single guest execution
+	capabilityResponses map[int32]<-chan *sdkpb.CapabilityResponse
+	secretsResponses    map[int32]<-chan *secretsResponse
+	pendingCallsLimiter limits.ResourcePoolLimiter[int]
+	lock                sync.RWMutex
+	module              *module
+	executor            ExecutionHelper
+	timeFetcher         *timeFetcher
+	baseTime            *time.Time
+	hasRun              bool
+	mode                sdkpb.Mode
+	donSeed             int64
+	nodeSeed            int64
+	donLogCount         uint32
+	nodeLogCount        uint32
 
 	usedCallbackIDs map[string]bool
 }

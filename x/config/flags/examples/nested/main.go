@@ -14,7 +14,7 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -82,12 +82,11 @@ func main() {
 	root.PersistentFlags().String("config", "", "path to a config file")
 
 	if err := flags.RegisterCommandFlags(root, &cfg, flags.DefaultTOMLOptions("APP")); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if err := root.Execute(); err != nil {
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 

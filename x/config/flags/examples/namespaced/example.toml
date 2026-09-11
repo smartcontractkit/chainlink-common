@@ -1,0 +1,8 @@
+[database]
+url = "postgres://file-host:5432/app"
+max-open = 50
+dial-timeout = "10s"
+
+[evm]
+url = "https://file-host:8545"
+chain-id = 137

@@ -1,0 +1,7 @@
+[server]
+host = "0.0.0.0"
+port = 9090
+idle = "2m"
+
+[metrics]
+endpoint = "https://metrics.example.com/push"

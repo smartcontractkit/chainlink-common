@@ -116,51 +116,6 @@ func (_c *Module_Execute_Call) RunAndReturn(run func(context.Context, *sdk.Execu
 	return _c
 }
 
-// IsLegacyDAG provides a mock function with no fields
-func (_m *Module) IsLegacyDAG() bool {
-	ret := _m.Called()
-
-	if len(ret) == 0 {
-		panic("no return value specified for IsLegacyDAG")
-	}
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func() bool); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// Module_IsLegacyDAG_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsLegacyDAG'
-type Module_IsLegacyDAG_Call struct {
-	*mock.Call
-}
-
-// IsLegacyDAG is a helper method to define mock.On call
-func (_e *Module_Expecter) IsLegacyDAG() *Module_IsLegacyDAG_Call {
-	return &Module_IsLegacyDAG_Call{Call: _e.mock.On("IsLegacyDAG")}
-}
-
-func (_c *Module_IsLegacyDAG_Call) Run(run func()) *Module_IsLegacyDAG_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run()
-	})
-	return _c
-}
-
-func (_c *Module_IsLegacyDAG_Call) Return(_a0 bool) *Module_IsLegacyDAG_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Module_IsLegacyDAG_Call) RunAndReturn(run func() bool) *Module_IsLegacyDAG_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // Start provides a mock function with no fields
 func (_m *Module) Start() {
 	_m.Called()

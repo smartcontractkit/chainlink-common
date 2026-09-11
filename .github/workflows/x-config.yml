@@ -1,0 +1,96 @@
+name: x/config Checks
+permissions:
+  contents: read
+
+on: [push, merge_group, pull_request]
+
+jobs:
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      x-config-src: ${{ steps.x-config-changes.outputs.src }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: x-config-changes
+        with:
+          filters: |
+            src:
+            - 'x/config/**'
+            - '.github/workflows/x-config.yml'
+
+  run-tests:
+    name: run tests
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.x-config-src == 'true'
+    outputs:
+      # The unit test step is continue-on-error so its results still upload, which leaves the
+      # job successful even when tests fail. The gate reads the step's own outcome instead.
+      tests-outcome: ${{ steps.run-tests.outcome }}
+    defaults:
+      run:
+        working-directory: x/config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          restore-build-cache-only: "false"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Build examples
+        # The examples live in their own modules (they model a real consumer of this library), so
+        # the parent module's ./... does not reach them.
+        run: |
+          go -C commentparsing/examples/separate_module_use/upstream build ./...
+          go -C commentparsing/examples/separate_module_use build ./...
+
+      - name: Ensure example generated files are up to date
+        run: |
+          go generate ./...
+          go -C commentparsing/examples/separate_module_use generate ./...
+          if [[ -n "$(git status --porcelain -- commentparsing/examples)" ]]; then
+            echo "Generated example files are stale. Run 'go generate ./...' in x/config and in commentparsing/examples/separate_module_use, then commit the result."
+            git status --porcelain -- commentparsing/examples
+            git diff -- commentparsing/examples
+            exit 1
+          fi
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Unit Tests
+        id: run-tests
+        continue-on-error: true
+        run: gotestsum --format standard-quiet --junitfile test-results.xml -- ./...
+
+      - name: Analyze and upload test results
+        uses: smartcontractkit/.github/actions/branch-out-upload@branch-out-upload/v1
+        with:
+          junit-file-path: x/config/test-results.xml
+          trunk-org-slug: chainlink
+          trunk-previous-step-outcome: ${{ steps.run-tests.outcome }}
+          trunk-token: ${{ secrets.TRUNK_API_KEY }}
+          trunk-job-url: ${{ format('https://github.com/{0}/actions/runs/{1}/job/{2}/attempts/{3}', github.repository, github.run_id, job.check_run_id, github.run_attempt) }}
+
+  gate:
+    name: summary gate
+    runs-on: ubuntu-latest
+    needs: [changes, run-tests]
+    if: always()
+    steps:
+      - name: Fail if any job ran and failed
+        if: >-
+          needs.changes.outputs.x-config-src == 'true' &&
+          (needs.run-tests.result != 'success' || needs.run-tests.outputs.tests-outcome != 'success')
+        run: exit 1

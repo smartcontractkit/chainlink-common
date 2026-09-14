@@ -73,6 +73,18 @@ one pass through `chainlink-common/pkg/utils/codegen`, so formatting, import
 grouping and the generated-by header are applied identically to all of them. Two
 generators claiming one path is an error rather than a coin toss.
 
+`Files` is `Run` without the writing, returning the same map:
+
+```go
+func Files(args RunArgs, generators ...Generator) (map[string]string, error)
+func Run(args RunArgs, generators ...Generator) error   // Files, then write
+```
+
+Use it when the output has to be inspected before it lands — checking committed
+files are up to date, say, which must not write the answer it is about to
+compare against. Note that formatting and the header are applied by the write, so
+bytes from `Files` are pre-`gofmt`.
+
 `RunArgs.Dir` anchors the run: the module enclosing it decides which types are
 local, and it is what generated paths resolve against. Empty means the working
 directory, which is where `go generate` starts.

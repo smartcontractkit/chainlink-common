@@ -106,16 +106,17 @@ func TestRunProducesEachTypeOnce(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// A directory outside this module makes every type above a dependency's, so nothing
-			// is parsed and nothing is written - the packages handed to the generator are the
-			// whole observable result.
+			// is parsed - the packages handed to the generator are the whole observable result.
+			// Files rather than Run, so none of this needs anything on disk.
 			dir := writePackage(t, map[string]string{"go.mod": "module example.com/x\n\ngo 1.26\n"})
 
 			var captured []Package
-			require.NoError(t, Run(RunArgs{Dir: dir, Roots: tc.roots, Tool: "example.com/x/gen"},
+			_, err := Files(RunArgs{Dir: dir, Roots: tc.roots, Tool: "example.com/x/gen"},
 				Generator(func(pkgs []Package) (map[string]string, error) {
 					captured = pkgs
 					return nil, nil
-				})))
+				}))
+			require.NoError(t, err)
 
 			require.Len(t, captured, 1, "every type above is declared in one package")
 
@@ -135,8 +136,8 @@ func TestRunProducesEachTypeOnce(t *testing.T) {
 			local := captured[0]
 			local.Name = "example"
 			generated := docCommentsFile(local)
-			_, err := parser.ParseFile(token.NewFileSet(), GeneratedFileName, generated, parser.SkipObjectResolution)
-			require.NoError(t, err)
+			_, parseErr := parser.ParseFile(token.NewFileSet(), GeneratedFileName, generated, parser.SkipObjectResolution)
+			require.NoError(t, parseErr)
 			for receiver, count := range receiverCounts(generated) {
 				require.Equal(t, 1, count, "%s has %d DocComments methods", receiver, count)
 			}
@@ -151,11 +152,12 @@ func TestRunOrderDoesNotChangeTheResult(t *testing.T) {
 	generate := func(roots ...any) string {
 		dir := writePackage(t, map[string]string{"go.mod": "module example.com/x\n\ngo 1.26\n"})
 		var captured []Package
-		require.NoError(t, Run(RunArgs{Dir: dir, Roots: roots, Tool: "example.com/x/gen"},
+		_, err := Files(RunArgs{Dir: dir, Roots: roots, Tool: "example.com/x/gen"},
 			Generator(func(pkgs []Package) (map[string]string, error) {
 				captured = pkgs
 				return nil, nil
-			})))
+			}))
+		require.NoError(t, err)
 		require.Len(t, captured, 1)
 		local := captured[0]
 		local.Name = "example"

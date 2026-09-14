@@ -44,28 +44,32 @@ type RunArgs struct {
 	Tool string
 }
 
-// Run discovers the config trees rooted at args.Roots, writes the DocComments methods for every
-// local package it reached, then hands those packages to each generator and writes what they
-// return.
-//
-// The DocComments step is not optional: it is what lets the next module downstream discover this
-// one at all, and a caller adding a generator is adding to that rather than replacing it.
-//
-// Files from every generator are written in one pass, so formatting, import grouping and the
-// generated-by header are applied the same way to all of them.
-func Run(args RunArgs, generators ...Generator) error {
-	dir := args.Dir
-	if dir == "" {
-		dir = "."
+// dir is where go generate starts, which is the only sensible default for a directive that took
+// no arguments.
+func (a RunArgs) dir() string {
+	if a.Dir == "" {
+		return "."
 	}
+	return a.Dir
+}
 
-	pkgs, err := Discover(dir, args.Roots...)
+// Files is [Run] without the writing: it discovers the config trees rooted at args.Roots, runs the
+// DocComments generator and then each generator given, and returns what they produced keyed by
+// path relative to [RunArgs.Dir].
+//
+// A caller that has to inspect the output before it lands uses this - checking committed files are
+// up to date, say, which must not write the answer it is about to compare against.
+func Files(args RunArgs, generators ...Generator) (map[string]string, error) {
+	pkgs, err := Discover(args.dir(), args.Roots...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	files := make(map[string]string)
 	var errs []error
+
+	// The DocComments step is not optional: it is what lets the next module downstream discover
+	// this one at all, so a caller adding a generator is adding to it rather than replacing it.
 	for _, generator := range append([]Generator{docComments}, generators...) {
 		generated, err := generator(pkgs)
 		if err != nil {
@@ -83,10 +87,22 @@ func Run(args RunArgs, generators ...Generator) error {
 		}
 	}
 	if err := errors.Join(errs...); err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+// Run generates as [Files] does and writes the result.
+//
+// Every file goes out in one pass through chainlink-common/pkg/utils/codegen, so formatting,
+// import grouping and the generated-by header are applied the same way to all of them, whichever
+// generator produced which.
+func Run(args RunArgs, generators ...Generator) error {
+	files, err := Files(args, generators...)
+	if err != nil {
 		return err
 	}
-
-	return codegen.WriteFiles(dir, args.LocalPrefix, args.Tool, files)
+	return codegen.WriteFiles(args.dir(), args.LocalPrefix, args.Tool, files)
 }
 
 // docComments is the built-in generator: one DocComments method per discovered type, written into

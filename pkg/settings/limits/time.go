@@ -230,7 +230,7 @@ func (l *timeLimiter) get(ctx context.Context) (tenant string, timeout time.Dura
 				l.lggr.Errorw("Unable to get scoped time limit due to missing tenant: using default value", append([]any{"scope", l.scope, "default", timeout}, kvs...)...)
 				return
 			}
-			err = fmt.Errorf("unable to get scoped time limit due to missing tenant for scope: %s", l.scope)
+			err = fmt.Errorf("unable to get scoped time limit: %w", ErrMissingTenant{Scope: l.scope})
 			return
 		}
 

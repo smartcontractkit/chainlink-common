@@ -104,7 +104,7 @@ func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfigurati
 			transmitters := make([]ocrtypes.Account, len(pbCfg.Transmitters))
 			for i, t := range pbCfg.Transmitters {
 				// OCR3 transmitter accounts cross the loop boundary as hex-encoded text.
-				// Keep LocalRegistry aligned with the external OCR config service so the
+				// Keep the metadata registry aligned with the external OCR config service so the
 				// imported registry path and the direct registry path serialize the same way.
 				transmitters[i] = ocrtypes.Account(hex.EncodeToString(t))
 			}
@@ -353,13 +353,13 @@ func (l *RegistryMetadata) ConfigForCapability(ctx context.Context, capabilityID
 
 func (l *RegistryMetadata) ensureNotEmpty() error {
 	if len(l.IDsToDONs) == 0 {
-		return errors.New("empty local registry. no DONs registered in the local registry")
+		return errors.New("empty metadata registry. no DONs registered in the metadata registry")
 	}
 	if len(l.IDsToNodes) == 0 {
-		return errors.New("empty local registry. no nodes registered in the local registry")
+		return errors.New("empty metadata registry. no nodes registered in the metadata registry")
 	}
 	if len(l.IDsToCapabilities) == 0 {
-		return errors.New("empty local registry. no capabilities registered in the local registry")
+		return errors.New("empty metadata registry. no capabilities registered in the metadata registry")
 	}
 	return nil
 }

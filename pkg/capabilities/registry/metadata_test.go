@@ -17,7 +17,7 @@ import (
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 )
 
-func TestLocalRegistry_LocalNode(t *testing.T) {
+func TestMetadataRegistry_LocalNode(t *testing.T) {
 	lggr := logger.Test(t)
 	localPeer := types.PeerID{0: 7}
 	getPeerID := func() (types.PeerID, error) {
@@ -68,7 +68,7 @@ func TestLocalRegistry_LocalNode(t *testing.T) {
 	})
 }
 
-func TestLocalRegistry_DONsForCapability(t *testing.T) {
+func TestMetadataRegistry_DONsForCapability(t *testing.T) {
 	lggr := logger.Test(t)
 	getPeerID := func() (types.PeerID, error) {
 		return [32]byte{0: 1}, nil
@@ -163,7 +163,7 @@ func TestLocalRegistry_DONsForCapability(t *testing.T) {
 	require.ErrorContains(t, err, "could not find node for peerID")
 }
 
-func TestLocalRegistry_DONByID(t *testing.T) {
+func TestMetadataRegistry_DONByID(t *testing.T) {
 	t.Parallel()
 	lggr := logger.Test(t)
 	getPeerID := func() (types.PeerID, error) {

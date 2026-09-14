@@ -56,7 +56,7 @@ func tableName(line string) string {
 	if i := indexOutsideQuotes(line, '#'); i > -1 {
 		line = line[:i]
 	}
-	return strings.Trim(strings.TrimSpace(line), "[]")
+	return strings.TrimSpace(strings.Trim(strings.TrimSpace(line), "[]"))
 }
 
 // lines holds a set of contiguous lines

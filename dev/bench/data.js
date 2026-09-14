@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789403565099,
+  "lastUpdate": 1789405197467,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60360,6 +60360,66 @@ window.BENCHMARK_DATA = {
             "value": 136442,
             "unit": "ns/op",
             "extra": "8854 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "5e439abbf31db1661ae625b2b4785329da19d63a",
+          "message": "Consolidate capabilities registry code into pkg/capabilities/registry (#2378)\n\n* Consolidate capabilities registry code into pkg/capabilities/registry\n\n* Rename method\n\n* Address comments\n\n* Fix small naming errors",
+          "timestamp": "2026-09-14T16:47:30Z",
+          "tree_id": "91c635dc0ebf6498c8e78f503cd39af6c62aadfe",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/5e439abbf31db1661ae625b2b4785329da19d63a"
+        },
+        "date": 1789405193257,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 270.7,
+            "unit": "ns/op",
+            "extra": "4369399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 57573,
+            "unit": "ns/op",
+            "extra": "20704 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 293.4,
+            "unit": "ns/op",
+            "extra": "4059442 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57465,
+            "unit": "ns/op",
+            "extra": "20713 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21776,
+            "unit": "ns/op",
+            "extra": "55170 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 96087,
+            "unit": "ns/op",
+            "extra": "12474 times\n4 procs"
           }
         ]
       }

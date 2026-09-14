@@ -328,18 +328,6 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		"maxOffsetFromMedian", timestampNodePairs[len(timestampNodePairs)-1].OffsetFromMedian,
 	)
 
-	if p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))) == nil { //TODO inspect error
-		return p.sequencedOutcome(ctx, outctx, nil, aos, donTime)
-	}
-
-	return p.unsequencedOutcome(ctx, outctx, nil, aos, donTime)
-}
-
-// unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
-func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, donTime int64) (ocr3types.Outcome, error) {
-	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-	limitByBatchSizeFlagEnabled := true
-
 	prevOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
 		p.lggr.Errorf("failed to unmarshal previous outcome in Outcome phase")
@@ -348,15 +336,28 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 		prevOutcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
 	}
 
+	// Compare with prior outcome to ensure DON time never goes backward.
+	if donTime < prevOutcome.Timestamp+p.minTimeIncrease {
+		p.lggr.Infow("DON Time incremented by minimum time increase to ensure time progression", "minTimeIncrease", p.minTimeIncrease)
+		donTime = prevOutcome.Timestamp + p.minTimeIncrease
+	}
+
+	if p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))) == nil { //TODO inspect error
+		return p.sequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
+	}
+
+	return p.unsequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
+}
+
+// unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
+func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
+	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
+
 	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
 			continue
-		}
-
-		if !observation.GetLimitByBatchSizeFlag() {
-			limitByBatchSizeFlagEnabled = false
 		}
 
 		for id, requestSeqNum := range observation.Requests {
@@ -411,7 +412,7 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 	}
 
 	var outcomeBatchOverflowCount int64
-	if len(outcome.ObservedDonTimes) > p.batchSize && limitByBatchSizeFlagEnabled {
+	if len(outcome.ObservedDonTimes) > p.batchSize {
 		ids := make([]string, 0, len(outcome.ObservedDonTimes))
 		for id := range outcome.ObservedDonTimes {
 			ids = append(ids, id)
@@ -440,25 +441,16 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 }
 
 // sequencedOutcome executed the updated outcome logic to produce a sequenced map of [pb.ObservedDonTimes.TimestampsBySequence].
-func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, donTime int64) (ocr3types.Outcome, error) {
+func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
 	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-	limitByBatchSizeFlagEnabled := true
 
-	prevOutcome := &pb.Outcome{}
-	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
-		p.lggr.Errorf("failed to unmarshal previous outcome in Outcome phase")
-	}
-	if prevOutcome.ObservedDonTimes == nil {
-		prevOutcome.ObservedDonTimes = make(map[string]*pb.ObservedDonTimes)
-	} else {
-		// At the transition point, we need to convert from the old slice format to maps
-		for _, observedTimes := range prevOutcome.ObservedDonTimes {
-			if len(observedTimes.Timestamps) > 0 {
-				for seqNum, ts := range observedTimes.Timestamps {
-					observedTimes.TimestampsBySequence[int64(seqNum)] = ts
-				}
-				observedTimes.Timestamps = nil
+	// At the transition point, we need to convert from the old slice format to maps
+	for _, observedTimes := range prevOutcome.ObservedDonTimes {
+		if len(observedTimes.Timestamps) > 0 {
+			for seqNum, ts := range observedTimes.Timestamps {
+				observedTimes.TimestampsBySequence[int64(seqNum)] = ts
 			}
+			observedTimes.Timestamps = nil
 		}
 	}
 
@@ -467,10 +459,6 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
 			continue
-		}
-
-		if !observation.GetLimitByBatchSizeFlag() {
-			limitByBatchSizeFlagEnabled = false
 		}
 
 		for id, requestSeqNum := range observation.Requests {
@@ -526,7 +514,7 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 	}
 
 	var outcomeBatchOverflowCount int64
-	if len(outcome.ObservedDonTimes) > p.batchSize && limitByBatchSizeFlagEnabled {
+	if len(outcome.ObservedDonTimes) > p.batchSize {
 		ids := make([]string, 0, len(outcome.ObservedDonTimes))
 		for id := range outcome.ObservedDonTimes {
 			ids = append(ids, id)

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789070885784,
+  "lastUpdate": 1789403565099,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60300,6 +60300,66 @@ window.BENCHMARK_DATA = {
             "value": 137382,
             "unit": "ns/op",
             "extra": "8223 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tar-2008.ferraz@hotmail.com",
+            "name": "Tarcísio Zotelli Ferraz",
+            "username": "tarcisiozf"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34ebd5d3972b8297986ce2dbbeb3fdfaa968628c",
+          "message": "Introduce ErrMissingTenant for scoped limiters (#2380)\n\n* introduce ErrMissingTenant for scoped limiters\n\n* handle case where tenant is not required\n\n* structured err and IsRecoverable helper",
+          "timestamp": "2026-09-14T16:20:34Z",
+          "tree_id": "f10927bd8e1fdd69aaff7d36d3d6799db7b24dc8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/34ebd5d3972b8297986ce2dbbeb3fdfaa968628c"
+        },
+        "date": 1789403560854,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 359.3,
+            "unit": "ns/op",
+            "extra": "3329038 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91032,
+            "unit": "ns/op",
+            "extra": "13113 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 409,
+            "unit": "ns/op",
+            "extra": "2936280 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91425,
+            "unit": "ns/op",
+            "extra": "13058 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25681,
+            "unit": "ns/op",
+            "extra": "46785 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136442,
+            "unit": "ns/op",
+            "extra": "8854 times\n4 procs"
           }
         ]
       }

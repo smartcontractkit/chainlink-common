@@ -15,7 +15,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -47,11 +46,9 @@ const memoryExportName = "memory"
 const callCapabilityV2ParamCount = 4
 
 var (
-	defaultTickInterval              = 100 * time.Millisecond
 	defaultTimeout                   = 10 * time.Minute
 	defaultPrehookTimeout            = 10 * time.Second
 	defaultMinMemoryMBs              = uint64(128)
-	DefaultInitialFuel               = uint64(100_000_000)
 	defaultMaxFetchRequests          = 5
 	defaultMaxCompressedBinarySize   = 20 * 1024 * 1024  // 20 MB
 	defaultMaxDecompressedBinarySize = 100 * 1024 * 1024 // 100 MB
@@ -72,13 +69,12 @@ type DeterminismConfig struct {
 	Seed int64
 }
 type ModuleConfig struct {
-	TickInterval     time.Duration
-	Timeout          *time.Duration
-	PrehookTimeout   *time.Duration
-	MaxMemoryMBs     uint64
-	MinMemoryMBs     uint64
-	MemoryLimiter    limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
-	InitialFuel      uint64
+	Timeout        *time.Duration
+	PrehookTimeout *time.Duration
+	MaxMemoryMBs   uint64
+	MinMemoryMBs   uint64
+	MemoryLimiter  limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
+
 	Logger           logger.Logger
 	IsUncompressed   bool
 	Fetch            func(ctx context.Context, req *FetchRequest) (*FetchResponse, error)
@@ -146,17 +142,12 @@ type ModuleV2 = host.Module
 type ExecutionHelper = host.ExecutionHelper
 
 type module struct {
-	engine  *wasmtime.Engine
-	module  *wasmtime.Module
-	wconfig *wasmtime.Config
+	module *wasmtime.Module
 
 	cfg             *ModuleConfig
 	defaultLimiters moduleLimiters
 
 	metrics moduleMetrics
-
-	wg     sync.WaitGroup
-	stopCh chan struct{}
 
 	v2ImportName string
 
@@ -271,10 +262,6 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 
 	if modCfg.SdkLabeler == nil {
 		modCfg.SdkLabeler = func(string) {}
-	}
-
-	if modCfg.TickInterval == 0 {
-		modCfg.TickInterval = defaultTickInterval
 	}
 
 	if modCfg.Timeout == nil {
@@ -428,22 +415,8 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 }
 
 func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
-	cfg := wasmtime.NewConfig()
-	cfg.SetEpochInterruption(true)
-	if modCfg.InitialFuel > 0 {
-		cfg.SetConsumeFuel(true)
-	}
-	if err := cfg.CacheConfigLoadDefault(); err != nil {
-		modCfg.Logger.Errorw("failed to load cache config, continuing without cache", "error", err)
-	}
-	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
-	SetUnwinding(cfg) // Handled differently based on host OS.
-
-	engine := wasmtime.NewEngineWithConfig(cfg)
-
-	mod, err := wasmtime.NewModule(engine, binary)
+	mod, err := wasmtime.NewModule(GetEngine(modCfg.Logger).Engine, binary)
 	if err != nil {
-		engine.Close()
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
 
@@ -453,7 +426,6 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 	// a missing or wrong-typed export.
 	if err = requireMemoryExport(mod); err != nil {
 		mod.Close()
-		engine.Close()
 		return nil, err
 	}
 
@@ -476,12 +448,9 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 	modCfg.SdkLabeler(v2ImportName)
 
 	return &module{
-		engine:        engine,
 		module:        mod,
-		wconfig:       cfg,
 		cfg:           modCfg,
 		metrics:       metrics,
-		stopCh:        make(chan struct{}),
 		v2ImportName:  v2ImportName,
 		callCapParams: callCapParams,
 		linkV2:        linkNoDAG,
@@ -489,7 +458,7 @@ func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*mod
 }
 
 func linkNoDAG(_ context.Context, m *module, store *wasmtime.Store, exec *execution[*sdkpb.ExecutionResult]) (*wasmtime.Instance, error) {
-	linker, err := newWasiLinker(exec, m.engine)
+	linker, err := newWasiLinker(exec)
 	if err != nil {
 		return nil, err
 	}
@@ -633,31 +602,14 @@ func linkLegacyDAG(ctx context.Context, m *module, store *wasmtime.Store, exec *
 	return linker.Instantiate(store, m.module)
 }
 
-func (m *module) Start() {
-	m.wg.Go(func() {
-		ticker := time.NewTicker(m.cfg.TickInterval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-m.stopCh:
-				return
-			case <-ticker.C:
-				m.engine.IncrementEpoch()
-			}
-		}
-	})
-}
+// noop
+func (m *module) Start() {}
 
 // Close may wait for a blocked acquisition from the internally owned pending
 // calls limiter.
 func (m *module) Close() {
-	close(m.stopCh)
-	m.wg.Wait()
-
 	m.defaultLimiters.close()
-	m.engine.Close()
 	m.module.Close()
-	m.wconfig.Close()
 }
 
 func (m *module) IsLegacyDAG() bool {
@@ -761,7 +713,8 @@ func runWasm[I, O proto.Message](
 
 	defer cancel()
 
-	store := wasmtime.NewStore(m.engine)
+	eng := GetEngine(m.cfg.Logger)
+	store := wasmtime.NewStore(eng.Engine)
 
 	defer store.Close()
 
@@ -789,13 +742,6 @@ func runWasm[I, O proto.Message](
 
 	store.SetWasi(wasi)
 
-	if m.cfg.InitialFuel > 0 {
-		err = store.SetFuel(m.cfg.InitialFuel)
-		if err != nil {
-			return o, fmt.Errorf("error setting fuel: %w", err)
-		}
-	}
-
 	// Limit memory to max memory megabytes per instance.
 	maxMemoryBytes, err := limiterOrDefault(m.cfg.MemoryLimiter, m.defaultLimiters.memory).Limit(ctx)
 	if err != nil {
@@ -809,7 +755,7 @@ func runWasm[I, O proto.Message](
 		1,  // memories
 	)
 
-	deadline := maxTimeout / m.cfg.TickInterval
+	deadline := maxTimeout / eng.engineTickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()
@@ -867,7 +813,7 @@ func runWasm[I, O proto.Message](
 	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
 	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
 	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= maxTimeout-m.cfg.TickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	if err != nil && ((executionDuration >= maxTimeout-engineTickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789405197467,
+  "lastUpdate": 1789410623898,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60420,6 +60420,66 @@ window.BENCHMARK_DATA = {
             "value": 96087,
             "unit": "ns/op",
             "extra": "12474 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c04345fd6f50ad109581cc5c4a18fa78f4e7f194",
+          "message": "Update configdoc to support more shapes of TOML (#2381)\n\n* Update configdoc to support more shapes of TOML\n\n* Fix bugs AI found\n\n* Fix another bug\n\n* Space parsing fix found by AI, wish it would find it all at once...\n\n* Small bug and comment fixes",
+          "timestamp": "2026-09-14T18:19:19Z",
+          "tree_id": "86d2ccb7963d14caceb47207ca5e0e4f4c42c48b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/c04345fd6f50ad109581cc5c4a18fa78f4e7f194"
+        },
+        "date": 1789410619449,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355.8,
+            "unit": "ns/op",
+            "extra": "3350736 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 89113,
+            "unit": "ns/op",
+            "extra": "13387 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.2,
+            "unit": "ns/op",
+            "extra": "2977386 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 88070,
+            "unit": "ns/op",
+            "extra": "13563 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25703,
+            "unit": "ns/op",
+            "extra": "46700 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 134369,
+            "unit": "ns/op",
+            "extra": "8360 times\n4 procs"
           }
         ]
       }

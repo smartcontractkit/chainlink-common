@@ -7,23 +7,30 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 )
 
-// GeneratedFileName is where [WriteFile] puts its output, and is skipped when parsing so a
+// GeneratedFileName is where the DocComments methods are written, and is skipped when parsing so a
 // regeneration reads the same sources as the first run.
 const GeneratedFileName = "doccomments_gen.go"
 
-// Package is one parsed Go package. Types are sorted by name so [Generate] emits them in a stable
-// order rather than the filesystem's.
+// Package is one package of a config tree, as a [Generator] receives it.
 type Package struct {
-	// Name is the package clause, which the generated file needs because it is written beside
-	// the source it was read from.
+	// ImportPath is what reflection reports as a type's package, so a generator keying on
+	// reflect.Type can match against it. It is empty for a package parsed without one.
+	ImportPath string
+
+	// Name is the package clause, which a generator emitting Go source into Dir needs and cannot
+	// derive from the path.
 	Name string
 
+	// Dir is where the package's generated files belong. [ParseDir] reports the directory it
+	// read; [Discover] rewrites it relative to the run directory, which is what a generator's
+	// paths are resolved against.
+	Dir string
+
+	// Types are sorted by name, so regenerating an unchanged package produces an unchanged file.
 	Types []Type
 }
 
@@ -32,11 +39,15 @@ type Type struct {
 	Name string
 
 	// Fields is keyed by Go field name rather than by config key, because the key depends on
-	// which tag convention the caller follows and the Go name does not.
+	// which tag convention the consumer follows and the Go name does not.
 	Fields map[string]FieldDoc
 }
 
-// ParseDir reads the documentation of every struct type declared in the package rooted at dir.
+// ParseDir reads the doc comments of every struct type declared in the package rooted at dir.
+//
+// Every struct is returned, with no judgement about which take part in configuration: the caller
+// walking a real config value knows which types it reached, and a parser guessing from comments
+// and tags would only disagree with it.
 //
 // Test files are excluded, since a config struct declared in one is not part of the package a
 // consumer imports.
@@ -47,7 +58,7 @@ func ParseDir(dir string) (*Package, error) {
 	}
 
 	fset := token.NewFileSet()
-	pkg := &Package{}
+	pkg := &Package{Dir: dir}
 	for _, entry := range entries {
 		name := entry.Name()
 		if entry.IsDir() || !strings.HasSuffix(name, ".go") ||
@@ -73,6 +84,18 @@ func ParseDir(dir string) (*Package, error) {
 	return pkg, nil
 }
 
+// Type finds a type by name, because a name is all reflection reports about one - there is no
+// index into the file it was declared in. A miss means the type is not part of the package a
+// consumer imports, which is a different thing from having no documentation.
+func (p *Package) Type(name string) (Type, bool) {
+	for _, typ := range p.Types {
+		if typ.Name == name {
+			return typ, true
+		}
+	}
+	return Type{}, false
+}
+
 func typesIn(file *ast.File) []Type {
 	var types []Type
 	for _, decl := range file.Decls {
@@ -89,44 +112,21 @@ func typesIn(file *ast.File) []Type {
 			if !ok {
 				continue
 			}
-			if fields, ok := documentedFields(structType); ok {
-				types = append(types, Type{Name: typeSpec.Name.Name, Fields: fields})
-			}
+			types = append(types, Type{Name: typeSpec.Name.Name, Fields: fieldsIn(structType)})
 		}
 	}
 	return types
 }
 
-// documentedFields reports whether a struct takes part in configuration at all, and its fields if
-// so. A struct with no comment and no tag anywhere is some internal type, and indexing it would
-// have a caller's lookup succeed on types no config file ever names.
-//
-// An embedded field alone qualifies, even when the struct adds nothing of its own. Skipping it
-// would leave it promoting the embedded type's DocComments and answering for fields that are not
-// its own - see [DocCommenter].
-func documentedFields(structType *ast.StructType) (map[string]FieldDoc, bool) {
+func fieldsIn(structType *ast.StructType) map[string]FieldDoc {
 	fields := make(map[string]FieldDoc)
-	qualifies := false
-
 	for _, field := range structType.Fields.List {
-		tag := structTag(field)
-		doc := FieldDoc{
-			Comment:  commentText(field),
-			Validate: tag.Get("validate"),
-		}
-		if len(field.Names) == 0 || doc.Comment != "" || tag != "" {
-			qualifies = true
-		}
-
+		doc := FieldDoc{Comment: commentText(field)}
 		for _, name := range fieldNames(field) {
 			fields[name] = doc
 		}
 	}
-
-	if !qualifies {
-		return nil, false
-	}
-	return fields, true
+	return fields
 }
 
 // fieldNames returns the Go names a field declares, which for an embedded field is the bare name
@@ -171,17 +171,4 @@ func commentText(field *ast.Field) string {
 		return ""
 	}
 	return strings.TrimSuffix(group.Text(), "\n")
-}
-
-// structTag unquotes a field's tag literal. An unparseable literal yields no tag rather than an
-// error, because the compiler will reject it far more clearly than this parser could.
-func structTag(field *ast.Field) reflect.StructTag {
-	if field.Tag == nil {
-		return ""
-	}
-	unquoted, err := strconv.Unquote(field.Tag.Value)
-	if err != nil {
-		return ""
-	}
-	return reflect.StructTag(unquoted)
 }

@@ -1,5 +1,5 @@
 // Command gen generates the DocComments for this example. It names one root type and nothing
-// else: Discover finds every package that type reaches, and writes a file into each one it owns.
+// else: Run discovers every package that type reaches and writes a file into each one it owns.
 package main
 
 import (
@@ -10,12 +10,11 @@ import (
 )
 
 func main() {
-	docs, err := commentparsing.Discover(&simple.Config{})
-	if err != nil {
+	if err := commentparsing.Run(commentparsing.RunArgs{
+		Roots:       []any{&simple.Config{}},
+		Tool:        "github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/simple/gen",
+		LocalPrefix: "github.com/smartcontractkit",
+	}); err != nil {
 		log.Fatal(err)
 	}
-	if err := docs.GenerateDocCommentFiles(); err != nil {
-		log.Fatal(err)
-	}
-	log.Println("documented", docs.Packages())
 }

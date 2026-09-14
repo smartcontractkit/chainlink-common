@@ -16,164 +16,112 @@ var (
 	textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()
 )
 
-// Docs is the documentation of a whole config tree: every struct type reachable from the root,
-// wherever it was declared.
+// Discover collects the documentation of every struct type reachable from the given roots, each of
+// which may be a struct, a pointer to one, or a config value of any shape holding them.
 //
-// It is what a consumer holds instead of a list of packages. Nothing about a config tree is the
-// caller's to restate - which types take part, which packages they live in, which of those are
-// local - so [Discover] works all of it out from the root value and this carries the answer.
-type Docs struct {
-	// fields is keyed by package path and type name together, because two packages of one config
-	// tree may well declare a Config apiece.
-	fields map[string]map[string]FieldDoc
-
-	// dirs are the discovered packages whose source this module owns, keyed by package path.
-	// Only these can be generated into: another module's source is in the read-only module cache,
-	// which is the whole reason it has to ship its documentation compiled.
-	dirs map[string]string
-}
-
-// Discover collects the documentation of every struct type reachable from root, which may be a
-// struct, a pointer to one, or a config value of any shape holding them.
+// Roots are variadic because a package often exposes more than one entry point - a config and a
+// secrets file, or two sections a consumer may embed independently - and a type reachable from
+// none of them would be left undocumented for whoever embeds it next.
 //
-// Each type is resolved the only way it can be. A type this module declares has its source on
-// hand, so its comments are parsed directly and stay incapable of disagreeing with the
-// declaration. A type from a dependency has no reachable source, so its generated DocComments
-// method is used, and a dependency that never generated is named rather than silently documented
-// as blank.
+// dir anchors the search: the module enclosing it decides which types are local. A type this
+// module declares has its source on hand, so its comments are parsed and stay incapable of
+// disagreeing with the declaration. A type from a dependency has no reachable source, so its
+// generated DocComments method is read, and a dependency that never generated is named rather
+// than documented as blank.
 //
 // The walk follows pointers, slices, arrays, maps and embedded fields, so a caller names one root
 // and never enumerates what it contains. Types decoded from a single string - a timestamp, a
-// duration - are left out: they are leaf values, not config sections, and have no fields to
-// describe.
-func Discover(root any) (*Docs, error) {
-	moduleRoot, modulePath, err := enclosingModule()
+// duration - are left out: they are leaf values, not config sections, and a dependency has every
+// right to document no fields on one.
+//
+// Only the types the walk reached are returned, so a package's internal structs are not carried
+// into a generator that would have no idea which of them a config file can name.
+func Discover(dir string, roots ...any) ([]Package, error) {
+	moduleRoot, modulePath, err := enclosingModule(dir)
+	if err != nil {
+		return nil, err
+	}
+	runDir, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	docs := &Docs{
-		fields: make(map[string]map[string]FieldDoc),
-		dirs:   make(map[string]string),
-	}
-	parsed := make(map[string]bool)
+	byPath := make(map[string]*Package)
+	parsed := make(map[string]*Package)
 
 	var errs []error
-	for _, structType := range collectStructs(reflect.TypeOf(root)) {
-		pkgPath := structType.PkgPath()
-		if pkgPath == "" {
+	for _, structType := range collectStructs(roots) {
+		importPath := structType.PkgPath()
+		if importPath == "" {
 			continue // an anonymous struct has no package to document it
 		}
 
-		rel, inModule := strings.CutPrefix(pkgPath, modulePath)
-		if !inModule {
-			if err := docs.addGenerated(structType); err != nil {
+		pkg, ok := byPath[importPath]
+		if !ok {
+			pkg = &Package{ImportPath: importPath}
+			byPath[importPath] = pkg
+		}
+
+		rel, local := strings.CutPrefix(importPath, modulePath)
+		if !local {
+			fields, err := Lookup(structType)
+			if err != nil {
 				errs = append(errs, err)
+				continue
 			}
+			pkg.Types = append(pkg.Types, Type{Name: structType.Name(), Fields: fields})
 			continue
 		}
 
-		dir := filepath.Join(moduleRoot, filepath.FromSlash(strings.TrimPrefix(rel, "/")))
-		docs.dirs[pkgPath] = dir
-		if parsed[pkgPath] {
+		source, ok := parsed[importPath]
+		if !ok {
+			source, err = ParseDir(filepath.Join(moduleRoot, filepath.FromSlash(strings.TrimPrefix(rel, "/"))))
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", importPath, err))
+				continue
+			}
+			parsed[importPath] = source
+
+			// A generator's paths are relative to the run directory, so a package's is too.
+			relDir, err := filepath.Rel(runDir, source.Dir)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("%s: %w", importPath, err))
+				continue
+			}
+			pkg.Name, pkg.Dir = source.Name, relDir
+		}
+
+		typ, ok := source.Type(structType.Name())
+		if !ok {
+			errs = append(errs, fmt.Errorf("%s.%s: declared in no source file of %s",
+				importPath, structType.Name(), source.Dir))
 			continue
 		}
-		parsed[pkgPath] = true
-		if err := docs.addParsed(pkgPath, dir); err != nil {
-			errs = append(errs, err)
-		}
+		pkg.Types = append(pkg.Types, typ)
 	}
-	return docs, errors.Join(errs...)
+
+	return sortedPackages(byPath), errors.Join(errs...)
 }
 
-// addParsed records a package this module declares, read from its source.
-func (d *Docs) addParsed(pkgPath, dir string) error {
-	pkg, err := ParseDir(dir)
-	if err != nil {
-		return fmt.Errorf("%s: %w", pkgPath, err)
+// sortedPackages orders packages and their types by name, so a regenerated file is byte-identical
+// to the last one and a CI diff means something.
+func sortedPackages(byPath map[string]*Package) []Package {
+	packages := make([]Package, 0, len(byPath))
+	for _, pkg := range byPath {
+		sort.Slice(pkg.Types, func(i, j int) bool { return pkg.Types[i].Name < pkg.Types[j].Name })
+		packages = append(packages, *pkg)
 	}
-	for _, typ := range pkg.Types {
-		d.fields[pkgPath+"."+typ.Name] = typ.Fields
-	}
-	return nil
+	sort.Slice(packages, func(i, j int) bool { return packages[i].ImportPath < packages[j].ImportPath })
+	return packages
 }
 
-// addGenerated records a dependency's type from the method compiled into it.
-func (d *Docs) addGenerated(structType reflect.Type) error {
-	fields, err := Lookup(structType)
-	if err != nil {
-		return err
-	}
-	d.fields[structType.PkgPath()+"."+structType.Name()] = fields
-	return nil
-}
-
-// Type returns the documentation of structType's fields, keyed by Go field name.
+// collectStructs returns every struct type reachable through the roots, each exactly once.
 //
-// A type the walk never reached is an error rather than an empty result, because the alternative
-// is a reference that silently describes nothing and reads as though the fields were never
-// documented.
-func (d *Docs) Type(structType reflect.Type) (map[string]FieldDoc, error) {
-	key, ok := typeKey(structType)
-	if !ok {
-		return nil, errors.New("no documentation discovered for a nil type")
-	}
-	fields, ok := d.fields[key]
-	if !ok {
-		return nil, fmt.Errorf("no documentation discovered for %s: it is not reachable from the root value", key)
-	}
-	return fields, nil
-}
-
-// Field returns one field's documentation, zero if it has none. It is the lookup a renderer wants
-// while walking a struct, where a field with no comment is a fact to report against that field
-// rather than a reason to abandon the walk.
-func (d *Docs) Field(structType reflect.Type, fieldName string) FieldDoc {
-	key, _ := typeKey(structType)
-	return d.fields[key][fieldName]
-}
-
-// typeKey names a struct type the way the index is keyed, reporting false for the nil type a
-// caller can reach through an interface field.
-func typeKey(structType reflect.Type) (string, bool) {
-	structType = derefType(structType)
-	if structType == nil {
-		return "", false
-	}
-	return structType.PkgPath() + "." + structType.Name(), true
-}
-
-// Packages returns the package paths the walk reached, sorted.
-func (d *Docs) Packages() []string {
-	seen := make(map[string]bool)
-	for key := range d.fields {
-		seen[key[:strings.LastIndex(key, ".")]] = true
-	}
-	paths := make([]string, 0, len(seen))
-	for path := range seen {
-		paths = append(paths, path)
-	}
-	sort.Strings(paths)
-	return paths
-}
-
-// GenerateDocCommentFiles writes a DocComments file into every discovered directory this module
-// owns, so the types documented here stay readable from a module that cannot see this source.
-//
-// A dependency's package is not written to: its source is in the read-only module cache, and its
-// documentation is its own repository's to generate.
-func (d *Docs) GenerateDocCommentFiles() error {
-	var errs []error
-	for _, pkgPath := range sortedDirKeys(d.dirs) {
-		if err := WriteFile(d.dirs[pkgPath]); err != nil {
-			errs = append(errs, fmt.Errorf("%s: %w", pkgPath, err))
-		}
-	}
-	return errors.Join(errs...)
-}
-
-// collectStructs returns every struct type reachable through t, the root first and each type once.
-func collectStructs(t reflect.Type) []reflect.Type {
+// Exactly once is what the generated code depends on: a type collected twice would become two
+// DocComments methods on one receiver, which does not compile. Reaching one type through a field,
+// a slice and an embed at the same time is ordinary, and a config that refers back to itself would
+// not terminate without the same memory.
+func collectStructs(roots []any) []reflect.Type {
 	var found []reflect.Type
 	visited := make(map[reflect.Type]bool)
 
@@ -189,7 +137,6 @@ func collectStructs(t reflect.Type) []reflect.Type {
 		switch t.Kind() {
 		case reflect.Slice, reflect.Array, reflect.Map:
 			walk(t.Elem())
-			return
 		case reflect.Struct:
 			if isScalarStruct(t) {
 				return
@@ -206,7 +153,9 @@ func collectStructs(t reflect.Type) []reflect.Type {
 		}
 	}
 
-	walk(t)
+	for _, root := range roots {
+		walk(reflect.TypeOf(root))
+	}
 	return found
 }
 
@@ -225,23 +174,13 @@ func derefType(t reflect.Type) reflect.Type {
 	return t
 }
 
-func sortedDirKeys(dirs map[string]string) []string {
-	keys := make([]string, 0, len(dirs))
-	for key := range dirs {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-// enclosingModule locates the module the caller is running in, by walking up from the working
-// directory to the nearest go.mod.
+// enclosingModule walks up from dir to the nearest go.mod.
 //
 // This is what tells a locally declared type from a dependency's, and it is read from the
 // filesystem rather than asked of the go tool so that discovery stays a library operation - see
 // the package README.
-func enclosingModule() (root, path string, err error) {
-	dir, err := os.Getwd()
+func enclosingModule(dir string) (root, path string, err error) {
+	dir, err = filepath.Abs(dir)
 	if err != nil {
 		return "", "", err
 	}

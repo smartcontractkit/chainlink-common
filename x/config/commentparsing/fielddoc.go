@@ -5,20 +5,19 @@ import (
 	"reflect"
 )
 
-// FieldDoc is what a field's declaration says about itself beyond its type and name.
+// FieldDoc is what a field's declaration says about itself that compilation discards.
 //
-// It is a struct rather than a bare comment string so a later addition - whether a value is a
-// default or an example, a deprecation note - extends it without disturbing the DocComments
-// signature every generated file implements.
+// Only the doc comment qualifies. A struct tag survives into the compiled type, so a consumer
+// holding the type can read `validate` and the rest through reflection and does not need them
+// carried here as well.
+//
+// It stays a struct rather than collapsing to a string because the next thing worth recording -
+// whether a value is a default or an example, a deprecation note - is also lost at compile time,
+// and adding it here leaves every generated method's signature alone.
 type FieldDoc struct {
 	// Comment is the field's doc comment, whole and unabridged rather than the first sentence,
 	// because a config reference is exactly where the caveats in the remaining sentences matter.
 	Comment string
-
-	// Validate is the field's `validate` tag, verbatim. Reflection can read this from the
-	// compiled struct, but a consumer rendering documentation from the method alone cannot, and
-	// it is often the only statement that a field is required or mutually exclusive with another.
-	Validate string
 }
 
 // DocCommenter is implemented by the generated code, returning the name of the type it was
@@ -38,8 +37,11 @@ type DocCommenter interface {
 // declares t - so both say so, since a caller hitting this has no other way to know that a
 // generation step exists.
 func Lookup(t reflect.Type) (map[string]FieldDoc, error) {
-	for t.Kind() == reflect.Pointer {
+	for t != nil && t.Kind() == reflect.Pointer {
 		t = t.Elem()
+	}
+	if t == nil {
+		return nil, fmt.Errorf("cannot look up documentation for a nil type")
 	}
 
 	// A generated method has a value receiver, so *T carries it too, and only *T can be

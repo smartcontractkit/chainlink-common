@@ -1,6 +1,6 @@
 // Command gen generates the DocComments for this example. The upstream package is never named
-// here: Discover reaches it through Config's embedded and nested fields, and
-// GenerateDocCommentFiles writes a file into both directories it found.
+// here: Run reaches it through Config's embedded and nested fields, and writes a file into both
+// directories it found.
 package main
 
 import (
@@ -11,12 +11,11 @@ import (
 )
 
 func main() {
-	docs, err := commentparsing.Discover(&nested.Config{})
-	if err != nil {
+	if err := commentparsing.Run(commentparsing.RunArgs{
+		Roots:       []any{&nested.Config{}},
+		Tool:        "github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/nested/gen",
+		LocalPrefix: "github.com/smartcontractkit",
+	}); err != nil {
 		log.Fatal(err)
 	}
-	if err := docs.GenerateDocCommentFiles(); err != nil {
-		log.Fatal(err)
-	}
-	log.Println("documented", docs.Packages())
 }

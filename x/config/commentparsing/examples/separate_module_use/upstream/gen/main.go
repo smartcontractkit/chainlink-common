@@ -10,11 +10,11 @@ import (
 )
 
 func main() {
-	docs, err := commentparsing.Discover(&upstream.Settings{})
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := docs.GenerateDocCommentFiles(); err != nil {
+	if err := commentparsing.Run(commentparsing.RunArgs{
+		Roots:       []any{&upstream.Settings{}, &upstream.Retry{}},
+		Tool:        "example.com/upstream/gen",
+		LocalPrefix: "example.com",
+	}); err != nil {
 		log.Fatal(err)
 	}
 }

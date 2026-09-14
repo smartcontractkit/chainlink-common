@@ -22,7 +22,7 @@ var (
 )
 
 func newWasiLinker[T any](exec *execution[T]) (*wasmtime.Linker, error) {
-	linker := wasmtime.NewLinker(GetEngine(exec.module.cfg.Logger))
+	linker := wasmtime.NewLinker(GetEngine(exec.module.cfg.Logger).Engine)
 	cleanupLinker := true
 	defer func() {
 		if cleanupLinker {
@@ -62,7 +62,7 @@ func newWasiLinker[T any](exec *execution[T]) (*wasmtime.Linker, error) {
 }
 
 func newDagWasiLinker(ctx context.Context, m *module) (*wasmtime.Linker, error) {
-	linker := wasmtime.NewLinker(GetEngine(m.cfg.Logger))
+	linker := wasmtime.NewLinker(GetEngine(m.cfg.Logger).Engine)
 	cleanupLinker := true
 	defer func() {
 		if cleanupLinker {

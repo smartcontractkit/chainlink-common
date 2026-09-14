@@ -23,7 +23,7 @@ const spinWat = `
 
 // newSpinner compiles spinWat on e and returns a store armed to trap one epoch
 // from now.
-func newSpinner(t *testing.T, e *engine) (*wasmtime.Store, *wasmtime.Func) {
+func newSpinner(t *testing.T, e *Engine) (*wasmtime.Store, *wasmtime.Func) {
 	t.Helper()
 
 	wasmBytes, err := wasmtime.Wat2Wasm(spinWat)
@@ -49,9 +49,9 @@ func newSpinner(t *testing.T, e *engine) (*wasmtime.Store, *wasmtime.Func) {
 func TestEngine_StartInterruptsRunningCode(t *testing.T) {
 	e := newEngine(logger.Test(t))
 	// Registered before anything built from the engine, so it is torn down last.
-	t.Cleanup(e.close)
+	t.Cleanup(e.Close)
 	e.engineTickInterval = time.Millisecond
-	e.start()
+	e.Start()
 
 	store, spin := newSpinner(t, e)
 
@@ -61,7 +61,7 @@ func TestEngine_StartInterruptsRunningCode(t *testing.T) {
 
 func TestEngine_EpochOnlyAdvancesWhileStarted(t *testing.T) {
 	e := newEngine(logger.Test(t))
-	t.Cleanup(e.close)
+	t.Cleanup(e.Close)
 
 	store, spin := newSpinner(t, e)
 
@@ -79,12 +79,12 @@ func TestEngine_EpochOnlyAdvancesWhileStarted(t *testing.T) {
 func TestEngine_CloseStopsTicker(t *testing.T) {
 	e := newEngine(logger.Test(t))
 	e.engineTickInterval = time.Millisecond
-	e.start()
+	e.Start()
 
 	time.Sleep(10 * time.Millisecond) // let the ticker run a few times
-	e.close()
+	e.Close()
 
-	// A ticker outliving close would call IncrementEpoch on the deallocated
+	// A ticker outliving Close would call IncrementEpoch on the deallocated
 	// engine and panic the test binary.
 	time.Sleep(20 * time.Millisecond)
 

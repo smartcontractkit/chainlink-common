@@ -9,14 +9,15 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
-type engine struct {
+type Engine struct {
 	*wasmtime.Engine
+	cfg                *wasmtime.Config
 	stopCh             chan struct{}
 	wg                 sync.WaitGroup
 	engineTickInterval time.Duration
 }
 
-func newEngine(lggr logger.Logger) *engine {
+func newEngine(lggr logger.Logger) *Engine {
 	cfg := wasmtime.NewConfig()
 	cfg.SetEpochInterruption(true)
 	if err := cfg.CacheConfigLoadDefault(); err != nil {
@@ -25,14 +26,15 @@ func newEngine(lggr logger.Logger) *engine {
 	cfg.SetCraneliftOptLevel(wasmtime.OptLevelSpeedAndSize)
 	SetUnwinding(cfg) // Handled differently based on host OS.
 
-	return &engine{
+	return &Engine{
 		Engine:             wasmtime.NewEngineWithConfig(cfg),
+		cfg:                cfg,
 		stopCh:             make(chan struct{}),
 		engineTickInterval: engineTickInterval,
 	}
 }
 
-func (e *engine) start() {
+func (e *Engine) Start() {
 	e.wg.Go(func() {
 		ticker := time.NewTicker(e.engineTickInterval)
 		defer ticker.Stop()
@@ -47,34 +49,35 @@ func (e *engine) start() {
 	})
 }
 
-func (e *engine) close() {
+func (e *Engine) Close() {
 	// Wait for the ticker to exit before deallocating, so it can't increment
 	// the epoch of an engine that is no longer there.
 	close(e.stopCh)
 	e.wg.Wait()
-	e.Close()
+	e.Engine.Close()
+	e.cfg.Close()
 }
 
 const engineTickInterval = 100 * time.Millisecond
 
 var (
 	globalEngineMu sync.Mutex
-	globalEngine   *engine
+	globalEngine   *Engine
 )
 
-func GetEngine(lggr logger.Logger) *wasmtime.Engine {
+func GetEngine(lggr logger.Logger) *Engine {
 	globalEngineMu.Lock()
 	defer globalEngineMu.Unlock()
 
 	if globalEngine != nil {
-		return globalEngine.Engine
+		return globalEngine
 	}
 
 	e := newEngine(lggr)
 	globalEngine = e
-	e.start()
+	e.Start()
 
-	return e.Engine
+	return e
 }
 
 func CloseEngine() {
@@ -85,6 +88,6 @@ func CloseEngine() {
 		return
 	}
 
-	globalEngine.close()
+	globalEngine.Close()
 	globalEngine = nil
 }

@@ -415,7 +415,7 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 }
 
 func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
-	mod, err := wasmtime.NewModule(GetEngine(modCfg.Logger), binary)
+	mod, err := wasmtime.NewModule(GetEngine(modCfg.Logger).Engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
@@ -713,7 +713,8 @@ func runWasm[I, O proto.Message](
 
 	defer cancel()
 
-	store := wasmtime.NewStore(GetEngine(m.cfg.Logger))
+	eng := GetEngine(m.cfg.Logger)
+	store := wasmtime.NewStore(eng.Engine)
 
 	defer store.Close()
 
@@ -754,7 +755,7 @@ func runWasm[I, O proto.Message](
 		1,  // memories
 	)
 
-	deadline := maxTimeout / engineTickInterval
+	deadline := maxTimeout / eng.engineTickInterval
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()

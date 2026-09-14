@@ -305,6 +305,19 @@ Foo=false # Default`
 		})
 	})
 
+	t.Run("Table header with an inline comment", func(t *testing.T) {
+		def := `
+# Baz is a table.
+[Baz] # section
+  # Test holds a string.
+  Test = "test" # Example`
+
+		s, err := Generate(def, "# H", "", map[string]string{"Baz": "Baz has an extended description"})
+		require.NoError(t, err)
+		require.Contains(t, s, "## Baz\n")
+		require.Contains(t, s, "Baz has an extended description")
+	})
+
 	t.Run("Undocumented key in a documented struct table", func(t *testing.T) {
 		def := `
 # Baz is a table.
@@ -383,4 +396,9 @@ func TestTableName(t *testing.T) {
 	require.Equal(t, "clients", tableName("[[clients]]"))
 	require.Equal(t, "clients", tableName("[[clients]] # Example"))
 	require.Equal(t, "clients", tableName("[[clients]] # Default"))
+	require.Equal(t, "Baz", tableName("[Baz] # section"))
+	require.Equal(t, "Baz", tableName("[Baz]#section"))
+	require.Equal(t, "clients", tableName("[[clients]] # a list of clients"))
+	require.Equal(t, `"a#b"`, tableName(`["a#b"]`))
+	require.Equal(t, `"a#b"`, tableName(`["a#b"] # section`))
 }

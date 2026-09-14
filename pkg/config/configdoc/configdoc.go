@@ -53,13 +53,10 @@ func isGeneratedPreamble(desc lines) bool {
 }
 
 func tableName(line string) string {
-	for _, marker := range []string{FieldDefault, FieldExample} {
-		if rest, ok := strings.CutSuffix(line, marker); ok {
-			line = strings.TrimSpace(rest)
-			break
-		}
+	if i := indexOutsideQuotes(line, '#'); i > -1 {
+		line = line[:i]
 	}
-	return strings.Trim(line, "[]")
+	return strings.Trim(strings.TrimSpace(line), "[]")
 }
 
 // lines holds a set of contiguous lines
@@ -148,11 +145,10 @@ type keyval struct {
 	desc lines
 }
 
-// keyName returns the key of a TOML key/value line. Whitespace around the '='
-// separator is optional, and quoted keys may themselves contain '=' or spaces,
-// so the separator is located outside of quotes.
-func keyName(line string) string {
-	line = strings.TrimSpace(line)
+// indexOutsideQuotes returns the index of the first b which is not inside a quoted
+// TOML key or string, or -1. Quoted keys may contain '=' and '#', which are
+// otherwise a key/value separator and the start of a comment.
+func indexOutsideQuotes(line string, b byte) int {
 	var inBasic, inLiteral bool
 	for i := 0; i < len(line); i++ {
 		c := line[i]
@@ -172,9 +168,19 @@ func keyName(line string) string {
 			inBasic = true
 		case c == '\'':
 			inLiteral = true
-		case c == '=':
-			return strings.TrimSpace(line[:i])
+		case c == b:
+			return i
 		}
+	}
+	return -1
+}
+
+// keyName returns the key of a TOML key/value line. Whitespace around the '='
+// separator is optional.
+func keyName(line string) string {
+	line = strings.TrimSpace(line)
+	if i := indexOutsideQuotes(line, '='); i > -1 {
+		return strings.TrimSpace(line[:i])
 	}
 	return line
 }

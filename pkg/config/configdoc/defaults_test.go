@@ -126,6 +126,22 @@ Foo = true # Default
 			require.Equal(t, 7, *c.Nested.Count)
 		})
 
+		t.Run("with whitespace inside the brackets", func(t *testing.T) {
+			def := `[[ Extra ]]
+  # Key is the API key.
+  Key = "def" # Default
+[ Nested ]
+  # Count is a number.
+  Count = 7 # Default
+`
+
+			var c cfg
+			require.NoError(t, DefaultsOnly(strings.NewReader(def), &c, config.DecodeTOML))
+
+			require.Empty(t, c.Extra)
+			require.Equal(t, 7, *c.Nested.Count)
+		})
+
 		t.Run("marked as an example", func(t *testing.T) {
 			def := `[[Extra]] # Example
   # Key is the API key.

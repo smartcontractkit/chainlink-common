@@ -13,13 +13,16 @@ const (
 	FieldExample = "# Example"
 
 	TokenAdvanced = "**ADVANCED**"
+	TokenMap      = "**MAP**"
 )
 
 // Generate returns MarkDown documentation generated from the TOML string.
-// - Each field but include a trailing comment of either FieldDefault or FieldExample.
-// - If a description begins with TokenAdvanced, then a warning will be included.
-// - The markdown wil begin with the header, followed by the example
-// - Extended descriptions can be applied to top level tables
+//   - Each field but include a trailing comment of either FieldDefault or FieldExample.
+//   - If a description begins with TokenAdvanced, then a warning will be included.
+//   - If a table description begins with TokenMap, then its keys are map entries, and
+//     they inherit the table description rather than requiring one of their own.
+//   - The markdown wil begin with the header, followed by the example
+//   - Extended descriptions can be applied to top level tables
 func Generate(toml, header, example string, extendedDescriptions map[string]string) (string, error) {
 	items, err := parseTOMLDocs(toml, extendedDescriptions)
 	var sb strings.Builder
@@ -70,6 +73,7 @@ type table struct {
 	name     string
 	codes    lines
 	adv      bool
+	isMap    bool
 	desc     lines
 	extended string
 }
@@ -83,12 +87,7 @@ func newTable(line string, desc lines, extendedDescriptions map[string]string) *
 	if extended, ok := extendedDescriptions[t.name]; ok {
 		t.extended = extended
 	}
-	if len(desc) > 0 {
-		if strings.HasPrefix(strings.TrimSpace(desc[0]), TokenAdvanced) {
-			t.adv = true
-			t.desc = t.desc[1:]
-		}
-	}
+	t.parseTokens()
 	return t
 }
 
@@ -101,13 +100,22 @@ func newArrayOfTables(line string, desc lines, extendedDescriptions map[string]s
 	if extended, ok := extendedDescriptions[t.name]; ok {
 		t.extended = extended
 	}
-	if len(desc) > 0 {
-		if strings.HasPrefix(strings.TrimSpace(desc[0]), TokenAdvanced) {
-			t.adv = true
-			t.desc = t.desc[1:]
-		}
-	}
+	t.parseTokens()
 	return t
+}
+
+func (t *table) parseTokens() {
+	for len(t.desc) > 0 {
+		switch first := strings.TrimSpace(t.desc[0]); {
+		case strings.HasPrefix(first, TokenAdvanced):
+			t.adv = true
+		case strings.HasPrefix(first, TokenMap):
+			t.isMap = true
+		default:
+			return
+		}
+		t.desc = t.desc[1:]
+	}
 }
 
 func (t table) advanced() string {
@@ -140,15 +148,41 @@ type keyval struct {
 	desc lines
 }
 
+// keyName returns the key of a TOML key/value line. Whitespace around the '='
+// separator is optional, and quoted keys may themselves contain '=' or spaces,
+// so the separator is located outside of quotes.
+func keyName(line string) string {
+	line = strings.TrimSpace(line)
+	var inBasic, inLiteral bool
+	for i := 0; i < len(line); i++ {
+		c := line[i]
+		switch {
+		case inBasic:
+			switch c {
+			case '\\':
+				i++
+			case '"':
+				inBasic = false
+			}
+		case inLiteral:
+			if c == '\'' {
+				inLiteral = false
+			}
+		case c == '"':
+			inBasic = true
+		case c == '\'':
+			inLiteral = true
+		case c == '=':
+			return strings.TrimSpace(line[:i])
+		}
+	}
+	return line
+}
+
 func newKeyval(line string, desc lines) keyval {
 	line = strings.TrimSpace(line)
-	// A malformed line with no space after the key would otherwise panic.
-	name := line
-	if i := strings.Index(line, " "); i > -1 {
-		name = line[:i]
-	}
 	kv := keyval{
-		name: name,
+		name: keyName(line),
 		code: line,
 		desc: desc,
 	}
@@ -211,14 +245,6 @@ func parseTOMLDocs(s string, extendedDescriptions map[string]string) (items []fm
 			items = append(items, currentTable)
 			desc = nil
 		default:
-			// A dynamic key — a map entry keyed by data, such as a chain selector
-			// or a telemetry label — has no declaring struct field, so it cannot
-			// carry a doc comment of its own.
-			inherited := false
-			if len(desc) == 0 && currentTable != &globalTable && len(currentTable.desc) > 0 {
-				desc = currentTable.desc
-				inherited = true
-			}
 			kv := newKeyval(trimmed, desc)
 			shortName := kv.name
 			if currentTable != &globalTable {
@@ -226,7 +252,10 @@ func parseTOMLDocs(s string, extendedDescriptions map[string]string) (items []fm
 				kv.name = currentTable.name + "." + kv.name
 			}
 			switch {
-			case inherited:
+			case len(kv.desc) == 0 && currentTable.isMap && len(currentTable.desc) > 0:
+				// A map entry is keyed by data - a chain selector, a telemetry label -
+				// so it has no declaring struct field to carry a doc comment.
+				kv.desc = currentTable.desc
 			case len(kv.desc) == 0:
 				err = errors.Join(err, fmt.Errorf("%s: missing description", kv.name))
 			case !strings.HasPrefix(kv.desc[0], shortName):

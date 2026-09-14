@@ -58,6 +58,7 @@ Foo = false # Default
 
 	t.Run("Dynamic map keys", func(t *testing.T) {
 		def := `
+# **MAP**
 # Addresses maps a chain selector to its contract address.
 [Addresses]
   1 = "0xabc" # Example
@@ -67,10 +68,37 @@ Foo = false # Default
 		require.NoError(t, err)
 		require.Contains(t, s, "### 1")
 		require.Contains(t, s, "Addresses maps a chain selector to its contract address.")
+		require.NotContains(t, s, TokenMap)
+	})
+
+	t.Run("Dynamic map keys without the map token", func(t *testing.T) {
+		def := `
+# Addresses maps a chain selector to its contract address.
+[Addresses]
+  1 = "0xabc" # Example`
+
+		_, err := Generate(def, "# H", "", nil)
+		require.ErrorContains(t, err, "Addresses.1: missing description")
+	})
+
+	t.Run("Advanced map", func(t *testing.T) {
+		def := `
+# **ADVANCED**
+# **MAP**
+# Addresses maps a chain selector to its contract address.
+[Addresses]
+  1 = "0xabc" # Example`
+
+		s, err := Generate(def, "# H", "", nil)
+		require.NoError(t, err)
+		require.Contains(t, s, "Do not change these settings unless you know what you are doing.")
+		require.NotContains(t, s, TokenAdvanced)
+		require.NotContains(t, s, TokenMap)
 	})
 
 	t.Run("Dynamic map keys missing flags", func(t *testing.T) {
 		def := `
+# **MAP**
 # Addresses maps a chain selector to its contract address.
 [Addresses]
   1 = "0xabc"`
@@ -183,6 +211,7 @@ Foo = false # Default`
 
 	t.Run("Dynamic map keys under an undescribed table", func(t *testing.T) {
 		def := `
+# **MAP**
 [Addresses]
   1 = "0xabc" # Example`
 
@@ -240,12 +269,112 @@ Foo = false # Default`
 		require.NotContains(t, s, TokenAdvanced)
 	})
 
-	t.Run("Key value without space does not panic", func(t *testing.T) {
+	t.Run("Key value without spaces around the separator", func(t *testing.T) {
+		def := `
+# Foo is a boolean field.
+Foo=false # Default`
+
+		s, err := Generate(def, "# H", "", nil)
+		require.NoError(t, err)
+		require.Contains(t, s, "### Foo")
+		require.Contains(t, s, "Foo is a boolean field.")
+	})
+
+	t.Run("Key value separated by tabs", func(t *testing.T) {
+		def := "\n# Foo is a boolean field.\nFoo\t=\tfalse # Default"
+
+		s, err := Generate(def, "# H", "", nil)
+		require.NoError(t, err)
+		require.Contains(t, s, "### Foo")
+	})
+
+	t.Run("Quoted key containing a separator", func(t *testing.T) {
+		def := `
+# "a=b" is an awkwardly named field.
+"a=b" = false # Default`
+
+		s, err := Generate(def, "# H", "", nil)
+		require.NoError(t, err)
+		require.Contains(t, s, `### "a=b"`)
+	})
+
+	t.Run("Key value without a separator does not panic", func(t *testing.T) {
 		require.NotPanics(t, func() {
-			_, err := Generate("\nFoo=false\n", "# H", "", nil)
-			require.ErrorContains(t, err, "Foo=false")
+			_, err := Generate("\nFoo false\n", "# H", "", nil)
+			require.ErrorContains(t, err, "Foo false")
 		})
 	})
+
+	t.Run("Undocumented key in a documented struct table", func(t *testing.T) {
+		def := `
+# Baz is a table.
+[Baz]
+  # Test holds a string.
+  Test = "test" # Example
+  Other = "other" # Example`
+
+		_, err := Generate(def, "# H", "", nil)
+		require.ErrorContains(t, err, "Baz.Other: missing description")
+	})
+
+	t.Run("Documented map keys keep their own description", func(t *testing.T) {
+		def := `
+# **MAP**
+# Addresses maps a chain selector to its contract address.
+[Addresses]
+  # 1 is the first chain.
+  1 = "0xabc" # Example
+  2 = "0xdef" # Example`
+
+		s, err := Generate(def, "# H", "", nil)
+		require.NoError(t, err)
+		require.Contains(t, s, "1 is the first chain.")
+	})
+
+	t.Run("Table with no documented keys still requires descriptions", func(t *testing.T) {
+		def := `
+# Baz is a table.
+[Baz]
+  Test = "test" # Example
+  Other = "other" # Example`
+
+		_, err := Generate(def, "# H", "", nil)
+		require.ErrorContains(t, err, "Baz.Test: missing description")
+		require.ErrorContains(t, err, "Baz.Other: missing description")
+	})
+
+	t.Run("Inheritance does not leak into the next table", func(t *testing.T) {
+		def := `
+# **MAP**
+# Addresses maps a chain selector to its contract address.
+[Addresses]
+  1 = "0xabc" # Example
+[Baz]
+  Test = "test" # Example`
+
+		_, err := Generate(def, "# H", "", nil)
+		require.ErrorContains(t, err, "Baz.Test: missing description")
+		require.NotContains(t, err.Error(), "Addresses.1")
+	})
+}
+
+func TestKeyName(t *testing.T) {
+	for _, tt := range []struct {
+		line string
+		exp  string
+	}{
+		{`Foo = false # Default`, "Foo"},
+		{`Foo=false # Default`, "Foo"},
+		{"Foo\t=\tfalse # Default", "Foo"},
+		{`  Foo = false # Default`, "Foo"},
+		{`"a=b" = false # Default`, `"a=b"`},
+		{`'a b' = false # Default`, `'a b'`},
+		{`site."google.com" = false # Default`, `site."google.com"`},
+		{`"quoted \" = not" = false`, `"quoted \" = not"`},
+		{`Foo false`, "Foo false"},
+	} {
+		require.Equal(t, tt.exp, keyName(tt.line), tt.line)
+	}
 }
 
 func TestTableName(t *testing.T) {

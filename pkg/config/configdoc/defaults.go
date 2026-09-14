@@ -28,27 +28,32 @@ func DefaultsOnly(r io.Reader, cfg any, decode func(io.Reader, any) error) error
 func writeDefaults(r io.Reader, w *io.PipeWriter) {
 	defer w.Close()
 	s := bufio.NewScanner(r)
-	var skipUntil func(line string) bool
+	var skipTable string
 	for s.Scan() {
 		t := s.Text()
-		if skipUntil != nil {
-			if skipUntil(t) {
-				skipUntil = nil
-			}
-			continue
-		}
 		// Indentation is ignored in TOML, and nested tables and their keys are conventionally indented.
 		trimmed := strings.TrimSpace(t)
 
-		// Skip comments and examples (which become zero values)
-		if strings.HasPrefix(trimmed, "#") || strings.HasSuffix(trimmed, FieldExample) {
-			continue
+		if skipTable != "" {
+			if !strings.HasPrefix(trimmed, "[") {
+				// TOML does not end a table at a blank line, only at the next table header,
+				// so keys - and blank lines - still belong to the array of tables.
+				continue
+			}
+			if name := tableName(trimmed); name == skipTable || strings.HasPrefix(name, skipTable+".") {
+				continue
+			}
+			skipTable = ""
 		}
 
 		// Skip arrays of tables
 		if strings.HasPrefix(trimmed, "[[") {
-			// skip fields until next empty line
-			skipUntil = func(line string) bool { return strings.TrimSpace(line) == "" }
+			skipTable = tableName(trimmed)
+			continue
+		}
+
+		// Skip comments and examples (which become zero values)
+		if strings.HasPrefix(trimmed, "#") || strings.HasSuffix(trimmed, FieldExample) {
 			continue
 		}
 		if _, err := io.WriteString(w, t); err != nil {

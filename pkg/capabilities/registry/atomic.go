@@ -247,7 +247,7 @@ func (a *atomicExecuteAndTriggerCapability) GetState() connectivity.State {
 	a.mu.RLock()
 	cap := a.cap
 	a.mu.RUnlock()
-	if a.cap == nil {
+	if cap == nil {
 		return connectivity.Shutdown
 	}
 	if sg, ok := cap.(StateGetter); ok {

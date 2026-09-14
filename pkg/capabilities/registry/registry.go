@@ -99,9 +99,9 @@ func (r *Registry) DONByID(ctx context.Context, donID uint32) (capabilities.DON,
 	return r.metadataRegistry.DONByID(ctx, donID)
 }
 
-// SetMetadataRegistry sets a local copy of the offchain registry for the registry to use.
+// SetRegistryMetadata sets a local copy of the offchain registry for the registry to use.
 // This is only public for testing purposes; the only production use should be from the CapabilitiesLauncher.
-func (r *Registry) SetMetadataRegistry(lr CapabilitiesRegistryMetadata) {
+func (r *Registry) SetRegistryMetadata(lr CapabilitiesRegistryMetadata) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.metadataRegistry = lr
@@ -115,11 +115,11 @@ func NewRegistry(lggr logger.Logger) *Registry {
 	}
 }
 
-var _ CapabilitiesRegistryMetadata = (*TestMetadataRegistry)(nil)
+var _ CapabilitiesRegistryMetadata = (*TestRegistryMetadata)(nil)
 
-// TestMetadataRegistry is a test implementation of the metadataRegistry
+// TestRegistryMetadata is a test implementation of the metadataRegistry
 // interface. It is used when ExternalCapabilitiesRegistry is not available.
-type TestMetadataRegistry struct {
+type TestRegistryMetadata struct {
 	// WorkflowDONF allows local CRE to override the synthetic workflow DON fault
 	// tolerance for compatibility paths that still expect a multi-signer shape.
 	WorkflowDONF uint8
@@ -130,7 +130,7 @@ const (
 	testWorkflowDONConfigVersion = 1
 )
 
-func (t *TestMetadataRegistry) LocalNode(ctx context.Context) (capabilities.Node, error) {
+func (t *TestRegistryMetadata) LocalNode(ctx context.Context) (capabilities.Node, error) {
 	peerID := types.PeerID{}
 	return capabilities.Node{
 		PeerID:         &peerID,
@@ -152,18 +152,18 @@ func newTestWorkflowDON(peerID types.PeerID, faultTolerance uint8) capabilities.
 	}
 }
 
-func (t *TestMetadataRegistry) NodeByPeerID(ctx context.Context, _ types.PeerID) (capabilities.Node, error) {
+func (t *TestRegistryMetadata) NodeByPeerID(ctx context.Context, _ types.PeerID) (capabilities.Node, error) {
 	return t.LocalNode(ctx)
 }
 
-func (t *TestMetadataRegistry) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+func (t *TestRegistryMetadata) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
 	return capabilities.CapabilityConfiguration{}, nil
 }
 
-func (t *TestMetadataRegistry) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
+func (t *TestRegistryMetadata) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
 	return []capabilities.DONWithNodes{}, nil
 }
 
-func (t *TestMetadataRegistry) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+func (t *TestRegistryMetadata) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
 	return capabilities.DON{}, nil
 }

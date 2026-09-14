@@ -45,7 +45,7 @@ func TestLocalRegistry_LocalNode(t *testing.T) {
 			CapabilityType: capabilities.CapabilityTypeAction,
 		},
 	}
-	lr := NewMetadataRegistry(lggr, getPeerID, idsToDons, idsToNodes, idsToCapabilities)
+	lr := NewRegistryMetadata(lggr, getPeerID, idsToDons, idsToNodes, idsToCapabilities)
 
 	ctx := t.Context()
 	want, err := lr.NodeByPeerID(ctx, localPeer)
@@ -60,7 +60,7 @@ func TestLocalRegistry_LocalNode(t *testing.T) {
 	assert.Equal(t, want, gotAgain)
 
 	t.Run("GetPeerID error", func(t *testing.T) {
-		broken := NewMetadataRegistry(lggr, func() (types.PeerID, error) {
+		broken := NewRegistryMetadata(lggr, func() (types.PeerID, error) {
 			return types.PeerID{}, assert.AnError
 		}, idsToDons, idsToNodes, idsToCapabilities)
 		_, err := broken.LocalNode(context.Background())
@@ -141,7 +141,7 @@ func TestLocalRegistry_DONsForCapability(t *testing.T) {
 			CapabilityType: capabilities.CapabilityTypeAction,
 		},
 	}
-	lr := NewMetadataRegistry(lggr, getPeerID, idsToDons, idsToNodes, idsToCapabilities)
+	lr := NewRegistryMetadata(lggr, getPeerID, idsToDons, idsToNodes, idsToCapabilities)
 
 	gotDons, err := lr.DONsForCapability(t.Context(), "capabilityID@1.0.0")
 	require.NoError(t, err)
@@ -194,7 +194,7 @@ func TestLocalRegistry_DONByID(t *testing.T) {
 	idsToCapabilities := map[string]Capability{
 		"capabilityID@1.0.0": {ID: "capabilityID@1.0.0", CapabilityType: capabilities.CapabilityTypeAction},
 	}
-	lr := NewMetadataRegistry(lggr, getPeerID, idsToDons, idsToNodes, idsToCapabilities)
+	lr := NewRegistryMetadata(lggr, getPeerID, idsToDons, idsToNodes, idsToCapabilities)
 
 	got, err := lr.DONByID(t.Context(), 1)
 	require.NoError(t, err)

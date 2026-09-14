@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"slices"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -74,6 +76,7 @@ func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfigurati
 						RequestTimeout:            remoteCfg.RemoteExecutableConfig.RequestTimeout.AsDuration(),
 						ServerMaxParallelRequests: remoteCfg.RemoteExecutableConfig.ServerMaxParallelRequests,
 						RequestHasherType:         capabilities.RequestHasherType(remoteCfg.RemoteExecutableConfig.RequestHasherType),
+						MinResponsesToAggregate:   remoteCfg.RemoteExecutableConfig.MinResponsesToAggregate,
 					},
 				}
 			default:
@@ -172,9 +175,9 @@ type NodeInfo struct {
 	CsaKey [32]byte
 }
 
-var _ CapabilitiesRegistryMetadata = (*MetadataRegistry)(nil)
+var _ CapabilitiesRegistryMetadata = (*RegistryMetadata)(nil)
 
-type MetadataRegistry struct {
+type RegistryMetadata struct {
 	Logger            logger.Logger
 	GetPeerID         func() (types.PeerID, error)
 	IDsToDONs         map[DonID]DON
@@ -186,15 +189,15 @@ type MetadataRegistry struct {
 	cachedLocalNode     capabilities.Node
 }
 
-func NewMetadataRegistry(
+func NewRegistryMetadata(
 	lggr logger.Logger,
 	getPeerID func() (types.PeerID, error),
 	idsToDONs map[DonID]DON,
 	idsToNodes map[types.PeerID]NodeInfo,
 	idsToCapabilities map[string]Capability,
-) MetadataRegistry {
-	return MetadataRegistry{
-		Logger:            logger.Named(lggr, "MetadataRegistry"),
+) RegistryMetadata {
+	return RegistryMetadata{
+		Logger:            logger.Named(lggr, "RegistryMetadata"),
 		GetPeerID:         getPeerID,
 		IDsToDONs:         idsToDONs,
 		IDsToNodes:        idsToNodes,
@@ -202,7 +205,7 @@ func NewMetadataRegistry(
 	}
 }
 
-func (l *MetadataRegistry) LocalNode(ctx context.Context) (capabilities.Node, error) {
+func (l *RegistryMetadata) LocalNode(ctx context.Context) (capabilities.Node, error) {
 	// Load the current nodes PeerWrapper, this gets us the current node's
 	// PeerID, allowing us to contextualize registry information in terms of DON ownership
 	// (eg. get my current DON configuration, etc).
@@ -238,7 +241,7 @@ func (l *MetadataRegistry) LocalNode(ctx context.Context) (capabilities.Node, er
 	return n, nil
 }
 
-func (l *MetadataRegistry) NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error) {
+func (l *RegistryMetadata) NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error) {
 	err := l.ensureNotEmpty()
 	if err != nil {
 		return capabilities.Node{}, err
@@ -279,7 +282,7 @@ func (l *MetadataRegistry) NodeByPeerID(ctx context.Context, peerID types.PeerID
 	}, nil
 }
 
-func (l *MetadataRegistry) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
+func (l *RegistryMetadata) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
 	err := l.ensureNotEmpty()
 	if err != nil {
 		return []capabilities.DONWithNodes{}, err
@@ -303,23 +306,10 @@ func (l *MetadataRegistry) DONsForCapability(ctx context.Context, capabilityID s
 		return nil, fmt.Errorf("could not find DON for capability %s", capabilityID)
 	}
 
-	for _, d := range foundDONs {
-		nodes := []capabilities.Node{}
-		for _, n := range d.DON.Members {
-			node, err := l.NodeByPeerID(ctx, n)
-			if err != nil {
-				return nil, fmt.Errorf("could not find node for peerID %s: %w", n.String(), err)
-			}
-
-			nodes = append(nodes, node)
-		}
-		(&d).Nodes = nodes
-	}
-
 	return foundDONs, nil
 }
 
-func (l *MetadataRegistry) nodesForDON(ctx context.Context, don capabilities.DON) ([]capabilities.Node, error) {
+func (l *RegistryMetadata) nodesForDON(ctx context.Context, don capabilities.DON) ([]capabilities.Node, error) {
 	nodes := []capabilities.Node{}
 	for _, n := range don.Members {
 		node, err := l.NodeByPeerID(ctx, n)
@@ -332,7 +322,7 @@ func (l *MetadataRegistry) nodesForDON(ctx context.Context, don capabilities.DON
 	return nodes, nil
 }
 
-func (l *MetadataRegistry) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
+func (l *RegistryMetadata) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
 	if err := l.ensureNotEmpty(); err != nil {
 		return capabilities.DON{}, err
 	}
@@ -343,7 +333,7 @@ func (l *MetadataRegistry) DONByID(ctx context.Context, donID uint32) (capabilit
 	return d.DON, nil
 }
 
-func (l *MetadataRegistry) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
+func (l *RegistryMetadata) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
 	err := l.ensureNotEmpty()
 	if err != nil {
 		return capabilities.CapabilityConfiguration{}, err
@@ -361,7 +351,7 @@ func (l *MetadataRegistry) ConfigForCapability(ctx context.Context, capabilityID
 	return cc.Unmarshal()
 }
 
-func (l *MetadataRegistry) ensureNotEmpty() error {
+func (l *RegistryMetadata) ensureNotEmpty() error {
 	if len(l.IDsToDONs) == 0 {
 		return errors.New("empty local registry. no DONs registered in the local registry")
 	}
@@ -374,7 +364,7 @@ func (l *MetadataRegistry) ensureNotEmpty() error {
 	return nil
 }
 
-func (l *MetadataRegistry) MarshalJSON() ([]byte, error) {
+func (l *RegistryMetadata) MarshalJSON() ([]byte, error) {
 	idsToNodes := make(map[types.PeerID]capabilitiesRegistryNodeInfo)
 	for k, v := range l.IDsToNodes {
 		hashedCapabilityIDs := make([]types.PeerID, len(v.HashedCapabilityIDs))
@@ -423,7 +413,7 @@ type capabilitiesRegistryNodeInfo struct {
 	CapabilitiesDONIds  []string       `json:"capabilitiesDONIds"`
 }
 
-func (l *MetadataRegistry) UnmarshalJSON(data []byte) error {
+func (l *RegistryMetadata) UnmarshalJSON(data []byte) error {
 	temp := struct {
 		IDsToDONs         map[DonID]DON
 		IDsToNodes        map[types.PeerID]capabilitiesRegistryNodeInfo
@@ -450,7 +440,9 @@ func (l *MetadataRegistry) UnmarshalJSON(data []byte) error {
 		capabilitiesDONIds := make([]*big.Int, len(v.CapabilitiesDONIds))
 		for i, id := range v.CapabilitiesDONIds {
 			bigInt := new(big.Int)
-			bigInt.SetString(id, 10)
+			if _, ok := bigInt.SetString(id, 10); !ok {
+				return fmt.Errorf("failed to unmarshal capabilities Don ID %q", id)
+			}
 			capabilitiesDONIds[i] = bigInt
 		}
 		l.IDsToNodes[peerID] = NodeInfo{
@@ -470,8 +462,8 @@ func (l *MetadataRegistry) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func DeepCopyLocalRegistry(lr *MetadataRegistry) MetadataRegistry {
-	var lrCopy MetadataRegistry
+func DeepCopyRegistryMetadata(lr *RegistryMetadata) RegistryMetadata {
+	var lrCopy RegistryMetadata
 	lrCopy.Logger = lr.Logger
 	lrCopy.GetPeerID = lr.GetPeerID
 	lrCopy.IDsToDONs = make(map[DonID]DON, len(lr.IDsToDONs))
@@ -479,19 +471,19 @@ func DeepCopyLocalRegistry(lr *MetadataRegistry) MetadataRegistry {
 		d := capabilities.DON{
 			Name:             don.Name,
 			ID:               don.ID,
-			Families:         don.Families,
+			Families:         slices.Clone(don.Families),
 			ConfigVersion:    don.ConfigVersion,
 			Members:          make([]types.PeerID, len(don.Members)),
 			F:                don.F,
 			IsPublic:         don.IsPublic,
 			AcceptsWorkflows: don.AcceptsWorkflows,
-			Config:           don.Config,
+			Config:           bytes.Clone(don.Config),
 		}
 		copy(d.Members, don.Members)
 		capCfgs := make(map[string]CapabilityConfiguration, len(don.CapabilityConfigurations))
 		for capID, capCfg := range don.CapabilityConfigurations {
 			capCfgs[capID] = CapabilityConfiguration{
-				Config: capCfg.Config,
+				Config: bytes.Clone(capCfg.Config),
 			}
 		}
 		lrCopy.IDsToDONs[id] = DON{

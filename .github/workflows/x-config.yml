@@ -1,8 +1,15 @@
-name: x/config Checks
+name: x/config Build and Test
 permissions:
   contents: read
 
-on: [push, merge_group, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  merge_group:
 
 jobs:
   changes:
@@ -23,15 +30,10 @@ jobs:
             - 'x/config/**'
             - '.github/workflows/x-config.yml'
 
-  run-tests:
-    name: run tests
+  build-test:
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.x-config-src == 'true'
-    outputs:
-      # The unit test step is continue-on-error so its results still upload, which leaves the
-      # job successful even when tests fail. The gate reads the step's own outcome instead.
-      tests-outcome: ${{ steps.run-tests.outcome }}
     defaults:
       run:
         working-directory: x/config
@@ -55,18 +57,7 @@ jobs:
           go -C commentparsing/examples/separate_module_use/upstream build ./...
           go -C commentparsing/examples/separate_module_use build ./...
 
-      - name: Ensure example generated files are up to date
-        run: |
-          go generate ./...
-          go -C commentparsing/examples/separate_module_use generate ./...
-          if [[ -n "$(git status --porcelain -- commentparsing/examples)" ]]; then
-            echo "Generated example files are stale. Run 'go generate ./...' in x/config and in commentparsing/examples/separate_module_use, then commit the result."
-            git status --porcelain -- commentparsing/examples
-            git diff -- commentparsing/examples
-            exit 1
-          fi
-
-      - name: Install gotestsum
+      - name: Download gotestsum
         run: go install gotest.tools/gotestsum@latest
 
       - name: Unit Tests
@@ -83,14 +74,74 @@ jobs:
           trunk-token: ${{ secrets.TRUNK_API_KEY }}
           trunk-job-url: ${{ format('https://github.com/{0}/actions/runs/{1}/job/{2}/attempts/{3}', github.repository, github.run_id, job.check_run_id, github.run_attempt) }}
 
-  gate:
-    name: summary gate
+  build-race-tests:
     runs-on: ubuntu-latest
-    needs: [changes, run-tests]
-    if: always()
+    needs: changes
+    if: needs.changes.outputs.x-config-src == 'true'
+    defaults:
+      run:
+        working-directory: x/config
     steps:
-      - name: Fail if any job ran and failed
-        if: >-
-          needs.changes.outputs.x-config-src == 'true' &&
-          (needs.run-tests.result != 'success' || needs.run-tests.outputs.tests-outcome != 'success')
-        run: exit 1
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Race Tests
+        run: GORACE="log_path=$PWD/race" go test -race ./...
+
+      - name: Print Races
+        if: failure()
+        id: print-races
+        run: |
+          find race.* | xargs cat > race.txt
+          if [[ -s race.txt ]]; then
+            cat race.txt
+          fi
+
+      - name: Upload Go test results
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: x-config-race-results
+          path: |
+            ./x/config/race.*
+
+  check-tidy:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.x-config-src == 'true'
+    defaults:
+      run:
+        working-directory: x/config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          only-modules: "true"
+
+      - name: Ensure "go mod tidy" has been run
+        run: |
+          go mod tidy
+          go -C commentparsing/examples/separate_module_use/upstream mod tidy
+          go -C commentparsing/examples/separate_module_use mod tidy
+          git add --all
+          git diff --minimal --cached --exit-code
+
+      - name: Ensure "go generate" has been run
+        # The examples are modules of their own, which go generate ./... does not descend into.
+        run: |
+          go generate ./...
+          go -C commentparsing/examples/separate_module_use generate ./...
+          git add --all
+          git diff --stat --cached --exit-code

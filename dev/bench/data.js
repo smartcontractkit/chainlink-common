@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789481133739,
+  "lastUpdate": 1789498494343,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60600,6 +60600,66 @@ window.BENCHMARK_DATA = {
             "value": 133749,
             "unit": "ns/op",
             "extra": "8512 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2730f1867c92cf5fe5248cc769206143c293bcc1",
+          "message": "chipingress: send whitelisted resource attributes as chainlink-* gRPC metadata (#2288)\n\n* chipingress: send resource attributes as prefixed gRPC metadata\n\nResource attributes describe the producer, not any individual event. Carrying\nthem as per-event CloudEvent extensions repeated identical bytes for every\nevent in a batch — for a thousand events with ten attributes, roughly 300 KB\nthat counts against maxGRPCRequestSize and so reduces how many events fit per\nbatch. OTLP factors resource out of the payload for the same reason. Send them\nonce per request as gRPC metadata instead.\n\nEvery emitted key is ResourceHeaderPrefix (\"resource_\") followed by a key\nnormalized to grpc's charset, which grpc-go gives as [0-9a-z-_.]\n(internal/metadata.ValidateKey). Structure therefore survives —\ncsa_public_key becomes resource_csa_public_key rather than collapsing to\ncsapublickey — which is what lets chip-ingress emit the forwarded header\nverbatim. Values still go through SanitizeMetadataValue, because grpc-go fails\nan entire RPC, auth header included, on one non-printable value. A trailing\n\"-bin\" is rewritten so grpc does not try to base64-decode a plain-text\nattribute.\n\nThe prefix is a wire contract with chip-ingress, which forwards metadata\ncarrying it onto every Kafka record a request produces. Requiring it inbound\nand preserving it outbound keeps the namespace closed, and that is what\nremoves the need for a reserved-key set on either side. The header interceptor\nappends to outgoing metadata rather than replacing, so an attribute named\nX-Beholder-Node-Auth-Token would have sent a second value under the key\ncarrying the CSA node auth token and broken authentication; prefixed, it\nbecomes resource_x-beholder-node-auth-token and collides with nothing. The\nsame holds for authorization, te, content-type, the grpc- prefix and\npseudo-headers, so reservedMetadataHeaderNames, reservedMetadataKeys and\nisReservedMetadataKey are all deleted rather than extended. A test asserts the\nproperty directly, in place of the set it replaces.\n\nRemoves EventOpt, NewEventWithOpts and WithResourceAttributeExtensions, which\nexisted only for the extension path and have no callers in either repository;\nNewEvent returns to being the single event constructor. With\nSanitizeMetadataHeaders the sole consumer of the shared key helper, fold it in\nand delete resource_attributes.go and the resourceAttrKey pair type — the\nsanitized output map doubles as the dedupe set. SanitizeMetadataKey becomes\nunexported, since nothing outside the package used it.\n\nAdds ResourceHeaderPrefix. The same constant exists in chip-ingress as\nconstants.ResourceHeaderPrefix; duplicating a wire contract across\nrepositories matches how authHeaderKey is already spelled in both\npkg/beholder and pkg/chipingress, and the two must stay byte-identical or\nforwarding silently stops.\n\n* chipingress: validate resource attributes instead of rewriting, add caps\n\nSanitizeMetadataHeaders now omits an invalid key, non-printable value,\nduplicate, or over-limit attribute rather than rewriting it, so two\ndistinct configured keys can never collapse into one gRPC metadata\nkey and a non-printable value can never be silently byte-mangled.\nAdds the 32-attribute / 128B-key / 512B-value / 4096B-total caps, and\nwarns plus meters every dropped attribute via WithResourceAttributeHeaders.\n\n* chipingress: extract metadata key charset check into a predicate\n\nstaticcheck QF1001 flagged the negated conjunction in sanitizeMetadataKey.\nA positive isValidMetadataKeyChar predicate reads better than a hand-applied\nDe Morgan inversion and keeps behaviour identical.\n\n* chipingress: send whitelisted resource attributes as fixed chainlink-* gRPC metadata\n\nReplace the open-keyspace resource_-prefixed metadata machinery with a closed\nwhitelist (ResourceAttributeHeaders): ten hand-named chainlink-* metadata\nheaders (chainlink-csa-public-key, chainlink-service-name, ...), matched\ncase-insensitively against the configured resource attributes.\n\nBecause no operator-defined key can ever become a header name, the per-key\ncharset validation, caps, deny-lists, DroppedAttribute reporting, zap logger\nand drop counter are no longer needed and are removed. Values must still be\nprintable ASCII (grpc-go hard-fails the RPC otherwise) and are omitted, never\nrewritten.\n\nSanitizeMetadataHeaders returns to its released single-value signature.\nchip-ingress reads exactly these fixed header names and forwards them onto\nKafka records as resource_<original attribute key>.\n\n* chipingress: name whitelisted headers chainlink-resource-*\n\nThe category infix makes the wire names self-describing and the boundary\ntranslation mechanical: strip the chainlink- org prefix, swap separators,\nand chainlink-resource-service-name becomes resource_service.name on Kafka —\nthe same per-transport spelling pattern CloudEvents uses for ce-/ce_.\n\n* chipingress: unexport the resource-attribute whitelist map\n\nAn exported mutable map contradicts the closed-whitelist contract — any\nimporter could add entries at runtime and reopen the keyspace. Nothing\noutside the package referenced it (one test assertion, now covered by the\nexact-output check). SanitizeMetadataHeaders remains the public surface.\n\n* chipingress: use slices.Sorted(maps.Keys) for deterministic key order\n\nAddresses review feedback: replaces the manual collect-and-sort with the\nstandard library helper.",
+          "timestamp": "2026-09-15T18:43:16Z",
+          "tree_id": "aec58b502ea6b95b7a5220479f86ce87ed299325",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/2730f1867c92cf5fe5248cc769206143c293bcc1"
+        },
+        "date": 1789498490089,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 277.1,
+            "unit": "ns/op",
+            "extra": "4324174 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 57230,
+            "unit": "ns/op",
+            "extra": "20794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 301.7,
+            "unit": "ns/op",
+            "extra": "3804850 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57011,
+            "unit": "ns/op",
+            "extra": "21034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21778,
+            "unit": "ns/op",
+            "extra": "55135 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 99255,
+            "unit": "ns/op",
+            "extra": "12016 times\n4 procs"
           }
         ]
       }

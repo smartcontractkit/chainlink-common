@@ -48,21 +48,21 @@ func ExampleGateLimiter_AllowErr() {
 	// allow: limited: not allowed
 }
 
-// TestGateLimiter_Open covers the property fail-closed callers depend on: a closed gate
+// TestGateLimiter_IsOpen covers the property fail-closed callers depend on: a closed gate
 // must not look like an evaluation failure, and vice versa.
-func TestGateLimiter_Open(t *testing.T) {
+func TestGateLimiter_IsOpen(t *testing.T) {
 	t.Parallel()
 
 	t.Run("open gate", func(t *testing.T) {
 		t.Parallel()
-		open, err := NewGateLimiter(true).Open(t.Context())
+		open, err := NewGateLimiter(true).IsOpen(t.Context())
 		require.NoError(t, err)
 		assert.True(t, open)
 	})
 
 	t.Run("closed gate is not an error", func(t *testing.T) {
 		t.Parallel()
-		open, err := NewGateLimiter(false).Open(t.Context())
+		open, err := NewGateLimiter(false).IsOpen(t.Context())
 		require.NoError(t, err, "a closed gate is a normal outcome, not a failure")
 		assert.False(t, open)
 	})
@@ -75,7 +75,7 @@ func TestGateLimiter_Open(t *testing.T) {
 		require.NoError(t, err)
 		t.Cleanup(func() { assert.NoError(t, gl.Close()) })
 
-		open, err := gl.Open(t.Context())
+		open, err := gl.IsOpen(t.Context())
 		require.ErrorIs(t, err, errGetterUnavailable, "an unevaluatable gate must surface the error")
 		assert.False(t, open)
 	})
@@ -98,9 +98,9 @@ func TestGateLimiter_NoTenantFailsOpen(t *testing.T) {
 
 	require.NoError(t, gl.AllowErr(ctx), "an org gate with no org in context must not deny")
 
-	open, err := gl.Open(ctx)
+	open, err := gl.IsOpen(ctx)
 	require.NoError(t, err)
-	assert.True(t, open, "Open must not report a closed gate when the gate was never evaluated")
+	assert.True(t, open, "IsOpen must not report a closed gate when the gate was never evaluated")
 }
 
 func TestMakeGateLimiter(t *testing.T) {

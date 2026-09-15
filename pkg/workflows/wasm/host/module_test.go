@@ -180,7 +180,7 @@ func (*closeTrackingGateLimiter) Limit(context.Context) (bool, error) {
 	return true, nil
 }
 
-func (*closeTrackingGateLimiter) Open(context.Context) (bool, error) {
+func (*closeTrackingGateLimiter) IsOpen(context.Context) (bool, error) {
 	return true, nil
 }
 

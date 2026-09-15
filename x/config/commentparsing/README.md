@@ -95,6 +95,12 @@ reaching it; CI runs `make generate` and fails on any resulting diff. Regenerati
 package produces byte-identical output, which is what makes that diff mean something — a generator
 you add has to sort anything it iterates out of a map.
 
+Deleting a documented type is the one edit that needs a hand: the committed file still declares a
+method on it, so the package no longer compiles, and a `go run ./gen` that imports that package to
+name its roots cannot start — the cleanup below never gets the chance to run. Delete the stale
+`doccomments_gen.go` (or have the generate recipe `rm` the artifacts first, as one would for any
+generated Go that its own generator imports) and regenerate.
+
 A package that stops documenting anything has its generated file removed, so no committed file
 keeps methods for types the tree no longer reaches. Removal is limited to files the same `Tool`
 wrote, and to the module being generated: another tool's file, and a nested module's, belong to

@@ -326,6 +326,38 @@ type lookupUndocumented struct {
 	Endpoint string
 }
 
+// LookupEmbeddable is exported, so reflection can allocate an embedded pointer to it.
+type LookupEmbeddable struct {
+	Endpoint string
+}
+
+func (LookupEmbeddable) DocComments() map[string]FieldDoc {
+	return map[string]FieldDoc{"Endpoint": {Comment: "Endpoint is the upstream URL."}}
+}
+
+// lookupEmbedsPointer promotes its documentation through a pointer, which is nil in the value a
+// lookup constructs.
+type lookupEmbedsPointer struct {
+	*LookupEmbeddable
+	Extra string
+}
+
+// lookupEmbedsUnexportedPointer promotes it through a pointer reflection may not set.
+type lookupEmbedsUnexportedPointer struct {
+	*lookupTarget
+	Extra string
+}
+
+// LookupCycle embeds a pointer to itself, which a walk that allocates them has to stop for.
+type LookupCycle struct {
+	*LookupCycle
+	Endpoint string
+}
+
+func (LookupCycle) DocComments() map[string]FieldDoc {
+	return map[string]FieldDoc{"Endpoint": {Comment: "Endpoint is the upstream URL."}}
+}
+
 // lookupPromoted never generated for itself and reaches lookupTarget's method by promotion.
 type lookupPromoted struct {
 	lookupTarget
@@ -364,6 +396,23 @@ func TestLookup(t *testing.T) {
 	t.Run("Type with no package path", func(t *testing.T) {
 		_, err := Lookup(reflect.TypeFor[struct{ Endpoint string }]())
 		require.ErrorContains(t, err, "has no DocComments method")
+	})
+
+	t.Run("Documentation promoted through an embedded pointer", func(t *testing.T) {
+		fields, err := Lookup(reflect.TypeFor[lookupEmbedsPointer]())
+		require.NoError(t, err)
+		require.Equal(t, "Endpoint is the upstream URL.", fields["Endpoint"].Comment)
+	})
+
+	t.Run("Documentation promoted through an unexported embedded pointer", func(t *testing.T) {
+		_, err := Lookup(reflect.TypeFor[lookupEmbedsUnexportedPointer]())
+		require.ErrorContains(t, err, "unexported embedded pointer lookupTarget")
+	})
+
+	t.Run("A type embedding a pointer to itself", func(t *testing.T) {
+		fields, err := Lookup(reflect.TypeFor[LookupCycle]())
+		require.NoError(t, err)
+		require.Contains(t, fields, "Endpoint")
 	})
 
 	// A generic type has no method either, but the advice every other miss carries -

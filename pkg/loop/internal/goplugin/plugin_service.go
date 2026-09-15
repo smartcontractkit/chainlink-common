@@ -134,6 +134,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 	s.lggr.Debug("Launching")
 
 	cc := s.grpcPlug.ClientConfig()
+	cc.AutoMTLS = true
 	cc.SkipHostEnv = true
 	cc.Cmd = s.cmd()
 	client := plugin.NewClient(cc)

@@ -13,7 +13,7 @@ import (
 // Kafka headers named "ce_<name>" (e.g., ce_idempotencykey), enabling downstream deduplication.
 const IdempotencyKeyAttr = "idempotencykey"
 
-// ResourceAttributeHeaders is the closed whitelist of producer resource attributes sent as gRPC
+// resourceAttributeHeaders is the closed whitelist of producer resource attributes sent as gRPC
 // metadata, mapping each attribute key (lowercased — SanitizeMetadataHeaders matches
 // case-insensitively) to the fixed chainlink-* metadata header name it travels under. For example
 // csa_public_key is sent as chainlink-resource-csa-public-key.
@@ -29,7 +29,7 @@ const IdempotencyKeyAttr = "idempotencykey"
 // The same mapping exists in chip-ingress (chip-ingress/internal/constants). Duplicating it across
 // repositories is deliberate, matching how authHeaderKey is already spelled in both pkg/beholder
 // and pkg/chipingress; the two must stay in sync or forwarding silently stops.
-var ResourceAttributeHeaders = map[string]string{
+var resourceAttributeHeaders = map[string]string{
 	"csa_public_key":   "chainlink-resource-csa-public-key",
 	"deployed_by":      "chainlink-resource-deployed-by",
 	"donid":            "chainlink-resource-don-id",

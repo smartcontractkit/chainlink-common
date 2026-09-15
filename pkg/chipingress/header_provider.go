@@ -138,7 +138,7 @@ func isPrintableASCII(val string) bool {
 }
 
 // SanitizeMetadataHeaders projects a map of resource attributes onto the closed whitelist defined
-// by ResourceAttributeHeaders, returning the gRPC metadata headers to attach to every request
+// by resourceAttributeHeaders, returning the gRPC metadata headers to attach to every request
 // (e.g. via NewStaticHeaderProvider). An attribute named csa_public_key is emitted as
 // chainlink-resource-csa-public-key; chip-ingress reads exactly those fixed header names and forwards them
 // onto every Kafka record a request produces under resource_<original attribute key>.
@@ -161,9 +161,9 @@ func SanitizeMetadataHeaders(in map[string]string) map[string]string {
 	}
 	sort.Strings(keys)
 
-	out := make(map[string]string, len(ResourceAttributeHeaders))
+	out := make(map[string]string, len(resourceAttributeHeaders))
 	for _, k := range keys {
-		header, ok := ResourceAttributeHeaders[strings.ToLower(k)]
+		header, ok := resourceAttributeHeaders[strings.ToLower(k)]
 		if !ok {
 			continue
 		}

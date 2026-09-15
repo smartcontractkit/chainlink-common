@@ -215,9 +215,9 @@ func WithHeaderProvider(provider HeaderProvider) Opt {
 }
 
 // WithResourceAttributeHeaders returns an Opt that attaches the whitelisted resource attributes
-// (see ResourceAttributeHeaders) as gRPC metadata on every request. It combines
-// SanitizeMetadataHeaders with NewStaticHeaderProvider so the safe, whitelisted path is used by
-// default. Attributes outside the whitelist are ignored.
+// (the fixed chainlink-resource-* headers — see SanitizeMetadataHeaders) as gRPC metadata on every
+// request. It combines SanitizeMetadataHeaders with NewStaticHeaderProvider so the safe,
+// whitelisted path is used by default. Attributes outside the whitelist are ignored.
 //
 // Attributes are attached once per request rather than to individual events because they describe the
 // producer, not any one event. Chip-ingress fans them out onto every Kafka record the request

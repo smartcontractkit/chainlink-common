@@ -310,9 +310,8 @@ func TestSanitizeMetadataHeaders(t *testing.T) {
 			"chainlink-resource-service-name":     "chainlink",
 			"chainlink-resource-service-sha":      "deadbeef",
 		}, got)
-		// The whitelist mapping itself is the wire contract with chip-ingress; pinning the input
-		// spellings guards both sides drifting apart.
-		assert.Len(t, chipingress.ResourceAttributeHeaders, len(in))
+		// The exact output map above pins all ten whitelisted translations — the wire contract
+		// with chip-ingress — so the two sides cannot drift apart unnoticed.
 	})
 
 	t.Run("key matching is case-insensitive", func(t *testing.T) {

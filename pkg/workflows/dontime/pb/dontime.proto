@@ -10,7 +10,8 @@ message Observation {
 }
 
 message ObservedDonTimes {
-  repeated int64 timestamps = 1;
+  repeated int64 timestamps = 1 [deprecated = true];
+  map<int64, int64> timestampsBySequence = 2;
 }
 
 message Outcome {

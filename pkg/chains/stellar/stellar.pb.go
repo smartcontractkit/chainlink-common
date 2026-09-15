@@ -23,6 +23,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type GetTransactionStatus int32
+
+const (
+	GetTransactionStatus_GET_TRANSACTION_STATUS_UNSPECIFIED GetTransactionStatus = 0
+	GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND   GetTransactionStatus = 1
+	GetTransactionStatus_GET_TRANSACTION_STATUS_FAILED      GetTransactionStatus = 2
+	GetTransactionStatus_GET_TRANSACTION_STATUS_SUCCESS     GetTransactionStatus = 3
+)
+
+// Enum value maps for GetTransactionStatus.
+var (
+	GetTransactionStatus_name = map[int32]string{
+		0: "GET_TRANSACTION_STATUS_UNSPECIFIED",
+		1: "GET_TRANSACTION_STATUS_NOT_FOUND",
+		2: "GET_TRANSACTION_STATUS_FAILED",
+		3: "GET_TRANSACTION_STATUS_SUCCESS",
+	}
+	GetTransactionStatus_value = map[string]int32{
+		"GET_TRANSACTION_STATUS_UNSPECIFIED": 0,
+		"GET_TRANSACTION_STATUS_NOT_FOUND":   1,
+		"GET_TRANSACTION_STATUS_FAILED":      2,
+		"GET_TRANSACTION_STATUS_SUCCESS":     3,
+	}
+)
+
+func (x GetTransactionStatus) Enum() *GetTransactionStatus {
+	p := new(GetTransactionStatus)
+	*p = x
+	return p
+}
+
+func (x GetTransactionStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GetTransactionStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_stellar_proto_enumTypes[0].Descriptor()
+}
+
+func (GetTransactionStatus) Type() protoreflect.EnumType {
+	return &file_stellar_proto_enumTypes[0]
+}
+
+func (x GetTransactionStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use GetTransactionStatus.Descriptor instead.
+func (GetTransactionStatus) EnumDescriptor() ([]byte, []int) {
+	return file_stellar_proto_rawDescGZIP(), []int{0}
+}
+
 type EventType int32
 
 const (
@@ -53,11 +105,11 @@ func (x EventType) String() string {
 }
 
 func (EventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_stellar_proto_enumTypes[0].Descriptor()
+	return file_stellar_proto_enumTypes[1].Descriptor()
 }
 
 func (EventType) Type() protoreflect.EnumType {
-	return &file_stellar_proto_enumTypes[0]
+	return &file_stellar_proto_enumTypes[1]
 }
 
 func (x EventType) Number() protoreflect.EnumNumber {
@@ -66,7 +118,7 @@ func (x EventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EventType.Descriptor instead.
 func (EventType) EnumDescriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{0}
+	return file_stellar_proto_rawDescGZIP(), []int{1}
 }
 
 type TxStatus int32
@@ -102,11 +154,11 @@ func (x TxStatus) String() string {
 }
 
 func (TxStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_stellar_proto_enumTypes[1].Descriptor()
+	return file_stellar_proto_enumTypes[2].Descriptor()
 }
 
 func (TxStatus) Type() protoreflect.EnumType {
-	return &file_stellar_proto_enumTypes[1]
+	return &file_stellar_proto_enumTypes[2]
 }
 
 func (x TxStatus) Number() protoreflect.EnumNumber {
@@ -115,7 +167,7 @@ func (x TxStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TxStatus.Descriptor instead.
 func (TxStatus) EnumDescriptor() ([]byte, []int) {
-	return file_stellar_proto_rawDescGZIP(), []int{1}
+	return file_stellar_proto_rawDescGZIP(), []int{2}
 }
 
 // SimulateTransactionRequest builds a synthetic single-operation Soroban
@@ -939,12 +991,16 @@ func (x *GetTransactionRequest) GetTxHash() string {
 	return ""
 }
 
-// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+// GetTransactionResponse carries the result of looking up a transaction by hash.
 type GetTransactionResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	FeeStroops      uint64                 `protobuf:"varint,1,opt,name=fee_stroops,json=feeStroops,proto3" json:"fee_stroops,omitempty"`
-	LedgerSequence  uint32                 `protobuf:"varint,2,opt,name=ledger_sequence,json=ledgerSequence,proto3" json:"ledger_sequence,omitempty"`
-	LedgerCloseTime int64                  `protobuf:"varint,3,opt,name=ledger_close_time,json=ledgerCloseTime,proto3" json:"ledger_close_time,omitempty"`
+	FeeStroops      *uint64                `protobuf:"varint,1,opt,name=fee_stroops,json=feeStroops,proto3,oneof" json:"fee_stroops,omitempty"`
+	LedgerSequence  *uint32                `protobuf:"varint,2,opt,name=ledger_sequence,json=ledgerSequence,proto3,oneof" json:"ledger_sequence,omitempty"`
+	LedgerCloseTime *int64                 `protobuf:"varint,3,opt,name=ledger_close_time,json=ledgerCloseTime,proto3,oneof" json:"ledger_close_time,omitempty"`
+	Status          GetTransactionStatus   `protobuf:"varint,4,opt,name=status,proto3,enum=loop.stellar.GetTransactionStatus" json:"status,omitempty"`
+	TxHash          string                 `protobuf:"bytes,5,opt,name=tx_hash,json=txHash,proto3" json:"tx_hash,omitempty"`
+	ResultXdr       []byte                 `protobuf:"bytes,6,opt,name=result_xdr,json=resultXdr,proto3" json:"result_xdr,omitempty"`
+	ResultMetaXdr   []byte                 `protobuf:"bytes,7,opt,name=result_meta_xdr,json=resultMetaXdr,proto3" json:"result_meta_xdr,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -980,24 +1036,52 @@ func (*GetTransactionResponse) Descriptor() ([]byte, []int) {
 }
 
 func (x *GetTransactionResponse) GetFeeStroops() uint64 {
-	if x != nil {
-		return x.FeeStroops
+	if x != nil && x.FeeStroops != nil {
+		return *x.FeeStroops
 	}
 	return 0
 }
 
 func (x *GetTransactionResponse) GetLedgerSequence() uint32 {
-	if x != nil {
-		return x.LedgerSequence
+	if x != nil && x.LedgerSequence != nil {
+		return *x.LedgerSequence
 	}
 	return 0
 }
 
 func (x *GetTransactionResponse) GetLedgerCloseTime() int64 {
-	if x != nil {
-		return x.LedgerCloseTime
+	if x != nil && x.LedgerCloseTime != nil {
+		return *x.LedgerCloseTime
 	}
 	return 0
+}
+
+func (x *GetTransactionResponse) GetStatus() GetTransactionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return GetTransactionStatus_GET_TRANSACTION_STATUS_UNSPECIFIED
+}
+
+func (x *GetTransactionResponse) GetTxHash() string {
+	if x != nil {
+		return x.TxHash
+	}
+	return ""
+}
+
+func (x *GetTransactionResponse) GetResultXdr() []byte {
+	if x != nil {
+		return x.ResultXdr
+	}
+	return nil
+}
+
+func (x *GetTransactionResponse) GetResultMetaXdr() []byte {
+	if x != nil {
+		return x.ResultMetaXdr
+	}
+	return nil
 }
 
 // GetSigningAccountResponse is the relayer default TXM signing account.
@@ -1909,12 +1993,20 @@ const file_stellar_proto_rawDesc = "" +
 	"\x18latest_ledger_close_time\x18\x05 \x01(\x03R\x15latestLedgerCloseTime\x127\n" +
 	"\x18oldest_ledger_close_time\x18\x06 \x01(\x03R\x15oldestLedgerCloseTime\"0\n" +
 	"\x15GetTransactionRequest\x12\x17\n" +
-	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"\x8e\x01\n" +
-	"\x16GetTransactionResponse\x12\x1f\n" +
-	"\vfee_stroops\x18\x01 \x01(\x04R\n" +
-	"feeStroops\x12'\n" +
-	"\x0fledger_sequence\x18\x02 \x01(\rR\x0eledgerSequence\x12*\n" +
-	"\x11ledger_close_time\x18\x03 \x01(\x03R\x0fledgerCloseTime\"D\n" +
+	"\atx_hash\x18\x01 \x01(\tR\x06txHash\"\xf3\x02\n" +
+	"\x16GetTransactionResponse\x12$\n" +
+	"\vfee_stroops\x18\x01 \x01(\x04H\x00R\n" +
+	"feeStroops\x88\x01\x01\x12,\n" +
+	"\x0fledger_sequence\x18\x02 \x01(\rH\x01R\x0eledgerSequence\x88\x01\x01\x12/\n" +
+	"\x11ledger_close_time\x18\x03 \x01(\x03H\x02R\x0fledgerCloseTime\x88\x01\x01\x12:\n" +
+	"\x06status\x18\x04 \x01(\x0e2\".loop.stellar.GetTransactionStatusR\x06status\x12\x17\n" +
+	"\atx_hash\x18\x05 \x01(\tR\x06txHash\x12\x1d\n" +
+	"\n" +
+	"result_xdr\x18\x06 \x01(\fR\tresultXdr\x12&\n" +
+	"\x0fresult_meta_xdr\x18\a \x01(\fR\rresultMetaXdrB\x0e\n" +
+	"\f_fee_stroopsB\x12\n" +
+	"\x10_ledger_sequenceB\x14\n" +
+	"\x12_ledger_close_time\"D\n" +
 	"\x19GetSigningAccountResponse\x12'\n" +
 	"\x0faccount_address\x18\x01 \x01(\tR\x0eaccountAddress\"A\n" +
 	"\x11PaginationOptions\x12\x16\n" +
@@ -1980,7 +2072,12 @@ const file_stellar_proto_rawDesc = "" +
 	"\x18latest_ledger_close_time\x18\x03 \x01(\x03R\x15latestLedgerCloseTime\x12#\n" +
 	"\roldest_ledger\x18\x04 \x01(\rR\foldestLedger\x127\n" +
 	"\x18oldest_ledger_close_time\x18\x05 \x01(\x03R\x15oldestLedgerCloseTime\x12\x16\n" +
-	"\x06cursor\x18\x06 \x01(\tR\x06cursor*;\n" +
+	"\x06cursor\x18\x06 \x01(\tR\x06cursor*\xab\x01\n" +
+	"\x14GetTransactionStatus\x12&\n" +
+	"\"GET_TRANSACTION_STATUS_UNSPECIFIED\x10\x00\x12$\n" +
+	" GET_TRANSACTION_STATUS_NOT_FOUND\x10\x01\x12!\n" +
+	"\x1dGET_TRANSACTION_STATUS_FAILED\x10\x02\x12\"\n" +
+	"\x1eGET_TRANSACTION_STATUS_SUCCESS\x10\x03*;\n" +
 	"\tEventType\x12\x15\n" +
 	"\x11EVENT_TYPE_SYSTEM\x10\x00\x12\x17\n" +
 	"\x13EVENT_TYPE_CONTRACT\x10\x01*L\n" +
@@ -2011,78 +2108,80 @@ func file_stellar_proto_rawDescGZIP() []byte {
 	return file_stellar_proto_rawDescData
 }
 
-var file_stellar_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_stellar_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_stellar_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_stellar_proto_goTypes = []any{
-	(EventType)(0),                      // 0: loop.stellar.EventType
-	(TxStatus)(0),                       // 1: loop.stellar.TxStatus
-	(*SimulateTransactionRequest)(nil),  // 2: loop.stellar.SimulateTransactionRequest
-	(*SimulateResourceConfig)(nil),      // 3: loop.stellar.SimulateResourceConfig
-	(*SimulateTransactionResponse)(nil), // 4: loop.stellar.SimulateTransactionResponse
-	(*SimulateRestorePreamble)(nil),     // 5: loop.stellar.SimulateRestorePreamble
-	(*GetLedgerEntriesRequest)(nil),     // 6: loop.stellar.GetLedgerEntriesRequest
-	(*GetLedgerEntriesResponse)(nil),    // 7: loop.stellar.GetLedgerEntriesResponse
-	(*LedgerEntryResult)(nil),           // 8: loop.stellar.LedgerEntryResult
-	(*GetEventsRequest)(nil),            // 9: loop.stellar.GetEventsRequest
-	(*EventInfo)(nil),                   // 10: loop.stellar.EventInfo
-	(*GetEventsResponse)(nil),           // 11: loop.stellar.GetEventsResponse
-	(*GetTransactionRequest)(nil),       // 12: loop.stellar.GetTransactionRequest
-	(*GetTransactionResponse)(nil),      // 13: loop.stellar.GetTransactionResponse
-	(*GetSigningAccountResponse)(nil),   // 14: loop.stellar.GetSigningAccountResponse
-	(*PaginationOptions)(nil),           // 15: loop.stellar.PaginationOptions
-	(*EventFilter)(nil),                 // 16: loop.stellar.EventFilter
-	(*TopicFilter)(nil),                 // 17: loop.stellar.TopicFilter
-	(*TopicSegment)(nil),                // 18: loop.stellar.TopicSegment
-	(*SubmitTransactionRequest)(nil),    // 19: loop.stellar.SubmitTransactionRequest
-	(*SubmitTransactionResponse)(nil),   // 20: loop.stellar.SubmitTransactionResponse
-	(*GetLatestLedgerResponse)(nil),     // 21: loop.stellar.GetLatestLedgerResponse
-	(*LedgerPaginationOptions)(nil),     // 22: loop.stellar.LedgerPaginationOptions
-	(*GetLedgersRequest)(nil),           // 23: loop.stellar.GetLedgersRequest
-	(*LedgerInfo)(nil),                  // 24: loop.stellar.LedgerInfo
-	(*GetLedgersResponse)(nil),          // 25: loop.stellar.GetLedgersResponse
-	(*scval.ScVal)(nil),                 // 26: capabilities.blockchain.stellar.v1alpha.ScVal
-	(*emptypb.Empty)(nil),               // 27: google.protobuf.Empty
+	(GetTransactionStatus)(0),           // 0: loop.stellar.GetTransactionStatus
+	(EventType)(0),                      // 1: loop.stellar.EventType
+	(TxStatus)(0),                       // 2: loop.stellar.TxStatus
+	(*SimulateTransactionRequest)(nil),  // 3: loop.stellar.SimulateTransactionRequest
+	(*SimulateResourceConfig)(nil),      // 4: loop.stellar.SimulateResourceConfig
+	(*SimulateTransactionResponse)(nil), // 5: loop.stellar.SimulateTransactionResponse
+	(*SimulateRestorePreamble)(nil),     // 6: loop.stellar.SimulateRestorePreamble
+	(*GetLedgerEntriesRequest)(nil),     // 7: loop.stellar.GetLedgerEntriesRequest
+	(*GetLedgerEntriesResponse)(nil),    // 8: loop.stellar.GetLedgerEntriesResponse
+	(*LedgerEntryResult)(nil),           // 9: loop.stellar.LedgerEntryResult
+	(*GetEventsRequest)(nil),            // 10: loop.stellar.GetEventsRequest
+	(*EventInfo)(nil),                   // 11: loop.stellar.EventInfo
+	(*GetEventsResponse)(nil),           // 12: loop.stellar.GetEventsResponse
+	(*GetTransactionRequest)(nil),       // 13: loop.stellar.GetTransactionRequest
+	(*GetTransactionResponse)(nil),      // 14: loop.stellar.GetTransactionResponse
+	(*GetSigningAccountResponse)(nil),   // 15: loop.stellar.GetSigningAccountResponse
+	(*PaginationOptions)(nil),           // 16: loop.stellar.PaginationOptions
+	(*EventFilter)(nil),                 // 17: loop.stellar.EventFilter
+	(*TopicFilter)(nil),                 // 18: loop.stellar.TopicFilter
+	(*TopicSegment)(nil),                // 19: loop.stellar.TopicSegment
+	(*SubmitTransactionRequest)(nil),    // 20: loop.stellar.SubmitTransactionRequest
+	(*SubmitTransactionResponse)(nil),   // 21: loop.stellar.SubmitTransactionResponse
+	(*GetLatestLedgerResponse)(nil),     // 22: loop.stellar.GetLatestLedgerResponse
+	(*LedgerPaginationOptions)(nil),     // 23: loop.stellar.LedgerPaginationOptions
+	(*GetLedgersRequest)(nil),           // 24: loop.stellar.GetLedgersRequest
+	(*LedgerInfo)(nil),                  // 25: loop.stellar.LedgerInfo
+	(*GetLedgersResponse)(nil),          // 26: loop.stellar.GetLedgersResponse
+	(*scval.ScVal)(nil),                 // 27: capabilities.blockchain.stellar.v1alpha.ScVal
+	(*emptypb.Empty)(nil),               // 28: google.protobuf.Empty
 }
 var file_stellar_proto_depIdxs = []int32{
-	26, // 0: loop.stellar.SimulateTransactionRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	3,  // 1: loop.stellar.SimulateTransactionRequest.resource_config:type_name -> loop.stellar.SimulateResourceConfig
-	5,  // 2: loop.stellar.SimulateTransactionResponse.restore_preamble:type_name -> loop.stellar.SimulateRestorePreamble
-	8,  // 3: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
-	16, // 4: loop.stellar.GetEventsRequest.filters:type_name -> loop.stellar.EventFilter
-	15, // 5: loop.stellar.GetEventsRequest.pagination:type_name -> loop.stellar.PaginationOptions
-	0,  // 6: loop.stellar.EventInfo.event_type:type_name -> loop.stellar.EventType
-	26, // 7: loop.stellar.EventInfo.topics:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	26, // 8: loop.stellar.EventInfo.value:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	10, // 9: loop.stellar.GetEventsResponse.events:type_name -> loop.stellar.EventInfo
-	0,  // 10: loop.stellar.EventFilter.event_types:type_name -> loop.stellar.EventType
-	17, // 11: loop.stellar.EventFilter.topics:type_name -> loop.stellar.TopicFilter
-	18, // 12: loop.stellar.TopicFilter.segments:type_name -> loop.stellar.TopicSegment
-	26, // 13: loop.stellar.TopicSegment.scval:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	26, // 14: loop.stellar.SubmitTransactionRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
-	1,  // 15: loop.stellar.SubmitTransactionResponse.tx_status:type_name -> loop.stellar.TxStatus
-	22, // 16: loop.stellar.GetLedgersRequest.pagination:type_name -> loop.stellar.LedgerPaginationOptions
-	24, // 17: loop.stellar.GetLedgersResponse.ledgers:type_name -> loop.stellar.LedgerInfo
-	6,  // 18: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
-	27, // 19: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
-	23, // 20: loop.stellar.Stellar.GetLedgers:input_type -> loop.stellar.GetLedgersRequest
-	2,  // 21: loop.stellar.Stellar.SimulateTransaction:input_type -> loop.stellar.SimulateTransactionRequest
-	9,  // 22: loop.stellar.Stellar.GetEvents:input_type -> loop.stellar.GetEventsRequest
-	12, // 23: loop.stellar.Stellar.GetTransaction:input_type -> loop.stellar.GetTransactionRequest
-	27, // 24: loop.stellar.Stellar.GetSigningAccount:input_type -> google.protobuf.Empty
-	19, // 25: loop.stellar.Stellar.SubmitTransaction:input_type -> loop.stellar.SubmitTransactionRequest
-	7,  // 26: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
-	21, // 27: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
-	25, // 28: loop.stellar.Stellar.GetLedgers:output_type -> loop.stellar.GetLedgersResponse
-	4,  // 29: loop.stellar.Stellar.SimulateTransaction:output_type -> loop.stellar.SimulateTransactionResponse
-	11, // 30: loop.stellar.Stellar.GetEvents:output_type -> loop.stellar.GetEventsResponse
-	13, // 31: loop.stellar.Stellar.GetTransaction:output_type -> loop.stellar.GetTransactionResponse
-	14, // 32: loop.stellar.Stellar.GetSigningAccount:output_type -> loop.stellar.GetSigningAccountResponse
-	20, // 33: loop.stellar.Stellar.SubmitTransaction:output_type -> loop.stellar.SubmitTransactionResponse
-	26, // [26:34] is the sub-list for method output_type
-	18, // [18:26] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	27, // 0: loop.stellar.SimulateTransactionRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	4,  // 1: loop.stellar.SimulateTransactionRequest.resource_config:type_name -> loop.stellar.SimulateResourceConfig
+	6,  // 2: loop.stellar.SimulateTransactionResponse.restore_preamble:type_name -> loop.stellar.SimulateRestorePreamble
+	9,  // 3: loop.stellar.GetLedgerEntriesResponse.entries:type_name -> loop.stellar.LedgerEntryResult
+	17, // 4: loop.stellar.GetEventsRequest.filters:type_name -> loop.stellar.EventFilter
+	16, // 5: loop.stellar.GetEventsRequest.pagination:type_name -> loop.stellar.PaginationOptions
+	1,  // 6: loop.stellar.EventInfo.event_type:type_name -> loop.stellar.EventType
+	27, // 7: loop.stellar.EventInfo.topics:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	27, // 8: loop.stellar.EventInfo.value:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	11, // 9: loop.stellar.GetEventsResponse.events:type_name -> loop.stellar.EventInfo
+	0,  // 10: loop.stellar.GetTransactionResponse.status:type_name -> loop.stellar.GetTransactionStatus
+	1,  // 11: loop.stellar.EventFilter.event_types:type_name -> loop.stellar.EventType
+	18, // 12: loop.stellar.EventFilter.topics:type_name -> loop.stellar.TopicFilter
+	19, // 13: loop.stellar.TopicFilter.segments:type_name -> loop.stellar.TopicSegment
+	27, // 14: loop.stellar.TopicSegment.scval:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	27, // 15: loop.stellar.SubmitTransactionRequest.args:type_name -> capabilities.blockchain.stellar.v1alpha.ScVal
+	2,  // 16: loop.stellar.SubmitTransactionResponse.tx_status:type_name -> loop.stellar.TxStatus
+	23, // 17: loop.stellar.GetLedgersRequest.pagination:type_name -> loop.stellar.LedgerPaginationOptions
+	25, // 18: loop.stellar.GetLedgersResponse.ledgers:type_name -> loop.stellar.LedgerInfo
+	7,  // 19: loop.stellar.Stellar.GetLedgerEntries:input_type -> loop.stellar.GetLedgerEntriesRequest
+	28, // 20: loop.stellar.Stellar.GetLatestLedger:input_type -> google.protobuf.Empty
+	24, // 21: loop.stellar.Stellar.GetLedgers:input_type -> loop.stellar.GetLedgersRequest
+	3,  // 22: loop.stellar.Stellar.SimulateTransaction:input_type -> loop.stellar.SimulateTransactionRequest
+	10, // 23: loop.stellar.Stellar.GetEvents:input_type -> loop.stellar.GetEventsRequest
+	13, // 24: loop.stellar.Stellar.GetTransaction:input_type -> loop.stellar.GetTransactionRequest
+	28, // 25: loop.stellar.Stellar.GetSigningAccount:input_type -> google.protobuf.Empty
+	20, // 26: loop.stellar.Stellar.SubmitTransaction:input_type -> loop.stellar.SubmitTransactionRequest
+	8,  // 27: loop.stellar.Stellar.GetLedgerEntries:output_type -> loop.stellar.GetLedgerEntriesResponse
+	22, // 28: loop.stellar.Stellar.GetLatestLedger:output_type -> loop.stellar.GetLatestLedgerResponse
+	26, // 29: loop.stellar.Stellar.GetLedgers:output_type -> loop.stellar.GetLedgersResponse
+	5,  // 30: loop.stellar.Stellar.SimulateTransaction:output_type -> loop.stellar.SimulateTransactionResponse
+	12, // 31: loop.stellar.Stellar.GetEvents:output_type -> loop.stellar.GetEventsResponse
+	14, // 32: loop.stellar.Stellar.GetTransaction:output_type -> loop.stellar.GetTransactionResponse
+	15, // 33: loop.stellar.Stellar.GetSigningAccount:output_type -> loop.stellar.GetSigningAccountResponse
+	21, // 34: loop.stellar.Stellar.SubmitTransaction:output_type -> loop.stellar.SubmitTransactionResponse
+	27, // [27:35] is the sub-list for method output_type
+	19, // [19:27] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_stellar_proto_init() }
@@ -2090,6 +2189,7 @@ func file_stellar_proto_init() {
 	if File_stellar_proto != nil {
 		return
 	}
+	file_stellar_proto_msgTypes[11].OneofWrappers = []any{}
 	file_stellar_proto_msgTypes[16].OneofWrappers = []any{
 		(*TopicSegment_Wildcard)(nil),
 		(*TopicSegment_Scval)(nil),
@@ -2100,7 +2200,7 @@ func file_stellar_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stellar_proto_rawDesc), len(file_stellar_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,

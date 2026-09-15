@@ -429,20 +429,28 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 	})
 
 	t.Run("GetTransaction_roundtrip", func(t *testing.T) {
+		fee := uint64(42)
+		ledger := uint32(100)
+		closeTime := int64(1_700_000_000)
 		svc.getTransaction = func(_ context.Context, req stellartypes.GetTransactionRequest) (stellartypes.GetTransactionResponse, error) {
 			require.Equal(t, "abc123hash", req.TxHash)
 			return stellartypes.GetTransactionResponse{
-				FeeStroops:      42,
-				LedgerSequence:  100,
-				LedgerCloseTime: 1_700_000_000,
+				Status:          stellartypes.GetTransactionStatusSuccess,
+				TxHash:          "abc123hash",
+				ResultXDR:       base64.StdEncoding.EncodeToString([]byte("result")),
+				FeeStroops:      &fee,
+				LedgerSequence:  &ledger,
+				LedgerCloseTime: &closeTime,
 			}, nil
 		}
 
 		resp, err := client.GetTransaction(ctx, stellartypes.GetTransactionRequest{TxHash: "abc123hash"})
 		require.NoError(t, err)
-		require.Equal(t, uint64(42), resp.FeeStroops)
-		require.Equal(t, uint32(100), resp.LedgerSequence)
-		require.Equal(t, int64(1_700_000_000), resp.LedgerCloseTime)
+		require.Equal(t, stellartypes.GetTransactionStatusSuccess, resp.Status)
+		require.Equal(t, "abc123hash", resp.TxHash)
+		require.Equal(t, uint64(42), *resp.FeeStroops)
+		require.Equal(t, uint32(100), *resp.LedgerSequence)
+		require.Equal(t, int64(1_700_000_000), *resp.LedgerCloseTime)
 	})
 
 	t.Run("GetTransaction_invalidRequest", func(t *testing.T) {

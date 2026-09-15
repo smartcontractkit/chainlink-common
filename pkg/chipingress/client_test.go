@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strings"
 	"testing"
 	"time"
 
@@ -602,20 +601,19 @@ func TestOptions(t *testing.T) {
 	t.Run("WithResourceAttributeHeaders", func(t *testing.T) {
 		config := defaultCfg
 		WithResourceAttributeHeaders(map[string]string{
-			"Chain-ID":       "1",   // lower-cased, separator preserved
-			"csa_public_key": "abc", // preserved verbatim
-			// Namespaced rather than dropped: prefixing puts them out of reach of the real keys.
-			"te":          "harmless",
-			authHeaderKey: "harmless",
+			"donID":          "don-1", // whitelisted, matched case-insensitively
+			"csa_public_key": "abc",   // whitelisted
+			// Not whitelisted, so never emitted: the closed header-name set is what keeps them
+			// out of reach of the real keys.
+			"te":          "dropped",
+			authHeaderKey: "dropped",
 		})(&config)
 		assert.NotNil(t, config.headerProvider)
 		headers, err := config.headerProvider.Headers(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			ResourceHeaderPrefix + "chain-id":                     "1",
-			ResourceHeaderPrefix + "csa_public_key":               "abc",
-			ResourceHeaderPrefix + "te":                           "harmless",
-			ResourceHeaderPrefix + strings.ToLower(authHeaderKey): "harmless",
+			"chainlink-don-id":         "don-1",
+			"chainlink-csa-public-key": "abc",
 		}, headers)
 	})
 
@@ -739,8 +737,8 @@ func TestClient_ChainedHeaderProviders(t *testing.T) {
 // (WithResourceAttributeHeaders) — and both must arrive intact, exactly once, on the same request.
 //
 // It also pins the property that lets the client carry attributes without a reserved-key deny-list:
-// an attribute named after the auth header is namespaced under ResourceHeaderPrefix, so it cannot
-// append a second value under the auth header's own key.
+// the emitted header names are a fixed whitelist under chainlink-, so an attribute named after the
+// auth header is not whitelisted and can never append a second value under the auth header's key.
 func TestClient_AuthHeaderCoexistsWithResourceAttributes(t *testing.T) {
 	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -760,7 +758,7 @@ func TestClient_AuthHeaderCoexistsWithResourceAttributes(t *testing.T) {
 		WithResourceAttributeHeaders(map[string]string{
 			"csa_public_key": "abc123",
 			"service.name":   "chainlink",
-			// Namespaced away from the auth key rather than appended to it.
+			// Not whitelisted, so dropped rather than appended to the real auth header.
 			authHeaderKey: "forged",
 		}),
 		WithNOPLookup(),
@@ -775,12 +773,11 @@ func TestClient_AuthHeaderCoexistsWithResourceAttributes(t *testing.T) {
 	// grpc lower-cases metadata keys on the wire.
 	assert.Equal(t, []string{authToken}, capture.lastMD.Get(authHeaderKey),
 		"the auth token must arrive exactly once, unmodified")
-	assert.Equal(t, []string{"abc123"}, capture.lastMD.Get(ResourceHeaderPrefix+"csa_public_key"))
-	assert.Equal(t, []string{"chainlink"}, capture.lastMD.Get(ResourceHeaderPrefix+"service.name"))
+	assert.Equal(t, []string{"abc123"}, capture.lastMD.Get("chainlink-csa-public-key"))
+	assert.Equal(t, []string{"chainlink"}, capture.lastMD.Get("chainlink-service-name"))
 	assert.Equal(t, []string{"true"}, capture.lastMD.Get("x-include-nop-info"))
-	// The forged attribute landed in the resource namespace, harmlessly.
-	assert.Equal(t, []string{"forged"},
-		capture.lastMD.Get(ResourceHeaderPrefix+strings.ToLower(authHeaderKey)))
+	// The forged attribute was dropped by the whitelist, never emitted.
+	assert.Empty(t, capture.lastMD.Get("forged"))
 }
 
 func TestWithTLS(t *testing.T) {

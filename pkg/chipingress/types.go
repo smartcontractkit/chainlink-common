@@ -13,20 +13,34 @@ import (
 // Kafka headers named "ce_<name>" (e.g., ce_idempotencykey), enabling downstream deduplication.
 const IdempotencyKeyAttr = "idempotencykey"
 
-// ResourceHeaderPrefix namespaces producer resource attributes sent as outgoing gRPC metadata.
-// SanitizeMetadataHeaders applies it to every key it emits.
+// ResourceAttributeHeaders is the closed whitelist of producer resource attributes sent as gRPC
+// metadata, mapping each attribute key (lowercased — SanitizeMetadataHeaders matches
+// case-insensitively) to the fixed chainlink-* metadata header name it travels under. For example
+// csa_public_key is sent as chainlink-csa-public-key.
 //
-// It is the wire contract with chip-ingress, which forwards metadata carrying this prefix onto every
-// Kafka record a request produces and emits the key unchanged. Requiring the prefix inbound and
-// preserving it outbound keeps the namespace closed, which is what makes the forwarding safe: a
-// client can only cause a header beginning with this prefix to be written, so a resource attribute
-// cannot shadow a "ce_" header, an identity header the server derives from the verified auth token,
-// or — on this side of the wire — a reserved gRPC metadata key such as the CSA auth token's.
+// It is the wire contract with chip-ingress, which reads exactly these header names and forwards
+// them onto every Kafka record a request produces under resource_<original attribute key> (e.g.
+// chainlink-service-name becomes resource_service.name). The set is
+// closed on purpose: because no operator-defined key can ever become a header name, no attribute
+// can shadow a reserved gRPC metadata key such as the CSA auth token's, and the server needs no
+// deny-list to keep resource attributes away from "ce_" or identity headers it derives from the
+// verified auth token.
 //
-// The same constant exists in chip-ingress as constants.ResourceHeaderPrefix. Duplicating it across
-// repositories is deliberate, matching how authHeaderKey is already spelled in both pkg/beholder and
-// pkg/chipingress; the two must stay byte-identical or forwarding silently stops.
-const ResourceHeaderPrefix = "resource_"
+// The same mapping exists in chip-ingress (chip-ingress/internal/constants). Duplicating it across
+// repositories is deliberate, matching how authHeaderKey is already spelled in both pkg/beholder
+// and pkg/chipingress; the two must stay in sync or forwarding silently stops.
+var ResourceAttributeHeaders = map[string]string{
+	"csa_public_key":   "chainlink-csa-public-key",
+	"deployed_by":      "chainlink-deployed-by",
+	"donid":            "chainlink-don-id",
+	"host.name":        "chainlink-host-name",
+	"internal_node_id": "chainlink-internal-node-id",
+	"node_id":          "chainlink-node-id",
+	"platformenv":      "chainlink-platform-env",
+	"service.name":     "chainlink-service-name",
+	"service.sha":      "chainlink-service-sha",
+	"zone":             "chainlink-zone",
+}
 
 type (
 	// Cloudevents types

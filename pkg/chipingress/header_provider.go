@@ -124,20 +124,10 @@ func NewStaticHeaderProvider(headers map[string]string) HeaderProvider {
 	return newStaticHeaderProvider(headers, false)
 }
 
-// Limits on resource attributes accepted by SanitizeMetadataHeaders. They reserve headroom in the
-// gRPC HEADERS frame for authentication and normal gRPC metadata, and bound how much of every Kafka
-// record's header space a producer's resource attributes can consume.
-const (
-	maxResourceAttributes          = 32
-	maxResourceAttributeKeyBytes   = 128
-	maxResourceAttributeValueBytes = 512
-	maxResourceAttributeTotalBytes = 4096 // sum of accepted key + value bytes, prefix excluded
-)
-
 // isPrintableASCII reports whether every byte of val is in the printable ASCII range [0x20, 0x7E].
 // grpc-go hard-fails the entire RPC — auth header included — when an outgoing metadata value fails
 // this check, so a value that does not pass is omitted rather than rewritten: a byte-mangled value
-// is a worse outcome than a dropped attribute for an operator-facing routing/observability field.
+// is a worse outcome than a dropped attribute for an operator-facing observability field.
 func isPrintableASCII(val string) bool {
 	for i := 0; i < len(val); i++ {
 		if c := val[i]; c < 0x20 || c > 0x7E {
@@ -147,120 +137,45 @@ func isPrintableASCII(val string) bool {
 	return true
 }
 
-// DroppedAttribute records a resource attribute SanitizeMetadataHeaders omitted, and why.
-type DroppedAttribute struct {
-	Key    string
-	Reason string
-}
-
-// Reasons a resource attribute can be omitted by SanitizeMetadataHeaders. Exposed as strings (not
-// an enum type) so callers can attach them to a log field or a metric attribute directly.
-const (
-	reasonInvalidKey    = "invalid_key"
-	reasonInvalidValue  = "invalid_value"
-	reasonDuplicateKey  = "duplicate_key"
-	reasonLimitExceeded = "limit_exceeded"
-)
-
-// isValidMetadataKeyChar reports whether r is allowed in an outgoing gRPC metadata key. grpc-go
-// accepts [0-9a-z-_.] (see internal/metadata.ValidateKey); upper-case is handled by lower-casing
-// before this is called.
-func isValidMetadataKeyChar(r rune) bool {
-	return (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '.' || r == '-' || r == '_'
-}
-
-// sanitizeMetadataKey validates a resource-attribute key as a valid outgoing gRPC metadata key,
-// without the ResourceHeaderPrefix that SanitizeMetadataHeaders adds, and reports whether it is
-// valid. It never rewrites: a key that fails validation is omitted by the caller rather than
-// mutated, so two distinct configured keys can never collapse into one gRPC metadata key.
+// SanitizeMetadataHeaders projects a map of resource attributes onto the closed whitelist defined
+// by ResourceAttributeHeaders, returning the gRPC metadata headers to attach to every request
+// (e.g. via NewStaticHeaderProvider). An attribute named csa_public_key is emitted as
+// chainlink-csa-public-key; chip-ingress reads exactly those fixed header names and forwards them
+// onto every Kafka record a request produces under resource_<original attribute key>.
 //
-// Valid keys, once lower-cased, match [0-9a-z-_.]+ (grpc's own key charset — see
-// internal/metadata.ValidateKey) and do not end in "-bin", which grpc treats as declaring a
-// base64-encoded binary value. A valid key's structure survives untouched: "csa_public_key" stays
-// "csa_public_key" and "service.name" stays "service.name", which is what lets chip-ingress emit the
-// forwarded header verbatim.
-func sanitizeMetadataKey(key string) (string, bool) {
-	if key == "" {
-		return "", false
-	}
-	lower := strings.ToLower(key)
-	for _, r := range lower {
-		if !isValidMetadataKeyChar(r) {
-			return "", false
-		}
-	}
-	if strings.HasSuffix(lower, "-bin") {
-		return "", false
-	}
-	return lower, true
-}
-
-// SanitizeMetadataHeaders validates a map of resource attributes for use as outgoing gRPC metadata
-// (e.g. via NewStaticHeaderProvider). Every emitted key is ResourceHeaderPrefix followed by the
-// validated key, unchanged, so service.name becomes resource_service.name and csa_public_key becomes
-// resource_csa_public_key. Chip-ingress forwards keys carrying that prefix onto every Kafka record a
-// request produces, emitting the key unchanged.
+// The whitelist is what makes this safe without validation machinery. Key matching is
+// case-insensitive against the fixed set, so no operator-defined key can ever become a header name:
+// an attribute named X-Beholder-Node-Auth-Token is simply not in the whitelist and is ignored,
+// which is how the CSA auth token stays out of reach without a deny-list (the header interceptor
+// appends to outgoing metadata, so an attribute that could land on the auth header's name would
+// break authentication by sending a second value under it).
 //
-// The prefix is what makes this safe without a deny-list. The header interceptor appends to outgoing
-// metadata rather than replacing it, so an attribute landing on an existing header name would send
-// two values under one key — an attribute named X-Beholder-Node-Auth-Token would have broken
-// authentication that way. Because every emitted key is prefixed, no attribute can reach a reserved
-// gRPC key: that one becomes resource_x-beholder-node-auth-token, which collides with nothing, and
-// the same holds for authorization, te, content-type, the grpc- prefix and pseudo-headers.
-//
-// An attribute is omitted, rather than rewritten, when: its key is empty, exceeds
-// maxResourceAttributeKeyBytes, fails sanitizeMetadataKey's charset/[-bin] validation, or duplicates
-// an already-accepted key (first in sorted order of the original keys wins); its value exceeds
-// maxResourceAttributeValueBytes or is not printable ASCII (isPrintableASCII); or accepting it would
-// push the accepted count past maxResourceAttributes or the accepted key+value byte total past
-// maxResourceAttributeTotalBytes. Keys are processed in sorted order so every omission is
-// deterministic. dropped records each omission and why, for the caller to warn and meter.
-func SanitizeMetadataHeaders(in map[string]string) (map[string]string, []DroppedAttribute) {
+// An attribute is omitted, never rewritten, when its key is not whitelisted (regardless of case)
+// or its value is not printable ASCII (isPrintableASCII). Keys are processed in sorted order so
+// that if case variants of one whitelisted attribute collide on the same header name, the first in
+// sorted order of the original keys wins, deterministically.
+func SanitizeMetadataHeaders(in map[string]string) map[string]string {
 	keys := make([]string, 0, len(in))
 	for k := range in {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys) // deterministic: first in sorted order wins, and excess entries drop from the tail
+	sort.Strings(keys)
 
-	out := make(map[string]string, len(in))
-	var dropped []DroppedAttribute
-	totalBytes := 0
+	out := make(map[string]string, len(ResourceAttributeHeaders))
 	for _, k := range keys {
-		if len(out) >= maxResourceAttributes {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonLimitExceeded})
-			continue
-		}
-		if len(k) > maxResourceAttributeKeyBytes {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidKey})
-			continue
-		}
-		name, ok := sanitizeMetadataKey(k)
+		header, ok := ResourceAttributeHeaders[strings.ToLower(k)]
 		if !ok {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidKey})
 			continue
 		}
-		name = ResourceHeaderPrefix + name
-		if _, dup := out[name]; dup {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonDuplicateKey})
+		if _, dup := out[header]; dup {
 			continue
 		}
-		val := in[k]
-		if len(val) > maxResourceAttributeValueBytes {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidValue})
+		if !isPrintableASCII(in[k]) {
 			continue
 		}
-		if !isPrintableASCII(val) {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonInvalidValue})
-			continue
-		}
-		if totalBytes+len(name)-len(ResourceHeaderPrefix)+len(val) > maxResourceAttributeTotalBytes {
-			dropped = append(dropped, DroppedAttribute{Key: k, Reason: reasonLimitExceeded})
-			continue
-		}
-		totalBytes += len(name) - len(ResourceHeaderPrefix) + len(val)
-		out[name] = val
+		out[header] = in[k]
 	}
-	return out, dropped
+	return out
 }
 
 // newRotatingHeaderProvider returns a HeaderProvider that refreshes its

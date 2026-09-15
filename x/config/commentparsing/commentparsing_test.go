@@ -348,6 +348,23 @@ type lookupEmbedsUnexportedPointer struct {
 	Extra string
 }
 
+// lookupEmbedsInterface promotes its documentation through an interface, which has no
+// implementation to construct.
+type lookupEmbedsInterface struct {
+	DocCommenter
+	Extra string
+}
+
+// LookupOwnMethod embeds a pointer reflection may not set, and documents itself anyway.
+type LookupOwnMethod struct {
+	*lookupTarget
+	Extra string
+}
+
+func (LookupOwnMethod) DocComments() map[string]FieldDoc {
+	return map[string]FieldDoc{"Extra": {Comment: "Extra is this type's own field."}}
+}
+
 // LookupCycle embeds a pointer to itself, which a walk that allocates them has to stop for.
 type LookupCycle struct {
 	*LookupCycle
@@ -404,9 +421,25 @@ func TestLookup(t *testing.T) {
 		require.Equal(t, "Endpoint is the upstream URL.", fields["Endpoint"].Comment)
 	})
 
-	t.Run("Documentation promoted through an unexported embedded pointer", func(t *testing.T) {
-		_, err := Lookup(reflect.TypeFor[lookupEmbedsUnexportedPointer]())
-		require.ErrorContains(t, err, "unexported embedded pointer lookupTarget")
+	// Neither an unexported embedded pointer nor an embedded interface can be filled in from
+	// the type alone, so the promotion is reported rather than dispatched on nothing.
+	t.Run("Documentation promoted through a receiver that cannot be built", func(t *testing.T) {
+		for _, typ := range []reflect.Type{
+			reflect.TypeFor[lookupEmbedsUnexportedPointer](),
+			reflect.TypeFor[lookupEmbedsInterface](),
+		} {
+			_, err := Lookup(typ)
+			require.ErrorContains(t, err, "promotes DocComments through an embedded field that cannot be constructed")
+			require.ErrorContains(t, err, typ.Name())
+		}
+	})
+
+	// The outer type's own method shadows what its embed promotes, so a receiver the promotion
+	// would have needed is beside the point.
+	t.Run("An unexported embedded pointer under a type documented in its own right", func(t *testing.T) {
+		fields, err := Lookup(reflect.TypeFor[LookupOwnMethod]())
+		require.NoError(t, err)
+		require.Equal(t, "Extra is this type's own field.", fields["Extra"].Comment)
 	})
 
 	t.Run("A type embedding a pointer to itself", func(t *testing.T) {
@@ -955,6 +988,37 @@ func TestDiscoverEmitsEachTypeOnce(t *testing.T) {
 // Go allows a type no field and method of one name, so a type carrying the field compiles only
 // until its documentation is generated. The parsed source is where that is caught, since the
 // reflected type would already have to have been generated for to be seen here.
+// Go leaves a selector ambiguous between two embedded types legal to declare and illegal to use,
+// so there is no name a config file could set.
+func TestAmbiguousPromotion(t *testing.T) {
+	require.NoError(t, ambiguousPromotion(reflect.TypeFor[repeatedRoot]()))
+
+	err := ambiguousPromotion(reflect.TypeFor[ambiguousOuter]())
+	require.ErrorContains(t, err, "Region from ambiguousLeft and ambiguousRight")
+
+	// The outer type's own field wins at the shallower depth, so it is not ambiguous.
+	require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousShadowed]()))
+}
+
+type ambiguousLeft struct {
+	Region string
+}
+
+type ambiguousRight struct {
+	Region string
+	Tenant string
+}
+
+type ambiguousOuter struct {
+	ambiguousLeft
+	ambiguousRight
+}
+
+type ambiguousShadowed struct {
+	ambiguousLeft
+	Region string
+}
+
 func TestReservedFieldName(t *testing.T) {
 	err := reservedFieldName("example.com/app", "Config", map[string]FieldDoc{
 		"DocComments": {Comment: "DocComments is a field, oddly."},

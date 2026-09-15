@@ -123,6 +123,17 @@ for; declare config types unconditionally.
 **`DocComments` is reserved on a documented type.** A field or hand-written method of that name
 cannot coexist with the generated one, so it is reported rather than redeclared.
 
+**Two embedded types cannot promote one field name.** Go leaves that selector legal to declare
+and illegal to use, and a config file keying on the name cannot say which of the two it means, so
+generation refuses the type rather than documenting a field nothing can set. Name the field on the
+outer type to shadow both, or stop embedding one of them.
+
+**Documentation promoted through an embedded interface, or an unexported embedded pointer, cannot
+be read.** A lookup constructs the type to call the method on, and neither of those can be filled
+in from the type alone — an interface has no implementation to pick and an unexported field cannot
+be set — so the promotion is reported instead. Generating in the package that declares the outer
+type gives it a method of its own, which is the fix either way.
+
 **A generic type cannot be documented.** A method on its declaration needs a receiver type
 parameter list, which the reflected type a run starts from cannot supply. Reported, not generated.
 

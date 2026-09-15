@@ -52,6 +52,11 @@ func Discover(dir string, roots ...any) ([]Package, error) {
 			continue
 		}
 
+		if ambiguousErr := ambiguousPromotion(structType); ambiguousErr != nil {
+			errs = append(errs, ambiguousErr)
+			continue
+		}
+
 		pkg, ok := byPath[importPath]
 		if !ok {
 			pkg = &Package{ImportPath: importPath}
@@ -128,6 +133,42 @@ func packageWithinModule(importPath, modulePath string) (rel string, within bool
 		return "", true
 	}
 	return strings.CutPrefix(importPath, modulePath+"/")
+}
+
+// ambiguousPromotion rejects a struct whose embedded types promote one field name between them.
+//
+// Go leaves such a selector legal to declare and illegal to use, and a config file keying on the
+// name has no way to say which of the two it means, so there is nothing for documentation to
+// describe.
+func ambiguousPromotion(t reflect.Type) error {
+	promotedBy := make(map[string][]string)
+	for i := range t.NumField() {
+		field := t.Field(i)
+		if !field.Anonymous {
+			continue
+		}
+		embedded := derefType(field.Type)
+		if embedded == nil || embedded.Kind() != reflect.Struct {
+			continue
+		}
+		for j := range embedded.NumField() {
+			promotedBy[embedded.Field(j).Name] = append(promotedBy[embedded.Field(j).Name], field.Name)
+		}
+	}
+
+	ambiguous := make([]string, 0, len(promotedBy))
+	for name, embeds := range promotedBy {
+		if len(embeds) > 1 {
+			sort.Strings(embeds)
+			ambiguous = append(ambiguous, fmt.Sprintf("%s from %s", name, strings.Join(embeds, " and ")))
+		}
+	}
+	if len(ambiguous) == 0 {
+		return nil
+	}
+	sort.Strings(ambiguous)
+	return fmt.Errorf("%s: embedded types promote one field name between them, which nothing can "+
+		"name to configure: %s", typeName(t), strings.Join(ambiguous, ", "))
 }
 
 func reservedFieldName(importPath, typeName string, fields map[string]FieldDoc) error {

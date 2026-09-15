@@ -1060,17 +1060,19 @@ type ambiguousDeepShadowed struct {
 	ambiguousDeepRight
 }
 
-type ambiguousHiddenLeft struct {
-	region string
+// The unexported names below are reached through reflection only, which the unused linter cannot
+// see: the point of the fixture is that nothing selects them.
+type ambiguousHiddenLeft struct { //nolint:unused // read reflectively
+	region string //nolint:unused // read reflectively
 }
 
-type ambiguousHiddenRight struct {
-	region string
+type ambiguousHiddenRight struct { //nolint:unused // read reflectively
+	region string //nolint:unused // read reflectively
 }
 
 type ambiguousUnexported struct {
-	ambiguousHiddenLeft
-	ambiguousHiddenRight
+	ambiguousHiddenLeft  //nolint:unused // read reflectively
+	ambiguousHiddenRight //nolint:unused // read reflectively
 }
 
 func TestReservedFieldName(t *testing.T) {

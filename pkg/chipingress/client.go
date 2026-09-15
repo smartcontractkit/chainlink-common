@@ -53,6 +53,7 @@ type clientConfig struct {
 	meterProvider         metric.MeterProvider
 	tracerProvider        trace.TracerProvider
 	nopInfoHeaderProvider HeaderProvider
+	retryPolicy           RetryPolicy
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -64,6 +65,7 @@ func newClientConfig(host string) *clientConfig {
 		insecureConnection:    true,
 		transportCredentials:  insecure.NewCredentials(),
 		nopInfoHeaderProvider: nil,
+		retryPolicy:           defaultRetryPolicy(),
 	}
 	return cfg
 }
@@ -100,15 +102,16 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 			PermitWithoutStream: true,
 		}),
 	}
-	// Retry policy
-	retryPolicy := `{
-		"maxAttempts": 3,
-		"initialBackoff": "100ms",
-		"maxBackoff": "1s",
-		"backoffMultiplier": 2,
-		"retryableStatusCodes": ["UNAVAILABLE", "RESOURCE_EXHAUSTED"]
-	}`
-	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryPolicy))
+	// Retry policy. Built from typed structs (see retry_policy.go) rather than a hand-written
+	// JSON literal - a previous hand-written literal here was malformed (fields missing the
+	// required methodConfig[].retryPolicy nesting) and gRPC's parser silently discarded it
+	// without error, so the client never actually retried anything.
+	throttling := defaultRetryThrottlingPolicy()
+	retryServiceConfig, err := buildRetryServiceConfigJSON(cfg.retryPolicy, &throttling)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build retry policy service config: %w", err)
+	}
+	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryServiceConfig))
 	// Auth
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))

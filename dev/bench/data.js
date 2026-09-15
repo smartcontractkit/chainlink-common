@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789498494343,
+  "lastUpdate": 1789509706377,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60660,6 +60660,66 @@ window.BENCHMARK_DATA = {
             "value": 99255,
             "unit": "ns/op",
             "extra": "12016 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "02f2214d582310e590555593fd6c07503fd5da23",
+          "message": "beholder: send resource attributes to chip ingress as gRPC metadata (#2216)\n\nResource attributes set in node TOML ([Telemetry.ResourceAttributes]) reach\nthe OTel collector path but never the ChipIngress path, so they appear as\nheaders on beholder__platform__messages and not on cre. This wires them into\nthe ChipIngress client via chipingress.WithResourceAttributeHeaders.\n\nThey travel once per request as gRPC metadata, not stamped on every\nCloudEvent: resource attributes describe the producer rather than any\nindividual event, and per-event stamping would repeat identical bytes across\nevery event in a batch against maxGRPCRequestSize. pkg/chipingress projects\nthe configured attributes onto a closed whitelist of fixed\nchainlink-resource-* metadata headers; attributes outside the whitelist are\nignored, and non-printable values are omitted rather than rewritten.\n\n- pkg/beholder/client.go: pass resource attributes to the ChipIngress client\n- pkg/beholder/resource_attributes.go: resourceAttributesToStringMap, the\n  single conversion point, using attribute.Value.Emit for canonical\n  stringification of any value type\n- pkg/beholder/client_test.go: regression test asserting on a real gRPC\n  connection that configuring AuthHeaders together with ResourceAttributes\n  leaves the CSA node auth token intact and delivers the attributes\n  alongside it\n- pkg/beholder/batch_emitter_service_test.go: PublishBatch success mocks\n  return a response with results (one per event), matching the real server\n  contract required by the batch client's partial-delivery callback path\n- go.mod/go.sum: bump pkg/chipingress to the merged whitelist contract\n  (v0.0.11-0.20260915184316-2730f1867c92)\n\nNo exported API is added or changed in pkg/beholder.\n\nUpstream: #2267, #2288 (merged). Server: smartcontractkit/atlas#13201.\nDownstream: smartcontractkit/chainlink#23014.",
+          "timestamp": "2026-09-15T21:47:59Z",
+          "tree_id": "3336cbfad4c121775f97f5afc2703412ca388ba3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/02f2214d582310e590555593fd6c07503fd5da23"
+        },
+        "date": 1789509702260,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 847.6,
+            "unit": "ns/op",
+            "extra": "1414951 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 116580,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 806.5,
+            "unit": "ns/op",
+            "extra": "1315042 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 94276,
+            "unit": "ns/op",
+            "extra": "12589 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26029,
+            "unit": "ns/op",
+            "extra": "45938 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135508,
+            "unit": "ns/op",
+            "extra": "8616 times\n4 procs"
           }
         ]
       }

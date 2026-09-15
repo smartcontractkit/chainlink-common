@@ -135,13 +135,44 @@ func packageWithinModule(importPath, modulePath string) (rel string, within bool
 	return strings.CutPrefix(importPath, modulePath+"/")
 }
 
-// ambiguousPromotion rejects a struct whose embedded types promote one field name between them.
+// ambiguousPromotion rejects a struct with a promoted field name that Go cannot resolve, which
+// happens when two embedded types provide it at the same depth.
 //
 // Go leaves such a selector legal to declare and illegal to use, and a config file keying on the
 // name has no way to say which of the two it means, so there is nothing for documentation to
-// describe.
+// describe. The resolution is [reflect.Type.FieldByName]'s rather than one of this package's own,
+// so shadowing and depth follow the same rules the compiler applies: a name the outer type
+// declares itself wins, and so does one promoted from a shallower embed.
 func ambiguousPromotion(t reflect.Type) error {
-	promotedBy := make(map[string][]string)
+	unresolved := make(map[string]bool)
+	for _, name := range promotedNames(t, map[reflect.Type]bool{}) {
+		if _, resolved := t.FieldByName(name); !resolved {
+			unresolved[name] = true
+		}
+	}
+	if len(unresolved) == 0 {
+		return nil
+	}
+
+	ambiguous := make([]string, 0, len(unresolved))
+	for name := range unresolved {
+		ambiguous = append(ambiguous, name)
+	}
+	sort.Strings(ambiguous)
+	return fmt.Errorf("%s: %s promoted from more than one embedded type at the same depth, so "+
+		"nothing can name it to configure: shadow it on %s, or embed only one of them",
+		typeName(t), strings.Join(ambiguous, ", "), t.Name())
+}
+
+// promotedNames lists the exported field names t's embedded types provide, at every depth. An
+// unexported one is left out: no config file can name it either way.
+func promotedNames(t reflect.Type, walked map[reflect.Type]bool) []string {
+	if t.Kind() != reflect.Struct || walked[t] {
+		return nil
+	}
+	walked[t] = true
+
+	var names []string
 	for i := range t.NumField() {
 		field := t.Field(i)
 		if !field.Anonymous {
@@ -151,24 +182,15 @@ func ambiguousPromotion(t reflect.Type) error {
 		if embedded == nil || embedded.Kind() != reflect.Struct {
 			continue
 		}
-		for j := range embedded.NumField() {
-			promotedBy[embedded.Field(j).Name] = append(promotedBy[embedded.Field(j).Name], field.Name)
-		}
-	}
 
-	ambiguous := make([]string, 0, len(promotedBy))
-	for name, embeds := range promotedBy {
-		if len(embeds) > 1 {
-			sort.Strings(embeds)
-			ambiguous = append(ambiguous, fmt.Sprintf("%s from %s", name, strings.Join(embeds, " and ")))
+		for j := range embedded.NumField() {
+			if promoted := embedded.Field(j); promoted.IsExported() {
+				names = append(names, promoted.Name)
+			}
 		}
+		names = append(names, promotedNames(embedded, walked)...)
 	}
-	if len(ambiguous) == 0 {
-		return nil
-	}
-	sort.Strings(ambiguous)
-	return fmt.Errorf("%s: embedded types promote one field name between them, which nothing can "+
-		"name to configure: %s", typeName(t), strings.Join(ambiguous, ", "))
+	return names
 }
 
 func reservedFieldName(importPath, typeName string, fields map[string]FieldDoc) error {

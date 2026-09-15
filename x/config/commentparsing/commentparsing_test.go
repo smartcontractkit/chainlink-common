@@ -991,13 +991,36 @@ func TestDiscoverEmitsEachTypeOnce(t *testing.T) {
 // Go leaves a selector ambiguous between two embedded types legal to declare and illegal to use,
 // so there is no name a config file could set.
 func TestAmbiguousPromotion(t *testing.T) {
-	require.NoError(t, ambiguousPromotion(reflect.TypeFor[repeatedRoot]()))
+	t.Run("Nothing promoted twice", func(t *testing.T) {
+		require.NoError(t, ambiguousPromotion(reflect.TypeFor[repeatedRoot]()))
+	})
 
-	err := ambiguousPromotion(reflect.TypeFor[ambiguousOuter]())
-	require.ErrorContains(t, err, "Region from ambiguousLeft and ambiguousRight")
+	t.Run("Two embeds declaring one name", func(t *testing.T) {
+		err := ambiguousPromotion(reflect.TypeFor[ambiguousOuter]())
+		require.ErrorContains(t, err, "Region promoted from more than one embedded type")
+		require.ErrorContains(t, err, "ambiguousOuter")
+	})
+
+	// The collision is two levels down, where each embed reaches it through an embed of its own.
+	t.Run("Two embeds reaching one name deeper", func(t *testing.T) {
+		err := ambiguousPromotion(reflect.TypeFor[ambiguousDeepOuter]())
+		require.ErrorContains(t, err, "Region promoted from more than one embedded type")
+	})
 
 	// The outer type's own field wins at the shallower depth, so it is not ambiguous.
-	require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousShadowed]()))
+	t.Run("The outer type shadows the name", func(t *testing.T) {
+		require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousShadowed]()))
+	})
+
+	// So does a shallower embed, over a name two deeper embeds share.
+	t.Run("A shallower embed shadows the name", func(t *testing.T) {
+		require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousDeepShadowed]()))
+	})
+
+	// An unexported name is out of reach of a config file whether it resolves or not.
+	t.Run("An unexported name promoted twice", func(t *testing.T) {
+		require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousUnexported]()))
+	})
 }
 
 type ambiguousLeft struct {
@@ -1017,6 +1040,37 @@ type ambiguousOuter struct {
 type ambiguousShadowed struct {
 	ambiguousLeft
 	Region string
+}
+
+type ambiguousDeepLeft struct {
+	ambiguousLeft
+}
+
+type ambiguousDeepRight struct {
+	ambiguousRight
+}
+
+type ambiguousDeepOuter struct {
+	ambiguousDeepLeft
+	ambiguousDeepRight
+}
+
+type ambiguousDeepShadowed struct {
+	ambiguousLeft
+	ambiguousDeepRight
+}
+
+type ambiguousHiddenLeft struct {
+	region string
+}
+
+type ambiguousHiddenRight struct {
+	region string
+}
+
+type ambiguousUnexported struct {
+	ambiguousHiddenLeft
+	ambiguousHiddenRight
 }
 
 func TestReservedFieldName(t *testing.T) {

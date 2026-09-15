@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -155,14 +155,8 @@ func isPrintableASCII(val string) bool {
 // that if case variants of one whitelisted attribute collide on the same header name, the first in
 // sorted order of the original keys wins, deterministically.
 func SanitizeMetadataHeaders(in map[string]string) map[string]string {
-	keys := make([]string, 0, len(in))
-	for k := range in {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
 	out := make(map[string]string, len(resourceAttributeHeaders))
-	for _, k := range keys {
+	for _, k := range slices.Sorted(maps.Keys(in)) {
 		header, ok := resourceAttributeHeaders[strings.ToLower(k)]
 		if !ok {
 			continue

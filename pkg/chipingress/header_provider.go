@@ -140,7 +140,7 @@ func isPrintableASCII(val string) bool {
 // SanitizeMetadataHeaders projects a map of resource attributes onto the closed whitelist defined
 // by ResourceAttributeHeaders, returning the gRPC metadata headers to attach to every request
 // (e.g. via NewStaticHeaderProvider). An attribute named csa_public_key is emitted as
-// chainlink-csa-public-key; chip-ingress reads exactly those fixed header names and forwards them
+// chainlink-resource-csa-public-key; chip-ingress reads exactly those fixed header names and forwards them
 // onto every Kafka record a request produces under resource_<original attribute key>.
 //
 // The whitelist is what makes this safe without validation machinery. Key matching is

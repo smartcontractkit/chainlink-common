@@ -16,11 +16,11 @@ const IdempotencyKeyAttr = "idempotencykey"
 // ResourceAttributeHeaders is the closed whitelist of producer resource attributes sent as gRPC
 // metadata, mapping each attribute key (lowercased — SanitizeMetadataHeaders matches
 // case-insensitively) to the fixed chainlink-* metadata header name it travels under. For example
-// csa_public_key is sent as chainlink-csa-public-key.
+// csa_public_key is sent as chainlink-resource-csa-public-key.
 //
 // It is the wire contract with chip-ingress, which reads exactly these header names and forwards
 // them onto every Kafka record a request produces under resource_<original attribute key> (e.g.
-// chainlink-service-name becomes resource_service.name). The set is
+// chainlink-resource-service-name becomes resource_service.name). The set is
 // closed on purpose: because no operator-defined key can ever become a header name, no attribute
 // can shadow a reserved gRPC metadata key such as the CSA auth token's, and the server needs no
 // deny-list to keep resource attributes away from "ce_" or identity headers it derives from the
@@ -30,16 +30,16 @@ const IdempotencyKeyAttr = "idempotencykey"
 // repositories is deliberate, matching how authHeaderKey is already spelled in both pkg/beholder
 // and pkg/chipingress; the two must stay in sync or forwarding silently stops.
 var ResourceAttributeHeaders = map[string]string{
-	"csa_public_key":   "chainlink-csa-public-key",
-	"deployed_by":      "chainlink-deployed-by",
-	"donid":            "chainlink-don-id",
-	"host.name":        "chainlink-host-name",
-	"internal_node_id": "chainlink-internal-node-id",
-	"node_id":          "chainlink-node-id",
-	"platformenv":      "chainlink-platform-env",
-	"service.name":     "chainlink-service-name",
-	"service.sha":      "chainlink-service-sha",
-	"zone":             "chainlink-zone",
+	"csa_public_key":   "chainlink-resource-csa-public-key",
+	"deployed_by":      "chainlink-resource-deployed-by",
+	"donid":            "chainlink-resource-don-id",
+	"host.name":        "chainlink-resource-host-name",
+	"internal_node_id": "chainlink-resource-internal-node-id",
+	"node_id":          "chainlink-resource-node-id",
+	"platformenv":      "chainlink-resource-platform-env",
+	"service.name":     "chainlink-resource-service-name",
+	"service.sha":      "chainlink-resource-service-sha",
+	"zone":             "chainlink-resource-zone",
 }
 
 type (

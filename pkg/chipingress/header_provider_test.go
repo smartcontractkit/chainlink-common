@@ -299,16 +299,16 @@ func TestSanitizeMetadataHeaders(t *testing.T) {
 		}
 		got := chipingress.SanitizeMetadataHeaders(in)
 		assert.Equal(t, map[string]string{
-			"chainlink-deployed-by":      "ci",
-			"chainlink-host-name":        "ip-10-0-0-1",
-			"chainlink-internal-node-id": "42",
-			"chainlink-node-id":          "7",
-			"chainlink-don-id":           "don-1",
-			"chainlink-platform-env":     "staging",
-			"chainlink-zone":             "us-east-1a",
-			"chainlink-csa-public-key":   "abc123",
-			"chainlink-service-name":     "chainlink",
-			"chainlink-service-sha":      "deadbeef",
+			"chainlink-resource-deployed-by":      "ci",
+			"chainlink-resource-host-name":        "ip-10-0-0-1",
+			"chainlink-resource-internal-node-id": "42",
+			"chainlink-resource-node-id":          "7",
+			"chainlink-resource-don-id":           "don-1",
+			"chainlink-resource-platform-env":     "staging",
+			"chainlink-resource-zone":             "us-east-1a",
+			"chainlink-resource-csa-public-key":   "abc123",
+			"chainlink-resource-service-name":     "chainlink",
+			"chainlink-resource-service-sha":      "deadbeef",
 		}, got)
 		// The whitelist mapping itself is the wire contract with chip-ingress; pinning the input
 		// spellings guards both sides drifting apart.
@@ -322,9 +322,9 @@ func TestSanitizeMetadataHeaders(t *testing.T) {
 			"Service.Name": "chainlink",
 		})
 		assert.Equal(t, map[string]string{
-			"chainlink-don-id":       "don-1",
-			"chainlink-platform-env": "prod",
-			"chainlink-service-name": "chainlink",
+			"chainlink-resource-don-id":       "don-1",
+			"chainlink-resource-platform-env": "prod",
+			"chainlink-resource-service-name": "chainlink",
 		}, got)
 	})
 
@@ -361,10 +361,10 @@ func TestSanitizeMetadataHeaders(t *testing.T) {
 	})
 
 	t.Run("case variants of one attribute resolve deterministically to sorted-first key", func(t *testing.T) {
-		// Both map to chainlink-don-id; sorted order of the ORIGINAL keys is "DonID" < "donid"
+		// Both map to chainlink-resource-don-id; sorted order of the ORIGINAL keys is "DonID" < "donid"
 		// (upper-case sorts first in ASCII), so "DonID" wins.
 		got := chipingress.SanitizeMetadataHeaders(map[string]string{"DonID": "upper", "donid": "lower"})
-		assert.Equal(t, map[string]string{"chainlink-don-id": "upper"}, got)
+		assert.Equal(t, map[string]string{"chainlink-resource-don-id": "upper"}, got)
 	})
 }
 

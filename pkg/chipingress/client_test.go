@@ -612,8 +612,8 @@ func TestOptions(t *testing.T) {
 		headers, err := config.headerProvider.Headers(t.Context())
 		require.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"chainlink-don-id":         "don-1",
-			"chainlink-csa-public-key": "abc",
+			"chainlink-resource-don-id":         "don-1",
+			"chainlink-resource-csa-public-key": "abc",
 		}, headers)
 	})
 
@@ -773,8 +773,8 @@ func TestClient_AuthHeaderCoexistsWithResourceAttributes(t *testing.T) {
 	// grpc lower-cases metadata keys on the wire.
 	assert.Equal(t, []string{authToken}, capture.lastMD.Get(authHeaderKey),
 		"the auth token must arrive exactly once, unmodified")
-	assert.Equal(t, []string{"abc123"}, capture.lastMD.Get("chainlink-csa-public-key"))
-	assert.Equal(t, []string{"chainlink"}, capture.lastMD.Get("chainlink-service-name"))
+	assert.Equal(t, []string{"abc123"}, capture.lastMD.Get("chainlink-resource-csa-public-key"))
+	assert.Equal(t, []string{"chainlink"}, capture.lastMD.Get("chainlink-resource-service-name"))
 	assert.Equal(t, []string{"true"}, capture.lastMD.Get("x-include-nop-info"))
 	// The forged attribute was dropped by the whitelist, never emitted.
 	assert.Empty(t, capture.lastMD.Get("forged"))

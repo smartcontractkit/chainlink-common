@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/stellar/go-stellar-sdk/xdr"
 	"github.com/stretchr/testify/require"
 
 	stellarcap "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/chain-capabilities/stellar"
@@ -14,8 +15,8 @@ import (
 )
 
 func TestConvertGetLedgerEntriesRequest_RoundTrip(t *testing.T) {
-	key1 := base64.StdEncoding.EncodeToString([]byte("key-one"))
-	key2 := base64.StdEncoding.EncodeToString([]byte("key-two"))
+	key1 := validLedgerKeyXDRBase64(1)
+	key2 := validLedgerKeyXDRBase64(2)
 	domain := stellartypes.GetLedgerEntriesRequest{Keys: []string{key1, key2}}
 
 	proto, err := conv.ConvertGetLedgerEntriesRequestToProto(domain)
@@ -34,6 +35,50 @@ func TestConvertGetLedgerEntriesRequestToProto_InvalidBase64(t *testing.T) {
 	require.Contains(t, err.Error(), "key[0]")
 }
 
+func TestConvertGetLedgerEntriesRequestToProto_EmptyKeys(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{})
+	require.EqualError(t, err, "ledger entry keys are empty")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_EmptyKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{""},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "empty XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_TruncatedKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{base64.StdEncoding.EncodeToString([]byte{0, 0, 0, 0})},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_TrailingBytes(t *testing.T) {
+	key := validLedgerKeyXDR(1)
+	key = append(key, 0xff)
+
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{base64.StdEncoding.EncodeToString(key)},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "trailing")
+}
+
+func TestConvertGetLedgerEntriesRequestToProto_UnsupportedLedgerKeyType(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestToProto(stellartypes.GetLedgerEntriesRequest{
+		Keys: []string{base64.StdEncoding.EncodeToString([]byte{0, 0, 0, 99})},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
 func TestConvertGetLedgerEntriesRequestFromProto_Nil(t *testing.T) {
 	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(nil)
 	require.EqualError(t, err, "get ledger entries request is nil")
@@ -42,6 +87,45 @@ func TestConvertGetLedgerEntriesRequestFromProto_Nil(t *testing.T) {
 func TestConvertGetLedgerEntriesRequestFromProto_EmptyKeys(t *testing.T) {
 	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{})
 	require.EqualError(t, err, "ledger entry keys are empty")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_EmptyKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{{}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "empty XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_TruncatedKey(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{{0, 0, 0, 0}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_UnsupportedLedgerKeyType(t *testing.T) {
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{{0, 0, 0, 99}},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "invalid LedgerKey XDR")
+}
+
+func TestConvertGetLedgerEntriesRequestFromProto_TrailingBytes(t *testing.T) {
+	key := validLedgerKeyXDR(1)
+	key = append(key, 0xff)
+
+	_, err := conv.ConvertGetLedgerEntriesRequestFromProto(&conv.GetLedgerEntriesRequest{
+		Keys: [][]byte{key},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "key[0]")
+	require.Contains(t, err.Error(), "trailing")
 }
 
 func TestConvertLedgerEntryResult_RoundTrip(t *testing.T) {
@@ -62,6 +146,28 @@ func TestConvertLedgerEntryResult_RoundTrip(t *testing.T) {
 	got, err := conv.ConvertLedgerEntryResultFromProto(proto)
 	require.NoError(t, err)
 	require.Equal(t, domain, got)
+}
+
+func validLedgerKeyXDRBase64(seed byte) string {
+	return base64.StdEncoding.EncodeToString(validLedgerKeyXDR(seed))
+}
+
+func validLedgerKeyXDR(seed byte) []byte {
+	var accountID xdr.Uint256
+	accountID[31] = seed
+	publicKey, err := xdr.NewPublicKey(xdr.PublicKeyTypePublicKeyTypeEd25519, accountID)
+	if err != nil {
+		panic(err)
+	}
+	key, err := xdr.NewLedgerKey(xdr.LedgerEntryTypeAccount, xdr.LedgerKeyAccount{AccountId: xdr.AccountId(publicKey)})
+	if err != nil {
+		panic(err)
+	}
+	raw, err := key.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	return raw
 }
 
 func TestConvertLedgerEntryResult_NoLiveUntil(t *testing.T) {
@@ -710,6 +816,24 @@ func TestConvertSubmitTransactionResponseToProto_InvalidResultMetaXDR(t *testing
 	require.Contains(t, err.Error(), "invalid result meta xdr")
 }
 
+func TestConvertSubmitTransactionResponseToProto_UnsupportedTxStatus(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseToProto(&stellartypes.SubmitTransactionResponse{
+		TxStatus: stellartypes.TransactionStatus(99),
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "txStatus")
+	require.Contains(t, err.Error(), "unsupported tx status")
+}
+
+func TestConvertSubmitTransactionResponseFromProto_UnsupportedTxStatus(t *testing.T) {
+	_, err := conv.ConvertSubmitTransactionResponseFromProto(&conv.SubmitTransactionResponse{
+		TxStatus: conv.TxStatus(99),
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "txStatus")
+	require.Contains(t, err.Error(), "unsupported proto tx status")
+}
+
 func TestConvertSubmitTransactionRequestFromProto_BadArg(t *testing.T) {
 	_, err := conv.ConvertSubmitTransactionRequestFromProto(&conv.SubmitTransactionRequest{
 		ContractId: "C_X",
@@ -1099,6 +1223,28 @@ func TestConvertGetEventsResponseFromProto_MissingValue(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "events[0]")
 	require.Contains(t, err.Error(), "value is required")
+}
+
+func TestConvertGetEventsResponseFromProto_UnsupportedEventType(t *testing.T) {
+	u64 := uint64(1)
+	value, err := stellarcap.ScValToProto(stellartypes.ScVal{
+		Type: stellartypes.ScValTypeU64,
+		U64:  &u64,
+	})
+	require.NoError(t, err)
+
+	_, err = conv.ConvertGetEventsResponseFromProto(&conv.GetEventsResponse{
+		Events: []*conv.EventInfo{
+			{
+				EventType: conv.EventType(99),
+				Value:     value,
+			},
+		},
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "events[0]")
+	require.Contains(t, err.Error(), "eventType")
+	require.Contains(t, err.Error(), "unsupported proto event type")
 }
 
 func TestConvertGetEventsResponseToProto_BadValue(t *testing.T) {

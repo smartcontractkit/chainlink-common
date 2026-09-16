@@ -12,9 +12,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
@@ -261,7 +261,7 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 		}
 		return res.CapabilityID, nil, nil
 	})
-	client := newBaseCapabilityClient(cr.BrokerExt, conn)
+	client := remote.NewBaseCapabilityClient(cr.Logger, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
@@ -280,7 +280,7 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 		}
 		return res.CapabilityID, nil, nil
 	})
-	client := NewTriggerCapabilityClient(cr.BrokerExt, conn)
+	client := remote.NewTriggerCapabilityClient(cr.Logger, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
@@ -299,7 +299,7 @@ func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID stri
 		}
 		return res.CapabilityID, nil, nil
 	})
-	client := NewExecutableCapabilityClient(cr.BrokerExt, conn)
+	client := remote.NewExecutableCapabilityClient(cr.Logger, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
@@ -318,7 +318,7 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 		if err != nil {
 			return nil, net.ErrConnDial{Name: "List", ID: id, Err: err}
 		}
-		client := newBaseCapabilityClient(cr.BrokerExt, conn)
+		client := remote.NewBaseCapabilityClient(cr.Logger, conn)
 		clients = append(clients, client)
 	}
 
@@ -333,7 +333,7 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 
 	var cRes net.Resource
 	id, cRes, err := cr.ServeNew(info.ID, func(s *grpc.Server) {
-		pbRegisterCapability(s, cr.BrokerExt, c, info.CapabilityType)
+		remote.RegisterCapabilityServer(s, cr.Logger, c, info.CapabilityType)
 	})
 	if err != nil {
 		return err
@@ -341,7 +341,7 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 
 	_, err = cr.grpc.Add(ctx, &pb.AddRequest{
 		CapabilityID: id,
-		Type:         getExecuteAPIType(info.CapabilityType),
+		Type:         remote.ExecuteAPITypeFor(info.CapabilityType),
 	})
 	if err != nil {
 		cRes.Close()
@@ -387,7 +387,7 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 	}
 
 	id, _, err := c.ServeNew("Get", func(s *grpc.Server) {
-		pbRegisterCapability(s, c.BrokerExt, capability, info.CapabilityType)
+		remote.RegisterCapabilityServer(s, c.Logger, capability, info.CapabilityType)
 	})
 	if err != nil {
 		return nil, err
@@ -395,7 +395,7 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 
 	return &pb.GetReply{
 		CapabilityID: id,
-		Type:         getExecuteAPIType(info.CapabilityType),
+		Type:         remote.ExecuteAPITypeFor(info.CapabilityType),
 	}, nil
 }
 
@@ -596,7 +596,7 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb
 	}
 
 	id, _, err := c.ServeNew("GetTrigger", func(s *grpc.Server) {
-		pbRegisterCapability(s, c.BrokerExt, capability, capabilities.CapabilityTypeTrigger)
+		remote.RegisterCapabilityServer(s, c.Logger, capability, capabilities.CapabilityTypeTrigger)
 	})
 	if err != nil {
 		return nil, err
@@ -625,7 +625,7 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 	}
 
 	id, _, err := c.ServeNew("GetExecutable", func(s *grpc.Server) {
-		pbRegisterCapability(s, c.BrokerExt, capability, info.CapabilityType)
+		remote.RegisterCapabilityServer(s, c.Logger, capability, info.CapabilityType)
 	})
 	if err != nil {
 		return nil, err
@@ -653,7 +653,7 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 		}
 
 		id, res, err := c.ServeNew("List", func(s *grpc.Server) {
-			pbRegisterCapability(s, c.BrokerExt, cap, info.CapabilityType)
+			remote.RegisterCapabilityServer(s, c.Logger, cap, info.CapabilityType)
 		})
 		if err != nil {
 			c.CloseAll(resources...)
@@ -666,10 +666,6 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 	return reply, nil
 }
 
-var _ registry.StateGetter = (*TriggerCapabilityClient)(nil)
-var _ registry.StateGetter = (*ExecutableCapabilityClient)(nil)
-var _ registry.StateGetter = (*CombinedCapabilityClient)(nil)
-
 func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddRequest) (*emptypb.Empty, error) {
 	conn, err := c.Dial(request.CapabilityID)
 	if err != nil {
@@ -679,11 +675,11 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddReq
 
 	switch request.Type {
 	case pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
-		client = NewTriggerCapabilityClient(c.BrokerExt, conn)
+		client = remote.NewTriggerCapabilityClient(c.Logger, conn)
 	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
-		client = NewExecutableCapabilityClient(c.BrokerExt, conn)
+		client = remote.NewExecutableCapabilityClient(c.Logger, conn)
 	case pb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED:
-		client = NewCombinedCapabilityClient(c.BrokerExt, conn)
+		client = remote.NewCombinedCapabilityClient(c.Logger, conn)
 	default:
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
@@ -703,57 +699,14 @@ func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *pb.Rem
 	return &emptypb.Empty{}, nil
 }
 
+// RegisterCapabilitiesRegistryServer serves i as the CapabilitiesRegistry service on s.
+func RegisterCapabilitiesRegistryServer(s *grpc.Server, b *net.BrokerExt, i core.CapabilitiesRegistry) {
+	pb.RegisterCapabilitiesRegistryServer(s, NewCapabilitiesRegistryServer(b, i))
+}
+
 func NewCapabilitiesRegistryServer(b *net.BrokerExt, i core.CapabilitiesRegistry) *capabilitiesRegistryServer {
 	return &capabilitiesRegistryServer{
 		BrokerExt: b.WithName("CapabilitiesRegistryServer"),
 		impl:      i,
-	}
-}
-
-// pbRegisterCapability registers the server with the correct capability based on capability type, this method assumes
-// that the capability has already been validated with validateCapability.
-func pbRegisterCapability(s *grpc.Server, b *net.BrokerExt, impl capabilities.BaseCapability, t capabilities.CapabilityType) {
-	switch t {
-	case capabilities.CapabilityTypeTrigger:
-		i, _ := impl.(capabilities.TriggerCapability)
-		capabilitiespb.RegisterTriggerExecutableServer(s, &triggerExecutableServer{
-			BrokerExt: b,
-			impl:      i,
-		})
-	case capabilities.CapabilityTypeCombined:
-		t, _ := impl.(capabilities.TriggerCapability)
-		capabilitiespb.RegisterTriggerExecutableServer(s, &triggerExecutableServer{
-			BrokerExt: b,
-			impl:      t,
-		})
-		e, _ := impl.(capabilities.ExecutableCapability)
-		capabilitiespb.RegisterExecutableServer(s, &executableServer{
-			BrokerExt:   b,
-			impl:        e,
-			cancelFuncs: map[string]func(){},
-		})
-	case capabilities.CapabilityTypeTarget, capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus:
-		i, _ := impl.(capabilities.ExecutableCapability)
-		capabilitiespb.RegisterExecutableServer(s, &executableServer{
-			BrokerExt:   b,
-			impl:        i,
-			cancelFuncs: map[string]func(){},
-		})
-	case capabilities.CapabilityTypeUnknown:
-		// Only register the base capability server
-	}
-	capabilitiespb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(impl))
-}
-
-func getExecuteAPIType(c capabilities.CapabilityType) pb.ExecuteAPIType {
-	switch c {
-	case capabilities.CapabilityTypeTrigger:
-		return pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER
-	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
-		return pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE
-	case capabilities.CapabilityTypeCombined:
-		return pb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED
-	default:
-		return pb.ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN
 	}
 }

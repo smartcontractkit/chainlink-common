@@ -1,4 +1,4 @@
-package capability
+package remote
 
 import (
 	"context"
@@ -14,7 +14,9 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
+	registrypb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
@@ -23,10 +25,10 @@ type TriggerCapabilityClient struct {
 	*baseCapabilityClient
 }
 
-func NewTriggerCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) capabilities.TriggerCapability {
+func NewTriggerCapabilityClient(lggr logger.Logger, conn ClientConn) capabilities.TriggerCapability {
 	return &TriggerCapabilityClient{
-		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
-		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
+		triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
+		baseCapabilityClient:    newBaseCapabilityClient(lggr, conn),
 	}
 }
 
@@ -40,10 +42,10 @@ type ExecutableCapability interface {
 	capabilities.BaseCapability
 }
 
-func NewExecutableCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) ExecutableCapability {
+func NewExecutableCapabilityClient(lggr logger.Logger, conn ClientConn) ExecutableCapability {
 	return &ExecutableCapabilityClient{
-		executableClient:     newExecutableClient(brokerExt, conn),
-		baseCapabilityClient: newBaseCapabilityClient(brokerExt, conn),
+		executableClient:     newExecutableClient(lggr, conn),
+		baseCapabilityClient: newBaseCapabilityClient(lggr, conn),
 	}
 }
 
@@ -53,30 +55,26 @@ type CombinedCapabilityClient struct {
 	*triggerExecutableClient
 }
 
-func NewCombinedCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) ExecutableCapability {
+func NewCombinedCapabilityClient(lggr logger.Logger, conn ClientConn) ExecutableCapability {
 	return &CombinedCapabilityClient{
-		executableClient:        newExecutableClient(brokerExt, conn),
-		baseCapabilityClient:    newBaseCapabilityClient(brokerExt, conn),
-		triggerExecutableClient: newTriggerExecutableClient(brokerExt, conn),
+		executableClient:        newExecutableClient(lggr, conn),
+		baseCapabilityClient:    newBaseCapabilityClient(lggr, conn),
+		triggerExecutableClient: newTriggerExecutableClient(lggr, conn),
 	}
 }
 
-func RegisterExecutableCapabilityServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl ExecutableCapability) error {
-	bext := &net.BrokerExt{
-		BrokerConfig: brokerCfg,
-		Broker:       broker,
-	}
-	pb.RegisterExecutableServer(server, newExecutableServer(bext, impl))
+var _ registry.StateGetter = (*TriggerCapabilityClient)(nil)
+var _ registry.StateGetter = (*ExecutableCapabilityClient)(nil)
+var _ registry.StateGetter = (*CombinedCapabilityClient)(nil)
+
+func RegisterExecutableCapabilityServer(server *grpc.Server, lggr logger.Logger, impl ExecutableCapability) error {
+	pb.RegisterExecutableServer(server, newExecutableServer(lggr, impl))
 	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
 	return nil
 }
 
-func RegisterTriggerCapabilityServer(server *grpc.Server, broker net.Broker, brokerCfg net.BrokerConfig, impl capabilities.TriggerCapability) error {
-	bext := &net.BrokerExt{
-		BrokerConfig: brokerCfg,
-		Broker:       broker,
-	}
-	pb.RegisterTriggerExecutableServer(server, newTriggerExecutableServer(bext, impl))
+func RegisterTriggerCapabilityServer(server *grpc.Server, lggr logger.Logger, impl capabilities.TriggerCapability) error {
+	pb.RegisterTriggerExecutableServer(server, newTriggerExecutableServer(lggr, impl))
 	pb.RegisterBaseCapabilityServer(server, newBaseCapabilityServer(impl))
 	return nil
 }
@@ -136,15 +134,22 @@ func InfoToReply(info capabilities.CapabilityInfo) *pb.CapabilityInfoReply {
 }
 
 type baseCapabilityClient struct {
-	c    net.ClientConnInterface
+	c    ClientConn
 	grpc pb.BaseCapabilityClient
-	*net.BrokerExt
+	lggr logger.Logger
 }
 
 var _ capabilities.BaseCapability = (*baseCapabilityClient)(nil)
 
-func newBaseCapabilityClient(brokerExt *net.BrokerExt, conn net.ClientConnInterface) *baseCapabilityClient {
-	return &baseCapabilityClient{c: conn, grpc: pb.NewBaseCapabilityClient(conn), BrokerExt: brokerExt}
+// NewBaseCapabilityClient returns a client for the BaseCapability service on conn.
+// The returned value also implements [registry.StateGetter], which the registry uses
+// to check whether the underlying connection is still usable.
+func NewBaseCapabilityClient(lggr logger.Logger, conn ClientConn) capabilities.BaseCapability {
+	return newBaseCapabilityClient(lggr, conn)
+}
+
+func newBaseCapabilityClient(lggr logger.Logger, conn ClientConn) *baseCapabilityClient {
+	return &baseCapabilityClient{c: conn, grpc: pb.NewBaseCapabilityClient(conn), lggr: lggr}
 }
 func (c *baseCapabilityClient) GetState() connectivity.State {
 	return c.c.GetState()
@@ -192,15 +197,15 @@ func InfoReplyToInfo(resp *pb.CapabilityInfoReply) (capabilities.CapabilityInfo,
 
 type triggerExecutableServer struct {
 	pb.UnimplementedTriggerExecutableServer
-	*net.BrokerExt
+	lggr logger.Logger
 
 	impl capabilities.TriggerExecutable
 }
 
-func newTriggerExecutableServer(brokerExt *net.BrokerExt, impl capabilities.TriggerExecutable) *triggerExecutableServer {
+func newTriggerExecutableServer(lggr logger.Logger, impl capabilities.TriggerExecutable) *triggerExecutableServer {
 	return &triggerExecutableServer{
-		impl:      impl,
-		BrokerExt: brokerExt,
+		impl: impl,
+		lggr: lggr,
 	}
 }
 
@@ -253,7 +258,7 @@ func (t *triggerExecutableServer) RegisterTrigger(request *pb.TriggerRegistratio
 		// Always attempt to unregister the trigger to ensure any related resources are cleaned up
 		err = t.impl.UnregisterTrigger(server.Context(), req)
 		if err != nil {
-			t.Logger.Error("error unregistering trigger", "err", err)
+			t.lggr.Error("error unregistering trigger", "err", err)
 		}
 	}()
 
@@ -292,7 +297,7 @@ func (t *triggerExecutableServer) UnregisterTrigger(ctx context.Context, request
 
 type triggerExecutableClient struct {
 	grpc pb.TriggerExecutableClient
-	*net.BrokerExt
+	lggr logger.Logger
 
 	// manage cancelation of gRPC client stream by trigger ID
 	mu          sync.Mutex
@@ -375,31 +380,31 @@ func (t *triggerExecutableClient) UnregisterTrigger(ctx context.Context, req cap
 		return nil
 	}
 
-	t.Logger.Warnw("attempted to cleanup stream that was not found", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
+	t.lggr.Warnw("attempted to cleanup stream that was not found", "triggerID", req.TriggerID, "workflowID", req.Metadata.WorkflowID)
 	return nil
 }
 
-func newTriggerExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *triggerExecutableClient {
+func newTriggerExecutableClient(lggr logger.Logger, conn grpc.ClientConnInterface) *triggerExecutableClient {
 	return &triggerExecutableClient{
 		grpc:        pb.NewTriggerExecutableClient(conn),
-		BrokerExt:   brokerExt,
+		lggr:        lggr,
 		cancelFuncs: make(map[string]func()),
 	}
 }
 
 type executableServer struct {
 	pb.UnimplementedExecutableServer
-	*net.BrokerExt
+	lggr logger.Logger
 
 	impl capabilities.Executable
 
 	cancelFuncs map[string]func()
 }
 
-func newExecutableServer(brokerExt *net.BrokerExt, impl capabilities.Executable) *executableServer {
+func newExecutableServer(lggr logger.Logger, impl capabilities.Executable) *executableServer {
 	return &executableServer{
 		impl:        impl,
-		BrokerExt:   brokerExt,
+		lggr:        lggr,
 		cancelFuncs: map[string]func(){},
 	}
 }
@@ -467,13 +472,13 @@ func (c *executableServer) Execute(reqpb *pb.CapabilityRequest, server pb.Execut
 
 type executableClient struct {
 	grpc pb.ExecutableClient
-	*net.BrokerExt
+	lggr logger.Logger
 }
 
-func newExecutableClient(brokerExt *net.BrokerExt, conn grpc.ClientConnInterface) *executableClient {
+func newExecutableClient(lggr logger.Logger, conn grpc.ClientConnInterface) *executableClient {
 	return &executableClient{
-		grpc:      pb.NewExecutableClient(conn),
-		BrokerExt: brokerExt,
+		grpc: pb.NewExecutableClient(conn),
+		lggr: lggr,
 	}
 }
 
@@ -594,4 +599,40 @@ func forwardTriggerResponsesToChannel(
 	}()
 
 	return responseCh, nil
+}
+
+// RegisterCapabilityServer registers impl on s as the gRPC services implied by its
+// capability type. It assumes impl has already been validated against that type.
+func RegisterCapabilityServer(s *grpc.Server, lggr logger.Logger, impl capabilities.BaseCapability, t capabilities.CapabilityType) {
+	switch t {
+	case capabilities.CapabilityTypeTrigger:
+		i, _ := impl.(capabilities.TriggerCapability)
+		pb.RegisterTriggerExecutableServer(s, newTriggerExecutableServer(lggr, i))
+	case capabilities.CapabilityTypeCombined:
+		tc, _ := impl.(capabilities.TriggerCapability)
+		pb.RegisterTriggerExecutableServer(s, newTriggerExecutableServer(lggr, tc))
+		e, _ := impl.(capabilities.ExecutableCapability)
+		pb.RegisterExecutableServer(s, newExecutableServer(lggr, e))
+	case capabilities.CapabilityTypeTarget, capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus:
+		i, _ := impl.(capabilities.ExecutableCapability)
+		pb.RegisterExecutableServer(s, newExecutableServer(lggr, i))
+	case capabilities.CapabilityTypeUnknown:
+		// Only register the base capability server
+	}
+	pb.RegisterBaseCapabilityServer(s, newBaseCapabilityServer(impl))
+}
+
+// ExecuteAPITypeFor reports which capability client wrapper a peer should use to
+// reach a capability of the given type.
+func ExecuteAPITypeFor(c capabilities.CapabilityType) registrypb.ExecuteAPIType {
+	switch c {
+	case capabilities.CapabilityTypeTrigger:
+		return registrypb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER
+	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
+		return registrypb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE
+	case capabilities.CapabilityTypeCombined:
+		return registrypb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED
+	default:
+		return registrypb.ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN
+	}
 }

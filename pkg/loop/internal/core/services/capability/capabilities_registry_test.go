@@ -18,9 +18,9 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 )
 
@@ -112,7 +112,7 @@ func (r *testRegistryPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPC
 
 func (r *testRegistryPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
 	r.brokerExt.Broker = broker
-	pb.RegisterCapabilitiesRegistryServer(server, NewCapabilitiesRegistryServer(r.brokerExt, r.impl))
+	RegisterCapabilitiesRegistryServer(server, r.brokerExt, r.impl)
 	return nil
 }
 
@@ -260,7 +260,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	}
 
 	// After adding the trigger, we'll expect something wrapped by the internal client type below.
-	reg.On("Add", mock.Anything, mock.AnythingOfType("*capability.TriggerCapabilityClient")).Return(nil)
+	reg.On("Add", mock.Anything, mock.AnythingOfType("*remote.TriggerCapabilityClient")).Return(nil)
 	err = rc.Add(t.Context(), testTrigger)
 	require.NoError(t, err)
 

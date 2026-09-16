@@ -77,7 +77,7 @@ func (p *PluginRelayerClient) NewRelayer(ctx context.Context, config string, key
 		deps.Add(ksCSARes)
 
 		capabilityRegistryID, capabilityRegistryResource, err := p.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
-			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(p.BrokerExt, capabilityRegistry))
+			capability.RegisterCapabilitiesRegistryServer(s, p.BrokerExt, capabilityRegistry)
 		})
 		if err != nil {
 			return 0, deps, fmt.Errorf("failed to serve new capability registry: %w", err)

@@ -1166,7 +1166,7 @@ const file_capabilities_registry_proto_rawDesc = "" +
 	"\rGetExecutable\x12\x1a.loop.GetExecutableRequest\x1a\x18.loop.GetExecutableReply\"\x00\x121\n" +
 	"\x04List\x12\x16.google.protobuf.Empty\x1a\x0f.loop.ListReply\"\x00\x121\n" +
 	"\x03Add\x12\x10.loop.AddRequest\x1a\x16.google.protobuf.Empty\"\x00\x127\n" +
-	"\x06Remove\x12\x13.loop.RemoveRequest\x1a\x16.google.protobuf.Empty\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
+	"\x06Remove\x12\x13.loop.RemoveRequest\x1a\x16.google.protobuf.Empty\"\x00BRZPgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pbb\x06proto3"
 
 var (
 	file_capabilities_registry_proto_rawDescOnce sync.Once

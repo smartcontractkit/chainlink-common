@@ -37,9 +37,13 @@ type Config struct {
 	TraceCompressor string
 
 	// OTel Metric
-	MetricReaderInterval time.Duration
-	MetricRetryConfig    *RetryConfig
-	MetricViews          []metric.View
+	// MetricExportBatchSize limits each exporter call to that many data points.
+	// Zero disables batching. The OTel SDK implements this experimentally via
+	// OTEL_GO_X_METRIC_EXPORT_BATCH_SIZE when the reader is constructed.
+	MetricExportBatchSize int
+	MetricReaderInterval  time.Duration
+	MetricRetryConfig     *RetryConfig
+	MetricViews           []metric.View
 	// MetricViewsDenyAttributes lists attribute keys dropped by the default
 	// global deny view (e.g. event_id). Empty skips the deny-list view; the
 	// PerWorkflow histogram bucket and base-trigger allow-list defaults still

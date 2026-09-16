@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"time"
 
@@ -142,11 +143,7 @@ func sortedRequests(requests map[string]*Request) []*Request {
 		return nil
 	}
 
-	ids := make([]string, 0, len(requests))
-	for id := range requests {
-		ids = append(ids, id)
-	}
-	slices.Sort(ids)
+	ids := slices.Sorted(maps.Keys(requests))
 
 	sorted := make([]*Request, 0, len(ids))
 	for _, id := range ids {
@@ -235,27 +232,6 @@ func (p *Plugin) sequencedObservation(ctx context.Context, previousOutcome *pb.O
 	requests := map[string]int64{} // Maps executionID --> seqNum
 	removedCount := 0
 	for _, req := range sortedRequests {
-		// Validate request sequence number
-		var maxSeqNum int64
-		times, ok := previousOutcome.ObservedDonTimes[req.WorkflowExecutionID]
-		if ok {
-			// We have seen this workflow before so check against the sequence
-			maxSeqNum = times.MaxSeqNum()
-		}
-
-		if int64(req.SeqNum) > maxSeqNum+1 {
-			p.store.RemoveRequest(req.WorkflowExecutionID)
-			req.SendResponse(Response{
-				WorkflowExecutionID: req.WorkflowExecutionID,
-				SeqNum:              req.SeqNum,
-				Timestamp:           0,
-				Err: fmt.Errorf("requested seqNum %d for executionID %s is greater than expected based on the max seqNum observed so far %d",
-					req.SeqNum, req.WorkflowExecutionID, maxSeqNum),
-			})
-			removedCount += 1
-			continue
-		}
-
 		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 		if len(requests) >= p.batchSize {
 			break
@@ -342,6 +318,8 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		donTime = prevOutcome.Timestamp + p.minTimeIncrease
 	}
 
+	p.lggr.Infow("New DON Time", "donTime", donTime)
+
 	if p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))) == nil { //TODO inspect error
 		return p.sequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
 	}
@@ -368,23 +346,11 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 			// We only count requests for the next sequence number and ignore all other ones.
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
-			} else if requestSeqNum > currSeqNum {
-				// This should never happen since we don't include out of sequence requests in the Observation phase
-				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the number of observed don times %d",
-					requestSeqNum, id, currSeqNum)
 			}
 		}
 	}
 
 	outcome := prevOutcome
-
-	// Compare with prior outcome to ensure DON time never goes backward.
-	if donTime < outcome.Timestamp+p.minTimeIncrease {
-		p.lggr.Infow("DON Time incremented by minimum time increase to ensure time progression", "minTimeIncrease", p.minTimeIncrease)
-		donTime = outcome.Timestamp + p.minTimeIncrease
-	}
-
-	p.lggr.Infow("New DON Time", "donTime", donTime)
 	outcome.Timestamp = donTime
 
 	for id, numRequests := range observationCounts {
@@ -469,23 +435,11 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 			// We only count requests for the next sequence number and ignore all other ones.
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
-			} else if requestSeqNum > currSeqNum {
-				// This should never happen since we don't include out of sequence requests in the Observation phase
-				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the current seqNum %d",
-					requestSeqNum, id, currSeqNum)
 			}
 		}
 	}
 
 	outcome := prevOutcome
-
-	// Compare with prior outcome to ensure DON time never goes backward.
-	if donTime < outcome.Timestamp+p.minTimeIncrease {
-		p.lggr.Infow("DON Time incremented by minimum time increase to ensure time progression", "minTimeIncrease", p.minTimeIncrease)
-		donTime = outcome.Timestamp + p.minTimeIncrease
-	}
-
-	p.lggr.Infow("New DON Time", "donTime", donTime)
 	outcome.Timestamp = donTime
 
 	for id, numRequests := range observationCounts {

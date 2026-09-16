@@ -12,7 +12,7 @@ func (t *ObservedDonTimes) MaxSeqNum() (maxSeqNum int64) {
 	return
 }
 
-// EarliestTS returns the easliest timestamp value from TimestampsBySequence, or math.MaxInt64 if none exist.
+// EarliestTS returns the earliest timestamp value from TimestampsBySequence, or math.MaxInt64 if none exist.
 func (t *ObservedDonTimes) EarliestTS() (earliestTS int64) {
 	earliestTS = math.MaxInt64
 	for _, ts := range t.TimestampsBySequence {

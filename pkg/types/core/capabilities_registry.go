@@ -4,39 +4,19 @@ import (
 	"context"
 	"errors"
 
-	"github.com/smartcontractkit/libocr/ragep2p/types"
-
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
+	"github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
-type CapabilitiesRegistry interface {
-	CapabilitiesRegistryBase
-	CapabilitiesRegistryMetadata
-}
+// Deprecated
+type CapabilitiesRegistry = registry.CapabilitiesRegistry
 
-type CapabilitiesRegistryMetadata interface {
-	LocalNode(ctx context.Context) (capabilities.Node, error)
-	NodeByPeerID(ctx context.Context, peerID types.PeerID) (capabilities.Node, error)
-	ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error)
-	DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error)
-	// DONByID resolves a DON by its registry ID. Unlike DONsForCapability, this
-	// resolves any DON known to the registry (including caller/workflow DONs that
-	// do not host a given capability), which is required to authoritatively read
-	// a caller DON's Families (e.g. zone membership) from its WorkflowDonID.
-	DONByID(ctx context.Context, donID uint32) (capabilities.DON, error)
-}
+// Deprecated
+type CapabilitiesRegistryMetadata = registry.CapabilitiesRegistryMetadata
 
-type CapabilitiesRegistryBase interface {
-	GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error)
-	Get(ctx context.Context, ID string) (capabilities.BaseCapability, error)
-	GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error)
-	List(ctx context.Context) ([]capabilities.BaseCapability, error)
-	Add(ctx context.Context, c capabilities.BaseCapability) error
-	Remove(ctx context.Context, ID string) error
-}
-
-var _ CapabilitiesRegistry = UnimplementedCapabilitiesRegistry{}
-var _ CapabilitiesRegistryBase = UnimplementedCapabilitiesRegistryBase{}
+// Deprecated
+type CapabilitiesRegistryBase = registry.CapabilitiesRegistryBase
 
 type UnimplementedCapabilitiesRegistry struct {
 	UnimplementedCapabilitiesRegistryMetadata

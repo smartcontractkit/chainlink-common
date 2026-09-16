@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v48"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -177,6 +177,10 @@ func (l *closeTrackingGateLimiter) Close() error {
 }
 
 func (*closeTrackingGateLimiter) Limit(context.Context) (bool, error) {
+	return true, nil
+}
+
+func (*closeTrackingGateLimiter) IsOpen(context.Context) (bool, error) {
 	return true, nil
 }
 

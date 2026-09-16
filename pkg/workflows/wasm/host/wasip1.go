@@ -9,7 +9,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v48"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/jonboulle/clockwork"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
@@ -21,8 +21,8 @@ var (
 	tick     = 100 * time.Millisecond
 )
 
-func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtime.Linker, error) {
-	linker := wasmtime.NewLinker(engine)
+func newWasiLinker[T any](exec *execution[T]) (*wasmtime.Linker, error) {
+	linker := wasmtime.NewLinker(GetEngine(exec.module.cfg.Logger).Engine)
 	cleanupLinker := true
 	defer func() {
 		if cleanupLinker {
@@ -62,7 +62,7 @@ func newWasiLinker[T any](exec *execution[T], engine *wasmtime.Engine) (*wasmtim
 }
 
 func newDagWasiLinker(ctx context.Context, m *module) (*wasmtime.Linker, error) {
-	linker := wasmtime.NewLinker(m.engine)
+	linker := wasmtime.NewLinker(GetEngine(m.cfg.Logger).Engine)
 	cleanupLinker := true
 	defer func() {
 		if cleanupLinker {

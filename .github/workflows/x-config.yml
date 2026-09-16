@@ -1,0 +1,147 @@
+name: x/config Build and Test
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  merge_group:
+
+jobs:
+  changes:
+    name: detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      x-config-src: ${{ steps.x-config-changes.outputs.src }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: x-config-changes
+        with:
+          filters: |
+            src:
+            - 'x/config/**'
+            - '.github/workflows/x-config.yml'
+
+  build-test:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.x-config-src == 'true'
+    defaults:
+      run:
+        working-directory: x/config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          restore-build-cache-only: "false"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Build examples
+        # The examples live in their own modules (they model a real consumer of this library), so
+        # the parent module's ./... does not reach them.
+        run: |
+          go -C commentparsing/examples/separate_module_use/upstream build ./...
+          go -C commentparsing/examples/separate_module_use build ./...
+
+      - name: Download gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Unit Tests
+        id: run-tests
+        continue-on-error: true
+        run: gotestsum --format standard-quiet --junitfile test-results.xml -- ./...
+
+      - name: Analyze and upload test results
+        uses: smartcontractkit/.github/actions/branch-out-upload@branch-out-upload/v1
+        with:
+          junit-file-path: x/config/test-results.xml
+          trunk-org-slug: chainlink
+          trunk-previous-step-outcome: ${{ steps.run-tests.outcome }}
+          trunk-token: ${{ secrets.TRUNK_API_KEY }}
+          trunk-job-url: ${{ format('https://github.com/{0}/actions/runs/{1}/job/{2}/attempts/{3}', github.repository, github.run_id, job.check_run_id, github.run_attempt) }}
+
+  build-race-tests:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.x-config-src == 'true'
+    defaults:
+      run:
+        working-directory: x/config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Race Tests
+        run: GORACE="log_path=$PWD/race" go test -race ./...
+
+      - name: Print Races
+        if: failure()
+        id: print-races
+        run: |
+          find race.* | xargs cat > race.txt
+          if [[ -s race.txt ]]; then
+            cat race.txt
+          fi
+
+      - name: Upload Go test results
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: x-config-race-results
+          path: |
+            ./x/config/race.*
+
+  check-tidy:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.x-config-src == 'true'
+    defaults:
+      run:
+        working-directory: x/config
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        with:
+          go-version-file: "go.mod"
+          only-modules: "true"
+
+      - name: Ensure "go mod tidy" has been run
+        run: |
+          go mod tidy
+          go -C commentparsing/examples/separate_module_use/upstream mod tidy
+          go -C commentparsing/examples/separate_module_use mod tidy
+          git add --all
+          git diff --minimal --cached --exit-code
+
+      - name: Ensure "go generate" has been run
+        # The examples are modules of their own, which go generate ./... does not descend into.
+        run: |
+          go generate ./...
+          go -C commentparsing/examples/separate_module_use generate ./...
+          git add --all
+          git diff --stat --cached --exit-code

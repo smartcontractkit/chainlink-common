@@ -14,14 +14,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basicaction/basicactiontest"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictarget/basictargettest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/basictrigger/basictriggertest"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/cli/cmd/testdata/fixtures/capabilities/referenceaction/referenceactiontest"
-	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/consensus/ocr3/ocr3cap/ocr3captest"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/targets/chainwriter/chainwritertest"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/sdk/testutils"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
@@ -35,7 +33,7 @@ func TestRunner(t *testing.T) {
 
 		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
 
-		triggerMock, actionMock, consensusMock, targetMock := setupAllRunnerMocks(t, runner)
+		triggerMock, actionMock, targetMock := setupAllRunnerMocks(t, runner)
 
 		runner.Run(workflow)
 		require.NoError(t, runner.Err())
@@ -51,15 +49,12 @@ func TestRunner(t *testing.T) {
 		assert.Equal(t, "it was true", action.Output.AdaptedThing)
 
 		assert.True(t, helper.transformTriggerCalled)
-		consensus := consensusMock.GetStepDecoded("consensus")
-		assert.Equal(t, "it was true", consensus.Output.AdaptedThing)
-		require.NotNil(t, consensus.Input.Observations[0])
 
-		rawConsensus := consensusMock.GetStep("consensus")
 		target := targetMock.GetAllWrites()
 		assert.Empty(t, target.Errors)
 		assert.Len(t, target.Inputs, 1)
-		assert.Equal(t, rawConsensus.Output, target.Inputs[0].SignedReport)
+		require.NotNil(t, target.Inputs[0].CoolInput)
+		assert.Equal(t, action.Output.AdaptedThing, *target.Inputs[0].CoolInput)
 	})
 
 	t.Run("Run allows hard-coded values", func(t *testing.T) {
@@ -80,19 +75,11 @@ func TestRunner(t *testing.T) {
 		action := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "name", SnakeCaseInSchemaForTesting: 20}.
 			New(workflow, "action", basicaction.ActionInput{InputThing: tTransform.Value()})
 
-		consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
-			Encoder:       "Test",
-			EncoderConfig: ocr3.EncoderConfig{},
-		}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
-
-		chainwriter.TargetConfig{
-			Address:    "0x123",
-			DeltaStage: "2m",
-			Schedule:   "oneAtATime",
-		}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
+		basictarget.TargetConfig{Name: "target", Number: 1}.
+			New(workflow, basictarget.TargetInput{CoolInput: action.AdaptedThing()})
 
 		runner := testutils.NewRunner(t.Context(), &testutils.NoopRuntime{})
-		_, _, _, targetMock := setupAllRunnerMocks(t, runner)
+		_, _, targetMock := setupAllRunnerMocks(t, runner)
 
 		runner.Run(workflow)
 		require.NoError(t, runner.Err())
@@ -127,13 +114,15 @@ func TestRunner(t *testing.T) {
 			return basicaction.ActionOutputs{AdaptedThing: "it was true"}, nil
 		})
 
-		consensusMock := ocr3captest.IdenticalConsensus[basicaction.ActionOutputs](runner)
+		targetMock := basictargettest.Target(runner, func(input basictarget.TargetInputs) error {
+			return nil
+		})
 
 		runner.Run(wf)
 		assert.ErrorIs(t, runner.Err(), expectedErr)
 
-		consensus := consensusMock.GetStep("consensus")
-		assert.False(t, consensus.WasRun)
+		// The compute step failed, so nothing downstream of it ran.
+		assert.Empty(t, targetMock.GetAllWrites().Inputs)
 	})
 
 	t.Run("Run fails if MockCapability is not provided for a step that is run", func(t *testing.T) {
@@ -146,9 +135,7 @@ func TestRunner(t *testing.T) {
 			return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
 		})
 
-		ocr3captest.IdenticalConsensus[basicaction.ActionOutputs](runner)
-
-		chainwritertest.Target(runner, "chainwriter@1.0.0", func(input chainwriter.TargetInputs) error {
+		basictargettest.Target(runner, func(input basictarget.TargetInputs) error {
 			return nil
 		})
 
@@ -347,7 +334,7 @@ func registrationWorkflow() (*sdk.WorkflowSpecFactory, map[string]any, map[strin
 	return workflow, testTriggerConfig, testTargetConfig
 }
 
-func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.TriggerMock[basictrigger.TriggerOutputs], *testutils.Mock[basicaction.ActionInputs, basicaction.ActionOutputs], *ocr3captest.IdenticalConsensusMock[basicaction.ActionOutputs], *testutils.TargetMock[chainwriter.TargetInputs]) {
+func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.TriggerMock[basictrigger.TriggerOutputs], *testutils.Mock[basicaction.ActionInputs, basicaction.ActionOutputs], *testutils.TargetMock[basictarget.TargetInputs]) {
 	triggerMock := basictriggertest.Trigger(runner, func() (basictrigger.TriggerOutputs, error) {
 		return basictrigger.TriggerOutputs{CoolOutput: "cool"}, nil
 	})
@@ -357,12 +344,10 @@ func setupAllRunnerMocks(t *testing.T, runner *testutils.Runner) (*testutils.Tri
 		return basicaction.ActionOutputs{AdaptedThing: "it was true"}, nil
 	})
 
-	consensusMock := ocr3captest.IdenticalConsensus[basicaction.ActionOutputs](runner)
-
-	targetMock := chainwritertest.Target(runner, "chainwriter@1.0.0", func(input chainwriter.TargetInputs) error {
+	targetMock := basictargettest.Target(runner, func(input basictarget.TargetInputs) error {
 		return nil
 	})
-	return triggerMock, actionMock, consensusMock, targetMock
+	return triggerMock, actionMock, targetMock
 }
 
 type actionTransform func(sdk sdk.Runtime, outputs basictrigger.TriggerOutputs) (bool, error)
@@ -379,15 +364,8 @@ func createBasicTestWorkflow(actionTransform actionTransform) *sdk.WorkflowSpecF
 	action := basicaction.ActionConfig{CamelCaseInSchemaForTesting: "name", SnakeCaseInSchemaForTesting: 20}.
 		New(workflow, "action", basicaction.ActionInput{InputThing: tTransform.Value()})
 
-	consensus := ocr3.IdenticalConsensusConfig[basicaction.ActionOutputs]{
-		Encoder: "Test", EncoderConfig: ocr3.EncoderConfig{},
-	}.New(workflow, "consensus", ocr3.IdenticalConsensusInput[basicaction.ActionOutputs]{Observation: action})
-
-	chainwriter.TargetConfig{
-		Address:    "0x123",
-		DeltaStage: "2m",
-		Schedule:   "oneAtATime",
-	}.New(workflow, "chainwriter@1.0.0", chainwriter.TargetInput{SignedReport: consensus})
+	basictarget.TargetConfig{Name: "target", Number: 1}.
+		New(workflow, basictarget.TargetInput{CoolInput: action.AdaptedThing()})
 
 	return workflow
 }

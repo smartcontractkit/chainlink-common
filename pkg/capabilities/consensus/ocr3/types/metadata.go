@@ -7,14 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
-
-	ocrcommon "github.com/smartcontractkit/libocr/commontypes"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
-
-const MetadataFieldName = "INTERNAL_METADATA"
 
 type Metadata struct {
 	Version          uint32 //  1 byte
@@ -180,22 +173,3 @@ func Decode(raw []byte) (Metadata, []byte, error) {
 func (m Metadata) Length() int {
 	return MetadataLen
 }
-
-// Aggregator is the interface that enables a hook to the Outcome() phase of OCR reporting.
-type Aggregator interface {
-	// Called by the Outcome() phase of OCR reporting.
-	// The inner array of observations corresponds to elements listed in "inputs.observations" section.
-	Aggregate(lggr logger.Logger, previousOutcome *AggregationOutcome, observations map[ocrcommon.OracleID][]values.Value, f int) (*AggregationOutcome, error)
-}
-
-func AppendMetadata(outcome *AggregationOutcome, meta *Metadata) (*AggregationOutcome, error) {
-	meta.padWorkflowName()
-	metaWrapped, err := values.Wrap(meta)
-	if err != nil {
-		return nil, err
-	}
-	outcome.EncodableOutcome.Fields[MetadataFieldName] = values.Proto(metaWrapped)
-	return outcome, nil
-}
-
-type AggregatorFactory func(name string, config values.Map, lggr logger.Logger) (Aggregator, error)

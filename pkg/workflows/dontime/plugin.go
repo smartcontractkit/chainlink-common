@@ -436,6 +436,10 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 			// We only count requests for the next sequence number and ignore all other ones.
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
+			} else if requestSeqNum > currSeqNum {
+				// This should never happen since we don't include out of sequence requests in the Observation phase
+				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the number of observed don times %d",
+					requestSeqNum, id, currSeqNum)
 			}
 		}
 	}

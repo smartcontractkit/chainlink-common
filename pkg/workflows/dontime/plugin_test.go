@@ -590,7 +590,7 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
 	require.NoError(t, err)
 
-	t.Run("trims when all observations set batch size flag", func(t *testing.T) {
+	t.Run("batch size enforced", func(t *testing.T) {
 		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(true))
 		require.NoError(t, err)
 
@@ -601,16 +601,6 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 		require.Contains(t, outcomeProto.ObservedDonTimes, "workflow-a")
 		require.Contains(t, outcomeProto.ObservedDonTimes, "workflow-b")
 		require.NotContains(t, outcomeProto.ObservedDonTimes, "workflow-c")
-	})
-
-	t.Run("does not trim when batch size flag is missing", func(t *testing.T) {
-		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(false))
-		require.NoError(t, err)
-
-		outcomeProto := &pb.Outcome{}
-		err = proto.Unmarshal(outcome, outcomeProto)
-		require.NoError(t, err)
-		require.Len(t, outcomeProto.ObservedDonTimes, 3)
 	})
 }
 

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789509706377,
+  "lastUpdate": 1789566974316,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60720,6 +60720,66 @@ window.BENCHMARK_DATA = {
             "value": 135508,
             "unit": "ns/op",
             "extra": "8616 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fa20ace2413307821e3510d18eca86c23cc006f8",
+          "message": "Add x/config/commentparsing to parse comments from godocs so they can be used at runtime (#2385)\n\n* Add x/config/commentparsing to parse comments from godocs so they can be used at runtime\n\n* Fix copilot compaints\n\n* More AI feedback to address, thanks copilot\n\n* Fix again...\n\n* remove lint unused warning, the type existing is what's needed\n\n* Align workflow with main one",
+          "timestamp": "2026-09-16T13:44:05Z",
+          "tree_id": "445d7bedd84663673af8c589eda0860b36143488",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/fa20ace2413307821e3510d18eca86c23cc006f8"
+        },
+        "date": 1789566969325,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.6,
+            "unit": "ns/op",
+            "extra": "3410474 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78357,
+            "unit": "ns/op",
+            "extra": "15109 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 375.7,
+            "unit": "ns/op",
+            "extra": "3176974 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79935,
+            "unit": "ns/op",
+            "extra": "14917 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28074,
+            "unit": "ns/op",
+            "extra": "42762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 128113,
+            "unit": "ns/op",
+            "extra": "9370 times\n4 procs"
           }
         ]
       }

@@ -123,10 +123,14 @@ for; declare config types unconditionally.
 **`DocComments` is reserved on a documented type.** A field or hand-written method of that name
 cannot coexist with the generated one, so it is reported rather than redeclared.
 
-**Two embedded types cannot promote one field name.** Go leaves that selector legal to declare
-and illegal to use, and a config file keying on the name cannot say which of the two it means, so
-generation refuses the type rather than documenting a field nothing can set. Name the field on the
-outer type to shadow both, or stop embedding one of them.
+**Two embedded types cannot promote one field name, unless every path to it crosses a pointer.**
+Go leaves that selector legal to declare and illegal to use, and a config file keying on the name
+cannot say which of the two it means, so generation refuses the type rather than documenting a
+field nothing can set. Name the field on the outer type to shadow both, or stop embedding one of
+them. The exception is the polymorphic-section idiom — one pointer embed per variant, all nil but
+the one a discriminator selects — where the tied fields never exist at once, and an encoder
+skipping the nil embeds emits the selected variant's keys unambiguously. A tie with even one
+pointer-free path is still refused.
 
 **Documentation promoted through an embedded interface, or an unexported embedded pointer, cannot
 be read.** A lookup constructs the type to call the method on, and neither of those can be filled

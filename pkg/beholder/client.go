@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -40,6 +41,12 @@ type Client struct {
 	eng *services.Engine
 
 	Config Config
+	// scopeName is the instrumentation scope name currently applied to
+	// Logger/Tracer/Meter/Emitter. Set by ForName; defaults to defaultPackageName.
+	scopeName string
+	// scopeAttributes are the instrumentation-scope attributes currently applied,
+	// accumulated across WithScopeAttributes calls and preserved across ForName.
+	scopeAttributes []attribute.KeyValue
 	// Logger
 	Logger otellog.Logger
 	// Tracer
@@ -288,6 +295,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	}
 	c := &Client{
 		Config:                cfg,
+		scopeName:             defaultPackageName,
 		Logger:                logger,
 		Tracer:                tracer,
 		Meter:                 meter,
@@ -329,26 +337,41 @@ func (c Client) ForPackage(name string) Client {
 	return c.ForName(name)
 }
 
-// ForName returns a new Client with the same configuration but with a different name.
-// For global package-scoped telemetry, use the package name.
-// For injected component-scoped telemetry, use a fully qualified name that uniquely identifies this instance.
-func (c Client) ForName(name string) Client {
-	// Logger
-	logger := c.LoggerProvider.Logger(name)
-	// Tracer
-	tracer := c.TracerProvider.Tracer(name)
-	// Meter
-	meter := c.MeterProvider.Meter(name)
-	// Message Emitter
-	messageLogger := c.MessageLoggerProvider.Logger(name)
+// withScope returns a copy of c with Logger/Tracer/Meter/Emitter rebuilt for the given
+// scope name and instrumentation-scope attributes.
+func (c Client) withScope(name string, attrs []attribute.KeyValue) Client {
+	logger := c.LoggerProvider.Logger(name, otellog.WithInstrumentationAttributes(attrs...))
+	tracer := c.TracerProvider.Tracer(name, oteltrace.WithInstrumentationAttributes(attrs...))
+	meter := c.MeterProvider.Meter(name, otelmetric.WithInstrumentationAttributes(attrs...))
+	messageLogger := c.MessageLoggerProvider.Logger(name, otellog.WithInstrumentationAttributes(attrs...))
 	messageEmitter := &messageEmitter{messageLogger: messageLogger}
 
 	newClient := c // copy
+	newClient.scopeName = name
+	newClient.scopeAttributes = attrs
 	newClient.Logger = logger
 	newClient.Tracer = tracer
 	newClient.Meter = meter
 	newClient.Emitter = messageEmitter
 	return newClient
+}
+
+// ForName returns a new Client with the same configuration but with a different name.
+// For global package-scoped telemetry, use the package name.
+// For injected component-scoped telemetry, use a fully qualified name that uniquely identifies this instance.
+// Any scope attributes previously set via WithScopeAttributes are preserved.
+func (c Client) ForName(name string) Client {
+	return c.withScope(name, c.scopeAttributes)
+}
+
+// WithScopeAttributes returns a new Client with additional OpenTelemetry instrumentation-scope
+// attributes attached to everything it emits (Logger, Tracer, Meter, Emitter). Unlike
+// Config.ResourceAttributes (process-wide, applies to every scope), scope attributes are local to
+// this Client value's current name and let you label telemetry with the identity of a specific
+// component, e.g. capability name or plugin name, without affecting other components that share
+// the same underlying providers. Repeated calls accumulate attributes.
+func (c Client) WithScopeAttributes(attrs ...attribute.KeyValue) Client {
+	return c.withScope(c.scopeName, append(slices.Clone(c.scopeAttributes), attrs...))
 }
 
 // SetSigner updates the signer in the lazy signer.

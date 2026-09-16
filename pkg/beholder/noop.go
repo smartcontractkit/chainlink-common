@@ -57,6 +57,7 @@ func (c NoopClientConfig) New() *Client {
 
 	cl := &Client{
 		Config:                cfg,
+		scopeName:             defaultPackageName,
 		Logger:                otelLogger,
 		Tracer:                tracer,
 		Meter:                 meter,
@@ -131,6 +132,7 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 
 	c := &Client{
 		Config:                cfg.Config,
+		scopeName:             defaultPackageName,
 		Logger:                otelLogger,
 		Tracer:                tracer,
 		Meter:                 meter,

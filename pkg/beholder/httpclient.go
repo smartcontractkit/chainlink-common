@@ -193,6 +193,7 @@ func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, erro
 	// HTTP client doesn't currently support rotating auth, so lazySigner is always nil.
 	c := &Client{
 		Config:                cfg,
+		scopeName:             defaultPackageName,
 		Logger:                logger,
 		Tracer:                tracer,
 		Meter:                 meter,

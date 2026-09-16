@@ -234,6 +234,75 @@ func TestClient_ForPackage(t *testing.T) {
 	assert.Contains(t, b.String(), "testMetric")
 }
 
+func TestClient_WithScopeAttributes(t *testing.T) {
+	var b strings.Builder
+	client, err := beholder.NewWriterClient(&b)
+	require.NoError(t, err)
+	clientForTest := client.ForName("TestClient_WithScopeAttributes").
+		WithScopeAttributes(attribute.String("capability_name", "cron-trigger"))
+
+	// Log: only the scope name is asserted here; the stdoutlog JSON exporter cannot render
+	// Scope.Attributes (see TestClient_WithScopeAttributes_Accumulates for details). Trace and
+	// Meter below assert the attribute itself.
+	clientForTest.Logger.Emit(t.Context(), otellog.Record{})
+	assert.Contains(t, b.String(), `"Name":"TestClient_WithScopeAttributes"`)
+	b.Reset()
+
+	// Trace
+	_, span := clientForTest.Tracer.Start(t.Context(), "testSpan")
+	span.End()
+	assert.Contains(t, b.String(), `"Name":"TestClient_WithScopeAttributes"`)
+	assert.Contains(t, b.String(), "capability_name")
+	assert.Contains(t, b.String(), "cron-trigger")
+	b.Reset()
+
+	// Meter
+	counter, _ := clientForTest.Meter.Int64Counter("testMetric")
+	counter.Add(t.Context(), 1)
+	require.NoError(t, client.Start(t.Context()))
+	require.NoError(t, clientForTest.Close())
+	assert.Contains(t, b.String(), `"Name":"TestClient_WithScopeAttributes"`)
+	assert.Contains(t, b.String(), "capability_name")
+	assert.Contains(t, b.String(), "cron-trigger")
+}
+
+func TestClient_WithScopeAttributes_Accumulates(t *testing.T) {
+	// Scope attributes are asserted via the trace signal: the stdoutlog JSON exporter
+	// (go.opentelemetry.io/otel/exporters/stdout/stdoutlog@v0.22.0) has a marshaling quirk where
+	// instrumentation.Scope.Attributes is not addressable when encoded, so it always renders as
+	// "{}" regardless of what was actually set on the scope (verified: the same scope's attributes
+	// render correctly via the stdouttrace and stdoutmetric exporters on the same Client).
+	var b strings.Builder
+	client, err := beholder.NewWriterClient(&b)
+	require.NoError(t, err)
+	clientForTest := client.ForName("TestClient_WithScopeAttributes_Accumulates").
+		WithScopeAttributes(attribute.String("first_attr", "one")).
+		WithScopeAttributes(attribute.String("second_attr", "two"))
+
+	_, span := clientForTest.Tracer.Start(t.Context(), "testSpan")
+	span.End()
+	out := b.String()
+	assert.Contains(t, out, "first_attr")
+	assert.Contains(t, out, "one")
+	assert.Contains(t, out, "second_attr")
+	assert.Contains(t, out, "two")
+}
+
+func TestClient_ForName_PreservesScopeAttributes(t *testing.T) {
+	var b strings.Builder
+	client, err := beholder.NewWriterClient(&b)
+	require.NoError(t, err)
+	labeled := client.WithScopeAttributes(attribute.String("capability_name", "cron-trigger"))
+	renamed := labeled.ForName("TestClient_ForName_PreservesScopeAttributes")
+
+	_, span := renamed.Tracer.Start(t.Context(), "testSpan")
+	span.End()
+	out := b.String()
+	assert.Contains(t, out, `"Name":"TestClient_ForName_PreservesScopeAttributes"`)
+	assert.Contains(t, out, "capability_name")
+	assert.Contains(t, out, "cron-trigger")
+}
+
 func otelMustNotErr(t *testing.T) otel.ErrorHandlerFunc {
 	// Create a context that will be canceled when the test completes
 	ctx, cancel := context.WithCancel(context.Background())

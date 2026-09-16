@@ -170,6 +170,10 @@ func (s *Server) start(opts ...ServerOpt) error {
 		if tracingConfig.Enabled {
 			attributes = tracingConfig.Attributes()
 		}
+		// Tag every beholder-exported signal with the plugin's own identity, regardless of
+		// whether tracing is enabled, so metrics/traces/logs can be attributed to the plugin
+		// that emitted them without per-deployment env var configuration.
+		attributes = append(attributes, semconv.ServiceNameKey.String(s.Logger.Name()))
 		beholderCfg := beholder.Config{
 			InsecureConnection:             s.EnvConfig.TelemetryInsecureConnection,
 			CACertFile:                     s.EnvConfig.TelemetryCACertFile,

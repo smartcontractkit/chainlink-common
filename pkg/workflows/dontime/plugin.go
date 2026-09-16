@@ -165,10 +165,10 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 	if observedDonTimes != nil && len(observedDonTimes.TimestampsBySequence) > 0 {
 		// feature flag for sequenced timestamps is in effect
 		// TODO can len be zero for both Timestamps and TimestampsBySequence?
-		return p.unsequencedObservation(ctx, previousOutcome, query)
+		return p.sequencedObservation(ctx, previousOutcome, query)
 	}
 	// unsequenced timestamps
-	return p.sequencedObservation(ctx, previousOutcome, query)
+	return p.unsequencedObservation(ctx, previousOutcome, query)
 }
 
 // unsequencedObservation executes the original Observation logic against the previous outcome's [pb.ObservedDonTimes.Timestamps].
@@ -320,11 +320,13 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 
 	p.lggr.Infow("New DON Time", "donTime", donTime)
 
-	if p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))) == nil { //TODO inspect error
-		return p.sequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
+	if err := p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))); err != nil {
+		if !errors.Is(err, limits.ErrorBoundLimited[config.Timestamp]{}) {
+			p.lggr.Warnw("Failed to check for sequenced timestamp feature flag", "err", err)
+		}
+		return p.unsequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
 	}
-
-	return p.unsequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
+	return p.sequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
 }
 
 // unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].

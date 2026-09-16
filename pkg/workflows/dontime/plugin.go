@@ -329,8 +329,8 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 
 // unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
 func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
-	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
-
+	// req_id->count - how many nodes reported where a new DON timestamp might be needed
+	observationCounts := map[string]int64{}
 	for _, ao := range aos {
 		observation := &pb.Observation{}
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
@@ -408,7 +408,8 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 
 // sequencedOutcome executed the updated outcome logic to produce a sequenced map of [pb.ObservedDonTimes.TimestampsBySequence].
 func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
-	observationCounts := map[string]int64{} // counts how many nodes reported where a new DON timestamp might be needed
+	// req_id->count - how many nodes reported where a new DON timestamp might be needed
+	observationCounts := map[string]int64{}
 
 	// At the transition point, we need to convert from the old slice format to maps
 	for _, observedTimes := range prevOutcome.ObservedDonTimes {

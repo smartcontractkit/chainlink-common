@@ -412,8 +412,12 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 
 // sequencedOutcome executed the updated outcome logic to produce a sequenced map of [pb.ObservedDonTimes.TimestampsBySequence].
 func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
-	// req_id->count - how many nodes reported where a new DON timestamp might be needed
-	observationCounts := map[string]int64{}
+	type reqSeq struct {
+		reqID  string
+		seqNum int64
+	}
+	// [req_id+seq_num]->count - how many nodes reported where a new DON timestamp might be needed
+	observationCounts := map[reqSeq]int64{}
 
 	// At the transition point, we need to convert from the old slice format to maps
 	for _, observedTimes := range prevOutcome.ObservedDonTimes {
@@ -433,29 +437,27 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 		}
 
 		for id, requestSeqNum := range observation.Requests {
-			var currSeqNum int64
+			// We only count requests for future sequence numbers and ignore all other ones.
 			if times, ok := prevOutcome.ObservedDonTimes[id]; ok {
-				currSeqNum = times.MaxSeqNum() + 1
+				if requestSeqNum <= times.MaxSeqNum() {
+					continue
+				}
 			}
-			// We only count requests for the next sequence number and ignore all other ones.
-			if requestSeqNum == currSeqNum {
-				observationCounts[id]++
-			}
+			observationCounts[reqSeq{id, requestSeqNum}]++
 		}
 	}
 
 	outcome := prevOutcome
 	outcome.Timestamp = donTime
 
-	for id, numRequests := range observationCounts {
+	for key, numRequests := range observationCounts {
 		if numRequests > int64(p.config.F) {
-			observedDonTimes, ok := outcome.ObservedDonTimes[id]
+			observedDonTimes, ok := outcome.ObservedDonTimes[key.reqID]
 			if !ok {
 				observedDonTimes = &pb.ObservedDonTimes{TimestampsBySequence: make(map[int64]int64)}
 			}
-			currSeqNum := observedDonTimes.MaxSeqNum() + 1
-			observedDonTimes.TimestampsBySequence[currSeqNum] = donTime
-			outcome.ObservedDonTimes[id] = observedDonTimes
+			observedDonTimes.TimestampsBySequence[key.seqNum] = donTime
+			outcome.ObservedDonTimes[key.reqID] = observedDonTimes
 		}
 	}
 

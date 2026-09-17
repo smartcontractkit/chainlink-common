@@ -146,7 +146,6 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	//TODO no such thing any more - or pass an old one?
 	t.Run("Valid skipped sequence number", func(t *testing.T) {
 		store := NewStore(DefaultRequestTimeout)
 		plugin, err := NewPlugin(store, config, offchainCfg, lggr)

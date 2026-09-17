@@ -73,7 +73,7 @@ func TestBuildRetryServiceConfigJSON_DefaultPolicy(t *testing.T) {
 	require.NoError(t, scpr.Err, "gRPC's parser rejected the generated service config")
 	require.NotNil(t, scpr.Config)
 
-	sc, ok := scpr.Config.(*gp.ServiceConfig)
+	sc, ok := scpr.Config.(*gp.ServiceConfig) //nolint:staticcheck // SA1019: grpc.ParseServiceConfig only ever returns this deprecated concrete type; inspecting it is the point of this test
 	require.True(t, ok, "expected *grpc.ServiceConfig, got %T", scpr.Config)
 	require.NotNil(t, sc.Methods, "MethodConfig must be populated - this is exactly what the old malformed JSON failed to do")
 
@@ -103,15 +103,15 @@ func TestBuildRetryServiceConfigJSON_CustomPolicy(t *testing.T) {
 
 	cfg := newClientConfig("localhost")
 	WithRetryPolicy(custom)(cfg)
-	assert.Equal(t, custom, cfg.retryPolicy)
+	assert.Equal(t, &custom, cfg.retryPolicy)
 
-	scJSON, err := buildRetryServiceConfigJSON(cfg.retryPolicy, nil)
+	scJSON, err := buildRetryServiceConfigJSON(*cfg.retryPolicy, nil)
 	require.NoError(t, err)
 
 	scpr := parseServiceConfigJSON(t, scJSON)
 	require.NoError(t, scpr.Err)
 
-	sc, ok := scpr.Config.(*gp.ServiceConfig)
+	sc, ok := scpr.Config.(*gp.ServiceConfig) //nolint:staticcheck // SA1019: grpc.ParseServiceConfig only ever returns this deprecated concrete type; inspecting it is the point of this test
 	require.True(t, ok)
 
 	mc, ok := sc.Methods[chipIngressMethodPath]
@@ -145,7 +145,7 @@ func TestOldMalformedServiceConfigInstallsNoRetryPolicy(t *testing.T) {
 	scpr := parseServiceConfigJSON(t, oldMalformedJSON)
 	require.NoError(t, scpr.Err, "the old malformed shape parses without error - that IS the bug")
 
-	sc, ok := scpr.Config.(*gp.ServiceConfig)
+	sc, ok := scpr.Config.(*gp.ServiceConfig) //nolint:staticcheck // SA1019: grpc.ParseServiceConfig only ever returns this deprecated concrete type; inspecting it is the point of this test
 	require.True(t, ok)
 	assert.Empty(t, sc.Methods, "the old malformed shape must install no retry policy for any method")
 }
@@ -205,7 +205,7 @@ func TestBuildRetryServiceConfigJSON_RetryThrottling(t *testing.T) {
 	scpr := parseServiceConfigJSON(t, scJSON)
 	require.NoError(t, scpr.Err)
 
-	sc, ok := scpr.Config.(*gp.ServiceConfig)
+	sc, ok := scpr.Config.(*gp.ServiceConfig) //nolint:staticcheck // SA1019: grpc.ParseServiceConfig only ever returns this deprecated concrete type; inspecting it is the point of this test
 	require.True(t, ok)
 	// retryThrottling is unexported on grpc.ServiceConfig, so we can't assert its fields
 	// directly; asserting no parse error with maxTokens/tokenRatio present in range is the

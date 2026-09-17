@@ -196,5 +196,5 @@ func buildRetryServiceConfigJSON(policy RetryPolicy, throttling *RetryThrottling
 // defaultRetryPolicy). Retry throttling (see RetryThrottlingPolicy) is always applied alongside
 // whichever retry policy is in effect, so a struggling server isn't amplified by retries.
 func WithRetryPolicy(policy RetryPolicy) Opt {
-	return func(c *clientConfig) { c.retryPolicy = policy }
+	return func(c *clientConfig) { c.retryPolicy = &policy }
 }

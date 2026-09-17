@@ -1,9 +1,10 @@
-package capability
+package remote
 
 import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"time"
 
 	"google.golang.org/grpc"
@@ -11,11 +12,10 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
+	registrypb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
@@ -23,14 +23,15 @@ import (
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
 )
 
-var _ core.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
+var _ registry.CapabilitiesRegistry = (*capabilitiesRegistryClient)(nil)
 
 type capabilitiesRegistryClient struct {
-	*net.BrokerExt
-	grpc pb.CapabilitiesRegistryClient
+	lggr      logger.Logger
+	transport Transport
+	grpc      registrypb.CapabilitiesRegistryClient
 }
 
-func toDON(don *pb.DON) capabilities.DON {
+func toDON(don *registrypb.DON) capabilities.DON {
 	var members []p2ptypes.PeerID
 	for _, m := range don.Members {
 		members = append(members, p2ptypes.PeerID(m))
@@ -47,13 +48,13 @@ func toDON(don *pb.DON) capabilities.DON {
 	}
 }
 
-func toPbDON(don capabilities.DON) *pb.DON {
+func toPbDON(don capabilities.DON) *registrypb.DON {
 	membersBytes := make([][]byte, len(don.Members))
 	for j, m := range don.Members {
 		membersBytes[j] = m[:]
 	}
 
-	return &pb.DON{
+	return &registrypb.DON{
 		Id:            don.ID,
 		Name:          don.Name,
 		Members:       membersBytes,
@@ -74,7 +75,7 @@ func (cr *capabilitiesRegistryClient) LocalNode(ctx context.Context) (capabiliti
 }
 
 func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p2ptypes.PeerID) (capabilities.Node, error) {
-	res, err := cr.grpc.NodeByPeerID(ctx, &pb.NodeRequest{PeerID: peerID[:]})
+	res, err := cr.grpc.NodeByPeerID(ctx, &registrypb.NodeRequest{PeerID: peerID[:]})
 	if err != nil {
 		return capabilities.Node{}, err
 	}
@@ -83,7 +84,7 @@ func (cr *capabilitiesRegistryClient) NodeByPeerID(ctx context.Context, peerID p
 }
 
 func (cr *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, capabilityID string) ([]capabilities.DONWithNodes, error) {
-	res, err := cr.grpc.DONsForCapability(ctx, &pb.DONForCapabilityRequest{CapabilityID: capabilityID})
+	res, err := cr.grpc.DONsForCapability(ctx, &registrypb.DONForCapabilityRequest{CapabilityID: capabilityID})
 	if err != nil {
 		return nil, err
 	}
@@ -104,14 +105,14 @@ func (cr *capabilitiesRegistryClient) DONsForCapability(ctx context.Context, cap
 }
 
 func (cr *capabilitiesRegistryClient) DONByID(ctx context.Context, donID uint32) (capabilities.DON, error) {
-	res, err := cr.grpc.DONByID(ctx, &pb.DONByIDRequest{DonID: donID})
+	res, err := cr.grpc.DONByID(ctx, &registrypb.DONByIDRequest{DonID: donID})
 	if err != nil {
 		return capabilities.DON{}, err
 	}
 	return toDON(res.Don), nil
 }
 
-func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply) capabilities.Node {
+func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *registrypb.NodeReply) capabilities.Node {
 	var pid *p2ptypes.PeerID
 	if len(nodeReply.PeerID) > 0 {
 		p := p2ptypes.PeerID(nodeReply.PeerID)
@@ -138,7 +139,7 @@ func (cr *capabilitiesRegistryClient) nodeFromNodeReply(nodeReply *pb.NodeReply)
 }
 
 func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, capabilityID string, donID uint32) (capabilities.CapabilityConfiguration, error) {
-	res, err := cr.grpc.ConfigForCapability(ctx, &pb.ConfigForCapabilityRequest{
+	res, err := cr.grpc.ConfigForCapability(ctx, &registrypb.ConfigForCapabilityRequest{
 		CapabilityID: capabilityID,
 		DonID:        donID,
 	})
@@ -157,9 +158,9 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		for mName, mConfig := range res.CapabilityConfig.MethodConfigs {
 			newCapCfg := capabilities.CapabilityMethodConfig{}
 			switch mConfig.RemoteConfig.(type) {
-			case *capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig:
+			case *pb.CapabilityMethodConfig_RemoteTriggerConfig:
 				newCapCfg.RemoteTriggerConfig = decodeRemoteTriggerConfig(mConfig.GetRemoteTriggerConfig())
-			case *capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig:
+			case *pb.CapabilityMethodConfig_RemoteExecutableConfig:
 				newCapCfg.RemoteExecutableConfig = decodeRemoteExecutableConfig(mConfig.GetRemoteExecutableConfig())
 			}
 			if mConfig.AggregatorConfig != nil {
@@ -206,7 +207,7 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	}, nil
 }
 
-func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabilities.RemoteTriggerConfig {
+func decodeRemoteTriggerConfig(prtc *pb.RemoteTriggerConfig) *capabilities.RemoteTriggerConfig {
 	remoteTriggerConfig := &capabilities.RemoteTriggerConfig{}
 	remoteTriggerConfig.RegistrationRefresh = prtc.RegistrationRefresh.AsDuration()
 	remoteTriggerConfig.RegistrationExpiry = prtc.RegistrationExpiry.AsDuration()
@@ -217,7 +218,7 @@ func decodeRemoteTriggerConfig(prtc *capabilitiespb.RemoteTriggerConfig) *capabi
 	return remoteTriggerConfig
 }
 
-func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *capabilities.RemoteExecutableConfig {
+func decodeRemoteExecutableConfig(prtc *pb.RemoteExecutableConfig) *capabilities.RemoteExecutableConfig {
 	remoteExecutableConfig := &capabilities.RemoteExecutableConfig{}
 	remoteExecutableConfig.TransmissionSchedule = capabilities.TransmissionSchedule(prtc.TransmissionSchedule)
 	remoteExecutableConfig.DeltaStage = prtc.DeltaStage.AsDuration()
@@ -228,7 +229,7 @@ func decodeRemoteExecutableConfig(prtc *capabilitiespb.RemoteExecutableConfig) *
 	return remoteExecutableConfig
 }
 
-func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig {
+func decodeOcr3Config(pbCfg *pb.OCR3Config) ocrtypes.ContractConfig {
 	signers := make([]ocrtypes.OnchainPublicKey, len(pbCfg.Signers))
 	for i, s := range pbCfg.Signers {
 		signers[i] = ocrtypes.OnchainPublicKey(s)
@@ -250,18 +251,18 @@ func decodeOcr3Config(pbCfg *capabilitiespb.OCR3Config) ocrtypes.ContractConfig 
 }
 
 func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capabilities.BaseCapability, error) {
-	req := &pb.GetRequest{
+	req := &registrypb.GetRequest{
 		Id: ID,
 	}
 
-	conn := cr.NewClientConn("Capability", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+	conn := cr.transport.Dial("Capability", func(ctx context.Context) (Locator, error) {
 		res, err := cr.grpc.Get(ctx, req)
 		if err != nil {
-			return 0, nil, err
+			return Locator{}, err
 		}
-		return res.CapabilityID, nil, nil
+		return Locator{Target: res.Target, LegacyHandle: res.CapabilityID}, nil
 	})
-	client := remote.NewBaseCapabilityClient(cr.Logger, conn)
+	client := NewBaseCapabilityClient(cr.lggr, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
@@ -269,18 +270,18 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 }
 
 func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error) {
-	req := &pb.GetTriggerRequest{
+	req := &registrypb.GetTriggerRequest{
 		Id: ID,
 	}
 
-	conn := cr.NewClientConn("Trigger", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+	conn := cr.transport.Dial("Trigger", func(ctx context.Context) (Locator, error) {
 		res, err := cr.grpc.GetTrigger(ctx, req)
 		if err != nil {
-			return 0, nil, err
+			return Locator{}, err
 		}
-		return res.CapabilityID, nil, nil
+		return Locator{Target: res.Target, LegacyHandle: res.CapabilityID}, nil
 	})
-	client := remote.NewTriggerCapabilityClient(cr.Logger, conn)
+	client := NewTriggerCapabilityClient(cr.lggr, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
@@ -288,18 +289,18 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 }
 
 func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
-	req := &pb.GetExecutableRequest{
+	req := &registrypb.GetExecutableRequest{
 		Id: ID,
 	}
 
-	conn := cr.NewClientConn("Executable", func(ctx context.Context) (id uint32, deps net.Resources, err error) {
+	conn := cr.transport.Dial("Executable", func(ctx context.Context) (Locator, error) {
 		res, err := cr.grpc.GetExecutable(ctx, req)
 		if err != nil {
-			return 0, nil, err
+			return Locator{}, err
 		}
-		return res.CapabilityID, nil, nil
+		return Locator{Target: res.Target, LegacyHandle: res.CapabilityID}, nil
 	})
-	client := remote.NewExecutableCapabilityClient(cr.Logger, conn)
+	client := NewExecutableCapabilityClient(cr.lggr, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
@@ -313,13 +314,11 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 	}
 
 	var clients []capabilities.BaseCapability
-	for _, id := range res.CapabilityID {
-		conn, err := cr.Dial(id)
-		if err != nil {
-			return nil, net.ErrConnDial{Name: "List", ID: id, Err: err}
-		}
-		client := remote.NewBaseCapabilityClient(cr.Logger, conn)
-		clients = append(clients, client)
+	for i, loc := range locatorsFromListReply(res) {
+		conn := cr.transport.Dial(fmt.Sprintf("List[%d]", i), func(context.Context) (Locator, error) {
+			return loc, nil
+		})
+		clients = append(clients, NewBaseCapabilityClient(cr.lggr, conn))
 	}
 
 	return clients, nil
@@ -331,17 +330,17 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		return err
 	}
 
-	var cRes net.Resource
-	id, cRes, err := cr.ServeNew(info.ID, func(s *grpc.Server) {
-		remote.RegisterCapabilityServer(s, cr.Logger, c, info.CapabilityType)
+	loc, cRes, err := cr.transport.Publish(info.ID, func(s *grpc.Server) {
+		RegisterCapabilityServer(s, cr.lggr, c, info.CapabilityType)
 	})
 	if err != nil {
 		return err
 	}
 
-	_, err = cr.grpc.Add(ctx, &pb.AddRequest{
-		CapabilityID: id,
-		Type:         remote.ExecuteAPITypeFor(info.CapabilityType),
+	_, err = cr.grpc.Add(ctx, &registrypb.AddRequest{
+		CapabilityID: loc.LegacyHandle,
+		Target:       loc.Target,
+		Type:         ExecuteAPITypeFor(info.CapabilityType),
 	})
 	if err != nil {
 		cRes.Close()
@@ -351,7 +350,7 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 }
 
 func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) error {
-	req := &pb.RemoveRequest{
+	req := &registrypb.RemoveRequest{
 		Id: ID,
 	}
 
@@ -363,19 +362,27 @@ func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) err
 	return nil
 }
 
-func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface, b *net.BrokerExt) *capabilitiesRegistryClient {
-	return &capabilitiesRegistryClient{grpc: pb.NewCapabilitiesRegistryClient(cc), BrokerExt: b.WithName("CapabilitiesRegistryClient")}
+// NewCapabilitiesRegistryClient returns a CapabilitiesRegistry backed by the service
+// on cc. Capabilities it resolves are reached over t, which also publishes the local
+// capabilities handed to Add.
+func NewCapabilitiesRegistryClient(lggr logger.Logger, cc grpc.ClientConnInterface, t Transport) registry.CapabilitiesRegistry {
+	return &capabilitiesRegistryClient{
+		lggr:      logger.Named(lggr, "CapabilitiesRegistryClient"),
+		transport: t,
+		grpc:      registrypb.NewCapabilitiesRegistryClient(cc),
+	}
 }
 
-var _ pb.CapabilitiesRegistryServer = (*capabilitiesRegistryServer)(nil)
+var _ registrypb.CapabilitiesRegistryServer = (*capabilitiesRegistryServer)(nil)
 
 type capabilitiesRegistryServer struct {
-	pb.UnimplementedCapabilitiesRegistryServer
-	*net.BrokerExt
-	impl core.CapabilitiesRegistry
+	registrypb.UnimplementedCapabilitiesRegistryServer
+	lggr      logger.Logger
+	transport Transport
+	impl      registry.CapabilitiesRegistry
 }
 
-func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetRequest) (*pb.GetReply, error) {
+func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registrypb.GetRequest) (*registrypb.GetReply, error) {
 	capability, err := c.impl.Get(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -386,26 +393,27 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 		return nil, err
 	}
 
-	id, _, err := c.ServeNew("Get", func(s *grpc.Server) {
-		remote.RegisterCapabilityServer(s, c.Logger, capability, info.CapabilityType)
+	loc, _, err := c.transport.Publish("Get", func(s *grpc.Server) {
+		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetReply{
-		CapabilityID: id,
-		Type:         remote.ExecuteAPITypeFor(info.CapabilityType),
+	return &registrypb.GetReply{
+		CapabilityID: loc.LegacyHandle,
+		Target:       loc.Target,
+		Type:         ExecuteAPITypeFor(info.CapabilityType),
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, req *pb.ConfigForCapabilityRequest) (*pb.ConfigForCapabilityReply, error) {
+func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, req *registrypb.ConfigForCapabilityRequest) (*registrypb.ConfigForCapabilityReply, error) {
 	cc, err := c.impl.ConfigForCapability(ctx, req.CapabilityID, req.DonID)
 	if err != nil {
 		return nil, err
 	}
 
-	ccp := &capabilitiespb.CapabilityConfig{}
+	ccp := &pb.CapabilityConfig{}
 
 	if cc.DefaultConfig != nil {
 		ccp.DefaultConfig = values.Proto(cc.DefaultConfig).GetMapValue()
@@ -413,14 +421,14 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 
 	// Handle method configs
 	if cc.CapabilityMethodConfig != nil {
-		ccp.MethodConfigs = make(map[string]*capabilitiespb.CapabilityMethodConfig, len(cc.CapabilityMethodConfig))
+		ccp.MethodConfigs = make(map[string]*pb.CapabilityMethodConfig, len(cc.CapabilityMethodConfig))
 		for mName, mConfig := range cc.CapabilityMethodConfig {
-			pbMethodConfig := &capabilitiespb.CapabilityMethodConfig{}
+			pbMethodConfig := &pb.CapabilityMethodConfig{}
 
 			// Handle remote trigger config for method
 			if mConfig.RemoteTriggerConfig != nil {
-				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteTriggerConfig{
-					RemoteTriggerConfig: &capabilitiespb.RemoteTriggerConfig{
+				pbMethodConfig.RemoteConfig = &pb.CapabilityMethodConfig_RemoteTriggerConfig{
+					RemoteTriggerConfig: &pb.RemoteTriggerConfig{
 						RegistrationRefresh:     durationpb.New(mConfig.RemoteTriggerConfig.RegistrationRefresh),
 						RegistrationExpiry:      durationpb.New(mConfig.RemoteTriggerConfig.RegistrationExpiry),
 						MinResponsesToAggregate: mConfig.RemoteTriggerConfig.MinResponsesToAggregate,
@@ -433,13 +441,13 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 
 			// Handle remote executable config for method
 			if mConfig.RemoteExecutableConfig != nil {
-				pbMethodConfig.RemoteConfig = &capabilitiespb.CapabilityMethodConfig_RemoteExecutableConfig{
-					RemoteExecutableConfig: &capabilitiespb.RemoteExecutableConfig{
-						TransmissionSchedule:      capabilitiespb.TransmissionSchedule(mConfig.RemoteExecutableConfig.TransmissionSchedule),
+				pbMethodConfig.RemoteConfig = &pb.CapabilityMethodConfig_RemoteExecutableConfig{
+					RemoteExecutableConfig: &pb.RemoteExecutableConfig{
+						TransmissionSchedule:      pb.TransmissionSchedule(mConfig.RemoteExecutableConfig.TransmissionSchedule),
 						DeltaStage:                durationpb.New(mConfig.RemoteExecutableConfig.DeltaStage),
 						RequestTimeout:            durationpb.New(mConfig.RemoteExecutableConfig.RequestTimeout),
 						ServerMaxParallelRequests: mConfig.RemoteExecutableConfig.ServerMaxParallelRequests,
-						RequestHasherType:         capabilitiespb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
+						RequestHasherType:         pb.RequestHasherType(mConfig.RemoteExecutableConfig.RequestHasherType),
 						MinResponsesToAggregate:   mConfig.RemoteExecutableConfig.MinResponsesToAggregate,
 					},
 				}
@@ -447,8 +455,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 
 			// Handle aggregator config for method
 			if mConfig.AggregatorConfig != nil {
-				pbMethodConfig.AggregatorConfig = &capabilitiespb.AggregatorConfig{
-					AggregatorType: capabilitiespb.AggregatorType(mConfig.AggregatorConfig.AggregatorType),
+				pbMethodConfig.AggregatorConfig = &pb.AggregatorConfig{
+					AggregatorType: pb.AggregatorType(mConfig.AggregatorConfig.AggregatorType),
 				}
 			}
 
@@ -460,7 +468,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 
 	// Handle OCR3 configs
 	if cc.Ocr3Configs != nil {
-		ccp.Ocr3Configs = make(map[string]*capabilitiespb.OCR3Config, len(cc.Ocr3Configs))
+		ccp.Ocr3Configs = make(map[string]*pb.OCR3Config, len(cc.Ocr3Configs))
 		for key, cfg := range cc.Ocr3Configs {
 			signers := make([][]byte, len(cfg.Signers))
 			for i, s := range cfg.Signers {
@@ -473,7 +481,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
 				}
 			}
-			ccp.Ocr3Configs[key] = &capabilitiespb.OCR3Config{
+			ccp.Ocr3Configs[key] = &pb.OCR3Config{
 				ConfigCount:           cfg.ConfigCount,
 				Signers:               signers,
 				Transmitters:          transmitters,
@@ -499,12 +507,12 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		ccp.SpecConfig = values.Proto(cc.SpecConfig).GetMapValue()
 	}
 
-	return &pb.ConfigForCapabilityReply{
+	return &registrypb.ConfigForCapabilityReply{
 		CapabilityConfig: ccp,
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*pb.NodeReply, error) {
+func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.Empty) (*registrypb.NodeReply, error) {
 	node, err := c.impl.LocalNode(ctx)
 	if err != nil {
 		return nil, err
@@ -513,7 +521,7 @@ func (c *capabilitiesRegistryServer) LocalNode(ctx context.Context, _ *emptypb.E
 	return c.nodeReplyFromNode(node), nil
 }
 
-func (c *capabilitiesRegistryServer) NodeByPeerID(ctx context.Context, nodeRequest *pb.NodeRequest) (*pb.NodeReply, error) {
+func (c *capabilitiesRegistryServer) NodeByPeerID(ctx context.Context, nodeRequest *registrypb.NodeRequest) (*registrypb.NodeReply, error) {
 	node, err := c.impl.NodeByPeerID(ctx, p2ptypes.PeerID(nodeRequest.GetPeerID()))
 	if err != nil {
 		return nil, err
@@ -522,42 +530,42 @@ func (c *capabilitiesRegistryServer) NodeByPeerID(ctx context.Context, nodeReque
 	return c.nodeReplyFromNode(node), nil
 }
 
-func (c *capabilitiesRegistryServer) DONsForCapability(ctx context.Context, req *pb.DONForCapabilityRequest) (*pb.DONForCapabilityReply, error) {
+func (c *capabilitiesRegistryServer) DONsForCapability(ctx context.Context, req *registrypb.DONForCapabilityRequest) (*registrypb.DONForCapabilityReply, error) {
 	dons, err := c.impl.DONsForCapability(ctx, req.CapabilityID)
 	if err != nil {
 		return nil, err
 	}
 
-	donWithNodes := []*pb.DONWithNodes{}
+	donWithNodes := []*registrypb.DONWithNodes{}
 	for _, d := range dons {
 		pbDon := toPbDON(d.DON)
-		nodes := []*pb.NodeReply{}
+		nodes := []*registrypb.NodeReply{}
 		for _, n := range d.Nodes {
 			nodes = append(nodes, c.nodeReplyFromNode(n))
 		}
-		donWithNodes = append(donWithNodes, &pb.DONWithNodes{
+		donWithNodes = append(donWithNodes, &registrypb.DONWithNodes{
 			Don:   pbDon,
 			Nodes: nodes,
 		})
 	}
 
-	return &pb.DONForCapabilityReply{
+	return &registrypb.DONForCapabilityReply{
 		Dons: donWithNodes,
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) DONByID(ctx context.Context, req *pb.DONByIDRequest) (*pb.DONByIDReply, error) {
+func (c *capabilitiesRegistryServer) DONByID(ctx context.Context, req *registrypb.DONByIDRequest) (*registrypb.DONByIDReply, error) {
 	don, err := c.impl.DONByID(ctx, req.DonID)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.DONByIDReply{Don: toPbDON(don)}, nil
+	return &registrypb.DONByIDReply{Don: toPbDON(don)}, nil
 }
 
-func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *pb.NodeReply {
+func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *registrypb.NodeReply {
 	workflowDONpb := toPbDON(node.WorkflowDON)
 
-	capabilityDONsPb := make([]*pb.DON, len(node.CapabilityDONs))
+	capabilityDONsPb := make([]*registrypb.DON, len(node.CapabilityDONs))
 	for i, don := range node.CapabilityDONs {
 		capabilityDONsPb[i] = toPbDON(don)
 	}
@@ -566,7 +574,7 @@ func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *
 	if node.PeerID != nil {
 		pid = node.PeerID[:]
 	}
-	reply := &pb.NodeReply{
+	reply := &registrypb.NodeReply{
 		PeerID:              pid,
 		NodeOperatorID:      node.NodeOperatorID,
 		Signer:              node.Signer[:],
@@ -578,7 +586,7 @@ func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *
 	return reply
 }
 
-func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb.GetTriggerRequest) (*pb.GetTriggerReply, error) {
+func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *registrypb.GetTriggerRequest) (*registrypb.GetTriggerReply, error) {
 	capability, err := c.impl.GetTrigger(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -595,19 +603,20 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	id, _, err := c.ServeNew("GetTrigger", func(s *grpc.Server) {
-		remote.RegisterCapabilityServer(s, c.Logger, capability, capabilities.CapabilityTypeTrigger)
+	loc, _, err := c.transport.Publish("GetTrigger", func(s *grpc.Server) {
+		RegisterCapabilityServer(s, c.lggr, capability, capabilities.CapabilityTypeTrigger)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetTriggerReply{
-		CapabilityID: id,
+	return &registrypb.GetTriggerReply{
+		CapabilityID: loc.LegacyHandle,
+		Target:       loc.Target,
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request *pb.GetExecutableRequest) (*pb.GetExecutableReply, error) {
+func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request *registrypb.GetExecutableRequest) (*registrypb.GetExecutableReply, error) {
 	capability, err := c.impl.GetExecutable(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -624,74 +633,76 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	id, _, err := c.ServeNew("GetExecutable", func(s *grpc.Server) {
-		remote.RegisterCapabilityServer(s, c.Logger, capability, info.CapabilityType)
+	loc, _, err := c.transport.Publish("GetExecutable", func(s *grpc.Server) {
+		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.GetExecutableReply{
-		CapabilityID: id,
+	return &registrypb.GetExecutableReply{
+		CapabilityID: loc.LegacyHandle,
+		Target:       loc.Target,
 	}, nil
 }
 
-func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty) (*pb.ListReply, error) {
+func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty) (*registrypb.ListReply, error) {
 	capabilities, err := c.impl.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	reply := &pb.ListReply{}
-
-	var resources []net.Resource
+	var (
+		locs      []Locator
+		resources []io.Closer
+	)
 	for _, cap := range capabilities {
 		info, err := cap.Info(ctx)
 		if err != nil {
-			c.CloseAll(resources...)
+			c.closeAll(resources...)
 			return nil, err
 		}
 
-		id, res, err := c.ServeNew("List", func(s *grpc.Server) {
-			remote.RegisterCapabilityServer(s, c.Logger, cap, info.CapabilityType)
+		loc, res, err := c.transport.Publish("List", func(s *grpc.Server) {
+			RegisterCapabilityServer(s, c.lggr, cap, info.CapabilityType)
 		})
 		if err != nil {
-			c.CloseAll(resources...)
+			c.closeAll(resources...)
 			return nil, err
 		}
 		resources = append(resources, res)
-		reply.CapabilityID = append(reply.CapabilityID, id)
+		locs = append(locs, loc)
 	}
 
-	return reply, nil
+	return listReplyFor(locs), nil
 }
 
-func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddRequest) (*emptypb.Empty, error) {
-	conn, err := c.Dial(request.CapabilityID)
-	if err != nil {
-		return &emptypb.Empty{}, net.ErrConnDial{Name: "Add", ID: request.CapabilityID, Err: err}
-	}
+func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registrypb.AddRequest) (*emptypb.Empty, error) {
+	loc := Locator{Target: request.Target, LegacyHandle: request.CapabilityID}
+	conn := c.transport.Dial("Add", func(context.Context) (Locator, error) {
+		return loc, nil
+	})
+
 	var client capabilities.BaseCapability
 
 	switch request.Type {
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
-		client = remote.NewTriggerCapabilityClient(c.Logger, conn)
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
-		client = remote.NewExecutableCapabilityClient(c.Logger, conn)
-	case pb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED:
-		client = remote.NewCombinedCapabilityClient(c.Logger, conn)
+	case registrypb.ExecuteAPIType_EXECUTE_API_TYPE_TRIGGER:
+		client = NewTriggerCapabilityClient(c.lggr, conn)
+	case registrypb.ExecuteAPIType_EXECUTE_API_TYPE_EXECUTE:
+		client = NewExecutableCapabilityClient(c.lggr, conn)
+	case registrypb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED:
+		client = NewCombinedCapabilityClient(c.lggr, conn)
 	default:
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
 
-	err = c.impl.Add(ctx, client)
-	if err != nil {
+	if err := c.impl.Add(ctx, client); err != nil {
 		return &emptypb.Empty{}, err
 	}
 	return &emptypb.Empty{}, nil
 }
 
-func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *pb.RemoveRequest) (*emptypb.Empty, error) {
+func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *registrypb.RemoveRequest) (*emptypb.Empty, error) {
 	err := c.impl.Remove(ctx, request.Id)
 	if err != nil {
 		return &emptypb.Empty{}, err
@@ -700,13 +711,63 @@ func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *pb.Rem
 }
 
 // RegisterCapabilitiesRegistryServer serves i as the CapabilitiesRegistry service on s.
-func RegisterCapabilitiesRegistryServer(s *grpc.Server, b *net.BrokerExt, i core.CapabilitiesRegistry) {
-	pb.RegisterCapabilitiesRegistryServer(s, NewCapabilitiesRegistryServer(b, i))
+// Capabilities it hands out are published over t, and local ones passed to Add are
+// dialled over it.
+func RegisterCapabilitiesRegistryServer(s *grpc.Server, lggr logger.Logger, i registry.CapabilitiesRegistry, t Transport) {
+	registrypb.RegisterCapabilitiesRegistryServer(s, NewCapabilitiesRegistryServer(lggr, i, t))
 }
 
-func NewCapabilitiesRegistryServer(b *net.BrokerExt, i core.CapabilitiesRegistry) *capabilitiesRegistryServer {
+func NewCapabilitiesRegistryServer(lggr logger.Logger, i registry.CapabilitiesRegistry, t Transport) registrypb.CapabilitiesRegistryServer {
 	return &capabilitiesRegistryServer{
-		BrokerExt: b.WithName("CapabilitiesRegistryServer"),
+		lggr:      logger.Named(lggr, "CapabilitiesRegistryServer"),
+		transport: t,
 		impl:      i,
 	}
+}
+
+func (c *capabilitiesRegistryServer) closeAll(closers ...io.Closer) {
+	for _, cl := range closers {
+		if err := cl.Close(); err != nil {
+			c.lggr.Errorw("Error closing served capability", "err", err)
+		}
+	}
+}
+
+// listReplyFor names each published capability both ways. Targets replace the
+// deprecated handles wholesale rather than supplementing them, so a reply carries
+// them only when every capability has one; a partial list would be read as complete.
+func listReplyFor(locs []Locator) *registrypb.ListReply {
+	reply := &registrypb.ListReply{}
+	targets := make([]string, 0, len(locs))
+	complete := true
+	for _, loc := range locs {
+		reply.CapabilityID = append(reply.CapabilityID, loc.LegacyHandle)
+		if loc.Target == "" {
+			complete = false
+		}
+		targets = append(targets, loc.Target)
+	}
+	if complete && len(targets) > 0 {
+		reply.Targets = targets
+	}
+	return reply
+}
+
+// locatorsFromListReply reads the locators a List reply names, preferring targets.
+func locatorsFromListReply(res *registrypb.ListReply) []Locator {
+	if len(res.Targets) > 0 {
+		locs := make([]Locator, len(res.Targets))
+		for i, t := range res.Targets {
+			locs[i] = Locator{Target: t}
+			if i < len(res.CapabilityID) {
+				locs[i].LegacyHandle = res.CapabilityID[i]
+			}
+		}
+		return locs
+	}
+	locs := make([]Locator, len(res.CapabilityID))
+	for i, id := range res.CapabilityID {
+		locs[i] = Locator{LegacyHandle: id}
+	}
+	return locs
 }

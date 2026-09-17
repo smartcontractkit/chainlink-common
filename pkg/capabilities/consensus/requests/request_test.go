@@ -1,4 +1,4 @@
-package ocr3
+package requests_test
 
 import (
 	"context"
@@ -9,15 +9,15 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 )
 
-type ReportRequest struct {
-	Observations            *values.List `mapstructure:"-"`
-	OverriddenEncoderName   string
-	OverriddenEncoderConfig *values.Map
-	ExpiresAt               time.Time
+// testRequest is a minimal implementation of requests.ConsensusRequest used to
+// exercise the store and the handler.
+type testRequest struct {
+	Observations *values.List
+	ExpiresAt    time.Time
 
 	// CallbackCh is a channel to send a response back to the requester
 	// after the request has been processed or timed out.
-	CallbackCh chan ReportResponse
+	CallbackCh chan testResponse
 	StopCh     services.StopChan
 
 	WorkflowExecutionID      string
@@ -31,15 +31,15 @@ type ReportRequest struct {
 	KeyID string
 }
 
-func (r *ReportRequest) ID() string {
+func (r *testRequest) ID() string {
 	return r.WorkflowExecutionID
 }
 
-func (r *ReportRequest) ExpiryTime() time.Time {
+func (r *testRequest) ExpiryTime() time.Time {
 	return r.ExpiresAt
 }
 
-func (r *ReportRequest) SendResponse(ctx context.Context, resp ReportResponse) {
+func (r *testRequest) SendResponse(ctx context.Context, resp testResponse) {
 	select {
 	case <-ctx.Done():
 		return
@@ -48,21 +48,19 @@ func (r *ReportRequest) SendResponse(ctx context.Context, resp ReportResponse) {
 	}
 }
 
-func (r *ReportRequest) SendTimeout(ctx context.Context) {
-	timeoutResponse := ReportResponse{
+func (r *testRequest) SendTimeout(ctx context.Context) {
+	timeoutResponse := testResponse{
 		WorkflowExecutionID: r.WorkflowExecutionID,
 		Err:                 fmt.Errorf("timeout exceeded: could not process request before expiry, workflowExecutionID %s", r.WorkflowExecutionID),
 	}
 	r.SendResponse(ctx, timeoutResponse)
 }
 
-func (r *ReportRequest) Copy() *ReportRequest {
-	return &ReportRequest{
-		Observations:            r.Observations.CopyList(),
-		OverriddenEncoderConfig: r.OverriddenEncoderConfig.CopyMap(),
+func (r *testRequest) Copy() *testRequest {
+	return &testRequest{
+		Observations: r.Observations.CopyList(),
 
 		// No need to copy these, they're value types.
-		OverriddenEncoderName:    r.OverriddenEncoderName,
 		ExpiresAt:                r.ExpiresAt,
 		WorkflowExecutionID:      r.WorkflowExecutionID,
 		WorkflowID:               r.WorkflowID,
@@ -79,12 +77,12 @@ func (r *ReportRequest) Copy() *ReportRequest {
 	}
 }
 
-type ReportResponse struct {
+type testResponse struct {
 	WorkflowExecutionID string
 	Value               *values.Map
 	Err                 error
 }
 
-func (r ReportResponse) RequestID() string {
+func (r testResponse) RequestID() string {
 	return r.WorkflowExecutionID
 }

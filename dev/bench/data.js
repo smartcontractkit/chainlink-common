@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789584077116,
+  "lastUpdate": 1789647009250,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -60900,6 +60900,66 @@ window.BENCHMARK_DATA = {
             "value": 138146,
             "unit": "ns/op",
             "extra": "8078 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d3a14a9b049680eb84225cb1c6954524a61ccde",
+          "message": "Clean up capabilities ocr3 package and on-demand trigger (#2391)\n\n* Remove on-demand trigger + unused legacy consensus code\n\n- ocr3cap/ocr3captest, the consensus step mocks.\n- consensus/ocr3/aggregators, which by then only held the config structs\n  typing ocr3cap's AggregationConfig fields.\n- capabilities/targets/chainwriter, whose schema $ref'd ocr3cap for\n  SignedReport and which had no importers outside the tests below.\n\npkg/workflows/sdk/testutils/runner_test.go exercised the v1 SDK runner\nover a trigger -> compute -> action -> consensus -> chainwriter DAG. It\nnow terminates in the basictarget codegen fixture, which keeps the\n\"target receives the upstream step's output\" assertion rather than\ndropping the target leg entirely.\n\n* Remove on-demand trigger + unused legacy consensus code\n\n- ocr3cap/ocr3captest, the consensus step mocks.\n- consensus/ocr3/aggregators, which by then only held the config structs\n  typing ocr3cap's AggregationConfig fields.\n- capabilities/targets/chainwriter, whose schema $ref'd ocr3cap for\n  SignedReport and which had no importers outside the tests below.\n\npkg/workflows/sdk/testutils/runner_test.go exercised the v1 SDK runner\nover a trigger -> compute -> action -> consensus -> chainwriter DAG. It\nnow terminates in the basictarget codegen fixture, which keeps the\n\"target receives the upstream step's output\" assertion rather than\ndropping the target leg entirely.",
+          "timestamp": "2026-09-17T11:57:05Z",
+          "tree_id": "8f9a61ea278ed0c827d5385c75002b45255de00e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1d3a14a9b049680eb84225cb1c6954524a61ccde"
+        },
+        "date": 1789647005689,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.6,
+            "unit": "ns/op",
+            "extra": "3379131 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 79306,
+            "unit": "ns/op",
+            "extra": "15091 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 395.8,
+            "unit": "ns/op",
+            "extra": "3035727 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 83119,
+            "unit": "ns/op",
+            "extra": "14478 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25098,
+            "unit": "ns/op",
+            "extra": "47740 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 125659,
+            "unit": "ns/op",
+            "extra": "9122 times\n4 procs"
           }
         ]
       }

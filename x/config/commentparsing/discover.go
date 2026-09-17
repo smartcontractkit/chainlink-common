@@ -143,36 +143,55 @@ func packageWithinModule(importPath, modulePath string) (rel string, within bool
 // describe. The resolution is [reflect.Type.FieldByName]'s rather than one of this package's own,
 // so shadowing and depth follow the same rules the compiler applies: a name the outer type
 // declares itself wins, and so does one promoted from a shallower embed.
+//
+// A name is left alone when every path to it crosses an embedded pointer. That shape is how a
+// polymorphic section is declared - one embed per variant, all nil but the one a discriminator
+// selects - so the tie is between fields that never exist at once, and an encoder skipping the nil
+// embeds emits the selected variant's keys unambiguously. A tie with even one pointer-free path is
+// still refused: those fields do coexist, and nothing decides between them.
 func ambiguousPromotion(t reflect.Type) error {
-	unresolved := make(map[string]bool)
-	for _, name := range promotedNames(t, map[reflect.Type]bool{}) {
+	var ambiguous []string
+	for name, always := range promotedNames(t, false, map[embedVisit]bool{}) {
+		if !always {
+			continue
+		}
 		if _, resolved := t.FieldByName(name); !resolved {
-			unresolved[name] = true
+			ambiguous = append(ambiguous, name)
 		}
 	}
-	if len(unresolved) == 0 {
+	if len(ambiguous) == 0 {
 		return nil
 	}
 
-	ambiguous := make([]string, 0, len(unresolved))
-	for name := range unresolved {
-		ambiguous = append(ambiguous, name)
-	}
 	sort.Strings(ambiguous)
 	return fmt.Errorf("%s: %s promoted from more than one embedded type at the same depth, so "+
 		"nothing can name it to configure: shadow it on %s, or embed only one of them",
 		typeName(t), strings.Join(ambiguous, ", "), t.Name())
 }
 
-// promotedNames lists the exported field names t's embedded types provide, at every depth. An
-// unexported one is left out: no config file can name it either way.
-func promotedNames(t reflect.Type, walked map[reflect.Type]bool) []string {
-	if t.Kind() != reflect.Struct || walked[t] {
+// embedVisit keys the walk by the type reached and whether a pointer embed was crossed to reach
+// it, so a type embedded both ways is walked once for each. Keying by type alone would let the
+// first arrival decide, and a name is exempt only when no arrival was pointer-free.
+type embedVisit struct {
+	t       reflect.Type
+	crossed bool
+}
+
+// promotedNames maps the exported field names t's embedded types provide, at every depth, to
+// whether the name has a path to it that crosses no embedded pointer - that is, whether the field
+// is there whatever the pointers hold. An unexported name is left out: no config file can name it
+// either way.
+//
+// crossed reports whether the caller already went through a pointer to reach t; a field found
+// below one is optional however many value embeds sit under it.
+func promotedNames(t reflect.Type, crossed bool, walked map[embedVisit]bool) map[string]bool {
+	visit := embedVisit{t: t, crossed: crossed}
+	if t.Kind() != reflect.Struct || walked[visit] {
 		return nil
 	}
-	walked[t] = true
+	walked[visit] = true
 
-	var names []string
+	names := make(map[string]bool)
 	for i := range t.NumField() {
 		field := t.Field(i)
 		if !field.Anonymous {
@@ -182,13 +201,16 @@ func promotedNames(t reflect.Type, walked map[reflect.Type]bool) []string {
 		if embedded == nil || embedded.Kind() != reflect.Struct {
 			continue
 		}
+		through := crossed || field.Type.Kind() == reflect.Pointer
 
 		for j := range embedded.NumField() {
 			if promoted := embedded.Field(j); promoted.IsExported() {
-				names = append(names, promoted.Name)
+				names[promoted.Name] = names[promoted.Name] || !through
 			}
 		}
-		names = append(names, promotedNames(embedded, walked)...)
+		for name, always := range promotedNames(embedded, through, walked) {
+			names[name] = names[name] || always
+		}
 	}
 	return names
 }

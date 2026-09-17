@@ -1021,6 +1021,31 @@ func TestAmbiguousPromotion(t *testing.T) {
 	t.Run("An unexported name promoted twice", func(t *testing.T) {
 		require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousUnexported]()))
 	})
+
+	// The polymorphic-section shape: one embed per variant, all nil but the selected one, so the
+	// tying fields never exist at once.
+	t.Run("Two pointer embeds declaring one name", func(t *testing.T) {
+		require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousPolymorphic]()))
+	})
+
+	t.Run("Two pointer embeds reaching one name deeper", func(t *testing.T) {
+		require.NoError(t, ambiguousPromotion(reflect.TypeFor[ambiguousDeepPolymorphic]()))
+	})
+
+	// The value embed's field is always there, so the two do coexist and the tie stands.
+	t.Run("A pointer embed tying with a value embed", func(t *testing.T) {
+		err := ambiguousPromotion(reflect.TypeFor[ambiguousMixed]())
+		require.ErrorContains(t, err, "Region promoted from more than one embedded type")
+		require.ErrorContains(t, err, "ambiguousMixed")
+	})
+
+	// One type embedded by value and by pointer, deep enough that the pointer-free path is found
+	// by recursion rather than by the immediate-field scan. A walk keyed on the type alone
+	// remembers whichever arrival came first and calls the name optional.
+	t.Run("One type reached through a pointer embed and a value embed", func(t *testing.T) {
+		err := ambiguousPromotion(reflect.TypeFor[ambiguousDiamond]())
+		require.ErrorContains(t, err, "Region promoted from more than one embedded type")
+	})
 }
 
 type ambiguousLeft struct {
@@ -1058,6 +1083,40 @@ type ambiguousDeepOuter struct {
 type ambiguousDeepShadowed struct {
 	ambiguousLeft
 	ambiguousDeepRight
+}
+
+type ambiguousPolymorphic struct {
+	*ambiguousLeft
+	*ambiguousRight
+}
+
+type ambiguousDeepPolymorphic struct {
+	*ambiguousDeepLeft
+	*ambiguousDeepRight
+}
+
+type ambiguousMixed struct {
+	*ambiguousLeft
+	ambiguousRight
+}
+
+// ambiguousDiamondInner promotes Region rather than declaring it, which puts Region below the
+// embed ambiguousDiamondPointer and ambiguousDiamondValue disagree about.
+type ambiguousDiamondInner struct {
+	ambiguousLeft
+}
+
+type ambiguousDiamondPointer struct {
+	*ambiguousDiamondInner
+}
+
+type ambiguousDiamondValue struct {
+	ambiguousDiamondInner
+}
+
+type ambiguousDiamond struct {
+	ambiguousDiamondPointer
+	ambiguousDiamondValue
 }
 
 // The unexported names below are reached through reflection only, which the unused linter cannot

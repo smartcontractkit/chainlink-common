@@ -318,17 +318,43 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 
 	p.lggr.Infow("New DON Time", "donTime", donTime)
 
+	var outcome *pb.Outcome
 	if err := p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))); err != nil {
 		if !errors.Is(err, limits.ErrorBoundLimited[config.Timestamp]{}) {
 			p.lggr.Warnw("Failed to check for sequenced timestamp feature flag", "err", err)
 		}
-		return p.unsequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
+		outcome = p.unsequencedOutcome(aos, prevOutcome, donTime)
+	} else {
+		outcome = p.sequencedOutcome(aos, prevOutcome, donTime)
 	}
-	return p.sequencedOutcome(ctx, outctx, nil, aos, prevOutcome, donTime)
+
+	var outcomeBatchOverflowCount int64
+	if len(outcome.ObservedDonTimes) > p.batchSize {
+		ids := slices.Sorted(maps.Keys(outcome.ObservedDonTimes))
+		outcomeBatchOverflowCount = int64(len(ids) - p.batchSize)
+		for _, id := range ids[p.batchSize:] {
+			delete(outcome.ObservedDonTimes, id)
+		}
+		p.lggr.Warnw("Trimmed outcome observed don times to batch size",
+			"batchSize", p.batchSize,
+			"removedEntries", outcomeBatchOverflowCount,
+		)
+	}
+
+	outcomeBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
+	p.lggr.Infow("Outcome computed",
+		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
+		"outcomeSizeBytes", len(outcomeBytes),
+	)
+	p.metrics.donTime.Record(ctx, outcome.Timestamp)
+	p.metrics.donTimeEntries.Record(ctx, int64(len(outcome.ObservedDonTimes)))
+	p.metrics.outcomeBatchOverflow.Record(ctx, outcomeBatchOverflowCount)
+	p.metrics.outcomeSize.Record(ctx, int64(len(outcomeBytes)))
+	return outcomeBytes, err
 }
 
 // unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
-func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
+func (p *Plugin) unsequencedOutcome(aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) *pb.Outcome {
 	// req_id->count - how many nodes reported where a new DON timestamp might be needed
 	observationCounts := map[string]int64{}
 	for _, ao := range aos {
@@ -380,38 +406,11 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 			p.store.deleteExecutionID(id)
 		}
 	}
-
-	var outcomeBatchOverflowCount int64
-	if len(outcome.ObservedDonTimes) > p.batchSize {
-		ids := make([]string, 0, len(outcome.ObservedDonTimes))
-		for id := range outcome.ObservedDonTimes {
-			ids = append(ids, id)
-		}
-		slices.Sort(ids)
-		outcomeBatchOverflowCount = int64(len(ids) - p.batchSize)
-		for _, id := range ids[p.batchSize:] {
-			delete(outcome.ObservedDonTimes, id)
-		}
-		p.lggr.Warnw("Trimmed outcome observed don times to batch size",
-			"batchSize", p.batchSize,
-			"removedEntries", outcomeBatchOverflowCount,
-		)
-	}
-
-	outcomeBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
-	p.lggr.Infow("Outcome computed",
-		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
-		"outcomeSizeBytes", len(outcomeBytes),
-	)
-	p.metrics.donTime.Record(ctx, outcome.Timestamp)
-	p.metrics.donTimeEntries.Record(ctx, int64(len(outcome.ObservedDonTimes)))
-	p.metrics.outcomeBatchOverflow.Record(ctx, outcomeBatchOverflowCount)
-	p.metrics.outcomeSize.Record(ctx, int64(len(outcomeBytes)))
-	return outcomeBytes, err
+	return outcome
 }
 
 // sequencedOutcome executed the updated outcome logic to produce a sequenced map of [pb.ObservedDonTimes.TimestampsBySequence].
-func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeContext, _ types.Query, aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) (ocr3types.Outcome, error) {
+func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) *pb.Outcome {
 	type reqSeq struct {
 		reqID  string
 		seqNum int64
@@ -473,34 +472,7 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 			p.store.deleteExecutionID(id)
 		}
 	}
-
-	var outcomeBatchOverflowCount int64
-	if len(outcome.ObservedDonTimes) > p.batchSize {
-		ids := make([]string, 0, len(outcome.ObservedDonTimes))
-		for id := range outcome.ObservedDonTimes {
-			ids = append(ids, id)
-		}
-		slices.Sort(ids)
-		outcomeBatchOverflowCount = int64(len(ids) - p.batchSize)
-		for _, id := range ids[p.batchSize:] {
-			delete(outcome.ObservedDonTimes, id)
-		}
-		p.lggr.Warnw("Trimmed outcome observed don times to batch size",
-			"batchSize", p.batchSize,
-			"removedEntries", outcomeBatchOverflowCount,
-		)
-	}
-
-	outcomeBytes, err := proto.MarshalOptions{Deterministic: true}.Marshal(outcome)
-	p.lggr.Infow("Outcome computed",
-		"observedDonTimesEntries", len(outcome.ObservedDonTimes),
-		"outcomeSizeBytes", len(outcomeBytes),
-	)
-	p.metrics.donTime.Record(ctx, outcome.Timestamp)
-	p.metrics.donTimeEntries.Record(ctx, int64(len(outcome.ObservedDonTimes)))
-	p.metrics.outcomeBatchOverflow.Record(ctx, outcomeBatchOverflowCount)
-	p.metrics.outcomeSize.Record(ctx, int64(len(outcomeBytes)))
-	return outcomeBytes, err
+	return outcome
 }
 
 func (p *Plugin) Reports(_ context.Context, _ uint64, outcome ocr3types.Outcome) ([]ocr3types.ReportPlus[[]byte], error) {

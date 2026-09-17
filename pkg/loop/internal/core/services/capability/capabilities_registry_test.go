@@ -18,9 +18,9 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	pb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
+	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 )
 
@@ -151,7 +151,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	// No capabilities in register
@@ -369,38 +369,6 @@ func testCapabilityInfo(t *testing.T, expectedInfo capabilities.CapabilityInfo, 
 	require.Equal(t, expectedInfo.Version(), gotInfo.Version())
 }
 
-func TestToDON(t *testing.T) {
-	don := &pb.DON{
-		Id:   0,
-		Name: "test-don",
-		Members: [][]byte{
-			{0: 4, 31: 0},
-			{0: 5, 31: 0},
-		},
-		F:             2,
-		ConfigVersion: 1,
-		Families:      []string{"a"},
-		Config:        []byte("test-config"),
-	}
-
-	expected := capabilities.DON{
-		ID:   0,
-		Name: "test-don",
-		Members: []p2ptypes.PeerID{
-			[32]byte{0: 4},
-			[32]byte{0: 5},
-		},
-		F:             2,
-		ConfigVersion: 1,
-		Families:      []string{"a"},
-		Config:        []byte("test-config"),
-	}
-
-	actual := toDON(don)
-
-	require.Equal(t, expected, actual)
-}
-
 func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
@@ -429,7 +397,7 @@ func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testin
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -486,7 +454,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -536,7 +504,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "ocr-cap@1.0.0"
@@ -609,7 +577,7 @@ func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -706,7 +674,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_DefaultConfig(t *testing.T) {
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -759,7 +727,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_NilDefaultConfig(t *testing.T)
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(*capabilitiesRegistryClient)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"

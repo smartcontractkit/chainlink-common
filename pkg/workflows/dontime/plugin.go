@@ -230,7 +230,6 @@ func (p *Plugin) unsequencedObservation(ctx context.Context, previousOutcome *pb
 func (p *Plugin) sequencedObservation(ctx context.Context, previousOutcome *pb.Outcome, query types.Query) (types.Observation, error) {
 	sortedRequests := sortedRequests(p.store.GetRequests())
 	requests := map[string]int64{} // Maps executionID --> seqNum
-	removedCount := 0
 	for _, req := range sortedRequests {
 		requests[req.WorkflowExecutionID] = int64(req.SeqNum)
 		if len(requests) >= p.batchSize {
@@ -238,12 +237,11 @@ func (p *Plugin) sequencedObservation(ctx context.Context, previousOutcome *pb.O
 		}
 	}
 
-	overflowCount := len(sortedRequests) - len(requests) - removedCount
+	overflowCount := len(sortedRequests) - len(requests)
 	p.lggr.Debugw("Observation batch processed",
 		"inputRequests", len(sortedRequests),
 		"batchSize", p.batchSize,
 		"includedRequests", len(requests),
-		"removedRequests", removedCount,
 		"overflowRequests", overflowCount,
 	)
 	if overflowCount > 0 {
@@ -348,6 +346,10 @@ func (p *Plugin) unsequencedOutcome(ctx context.Context, outctx ocr3types.Outcom
 			// We only count requests for the next sequence number and ignore all other ones.
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
+			} else if requestSeqNum > currSeqNum {
+				// This should never happen since we don't include out of sequence requests in the Observation phase
+				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the number of observed don times %d",
+					requestSeqNum, id, currSeqNum)
 			}
 		}
 	}
@@ -438,10 +440,6 @@ func (p *Plugin) sequencedOutcome(ctx context.Context, outctx ocr3types.OutcomeC
 			// We only count requests for the next sequence number and ignore all other ones.
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
-			} else if requestSeqNum > currSeqNum {
-				// This should never happen since we don't include out of sequence requests in the Observation phase
-				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the number of observed don times %d",
-					requestSeqNum, id, currSeqNum)
 			}
 		}
 	}

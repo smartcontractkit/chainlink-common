@@ -259,7 +259,11 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 		if err != nil {
 			return 0, nil, err
 		}
-		return res.CapabilityID, nil, nil
+		id, err = brokerConnID(res.Target, res.CapabilityID)
+		if err != nil {
+			return 0, nil, err
+		}
+		return id, nil, nil
 	})
 	client := remote.NewBaseCapabilityClient(cr.Logger, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -278,7 +282,11 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 		if err != nil {
 			return 0, nil, err
 		}
-		return res.CapabilityID, nil, nil
+		id, err = brokerConnID(res.Target, res.CapabilityID)
+		if err != nil {
+			return 0, nil, err
+		}
+		return id, nil, nil
 	})
 	client := remote.NewTriggerCapabilityClient(cr.Logger, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -297,7 +305,11 @@ func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID stri
 		if err != nil {
 			return 0, nil, err
 		}
-		return res.CapabilityID, nil, nil
+		id, err = brokerConnID(res.Target, res.CapabilityID)
+		if err != nil {
+			return 0, nil, err
+		}
+		return id, nil, nil
 	})
 	client := remote.NewExecutableCapabilityClient(cr.Logger, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
@@ -312,8 +324,13 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 		return nil, err
 	}
 
+	ids, err := listBrokerConnIDs(res)
+	if err != nil {
+		return nil, err
+	}
+
 	var clients []capabilities.BaseCapability
-	for _, id := range res.CapabilityID {
+	for _, id := range ids {
 		conn, err := cr.Dial(id)
 		if err != nil {
 			return nil, net.ErrConnDial{Name: "List", ID: id, Err: err}
@@ -323,6 +340,33 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 	}
 
 	return clients, nil
+}
+
+// brokerConnID resolves the brokered connection to dial from a peer's target,
+// falling back to the deprecated numeric handle when the peer predates the target
+// field. Only this package understands what a broker target means.
+func brokerConnID(target string, legacyID uint32) (uint32, error) {
+	if target == "" {
+		return legacyID, nil
+	}
+	return net.ParseBrokerTarget(target)
+}
+
+// listBrokerConnIDs resolves the connections named by a List reply. Targets, when
+// present, replace the deprecated numeric handles rather than supplementing them.
+func listBrokerConnIDs(res *pb.ListReply) ([]uint32, error) {
+	if len(res.Targets) == 0 {
+		return res.CapabilityID, nil
+	}
+	ids := make([]uint32, len(res.Targets))
+	for i, t := range res.Targets {
+		id, err := net.ParseBrokerTarget(t)
+		if err != nil {
+			return nil, err
+		}
+		ids[i] = id
+	}
+	return ids, nil
 }
 
 func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.BaseCapability) error {
@@ -341,6 +385,7 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 
 	_, err = cr.grpc.Add(ctx, &pb.AddRequest{
 		CapabilityID: id,
+		Target:       net.BrokerTarget(id),
 		Type:         remote.ExecuteAPITypeFor(info.CapabilityType),
 	})
 	if err != nil {
@@ -395,6 +440,7 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *pb.GetReq
 
 	return &pb.GetReply{
 		CapabilityID: id,
+		Target:       net.BrokerTarget(id),
 		Type:         remote.ExecuteAPITypeFor(info.CapabilityType),
 	}, nil
 }
@@ -604,6 +650,7 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *pb
 
 	return &pb.GetTriggerReply{
 		CapabilityID: id,
+		Target:       net.BrokerTarget(id),
 	}, nil
 }
 
@@ -633,6 +680,7 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 
 	return &pb.GetExecutableReply{
 		CapabilityID: id,
+		Target:       net.BrokerTarget(id),
 	}, nil
 }
 
@@ -661,15 +709,21 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 		}
 		resources = append(resources, res)
 		reply.CapabilityID = append(reply.CapabilityID, id)
+		reply.Targets = append(reply.Targets, net.BrokerTarget(id))
 	}
 
 	return reply, nil
 }
 
 func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *pb.AddRequest) (*emptypb.Empty, error) {
-	conn, err := c.Dial(request.CapabilityID)
+	id, err := brokerConnID(request.Target, request.CapabilityID)
 	if err != nil {
-		return &emptypb.Empty{}, net.ErrConnDial{Name: "Add", ID: request.CapabilityID, Err: err}
+		return &emptypb.Empty{}, err
+	}
+
+	conn, err := c.Dial(id)
+	if err != nil {
+		return &emptypb.Empty{}, net.ErrConnDial{Name: "Add", ID: id, Err: err}
 	}
 	var client capabilities.BaseCapability
 

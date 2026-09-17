@@ -874,15 +874,13 @@ func toSdkReq(req *wasmdagpb.FetchRequest) *FetchRequest {
 		}
 	}
 	return &FetchRequest{
-		FetchRequest: dagsdk.FetchRequest{
-			URL:        req.Url,
-			Method:     req.Method,
-			Headers:    h,
-			Body:       req.Body,
-			TimeoutMs:  req.TimeoutMs,
-			MaxRetries: req.MaxRetries,
-		},
-		Metadata: md,
+		URL:        req.Url,
+		Method:     req.Method,
+		Headers:    h,
+		Body:       req.Body,
+		TimeoutMs:  req.TimeoutMs,
+		MaxRetries: req.MaxRetries,
+		Metadata:   md,
 	}
 }
 

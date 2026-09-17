@@ -15,12 +15,10 @@ var (
 	previousReport = libocr.Report([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 	report         = libocr.Report{42: 101}
 	reportContext  = libocr.ReportContext{
-		ReportTimestamp: libocr.ReportTimestamp{
-			ConfigDigest: libocr.ConfigDigest([32]byte{1: 7, 31: 3}),
-			Epoch:        79,
-			Round:        17,
-		},
-		ExtraHash: [32]byte{1: 2, 3: 4, 5: 6},
+		ConfigDigest: libocr.ConfigDigest([32]byte{1: 7, 31: 3}),
+		Epoch:        79,
+		Round:        17,
+		ExtraHash:    [32]byte{1: 2, 3: 4, 5: 6},
 	}
 )
 

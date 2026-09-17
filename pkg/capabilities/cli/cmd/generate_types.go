@@ -146,13 +146,11 @@ func generateHelpers(helpers []WorkflowHelperGenerator, structs GeneratedInfo, a
 func ConfigFromSchemas(schemaFilePaths []string) (ConfigInfo, error) {
 	loader := schemas.NewDefaultCacheLoader([]string{}, []string{".yaml", ".yml"})
 	configInfo := ConfigInfo{
-		Config: generator.Config{
-			Tags:           []string{"json", "yaml", "mapstructure"},
-			Warner:         func(message string) { fmt.Printf("Warning: %s\n", message) },
-			MinSizedInts:   true,
-			YAMLExtensions: []string{".yaml", ".yml"},
-			Loader:         loader,
-		},
+		Tags:             []string{"json", "yaml", "mapstructure"},
+		Warner:           func(message string) { fmt.Printf("Warning: %s\n", message) },
+		MinSizedInts:     true,
+		YAMLExtensions:   []string{".yaml", ".yml"},
+		Loader:           loader,
 		SchemaToTypeInfo: map[string]TypeInfo{},
 	}
 

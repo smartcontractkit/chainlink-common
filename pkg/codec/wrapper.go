@@ -15,12 +15,10 @@ func NewWrapperModifier(fields map[string]string) Modifier {
 
 func NewPathTraverseWrapperModifier(fields map[string]string, enablePathTraverse bool) Modifier {
 	m := &wrapperModifier{
-		modifierBase: modifierBase[string]{
-			enablePathTraverse: enablePathTraverse,
-			fields:             fields,
-			onToOffChainType:   map[reflect.Type]reflect.Type{},
-			offToOnChainType:   map[reflect.Type]reflect.Type{},
-		},
+		enablePathTraverse: enablePathTraverse,
+		fields:             fields,
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
 	}
 
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, fieldName string) error {

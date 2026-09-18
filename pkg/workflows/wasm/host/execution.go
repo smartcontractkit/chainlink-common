@@ -67,7 +67,20 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	go func() {
 		defer free()
 
-		resp := e.callCapabilityRecovered(ctx, req)
+		resp, err := e.executor.CallCapability(ctx, req)
+
+		if err != nil {
+			errString := err.Error()
+
+			if caperror, ok := errors.AsType[caperrors.Error](err); ok {
+				errString = caperror.SerializeToString()
+			}
+			resp = &sdkpb.CapabilityResponse{
+				Response: &sdkpb.CapabilityResponse_Error{
+					Error: errString,
+				},
+			}
+		}
 
 		select {
 		case <-ctx.Done():
@@ -76,69 +89,6 @@ func (e *execution[T]) callCapAsync(ctx context.Context, req *sdkpb.CapabilityRe
 	}()
 
 	return nil
-}
-
-// callCapabilityRecovered invokes the ExecutionHelper and normalizes both errors
-// and panics into a CapabilityResponse, so the caller always has a value to put
-// on the response channel.
-func (e *execution[T]) callCapabilityRecovered(ctx context.Context, req *sdkpb.CapabilityRequest) (resp *sdkpb.CapabilityResponse) {
-	defer func() {
-		if r := recover(); r != nil {
-			e.reportAsyncPanic("CallCapability", r)
-			resp = capabilityErrorResponse(fmt.Sprintf("panic in capability call: %v", r))
-		}
-	}()
-
-	resp, err := e.executor.CallCapability(ctx, req)
-	if err != nil {
-		errString := err.Error()
-
-		if caperror, ok := errors.AsType[caperrors.Error](err); ok {
-			errString = caperror.SerializeToString()
-		}
-		return capabilityErrorResponse(errString)
-	}
-
-	return resp
-}
-
-// getSecretsRecovered is the getSecretsAsync counterpart to
-// callCapabilityRecovered.
-func (e *execution[T]) getSecretsRecovered(ctx context.Context, req *sdkpb.GetSecretsRequest) (sr *secretsResponse) {
-	defer func() {
-		if r := recover(); r != nil {
-			e.reportAsyncPanic("GetSecrets", r)
-			sr = &secretsResponse{err: fmt.Errorf("panic in get secrets: %v", r)}
-		}
-	}()
-
-	resp, err := e.executor.GetSecrets(ctx, req)
-	return &secretsResponse{responses: resp, err: err}
-}
-
-func capabilityErrorResponse(msg string) *sdkpb.CapabilityResponse {
-	return &sdkpb.CapabilityResponse{
-		Response: &sdkpb.CapabilityResponse_Error{
-			Error: msg,
-		},
-	}
-}
-
-// reportAsyncPanic logs a recovered panic and records it on the same counter as
-// the synchronous host-function recoveries in callStart.
-func (e *execution[T]) reportAsyncPanic(method string, r any) {
-	if e.module == nil {
-		return
-	}
-	if e.module.cfg != nil && e.module.cfg.Logger != nil {
-		e.module.cfg.Logger.Errorw("recovered panic in async execution helper call",
-			"method", method,
-			"panic", r,
-		)
-	}
-	if e.module.metrics != nil {
-		e.module.metrics.IncHostFnPanicRecovered()
-	}
 }
 
 func (e *execution[T]) awaitCapabilities(ctx context.Context, acr *sdkpb.AwaitCapabilitiesRequest) (*sdkpb.AwaitCapabilitiesResponse, error) {
@@ -195,7 +145,8 @@ func (e *execution[T]) getSecretsAsync(ctx context.Context, req *sdkpb.GetSecret
 	go func() {
 		defer free()
 
-		sr := e.getSecretsRecovered(ctx, req)
+		resp, err := e.executor.GetSecrets(ctx, req)
+		sr := &secretsResponse{responses: resp, err: err}
 
 		select {
 		case <-ctx.Done():

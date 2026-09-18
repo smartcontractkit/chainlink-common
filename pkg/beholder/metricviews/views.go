@@ -32,6 +32,10 @@ import (
 const (
 	baseTriggerInstrumentGlob  = "capabilities_base_trigger_*"
 	stoppedResendingInstrument = "capabilities_base_trigger_stopped_resending_timestamp"
+	// rpcClientCallInstrument is the otelgrpc client duration histogram.
+	// Its server.address label carries per-plugin unix socket paths
+	// (/tmp/pluginN) on loop RPC clients, churning on every plugin restart.
+	rpcClientCallInstrument = "rpc.client.call.duration"
 )
 
 var (
@@ -44,6 +48,12 @@ var (
 	stoppedResendingAllow = attribute.NewAllowKeysFilter(
 		attribute.Key("capability_id"),
 		attribute.Key("trigger_id"),
+	)
+
+	rpcClientCallAllow = attribute.NewAllowKeysFilter(
+		attribute.Key("rpc.method"),
+		attribute.Key("rpc.system.name"),
+		attribute.Key("rpc.response.status_code"),
 	)
 )
 
@@ -71,6 +81,10 @@ func Default(denyKeys []string) []sdkmetric.View {
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: baseTriggerInstrumentGlob},
 			sdkmetric.Stream{AttributeFilter: baseTriggerAllow},
+		),
+		sdkmetric.NewView(
+			sdkmetric.Instrument{Name: rpcClientCallInstrument},
+			sdkmetric.Stream{AttributeFilter: rpcClientCallAllow},
 		),
 	)
 	if denyFilter == nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	errorlogtest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog/test"
 	keyvaluestoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keyvalue/test"
 	pipelinetest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline/test"
@@ -65,10 +64,8 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 		ocr3test.OCR3ReportingPluginWithMedianProviderName,
 		&GRPCService[types.MedianProvider]{
 			PluginServer: ocr3test.MedianServer(lggr),
-			BrokerConfig: loop.BrokerConfig{
-				Logger: lggr,
-				StopCh: stopCh,
-			},
+			Logger:       lggr,
+			StopCh:       stopCh,
 		},
 		PluginGenericTest,
 	)
@@ -84,10 +81,8 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 		PluginServiceName,
 		&GRPCService[types.PluginProvider]{
 			PluginServer: ocr3test.AgnosticPluginServer(lggr),
-			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
-				StopCh: stopCh,
-			},
+			Logger:       logger.Test(t),
+			StopCh:       stopCh,
 		},
 		PluginGenericTest,
 	)

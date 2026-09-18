@@ -14,62 +14,52 @@ import (
 // OnRampReader is a static test implementation of [testtypes.Evaluator] for [ccip.OnRampReader].
 // The implementation is a simple struct that returns predefined responses.
 var OnRampReader = staticOnRamp{
-	staticOnRampConfig: staticOnRampConfig{
-		addressResponse: ccip.Address("some-address"),
-		routerResponse:  ccip.Address("some-router"),
-		dynamicConfigResponse: ccip.OnRampDynamicConfig{
-			Router:                            "some-router",
-			MaxNumberOfTokensPerMsg:           11,
-			DestGasOverhead:                   13,
-			DestGasPerPayloadByte:             17,
-			DestDataAvailabilityOverheadGas:   23,
-			DestGasPerDataAvailabilityByte:    29,
-			DestDataAvailabilityMultiplierBps: 31,
-			PriceRegistry:                     "some-price-registry",
-			MaxDataBytes:                      37,
-			MaxPerMsgGasLimit:                 41,
-		},
-		getSendRequestsBetweenSeqNumsResponse: getSendRequestsBetweenSeqNumsResponse{
-			EVM2EVMMessageWithTxMeta: []ccip.EVM2EVMMessageWithTxMeta{
+	addressResponse: ccip.Address("some-address"),
+	routerResponse:  ccip.Address("some-router"),
+	dynamicConfigResponse: ccip.OnRampDynamicConfig{
+		Router:                            "some-router",
+		MaxNumberOfTokensPerMsg:           11,
+		DestGasOverhead:                   13,
+		DestGasPerPayloadByte:             17,
+		DestDataAvailabilityOverheadGas:   23,
+		DestGasPerDataAvailabilityByte:    29,
+		DestDataAvailabilityMultiplierBps: 31,
+		PriceRegistry:                     "some-price-registry",
+		MaxDataBytes:                      37,
+		MaxPerMsgGasLimit:                 41,
+	},
+	EVM2EVMMessageWithTxMeta: []ccip.EVM2EVMMessageWithTxMeta{
+		{
+			BlockNumber:             1,
+			BlockTimestampUnixMilli: 2,
+			TxHash:                  "tx-hash",
+			LogIndex:                3,
+			SequenceNumber:          5,
+			GasLimit:                big.NewInt(7),
+			Nonce:                   11,
+			MessageID:               ccip.Hash{0: 1, 31: 7},
+			SourceChainSelector:     13,
+			Sender:                  "sender",
+			Receiver:                "receiver",
+			Strict:                  true,
+			FeeToken:                "fee-token",
+			FeeTokenAmount:          big.NewInt(17),
+			Data:                    []byte{19},
+			TokenAmounts: []ccip.TokenAmount{
 				{
-					TxMeta: ccip.TxMeta{
-						BlockNumber:             1,
-						BlockTimestampUnixMilli: 2,
-						TxHash:                  "tx-hash",
-						LogIndex:                3,
-					},
-					EVM2EVMMessage: ccip.EVM2EVMMessage{
-						SequenceNumber:      5,
-						GasLimit:            big.NewInt(7),
-						Nonce:               11,
-						MessageID:           ccip.Hash{0: 1, 31: 7},
-						SourceChainSelector: 13,
-						Sender:              "sender",
-						Receiver:            "receiver",
-						Strict:              true,
-						FeeToken:            "fee-token",
-						FeeTokenAmount:      big.NewInt(17),
-						Data:                []byte{19},
-						TokenAmounts: []ccip.TokenAmount{
-							{
-								Token:  "token-1",
-								Amount: big.NewInt(23),
-							},
-							{
-								Token:  "token-2",
-								Amount: big.NewInt(29),
-							},
-						},
-					},
+					Token:  "token-1",
+					Amount: big.NewInt(23),
+				},
+				{
+					Token:  "token-2",
+					Amount: big.NewInt(29),
 				},
 			},
 		},
-		getSendRequestsBetweenSeqNums: getSendRequestsBetweenSeqNums{
-			SeqNumMin: 1,
-			SeqNumMax: 2,
-			Finalized: true,
-		},
 	},
+	SeqNumMin: 1,
+	SeqNumMax: 2,
+	Finalized: true,
 }
 
 type OnRampEvaluator interface {

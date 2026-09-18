@@ -10,11 +10,9 @@ import (
 )
 
 var Codec = staticCodec{
-	staticCodecConfig: staticCodecConfig{
-		n:        3,
-		itemType: "itemType",
-		maxSize:  37,
-	},
+	n:        3,
+	itemType: "itemType",
+	maxSize:  37,
 }
 
 type staticCodecConfig struct {

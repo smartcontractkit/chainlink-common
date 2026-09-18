@@ -38,7 +38,7 @@ func countLimiterUpdaterGoroutines(t *testing.T) int {
 	var profile bytes.Buffer
 	require.NoError(t, pprof.Lookup("goroutine").WriteTo(&profile, 2))
 	count := 0
-	for _, goroutine := range strings.Split(profile.String(), "\n\n") {
+	for goroutine := range strings.SplitSeq(profile.String(), "\n\n") {
 		if strings.Contains(goroutine, "pkg/settings/limits.(*updater") && strings.Contains(goroutine, ").updateLoop(") {
 			count++
 		}

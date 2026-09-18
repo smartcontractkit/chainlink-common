@@ -55,7 +55,7 @@ func BuildDependencyGraph(spec sdk.WorkflowSpec) (*DependencyGraph, error) {
 		graph.Directed(),
 	)
 	err := g.AddVertex(&Vertex{
-		StepDefinition: sdk.StepDefinition{Ref: KeywordTrigger},
+		Ref: KeywordTrigger,
 	})
 	if err != nil {
 		return nil, err

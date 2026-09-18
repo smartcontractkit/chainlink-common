@@ -50,10 +50,9 @@ var (
 		attribute.Key("trigger_id"),
 	)
 
-	rpcClientCallAllow = attribute.NewAllowKeysFilter(
-		attribute.Key("rpc.method"),
-		attribute.Key("rpc.system.name"),
-		attribute.Key("rpc.response.status_code"),
+	rpcClientCallDeny = attribute.NewDenyKeysFilter(
+		attribute.Key("server.address"),
+		attribute.Key("server.port"),
 	)
 )
 
@@ -84,7 +83,7 @@ func Default(denyKeys []string) []sdkmetric.View {
 		),
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: rpcClientCallInstrument},
-			sdkmetric.Stream{AttributeFilter: rpcClientCallAllow},
+			sdkmetric.Stream{AttributeFilter: rpcClientCallDeny},
 		),
 	)
 	if denyFilter == nil {

@@ -171,6 +171,8 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 			attribute.String("rpc.response.status_code", "OK"),
 			attribute.String("server.address", "/tmp/plugin1519119202"),
 			attribute.Int("server.port", 50051),
+			// Deny-list semantics: attributes not blacklisted must survive.
+			attribute.String("rpc.some.future.attribute", "v"),
 		),
 	)
 
@@ -181,6 +183,7 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 	assert.Contains(t, keys, attribute.Key("rpc.system.name"))
 	assert.Contains(t, keys, attribute.Key("rpc.method"))
 	assert.Contains(t, keys, attribute.Key("rpc.response.status_code"))
+	assert.Contains(t, keys, attribute.Key("rpc.some.future.attribute"))
 	assert.NotContains(t, keys, attribute.Key("server.address"))
 	assert.NotContains(t, keys, attribute.Key("server.port"))
 }

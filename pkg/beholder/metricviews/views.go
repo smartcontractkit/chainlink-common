@@ -32,10 +32,12 @@ import (
 const (
 	baseTriggerInstrumentGlob  = "capabilities_base_trigger_*"
 	stoppedResendingInstrument = "capabilities_base_trigger_stopped_resending_timestamp"
-	// rpcClientCallInstrument is the otelgrpc client duration histogram.
-	// Its server.address label carries per-plugin unix socket paths
-	// (/tmp/pluginN) on loop RPC clients, churning on every plugin restart.
-	rpcClientCallInstrument = "rpc.client.call.duration"
+	// rpcClientCallInstrumentGlob matches every rpc client call duration
+	// instrument variant (otelgrpc's rpc.client.call.duration and any future
+	// revisions, e.g. unit renames). Their server.address label carries
+	// per-plugin unix socket paths (/tmp/pluginN) on loop RPC clients,
+	// churning on every plugin restart.
+	rpcClientCallInstrumentGlob = "rpc.client.call.duration*"
 )
 
 var (
@@ -82,7 +84,7 @@ func Default(denyKeys []string) []sdkmetric.View {
 			sdkmetric.Stream{AttributeFilter: baseTriggerAllow},
 		),
 		sdkmetric.NewView(
-			sdkmetric.Instrument{Name: rpcClientCallInstrument},
+			sdkmetric.Instrument{Name: rpcClientCallInstrumentGlob},
 			sdkmetric.Stream{AttributeFilter: rpcClientCallDeny},
 		),
 	)

@@ -186,6 +186,23 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 	assert.Contains(t, keys, attribute.Key("rpc.some.future.attribute"))
 	assert.NotContains(t, keys, attribute.Key("server.address"))
 	assert.NotContains(t, keys, attribute.Key("server.port"))
+
+	// The glob matcher covers future variants of the instrument name too.
+	variant, err := meter.Float64Histogram("rpc.client.call.duration.custom")
+	require.NoError(t, err)
+	variant.Record(context.Background(), 0.1,
+		metric.WithAttributes(
+			attribute.String("server.address", "/tmp/plugin1519119202"),
+			attribute.String("rpc.method", "loop.Relayer/LatestHead"),
+		),
+	)
+
+	rm = metricdata.ResourceMetrics{}
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	variantKeys := attributeKeysFromHistogramNamed(t, rm, "rpc.client.call.duration.custom")
+	assert.Contains(t, variantKeys, attribute.Key("rpc.method"))
+	assert.NotContains(t, variantKeys, attribute.Key("server.address"))
 }
 
 func TestDefault_perWorkflowHistogramBuckets(t *testing.T) {
@@ -395,6 +412,22 @@ func attributeKeysFromHistogram(t *testing.T, rm metricdata.ResourceMetrics) []a
 	require.True(t, ok)
 	require.Len(t, histogram.DataPoints, 1)
 	return keysFromSet(histogram.DataPoints[0].Attributes)
+}
+
+func attributeKeysFromHistogramNamed(t *testing.T, rm metricdata.ResourceMetrics, name string) []attribute.Key {
+	t.Helper()
+	require.Len(t, rm.ScopeMetrics, 1)
+	for _, m := range rm.ScopeMetrics[0].Metrics {
+		if m.Name != name {
+			continue
+		}
+		histogram, ok := m.Data.(metricdata.Histogram[float64])
+		require.True(t, ok)
+		require.Len(t, histogram.DataPoints, 1)
+		return keysFromSet(histogram.DataPoints[0].Attributes)
+	}
+	t.Fatalf("metric %q not found", name)
+	return nil
 }
 
 func keysFromSet(set attribute.Set) []attribute.Key {

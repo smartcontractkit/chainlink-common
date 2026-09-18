@@ -143,10 +143,102 @@ func TestDefault_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
 
 func TestDefault_viewCount(t *testing.T) {
 	t.Parallel()
-	// PerWorkflow histogram bucket views (4) + base-trigger allow-lists (2).
-	assert.Len(t, metricviews.Default(nil), 6)
+	// PerWorkflow histogram bucket views (4) + base-trigger allow-lists (2) +
+	// otelgrpc client-duration allow-list (1).
+	assert.Len(t, metricviews.Default(nil), 7)
 	// Same fixed views, plus the global "*" deny-list catch-all.
-	assert.Len(t, metricviews.Default([]string{"event_id"}), 7)
+	assert.Len(t, metricviews.Default([]string{"event_id"}), 8)
+}
+
+func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithView(metricviews.Default(nil)...),
+	)
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+	meter := mp.Meter("test")
+	histogram, err := meter.Float64Histogram("rpc.client.call.duration")
+	require.NoError(t, err)
+
+	histogram.Record(context.Background(), 0.1,
+		metric.WithAttributes(
+			attribute.String("rpc.system.name", "grpc"),
+			attribute.String("rpc.method", "loop.Relayer/LatestHead"),
+			attribute.String("rpc.response.status_code", "OK"),
+			attribute.String("server.address", "/tmp/plugin1519119202"),
+			attribute.Int("server.port", 50051),
+			// Deny-list semantics: attributes not blacklisted must survive.
+			attribute.String("rpc.some.future.attribute", "v"),
+		),
+	)
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	keys := attributeKeysFromHistogram(t, rm)
+	assert.Contains(t, keys, attribute.Key("rpc.system.name"))
+	assert.Contains(t, keys, attribute.Key("rpc.method"))
+	assert.Contains(t, keys, attribute.Key("rpc.response.status_code"))
+	assert.Contains(t, keys, attribute.Key("rpc.some.future.attribute"))
+	assert.NotContains(t, keys, attribute.Key("server.address"))
+	assert.NotContains(t, keys, attribute.Key("server.port"))
+
+	// The glob matcher covers future variants of the instrument name too.
+	variant, err := meter.Float64Histogram("rpc.client.call.duration.custom")
+	require.NoError(t, err)
+	variant.Record(context.Background(), 0.1,
+		metric.WithAttributes(
+			attribute.String("server.address", "/tmp/plugin1519119202"),
+			attribute.String("rpc.method", "loop.Relayer/LatestHead"),
+		),
+	)
+
+	rm = metricdata.ResourceMetrics{}
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	variantKeys := attributeKeysFromHistogramNamed(t, rm, "rpc.client.call.duration.custom")
+	assert.Contains(t, variantKeys, attribute.Key("rpc.method"))
+	assert.NotContains(t, variantKeys, attribute.Key("server.address"))
+}
+
+// TestDefault_rpcClientCallDurationComposesGlobalDenylist guards against the
+// rpc client call duration view winning the stream identity ahead of the
+// global "*" deny-filter view and, as a result, silently bypassing it. The
+// view must carry the configured deny filter itself, combined with its fixed
+// deny keys (see TestDefault_perWorkflowHistogramDropsHighCardinalityKeys).
+func TestDefault_rpcClientCallDurationComposesGlobalDenylist(t *testing.T) {
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithView(metricviews.Default([]string{"event_id"})...),
+	)
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+	meter := mp.Meter("test")
+	histogram, err := meter.Float64Histogram("rpc.client.call.duration")
+	require.NoError(t, err)
+
+	histogram.Record(context.Background(), 0.1,
+		metric.WithAttributes(
+			attribute.String("rpc.method", "loop.Relayer/LatestHead"),
+			attribute.String("server.address", "/tmp/plugin1519119202"),
+			attribute.String("event_id", "ev-1"),
+		),
+	)
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	keys := attributeKeysFromHistogram(t, rm)
+	assert.Contains(t, keys, attribute.Key("rpc.method"))
+	assert.NotContains(t, keys, attribute.Key("server.address"))
+	assert.NotContains(t, keys, attribute.Key("event_id"))
 }
 
 func TestDefault_perWorkflowHistogramBuckets(t *testing.T) {
@@ -346,6 +438,32 @@ func attributeKeysFromGauge(t *testing.T, rm metricdata.ResourceMetrics) []attri
 	require.True(t, ok)
 	require.Len(t, gauge.DataPoints, 1)
 	return keysFromSet(gauge.DataPoints[0].Attributes)
+}
+
+func attributeKeysFromHistogram(t *testing.T, rm metricdata.ResourceMetrics) []attribute.Key {
+	t.Helper()
+	require.Len(t, rm.ScopeMetrics, 1)
+	require.Len(t, rm.ScopeMetrics[0].Metrics, 1)
+	histogram, ok := rm.ScopeMetrics[0].Metrics[0].Data.(metricdata.Histogram[float64])
+	require.True(t, ok)
+	require.Len(t, histogram.DataPoints, 1)
+	return keysFromSet(histogram.DataPoints[0].Attributes)
+}
+
+func attributeKeysFromHistogramNamed(t *testing.T, rm metricdata.ResourceMetrics, name string) []attribute.Key {
+	t.Helper()
+	require.Len(t, rm.ScopeMetrics, 1)
+	for _, m := range rm.ScopeMetrics[0].Metrics {
+		if m.Name != name {
+			continue
+		}
+		histogram, ok := m.Data.(metricdata.Histogram[float64])
+		require.True(t, ok)
+		require.Len(t, histogram.DataPoints, 1)
+		return keysFromSet(histogram.DataPoints[0].Attributes)
+	}
+	t.Fatalf("metric %q not found", name)
+	return nil
 }
 
 func keysFromSet(set attribute.Set) []attribute.Key {

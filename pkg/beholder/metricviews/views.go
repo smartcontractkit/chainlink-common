@@ -32,7 +32,20 @@ import (
 const (
 	baseTriggerInstrumentGlob  = "capabilities_base_trigger_*"
 	stoppedResendingInstrument = "capabilities_base_trigger_stopped_resending_timestamp"
+	// rpcClientCallInstrumentGlob matches every rpc client call duration
+	// instrument variant (otelgrpc's rpc.client.call.duration and any future
+	// revisions, e.g. unit renames). Their server.address label carries
+	// per-plugin unix socket paths (/tmp/pluginN) on loop RPC clients,
+	// churning on every plugin restart.
+	rpcClientCallInstrumentGlob = "rpc.client.call.duration*"
 )
+
+// rpcClientCallDenyKeys are dropped from rpc.client.call.duration* regardless
+// of the configured denylist.
+var rpcClientCallDenyKeys = []string{
+	"server.address",
+	"server.port",
+}
 
 var (
 	baseTriggerAllow = attribute.NewAllowKeysFilter(
@@ -71,6 +84,13 @@ func Default(denyKeys []string) []sdkmetric.View {
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: baseTriggerInstrumentGlob},
 			sdkmetric.Stream{AttributeFilter: baseTriggerAllow},
+		),
+		sdkmetric.NewView(
+			sdkmetric.Instrument{Name: rpcClientCallInstrumentGlob},
+			// This view wins the stream identity over the global "*" deny
+			// view, so it must carry the configured deny filter itself —
+			// composed with the fixed rpc client deny keys.
+			sdkmetric.Stream{AttributeFilter: denyKeysFilter(append(rpcClientCallDenyKeys, denyKeys...))},
 		),
 	)
 	if denyFilter == nil {

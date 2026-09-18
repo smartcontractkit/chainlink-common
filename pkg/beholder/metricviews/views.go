@@ -40,6 +40,13 @@ const (
 	rpcClientCallInstrumentGlob = "rpc.client.call.duration*"
 )
 
+// rpcClientCallDenyKeys are dropped from rpc.client.call.duration* regardless
+// of the configured denylist.
+var rpcClientCallDenyKeys = []string{
+	"server.address",
+	"server.port",
+}
+
 var (
 	baseTriggerAllow = attribute.NewAllowKeysFilter(
 		attribute.Key("capability_id"),
@@ -50,11 +57,6 @@ var (
 	stoppedResendingAllow = attribute.NewAllowKeysFilter(
 		attribute.Key("capability_id"),
 		attribute.Key("trigger_id"),
-	)
-
-	rpcClientCallDeny = attribute.NewDenyKeysFilter(
-		attribute.Key("server.address"),
-		attribute.Key("server.port"),
 	)
 )
 
@@ -85,7 +87,10 @@ func Default(denyKeys []string) []sdkmetric.View {
 		),
 		sdkmetric.NewView(
 			sdkmetric.Instrument{Name: rpcClientCallInstrumentGlob},
-			sdkmetric.Stream{AttributeFilter: rpcClientCallDeny},
+			// This view wins the stream identity over the global "*" deny
+			// view, so it must carry the configured deny filter itself —
+			// composed with the fixed rpc client deny keys.
+			sdkmetric.Stream{AttributeFilter: denyKeysFilter(append(rpcClientCallDenyKeys, denyKeys...))},
 		),
 	)
 	if denyFilter == nil {

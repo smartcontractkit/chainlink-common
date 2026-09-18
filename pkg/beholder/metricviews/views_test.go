@@ -205,6 +205,42 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 	assert.NotContains(t, variantKeys, attribute.Key("server.address"))
 }
 
+// TestDefault_rpcClientCallDurationComposesGlobalDenylist guards against the
+// rpc client call duration view winning the stream identity ahead of the
+// global "*" deny-filter view and, as a result, silently bypassing it. The
+// view must carry the configured deny filter itself, combined with its fixed
+// deny keys (see TestDefault_perWorkflowHistogramDropsHighCardinalityKeys).
+func TestDefault_rpcClientCallDurationComposesGlobalDenylist(t *testing.T) {
+	t.Parallel()
+
+	reader := sdkmetric.NewManualReader()
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithView(metricviews.Default([]string{"event_id"})...),
+	)
+	t.Cleanup(func() { _ = mp.Shutdown(context.Background()) })
+
+	meter := mp.Meter("test")
+	histogram, err := meter.Float64Histogram("rpc.client.call.duration")
+	require.NoError(t, err)
+
+	histogram.Record(context.Background(), 0.1,
+		metric.WithAttributes(
+			attribute.String("rpc.method", "loop.Relayer/LatestHead"),
+			attribute.String("server.address", "/tmp/plugin1519119202"),
+			attribute.String("event_id", "ev-1"),
+		),
+	)
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(context.Background(), &rm))
+
+	keys := attributeKeysFromHistogram(t, rm)
+	assert.Contains(t, keys, attribute.Key("rpc.method"))
+	assert.NotContains(t, keys, attribute.Key("server.address"))
+	assert.NotContains(t, keys, attribute.Key("event_id"))
+}
+
 func TestDefault_perWorkflowHistogramBuckets(t *testing.T) {
 	t.Parallel()
 

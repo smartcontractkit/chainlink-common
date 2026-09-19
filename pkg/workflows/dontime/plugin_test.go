@@ -146,7 +146,8 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Invalid sequence number", func(t *testing.T) {
+	//TODO no such thing any more - or pass an old one?
+	t.Run("Valid skipped sequence number", func(t *testing.T) {
 		store := NewStore(DefaultRequestTimeout)
 		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 		require.NoError(t, err)
@@ -160,13 +161,18 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 		// Add single request to queue
 		executionID := "workflow-123"
-		requestCh := store.RequestDonTime(executionID, 1)
+		_ = store.RequestDonTime(executionID, 1)
 
-		_, err = plugin.Observation(ctx, outcomeCtx, query)
+		observation, err := plugin.Observation(ctx, outcomeCtx, query)
 		require.NoError(t, err)
 
-		response := <-requestCh
-		require.ErrorContains(t, response.Err, "requested seqNum 1 for executionID workflow-123 is greater than the number of observed don times 0")
+		ao := types.AttributedObservation{
+			Observation: observation,
+			Observer:    commontypes.OracleID(1),
+		}
+
+		err = plugin.ValidateObservation(ctx, outcomeCtx, query, ao)
+		require.NoError(t, err)
 	})
 }
 
@@ -590,7 +596,7 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
 	require.NoError(t, err)
 
-	t.Run("trims when all observations set batch size flag", func(t *testing.T) {
+	t.Run("batch size enforced", func(t *testing.T) {
 		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(true))
 		require.NoError(t, err)
 

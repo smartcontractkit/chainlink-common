@@ -9,8 +9,11 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
@@ -26,17 +29,28 @@ const (
 var _ core.OCR3ReportingPluginFactory = &Factory{}
 
 type Factory struct {
-	store *Store
-	lggr  logger.Logger
+	store              *Store
+	lggr               logger.Logger
+	sequencedTSEnabled limits.RangeLimiter[config.Timestamp]
 
 	services.StateMachine
 }
 
 func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
 	return &Factory{
-		store: s,
-		lggr:  logger.Named(lggr, "OCR3DonTimeFactory"),
+		store:              s,
+		lggr:               logger.Named(lggr, "OCR3DonTimeFactory"),
+		sequencedTSEnabled: limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsEnabled.DefaultValue),
 	}, nil
+}
+
+func (o *Factory) InitLimits(lf limits.Factory) error {
+	sequencedTSEnabled, err := limits.MakeRangeLimiter[config.Timestamp](lf, cresettings.Default.DonTimeSequencedTimestampsEnabled)
+	if err != nil {
+		return err
+	}
+	o.sequencedTSEnabled = sequencedTSEnabled
+	return nil
 }
 
 func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.ReportingPluginConfig) (ocr3types.ReportingPlugin[[]byte], ocr3types.ReportingPluginInfo, error) {
@@ -75,6 +89,7 @@ func (o *Factory) NewReportingPlugin(_ context.Context, config ocr3types.Reporti
 	if err != nil {
 		return nil, ocr3types.ReportingPluginInfo{}, err
 	}
+	plugin.setSequencedTSEnabled(o.sequencedTSEnabled)
 	pluginInfo := ocr3types.ReportingPluginInfo{
 		Name: "DON Time Plugin",
 		Limits: ocr3types.ReportingPluginLimits{

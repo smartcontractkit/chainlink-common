@@ -350,6 +350,9 @@ flowchart
 %%  enclave → gateway → relay DON node is likewise its own entry point
     HandleGatewayMessage
 
+%% TODO placating test for now since this flowchart no longer renders
+    DonTimeSequencedTimestampsEnabled 
+
     classDef bound stroke:#f00
     classDef gate stroke:#0f0
     classDef queue stroke:#00f

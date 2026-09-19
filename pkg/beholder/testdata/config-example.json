@@ -29,6 +29,7 @@
   "TraceSpanExporter": null,
   "TraceRetryConfig": null,
   "TraceCompressor": "gzip",
+  "MetricExportBatchSize": 0,
   "MetricReaderInterval": 1000000000,
   "MetricRetryConfig": null,
   "MetricViews": null,

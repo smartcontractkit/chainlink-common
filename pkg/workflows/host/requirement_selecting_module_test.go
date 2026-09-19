@@ -20,12 +20,10 @@ type stubModule struct {
 	executeFn  func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error)
 	startCount atomic.Int32
 	closeCount atomic.Int32
-	legacy     bool
 }
 
-func (s *stubModule) Start()            { s.startCount.Add(1) }
-func (s *stubModule) Close()            { s.closeCount.Add(1) }
-func (s *stubModule) IsLegacyDAG() bool { return s.legacy }
+func (s *stubModule) Start() { s.startCount.Add(1) }
+func (s *stubModule) Close() { s.closeCount.Add(1) }
 func (s *stubModule) Execute(ctx context.Context, req *sdk.ExecuteRequest, h ExecutionHelper) (*sdk.ExecutionResult, error) {
 	return s.executeFn(ctx, req, h)
 }
@@ -143,12 +141,6 @@ func TestRequirementSelectingModule_Close(t *testing.T) {
 		assert.Equal(t, int32(1), requirementsSatisfier.closeCount.Load(), "started additional should be closed")
 		assert.Equal(t, int32(0), nonMatcher.closeCount.Load(), "never-started additional should not be closed")
 	})
-}
-
-func TestRequirementSelectingModule_IsLegacyDAG(t *testing.T) {
-	main := &stubModule{legacy: true}
-	m := NewRequirementSelectingModule(ModuleAndHandler{Module: main}, nil)
-	assert.True(t, m.IsLegacyDAG())
 }
 
 func TestRequirementSelectingModule_Execute(t *testing.T) {

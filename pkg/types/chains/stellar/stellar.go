@@ -546,9 +546,28 @@ type GetTransactionRequest struct {
 	TxHash string
 }
 
-// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+// GetTransactionStatus is the lookup status returned by Stellar RPC getTransaction.
+type GetTransactionStatus int
+
+const (
+	GetTransactionStatusUnspecified GetTransactionStatus = iota
+	GetTransactionStatusNotFound
+	GetTransactionStatusFailed
+	GetTransactionStatusSuccess
+)
+
+// GetTransactionResponse carries the result of looking up a transaction by hash.
 type GetTransactionResponse struct {
-	FeeStroops      uint64
-	LedgerSequence  uint32
-	LedgerCloseTime int64 // unix seconds
+	Status GetTransactionStatus
+	TxHash string
+	// ResultXDR is the base64-encoded transaction result XDR when status is failed or success.
+	ResultXDR string
+	// ResultMetaXDR is the base64-encoded transaction meta XDR when available.
+	ResultMetaXDR string
+	// FeeStroops is the fee charged in stroops when available.
+	FeeStroops *uint64
+	// LedgerSequence is the ledger that included the transaction when available.
+	LedgerSequence *uint32
+	// LedgerCloseTime is the unix timestamp of the ledger that included the transaction when available.
+	LedgerCloseTime *int64
 }

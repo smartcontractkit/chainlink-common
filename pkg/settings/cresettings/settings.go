@@ -326,14 +326,7 @@ var Default = Schema{
 			RequestTimeout: Duration(30 * time.Second),
 		},
 
-		FeatureMultiTriggerExecutionIDsActiveAt: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureHTTPTriggerNewExecutionIDsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureUseSingleDONTimeProviderPerExecutionActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
@@ -525,15 +518,12 @@ type Workflows struct {
 	Secrets               secrets
 	DONTime               donTime
 
-	FeatureMultiTriggerExecutionIDsActiveAt                 Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod             Setting[Range[config.Timestamp]]
-	FeatureHTTPTriggerNewExecutionIDsActivePeriod           Setting[Range[config.Timestamp]]
-	FeatureUseSingleDONTimeProviderPerExecutionActivePeriod Setting[Range[config.Timestamp]]
-	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
-	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
-	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
-	FeatureRequestHashIncludeWorkflowTagActivePeriod        Setting[Range[config.Timestamp]]
-	FeatureWorkflowTagBackfillActivePeriod                  Setting[Range[config.Timestamp]]
+	FeatureHTTPTriggerNewExecutionIDsActivePeriod     Setting[Range[config.Timestamp]]
+	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]]
+	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
+	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

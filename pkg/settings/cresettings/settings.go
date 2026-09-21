@@ -239,7 +239,7 @@ var Default = Schema{
 		UserMetricEnabled:             Bool(false),
 		UserMetricPayloadLimit:        Size(4 * config.KByte),
 		UserMetricNameLengthLimit:     Int(128),
-		UserMetricLabelsPerMetric:     Int(10),
+		UserMetricLabelsPerMetric:     Int(15),
 		UserMetricLabelValueLength:    Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2

@@ -255,17 +255,21 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 		Id: ID,
 	}
 
-	conn := cr.transport.Dial("Capability", func(ctx context.Context) (Locator, error) {
+	conn, err := cr.transport.Dial(ctx, "Capability", func(ctx context.Context) (Locator, error) {
 		res, err := cr.grpc.Get(ctx, req)
 		if err != nil {
 			return Locator{}, err
 		}
 		return Locator{Target: res.Target, LegacyHandle: res.CapabilityID}, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	client := NewBaseCapabilityClient(cr.lggr, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
+	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
 	return client, err
 }
 
@@ -274,17 +278,21 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 		Id: ID,
 	}
 
-	conn := cr.transport.Dial("Trigger", func(ctx context.Context) (Locator, error) {
+	conn, err := cr.transport.Dial(ctx, "Trigger", func(ctx context.Context) (Locator, error) {
 		res, err := cr.grpc.GetTrigger(ctx, req)
 		if err != nil {
 			return Locator{}, err
 		}
 		return Locator{Target: res.Target, LegacyHandle: res.CapabilityID}, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	client := NewTriggerCapabilityClient(cr.lggr, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
+	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
 	return client, err
 }
 
@@ -293,17 +301,21 @@ func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID stri
 		Id: ID,
 	}
 
-	conn := cr.transport.Dial("Executable", func(ctx context.Context) (Locator, error) {
+	conn, err := cr.transport.Dial(ctx, "Executable", func(ctx context.Context) (Locator, error) {
 		res, err := cr.grpc.GetExecutable(ctx, req)
 		if err != nil {
 			return Locator{}, err
 		}
 		return Locator{Target: res.Target, LegacyHandle: res.CapabilityID}, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
 	client := NewExecutableCapabilityClient(cr.lggr, conn)
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err := client.Info(ctx) // ensure exists by triggering lazy connection with reduced timeout
+	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
 	return client, err
 }
 
@@ -315,9 +327,12 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 
 	var clients []capabilities.BaseCapability
 	for i, loc := range locatorsFromListReply(res) {
-		conn := cr.transport.Dial(fmt.Sprintf("List[%d]", i), func(context.Context) (Locator, error) {
+		conn, err := cr.transport.Dial(ctx, fmt.Sprintf("List[%d]", i), func(context.Context) (Locator, error) {
 			return loc, nil
 		})
+		if err != nil {
+			return nil, err
+		}
 		clients = append(clients, NewBaseCapabilityClient(cr.lggr, conn))
 	}
 
@@ -679,9 +694,12 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 
 func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registrypb.AddRequest) (*emptypb.Empty, error) {
 	loc := Locator{Target: request.Target, LegacyHandle: request.CapabilityID}
-	conn := c.transport.Dial("Add", func(context.Context) (Locator, error) {
+	conn, err := c.transport.Dial(ctx, "Add", func(context.Context) (Locator, error) {
 		return loc, nil
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	var client capabilities.BaseCapability
 

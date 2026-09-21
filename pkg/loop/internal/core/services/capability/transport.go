@@ -32,7 +32,9 @@ func (t brokerTransport) Publish(name string, register func(*grpc.Server)) (remo
 	return remote.Locator{Target: net.BrokerTarget(id), LegacyHandle: id}, res, nil
 }
 
-func (t brokerTransport) Dial(name string, resolve func(context.Context) (remote.Locator, error)) remote.ClientConn {
+// Dial defers resolution to first use, and re-resolves whenever the brokered
+// connection has to be rebuilt, so the ctx it is handed here goes unused.
+func (t brokerTransport) Dial(_ context.Context, name string, resolve func(context.Context) (remote.Locator, error)) (remote.ClientConn, error) {
 	return t.brokerExt.NewClientConn(name, func(ctx context.Context) (uint32, net.Resources, error) {
 		loc, err := resolve(ctx)
 		if err != nil {
@@ -43,7 +45,7 @@ func (t brokerTransport) Dial(name string, resolve func(context.Context) (remote
 			return 0, nil, err
 		}
 		return id, nil, nil
-	})
+	}), nil
 }
 
 func brokerConnID(loc remote.Locator) (uint32, error) {

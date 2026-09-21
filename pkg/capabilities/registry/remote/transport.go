@@ -20,5 +20,8 @@ type Locator struct {
 
 type Transport interface {
 	Publish(name string, register func(*grpc.Server)) (Locator, io.Closer, error)
-	Dial(name string, resolve func(context.Context) (Locator, error)) ClientConn
+	// Dial returns a connection to the capability named by the Locator resolve
+	// reports. A transport may resolve during the call or defer it to first use, so
+	// resolve takes its own context and may be called more than once.
+	Dial(ctx context.Context, name string, resolve func(context.Context) (Locator, error)) (ClientConn, error)
 }

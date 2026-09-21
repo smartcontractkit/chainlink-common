@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -103,80 +102,19 @@ func (t *ListenerTransport) Publish(name string, register func(*grpc.Server)) (L
 	}), nil
 }
 
-func (t *ListenerTransport) Dial(name string, resolve func(context.Context) (Locator, error)) ClientConn {
-	return &lazyConn{name: name, resolve: resolve, connect: t.connect}
-}
-
-// lazyConn resolves its target on first use, so the RPC that discovers a
-// capability's address is not made until someone actually calls the capability.
-// That matches what callers of [Dialer.Dial] already expect from the broker-backed
-// transport, and lets a capability be resolved after the registry client is built.
-type lazyConn struct {
-	name    string
-	resolve func(context.Context) (Locator, error)
-	connect func(target string) (*grpc.ClientConn, error)
-
-	mu sync.Mutex
-	cc *grpc.ClientConn
-}
-
-var _ ClientConn = (*lazyConn)(nil)
-
-func (c *lazyConn) conn(ctx context.Context) (*grpc.ClientConn, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cc != nil {
-		return c.cc, nil
-	}
-	loc, err := c.resolve(ctx)
+func (t *ListenerTransport) Dial(ctx context.Context, name string, resolve func(context.Context) (Locator, error)) (ClientConn, error) {
+	loc, err := resolve(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if loc.Target == "" {
-		return nil, fmt.Errorf("cannot reach %s: %w", c.name, ErrNoLegacyHandle)
+		return nil, fmt.Errorf("cannot reach %s: %w", name, ErrNoLegacyHandle)
 	}
-	cc, err := c.connect(loc.Target)
+	cc, err := t.connect(loc.Target)
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to %s at %q: %w", c.name, loc.Target, err)
+		return nil, fmt.Errorf("failed to connect to %s at %q: %w", name, loc.Target, err)
 	}
-	c.cc = cc
 	return cc, nil
-}
-
-func (c *lazyConn) Invoke(ctx context.Context, method string, args, reply any, opts ...grpc.CallOption) error {
-	cc, err := c.conn(ctx)
-	if err != nil {
-		return err
-	}
-	return cc.Invoke(ctx, method, args, reply, opts...)
-}
-
-func (c *lazyConn) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	cc, err := c.conn(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return cc.NewStream(ctx, desc, method, opts...)
-}
-
-func (c *lazyConn) GetState() connectivity.State {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cc == nil {
-		return connectivity.Idle
-	}
-	return c.cc.GetState()
-}
-
-func (c *lazyConn) Close() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.cc == nil {
-		return nil
-	}
-	cc := c.cc
-	c.cc = nil
-	return cc.Close()
 }
 
 // closeFunc adapts a func() error to io.Closer.

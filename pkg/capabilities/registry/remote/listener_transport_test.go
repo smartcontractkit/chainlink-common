@@ -228,10 +228,9 @@ func TestListenerTransport_rejectsLegacyHandle(t *testing.T) {
 		Listen: newBufnet().listen,
 	})
 	require.NoError(t, err)
-	conn := transport.Dial("Capability", func(context.Context) (Locator, error) {
+	_, err = transport.Dial(t.Context(), "Capability", func(context.Context) (Locator, error) {
 		return Locator{LegacyHandle: 7}, nil
 	})
-	err = conn.Invoke(t.Context(), "/whatever", nil, nil)
 	require.ErrorIs(t, err, ErrNoLegacyHandle)
 }
 

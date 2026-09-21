@@ -14,7 +14,6 @@ import (
 type ModuleBase interface {
 	Start()
 	Close()
-	IsLegacyDAG() bool
 }
 
 type Module interface {

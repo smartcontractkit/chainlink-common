@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790010048556,
+  "lastUpdate": 1790013264233,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61080,6 +61080,66 @@ window.BENCHMARK_DATA = {
             "value": 135819,
             "unit": "ns/op",
             "extra": "8445 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "538f4bf0cb6f9b6109493b26601c007bdd5c00b6",
+          "message": "[CRE] Remove legacy DAG paths from workflows/wasm/host (#2382)\n\nStrips the v1 legacy DAG machinery from the wasm host ahead of the DAG\nWASM removal (CRE-5836): ModuleV1/Run, linkLegacyDAG, IsLegacyDAG,\nGetWorkflowSpec, the legacy fetch/emit/log env imports and converters,\nthe determinism random_get shim, the legacy poll_oneoff stub and fake\nclock, and the Fetch/MaxFetchRequests/Labeler/Determinism module config\nfields.\n\nIsLegacyDAG is also dropped from host.ModuleBase.\n\nThe sleep/oom test drivers are ported to v2 guests (rawsdk import) and\ndriven via Execute, the two brotli/size tests are kept, and the 13\nlegacy guest test modules plus the dead test/requirements fixtures,\nmocks/module_v1 and its .mockery.yaml entry are deleted.",
+          "timestamp": "2026-09-21T17:45:56Z",
+          "tree_id": "50a43490aaf0055fae3051900536945dcfbb66b7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/538f4bf0cb6f9b6109493b26601c007bdd5c00b6"
+        },
+        "date": 1790013261297,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 365,
+            "unit": "ns/op",
+            "extra": "2919523 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 24931,
+            "unit": "ns/op",
+            "extra": "46903 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 230.3,
+            "unit": "ns/op",
+            "extra": "5172475 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 24053,
+            "unit": "ns/op",
+            "extra": "49598 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 14275,
+            "unit": "ns/op",
+            "extra": "84999 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 44462,
+            "unit": "ns/op",
+            "extra": "27074 times\n4 procs"
           }
         ]
       }

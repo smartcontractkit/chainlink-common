@@ -144,13 +144,17 @@ func TestDefault_stoppedResendingDropsHighCardinalityKeys(t *testing.T) {
 func TestDefault_viewCount(t *testing.T) {
 	t.Parallel()
 	// PerWorkflow histogram bucket views (4) + base-trigger allow-lists (2) +
-	// otelgrpc client-duration allow-list (1).
+	// otelgrpc client-duration deny-list (1).
 	assert.Len(t, metricviews.Default(nil), 7)
 	// Same fixed views, plus the global "*" deny-list catch-all.
 	assert.Len(t, metricviews.Default([]string{"event_id"}), 8)
 }
 
-func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
+// TestDefault_rpcClientCallDurationDropsPluginServerAddress asserts the view
+// drops server.address only for go-plugin socket paths, keeping stable
+// addresses, while server.port is always dropped (the per-attribute filter
+// hook cannot couple it to the address value).
+func TestDefault_rpcClientCallDurationDropsPluginServerAddress(t *testing.T) {
 	t.Parallel()
 
 	reader := sdkmetric.NewManualReader()
@@ -171,7 +175,7 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 			attribute.String("rpc.response.status_code", "OK"),
 			attribute.String("server.address", "/tmp/plugin1519119202"),
 			attribute.Int("server.port", 50051),
-			// Deny-list semantics: attributes not blacklisted must survive.
+			// Deny-list semantics: attributes not filtered must survive.
 			attribute.String("rpc.some.future.attribute", "v"),
 		),
 	)
@@ -187,13 +191,16 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 	assert.NotContains(t, keys, attribute.Key("server.address"))
 	assert.NotContains(t, keys, attribute.Key("server.port"))
 
-	// The glob matcher covers future variants of the instrument name too.
+	// The glob matcher covers future variants of the instrument name too,
+	// and a stable (non-plugin-socket) server.address is kept while
+	// server.port is still dropped.
 	variant, err := meter.Float64Histogram("rpc.client.call.duration.custom")
 	require.NoError(t, err)
 	variant.Record(context.Background(), 0.1,
 		metric.WithAttributes(
-			attribute.String("server.address", "/tmp/plugin1519119202"),
-			attribute.String("rpc.method", "loop.Relayer/LatestHead"),
+			attribute.String("server.address", "104.20.20.252"),
+			attribute.Int("server.port", 443),
+			attribute.String("rpc.method", "chipingress.pb.ChipIngress/PublishBatch"),
 		),
 	)
 
@@ -202,7 +209,8 @@ func TestDefault_rpcClientCallDurationDropsServerAddress(t *testing.T) {
 
 	variantKeys := attributeKeysFromHistogramNamed(t, rm, "rpc.client.call.duration.custom")
 	assert.Contains(t, variantKeys, attribute.Key("rpc.method"))
-	assert.NotContains(t, variantKeys, attribute.Key("server.address"))
+	assert.Contains(t, variantKeys, attribute.Key("server.address"))
+	assert.NotContains(t, variantKeys, attribute.Key("server.port"))
 }
 
 // TestDefault_rpcClientCallDurationComposesGlobalDenylist guards against the

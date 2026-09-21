@@ -136,10 +136,8 @@ func TestCapabilitiesRegistry(t *testing.T) {
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},
@@ -414,10 +412,8 @@ func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testin
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},
@@ -471,10 +467,8 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},
@@ -521,10 +515,8 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},
@@ -594,10 +586,8 @@ func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},
@@ -691,10 +681,8 @@ func TestCapabilitiesRegistry_ConfigForCapability_DefaultConfig(t *testing.T) {
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},
@@ -744,10 +732,8 @@ func TestCapabilitiesRegistry_ConfigForCapability_NilDefaultConfig(t *testing.T)
 			pluginName: &testRegistryPlugin{
 				impl: reg,
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: logger,
-					},
+					StopCh: stopCh,
+					Logger: logger,
 				},
 			},
 		},

@@ -123,12 +123,12 @@ func TestRequirementSelectingModule_Close(t *testing.T) {
 			ModuleAndHandler{Module: main},
 			[]ModuleAndHandler{
 				{
-					Module:              requirementsSatisfier,
-					RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+					Module: requirementsSatisfier,
+					Tee:    func(context.Context, *sdk.Tee) bool { return true },
 				},
 				{
-					Module:              nonMatcher,
-					RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+					Module: nonMatcher,
+					Tee:    func(context.Context, *sdk.Tee) bool { return false },
 				},
 			},
 		)
@@ -180,7 +180,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return nil, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -205,7 +205,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return want, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -228,8 +228,8 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 			},
 		}}
 		add := ModuleAndHandler{
-			Module:              &stubModule{},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+			Module: &stubModule{},
+			Tee:    func(context.Context, *sdk.Tee) bool { return false },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -250,8 +250,8 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 			},
 		}}
 		add0 := ModuleAndHandler{
-			Module:              &stubModule{},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+			Module: &stubModule{},
+			Tee:    func(context.Context, *sdk.Tee) bool { return false },
 		}
 		add1 := ModuleAndHandler{
 			Module: &stubModule{
@@ -259,7 +259,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return want, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add0, add1})
@@ -283,8 +283,8 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 		}}
 		requirementsSatisfier := &stubModule{}
 		add := ModuleAndHandler{
-			Module:              requirementsSatisfier,
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Module: requirementsSatisfier,
+			Tee:    func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -333,7 +333,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return subscribeResult(subWithReqs(teeReqs)), nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 		add := ModuleAndHandler{
 			Module: &stubModule{
@@ -342,7 +342,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return nil, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -368,7 +368,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 					return subscribeResult(subWithReqs(teeReqs)), nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return false }},
+			Tee: func(context.Context, *sdk.Tee) bool { return false },
 		}
 
 		var calls []string
@@ -388,8 +388,8 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 			},
 		}
 		add := ModuleAndHandler{
-			Module:              enforcingAdd,
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Module: enforcingAdd,
+			Tee:    func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -428,7 +428,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -466,7 +466,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -506,7 +506,7 @@ func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 					return wantAdditional, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -582,7 +582,7 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -620,7 +620,7 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 					return nil, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -651,7 +651,7 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 					return nil, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -716,7 +716,7 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 					return &sdk.ExecutionResult{}, nil
 				},
 			},
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -763,8 +763,8 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 			},
 		}
 		add := ModuleAndHandler{
-			Module:              awareAdd,
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Module: awareAdd,
+			Tee:    func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
@@ -812,8 +812,8 @@ func TestRequirementSelectingModule_PreHook(t *testing.T) {
 			setRequirementsFn: func(string, *sdk.Requirements) { calls = append(calls, "setRequirements") },
 		}
 		add := ModuleAndHandler{
-			Module:              bothAware,
-			RequirementsHandler: RequirementsHandler{Tee: func(context.Context, *sdk.Tee) bool { return true }},
+			Module: bothAware,
+			Tee:    func(context.Context, *sdk.Tee) bool { return true },
 		}
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})

@@ -80,7 +80,7 @@ func TestCommitLOOP(t *testing.T) {
 	// launch the commit loop via the main program
 	t.Parallel()
 	stopCh := newStopCh(t)
-	commit := loop.CommitLoop{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	commit := loop.CommitLoop{Logger: logger.Test(t), StopCh: stopCh}
 	cc := commit.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.CCIPCommitLOOPName, false, 0)
 	c := plugin.NewClient(cc)

@@ -91,7 +91,7 @@ func TestSleeperTask_WakeupEnqueuesMaxTwice(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 
-	worker := &controllableWorker{chanWorker: chanWorker{ch: make(chan struct{}, 1)}, awaitWorkStarted: make(chan struct{}), allowResumeWork: make(chan struct{})}
+	worker := &controllableWorker{ch: make(chan struct{}, 1), awaitWorkStarted: make(chan struct{}), allowResumeWork: make(chan struct{})}
 	sleeper := utils.NewSleeperTask(worker)
 
 	sleeper.WakeUp()
@@ -126,7 +126,7 @@ func TestSleeperTask_WakeupEnqueuesMaxTwice(t *testing.T) {
 func TestSleeperTask_StopWaitsUntilWorkFinishes(t *testing.T) {
 	t.Parallel()
 
-	worker := &controllableWorker{chanWorker: chanWorker{ch: make(chan struct{}, 1)}, awaitWorkStarted: make(chan struct{}), allowResumeWork: make(chan struct{})}
+	worker := &controllableWorker{ch: make(chan struct{}, 1), awaitWorkStarted: make(chan struct{}), allowResumeWork: make(chan struct{})}
 	sleeper := utils.NewSleeperTask(worker)
 
 	sleeper.WakeUp()

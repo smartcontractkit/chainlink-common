@@ -183,12 +183,10 @@ func TestDecodeCommitReportInfo(t *testing.T) {
 		validReport := CommitReportInfo{
 			RemoteF:     1,
 			MerkleRoots: []MerkleRootChain{},
-			PriceUpdates: PriceUpdates{
-				TokenPriceUpdates: []TokenPrice{
-					{
-						TokenID: "0x1234",
-						Price:   NewBigInt(big.NewInt(123)),
-					},
+			TokenPriceUpdates: []TokenPrice{
+				{
+					TokenID: "0x1234",
+					Price:   NewBigInt(big.NewInt(123)),
 				},
 			},
 		}

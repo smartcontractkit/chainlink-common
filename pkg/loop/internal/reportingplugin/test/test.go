@@ -39,12 +39,10 @@ var (
 
 	report        = libocr.Report{42: 101}
 	reportContext = libocr.ReportContext{
-		ReportTimestamp: libocr.ReportTimestamp{
-			ConfigDigest: configDigest,
-			Epoch:        epoch,
-			Round:        round,
-		},
-		ExtraHash: [32]byte{1: 2, 3: 4, 5: 6},
+		ConfigDigest: configDigest,
+		Epoch:        epoch,
+		Round:        round,
+		ExtraHash:    [32]byte{1: 2, 3: 4, 5: 6},
 	}
 
 	reportingPluginConfig = libocr.ReportingPluginConfig{

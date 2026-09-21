@@ -41,12 +41,10 @@ func (m *NodeJWTGenerator) CreateJWTForRequest(req any) (string, error) {
 	claims := types.NodeJWTClaims{
 		PublicKey: hex.EncodeToString(m.csaPubKey), // PublicKey: Node's public key to proof JWT's signature.
 		Digest:    digest,                          // Digest: Request integrity hash
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hex.EncodeToString(m.csaPubKey), // Issuer: Node's CSA Public Key  // TODO: change to DON ID if node is aware of its DON ID
-			Subject:   hex.EncodeToString(m.csaPubKey), // Subject: Node's CSA Public Key for on-chain verification of node-DON relationship.
-			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
-			IssuedAt:  jwt.NewNumericDate(now),
-		},
+		Issuer:    hex.EncodeToString(m.csaPubKey), // Issuer: Node's CSA Public Key  // TODO: change to DON ID if node is aware of its DON ID
+		Subject:   hex.EncodeToString(m.csaPubKey), // Subject: Node's CSA Public Key for on-chain verification of node-DON relationship.
+		ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
+		IssuedAt:  jwt.NewNumericDate(now),
 	}
 
 	// Create token with claims using jwt.SigningMethodEdDSA(built-in EdDSA signing method)

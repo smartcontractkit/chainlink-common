@@ -65,74 +65,66 @@ func CommitStoreReader(lggr logger.Logger) staticCommitStoreReader {
 		},
 		getAcceptedCommitReportsGteTimestampResponse: []ccip.CommitStoreReportWithTxMeta{
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 10000,
-					BlockNumber:             1,
-					TxHash:                  "first accepted hash",
-					LogIndex:                1,
+				BlockTimestampUnixMilli: 10000,
+				BlockNumber:             1,
+				TxHash:                  "first accepted hash",
+				LogIndex:                1,
+				TokenPrices: []ccip.TokenPrice{
+					{
+						Token: ccip.Address("first accepted token address1"),
+						Value: big.NewInt(7),
+					},
+					{
+						Token: ccip.Address("first accepted token address2"),
+						Value: big.NewInt(8),
+					},
 				},
-				CommitStoreReport: ccip.CommitStoreReport{
-					TokenPrices: []ccip.TokenPrice{
-						{
-							Token: ccip.Address("first accepted token address1"),
-							Value: big.NewInt(7),
-						},
-						{
-							Token: ccip.Address("first accepted token address2"),
-							Value: big.NewInt(8),
-						},
+				GasPrices: []ccip.GasPrice{
+					{
+						DestChainSelector: 7,
+						Value:             big.NewInt(7),
 					},
-					GasPrices: []ccip.GasPrice{
-						{
-							DestChainSelector: 7,
-							Value:             big.NewInt(7),
-						},
-						{
-							DestChainSelector: 8,
-							Value:             big.NewInt(8),
-						},
+					{
+						DestChainSelector: 8,
+						Value:             big.NewInt(8),
 					},
-					Interval: ccip.CommitStoreInterval{
-						Min: 700,
-						Max: 799,
-					},
-					MerkleRoot: [32]byte{1: 11, 2: 13},
 				},
+				Interval: ccip.CommitStoreInterval{
+					Min: 700,
+					Max: 799,
+				},
+				MerkleRoot: [32]byte{1: 11, 2: 13},
 			},
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 20000,
-					BlockNumber:             2,
-					TxHash:                  "second accepted hash 2",
-					LogIndex:                1,
+				BlockTimestampUnixMilli: 20000,
+				BlockNumber:             2,
+				TxHash:                  "second accepted hash 2",
+				LogIndex:                1,
+				TokenPrices: []ccip.TokenPrice{
+					{
+						Token: ccip.Address("seconde token address1"),
+						Value: big.NewInt(7),
+					},
+					{
+						Token: ccip.Address("second token address2"),
+						Value: big.NewInt(8),
+					},
 				},
-				CommitStoreReport: ccip.CommitStoreReport{
-					TokenPrices: []ccip.TokenPrice{
-						{
-							Token: ccip.Address("seconde token address1"),
-							Value: big.NewInt(7),
-						},
-						{
-							Token: ccip.Address("second token address2"),
-							Value: big.NewInt(8),
-						},
+				GasPrices: []ccip.GasPrice{
+					{
+						DestChainSelector: 17,
+						Value:             big.NewInt(17),
 					},
-					GasPrices: []ccip.GasPrice{
-						{
-							DestChainSelector: 17,
-							Value:             big.NewInt(17),
-						},
-						{
-							DestChainSelector: 19,
-							Value:             big.NewInt(19),
-						},
+					{
+						DestChainSelector: 19,
+						Value:             big.NewInt(19),
 					},
-					Interval: ccip.CommitStoreInterval{
-						Min: 900,
-						Max: 999,
-					},
-					MerkleRoot: [32]byte{3: 23, 5: 27},
 				},
+				Interval: ccip.CommitStoreInterval{
+					Min: 900,
+					Max: 999,
+				},
+				MerkleRoot: [32]byte{3: 23, 5: 27},
 			},
 		},
 

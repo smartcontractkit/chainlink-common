@@ -75,7 +75,7 @@ func TestExecLOOP(t *testing.T) {
 	// launch the exec loop via the main program
 	t.Parallel()
 	stopCh := newStopCh(t)
-	exec := loop.ExecutionLoop{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	exec := loop.ExecutionLoop{Logger: logger.Test(t), StopCh: stopCh}
 	cc := exec.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.CCIPExecutionLOOPName, false, 0)
 	c := plugin.NewClient(cc)

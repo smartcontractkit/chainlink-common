@@ -22,14 +22,12 @@ var (
 
 	// ContractTransmitter is a static implementation of the ContractTransmitterTester interface for testing
 	ContractTransmitter = staticOCR3ContractTransmitter{
-		ocr3ContractTransmitterTestConfig: ocr3ContractTransmitterTestConfig{
-			ConfigDigest: configDigest,
-			SeqNr:        3,
-			Report:       libocr.Report{41: 131},
-			Info:         []byte("some-info"),
-			Sigs:         sigs,
-			Account:      libocr.Account("some-account"),
-		},
+		ConfigDigest: configDigest,
+		SeqNr:        3,
+		Report:       libocr.Report{41: 131},
+		Info:         []byte("some-info"),
+		Sigs:         sigs,
+		Account:      libocr.Account("some-account"),
 	}
 )
 

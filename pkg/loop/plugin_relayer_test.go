@@ -22,9 +22,8 @@ func TestPluginRelayer(t *testing.T) {
 	test.PluginTest(t, loop.PluginRelayerName,
 		&loop.GRPCPluginRelayer{
 			PluginServer: relayertest.NewPluginRelayer(lggr, false),
-			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
-				StopCh: stopCh}},
+			Logger:       logger.Test(t),
+			StopCh:       stopCh},
 		relayertest.RunPlugin)
 }
 
@@ -69,7 +68,7 @@ func FuzzRelayer(f *testing.F) {
 }
 
 func newPluginRelayerExec(t *testing.T, staticChecks bool, stopCh <-chan struct{}) loop.PluginRelayer {
-	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	relayer := loop.GRPCPluginRelayer{Logger: logger.Test(t), StopCh: stopCh}
 	cc := relayer.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName, staticChecks, 0)
 	c := plugin.NewClient(cc)
@@ -84,7 +83,7 @@ func newPluginRelayerExec(t *testing.T, staticChecks bool, stopCh <-chan struct{
 }
 
 func newPluginRelayerCommit(t *testing.T, staticChecks bool, stopCh <-chan struct{}) loop.PluginRelayer {
-	relayer := loop.GRPCPluginRelayer{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	relayer := loop.GRPCPluginRelayer{Logger: logger.Test(t), StopCh: stopCh}
 	cc := relayer.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.PluginRelayerName, staticChecks, 0)
 	c := plugin.NewClient(cc)

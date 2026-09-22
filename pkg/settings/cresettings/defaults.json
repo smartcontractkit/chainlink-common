@@ -125,7 +125,7 @@
 		"UserMetricEnabled": "false",
 		"UserMetricPayloadLimit": "4kb",
 		"UserMetricNameLengthLimit": "128",
-		"UserMetricLabelsPerMetric": "10",
+		"UserMetricLabelsPerMetric": "20",
 		"UserMetricLabelValueLength": "256",
 		"ChainAllowed": {
 			"Default": "false",

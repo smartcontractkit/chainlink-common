@@ -56,7 +56,7 @@ var (
 
 	defaultMaxUserMetricPayloadBytes     = uint32(4096) // 4 KB
 	defaultMaxUserMetricNameLength       = uint32(128)
-	defaultMaxUserMetricLabelsPerMetric  = uint32(10)
+	defaultMaxUserMetricLabelsPerMetric  = uint32(20)
 	defaultMaxUserMetricLabelValueLength = uint32(256)
 )
 

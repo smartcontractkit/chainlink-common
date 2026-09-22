@@ -587,9 +587,10 @@ func LineHue(base *PanelOptions) *TimeSeriesPanelOptions {
 // built-in "Line scheme" panel style preset: a continuous color scheme
 // driving both the line/fill color and the fill's gradient.
 func LineScheme(base *PanelOptions) *TimeSeriesPanelOptions {
-	base.ColorScheme = dashboard.FieldColorModeIdContinuousGrYlRd
+	b := *base
+	b.ColorScheme = dashboard.FieldColorModeIdContinuousGrYlRd
 	return &TimeSeriesPanelOptions{
-		PanelOptions: base,
+		PanelOptions: &b,
 		DrawStyle:    common.GraphDrawStyleLine,
 		LineWidth:    Pointer[float64](2),
 		FillOpacity:  17,
@@ -605,9 +606,10 @@ func LineScheme(base *PanelOptions) *TimeSeriesPanelOptions {
 // fill. Callers must still set a Threshold on the base PanelOptions — the
 // preset only owns the color/gradient mode, not the threshold steps.
 func ThresholdScheme(base *PanelOptions) *TimeSeriesPanelOptions {
-	base.ColorScheme = dashboard.FieldColorModeIdThresholds
+	b := *base
+	b.ColorScheme = dashboard.FieldColorModeIdThresholds
 	return &TimeSeriesPanelOptions{
-		PanelOptions: base,
+		PanelOptions: &b,
 		DrawStyle:    common.GraphDrawStyleLine,
 		FillOpacity:  27,
 		GradientMode: common.GraphGradientModeScheme,

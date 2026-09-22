@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790080952331,
+  "lastUpdate": 1790085755583,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61200,6 +61200,66 @@ window.BENCHMARK_DATA = {
             "value": 137715,
             "unit": "ns/op",
             "extra": "8248 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cawthornegd@gmail.com",
+            "name": "cawthorne",
+            "username": "cawthorne"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "09bd6e5e3a92b8dc73a42f0d8beb9494491bf197",
+          "message": "cresettings: raise UserMetricLabelsPerMetric default to 20 (#2406)\n\n* cresettings: raise UserMetricLabelsPerMetric default to 15\n\nThe data-feeds-streams-transmitter workflow now stamps every user metric\nwith a workflow_version label, putting its widest metric (feed_config) at\n10 labels — exactly the previous default cap. Raise the default to 15 to\nleave headroom, and move the wasm host fallback default with it.\n\n* cresettings: raise UserMetricLabelsPerMetric default to 20\n\nFollow-up on the 15 bump: use 20 for more headroom over the workflow's\nwidest metric (feed_config at 10 labels with workflow_version).",
+          "timestamp": "2026-09-22T13:53:41Z",
+          "tree_id": "6b997aa7718044dd16c8913f6e7027e1b05b3243",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/09bd6e5e3a92b8dc73a42f0d8beb9494491bf197"
+        },
+        "date": 1790085751684,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 635.9,
+            "unit": "ns/op",
+            "extra": "1862347 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 67812,
+            "unit": "ns/op",
+            "extra": "17199 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 312.7,
+            "unit": "ns/op",
+            "extra": "3741854 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 63925,
+            "unit": "ns/op",
+            "extra": "18375 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 23197,
+            "unit": "ns/op",
+            "extra": "51451 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 107914,
+            "unit": "ns/op",
+            "extra": "9915 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790013264233,
+  "lastUpdate": 1790080952331,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61140,6 +61140,66 @@ window.BENCHMARK_DATA = {
             "value": 44462,
             "unit": "ns/op",
             "extra": "27074 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yikjiun.lee@smartcontract.com",
+            "name": "Lee Yik Jiun",
+            "username": "leeyikjiun"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "304634fe2be213f8632de587fab56561ba2442d1",
+          "message": "observability-lib/grafana: add TimeSeries panel-style presets (#2407)\n\n* observability-lib/grafana: add TimeSeries panel-style presets\n\nLinesWithPoints, StackedLines, Stacked100Percent, LineFill, LineHue,\nLineScheme, and ThresholdScheme match Grafana's built-in \"Panel styles\"\nquick-presets. Also adds the underlying TimeSeriesPanelOptions fields\neach preset needs: ShowPoints, SpanNulls, PointSize, GradientMode,\nLineInterpolation.\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\n\n* observability-lib/grafana: stop LineScheme/ThresholdScheme mutating caller's base\n\nBoth wrote ColorScheme onto the caller-owned *PanelOptions pointer and\nkept that same pointer, so reusing a base across two panels made the\nfirst panel's color mode silently change when the second overwrote it.\nCopy base before setting ColorScheme.\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Sonnet 5 <noreply@anthropic.com>",
+          "timestamp": "2026-09-22T12:33:08Z",
+          "tree_id": "f35841b9609c2e1c8b854275d1b0be54e3531a7c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/304634fe2be213f8632de587fab56561ba2442d1"
+        },
+        "date": 1790080947475,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 858.7,
+            "unit": "ns/op",
+            "extra": "1423506 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 116382,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.5,
+            "unit": "ns/op",
+            "extra": "2939169 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90829,
+            "unit": "ns/op",
+            "extra": "13182 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25666,
+            "unit": "ns/op",
+            "extra": "46820 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 137715,
+            "unit": "ns/op",
+            "extra": "8248 times\n4 procs"
           }
         ]
       }

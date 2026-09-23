@@ -207,3 +207,57 @@ func TestPgDurableEventStore_ImplementsExpiredPurger(t *testing.T) {
 	_, ok := s.(ExpiredPurger)
 	assert.True(t, ok)
 }
+
+// proto.Unmarshal accepts arbitrary bytes as an empty message, so a payload that
+// decodes but carries no source/type must still be attributed as unknown, not
+// as an empty label (review finding on #2411).
+func TestDurableEmitter_ExpiryPurgeFieldlessPayloadIsUnknown(t *testing.T) {
+	fieldless, err := proto.Marshal(&chipingress.CloudEventPb{Id: "no-source-no-type"})
+	require.NoError(t, err)
+	onlySource, err := proto.Marshal(&chipingress.CloudEventPb{Id: "x", Source: "platform"})
+	require.NoError(t, err)
+
+	store := NewMemDurableEventStore()
+	insertAged(t, store, fieldless, time.Hour)
+	insertAged(t, store, onlySource, time.Hour)
+	insertAged(t, store, []byte{}, time.Hour) // empty payload decodes as an empty message too
+
+	cfg := DefaultConfig()
+	cfg.ExpiryInterval = 20 * time.Millisecond
+	cfg.EventTTL = time.Minute
+	em, collect := newPurgeTestEmitter(t, store, cfg)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	rm := waitForCounter(t, ctx, collect, expiredPurgedMetric, nil, 3)
+	assert.Equal(t, int64(2), counterSumByAttrs(t, rm, expiredPurgedMetric, map[string]string{"domain": purgeUnknown, "subject": purgeUnknown}))
+	assert.Equal(t, int64(1), counterSumByAttrs(t, rm, expiredPurgedMetric, map[string]string{"domain": "platform", "subject": purgeUnknown}),
+		"a present source is kept, the missing type is reported as unknown")
+	assert.Equal(t, int64(0), counterSumByAttrs(t, rm, expiredPurgedMetric, map[string]string{"domain": ""}), "no empty-string labels")
+	assert.Equal(t, int64(0), counterSumByAttrs(t, rm, expiredPurgedMetric, map[string]string{"subject": ""}), "no empty-string labels")
+}
+
+// A shutdown mid-drain stops deleting but must still record the batches that
+// were already deleted; those rows are gone from the store regardless (review
+// finding on #2411).
+func TestDurableEmitter_ExpiryPurgeRecordsPartialDrainOnShutdown(t *testing.T) {
+	store := NewMemDurableEventStore()
+	const n = 7
+	for range n {
+		insertAged(t, store, makeCloudEventPayloadFrom(t, "platform", "workflow.execution", "x"), time.Hour)
+	}
+
+	cfg := DefaultConfig()
+	cfg.EventTTL = time.Minute
+	cfg.ExpiryBatchSize = 3
+	em, collect := newPurgeTestEmitter(t, store, cfg)
+	// Not started: drive one pass by hand with the stop signal already raised,
+	// so the loop deletes exactly one batch and then observes shutdown.
+	close(em.stopCh)
+	em.purgeExpired(t.Context())
+
+	assert.Equal(t, n-3, store.Len(), "one batch deleted before shutdown was observed")
+	rm := collect(t.Context())
+	assert.Equal(t, int64(3), counterSumByAttrs(t, rm, expiredPurgedMetric, map[string]string{"domain": "platform", "subject": "workflow.execution"}),
+		"the deleted batch is counted even though the drain was interrupted")
+}

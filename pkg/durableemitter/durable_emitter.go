@@ -780,6 +780,26 @@ const purgeUnknown = "unknown"
 // entities (single digits by a few dozen).
 type purgeKey struct{ domain, subject string }
 
+// purgeKeyOf decodes a stored payload into its attribution. ok is false when the
+// payload is not a decodable CloudEvent or lacks a source or type (proto.Unmarshal
+// accepts arbitrary bytes as an empty message), in which case the missing parts
+// are reported as unknown rather than as an empty label.
+func purgeKeyOf(payload []byte) (purgeKey, bool) {
+	ev := new(chipingress.CloudEventPb)
+	if err := proto.Unmarshal(payload, ev); err != nil {
+		return purgeKey{purgeUnknown, purgeUnknown}, false
+	}
+	k := purgeKey{domain: ev.GetSource(), subject: ev.GetType()}
+	ok := true
+	if k.domain == "" {
+		k.domain, ok = purgeUnknown, false
+	}
+	if k.subject == "" {
+		k.subject, ok = purgeUnknown, false
+	}
+	return k, ok
+}
+
 func (d *DurableEmitter) expiryLoop() {
 	ticker := time.NewTicker(d.cfg.ExpiryInterval)
 	defer ticker.Stop()
@@ -834,6 +854,7 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 	}
 	counts := make(map[purgeKey]int64)
 	var total, undecodable int64
+drain:
 	for {
 		payloads, err := purger.DeleteExpiredBatch(ctx, d.cfg.EventTTL, batch)
 		if err != nil {
@@ -841,11 +862,8 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 			break
 		}
 		for _, p := range payloads {
-			k := purgeKey{purgeUnknown, purgeUnknown}
-			ev := new(chipingress.CloudEventPb)
-			if err := proto.Unmarshal(p, ev); err == nil {
-				k = purgeKey{domain: ev.GetSource(), subject: ev.GetType()}
-			} else {
+			k, ok := purgeKeyOf(p)
+			if !ok {
 				undecodable++
 			}
 			counts[k]++
@@ -854,9 +872,12 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 		if len(payloads) < batch {
 			break
 		}
+		// Stop draining on shutdown, but fall through to record what this pass
+		// already deleted: those rows are gone from the store either way.
 		select {
 		case <-d.stopCh:
-			return
+			d.eng.Infow("expiry drain interrupted by shutdown", "purged_so_far", total)
+			break drain
 		default:
 		}
 	}

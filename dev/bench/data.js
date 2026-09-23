@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790085755583,
+  "lastUpdate": 1790127857154,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61260,6 +61260,66 @@ window.BENCHMARK_DATA = {
             "value": 107914,
             "unit": "ns/op",
             "extra": "9915 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b69abd283d40190b1bf1095f8fd7b502b78a3a52",
+          "message": "beholder/metricviews: drop server.address from rpc.client.call.duration (#2403)\n\n* beholder/metricviews: drop server.address from rpc.client.call.duration\n\nThe otelgrpc client duration histogram's server.address attribute carries\nper-plugin unix socket paths (/tmp/pluginN) that churn on every plugin\nrestart — ~8.9k live / ~13k all-time distinct values across cl-ccip nodes,\ndriving ~238k Prometheus series for node_id=~\"cl-ccip.*\" alone.\n\nAdd a fixed allow-list view for rpc.client.call.duration keeping only\nrpc.method, rpc.system.name, rpc.response.status_code. Registered before\nthe global \"*\" deny view per the package precedence rule.\n\n* beholder/metricviews: use deny-list for rpc.client.call.duration view\n\nReplace the rpcClientCallAllow allow-list with a deny-list of the two\noffensive attributes (server.address, server.port). Blacklist semantics\nkeep any attributes otelgrpc adds in future versions instead of silently\ndiscarding them.\n\n* beholder/metricviews: match all rpc client call duration instruments\n\nWiden the view matcher to the rpc.client.call.duration* glob so the\nserver.address/server.port deny-list also covers future instrument\nvariants (e.g. unit renames), not just the exact otelgrpc v0.70 name.\n\n* beholder/metricviews: compose global denylist into rpc client view\n\nThe rpc.client.call.duration view wins stream identity over the global\n\"*\" deny view, so it must carry the configured deny filter itself —\ncompose the configured denyKeys with the fixed server.address/server.port\nkeys instead of filtering only the fixed ones. Adds a regression test with\na non-empty global denylist.\n\n* beholder/metricviews: drop server.address only for go-plugin socket paths\n\nReview feedback: the unconditional deny dropped the stable chipingress\nCloudflare anycast IPs along with the churn. The per-attribute filter\nhook (attribute.Filter = func(KeyValue) bool) cannot rewrite values\n(/tmp/pluginN -> /tmp/plugin is not expressible), but it can inspect\nvalues, so scope the server.address drop to /tmp/plugin* socket paths\nonly. server.port stays unconditionally dropped: the per-KV hook cannot\ncouple it to the address value, and its values are meaningless alone.",
+          "timestamp": "2026-09-23T01:34:58Z",
+          "tree_id": "10b937cd8f411ff4746cfff5df6cc7d6af024c01",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b69abd283d40190b1bf1095f8fd7b502b78a3a52"
+        },
+        "date": 1790127852813,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 724.6,
+            "unit": "ns/op",
+            "extra": "1386420 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90861,
+            "unit": "ns/op",
+            "extra": "13165 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 387,
+            "unit": "ns/op",
+            "extra": "3093625 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90234,
+            "unit": "ns/op",
+            "extra": "13324 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25724,
+            "unit": "ns/op",
+            "extra": "46755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135836,
+            "unit": "ns/op",
+            "extra": "8187 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790180599138,
+  "lastUpdate": 1790182449453,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61440,6 +61440,66 @@ window.BENCHMARK_DATA = {
             "value": 136930,
             "unit": "ns/op",
             "extra": "8305 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "patricio.passarino@smartcontract.com",
+            "name": "Patricio",
+            "username": "duck-types"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "86cd57d9fdbdc73671b6ee22b8e5a5e1e81d6c2b",
+          "message": "fix(keystore): migrate tonkey to tonutils-go v1.18 API (#2410)\n\nFromPrivateKeyWithOptions moved the API client from a positional argument to\nthe WithAPI option in tonutils-go v1.18.0. Address derivation needs no API\nclient, so drop the nil argument. Bump tonutils-go v1.14.1 -> v1.18.0.",
+          "timestamp": "2026-09-23T16:43:24Z",
+          "tree_id": "f7a3cadd1dd084b3e209b2a2a201a43a352cc0d8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/86cd57d9fdbdc73671b6ee22b8e5a5e1e81d6c2b"
+        },
+        "date": 1790182444491,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 832.2,
+            "unit": "ns/op",
+            "extra": "1430728 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 97447,
+            "unit": "ns/op",
+            "extra": "12000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 388.5,
+            "unit": "ns/op",
+            "extra": "3083150 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 86410,
+            "unit": "ns/op",
+            "extra": "14034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26129,
+            "unit": "ns/op",
+            "extra": "45524 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 129031,
+            "unit": "ns/op",
+            "extra": "8900 times\n4 procs"
           }
         ]
       }

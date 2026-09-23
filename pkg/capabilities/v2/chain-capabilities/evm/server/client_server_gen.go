@@ -13,7 +13,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Avoid unused imports if there is configuration type
@@ -56,6 +58,7 @@ func NewClientServer(capability ClientCapability) *ClientServer {
 	return &ClientServer{
 		clientCapability: clientCapability{ClientCapability: capability, stopCh: stopCh},
 		stopCh:           stopCh,
+		initMetrics:      capmon.NewInitMetrics(),
 	}
 }
 
@@ -63,11 +66,15 @@ type ClientServer struct {
 	clientCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
+	initMetrics        capmon.InitMetrics
 }
 
 func (c *ClientServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
-	if err := c.ClientCapability.Initialise(ctx, dependencies); err != nil {
-		return fmt.Errorf("error when initializing capability: %w", err)
+	initErr := c.ClientCapability.Initialise(ctx, dependencies)
+	initAttrs := []attribute.KeyValue{attribute.String("capability", "evm@1.0.0"), attribute.String("ChainSelector", fmt.Sprint(c.ChainSelector()))}
+	c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
+	if initErr != nil {
+		return fmt.Errorf("error when initializing capability: %w", initErr)
 	}
 
 	c.capabilityRegistry = dependencies.CapabilityRegistry

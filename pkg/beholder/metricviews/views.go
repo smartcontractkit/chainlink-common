@@ -25,6 +25,8 @@
 package metricviews
 
 import (
+	"strings"
+
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 )
@@ -32,6 +34,12 @@ import (
 const (
 	baseTriggerInstrumentGlob  = "capabilities_base_trigger_*"
 	stoppedResendingInstrument = "capabilities_base_trigger_stopped_resending_timestamp"
+	// rpcClientCallInstrumentGlob matches every rpc client call duration
+	// instrument variant (otelgrpc's rpc.client.call.duration and any future
+	// revisions, e.g. unit renames). Their server.address label carries
+	// per-plugin unix socket paths (/tmp/pluginN) on loop RPC clients,
+	// churning on every plugin restart.
+	rpcClientCallInstrumentGlob = "rpc.client.call.duration*"
 )
 
 var (
@@ -72,6 +80,13 @@ func Default(denyKeys []string) []sdkmetric.View {
 			sdkmetric.Instrument{Name: baseTriggerInstrumentGlob},
 			sdkmetric.Stream{AttributeFilter: baseTriggerAllow},
 		),
+		sdkmetric.NewView(
+			sdkmetric.Instrument{Name: rpcClientCallInstrumentGlob},
+			// This view wins the stream identity over the global "*" deny
+			// view, so it must carry the configured deny filter itself —
+			// composed with the rpc client socket filter.
+			sdkmetric.Stream{AttributeFilter: rpcClientCallFilter(denyKeys)},
+		),
 	)
 	if denyFilter == nil {
 		return views
@@ -82,6 +97,28 @@ func Default(denyKeys []string) []sdkmetric.View {
 			sdkmetric.Stream{AttributeFilter: denyFilter},
 		),
 	)
+}
+
+// rpcClientCallFilter drops server.address only for hashicorp go-plugin unix
+// socket paths (/tmp/pluginN), which churn on every plugin restart, keeping
+// stable addresses (e.g. the chipingress Cloudflare anycast IPs). server.port
+// is always dropped: the per-attribute filter hook cannot couple it to the
+// address value, and its values are meaningless without the address. The
+// configured denylist is composed on top of both rules.
+func rpcClientCallFilter(denyKeys []string) attribute.Filter {
+	deny := denyKeysFilter(denyKeys)
+	return func(kv attribute.KeyValue) bool {
+		switch kv.Key {
+		case "server.address":
+			return !strings.HasPrefix(kv.Value.AsString(), "/tmp/plugin")
+		case "server.port":
+			return false
+		}
+		if deny != nil {
+			return deny(kv)
+		}
+		return true
+	}
 }
 
 func denyKeysFilter(denyKeys []string) attribute.Filter {

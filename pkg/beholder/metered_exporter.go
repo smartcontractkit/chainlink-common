@@ -163,7 +163,7 @@ type meteredMetricExporter struct {
 }
 
 func newMeteredMetricExporter(inner sdkmetric.Exporter) *meteredMetricExporter {
-	return &meteredMetricExporter{Exporter: inner, lazyMetered: lazyMetered{signal: signalMetrics}}
+	return &meteredMetricExporter{Exporter: inner, signal: signalMetrics}
 }
 
 func (e *meteredMetricExporter) Export(ctx context.Context, rm *metricdata.ResourceMetrics) error {
@@ -176,7 +176,7 @@ type meteredTraceExporter struct {
 }
 
 func newMeteredTraceExporter(inner sdktrace.SpanExporter) *meteredTraceExporter {
-	return &meteredTraceExporter{SpanExporter: inner, lazyMetered: lazyMetered{signal: signalTraces}}
+	return &meteredTraceExporter{SpanExporter: inner, signal: signalTraces}
 }
 
 func (e *meteredTraceExporter) ExportSpans(ctx context.Context, spans []sdktrace.ReadOnlySpan) error {

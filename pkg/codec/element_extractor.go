@@ -60,11 +60,9 @@ func (e *ElementExtractorLocation) UnmarshalJSON(b []byte) error {
 // so calling TransformToOnChain, then TransformToOffChain will not return the original value, if it has multiple elements.
 func NewElementExtractor(fields map[string]*ElementExtractorLocation) Modifier {
 	m := &elementExtractor{
-		modifierBase: modifierBase[*ElementExtractorLocation]{
-			fields:           fields,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
-		},
+		fields:           fields,
+		onToOffChainType: map[reflect.Type]reflect.Type{},
+		offToOnChainType: map[reflect.Type]reflect.Type{},
 	}
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ *ElementExtractorLocation) error {
 		field.Type = reflect.SliceOf(field.Type)

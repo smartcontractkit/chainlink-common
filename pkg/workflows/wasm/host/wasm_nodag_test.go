@@ -19,6 +19,7 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -45,7 +46,6 @@ func Test_Sleep_Timeout(t *testing.T) {
 	m, err := NewModule(t.Context(), mc, binary)
 	require.NoError(t, err)
 
-	m.v2ImportName = "test"
 	m.Start()
 	defer m.Close()
 
@@ -66,6 +66,32 @@ func Test_Sleep_Timeout(t *testing.T) {
 	require.Less(t, duration.Seconds(), 3.0, "execution should be interrupted quickly")
 }
 
+// The oom guest tries to allocate far more memory than the module memory
+// limit allows; the sandbox must terminate it instead of letting it exhaust
+// host memory.
+func Test_Sandbox_Memory(t *testing.T) {
+	t.Parallel()
+
+	binary := createTestBinary(oomBinaryCmd, oomBinaryLocation, true, t)
+
+	m, err := NewModule(t.Context(), defaultNoDAGModCfg(t), binary)
+	require.NoError(t, err)
+
+	m.Start()
+	defer m.Close()
+
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	_, err = m.Execute(t.Context(), &sdk.ExecuteRequest{
+		Request: &sdk.ExecuteRequest_Trigger{},
+	}, mockExecutionHelper)
+	assert.ErrorContains(t, err, "exit status 2")
+}
+
 func Test_Execute_CtxTimeout(t *testing.T) {
 	t.Parallel()
 	// different build location so it doesn't clash with the other test when building
@@ -78,7 +104,6 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
-		m.v2ImportName = "test"
 		m.Start()
 		defer m.Close()
 
@@ -110,7 +135,6 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
-		m.v2ImportName = "test"
 		m.Start()
 		defer m.Close()
 
@@ -140,7 +164,6 @@ func Test_Execute_CtxTimeout(t *testing.T) {
 		m, err := NewModule(t.Context(), mc, binary)
 		require.NoError(t, err)
 
-		m.v2ImportName = "test"
 		m.Start()
 		defer m.Close()
 

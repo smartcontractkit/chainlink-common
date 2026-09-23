@@ -15,12 +15,10 @@ func NewRenamer(fields map[string]string) Modifier {
 
 func NewPathTraverseRenamer(fields map[string]string, enablePathTraverse bool) Modifier {
 	m := &renamer{
-		modifierBase: modifierBase[string]{
-			enablePathTraverse: enablePathTraverse,
-			fields:             fields,
-			onToOffChainType:   map[reflect.Type]reflect.Type{},
-			offToOnChainType:   map[reflect.Type]reflect.Type{},
-		},
+		enablePathTraverse: enablePathTraverse,
+		fields:             fields,
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
 	}
 	m.modifyFieldForInput = func(pkgPath string, field *reflect.StructField, _, newName string) error {
 		field.Name = newName

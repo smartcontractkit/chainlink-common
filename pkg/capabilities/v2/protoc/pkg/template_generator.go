@@ -85,10 +85,8 @@ func (t *TemplateGenerator) Generate(
 	}
 
 	settings := codegen.PrettySettings{
-		Tool: toolName,
-		GoPrettySettings: codegen.GoPrettySettings{
-			LocalPrefix: localPrefix,
-		},
+		Tool:        toolName,
+		LocalPrefix: localPrefix,
 	}
 
 	prettyFile, err := codegen.PrettyFile(fileName, file, settings)

@@ -238,11 +238,9 @@ func gasPriceUpdateWithTxMeta(in *ccippb.GasPriceUpdateWithTxMeta) cciptypes.Gas
 
 func gasPriceUpdate(in *ccippb.GasPriceUpdate) cciptypes.GasPriceUpdate {
 	return cciptypes.GasPriceUpdate{
-		GasPrice: cciptypes.GasPrice{
-			Value:             in.Price.Value.Int(),
-			DestChainSelector: in.Price.DestChainSelector,
-		},
-		TimestampUnixSec: in.UnixTimestamp.Int(),
+		Value:             in.Price.Value.Int(),
+		DestChainSelector: in.Price.DestChainSelector,
+		TimestampUnixSec:  in.UnixTimestamp.Int(),
 	}
 }
 

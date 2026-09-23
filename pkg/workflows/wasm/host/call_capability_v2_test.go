@@ -145,7 +145,6 @@ func TestNewModule_DetectsCallCapabilityParamCount_V2(t *testing.T) {
 	mc := defaultNoDAGModCfg(t)
 	m, err := NewModule(t.Context(), mc, wasmBytes)
 	require.NoError(t, err)
-	require.False(t, m.IsLegacyDAG(), "expected NoDAG module")
 
 	assert.Equal(t, callCapabilityV2ParamCount, m.callCapParams,
 		"module should detect 4-param call_capability import")
@@ -160,7 +159,6 @@ func TestNewModule_DetectsCallCapabilityParamCount_V1(t *testing.T) {
 	mc := defaultNoDAGModCfg(t)
 	m, err := NewModule(t.Context(), mc, wasmBytes)
 	require.NoError(t, err)
-	require.False(t, m.IsLegacyDAG(), "expected NoDAG module")
 
 	assert.Equal(t, callCapabilityV1ParamCount, m.callCapParams,
 		"module should detect 2-param call_capability import")

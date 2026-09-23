@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790172357037,
+  "lastUpdate": 1790180599138,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61380,6 +61380,66 @@ window.BENCHMARK_DATA = {
             "value": 117789,
             "unit": "ns/op",
             "extra": "9897 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "170ea96c32692c374f05d4569c122a070406b5a7",
+          "message": "durableemitter: remove dead publish counters (INFOPLAT-19149) (#2408)\n\nRemove four counters that were registered but never incremented, so they\nwere silently absent from production:\n\n- durable_emitter.publish.immediate.success\n- durable_emitter.publish.immediate.failure\n- durable_emitter.publish.retransmit.batch.success\n- durable_emitter.publish.retransmit.batch.failure\n\nImmediate publish outcomes are already covered by publish.duration\n(phase/error labels) and emit.*; batch delivery is covered by\npublish.batch.events.{success,failure}.\n\nFollow-up from INCIDENT-2673.\n\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-09-23T16:13:43Z",
+          "tree_id": "3adb79e2b3bc7c979ae0fcfdeaa32baefee65d3e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/170ea96c32692c374f05d4569c122a070406b5a7"
+        },
+        "date": 1790180593698,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 844.1,
+            "unit": "ns/op",
+            "extra": "1421620 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 103152,
+            "unit": "ns/op",
+            "extra": "11124 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 386.5,
+            "unit": "ns/op",
+            "extra": "3088454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92610,
+            "unit": "ns/op",
+            "extra": "12992 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25839,
+            "unit": "ns/op",
+            "extra": "45673 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136930,
+            "unit": "ns/op",
+            "extra": "8305 times\n4 procs"
           }
         ]
       }

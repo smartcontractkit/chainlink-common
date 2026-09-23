@@ -23,6 +23,7 @@ var (
 	_ DurableEventStore    = (*PgDurableEventStore)(nil)
 	_ DurableQueueObserver = (*PgDurableEventStore)(nil)
 	_ BatchInserter        = (*PgDurableEventStore)(nil)
+	_ ExpiredPurger        = (*PgDurableEventStore)(nil)
 )
 
 func NewPgDurableEventStore(ds sqlutil.DataSource) *PgDurableEventStore {
@@ -148,6 +149,36 @@ SELECT count(*) FROM deleted`
 		return 0, fmt.Errorf("failed to delete expired chip durable events: %w", err)
 	}
 	return count, nil
+}
+
+// DeleteExpiredBatch implements ExpiredPurger: expire at most limit rows, oldest
+// first, returning their payloads so the caller can attribute the purge. Bounded
+// so that a large backlog (INCIDENT-2673 expired ~246k rows) is drained in slices
+// rather than one statement that streams every payload back at once.
+func (s *PgDurableEventStore) DeleteExpiredBatch(ctx context.Context, ttl time.Duration, limit int) ([][]byte, error) {
+	if limit <= 0 {
+		return nil, fmt.Errorf("delete expired batch: limit must be positive, got %d", limit)
+	}
+	const q = `
+WITH victims AS (
+    SELECT id FROM ` + chipDurableEventsTable + `
+    WHERE created_at <= now() - $1::interval
+    ORDER BY created_at ASC, id ASC
+    LIMIT $2
+    FOR UPDATE SKIP LOCKED
+),
+deleted AS (
+    DELETE FROM ` + chipDurableEventsTable + `
+    WHERE id IN (SELECT id FROM victims)
+    RETURNING payload
+)
+SELECT payload FROM deleted`
+
+	var payloads [][]byte
+	if err := s.ds.SelectContext(ctx, &payloads, q, ttl.String(), limit); err != nil {
+		return nil, fmt.Errorf("failed to delete expired chip durable events batch: %w", err)
+	}
+	return payloads, nil
 }
 
 type chipDurableQueueAgg struct {

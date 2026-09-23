@@ -50,6 +50,19 @@ type BatchInserter interface {
 	InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error)
 }
 
+// ExpiredPurger is optionally implemented by DurableEventStore implementations
+// that can hand back the payloads of the events they expire. DurableEmitter
+// uses it to attribute the expired_purged counter by the events' CloudEvent
+// source (domain) and type (subject) instead of only counting rows, so a purge
+// can be explained after the fact (INFOPLAT-19148). Stores without it fall back
+// to DeleteExpired and the counter is recorded with unknown attribution.
+type ExpiredPurger interface {
+	// DeleteExpiredBatch removes up to limit events older than ttl, oldest
+	// first, and returns their payloads. A result shorter than limit means the
+	// backlog of expired rows is drained.
+	DeleteExpiredBatch(ctx context.Context, ttl time.Duration, limit int) ([][]byte, error)
+}
+
 // DurableEventStore abstracts the persistence layer for durable chip events.
 // Implementations must be safe for concurrent use.
 type DurableEventStore interface {
@@ -128,6 +141,17 @@ func (s *metricsInstrumentedStore) DeleteExpired(ctx context.Context, ttl time.D
 	n, err := s.inner.DeleteExpired(ctx, ttl)
 	s.m.recordStoreOp(ctx, "delete_expired", time.Since(t0), err)
 	return n, err
+}
+
+func (s *metricsInstrumentedStore) DeleteExpiredBatch(ctx context.Context, ttl time.Duration, limit int) ([][]byte, error) {
+	p, ok := s.inner.(ExpiredPurger)
+	if !ok {
+		return nil, errors.New("inner DurableEventStore does not implement ExpiredPurger")
+	}
+	t0 := time.Now()
+	payloads, err := p.DeleteExpiredBatch(ctx, ttl, limit)
+	s.m.recordStoreOp(ctx, "delete_expired", time.Since(t0), err)
+	return payloads, err
 }
 
 func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, eventTTL time.Duration) (DurableQueueStats, error) {

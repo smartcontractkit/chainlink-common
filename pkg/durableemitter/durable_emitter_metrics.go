@@ -191,7 +191,7 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 	if m.expiredPurged, err = meter.Int64Counter(
 		"durable_emitter.expired_purged",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Events deleted by TTL expiry loop"),
+		metric.WithDescription("Events deleted by the TTL expiry loop, attributed by CloudEvent source (domain) and type (subject); unknown when the payload could not be decoded"),
 	); err != nil {
 		return nil, err
 	}
@@ -295,6 +295,18 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 		return nil, err
 	}
 	return m, nil
+}
+
+// recordExpiredPurged counts events the expiry loop deleted, attributed by
+// domain (CloudEvent source) and subject (CloudEvent type).
+func (m *durableEmitterMetrics) recordExpiredPurged(ctx context.Context, domain, subject string, n int64) {
+	if m == nil || n <= 0 {
+		return
+	}
+	m.expiredPurged.Add(ctx, n, metric.WithAttributes(
+		attribute.String("domain", domain),
+		attribute.String("subject", subject),
+	))
 }
 
 func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, elapsed time.Duration, opErr error) {

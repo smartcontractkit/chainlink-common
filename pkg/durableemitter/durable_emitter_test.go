@@ -1410,6 +1410,7 @@ var (
 	_ DurableEventStore    = (*MemDurableEventStore)(nil)
 	_ DurableQueueObserver = (*MemDurableEventStore)(nil)
 	_ BatchInserter        = (*MemDurableEventStore)(nil)
+	_ ExpiredPurger        = (*MemDurableEventStore)(nil)
 )
 
 func NewMemDurableEventStore() *MemDurableEventStore {
@@ -1508,6 +1509,36 @@ func (m *MemDurableEventStore) DeleteExpired(_ context.Context, ttl time.Duratio
 		}
 	}
 	return deleted, nil
+}
+
+// DeleteExpiredBatch implements ExpiredPurger: oldest-first, at most limit rows,
+// returning the deleted payloads.
+func (m *MemDurableEventStore) DeleteExpiredBatch(_ context.Context, ttl time.Duration, limit int) ([][]byte, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	cutoff := time.Now().Add(-ttl)
+	var expired []*DurableEvent
+	for _, e := range m.events {
+		if e.CreatedAt.Before(cutoff) {
+			expired = append(expired, e)
+		}
+	}
+	sort.Slice(expired, func(i, j int) bool {
+		if expired[i].CreatedAt.Equal(expired[j].CreatedAt) {
+			return expired[i].ID < expired[j].ID
+		}
+		return expired[i].CreatedAt.Before(expired[j].CreatedAt)
+	})
+	if len(expired) > limit {
+		expired = expired[:limit]
+	}
+	payloads := make([][]byte, 0, len(expired))
+	for _, e := range expired {
+		payloads = append(payloads, e.Payload)
+		delete(m.events, e.ID)
+	}
+	return payloads, nil
 }
 
 // Len returns the number of events in the store (test helper).

@@ -61,6 +61,10 @@ type Config struct {
 	ExpiryInterval time.Duration
 	// EventTTL is the maximum age of an event before it is expired.
 	EventTTL time.Duration
+	// ExpiryBatchSize caps how many expired rows one expiry tick deletes per
+	// statement when the store implements ExpiredPurger; the tick loops until the
+	// expired backlog is drained. Zero defaults to 5000.
+	ExpiryBatchSize int
 	// PublishTimeout is the deadline for DB operations in delivery callbacks
 	// (BatchDelete). The actual gRPC publish timeout is configured on
 	// the BatchEmitter (batch.Client) directly.
@@ -120,6 +124,7 @@ func DefaultConfig() Config {
 		RetransmitAfter:          10 * time.Second,
 		RetransmitBatchSize:      100,
 		ExpiryInterval:           1 * time.Minute,
+		ExpiryBatchSize:          defaultExpiryBatchSize,
 		EventTTL:                 1 * time.Hour,
 		PublishTimeout:           5 * time.Second,
 		InsertBatchFlushInterval: 50 * time.Millisecond,
@@ -764,6 +769,17 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 	)
 }
 
+const defaultExpiryBatchSize = 5000
+
+// purgeUnknown is the domain/subject recorded for expired events whose payload
+// could not be decoded, and for stores that cannot return payloads at all.
+const purgeUnknown = "unknown"
+
+// purgeKey attributes a purged event by its CloudEvent source (domain) and
+// type (subject). Cardinality is bounded by the emitting node's domains and
+// entities (single digits by a few dozen).
+type purgeKey struct{ domain, subject string }
+
 func (d *DurableEmitter) expiryLoop() {
 	ticker := time.NewTicker(d.cfg.ExpiryInterval)
 	defer ticker.Stop()
@@ -775,19 +791,82 @@ func (d *DurableEmitter) expiryLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
-			if err != nil {
-				d.eng.Errorw("failed to delete expired events", "error", err)
-				continue
-			}
-			if deleted > 0 {
-				if d.metrics != nil {
-					d.metrics.expiredPurged.Add(ctx, deleted)
-				}
-				d.eng.Infow("purged expired events", "count", deleted)
-			}
+			d.purgeExpired(ctx)
 		}
 	}
+}
+
+// purgeExpired runs one expiry pass. With an ExpiredPurger store it deletes in
+// bounded batches and attributes every deleted event by domain/subject; other
+// stores get the plain count with unknown attribution.
+// expiredPurgerOf reports whether the store can attribute purges. The metrics
+// wrapper forwards every optional interface, so it is only a purger when the
+// store it wraps is one.
+func expiredPurgerOf(s DurableEventStore) (ExpiredPurger, bool) {
+	if w, ok := s.(*metricsInstrumentedStore); ok {
+		if _, inner := w.inner.(ExpiredPurger); !inner {
+			return nil, false
+		}
+		return w, true
+	}
+	p, ok := s.(ExpiredPurger)
+	return p, ok
+}
+
+func (d *DurableEmitter) purgeExpired(ctx context.Context) {
+	purger, ok := expiredPurgerOf(d.store)
+	if !ok {
+		deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
+		if err != nil {
+			d.eng.Errorw("failed to delete expired events", "error", err)
+			return
+		}
+		if deleted > 0 {
+			d.metrics.recordExpiredPurged(ctx, purgeUnknown, purgeUnknown, deleted)
+			d.eng.Infow("purged expired events", "count", deleted)
+		}
+		return
+	}
+
+	batch := d.cfg.ExpiryBatchSize
+	if batch <= 0 {
+		batch = defaultExpiryBatchSize
+	}
+	counts := make(map[purgeKey]int64)
+	var total, undecodable int64
+	for {
+		payloads, err := purger.DeleteExpiredBatch(ctx, d.cfg.EventTTL, batch)
+		if err != nil {
+			d.eng.Errorw("failed to delete expired events", "error", err, "purged_before_error", total)
+			break
+		}
+		for _, p := range payloads {
+			k := purgeKey{purgeUnknown, purgeUnknown}
+			ev := new(chipingress.CloudEventPb)
+			if err := proto.Unmarshal(p, ev); err == nil {
+				k = purgeKey{domain: ev.GetSource(), subject: ev.GetType()}
+			} else {
+				undecodable++
+			}
+			counts[k]++
+			total++
+		}
+		if len(payloads) < batch {
+			break
+		}
+		select {
+		case <-d.stopCh:
+			return
+		default:
+		}
+	}
+	if total == 0 {
+		return
+	}
+	for k, n := range counts {
+		d.metrics.recordExpiredPurged(ctx, k.domain, k.subject, n)
+	}
+	d.eng.Infow("purged expired events", "count", total, "undecodable", undecodable, "by_domain_subject", counts)
 }
 
 func (d *DurableEmitter) metricsLoop() {

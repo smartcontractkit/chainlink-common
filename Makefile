@@ -12,13 +12,13 @@ docs:
 
 .PHONY: install-protoc
 install-protoc:
-	script/install-protoc.sh 29.3 /
+	script/install-protoc.sh $(shell grep '^protoc ' .tool-versions | awk '{print $$2}') /
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@`go list -m -json google.golang.org/protobuf | jq -r .Version`
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$(shell grep '^protoc-gen-go-grpc ' .tool-versions | awk '{print $$2}')
 
 .PHONY: mockery
 mockery: $(mockery) ## Install mockery.
-	go install github.com/vektra/mockery/v2@v2.53.7
+	go install github.com/vektra/mockery/v2@v$(shell grep '^mockery ' .tool-versions | awk '{print $$2}')
 
 .PHONY: rm-mocked
 rm-mocked:

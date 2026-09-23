@@ -12,7 +12,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Avoid unused imports if there is configuration type
@@ -40,6 +42,7 @@ func NewCronServer(capability CronCapability) *CronServer {
 	return &CronServer{
 		cronCapability: cronCapability{CronCapability: capability, stopCh: stopCh},
 		stopCh:         stopCh,
+		initMetrics:    capmon.NewInitMetrics(),
 	}
 }
 
@@ -47,11 +50,15 @@ type CronServer struct {
 	cronCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
+	initMetrics        capmon.InitMetrics
 }
 
 func (c *CronServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
-	if err := c.CronCapability.Initialise(ctx, dependencies); err != nil {
-		return fmt.Errorf("error when initializing capability: %w", err)
+	initErr := c.CronCapability.Initialise(ctx, dependencies)
+	initAttrs := []attribute.KeyValue{attribute.String("capability", "cron-trigger@1.0.0")}
+	c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
+	if initErr != nil {
+		return fmt.Errorf("error when initializing capability: %w", initErr)
 	}
 
 	c.capabilityRegistry = dependencies.CapabilityRegistry

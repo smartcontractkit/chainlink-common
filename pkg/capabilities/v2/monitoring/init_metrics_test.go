@@ -17,8 +17,7 @@ func TestInitMetrics_RecordInitSuccess(t *testing.T) {
 	metrics := NewInitMetrics()
 	// 4051577828743386545 is the chain selector for Polygon mainnet (chain ID 137).
 	attrs := []attribute.KeyValue{
-		attribute.String("capability", "evm@1.0.0"),
-		attribute.String("ChainSelector", "4051577828743386545"),
+		attribute.String("capability", "evm:ChainSelector:4051577828743386545@1.0.0"),
 	}
 
 	metrics.RecordInit(t.Context(), nil, attrs...)
@@ -30,7 +29,7 @@ func TestInitMetrics_RecordInitSuccess(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, failureGauge.DataPoints, 1)
 	assert.Equal(t, int64(0), failureGauge.DataPoints[0].Value)
-	requireAttrValue(t, failureGauge.DataPoints[0].Attributes, "ChainSelector", "4051577828743386545")
+	requireAttrValue(t, failureGauge.DataPoints[0].Attributes, "capability", "evm:ChainSelector:4051577828743386545@1.0.0")
 }
 
 func TestInitMetrics_RecordInitFailure(t *testing.T) {
@@ -39,8 +38,7 @@ func TestInitMetrics_RecordInitFailure(t *testing.T) {
 
 	metrics := NewInitMetrics()
 	attrs := []attribute.KeyValue{
-		attribute.String("capability", "solana@1.0.0"),
-		attribute.String("ChainSelector", "42"),
+		attribute.String("capability", "solana:ChainSelector:42@1.0.0"),
 	}
 
 	metrics.RecordInit(t.Context(), errors.New("boom"), attrs...)
@@ -52,5 +50,5 @@ func TestInitMetrics_RecordInitFailure(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, failureGauge.DataPoints, 1)
 	assert.Equal(t, int64(1), failureGauge.DataPoints[0].Value)
-	requireAttrValue(t, failureGauge.DataPoints[0].Attributes, "ChainSelector", "42")
+	requireAttrValue(t, failureGauge.DataPoints[0].Attributes, "capability", "solana:ChainSelector:42@1.0.0")
 }

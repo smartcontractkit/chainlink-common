@@ -71,7 +71,7 @@ type ClientServer struct {
 
 func (c *ClientServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
 	initErr := c.ClientCapability.Initialise(ctx, dependencies)
-	initAttrs := []attribute.KeyValue{attribute.String("capability", "evm@1.0.0"), attribute.String("ChainSelector", fmt.Sprint(c.ChainSelector()))}
+	initAttrs := []attribute.KeyValue{attribute.String("capability", "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0")}
 	c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
 	if initErr != nil {
 		return fmt.Errorf("error when initializing capability: %w", initErr)

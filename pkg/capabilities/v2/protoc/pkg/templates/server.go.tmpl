@@ -94,9 +94,7 @@ type {{.GoName}}Server struct {
 
 func (c *{{.GoName}}Server) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
     initErr := c.{{.GoName}}Capability.Initialise(ctx, dependencies)
-    initAttrs := []attribute.KeyValue{attribute.String("capability", "{{CapabilityId $service}}")
-        {{- range Labels $service }}, attribute.String("{{.Name}}", fmt.Sprint(c.{{.Name}}())){{- end }},
-    }
+    initAttrs := []attribute.KeyValue{attribute.String("capability", {{$fullCapabilityId}})}
     c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
     if initErr != nil {
         return fmt.Errorf("error when initializing capability: %w", initErr)

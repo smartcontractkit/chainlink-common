@@ -10,7 +10,6 @@ const (
 	ActionCountMetric    = MetricPrefix + "_action_count"
 	ActionDurationMetric = MetricPrefix + "_action_duration"
 
-	InitSuccessMetric = "chain_capability_initialization_success"
 	InitFailureMetric = "chain_capability_initialization_failure"
 
 	OutcomeSuccess = "success"
@@ -41,7 +40,6 @@ type actionInstrumentInfo struct {
 }
 
 type initInstrumentInfo struct {
-	success beholder.MetricInfo
 	failure beholder.MetricInfo
 }
 
@@ -61,10 +59,6 @@ func newActionInstrumentInfo() actionInstrumentInfo {
 
 func newInitInstrumentInfo() initInstrumentInfo {
 	return initInstrumentInfo{
-		success: beholder.MetricInfo{
-			Name:        InitSuccessMetric,
-			Description: "1 if the v2 capability initialised successfully, 0 otherwise",
-		},
 		failure: beholder.MetricInfo{
 			Name:        InitFailureMetric,
 			Description: "1 if the v2 capability failed to initialise, 0 otherwise",

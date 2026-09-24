@@ -29,7 +29,6 @@ type initMetrics struct {
 }
 
 type initInstruments struct {
-	success metric.Int64Gauge
 	failure metric.Int64Gauge
 }
 
@@ -42,10 +41,8 @@ func (m *initMetrics) RecordInit(ctx context.Context, err error, attrs ...attrib
 	recordAttrs := metric.WithAttributes(attrs...)
 	if err != nil {
 		instruments.failure.Record(ctx, 1, recordAttrs)
-		instruments.success.Record(ctx, 0, recordAttrs)
 		return
 	}
-	instruments.success.Record(ctx, 1, recordAttrs)
 	instruments.failure.Record(ctx, 0, recordAttrs)
 }
 
@@ -54,17 +51,12 @@ func (m *initMetrics) loadInstruments() (initInstruments, error) {
 		info := newInitInstrumentInfo()
 		meter := beholder.GetMeter()
 
-		success, err := info.success.NewInt64Gauge(meter)
-		if err != nil {
-			m.initErr = fmt.Errorf("failed to create chain capability initialization success gauge: %w", err)
-			return
-		}
 		failure, err := info.failure.NewInt64Gauge(meter)
 		if err != nil {
 			m.initErr = fmt.Errorf("failed to create chain capability initialization failure gauge: %w", err)
 			return
 		}
-		m.instruments = initInstruments{success: success, failure: failure}
+		m.instruments = initInstruments{failure: failure}
 	})
 	return m.instruments, m.initErr
 }

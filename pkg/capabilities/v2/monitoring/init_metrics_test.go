@@ -25,18 +25,12 @@ func TestInitMetrics_RecordInitSuccess(t *testing.T) {
 
 	rm := collectMetrics(t, reader)
 
-	success := mustMetric(t, rm, InitSuccessMetric)
-	successGauge, ok := success.Data.(metricdata.Gauge[int64])
-	require.True(t, ok)
-	require.Len(t, successGauge.DataPoints, 1)
-	assert.Equal(t, int64(1), successGauge.DataPoints[0].Value)
-	requireAttrValue(t, successGauge.DataPoints[0].Attributes, "ChainSelector", "4051577828743386545")
-
 	failure := mustMetric(t, rm, InitFailureMetric)
 	failureGauge, ok := failure.Data.(metricdata.Gauge[int64])
 	require.True(t, ok)
 	require.Len(t, failureGauge.DataPoints, 1)
 	assert.Equal(t, int64(0), failureGauge.DataPoints[0].Value)
+	requireAttrValue(t, failureGauge.DataPoints[0].Attributes, "ChainSelector", "4051577828743386545")
 }
 
 func TestInitMetrics_RecordInitFailure(t *testing.T) {
@@ -59,10 +53,4 @@ func TestInitMetrics_RecordInitFailure(t *testing.T) {
 	require.Len(t, failureGauge.DataPoints, 1)
 	assert.Equal(t, int64(1), failureGauge.DataPoints[0].Value)
 	requireAttrValue(t, failureGauge.DataPoints[0].Attributes, "ChainSelector", "42")
-
-	success := mustMetric(t, rm, InitSuccessMetric)
-	successGauge, ok := success.Data.(metricdata.Gauge[int64])
-	require.True(t, ok)
-	require.Len(t, successGauge.DataPoints, 1)
-	assert.Equal(t, int64(0), successGauge.DataPoints[0].Value)
 }

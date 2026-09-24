@@ -54,7 +54,7 @@ type BatchInserter interface {
 // that can hand back the payloads of the events they expire. DurableEmitter
 // uses it to attribute the expired_purged counter by the events' CloudEvent
 // source (domain) and type (subject) instead of only counting rows, so a purge
-// can be explained after the fact (INFOPLAT-19148). Stores without it fall back
+// can be explained after the fact. Stores without it fall back
 // to DeleteExpired and the counter is recorded with unknown attribution.
 type ExpiredPurger interface {
 	// DeleteExpiredBatch removes up to limit events older than ttl, oldest

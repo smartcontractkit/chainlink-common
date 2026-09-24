@@ -153,14 +153,14 @@ SELECT count(*) FROM deleted`
 
 // DeleteExpiredBatch implements ExpiredPurger: expire at most limit rows, oldest
 // first, returning their payloads so the caller can attribute the purge. Bounded
-// so that a large backlog (INCIDENT-2673 expired ~246k rows) is drained in slices
-// rather than one statement that streams every payload back at once.
+// so that a large backlog is drained in slices rather than one statement that
+// streams every payload back at once.
 func (s *PgDurableEventStore) DeleteExpiredBatch(ctx context.Context, ttl time.Duration, limit int) ([][]byte, error) {
 	if limit <= 0 {
 		return nil, fmt.Errorf("delete expired batch: limit must be positive, got %d", limit)
 	}
 	const q = `
-WITH victims AS (
+WITH expired AS (
     SELECT id FROM ` + chipDurableEventsTable + `
     WHERE created_at <= now() - $1::interval
     ORDER BY created_at ASC, id ASC
@@ -169,7 +169,7 @@ WITH victims AS (
 ),
 deleted AS (
     DELETE FROM ` + chipDurableEventsTable + `
-    WHERE id IN (SELECT id FROM victims)
+    WHERE id IN (SELECT id FROM expired)
     RETURNING payload
 )
 SELECT payload FROM deleted`

@@ -53,7 +53,7 @@ func (m *initMetrics) loadInstruments() (initInstruments, error) {
 
 		failure, err := info.failure.NewInt64Gauge(meter)
 		if err != nil {
-			m.initErr = fmt.Errorf("failed to create chain capability initialization failure gauge: %w", err)
+			m.initErr = fmt.Errorf("failed to create capability initialization failure gauge: %w", err)
 			return
 		}
 		m.instruments = initInstruments{failure: failure}

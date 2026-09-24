@@ -10,7 +10,7 @@ const (
 	ActionCountMetric    = MetricPrefix + "_action_count"
 	ActionDurationMetric = MetricPrefix + "_action_duration"
 
-	InitFailureMetric = "chain_capability_initialization_failure"
+	InitFailureMetric = "capability_initialization_failure"
 
 	OutcomeSuccess = "success"
 	OutcomeError   = "error"

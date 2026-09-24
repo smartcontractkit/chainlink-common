@@ -108,7 +108,7 @@ func newPurgeTestEmitter(t *testing.T, store DurableEventStore, cfg Config) (*Du
 
 // A purge must say what was lost: expired events are counted per CloudEvent
 // source (domain) and type (subject), and an undecodable payload lands under
-// unknown/unknown rather than vanishing from the count (INFOPLAT-19148).
+// unknown/unknown rather than vanishing from the count.
 func TestDurableEmitter_ExpiryPurgeAttributesByDomainAndSubject(t *testing.T) {
 	store := NewMemDurableEventStore()
 	for range 2 {

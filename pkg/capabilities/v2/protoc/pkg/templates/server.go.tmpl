@@ -21,10 +21,8 @@ import (
     "github.com/smartcontractkit/chainlink-common/pkg/types/core"
     "github.com/smartcontractkit/chainlink-common/pkg/capabilities"
     caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
-    {{- if $.WithMonitoring }}
     capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
     "go.opentelemetry.io/otel/attribute"
-    {{- end }}
     "github.com/smartcontractkit/chainlink-common/pkg/loop"
 )
 
@@ -82,6 +80,7 @@ func New{{.GoName}}Server(capability {{.GoName}}Capability) *{{.GoName}}Server {
         {{.GoName|LowerFirst}}Capability:   {{.GoName|LowerFirst}}Capability{ {{.GoName}}Capability: capability, stopCh: stopCh},
         {{- end }}
         stopCh: stopCh,
+        initMetrics: capmon.NewInitMetrics(),
     }
 }
 
@@ -89,12 +88,16 @@ type {{.GoName}}Server struct {
     {{.GoName|LowerFirst}}Capability
     capabilityRegistry core.CapabilitiesRegistry
     stopCh chan struct{}
+    initMetrics capmon.InitMetrics
 }
 
 
 func (c *{{.GoName}}Server) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
-    if err := c.{{.GoName}}Capability.Initialise(ctx, dependencies); err != nil {
-        return fmt.Errorf("error when initializing capability: %w", err)
+    initErr := c.{{.GoName}}Capability.Initialise(ctx, dependencies)
+    initAttrs := []attribute.KeyValue{attribute.String("capability", {{$fullCapabilityId}})}
+    c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
+    if initErr != nil {
+        return fmt.Errorf("error when initializing capability: %w", initErr)
     }
 
     c.capabilityRegistry = dependencies.CapabilityRegistry

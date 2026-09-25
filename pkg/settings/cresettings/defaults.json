@@ -52,6 +52,7 @@
 	"VaultMaxBlobPayloadSizeLimit": "25.6kb",
 	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
+	"MissingRequestRecoveryEnabled": "false",
 	"ConfidentialCompute": {
 		"GlobalRate": "1000rps:1000",
 		"MaxRetries": "3",

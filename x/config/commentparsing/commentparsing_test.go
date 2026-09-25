@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,6 +13,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/x/config/markup"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 func writePackage(t *testing.T, files map[string]string) string {
@@ -165,7 +169,7 @@ type Config struct {
 
 	t.Run("Missing directory", func(t *testing.T) {
 		_, err := ParseDir(filepath.Join(t.TempDir(), "absent"))
-		require.Error(t, err)
+		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
 	t.Run("Directory holding no Go package", func(t *testing.T) {
@@ -175,7 +179,7 @@ type Config struct {
 
 	t.Run("Unparseable source", func(t *testing.T) {
 		_, err := ParseDir(writePackage(t, map[string]string{"config.go": "package example\n\ntype Config struct {"}))
-		require.Error(t, err)
+		require.ErrorContains(t, err, "config.go:3:21: expected '}'")
 	})
 
 	t.Run("Generic declaration", func(t *testing.T) {
@@ -469,26 +473,26 @@ func TestDiscoverEdges(t *testing.T) {
 
 	// A nil root reaches the walk as a nil reflect.Type, which used to panic there.
 	t.Run("Nil root", func(t *testing.T) {
-		pkgs, err := Discover(dir, nil)
+		pkgs, err := discover(dir, tomlmarkup.New(), nil)
 		require.NoError(t, err)
 		require.Empty(t, pkgs)
 	})
 
 	t.Run("No roots at all", func(t *testing.T) {
-		pkgs, err := Discover(dir)
+		pkgs, err := discover(dir, tomlmarkup.New())
 		require.NoError(t, err)
 		require.Empty(t, pkgs)
 	})
 
 	// An anonymous struct belongs to no package, so there is nothing to parse or generate for it.
 	t.Run("Anonymous struct root", func(t *testing.T) {
-		pkgs, err := Discover(dir, &struct{ Plain string }{})
+		pkgs, err := discover(dir, tomlmarkup.New(), &struct{ Plain string }{})
 		require.NoError(t, err)
 		require.Empty(t, pkgs)
 	})
 
 	t.Run("Non-struct root", func(t *testing.T) {
-		pkgs, err := Discover(dir, "not a config")
+		pkgs, err := discover(dir, tomlmarkup.New(), "not a config")
 		require.NoError(t, err)
 		require.Empty(t, pkgs)
 	})
@@ -496,13 +500,13 @@ func TestDiscoverEdges(t *testing.T) {
 	// reflect.StructField is a struct from another module with no DocComments, which is the gap
 	// generation exists to close, so Discover names it instead of documenting it as blank.
 	t.Run("Dependency that never generated", func(t *testing.T) {
-		_, err := Discover(dir, &struct{ Foreign reflect.StructField }{})
+		_, err := discover(dir, tomlmarkup.New(), &struct{ Foreign reflect.StructField }{})
 		require.ErrorContains(t, err, "has no DocComments method")
 		require.ErrorContains(t, err, "go generate")
 	})
 
 	t.Run("A dependency that did generate is recorded", func(t *testing.T) {
-		pkgs, err := Discover(dir, &lookupTarget{})
+		pkgs, err := discover(dir, tomlmarkup.New(), &lookupTarget{})
 		require.NoError(t, err)
 		require.Len(t, pkgs, 1)
 		require.Equal(t, selfImportPath, pkgs[0].ImportPath)
@@ -517,7 +521,7 @@ func TestDiscoverEdges(t *testing.T) {
 			"go.mod": "module " + selfImportPath + "-extra\n\ngo 1.26\n",
 		})
 
-		pkgs, err := Discover(outside, &lookupTarget{})
+		pkgs, err := discover(outside, tomlmarkup.New(), &lookupTarget{})
 		require.NoError(t, err)
 		require.Len(t, pkgs, 1)
 		require.Equal(t, selfImportPath, pkgs[0].ImportPath)
@@ -535,7 +539,7 @@ func TestDiscoverEdges(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(nested, "go.mod"),
 			[]byte("module "+selfImportPath+"\n\ngo 1.26\n"), 0o600))
 
-		pkgs, err := Discover(parent, &lookupTarget{})
+		pkgs, err := discover(parent, tomlmarkup.New(), &lookupTarget{})
 		require.NoError(t, err)
 		require.Len(t, pkgs, 1)
 		require.Empty(t, pkgs[0].Dir, "resolved through Lookup, so there is nothing local to write")
@@ -545,14 +549,14 @@ func TestDiscoverEdges(t *testing.T) {
 	// reflection reports cannot supply, so the type is named rather than turned into a file
 	// that does not compile.
 	t.Run("Generic root", func(t *testing.T) {
-		_, err := Discover(dir, &genericConfig[string]{})
+		_, err := discover(dir, tomlmarkup.New(), &genericConfig[string]{})
 		require.ErrorContains(t, err, "genericConfig[string]")
 		require.ErrorContains(t, err, "generic types are not supported")
 	})
 
 	t.Run("No enclosing module", func(t *testing.T) {
-		_, err := Discover(filepath.Join(t.TempDir(), "nowhere"))
-		require.Error(t, err)
+		_, err := discover(filepath.Join(t.TempDir(), "nowhere"), tomlmarkup.New(), &lookupTarget{})
+		require.ErrorContains(t, err, "no go.mod at or above")
 	})
 }
 
@@ -566,7 +570,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("Returns what a write would put on disk", func(t *testing.T) {
 		dir := writePackage(t, module)
-		files, err := Files(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		files, err := Files(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{"out/thing.go": "package out\nfunc  Thing ()  {}\n"}))
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{
@@ -576,18 +580,29 @@ func TestFiles(t *testing.T) {
 
 	t.Run("A file that is not Go source is untouched", func(t *testing.T) {
 		dir := writePackage(t, module)
-		files, err := Files(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		files, err := Files(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{"notes.md": "left  alone\n"}))
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{"notes.md": "left  alone\n"}, files)
 	})
 
+	t.Run("A run with no markup is refused", func(t *testing.T) {
+		dir := writePackage(t, module)
+		_, err := Files(RunArgs{Dir: dir, Tool: "gen"})
+		require.ErrorIs(t, err, markup.Err)
+
+		require.ErrorIs(t, Run(RunArgs{Dir: dir, Tool: "gen"}), markup.Err)
+		entries, readErr := os.ReadDir(dir)
+		require.NoError(t, readErr)
+		require.Len(t, entries, 1, "only the go.mod it started with")
+	})
+
 	t.Run("A run with no tool name is refused", func(t *testing.T) {
 		dir := writePackage(t, module)
-		_, err := Files(RunArgs{Dir: dir}, returning(map[string]string{"out/thing.go": "package out\n"}))
-		require.ErrorContains(t, err, "tool name")
+		_, err := Files(RunArgs{Dir: dir, Markup: tomlmarkup.New()}, returning(map[string]string{"out/thing.go": "package out\n"}))
+		require.ErrorContains(t, err, "tool name must not be empty")
 
-		require.ErrorContains(t, Run(RunArgs{Dir: dir}), "tool name")
+		require.ErrorContains(t, Run(RunArgs{Dir: dir, Markup: tomlmarkup.New()}), "tool name must not be empty")
 		entries, readErr := os.ReadDir(dir)
 		require.NoError(t, readErr)
 		require.Len(t, entries, 1, "only the go.mod it started with")
@@ -595,7 +610,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("Every generator's files are collected", func(t *testing.T) {
 		dir := writePackage(t, module)
-		files, err := Files(RunArgs{Dir: dir, Tool: "gen"},
+		files, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{"first.md": "content\n"}),
 			returning(map[string]string{"second.md": "content\n"}))
 		require.NoError(t, err)
@@ -608,13 +623,13 @@ func TestFiles(t *testing.T) {
 	t.Run("Two generators claiming one path", func(t *testing.T) {
 		dir := writePackage(t, module)
 		clash := map[string]string{"clash.md": "content\n"}
-		_, err := Files(RunArgs{Dir: dir, Tool: "gen"}, returning(clash), returning(clash))
+		_, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()}, returning(clash), returning(clash))
 		require.ErrorContains(t, err, "written by more than one generator")
 	})
 
 	t.Run("A generator's failure yields no files", func(t *testing.T) {
 		dir := writePackage(t, module)
-		files, err := Files(RunArgs{Dir: dir, Tool: "gen"}, func([]Package) (map[string]string, error) {
+		files, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()}, func([]Package) (map[string]string, error) {
 			return nil, os.ErrInvalid
 		})
 		require.ErrorIs(t, err, os.ErrInvalid)
@@ -623,7 +638,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("A path spelled two ways is one file", func(t *testing.T) {
 		dir := writePackage(t, module)
-		files, err := Files(RunArgs{Dir: dir, Tool: "gen"},
+		files, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{filepath.Join(".", "out", "..", "out", "thing.md"): "content\n"}))
 		require.NoError(t, err)
 		require.Equal(t, map[string]string{filepath.Join("out", "thing.md"): "content\n"}, files)
@@ -631,7 +646,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("Two generators claiming one path spelled differently", func(t *testing.T) {
 		dir := writePackage(t, module)
-		_, err := Files(RunArgs{Dir: dir, Tool: "gen"},
+		_, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{"clash.md": "content\n"}),
 			returning(map[string]string{filepath.Join(".", "clash.md"): "content\n"}))
 		require.ErrorContains(t, err, "written by more than one generator")
@@ -639,11 +654,11 @@ func TestFiles(t *testing.T) {
 
 	t.Run("A path outside the run directory", func(t *testing.T) {
 		dir := writePackage(t, module)
-		_, err := Files(RunArgs{Dir: dir, Tool: "gen"},
+		_, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{filepath.Join("..", "escaped.md"): "content\n"}))
 		require.ErrorContains(t, err, "lies outside the run directory")
 
-		require.ErrorContains(t, Run(RunArgs{Dir: dir, Tool: "gen"},
+		require.ErrorContains(t, Run(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{filepath.Join("..", "escaped.md"): "content\n"})),
 			"lies outside the run directory")
 		require.NoFileExists(t, filepath.Join(filepath.Dir(dir), "escaped.md"))
@@ -651,7 +666,7 @@ func TestFiles(t *testing.T) {
 
 	t.Run("An absolute path", func(t *testing.T) {
 		dir := writePackage(t, module)
-		_, err := Files(RunArgs{Dir: dir, Tool: "gen"},
+		_, err := Files(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()},
 			returning(map[string]string{filepath.Join(dir, "absolute.md"): "content\n"}))
 		require.ErrorContains(t, err, "relative to the run directory")
 	})
@@ -660,22 +675,23 @@ func TestFiles(t *testing.T) {
 	// too, where nothing scans for it afterwards.
 	t.Run("A discovered package above the run directory", func(t *testing.T) {
 		_, err := Files(RunArgs{
-			Dir:   filepath.Join("examples", "simple"),
-			Roots: []any{&Package{}},
-			Tool:  "gen",
+			Dir:    filepath.Join("examples", "simple"),
+			Roots:  []any{&Package{}},
+			Tool:   "gen",
+			Markup: tomlmarkup.New(),
 		})
 		require.ErrorContains(t, err, "lies outside the run directory")
 	})
 
 	t.Run("Discovery failure is reported", func(t *testing.T) {
-		_, err := Files(RunArgs{Dir: filepath.Join(t.TempDir(), "nowhere"), Tool: "gen"})
-		require.ErrorContains(t, err, "go.mod")
+		_, err := Files(RunArgs{Dir: filepath.Join(t.TempDir(), "nowhere"), Tool: "gen", Markup: tomlmarkup.New()})
+		require.ErrorContains(t, err, "no go.mod at or above")
 	})
 
 	t.Run("An empty directory means the working directory", func(t *testing.T) {
 		// This package's directory encloses a module, so discovery resolves and, with no
 		// roots, finds nothing to document.
-		files, err := Files(RunArgs{Tool: "gen"}, func(pkgs []Package) (map[string]string, error) {
+		files, err := Files(RunArgs{Tool: "gen", Markup: tomlmarkup.New()}, func(pkgs []Package) (map[string]string, error) {
 			require.Empty(t, pkgs)
 			return nil, nil
 		})
@@ -700,7 +716,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("Writes every generator's files, formatted and headed", func(t *testing.T) {
 		dir := writePackage(t, module)
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			func([]Package) (map[string]string, error) {
 				return map[string]string{
 					"out/thing.go": "package out\nfunc  Thing ()  {}\n",
@@ -722,7 +738,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("A generator's failure stops the write", func(t *testing.T) {
 		dir := writePackage(t, module)
-		err := Run(RunArgs{Dir: dir, Tool: "gen"}, func([]Package) (map[string]string, error) {
+		err := Run(RunArgs{Dir: dir, Tool: "gen", Markup: tomlmarkup.New()}, func([]Package) (map[string]string, error) {
 			return nil, os.ErrInvalid
 		})
 		require.ErrorIs(t, err, os.ErrInvalid)
@@ -739,7 +755,7 @@ func TestRun(t *testing.T) {
 		stale := write(t, dir, GeneratedFileName, header+"package x\n")
 		nested := write(t, dir, filepath.Join("sub", GeneratedFileName), header+"package sub\n")
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"}))
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()}))
 		require.NoFileExists(t, stale)
 		require.NoFileExists(t, nested)
 	})
@@ -748,7 +764,7 @@ func TestRun(t *testing.T) {
 		dir := writePackage(t, module)
 		path := write(t, dir, GeneratedFileName, header+"package x\n")
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			func([]Package) (map[string]string, error) {
 				return map[string]string{GeneratedFileName: "package x\n\nfunc Now() {}\n"}, nil
 			}))
@@ -765,7 +781,7 @@ func TestRun(t *testing.T) {
 		write(t, dir, filepath.Join("inner", "go.mod"), "module example.com/inner\n\ngo 1.26\n")
 		inner := write(t, dir, filepath.Join("inner", GeneratedFileName), header+"package inner\n")
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"}))
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()}))
 		require.FileExists(t, inner)
 	})
 
@@ -774,7 +790,7 @@ func TestRun(t *testing.T) {
 		theirs := "// Code generated by example.com/x/other, DO NOT EDIT.\n\npackage x\n"
 		path := write(t, dir, GeneratedFileName, theirs)
 
-		err := Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		err := Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			func([]Package) (map[string]string, error) {
 				return map[string]string{GeneratedFileName: "package x\n\nfunc Generated() {}\n"}, nil
 			})
@@ -789,7 +805,7 @@ func TestRun(t *testing.T) {
 		dir := writePackage(t, module)
 		path := write(t, dir, GeneratedFileName, "package x\n\n// Written by hand.\n")
 
-		err := Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		err := Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			func([]Package) (map[string]string, error) {
 				return map[string]string{GeneratedFileName: "package x\n\nfunc Generated() {}\n"}, nil
 			})
@@ -805,7 +821,7 @@ func TestRun(t *testing.T) {
 		dir := writePackage(t, module)
 		path := write(t, dir, GeneratedFileName, "package x\n\n// Written by hand.\n")
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"}))
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()}))
 		require.FileExists(t, path)
 	})
 
@@ -817,7 +833,7 @@ func TestRun(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(dir, "go.mod"),
 			[]byte("module example.com/x\n\ngo 1.26\n"), 0o600))
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"},
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			func([]Package) (map[string]string, error) {
 				return map[string]string{filepath.Join("config_types", "out.go"): "package out\n"}, nil
 			}))
@@ -832,7 +848,7 @@ func TestRun(t *testing.T) {
 		other := write(t, dir, GeneratedFileName,
 			"// Code generated by example.com/x/other, DO NOT EDIT.\n\npackage x\n")
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"}))
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()}))
 		require.FileExists(t, other)
 	})
 
@@ -841,7 +857,7 @@ func TestRun(t *testing.T) {
 		dir := writePackage(t, module)
 		path := write(t, dir, GeneratedFileName, "//go:build linux\n\n"+header+"package x\n")
 
-		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen"}))
+		require.NoError(t, Run(RunArgs{Dir: dir, Tool: "example.com/x/gen", Markup: tomlmarkup.New()}))
 		require.NoFileExists(t, path)
 	})
 }
@@ -882,28 +898,29 @@ func TestModulePath(t *testing.T) {
 	t.Run("Unparseable go.mod", func(t *testing.T) {
 		dir := writePackage(t, map[string]string{"go.mod": "go 1.26\n"})
 		_, _, err := enclosingModule(dir)
-		require.ErrorContains(t, err, "parsing")
+		require.ErrorContains(t, err, "no module directive")
 	})
 }
 
-func TestIsScalarStruct(t *testing.T) {
-	require.True(t, isScalarStruct(reflect.TypeFor[scalarByValue]()))
-	require.True(t, isScalarStruct(reflect.TypeFor[scalarByPointer]()))
-	require.False(t, isScalarStruct(reflect.TypeFor[lookupTarget]()))
+// The walk stops at a type the language reads whole: its fields are never configured one at a time.
+func TestCollectStructsStopsAtALeaf(t *testing.T) {
+	type hasLeaf struct {
+		Leaf readWhole
+	}
+	isLeaf := func(t reflect.Type) bool { return t == reflect.TypeFor[readWhole]() }
+
+	require.Equal(t, []reflect.Type{reflect.TypeFor[hasLeaf]()}, collectStructs([]any{&hasLeaf{}}, isLeaf))
+	require.Len(t, collectStructs([]any{&hasLeaf{}}, func(reflect.Type) bool { return false }), 2)
 }
 
-type scalarByValue struct{}
-
-func (scalarByValue) MarshalText() ([]byte, error) { return nil, nil }
-
-type scalarByPointer struct{}
-
-func (*scalarByPointer) UnmarshalText([]byte) error { return nil }
+type readWhole struct {
+	Value string
+}
 
 // A type declared only in a test file is not part of the package a consumer imports, so parsing
 // finds the package but never the type - an error, not blank documentation.
 func TestDiscoverLocalTypeMissingFromSource(t *testing.T) {
-	_, err := Discover(".", &lookupTarget{})
+	_, err := discover(".", tomlmarkup.New(), &lookupTarget{})
 	require.ErrorContains(t, err, "declared in no source file")
 }
 
@@ -944,20 +961,20 @@ func TestCollectStructs(t *testing.T) {
 	t.Run("One root reaching a type many ways", func(t *testing.T) {
 		require.ElementsMatch(t,
 			[]string{"repeatedRoot", "repeatedEmbed", "repeatedLeaf"},
-			names(collectStructs([]any{&repeatedRoot{}})))
+			names(collectStructs([]any{&repeatedRoot{}}, tomlmarkup.New().IsLeaf)))
 	})
 
 	// Two roots sharing a type must share the walk's memory, or the second would emit it again.
 	t.Run("Several roots sharing a type", func(t *testing.T) {
 		require.ElementsMatch(t,
 			[]string{"repeatedRoot", "repeatedEmbed", "repeatedLeaf", "repeatedOther"},
-			names(collectStructs([]any{&repeatedRoot{}, &repeatedOther{}, &repeatedLeaf{}})))
+			names(collectStructs([]any{&repeatedRoot{}, &repeatedOther{}, &repeatedLeaf{}}, tomlmarkup.New().IsLeaf)))
 	})
 
 	t.Run("The same root given twice", func(t *testing.T) {
 		require.Equal(t,
-			names(collectStructs([]any{&repeatedRoot{}})),
-			names(collectStructs([]any{&repeatedRoot{}, &repeatedRoot{}})))
+			names(collectStructs([]any{&repeatedRoot{}}, tomlmarkup.New().IsLeaf)),
+			names(collectStructs([]any{&repeatedRoot{}, &repeatedRoot{}}, tomlmarkup.New().IsLeaf)))
 	})
 }
 
@@ -965,7 +982,7 @@ func TestCollectStructs(t *testing.T) {
 // compile, so the guarantee is checked where it is consumed as well as in the walk.
 func TestDiscoverEmitsEachTypeOnce(t *testing.T) {
 	// Type is reachable from both roots as well as through Package's slice of them.
-	pkgs, err := Discover(".", &Package{}, &Type{})
+	pkgs, err := discover(".", tomlmarkup.New(), &Package{}, &Type{})
 	require.NoError(t, err)
 	require.Len(t, pkgs, 1)
 
@@ -985,9 +1002,6 @@ func TestDiscoverEmitsEachTypeOnce(t *testing.T) {
 	require.NoError(t, parseErr)
 }
 
-// Go allows a type no field and method of one name, so a type carrying the field compiles only
-// until its documentation is generated. The parsed source is where that is caught, since the
-// reflected type would already have to have been generated for to be seen here.
 // Go leaves a selector ambiguous between two embedded types legal to declare and illegal to use,
 // so there is no name a config file could set.
 func TestAmbiguousPromotion(t *testing.T) {
@@ -1134,6 +1148,9 @@ type ambiguousUnexported struct {
 	ambiguousHiddenRight //nolint:unused // read reflectively
 }
 
+// Go allows a type no field and method of one name, so a type carrying the field compiles only
+// until its documentation is generated. The parsed source is where that has to be caught: a
+// reflected type could only be seen here once it had already been generated.
 func TestReservedFieldName(t *testing.T) {
 	err := reservedFieldName("example.com/app", "Config", map[string]FieldDoc{
 		"DocComments": {Comment: "DocComments is a field, oddly."},

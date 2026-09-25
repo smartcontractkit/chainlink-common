@@ -19,6 +19,7 @@ Add a `//go:generate` directive and a `gen` command to the package declaring you
 func main() {
 	if err := commentparsing.Run(commentparsing.RunArgs{
 		Roots:       []any{&Config{}},
+		Markup:      tomlmarkup.New(),
 		Tool:        "example.com/app/gen",
 		LocalPrefix: "example.com",
 	}); err != nil {
@@ -27,8 +28,8 @@ func main() {
 }
 ```
 
-`Run` walks the type tree from those roots — through pointers, slices, maps and embedded fields —
-and writes a `doccomments_gen.go` into every package of your module it reaches. One call covers a
+`Run` walks the type tree from those roots — through pointers, slices, maps and embedded fields,
+stopping at a type your config language reads whole — and writes a `doccomments_gen.go` into every package of your module it reaches. One call covers a
 config tree spanning several packages. Commit the generated files.
 
 List every type a consumer may reach on its own, not just the outermost config. A package exposing
@@ -53,11 +54,11 @@ it and says where to run `go generate`.
 `Run` takes any number of extra generators, each handed the packages it discovered:
 
 ```go
-commentparsing.Run(args, myJSONSchema, (&tomlDocs{Dir: "docs/config"}).Generate)
+commentparsing.Run(args, myJSONSchema, (&configDocs{Dir: "docs/config"}).Generate)
 ```
 
 A `Package` carries its import path, package clause, directory and the types the walk reached with
-their field comments, so a TOML reference or a settings page needs neither the walk nor the
+their field comments, so a config file reference or a settings page needs neither the walk nor the
 parsing. Comments arrive resolved, whether they came from local source or a dependency's compiled
 methods.
 

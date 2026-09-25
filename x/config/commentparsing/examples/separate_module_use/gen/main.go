@@ -13,11 +13,13 @@ import (
 
 	"example.com/consumer"
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 func main() {
 	if err := commentparsing.Run(commentparsing.RunArgs{
 		Roots:       []any{&consumer.Config{}},
+		Markup:      tomlmarkup.New(),
 		Tool:        "example.com/consumer/gen",
 		LocalPrefix: "example.com",
 	}, reference); err != nil {

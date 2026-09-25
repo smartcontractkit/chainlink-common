@@ -7,11 +7,13 @@ import (
 
 	"example.com/upstream"
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 func main() {
 	if err := commentparsing.Run(commentparsing.RunArgs{
 		Roots:       []any{&upstream.Settings{}, &upstream.Retry{}},
+		Markup:      tomlmarkup.New(),
 		Tool:        "example.com/upstream/gen",
 		LocalPrefix: "example.com",
 	}); err != nil {

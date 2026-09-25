@@ -415,6 +415,11 @@ type TimeSeriesPanelOptions struct {
 	StackingMode      common.StackingMode
 	AxisSoftMin       *float64
 	AxisSoftMax       *float64
+	ShowPoints        common.VisibilityMode
+	SpanNulls         *common.BoolOrFloat64
+	PointSize         *float64
+	GradientMode      common.GraphGradientMode
+	LineInterpolation common.LineInterpolation
 }
 
 func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
@@ -506,6 +511,26 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		newPanel.DrawStyle(options.DrawStyle)
 	}
 
+	if options.ShowPoints != "" {
+		newPanel.ShowPoints(options.ShowPoints)
+	}
+
+	if options.SpanNulls != nil {
+		newPanel.SpanNulls(*options.SpanNulls)
+	}
+
+	if options.PointSize != nil {
+		newPanel.PointSize(*options.PointSize)
+	}
+
+	if options.GradientMode != "" {
+		newPanel.GradientMode(options.GradientMode)
+	}
+
+	if options.LineInterpolation != "" {
+		newPanel.LineInterpolation(options.LineInterpolation)
+	}
+
 	if options.Transforms != nil {
 		for _, transform := range options.Transforms {
 			newPanel.WithTransformation(newTransform(transform))
@@ -542,6 +567,108 @@ func NewTimeSeriesPanel(options *TimeSeriesPanelOptions) *Panel {
 		timeSeriesPanelBuilder: newPanel,
 		alertBuilders:          alertBuilders,
 	}, options.PanelOptions)
+}
+
+// LinesWithPoints returns TimeSeriesPanelOptions preconfigured to match
+// Grafana's built-in "Lines with points" panel style preset.
+func LinesWithPoints(base *PanelOptions) *TimeSeriesPanelOptions {
+	return &TimeSeriesPanelOptions{
+		PanelOptions: base,
+		DrawStyle:    common.GraphDrawStyleLine,
+		LineWidth:    Pointer[float64](1),
+		FillOpacity:  0,
+		ShowPoints:   common.VisibilityModeAlways,
+		PointSize:    Pointer[float64](1),
+		StackingMode: common.StackingModeNone,
+	}
+}
+
+// StackedLines returns TimeSeriesPanelOptions preconfigured to match
+// Grafana's built-in "Stacked lines" panel style preset.
+func StackedLines(base *PanelOptions) *TimeSeriesPanelOptions {
+	return &TimeSeriesPanelOptions{
+		PanelOptions: base,
+		DrawStyle:    common.GraphDrawStyleLine,
+		LineWidth:    Pointer[float64](2),
+		FillOpacity:  50,
+		ShowPoints:   common.VisibilityModeAlways,
+		PointSize:    Pointer[float64](1),
+		StackingMode: common.StackingModeNormal,
+	}
+}
+
+// Stacked100Percent returns TimeSeriesPanelOptions preconfigured to match
+// Grafana's built-in "Stacked 100%" panel style preset.
+func Stacked100Percent(base *PanelOptions) *TimeSeriesPanelOptions {
+	return &TimeSeriesPanelOptions{
+		PanelOptions: base,
+		DrawStyle:    common.GraphDrawStyleLine,
+		LineWidth:    Pointer[float64](2),
+		FillOpacity:  50,
+		ShowPoints:   common.VisibilityModeAlways,
+		PointSize:    Pointer[float64](1),
+		StackingMode: common.StackingModePercent,
+	}
+}
+
+// LineFill returns TimeSeriesPanelOptions preconfigured to match Grafana's
+// built-in "Line fill" panel style preset (an opacity gradient under the
+// line).
+func LineFill(base *PanelOptions) *TimeSeriesPanelOptions {
+	return &TimeSeriesPanelOptions{
+		PanelOptions: base,
+		DrawStyle:    common.GraphDrawStyleLine,
+		FillOpacity:  27,
+		GradientMode: common.GraphGradientModeOpacity,
+		StackingMode: common.StackingModeNone,
+	}
+}
+
+// LineHue returns TimeSeriesPanelOptions preconfigured to match Grafana's
+// built-in "Line hue" panel style preset (a hue gradient under the line).
+func LineHue(base *PanelOptions) *TimeSeriesPanelOptions {
+	return &TimeSeriesPanelOptions{
+		PanelOptions: base,
+		DrawStyle:    common.GraphDrawStyleLine,
+		FillOpacity:  57,
+		GradientMode: common.GraphGradientModeHue,
+		StackingMode: common.StackingModeNone,
+	}
+}
+
+// LineScheme returns TimeSeriesPanelOptions preconfigured to match Grafana's
+// built-in "Line scheme" panel style preset: a continuous color scheme
+// driving both the line/fill color and the fill's gradient.
+func LineScheme(base *PanelOptions) *TimeSeriesPanelOptions {
+	b := *base
+	b.ColorScheme = dashboard.FieldColorModeIdContinuousGrYlRd
+	return &TimeSeriesPanelOptions{
+		PanelOptions: &b,
+		DrawStyle:    common.GraphDrawStyleLine,
+		LineWidth:    Pointer[float64](2),
+		FillOpacity:  17,
+		GradientMode: common.GraphGradientModeScheme,
+		PointSize:    Pointer[float64](3),
+		StackingMode: common.StackingModeNone,
+	}
+}
+
+// ThresholdScheme returns TimeSeriesPanelOptions preconfigured to match
+// Grafana's built-in "Threshold scheme" panel style preset: color driven by
+// the panel's own thresholds rather than by series, with a scheme gradient
+// fill. Callers must still set a Threshold on the base PanelOptions — the
+// preset only owns the color/gradient mode, not the threshold steps.
+func ThresholdScheme(base *PanelOptions) *TimeSeriesPanelOptions {
+	b := *base
+	b.ColorScheme = dashboard.FieldColorModeIdThresholds
+	return &TimeSeriesPanelOptions{
+		PanelOptions: &b,
+		DrawStyle:    common.GraphDrawStyleLine,
+		FillOpacity:  27,
+		GradientMode: common.GraphGradientModeScheme,
+		PointSize:    Pointer[float64](3),
+		StackingMode: common.StackingModeNone,
+	}
 }
 
 type BarGaugePanelOptions struct {

@@ -459,10 +459,8 @@ func TestManagedGRPCClientConfig(t *testing.T) {
 
 		brokerConfig := BrokerConfig{
 			Logger: logger.Test(t),
-			GRPCOpts: GRPCOpts{
-				DialOpts: []grpc.DialOption{
-					grpc.WithNoProxy(), // any grpc.DialOption will do
-				},
+			DialOpts: []grpc.DialOption{
+				grpc.WithNoProxy(), // any grpc.DialOption will do
 			},
 		}
 

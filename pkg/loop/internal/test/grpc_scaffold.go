@@ -58,8 +58,8 @@ func NewGRPCScaffold[T Client, S any](t *testing.T, serverFn SetupGRPCServer[S],
 	lggr := logger.Test(t)
 	broker := &loopnettest.Broker{T: t}
 	brokerExt := &loopnet.BrokerExt{
-		Broker:       broker,
-		BrokerConfig: loopnet.BrokerConfig{Logger: lggr, StopCh: make(chan struct{})},
+		Broker: broker,
+		Logger: lggr, StopCh: make(chan struct{}),
 	}
 
 	s := serverFn(t, grpcServer, brokerExt)

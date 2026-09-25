@@ -81,10 +81,6 @@ func (r *requirementSelectingModule) Close() {
 	}
 }
 
-func (r *requirementSelectingModule) IsLegacyDAG() bool {
-	return r.modules[0].IsLegacyDAG()
-}
-
 func (r *requirementSelectingModule) Execute(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
 	if request.GetTrigger() == nil {
 		return r.subscribe(ctx, request, handler)

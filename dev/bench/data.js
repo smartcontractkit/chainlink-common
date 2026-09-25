@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790356830508,
+  "lastUpdate": 1790363526816,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61620,6 +61620,66 @@ window.BENCHMARK_DATA = {
             "value": 140065,
             "unit": "ns/op",
             "extra": "8012 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e1b87ad2d7b1a6e1372d4e3fa759dac19db91c0d",
+          "message": "[CRE] Remove legacy DAG guest SDK from workflows/wasm root (#2416)\n\nDeletes the legacy v1 DAG guest SDK package (runner, runner_wasip1, runner_notwasip1, sdk + tests). Zero importers remain since C2 removed the legacy guest test modules. Part of CRE-5836.",
+          "timestamp": "2026-09-25T19:04:14Z",
+          "tree_id": "2c01fd946027b6824116c675878920e4dbc23e26",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e1b87ad2d7b1a6e1372d4e3fa759dac19db91c0d"
+        },
+        "date": 1790363522329,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 272.1,
+            "unit": "ns/op",
+            "extra": "4397126 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 60131,
+            "unit": "ns/op",
+            "extra": "19521 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 291.5,
+            "unit": "ns/op",
+            "extra": "4132669 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 59575,
+            "unit": "ns/op",
+            "extra": "19930 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22058,
+            "unit": "ns/op",
+            "extra": "55000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 101128,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

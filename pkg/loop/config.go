@@ -83,6 +83,7 @@ const (
 	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
 	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
 	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
+	envTelemetryMetricExportBatchSize     = "CL_TELEMETRY_METRIC_EXPORT_BATCH_SIZE"
 	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
 	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
@@ -195,6 +196,9 @@ type EnvConfig struct {
 	TelemetryLogMaxQueueSize           int
 	TelemetryTraceCompressor           string
 	TelemetryMetricCompressor          string
+	// TelemetryMetricExportBatchSize limits each exporter call to that many
+	// data points. Zero (the default) disables batching.
+	TelemetryMetricExportBatchSize int
 	// TelemetryMetricCardinalityLimit is nil when unset, so AsCmdEnv can
 	// distinguish "no opinion" (child applies its own default) from an
 	// explicit 0, which disables the limit.
@@ -316,6 +320,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
 	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
 	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
+	add(envTelemetryMetricExportBatchSize, strconv.Itoa(e.TelemetryMetricExportBatchSize))
 	if e.TelemetryMetricCardinalityLimit != nil {
 		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
 	}
@@ -569,6 +574,10 @@ func (e *EnvConfig) parse() error {
 		}
 		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
 		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
+		e.TelemetryMetricExportBatchSize, err = getInt(envTelemetryMetricExportBatchSize)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricExportBatchSize, err)
+		}
 		if v, ok := os.LookupEnv(envTelemetryMetricCardinalityLimit); ok {
 			limit, err := strconv.Atoi(v)
 			if err != nil {

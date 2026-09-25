@@ -43,6 +43,11 @@ type client struct {
 type Opt func(*clientConfig)
 
 // clientConfig is the configuration for the ChipIngressClient.
+//
+// clientConfig must remain comparable: it is referenced by the exported Opt type, and a
+// comparability break (e.g. adding a slice-valued field) is reported by api-diff CI as a
+// breaking change. That is also why retryPolicy is a pointer. The compile-time guard below
+// enforces comparability.
 type clientConfig struct {
 	transportCredentials  credentials.TransportCredentials
 	perRPCCredentials     credentials.PerRPCCredentials
@@ -52,9 +57,14 @@ type clientConfig struct {
 	meterProvider         metric.MeterProvider
 	tracerProvider        trace.TracerProvider
 	nopInfoHeaderProvider HeaderProvider
+	retryPolicy           *RetryPolicy
 }
 
+// Compile-time assertion that clientConfig stays comparable (fails to build otherwise).
+var _ = map[clientConfig]struct{}{}
+
 func newClientConfig(host string) *clientConfig {
+	defaultPolicy := defaultRetryPolicy()
 	cfg := &clientConfig{
 		headerProvider:    nil,
 		perRPCCredentials: nil,
@@ -63,6 +73,7 @@ func newClientConfig(host string) *clientConfig {
 		insecureConnection:    true,
 		transportCredentials:  insecure.NewCredentials(),
 		nopInfoHeaderProvider: nil,
+		retryPolicy:           &defaultPolicy,
 	}
 	return cfg
 }
@@ -99,15 +110,20 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 			PermitWithoutStream: true,
 		}),
 	}
-	// Retry policy
-	retryPolicy := `{
-		"maxAttempts": 3,
-		"initialBackoff": "100ms",
-		"maxBackoff": "1s",
-		"backoffMultiplier": 2,
-		"retryableStatusCodes": ["UNAVAILABLE", "RESOURCE_EXHAUSTED"]
-	}`
-	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryPolicy))
+	// Retry policy. Built from typed structs (see retry_policy.go) rather than a hand-written
+	// JSON literal - a previous hand-written literal here was malformed (fields missing the
+	// required methodConfig[].retryPolicy nesting) and gRPC's parser silently discarded it
+	// without error, so the client never actually retried anything.
+	policy := defaultRetryPolicy()
+	if cfg.retryPolicy != nil {
+		policy = *cfg.retryPolicy
+	}
+	throttling := defaultRetryThrottlingPolicy()
+	retryServiceConfig, err := buildRetryServiceConfigJSON(policy, &throttling)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build retry policy service config: %w", err)
+	}
+	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryServiceConfig))
 	// Auth
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))

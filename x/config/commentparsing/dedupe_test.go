@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 // The types below stand in for a dependency's, carrying the DocComments methods a generator would
@@ -59,10 +61,6 @@ func (dedupeBeta) DocComments() map[string]FieldDoc {
 
 var methodReceiver = regexp.MustCompile(`func \((\w+)\) DocComments\(\)`)
 
-// TestFilesProducesEachTypeOnce covers every way a struct can arrive at one run: named as a root,
-// nested in another root's tree, nested in two structs at once, reached through each kind of
-// container, and named as a root while also being nested.
-//
 // The arrangements must agree with each other as well as be duplicate-free, since a config tree's
 // shape is a property of the types, not of the order a caller listed them in.
 func TestFilesProducesEachTypeOnce(t *testing.T) {
@@ -110,7 +108,7 @@ func TestFilesProducesEachTypeOnce(t *testing.T) {
 			dir := writePackage(t, map[string]string{"go.mod": "module example.com/x\n\ngo 1.26\n"})
 
 			var captured []Package
-			_, err := Files(RunArgs{Dir: dir, Roots: tc.roots, Tool: "example.com/x/gen"},
+			_, err := Files(RunArgs{Dir: dir, Roots: tc.roots, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 				func(pkgs []Package) (map[string]string, error) {
 					captured = pkgs
 					return nil, nil
@@ -150,7 +148,7 @@ func TestFilesOrderDoesNotChangeTheResult(t *testing.T) {
 	generate := func(roots ...any) string {
 		dir := writePackage(t, map[string]string{"go.mod": "module example.com/x\n\ngo 1.26\n"})
 		var captured []Package
-		_, err := Files(RunArgs{Dir: dir, Roots: roots, Tool: "example.com/x/gen"},
+		_, err := Files(RunArgs{Dir: dir, Roots: roots, Tool: "example.com/x/gen", Markup: tomlmarkup.New()},
 			func(pkgs []Package) (map[string]string, error) {
 				captured = pkgs
 				return nil, nil

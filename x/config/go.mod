@@ -3,6 +3,7 @@ module github.com/smartcontractkit/chainlink-common/x/config
 go 1.26.6
 
 require (
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/smartcontractkit/chainlink-common v0.9.6-0.20260206011444-ed1fb0284e5d
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/mod v0.38.0

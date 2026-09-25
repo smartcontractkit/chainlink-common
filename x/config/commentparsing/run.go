@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/utils/codegen"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
 // Generator turns the discovered packages of a config tree into files to write, keyed by path
@@ -25,6 +26,10 @@ type RunArgs struct {
 	// Roots are the config values whose type trees are walked. List every type a consumer may
 	// reach on its own, not only the outermost config.
 	Roots []any
+
+	// Markup is the required config language, such as tomlmarkup.New(). The walk stops at a type
+	// it reads whole, whose fields aren't configured one at a time and so need no docs.
+	Markup markup.Markup
 
 	// Dir anchors the run: the module enclosing it decides which types are local, and every
 	// generated file path is relative to it. Empty means the working directory.
@@ -58,8 +63,11 @@ func Files(args RunArgs, generators ...Generator) (map[string]string, error) {
 	if args.Tool == "" {
 		return nil, errors.New("tool name must not be empty")
 	}
+	if args.Markup == nil {
+		return nil, markup.Err
+	}
 
-	pkgs, err := Discover(args.dir(), args.Roots...)
+	pkgs, err := discover(args.dir(), args.Markup, args.Roots...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +109,7 @@ func Files(args RunArgs, generators ...Generator) (map[string]string, error) {
 // A path reaching outside the run directory is refused rather than cleaned into one. [Run] scans
 // only that directory, so a file above it is written without the header guard and never revisited
 // when the type it documents goes away. A package above [RunArgs.Dir] reaches this as "..", which
-// means the run wants anchoring further up - at the module root, as [Discover] describes.
+// means the run wants anchoring further up - at the module root, as [RunArgs.Dir] describes.
 func containedPath(p string) (string, error) {
 	if filepath.IsAbs(p) {
 		return "", fmt.Errorf("%s: a generated path is relative to the run directory", p)

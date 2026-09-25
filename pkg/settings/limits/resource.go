@@ -212,9 +212,9 @@ func (l *resourcePoolLimiter[N]) newLimitUsage(opts ...metric.RecordOption) *res
 				l.recordDenied(ctx, n, opts...)
 			}
 		},
-	}
-	// copy but replace updater
-	u.resourcePoolLimiter = *l
+
+		// copy but replace updater
+		resourcePoolLimiter: *l}
 	u.updater = newUpdater(l.lggr, l.getLimitFn, l.subFn)
 	return &u
 }
@@ -374,9 +374,7 @@ type unscopedResourcePoolLimiter[N Number] struct {
 
 func newUnscopedResourcePoolLimiter[N Number](defaultLimit N) *unscopedResourcePoolLimiter[N] {
 	l := &unscopedResourcePoolLimiter[N]{
-		resourcePoolLimiter: resourcePoolLimiter[N]{
-			updater: newUpdater[N](nil, func(ctx context.Context) (N, error) { return defaultLimit, nil }, nil),
-		},
+		updater: newUpdater[N](nil, func(ctx context.Context) (N, error) { return defaultLimit, nil }, nil),
 	}
 	l.resourcePoolUsage = l.newLimitUsage()
 	l.setOnLimitUpdate(func(context.Context) {
@@ -502,11 +500,9 @@ func WorkflowResourcePoolLimiter[N Number](defaultLimit N) ResourcePoolLimiter[N
 
 func newScopedResourcePoolLimiter[N Number](scope settings.Scope, key string, defaultLimit N) *scopedResourcePoolLimiter[N] {
 	l := &scopedResourcePoolLimiter[N]{
-		resourcePoolLimiter: resourcePoolLimiter[N]{
-			key:     key,
-			updater: newUpdater[N](nil, func(ctx context.Context) (N, error) { return defaultLimit, nil }, nil),
-		},
-		scope: scope,
+		key:     key,
+		updater: newUpdater[N](nil, func(ctx context.Context) (N, error) { return defaultLimit, nil }, nil),
+		scope:   scope,
 	}
 	l.setOnLimitUpdate(func(ctx context.Context) {
 		tenant := l.scope.Value(ctx)
@@ -679,7 +675,7 @@ func (s *scopedResourcePoolLimiter[N]) getOrCreate(ctx context.Context) (resourc
 			return unlimitedResourcePool[N]{}, s.wg.Done, nil
 		}
 		s.wg.Done()
-		return nil, nil, fmt.Errorf("failed to get resource pool: missing tenant for scope: %s", s.scope)
+		return nil, nil, fmt.Errorf("failed to get resource pool: %w", ErrMissingTenant{Scope: s.scope})
 	}
 
 	usage := s.newLimitUsage(tenant)

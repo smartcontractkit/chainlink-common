@@ -12,12 +12,10 @@ import (
 )
 
 var Keystore = staticKeystore{
-	staticKeystoreConfig: staticKeystoreConfig{
-		Account:   libocr.Account("testaccount"),
-		encoded:   []byte{5: 11},
-		signed:    []byte{13: 37},
-		decrypted: []byte{17: 41},
-	},
+	Account:   libocr.Account("testaccount"),
+	encoded:   []byte{5: 11},
+	signed:    []byte{13: 37},
+	decrypted: []byte{17: 41},
 }
 
 var _ core.Keystore = (*staticKeystore)(nil)

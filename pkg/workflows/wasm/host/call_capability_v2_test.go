@@ -117,13 +117,13 @@ func instantiateCallCapModule(t *testing.T, wat string, exec *execution[*sdkpb.E
 
 	hostFn := createCallCapFn(lggr, exec, m.callCapParams)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(GetEngine(mc.Logger).Engine)
 	// NewModule enables wasmtime epoch interruption (SetEpochInterruption(true))
 	// for timeout enforcement. In production, Execute sets the epoch deadline
 	// based on the configured timeout. Here we set it to MaxUint64 so the
 	// epoch never fires during the test, effectively disabling interruption.
 	store.SetEpochDeadline(math.MaxUint64)
-	linker := wasmtime.NewLinker(m.engine)
+	linker := wasmtime.NewLinker(GetEngine(mc.Logger).Engine)
 	require.NoError(t, linker.FuncWrap("env", "call_capability", hostFn))
 
 	inst, err := linker.Instantiate(store, m.module)
@@ -145,7 +145,6 @@ func TestNewModule_DetectsCallCapabilityParamCount_V2(t *testing.T) {
 	mc := defaultNoDAGModCfg(t)
 	m, err := NewModule(t.Context(), mc, wasmBytes)
 	require.NoError(t, err)
-	require.False(t, m.IsLegacyDAG(), "expected NoDAG module")
 
 	assert.Equal(t, callCapabilityV2ParamCount, m.callCapParams,
 		"module should detect 4-param call_capability import")
@@ -160,7 +159,6 @@ func TestNewModule_DetectsCallCapabilityParamCount_V1(t *testing.T) {
 	mc := defaultNoDAGModCfg(t)
 	m, err := NewModule(t.Context(), mc, wasmBytes)
 	require.NoError(t, err)
-	require.False(t, m.IsLegacyDAG(), "expected NoDAG module")
 
 	assert.Equal(t, callCapabilityV1ParamCount, m.callCapParams,
 		"module should detect 2-param call_capability import")
@@ -369,108 +367,6 @@ func TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
 }
 
-// --- Host function tests (V1: 2-param import → request buffer) ---
-
-// TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer verifies that
-// V1 (legacy 2-param) writes errors to the request buffer — the same buffer
-// is used for both request and response. This is the known limitation that
-// V2 fixes by using a dedicated response buffer.
-func TestCallCapability_V1_CallCapAsyncErrorWritesToRequestBuffer(t *testing.T) {
-	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
-
-	zeroLimiter := limits.GlobalResourcePoolLimiter(0)
-	mockExecHelper := mocks.NewMockExecutionHelper(t)
-
-	// Use an already-cancelled context so the zero-capacity limiter returns
-	// immediately instead of blocking.
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-
-	exec := &execution[*sdkpb.ExecutionResult]{
-		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
-		usedCallbackIDs:     map[string]bool{},
-		pendingCallsLimiter: zeroLimiter,
-		ctx:                 ctx,
-		executor:            mockExecHelper,
-	}
-
-	// instantiateCallCapModule uses createCallCapFn internally, dispatching
-	// to V1 because watCallCapV1Test declares a 2-param import.
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV1Test, exec, lggr)
-
-	req := &sdkpb.CapabilityRequest{
-		Id:         "test-cap@1.0.0",
-		CallbackId: 1,
-	}
-	reqBytes, err := proto.Marshal(req)
-	require.NoError(t, err)
-
-	reqOffset := int32(0)
-	memWrite(t, mem, store, reqOffset, reqBytes)
-
-	callCap := inst.GetExport(store, "call_cap").Func()
-	result, err := callCap.Call(store, reqOffset, int32(len(reqBytes)))
-	require.NoError(t, err)
-
-	resultI64 := result.(int64)
-	// V1 writes the error to the request buffer (same buffer for both) and
-	// returns a negative value. This is the known limitation that V2 fixes
-	// by using a dedicated response buffer.
-	assert.Negative(t, resultI64,
-		"V1 should return negative on callCapAsync error")
-
-	// The error string is written to the request buffer (offset 0), but
-	// truncated to fit the request buffer size. Check for the prefix that
-	// survives truncation.
-	bytesWritten := int(-resultI64)
-	reqData := memRead(t, mem, store, reqOffset, int32(bytesWritten))
-	assert.Contains(t, string(reqData), "error calling",
-		"V1 writes error to request buffer (same buffer for both)")
-
-	// Verify error was logged.
-	require.Len(t, logs.AllUntimed(), 1)
-	assert.Equal(t, zapcore.ErrorLevel, logs.AllUntimed()[0].Level)
-}
-
-// TestCallCapability_V1_SuccessReturnsZero verifies that V1 returns 0 on a
-// successful call, matching the existing behavior.
-func TestCallCapability_V1_SuccessReturnsZero(t *testing.T) {
-	mockExecHelper := mocks.NewMockExecutionHelper(t)
-	// callCapAsync runs CallCapability in a goroutine; use .Maybe() since the
-	// test only checks the synchronous return value, not the async result.
-	mockExecHelper.EXPECT().
-		CallCapability(mock.Anything, mock.Anything).
-		Return(&sdkpb.CapabilityResponse{}, nil).Maybe()
-
-	exec := &execution[*sdkpb.ExecutionResult]{
-		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
-		usedCallbackIDs:     map[string]bool{},
-		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
-		ctx:                 t.Context(),
-		executor:            mockExecHelper,
-	}
-
-	store, inst, mem := instantiateCallCapModule(t, watCallCapV1Test, exec, logger.Test(t))
-
-	req := &sdkpb.CapabilityRequest{
-		Id:         "test-cap@1.0.0",
-		CallbackId: 42,
-	}
-	reqBytes, err := proto.Marshal(req)
-	require.NoError(t, err)
-
-	reqOffset := int32(0)
-	memWrite(t, mem, store, reqOffset, reqBytes)
-
-	callCap := inst.GetExport(store, "call_cap").Func()
-	result, err := callCap.Call(store, reqOffset, int32(len(reqBytes)))
-	require.NoError(t, err)
-
-	resultI64 := result.(int64)
-	assert.Equal(t, int64(0), resultI64,
-		"V1 should return 0 on success")
-}
-
 // --- Dynamic linking tests ---
 
 // TestLinkNoDAG_RegistersV2For4ParamImport verifies that linkNoDAG registers
@@ -490,7 +386,7 @@ func TestLinkNoDAG_RegistersV2For4ParamImport(t *testing.T) {
 	// If the wrong function signature is registered, wasmtime will reject the import.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(GetEngine(mc.Logger).Engine)
 	exec := &execution[*sdkpb.ExecutionResult]{
 		module:              m,
 		ctx:                 t.Context(),
@@ -519,7 +415,7 @@ func TestLinkNoDAG_RegistersV1For2ParamImport(t *testing.T) {
 	// The module should link successfully with the V1 host function.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(GetEngine(mc.Logger).Engine)
 	exec := &execution[*sdkpb.ExecutionResult]{
 		module:              m,
 		ctx:                 t.Context(),

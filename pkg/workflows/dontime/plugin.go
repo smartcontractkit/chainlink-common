@@ -220,7 +220,6 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		OffsetFromMedian int64
 	}
 	var timestampNodePairs []timestampNodePair
-	limitByBatchSizeFlagEnabled := true
 
 	prevOutcome := &pb.Outcome{}
 	if err := proto.Unmarshal(outctx.PreviousOutcome, prevOutcome); err != nil {
@@ -235,10 +234,6 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		if err := proto.Unmarshal(ao.Observation, observation); err != nil {
 			p.lggr.Errorf("failed to unmarshal observation in Outcome phase")
 			continue
-		}
-
-		if !observation.GetLimitByBatchSizeFlag() {
-			limitByBatchSizeFlagEnabled = false
 		}
 
 		for id, requestSeqNum := range observation.Requests {
@@ -313,7 +308,7 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 	}
 
 	var outcomeBatchOverflowCount int64
-	if len(outcome.ObservedDonTimes) > p.batchSize && limitByBatchSizeFlagEnabled {
+	if len(outcome.ObservedDonTimes) > p.batchSize {
 		ids := make([]string, 0, len(outcome.ObservedDonTimes))
 		for id := range outcome.ObservedDonTimes {
 			ids = append(ids, id)

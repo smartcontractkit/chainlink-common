@@ -21,12 +21,10 @@ func NewPathTraverseEpochToTimeModifier(fields []string, enablePathTraverse bool
 	}
 
 	m := &timeToUnixModifier{
-		modifierBase: modifierBase[bool]{
-			enablePathTraverse: enablePathTraverse,
-			fields:             fieldMap,
-			onToOffChainType:   map[reflect.Type]reflect.Type{},
-			offToOnChainType:   map[reflect.Type]reflect.Type{},
-		},
+		enablePathTraverse: enablePathTraverse,
+		fields:             fieldMap,
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
 	}
 
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ bool) error {

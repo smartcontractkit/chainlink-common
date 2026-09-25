@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -60,7 +59,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 				defer close(stopCh)
 				test.PluginTest(b, relayer.PluginKeystoreName, &relayer.GRPCPluginKeystore{
 					PluginServer: ks,
-					BrokerConfig: net.BrokerConfig{Logger: logger.Nop(), StopCh: stopCh},
+					Logger:       logger.Nop(), StopCh: stopCh,
 				}, func(b *testing.B, ks core.Keystore) {
 					b.ResetTimer()
 					defer b.StopTimer()

@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -111,48 +113,61 @@ func newStaticHeaderProvider(headers map[string]string, requireTLS bool) HeaderP
 // NewStaticHeaderProvider returns a HeaderProvider that always returns the given headers,
 // for use with WithHeaderProvider to attach fixed, non-auth gRPC metadata (e.g. resource
 // attributes) to every request.
+//
+// This is for the non-auth interceptor path only. It reports RequireTransportSecurity() == false,
+// which WithHeaderProvider never consults — the HeaderProvider interface declares only Headers,
+// and grpc asks only credentials.PerRPCCredentials about transport security. Do not pass the
+// result to WithTokenAuth: that path takes its TLS requirement from the client config
+// (!c.insecureConnection), not from the provider, so the false here would be silently ignored
+// rather than honoured. Use NewHeaderProvider for auth headers.
 func NewStaticHeaderProvider(headers map[string]string) HeaderProvider {
 	return newStaticHeaderProvider(headers, false)
 }
 
-// SanitizeMetadataValue replaces any byte outside the printable ASCII range [0x20-0x7E]
-// with '?'. grpc-go hard-fails the entire RPC when an outgoing metadata value fails this
-// check (unlike the CE-extension path, where an invalid entry is simply dropped), so
-// values headed for gRPC metadata must be normalized before being sent.
-func SanitizeMetadataValue(val string) string {
-	b := []byte(val)
-	out := make([]byte, len(b))
-	for i, c := range b {
-		if c >= 0x20 && c <= 0x7E {
-			out[i] = c
-		} else {
-			out[i] = '?'
+// isPrintableASCII reports whether every byte of val is in the printable ASCII range [0x20, 0x7E].
+// grpc-go hard-fails the entire RPC — auth header included — when an outgoing metadata value fails
+// this check, so a value that does not pass is omitted rather than rewritten: a byte-mangled value
+// is a worse outcome than a dropped attribute for an operator-facing observability field.
+func isPrintableASCII(val string) bool {
+	for i := 0; i < len(val); i++ {
+		if c := val[i]; c < 0x20 || c > 0x7E {
+			return false
 		}
 	}
-	return string(out)
+	return true
 }
 
-// SanitizeMetadataHeaders sanitizes a map of resource-attribute headers for use as outgoing
-// gRPC metadata (e.g. via NewStaticHeaderProvider). Keys are sanitized with
-// sanitizeExtensionName — the same strict [a-z0-9] charset used for CloudEvent extensions —
-// which is a subset of grpc's allowed metadata-key charset, so a sanitized key can never trip
-// grpc's key validation or the reserved "-bin" suffix, and produces the same key stem as the
-// corresponding CE extension (differing only by the CloudEvents Kafka binding's "ce_" prefix
-// once on the wire). Values are sanitized via SanitizeMetadataValue, since grpc-go fails the
-// whole RPC on a non-printable value. Entries that sanitize to an empty key, or that collide
-// with a reserved extension name (see reservedExtensionNames) or a gRPC-reserved header name
-// (see reservedMetadataKeys), are skipped. Keys are applied in sorted order so duplicate
-// sanitized keys resolve deterministically (first in sorted order wins), matching
-// WithResourceAttributeExtensions' collision handling.
+// SanitizeMetadataHeaders projects a map of resource attributes onto the closed whitelist defined
+// by resourceAttributeHeaders, returning the gRPC metadata headers to attach to every request
+// (e.g. via NewStaticHeaderProvider). An attribute named csa_public_key is emitted as
+// chainlink-resource-csa-public-key; chip-ingress reads exactly those fixed header names and forwards them
+// onto every Kafka record a request produces under resource_<original attribute key>.
 //
-// Note: unlike the CloudEvents Kafka binding, gRPC metadata keys are NOT prefixed with "ce_" —
-// that prefix is a CloudEvents-binding concept, not a metadata one, and reusing it here would
-// collide with the CE binding's own "ce_<name>" Kafka header if the server ever forwards gRPC
-// metadata verbatim onto Kafka.
+// The whitelist is what makes this safe without validation machinery. Key matching is
+// case-insensitive against the fixed set, so no operator-defined key can ever become a header name:
+// an attribute named X-Beholder-Node-Auth-Token is simply not in the whitelist and is ignored,
+// which is how the CSA auth token stays out of reach without a deny-list (the header interceptor
+// appends to outgoing metadata, so an attribute that could land on the auth header's name would
+// break authentication by sending a second value under it).
+//
+// An attribute is omitted, never rewritten, when its key is not whitelisted (regardless of case)
+// or its value is not printable ASCII (isPrintableASCII). Keys are processed in sorted order so
+// that if case variants of one whitelisted attribute collide on the same header name, the first in
+// sorted order of the original keys wins, deterministically.
 func SanitizeMetadataHeaders(in map[string]string) map[string]string {
-	out := make(map[string]string, len(in))
-	for _, pair := range sanitizeResourceAttributeKeys(in, reservedMetadataKeys) {
-		out[pair.name] = SanitizeMetadataValue(in[pair.key])
+	out := make(map[string]string, len(resourceAttributeHeaders))
+	for _, k := range slices.Sorted(maps.Keys(in)) {
+		header, ok := resourceAttributeHeaders[strings.ToLower(k)]
+		if !ok {
+			continue
+		}
+		if _, dup := out[header]; dup {
+			continue
+		}
+		if !isPrintableASCII(in[k]) {
+			continue
+		}
+		out[header] = in[k]
 	}
 	return out
 }

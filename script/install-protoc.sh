@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+set -eu
 
 
 VERSION=$1
@@ -13,8 +13,11 @@ os=$(uname)
 arch=$(uname -m)
 
 install_dir=$HOME/.local
-protoc --version | grep $VERSION
-rc=$?
+rc=1
+if command -v protoc &> /dev/null; then
+    protoc --version | grep $VERSION
+    rc=$?
+fi
 if [ $rc -eq 0 ]; then
     # we have the current VERSION
     echo "protoc up-to-date @ $VERSION"
@@ -41,7 +44,7 @@ workdir=$(mktemp -d)
 pushd $workdir
 pb_url="https://github.com/protocolbuffers/protobuf/releases"
 artifact=protoc-$VERSION-$os-$arch.zip
-curl -LO $pb_url/download/v${VERSION}/$artifact
+curl -fLO -w "%{url_effective}\n" $pb_url/download/v${VERSION}/$artifact
 if [[ ! -d $install_dir ]]; then
     mkdir $install_dir
 fi

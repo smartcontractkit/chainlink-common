@@ -102,3 +102,29 @@ message CapabilityConfig {
   values.v1.Map spec_config = 11;
 }
 
+// OffchainCapabilitiesRegistry is the offchain-distributed consolidation of the capability
+// configuration that today is split across the on-chain CapabilitiesRegistry, job specs, and
+// node TOML. It is delivered to nodes out-of-band (via the cresettings job with
+// config_type=capabilities_registry) and is cross-validated against the on-chain registry
+// before being applied. It reuses CapabilityConfig so the offchain and on-chain shapes stay
+// identical and can be compared field-by-field.
+message OffchainCapabilitiesRegistry {
+  // Monotonic version. A node applies a payload only when its version is strictly greater
+  // than the version already applied, so out-of-order deliveries are ignored.
+  uint64 version = 1;
+
+  // Per-DON configuration, keyed by on-chain DON ID.
+  map<uint32, OffchainDONConfig> dons = 2;
+}
+
+// OffchainDONConfig carries the offchain capability configuration for a single DON.
+message OffchainDONConfig {
+  // On-chain DON ID this config applies to. Redundant with the map key in
+  // OffchainCapabilitiesRegistry.dons but kept so a DONConfig is self-describing.
+  uint32 don_id = 1;
+
+  // Capability configuration keyed by capability ID (e.g. "consensus@1.0.0"), using the same
+  // CapabilityConfig message the on-chain registry stores.
+  map<string, CapabilityConfig> capability_configs = 2;
+}
+

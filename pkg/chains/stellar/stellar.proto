@@ -123,7 +123,7 @@ message GetEventsRequest {
 }
 
 message EventInfo {
-  EventType event_type = 1;
+  optional EventType event_type = 1;
 
   uint32 ledger = 2;
   string ledger_closed_at = 3;
@@ -217,7 +217,7 @@ enum TxStatus {
 
 // SubmitTransactionResponse carries the outcome of a transaction submission.
 message SubmitTransactionResponse {
-  TxStatus tx_status = 1;
+  optional TxStatus tx_status = 1;
   string   tx_hash = 2;
   string   tx_idempotency_key = 3;  // Assigned key (caller-supplied or TXM-generated)
   bytes    result_xdr = 4;       // TransactionResult binary XDR; empty if unavailable

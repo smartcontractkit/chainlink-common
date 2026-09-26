@@ -179,7 +179,7 @@
 			"Stellar": {
 				"ReportSizeLimit": "5kb",
 				"MaxResourceFee": {
-					"Default": "1000000",
+					"Default": "10000000",
 					"Values": {}
 				}
 			}

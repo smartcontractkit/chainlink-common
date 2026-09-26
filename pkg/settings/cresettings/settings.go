@@ -289,7 +289,9 @@ var Default = Schema{
 			},
 			Stellar: stellarChainWrite{
 				ReportSizeLimit: Size(5 * config.KByte),
-				MaxResourceFee:  PerChainSelector(Uint64(1_000_000), map[string]uint64{}),
+				// A forwarder -> data-feeds cache write simulates at ~1.7M stroops on localnet,
+				// above the previous 1M default. 10M stroops = 1 XLM, matching the TXM cap.
+				MaxResourceFee:  PerChainSelector(Uint64(10_000_000), map[string]uint64{}),
 			},
 		},
 		ChainRead: chainRead{

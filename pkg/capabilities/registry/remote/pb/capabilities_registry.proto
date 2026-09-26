@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb";
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb";
 
 package loop;
 
@@ -59,10 +59,15 @@ message GetRequest {
   string id = 1;
 }
 
-// GetReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin) and type indicating client wrapper that we need to use on the client side.
+// GetReply locates the capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get],
+// and indicates which client wrapper the caller should use to reach it.
 message GetReply {
+  // Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
+  // target is a GRPC target the caller dials to reach the capability. Its scheme is
+  // chosen by the serving host, which is also the only party that must understand it.
+  string target = 3;
 }
 
 // GetTrigger has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger].
@@ -70,9 +75,12 @@ message GetTriggerRequest {
   string id = 1;
 }
 
-// GetTriggerReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+// GetTriggerReply locates the capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger].
 message GetTriggerReply {
+  // Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
   uint32 capabilityID = 1;
+  // target is a GRPC target the caller dials to reach the capability.
+  string target = 2;
 }
 
 // GetExecutableRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable].
@@ -80,14 +88,21 @@ message GetExecutableRequest {
   string id = 1;
 }
 
-// GetExecutableReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+// GetExecutableReply locates the capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable].
 message GetExecutableReply {
+  // Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
   uint32 capabilityID = 1;
+  // target is a GRPC target the caller dials to reach the capability.
+  string target = 2;
 }
 
-// ListReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.List], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+// ListReply locates each capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.List].
+// targets, when set, replaces capabilityID entirely rather than being parallel to it.
 message ListReply {
+  // Deprecated: GRPC connectionIDs internal to go-hashicorp-plugin. Use targets.
   repeated uint32 capabilityID = 1;
+  // targets are GRPC targets the caller dials to reach each capability.
+  repeated string targets = 2;
 }
 
 // GetTargetReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
@@ -97,8 +112,11 @@ message GetTargetReply {
 
 // Add has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Add].
 message AddRequest {
+  // Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
   uint32 capabilityID = 1;
   ExecuteAPIType type = 2;
+  // target is a GRPC target the registry dials to reach the capability being added.
+  string target = 3;
 }
 
 // Remove has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Remove].

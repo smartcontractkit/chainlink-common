@@ -355,6 +355,9 @@ var Default = Schema{
 		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureConsensusStricterMedianQuorumActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -529,6 +532,7 @@ type Workflows struct {
 	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
 	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
+	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

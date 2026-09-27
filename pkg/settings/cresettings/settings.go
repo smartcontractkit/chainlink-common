@@ -81,6 +81,8 @@ var Default = Schema{
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled:              Bool(false),
 	VaultZoneBWorkflowGetSecretsRestrictEnabled:      Bool(false),
+	VaultGetSecretsIncludePublicKeyEnabled:           Bool(false),
+	VaultPublicKeyEncryptOnlyEnabled:                 Bool(false),
 	GatewayHTTPGlobalRate:                            Rate(rate.Limit(500), 500),
 	GatewayHTTPPerNodeRate:                           Rate(rate.Limit(100), 100),
 	GatewayConfidentialRelayGlobalRate:               Rate(rate.Limit(50), 10),
@@ -392,7 +394,19 @@ type Schema struct {
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultSignedResponseRequestIDEnabled         Setting[bool]
 	VaultZoneBWorkflowGetSecretsRestrictEnabled Setting[bool]
-	GatewayHTTPGlobalRate                       Setting[config.Rate]
+	// VaultGetSecretsIncludePublicKeyEnabled, when true, makes the Vault plugin
+	// include the raw Vault public key (the key used to produce the shares) in the
+	// GetSecrets OCR response body, so decrypt-side callers read it live from the
+	// response instead of from CapReg / static config. Gate flag consumed in the
+	// Vault plugin.
+	VaultGetSecretsIncludePublicKeyEnabled Setting[bool]
+	// VaultPublicKeyEncryptOnlyEnabled, when true, makes the Vault capability's
+	// GetPublicKey return only the stable encrypt-only sub-key (Group/G_bar/H,
+	// without the per-recipient HArray), so encrypt-only consumers (e.g. the CRE
+	// CLI) are unaffected by reshares. Atomic feature flag consumed in the Vault
+	// capability; flip in lockstep with the on-chain CapReg VaultPublicKey write.
+	VaultPublicKeyEncryptOnlyEnabled Setting[bool]
+	GatewayHTTPGlobalRate            Setting[config.Rate]
 	GatewayHTTPPerNodeRate                      Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate          Setting[config.Rate]
 	GatewayConfidentialRelayPerNodeRate         Setting[config.Rate]

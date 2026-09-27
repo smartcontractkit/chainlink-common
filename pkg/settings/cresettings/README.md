@@ -61,6 +61,8 @@ flowchart
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
         VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
+        VaultGetSecretsIncludePublicKeyEnabled[/VaultGetSecretsIncludePublicKeyEnabled\]:::gate
+        VaultPublicKeyEncryptOnlyEnabled[/VaultPublicKeyEncryptOnlyEnabled\]:::gate
         PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate
     end
 

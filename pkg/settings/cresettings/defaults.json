@@ -20,6 +20,8 @@
 	"VaultPendingQueueStallThreshold": "0",
 	"VaultSignedResponseRequestIDEnabled": "false",
 	"VaultZoneBWorkflowGetSecretsRestrictEnabled": "false",
+	"VaultGetSecretsIncludePublicKeyEnabled": "false",
+	"VaultPublicKeyEncryptOnlyEnabled": "false",
 	"GatewayHTTPGlobalRate": "500rps:500",
 	"GatewayHTTPPerNodeRate": "100rps:100",
 	"GatewayConfidentialRelayGlobalRate": "50rps:10",

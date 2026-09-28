@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790605090603,
+  "lastUpdate": 1790610309267,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61800,6 +61800,66 @@ window.BENCHMARK_DATA = {
             "value": 46265,
             "unit": "ns/op",
             "extra": "26385 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "152236536+Krish-vemula@users.noreply.github.com",
+            "name": "Krish-vemula",
+            "username": "Krish-vemula"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1240c80a639ea28d6ff378f08cd692d34e19ebc",
+          "message": "Add chain capability initialization success/failure metrics (#2412)\n\n* Add chain capability initialization success/failure metrics\n\n* build fix\n\n* remove the success metric\n\n* rename the initmetric\n\n* update: change the 2 label cap id to 1",
+          "timestamp": "2026-09-28T15:36:45Z",
+          "tree_id": "c0c4fb1b54ce0ebd7b76bfc0ba3d709257db7d32",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b1240c80a639ea28d6ff378f08cd692d34e19ebc"
+        },
+        "date": 1790610304706,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 320.8,
+            "unit": "ns/op",
+            "extra": "3608428 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 72000,
+            "unit": "ns/op",
+            "extra": "16454 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 359.7,
+            "unit": "ns/op",
+            "extra": "3323245 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 72531,
+            "unit": "ns/op",
+            "extra": "16458 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21871,
+            "unit": "ns/op",
+            "extra": "54831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 114212,
+            "unit": "ns/op",
+            "extra": "9805 times\n4 procs"
           }
         ]
       }

@@ -884,10 +884,14 @@ drain:
 	if total == 0 {
 		return
 	}
+	breakdown := make(map[string]int64, len(counts))
 	for k, n := range counts {
 		d.metrics.recordExpiredPurged(ctx, k.domain, k.subject, n)
+		breakdown[k.domain+"/"+k.subject] = n
 	}
-	d.eng.Infow("purged expired events", "count", total, "undecodable", undecodable, "by_domain_subject", counts)
+	// Struct-keyed maps are not JSON-encodable by the logger; key the breakdown by
+	// "domain/subject" so the field serializes.
+	d.eng.Infow("purged expired events", "count", total, "undecodable", undecodable, "by_domain_subject", breakdown)
 }
 
 func (d *DurableEmitter) metricsLoop() {

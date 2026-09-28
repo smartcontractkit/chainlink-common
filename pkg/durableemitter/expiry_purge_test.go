@@ -1,7 +1,9 @@
 package durableemitter
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -260,4 +262,38 @@ func TestDurableEmitter_ExpiryPurgeRecordsPartialDrainOnShutdown(t *testing.T) {
 	rm := collect(t.Context())
 	assert.Equal(t, int64(3), counterSumByAttrs(t, rm, expiredPurgedMetric, map[string]string{"domain": "platform", "subject": "workflow.execution"}),
 		"the deleted batch is counted even though the drain was interrupted")
+}
+
+// The purge summary log must serialize: a struct-keyed map is not JSON-encodable
+// and showed up on a live node as `by_domain_subjectError`. Assert the encoded
+// line carries the breakdown keyed by "domain/subject".
+func TestDurableEmitter_ExpiryPurgeLogBreakdownSerializes(t *testing.T) {
+	store := NewMemDurableEventStore()
+	for range 2 {
+		insertAged(t, store, makeCloudEventPayloadFrom(t, "platform", "workflow.execution", "a"), time.Hour)
+	}
+	insertAged(t, store, makeCloudEventPayloadFrom(t, "billing", "meter.record", "b"), time.Hour)
+
+	var buf bytes.Buffer
+	lggr := logger.NewWithSync(&buf)
+	cfg := DefaultConfig()
+	cfg.EventTTL = time.Minute
+	em, err := NewDurableEmitter(store, newTestBatchEmitter(), true, cfg, lggr, nil)
+	require.NoError(t, err)
+	em.purgeExpired(t.Context())
+	require.NoError(t, lggr.Sync())
+
+	var line map[string]any
+	for _, l := range bytes.Split(buf.Bytes(), []byte("\n")) {
+		if bytes.Contains(l, []byte("purged expired events")) {
+			require.NoError(t, json.Unmarshal(l, &line), "log line must be valid JSON: %s", l)
+		}
+	}
+	require.NotNil(t, line, "expected a 'purged expired events' log line")
+	assert.NotContains(t, line, "by_domain_subjectError")
+	bd, ok := line["by_domain_subject"].(map[string]any)
+	require.True(t, ok, "by_domain_subject should be an object, got %T", line["by_domain_subject"])
+	assert.Equal(t, float64(2), bd["platform/workflow.execution"])
+	assert.Equal(t, float64(1), bd["billing/meter.record"])
+	assert.Equal(t, float64(3), line["count"])
 }

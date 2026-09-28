@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790610309267,
+  "lastUpdate": 1790612747354,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61860,6 +61860,66 @@ window.BENCHMARK_DATA = {
             "value": 114212,
             "unit": "ns/op",
             "extra": "9805 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9b1062f5076f0eff08dd62a9429a99c3211d76fd",
+          "message": "[CRE] Remove legacy DAG spec SDK, wasm/pb wire format and YAML DAG parsing (#2418)\n\nCo-authored-by: Ryan Tinianov <tinianov@live.com>\nCo-authored-by: pavel-raykov <165708424+pavel-raykov@users.noreply.github.com>",
+          "timestamp": "2026-09-28T16:15:32Z",
+          "tree_id": "ff2e2aac36d62599ee93b6504f8195036f2a5ce7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9b1062f5076f0eff08dd62a9429a99c3211d76fd"
+        },
+        "date": 1790612744341,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 747.2,
+            "unit": "ns/op",
+            "extra": "1607674 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92938,
+            "unit": "ns/op",
+            "extra": "12906 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 457.8,
+            "unit": "ns/op",
+            "extra": "2516870 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78381,
+            "unit": "ns/op",
+            "extra": "15236 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28592,
+            "unit": "ns/op",
+            "extra": "40581 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 124121,
+            "unit": "ns/op",
+            "extra": "8282 times\n4 procs"
           }
         ]
       }

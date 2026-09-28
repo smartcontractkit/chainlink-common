@@ -10,6 +10,8 @@ const (
 	ActionCountMetric    = MetricPrefix + "_action_count"
 	ActionDurationMetric = MetricPrefix + "_action_duration"
 
+	InitFailureMetric = "capability_initialization_failure"
+
 	OutcomeSuccess = "success"
 	OutcomeError   = "error"
 
@@ -37,6 +39,10 @@ type actionInstrumentInfo struct {
 	duration beholder.MetricInfo
 }
 
+type initInstrumentInfo struct {
+	failure beholder.MetricInfo
+}
+
 func newActionInstrumentInfo() actionInstrumentInfo {
 	return actionInstrumentInfo{
 		count: beholder.MetricInfo{
@@ -47,6 +53,15 @@ func newActionInstrumentInfo() actionInstrumentInfo {
 			Name:        ActionDurationMetric,
 			Unit:        "ms",
 			Description: "The duration since capability exec start to action lifecycle emit",
+		},
+	}
+}
+
+func newInitInstrumentInfo() initInstrumentInfo {
+	return initInstrumentInfo{
+		failure: beholder.MetricInfo{
+			Name:        InitFailureMetric,
+			Description: "1 if the v2 capability failed to initialise, 0 otherwise",
 		},
 	}
 }

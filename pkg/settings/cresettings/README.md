@@ -39,6 +39,7 @@ flowchart
     subgraph handleRequest[httpServer/websocketServer.handleRequest]
         GatewayIncomingPayloadSizeLimit{{GatewayIncomingPayloadSizeLimit}}:::bound
 %%        TODO GatewayVaultManagementEnabled
+        GatewayVaultNodeSignaturesEnabled[/GatewayVaultNodeSignaturesEnabled\]:::gate
         VaultJWTAuthEnabled[/VaultJWTAuthEnabled\]:::gate
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultOrgIdAsSecretOwnerEnabled[/VaultOrgIdAsSecretOwnerEnabled\]:::gate

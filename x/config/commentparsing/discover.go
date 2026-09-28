@@ -1,7 +1,6 @@
 package commentparsing
 
 import (
-	"encoding"
 	"errors"
 	"fmt"
 	"os"
@@ -11,23 +10,20 @@ import (
 	"strings"
 
 	"golang.org/x/mod/modfile"
+
+	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
-var (
-	textMarshaler   = reflect.TypeFor[encoding.TextMarshaler]()
-	textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()
-)
-
-// Discover collects the documentation of every struct type reachable from the given roots.
+// discover collects the documentation of every struct type reachable from the given roots.
 //
 // dir anchors the search: the module enclosing it decides which types are local. A type this
 // module declares has its source on hand, so its comments are parsed. A type from a dependency has
 // no reachable source, so its generated DocComments method is read instead, and a dependency that
 // never generated is reported as an error rather than documented as blank.
 //
-// The walk follows pointers, slices, arrays, maps and embedded fields. Types decoded from a single
-// string, such as a duration, are left out: they are leaf values, not config sections.
-func Discover(dir string, roots ...any) ([]Package, error) {
+// The walk follows pointers, slices, arrays, maps and embedded fields, and stops at any type the
+// language reads whole: its fields are not configured, so not documented, one at a time.
+func discover(dir string, lang markup.Markup, roots ...any) ([]Package, error) {
 	moduleRoot, modulePath, err := enclosingModule(dir)
 	if err != nil {
 		return nil, err
@@ -41,7 +37,7 @@ func Discover(dir string, roots ...any) ([]Package, error) {
 	parsed := make(map[string]*Package)
 
 	var errs []error
-	for _, structType := range collectStructs(roots) {
+	for _, structType := range collectStructs(roots, lang.IsLeaf) {
 		importPath := structType.PkgPath()
 		if importPath == "" {
 			continue // an anonymous struct has no package to document it
@@ -197,7 +193,7 @@ func promotedNames(t reflect.Type, crossed bool, walked map[embedVisit]bool) map
 		if !field.Anonymous {
 			continue
 		}
-		embedded := derefType(field.Type)
+		embedded := DerefType(field.Type)
 		if embedded == nil || embedded.Kind() != reflect.Struct {
 			continue
 		}
@@ -243,13 +239,13 @@ func sortedPackages(byPath map[string]*Package) []Package {
 //
 // A type collected twice would become two DocComments methods on one receiver, and a config that
 // refers back to itself would not terminate.
-func collectStructs(roots []any) []reflect.Type {
+func collectStructs(roots []any, isLeaf func(reflect.Type) bool) []reflect.Type {
 	var found []reflect.Type
 	visited := make(map[reflect.Type]bool)
 
 	var walk func(reflect.Type)
 	walk = func(t reflect.Type) {
-		t = derefType(t)
+		t = DerefType(t)
 		// reflect.TypeOf(nil) is nil, so an untyped nil root arrives here as one.
 		if t == nil || visited[t] {
 			return
@@ -262,7 +258,7 @@ func collectStructs(roots []any) []reflect.Type {
 		case reflect.Slice, reflect.Array, reflect.Map:
 			walk(t.Elem())
 		case reflect.Struct:
-			if isScalarStruct(t) {
+			if isLeaf(t) {
 				return
 			}
 			found = append(found, t)
@@ -283,13 +279,8 @@ func collectStructs(roots []any) []reflect.Type {
 	return found
 }
 
-func isScalarStruct(t reflect.Type) bool {
-	pointer := reflect.PointerTo(t)
-	return t.Implements(textMarshaler) || pointer.Implements(textMarshaler) ||
-		t.Implements(textUnmarshaler) || pointer.Implements(textUnmarshaler)
-}
-
-func derefType(t reflect.Type) reflect.Type {
+// DerefType strips every level of pointer from t. A nil t stays nil.
+func DerefType(t reflect.Type) reflect.Type {
 	for t != nil && t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}

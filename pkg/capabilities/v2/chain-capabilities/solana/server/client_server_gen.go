@@ -67,7 +67,8 @@ func NewClientServer(capability ClientCapability) *ClientServer {
 			stopCh:           stopCh,
 			actionMetrics:    capmon.NewActionMetrics(),
 		},
-		stopCh: stopCh,
+		stopCh:      stopCh,
+		initMetrics: capmon.NewInitMetrics(),
 	}
 }
 
@@ -75,11 +76,15 @@ type ClientServer struct {
 	clientCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
+	initMetrics        capmon.InitMetrics
 }
 
 func (c *ClientServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
-	if err := c.ClientCapability.Initialise(ctx, dependencies); err != nil {
-		return fmt.Errorf("error when initializing capability: %w", err)
+	initErr := c.ClientCapability.Initialise(ctx, dependencies)
+	initAttrs := []attribute.KeyValue{attribute.String("capability", "solana"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0")}
+	c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
+	if initErr != nil {
+		return fmt.Errorf("error when initializing capability: %w", initErr)
 	}
 
 	c.capabilityRegistry = dependencies.CapabilityRegistry

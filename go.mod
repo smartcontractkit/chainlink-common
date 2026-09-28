@@ -9,7 +9,6 @@ require (
 	github.com/bytecodealliance/wasmtime-go/v47 v47.0.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
-	github.com/dominikbraun/graph v0.23.0
 	github.com/fxamacker/cbor/v2 v2.9.0
 	github.com/gagliardetto/utilz v0.1.3
 	github.com/go-json-experiment/json v0.0.0-20250223041408-d3c622f1b874
@@ -85,7 +84,6 @@ require (
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
-	sigs.k8s.io/yaml v1.4.0
 )
 
 require (

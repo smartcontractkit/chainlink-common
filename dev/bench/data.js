@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790619095581,
+  "lastUpdate": 1790623943542,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62040,6 +62040,66 @@ window.BENCHMARK_DATA = {
             "value": 142066,
             "unit": "ns/op",
             "extra": "7706 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "01baabe0761bd7511ecc2f5d4db3c65a5a7fde90",
+          "message": "DurableEmitter: attribute purged events by domain and subject (#2411)\n\n* durableemitter: attribute expired_purged by domain and subject (INFOPLAT-19148)\n\nDuring INCIDENT-2673 the expiry loop purged ~246k events and the only\ntrace was an unlabelled count: DeleteExpired ran DELETE ... RETURNING id,\nso by the time the counter incremented the payloads were gone.\n\nAdd an optional ExpiredPurger store interface (DeleteExpiredBatch: expire\nup to N oldest rows and return their payloads). The expiry loop drains\nthe backlog in bounded batches (ExpiryBatchSize, default 5000), decodes\neach CloudEvent, and records durable_emitter.expired_purged with\ndomain=<source> and subject=<type>. Undecodable payloads count under\nunknown/unknown so nothing drops out of the total. Stores without the\ninterface keep the old single DELETE and record unknown attribution.\n\nPgDurableEventStore implements it with a LIMIT ... FOR UPDATE SKIP LOCKED\nvictim CTE so a large purge streams payloads in slices, not one\nstatement. The metrics wrapper forwards the interface only when the\nwrapped store has it, so a legacy store still purges (the first draft\nbroke that; a test now guards it).\n\nTests: attribution by domain/subject incl. an undecodable payload,\ndraining a backlog larger than the batch size, leaving fresh events\nalone, the legacy-store fallback, and the Pg store advertising the\ninterface. The Pg query itself is exercised by the DB-backed tests in\nchainlink/core/services/durableemitter (follow-up there once this lands).\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* durableemitter: unknown attribution for fieldless payloads; record partial drains on shutdown\n\nReview findings on #2411:\n- proto.Unmarshal accepts arbitrary bytes as an empty message, so a payload\n  with no source/type was labelled with empty strings. purgeKeyOf now\n  reports each missing part as unknown and counts it as undecodable.\n- A shutdown observed mid-drain returned before recording, undercounting\n  rows already deleted. The loop now breaks out and falls through to the\n  common recording path.\n\nTests for both: fieldless / partial / empty payloads land under unknown\nwith no empty labels; a pass interrupted after one batch still records\nthat batch.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* durableemitter: neutral wording in the batched-expiry comment and CTE\n\nDrop the incident reference from the DeleteExpiredBatch comment and the\nticket reference from the ExpiredPurger doc; rename the victims CTE to\nexpired.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* durableemitter: drop ticket reference from test comment\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* Fix domain/subject key\n\n---------\n\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-09-28T19:22:38Z",
+          "tree_id": "e6b733b84d6663418c456b54c0ac0e70c3fffb33",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/01baabe0761bd7511ecc2f5d4db3c65a5a7fde90"
+        },
+        "date": 1790623939029,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3345034 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92999,
+            "unit": "ns/op",
+            "extra": "12884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 394.5,
+            "unit": "ns/op",
+            "extra": "3006510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92810,
+            "unit": "ns/op",
+            "extra": "12888 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26011,
+            "unit": "ns/op",
+            "extra": "44616 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 138036,
+            "unit": "ns/op",
+            "extra": "8658 times\n4 procs"
           }
         ]
       }

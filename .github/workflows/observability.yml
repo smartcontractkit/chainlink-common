@@ -4,9 +4,13 @@ on:
   push:
     paths:
       - "observability-lib/**"
+      - ".github/**"
 
 jobs:
   run-tests:
+    # pkg.yml checks observability-lib on pushes to main, so this workflow checks only pushes to
+    # other branches.
+    if: github.ref != 'refs/heads/main'
     defaults:
       run:
         working-directory: observability-lib

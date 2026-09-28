@@ -665,7 +665,13 @@ func (e *EnvConfig) parse() error {
 // Note: managed plugins shutdown when the parent process exits. We may want to change this behavior in the future
 // to enable host process restarts without restarting the plugin. To do that we would also need
 // supply the appropriate ReattachConfig to the plugin.ClientConfig.
-func ManagedGRPCClientConfig(clientConfig *plugin.ClientConfig, c BrokerConfig, opts ...GRPCClientConfigOpt) *plugin.ClientConfig {
+func ManagedGRPCClientConfig(clientConfig *plugin.ClientConfig, c BrokerConfig) *plugin.ClientConfig {
+	return ManagedGRPCClientConfigWithOpts(clientConfig, c)
+}
+
+// ManagedGRPCClientConfigWithOpts is ManagedGRPCClientConfig with additional GRPCClientConfigOpt
+// customizations, such as WithAutoMTLS or WithSecureConfigFactory.
+func ManagedGRPCClientConfigWithOpts(clientConfig *plugin.ClientConfig, c BrokerConfig, opts ...GRPCClientConfigOpt) *plugin.ClientConfig {
 	clientConfig.AllowedProtocols = []plugin.Protocol{plugin.ProtocolGRPC}
 	clientConfig.GRPCDialOptions = c.DialOpts
 	clientConfig.Logger = HCLogLogger(c.Logger)
@@ -676,7 +682,7 @@ func ManagedGRPCClientConfig(clientConfig *plugin.ClientConfig, c BrokerConfig, 
 	return clientConfig
 }
 
-// GRPCClientConfigOpt customizes the *plugin.ClientConfig built by ManagedGRPCClientConfig.
+// GRPCClientConfigOpt customizes the *plugin.ClientConfig built by ManagedGRPCClientConfigWithOpts.
 type GRPCClientConfigOpt func(*plugin.ClientConfig)
 
 // WithAutoMTLS enables go-plugin's automatic mutual TLS between the host and the plugin process.

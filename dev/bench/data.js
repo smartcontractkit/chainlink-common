@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790612747354,
+  "lastUpdate": 1790616609119,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -61920,6 +61920,66 @@ window.BENCHMARK_DATA = {
             "value": 124121,
             "unit": "ns/op",
             "extra": "8282 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "390b2a477571c7b0332452e574a448eb49cecc1a",
+          "message": "cresettings: add vault reshare zero-downtime PublicKey flags (#2419)\n\n* cresettings: add vault reshare zero-downtime PublicKey flags\n\n* vault proto: add RawVaultPublicKey to GetSecretsResponse\n\n* make generate",
+          "timestamp": "2026-09-28T17:21:31Z",
+          "tree_id": "9ae2c719bb5b0338ae92522ef991e05e6226b3f8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/390b2a477571c7b0332452e574a448eb49cecc1a"
+        },
+        "date": 1790616604510,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3358372 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94306,
+            "unit": "ns/op",
+            "extra": "12739 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 393.4,
+            "unit": "ns/op",
+            "extra": "3027769 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93677,
+            "unit": "ns/op",
+            "extra": "12847 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25687,
+            "unit": "ns/op",
+            "extra": "46756 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141040,
+            "unit": "ns/op",
+            "extra": "8157 times\n4 procs"
           }
         ]
       }

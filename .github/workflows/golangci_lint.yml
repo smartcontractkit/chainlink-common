@@ -1,6 +1,10 @@
 name: golangci-lint
 
 on:
+  # Pushes to main give Sonar's view of main a lint report of its own commit.
+  push:
+    branches:
+      - main
   pull_request:
   merge_group:
   schedule:

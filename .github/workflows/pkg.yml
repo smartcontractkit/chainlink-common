@@ -47,9 +47,7 @@ jobs:
         if: always()
         continue-on-error: true
         run: |
-          for module in $(git ls-files '*/go.mod' | grep -v /examples/ | xargs -n1 dirname); do
-            go -C "$module" test ./... -coverpkg=./... -coverprofile=coverage.txt || echo "::warning::$module tests failed"
-          done
+          gomods -go test ./... -coverpkg=./... -coverprofile=coverage.txt
 
       - name: Fuzz Tests
         # the amount of --seconds here is subject to change based on how long the CI job takes in the future

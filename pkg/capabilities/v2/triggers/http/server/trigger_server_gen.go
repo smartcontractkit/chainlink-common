@@ -12,7 +12,9 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Avoid unused imports if there is configuration type
@@ -37,6 +39,7 @@ func NewHTTPServer(capability HTTPCapability) *HTTPServer {
 	return &HTTPServer{
 		hTTPCapability: hTTPCapability{HTTPCapability: capability, stopCh: stopCh},
 		stopCh:         stopCh,
+		initMetrics:    capmon.NewInitMetrics(),
 	}
 }
 
@@ -44,11 +47,15 @@ type HTTPServer struct {
 	hTTPCapability
 	capabilityRegistry core.CapabilitiesRegistry
 	stopCh             chan struct{}
+	initMetrics        capmon.InitMetrics
 }
 
 func (c *HTTPServer) Initialise(ctx context.Context, dependencies core.StandardCapabilitiesDependencies) error {
-	if err := c.HTTPCapability.Initialise(ctx, dependencies); err != nil {
-		return fmt.Errorf("error when initializing capability: %w", err)
+	initErr := c.HTTPCapability.Initialise(ctx, dependencies)
+	initAttrs := []attribute.KeyValue{attribute.String("capability", "http-trigger@1.0.0-alpha")}
+	c.initMetrics.RecordInit(ctx, initErr, initAttrs...)
+	if initErr != nil {
+		return fmt.Errorf("error when initializing capability: %w", initErr)
 	}
 
 	c.capabilityRegistry = dependencies.CapabilityRegistry

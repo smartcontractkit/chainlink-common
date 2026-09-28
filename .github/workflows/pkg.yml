@@ -41,6 +41,16 @@ jobs:
           trunk-token: ${{ secrets.TRUNK_API_KEY }}
           trunk-job-url: ${{ format('https://github.com/{0}/actions/runs/{1}/job/{2}/attempts/{3}', github.repository, github.run_id, job.check_run_id, github.run_attempt) }}
 
+      - name: Nested Module Coverage
+        # Sonar reads coverage from this job alone, and ./... stops at a nested module. This step
+        # records coverage only; it does not gate on the tests passing.
+        if: always()
+        continue-on-error: true
+        run: |
+          for module in $(git ls-files '*/go.mod' | grep -v /examples/ | xargs -n1 dirname); do
+            go -C "$module" test ./... -coverpkg=./... -coverprofile=coverage.txt || echo "::warning::$module tests failed"
+          done
+
       - name: Fuzz Tests
         # the amount of --seconds here is subject to change based on how long the CI job takes in the future
         # as we add more fuzz tests, we should take into consideration increasing this timelapse, so we can have enough coverage.
@@ -60,7 +70,7 @@ jobs:
         with:
           name: go-test-coverage
           path: |
-            ./coverage.txt
+            **/coverage.txt
 
   build-race-tests:
     runs-on: ubuntu-latest

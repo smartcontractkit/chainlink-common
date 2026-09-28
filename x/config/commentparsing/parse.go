@@ -30,7 +30,7 @@ type Package struct {
 	Name string
 
 	// Dir is where the package's generated files belong. [ParseDir] reports the directory it
-	// read; [Discover] rewrites it relative to the run directory.
+	// read; the walk rewrites it relative to the run directory.
 	Dir string
 
 	// Types are sorted by name, so regenerating an unchanged package produces an unchanged file.

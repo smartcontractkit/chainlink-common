@@ -27,9 +27,7 @@ func TestStellarDomainRoundTripThroughGRPC(t *testing.T) {
 
 	svc := &staticStellarService{}
 	stelpb.RegisterStellarServer(s, newStellarServer(svc, &loopnet.BrokerExt{
-		BrokerConfig: loopnet.BrokerConfig{
-			Logger: logger.Test(t),
-		},
+		Logger: logger.Test(t),
 	}))
 
 	go func() { _ = s.Serve(lis) }()

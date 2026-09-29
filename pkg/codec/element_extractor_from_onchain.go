@@ -9,11 +9,9 @@ import (
 
 func NewElementExtractorFromOnchain(fields map[string]*ElementExtractorLocation) Modifier {
 	m := &elementExtractorFromOnchain{
-		modifierBase: modifierBase[*ElementExtractorLocation]{
-			fields:           fields,
-			onToOffChainType: map[reflect.Type]reflect.Type{},
-			offToOnChainType: map[reflect.Type]reflect.Type{},
-		},
+		fields:           fields,
+		onToOffChainType: map[reflect.Type]reflect.Type{},
+		offToOnChainType: map[reflect.Type]reflect.Type{},
 	}
 
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, _ string, _ *ElementExtractorLocation) error {

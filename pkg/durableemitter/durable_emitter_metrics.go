@@ -49,11 +49,7 @@ type durableEmitterMetrics struct {
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
 	emitTotalDuration  metric.Float64Histogram
-	publishImmOK       metric.Int64Counter
-	publishImmErr      metric.Int64Counter
 	publishDuration    metric.Float64Histogram
-	publishBatchOK     metric.Int64Counter
-	publishBatchErr    metric.Int64Counter
 	publishBatchEvOK   metric.Int64Counter
 	publishBatchEvErr  metric.Int64Counter
 	deliverComplete    metric.Int64Counter
@@ -131,39 +127,11 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 	); err != nil {
 		return nil, err
 	}
-	if m.publishImmOK, err = meter.Int64Counter(
-		"durable_emitter.publish.immediate.success",
-		metric.WithUnit("{call}"),
-		metric.WithDescription("Immediate Publish RPC successes"),
-	); err != nil {
-		return nil, err
-	}
-	if m.publishImmErr, err = meter.Int64Counter(
-		"durable_emitter.publish.immediate.failure",
-		metric.WithUnit("{call}"),
-		metric.WithDescription("Immediate Publish RPC failures (events await retransmit)"),
-	); err != nil {
-		return nil, err
-	}
 	if m.publishDuration, err = meter.Float64Histogram(
 		"durable_emitter.publish.duration",
 		metric.WithUnit("s"),
 		metric.WithDescription("Chip Ingress Publish RPC duration; labels: phase={batch,retransmit}, error={true,false}, client_name"),
 		durationBuckets,
-	); err != nil {
-		return nil, err
-	}
-	if m.publishBatchOK, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.batch.success",
-		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
-	); err != nil {
-		return nil, err
-	}
-	if m.publishBatchErr, err = meter.Int64Counter(
-		"durable_emitter.publish.retransmit.batch.failure",
-		metric.WithUnit("{call}"),
-		metric.WithDescription("Unused; batch delivery uses batch.events.* counters"),
 	); err != nil {
 		return nil, err
 	}
@@ -191,7 +159,7 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 	if m.expiredPurged, err = meter.Int64Counter(
 		"durable_emitter.expired_purged",
 		metric.WithUnit("{event}"),
-		metric.WithDescription("Events deleted by TTL expiry loop"),
+		metric.WithDescription("Events deleted by the TTL expiry loop, attributed by CloudEvent source (domain) and type (subject); unknown when the payload could not be decoded"),
 	); err != nil {
 		return nil, err
 	}
@@ -295,6 +263,18 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 		return nil, err
 	}
 	return m, nil
+}
+
+// recordExpiredPurged counts events the expiry loop deleted, attributed by
+// domain (CloudEvent source) and subject (CloudEvent type).
+func (m *durableEmitterMetrics) recordExpiredPurged(ctx context.Context, domain, subject string, n int64) {
+	if m == nil || n <= 0 {
+		return
+	}
+	m.expiredPurged.Add(ctx, n, metric.WithAttributes(
+		attribute.String("domain", domain),
+		attribute.String("subject", subject),
+	))
 }
 
 func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, elapsed time.Duration, opErr error) {

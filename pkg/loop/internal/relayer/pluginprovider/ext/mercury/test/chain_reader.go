@@ -11,16 +11,14 @@ import (
 )
 
 var ChainReader = staticMercuryChainReader{
-	staticMercuryChainReaderConfig: staticMercuryChainReaderConfig{
-		latestHeads: []mercury_types.Head{
-			{
-				Hash:   []byte{1},
-				Number: 1,
-			},
-			{
-				Hash:   []byte{2},
-				Number: 2,
-			},
+	latestHeads: []mercury_types.Head{
+		{
+			Hash:   []byte{1},
+			Number: 1,
+		},
+		{
+			Hash:   []byte{2},
+			Number: 2,
 		},
 	},
 }

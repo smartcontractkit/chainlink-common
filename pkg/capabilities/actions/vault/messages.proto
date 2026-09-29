@@ -45,6 +45,10 @@ message GetSecretsRequest {
 
 message GetSecretsResponse {
   repeated SecretResponse responses = 1;
+  // raw_vault_public_key is the TDH2 Vault public key of the DKG instance that
+  // produced these shares. When populated, decrypt-side callers read the matching
+  // key live from the response instead of from CapReg / static config.
+  string raw_vault_public_key = 2;
 }
 
 message EncryptedSecret {

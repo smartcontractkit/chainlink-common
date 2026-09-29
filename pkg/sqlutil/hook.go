@@ -174,12 +174,10 @@ func (w *wrappedTransactionalDataSource) BeginWrappedTxx(ctx context.Context, op
 		return nil, err
 	}
 	return &wrappedTx{
-		wrappedDataSource: wrappedDataSource{
-			db:   tx,
-			lggr: w.lggr,
-			hook: w.hook,
-		},
-		tx: tx,
+		db:   tx,
+		lggr: w.lggr,
+		hook: w.hook,
+		tx:   tx,
 	}, nil
 }
 

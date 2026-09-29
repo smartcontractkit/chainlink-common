@@ -11,13 +11,9 @@ import (
 
 var GasPriceEstimatorCommit = staticGasPriceEstimatorCommit{
 	commonStaticGasPriceEstimator: commonGasPriceEstimator,
-	staticGasPriceEstimatorCommitConfig: staticGasPriceEstimatorCommitConfig{
-		deviatesRequest: deviatesRequest{
-			p1: big.NewInt(1),
-			p2: big.NewInt(2),
-		},
-		deviatesResponse: true,
-	},
+	p1:                            big.NewInt(1),
+	p2:                            big.NewInt(2),
+	deviatesResponse:              true,
 }
 
 type GasPriceEstimatorCommitEvaluator interface {

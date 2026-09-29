@@ -31,10 +31,8 @@ func TestKeystore(t *testing.T) {
 				log:  log,
 				impl: &testKeystore{},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},

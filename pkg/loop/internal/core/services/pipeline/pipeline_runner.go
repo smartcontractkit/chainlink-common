@@ -57,14 +57,12 @@ func (p pipelineRunnerServiceClient) ExecuteRun(ctx context.Context, spec string
 			return nil, err2
 		}
 		trs[i] = core.TaskResult{
-			ID:   trr.Id,
-			Type: trr.Type,
-			TaskValue: core.TaskValue{
-				Value:      js,
-				Error:      err,
-				IsTerminal: trr.IsTerminal,
-			},
-			Index: int(trr.Index),
+			ID:         trr.Id,
+			Type:       trr.Type,
+			Value:      js,
+			Error:      err,
+			IsTerminal: trr.IsTerminal,
+			Index:      int(trr.Index),
 		}
 	}
 

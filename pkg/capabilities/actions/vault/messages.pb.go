@@ -554,10 +554,14 @@ func (x *GetSecretsRequest) GetWorkflowOwner() string {
 }
 
 type GetSecretsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Responses     []*SecretResponse      `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Responses []*SecretResponse      `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	// raw_vault_public_key is the TDH2 Vault public key of the DKG instance that
+	// produced these shares. When populated, decrypt-side callers read the matching
+	// key live from the response instead of from CapReg / static config.
+	RawVaultPublicKey string `protobuf:"bytes,2,opt,name=raw_vault_public_key,json=rawVaultPublicKey,proto3" json:"raw_vault_public_key,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetSecretsResponse) Reset() {
@@ -595,6 +599,13 @@ func (x *GetSecretsResponse) GetResponses() []*SecretResponse {
 		return x.Responses
 	}
 	return nil
+}
+
+func (x *GetSecretsResponse) GetRawVaultPublicKey() string {
+	if x != nil {
+		return x.RawVaultPublicKey
+	}
+	return ""
 }
 
 type EncryptedSecret struct {
@@ -2511,9 +2522,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x11GetSecretsRequest\x120\n" +
 	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\x12\x19\n" +
 	"\x06org_id\x18\x02 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
-	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\"I\n" +
+	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\"z\n" +
 	"\x12GetSecretsResponse\x123\n" +
-	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\"c\n" +
+	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\x12/\n" +
+	"\x14raw_vault_public_key\x18\x02 \x01(\tR\x11rawVaultPublicKey\"c\n" +
 	"\x0fEncryptedSecret\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"\xc0\x01\n" +

@@ -110,7 +110,9 @@ func (key Key) Sign(msg []byte) ([]byte, error) {
 // PubkeyToAddressWith returns the TON wallet address for the given wallet version and workchain
 func (key Key) PubkeyToAddressWith(version wallet.VersionConfig, workchain int8) (*address.Address, error) {
 	privKey := ed25519.NewKeyFromSeed(internal.Bytes(key.raw))
-	w, err := wallet.FromPrivateKeyWithOptions(nil, privKey, version, wallet.WithWorkchain(workchain))
+	// tonutils-go v1.18.0: the API client moved from a positional argument to
+	// the WithAPI option. No API client is needed for address derivation.
+	w, err := wallet.FromPrivateKeyWithOptions(privKey, version, wallet.WithWorkchain(workchain))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wallet: %w", err)
 	}

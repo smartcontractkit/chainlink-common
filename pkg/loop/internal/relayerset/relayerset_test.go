@@ -60,10 +60,8 @@ func Test_RelayerSet(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},
@@ -151,10 +149,8 @@ func Test_RelayerSet_ContractReader(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},
@@ -254,10 +250,8 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},
@@ -597,10 +591,8 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},
@@ -652,7 +644,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				mockSol.EXPECT().
 					GetAccountInfoWithOpts(mock.Anything, req).
 					Return(&soltypes.GetAccountInfoReply{
-						RPCContext: soltypes.RPCContext{Slot: slot},
+						Slot: slot,
 						Value: &soltypes.Account{
 							Lamports:   lamports,
 							Executable: false,
@@ -681,7 +673,7 @@ func Test_RelayerSet_SolanaService(t *testing.T) {
 				mockSol.EXPECT().
 					GetMultipleAccountsWithOpts(mock.Anything, req).
 					Return(&soltypes.GetMultipleAccountsReply{
-						RPCContext: soltypes.RPCContext{Slot: slot},
+						Slot: slot,
 						Value: []*soltypes.Account{
 							{Lamports: lamports}, {Lamports: lamports},
 						},
@@ -941,10 +933,8 @@ func Test_RelayerSet_AptosService(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},
@@ -1255,10 +1245,8 @@ func Test_RelayerSet_TONService(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},
@@ -1550,10 +1538,8 @@ func Test_RelayerSet_StellarService(t *testing.T) {
 				log:  log,
 				impl: &TestRelayerSet{relayers: relayers},
 				brokerExt: &net.BrokerExt{
-					BrokerConfig: net.BrokerConfig{
-						StopCh: stopCh,
-						Logger: log,
-					},
+					StopCh: stopCh,
+					Logger: log,
 				},
 			},
 		},

@@ -14,145 +14,135 @@ import (
 )
 
 var OffRampReader = staticOffRamp{
-	staticOffRampConfig: staticOffRampConfig{
-		// Address test data
-		addressResponse: ccip.Address("addressResponse"),
-		// ChangeConfig test data
-		changeConfigRequest: changeConfigRequest{
-			onchainConfig:  []byte("onchainConfig"),
-			offchainConfig: []byte("offchainConfig"),
-		},
-		changeConfigResponse: changeConfigResponse{
-			onchainConfigDigest:  ccip.Address("onchainConfigDigest"),
-			offchainConfigDigest: ccip.Address("offchainConfigDigest"),
-		},
-		// CurrentRateLimiterState test data
-		currentRateLimiterStateResponse: ccip.TokenBucketRateLimit{
-			Tokens:      big.NewInt(1),
-			IsEnabled:   true,
-			LastUpdated: 7,
-			Capacity:    big.NewInt(2),
-			Rate:        big.NewInt(3),
-		},
-		// DecodeExecutionReport test data
-		decodeExecutionReportResponse: ccip.ExecReport{
-			Messages: []ccip.EVM2EVMMessage{
-				{
-					SequenceNumber:      1,
-					GasLimit:            big.NewInt(1),
-					Nonce:               1,
-					MessageID:           ccip.Hash{1},
-					SourceChainSelector: 1,
-					Sender:              ccip.Address("sender"),
-					Receiver:            ccip.Address("receiver"),
-					Strict:              true,
-					FeeToken:            ccip.Address("feeToken"),
-					FeeTokenAmount:      big.NewInt(1),
-					Data:                []byte("data"),
-					TokenAmounts: []ccip.TokenAmount{
-						{
-							Token:  ccip.Address("token"),
-							Amount: big.NewInt(1),
-						},
-					},
-					SourceTokenData: [][]byte{
-						[]byte("sourceTokenData"),
-					},
-				},
-			},
-			Proofs: [][32]byte{
-				{11},
-				{79},
-			},
-			OffchainTokenData: [][][]byte{
-				{
-					[]byte("offchainTokenData"),
-				},
-			},
-			ProofFlagBits: big.NewInt(1),
-		},
-
-		// EncodeExecutionReport test data
-		encodeExecutionReportRequest: ccip.ExecReport{
-			Messages: []ccip.EVM2EVMMessage{
-				{
-					SequenceNumber: 3,
-				},
-			},
-			Proofs: [][32]byte{
-				{3},
-			},
-		},
-		encodeExecutionReportResponse: []byte("encodeExecutionReportResponse"),
-
-		// GasPriceEstimator test data
-		gasPriceEstimatorResponse: GasPriceEstimatorExec,
-
-		// GetExecutionState test data
-		getExecutionStateRequest:  4,
-		getExecutionStateResponse: 5,
-
-		// GetExecutionStateChangesBetweenSeqNums test data
-		getExecutionStateChangesBetweenSeqNumsRequest: getExecutionStateChangesBetweenSeqNumsRequest{
-			seqNumMin:     6,
-			seqNumMax:     7,
-			confirmations: 8,
-		},
-		getExecutionStateChangesBetweenSeqNumsResponse: getExecutionStateChangesBetweenSeqNumsResponse{
-			executionStateChangedWithTxMeta: []ccip.ExecutionStateChangedWithTxMeta{
-				{
-					TxMeta: ccip.TxMeta{
-						BlockTimestampUnixMilli: 1,
-						BlockNumber:             2,
-						TxHash:                  "txHash",
-						LogIndex:                3,
-						Finalized:               ccip.FinalizedStatusFinalized,
-					},
-					ExecutionStateChanged: ccip.ExecutionStateChanged{
-						SequenceNumber: 9,
-					},
-				},
-			},
-		},
-
-		// GetSenderNonce test data
-		getSenderNonceRequest:  ccip.Address("getSenderNonceRequest"),
-		getSenderNonceResponse: 10,
-
-		// ListSenderNonces test data
-		listSenderNoncesRequest:  []ccip.Address{ccip.Address("listSenderNoncesRequest")},
-		listSenderNoncesResponse: map[ccip.Address]uint64{ccip.Address("listSenderNoncesRequest"): 10},
-
-		// GetSourceToDestTokensMapping test data
-		getSourceToDestTokensMappingResponse: map[ccip.Address]ccip.Address{
-			ccip.Address("source"): ccip.Address("dest"),
-		},
-
-		// GetStaticConfig test data
-		getStaticConfigResponse: ccip.OffRampStaticConfig{
-			CommitStore:         ccip.Address("commitStore"),
-			ChainSelector:       1,
-			SourceChainSelector: 2,
-			OnRamp:              ccip.Address("onRamp"),
-			PrevOffRamp:         ccip.Address("prevOffRamp"),
-			ArmProxy:            ccip.Address("armProxy"),
-		},
-
-		// GetTokens test data
-		getTokensResponse: ccip.OffRampTokens{
-			DestinationTokens: []ccip.Address{
-				ccip.Address("destinationToken1"),
-				ccip.Address("destinationToken2"),
-			},
-			SourceTokens: []ccip.Address{
-				ccip.Address("sourceToken1"),
-				ccip.Address("sourceToken2"),
-			},
-		},
-
-		// GetRouter test data
-		getRouterResponse: ccip.Address("getRouterResponse"),
+	// Address test data
+	addressResponse: ccip.Address("addressResponse"),
+	// ChangeConfig test data
+	onchainConfig:        []byte("onchainConfig"),
+	offchainConfig:       []byte("offchainConfig"),
+	onchainConfigDigest:  ccip.Address("onchainConfigDigest"),
+	offchainConfigDigest: ccip.Address("offchainConfigDigest"),
+	// CurrentRateLimiterState test data
+	currentRateLimiterStateResponse: ccip.TokenBucketRateLimit{
+		Tokens:      big.NewInt(1),
+		IsEnabled:   true,
+		LastUpdated: 7,
+		Capacity:    big.NewInt(2),
+		Rate:        big.NewInt(3),
 	},
+	// DecodeExecutionReport test data
+	decodeExecutionReportResponse: ccip.ExecReport{
+		Messages: []ccip.EVM2EVMMessage{
+			{
+				SequenceNumber:      1,
+				GasLimit:            big.NewInt(1),
+				Nonce:               1,
+				MessageID:           ccip.Hash{1},
+				SourceChainSelector: 1,
+				Sender:              ccip.Address("sender"),
+				Receiver:            ccip.Address("receiver"),
+				Strict:              true,
+				FeeToken:            ccip.Address("feeToken"),
+				FeeTokenAmount:      big.NewInt(1),
+				Data:                []byte("data"),
+				TokenAmounts: []ccip.TokenAmount{
+					{
+						Token:  ccip.Address("token"),
+						Amount: big.NewInt(1),
+					},
+				},
+				SourceTokenData: [][]byte{
+					[]byte("sourceTokenData"),
+				},
+			},
+		},
+		Proofs: [][32]byte{
+			{11},
+			{79},
+		},
+		OffchainTokenData: [][][]byte{
+			{
+				[]byte("offchainTokenData"),
+			},
+		},
+		ProofFlagBits: big.NewInt(1),
+	},
+
+	// EncodeExecutionReport test data
+	encodeExecutionReportRequest: ccip.ExecReport{
+		Messages: []ccip.EVM2EVMMessage{
+			{
+				SequenceNumber: 3,
+			},
+		},
+		Proofs: [][32]byte{
+			{3},
+		},
+	},
+	encodeExecutionReportResponse: []byte("encodeExecutionReportResponse"),
+
+	// GasPriceEstimator test data
+	gasPriceEstimatorResponse: GasPriceEstimatorExec,
+
+	// GetExecutionState test data
+	getExecutionStateRequest:  4,
+	getExecutionStateResponse: 5,
+
+	// GetExecutionStateChangesBetweenSeqNums test data
+	getExecutionStateChangesBetweenSeqNumsRequest: getExecutionStateChangesBetweenSeqNumsRequest{
+		seqNumMin:     6,
+		seqNumMax:     7,
+		confirmations: 8,
+	},
+	getExecutionStateChangesBetweenSeqNumsResponse: getExecutionStateChangesBetweenSeqNumsResponse{
+		executionStateChangedWithTxMeta: []ccip.ExecutionStateChangedWithTxMeta{
+			{
+				BlockTimestampUnixMilli: 1,
+				BlockNumber:             2,
+				TxHash:                  "txHash",
+				LogIndex:                3,
+				Finalized:               ccip.FinalizedStatusFinalized,
+				SequenceNumber:          9,
+			},
+		},
+	},
+
+	// GetSenderNonce test data
+	getSenderNonceRequest:  ccip.Address("getSenderNonceRequest"),
+	getSenderNonceResponse: 10,
+
+	// ListSenderNonces test data
+	listSenderNoncesRequest:  []ccip.Address{ccip.Address("listSenderNoncesRequest")},
+	listSenderNoncesResponse: map[ccip.Address]uint64{ccip.Address("listSenderNoncesRequest"): 10},
+
+	// GetSourceToDestTokensMapping test data
+	getSourceToDestTokensMappingResponse: map[ccip.Address]ccip.Address{
+		ccip.Address("source"): ccip.Address("dest"),
+	},
+
+	// GetStaticConfig test data
+	getStaticConfigResponse: ccip.OffRampStaticConfig{
+		CommitStore:         ccip.Address("commitStore"),
+		ChainSelector:       1,
+		SourceChainSelector: 2,
+		OnRamp:              ccip.Address("onRamp"),
+		PrevOffRamp:         ccip.Address("prevOffRamp"),
+		ArmProxy:            ccip.Address("armProxy"),
+	},
+
+	// GetTokens test data
+	getTokensResponse: ccip.OffRampTokens{
+		DestinationTokens: []ccip.Address{
+			ccip.Address("destinationToken1"),
+			ccip.Address("destinationToken2"),
+		},
+		SourceTokens: []ccip.Address{
+			ccip.Address("sourceToken1"),
+			ccip.Address("sourceToken2"),
+		},
+	},
+
+	// GetRouter test data
+	getRouterResponse: ccip.Address("getRouterResponse"),
 }
 
 type OffRampEvaluator interface {

@@ -53,11 +53,9 @@ func TestStarknetKeyring_TestVector(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := ocrtypes.ReportContext{
-		ReportTimestamp: ocrtypes.ReportTimestamp{
-			ConfigDigest: configDigest,
-			Epoch:        0,
-			Round:        1,
-		},
+		ConfigDigest: configDigest,
+		Epoch:        0,
+		Round:        1,
 		ExtraHash: [32]byte{
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -118,11 +116,9 @@ func TestStarknetKeyring_Sign_Verify(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := ocrtypes.ReportContext{
-		ReportTimestamp: ocrtypes.ReportTimestamp{
-			ConfigDigest: configDigest,
-			Epoch:        1,
-			Round:        1,
-		},
+		ConfigDigest: configDigest,
+		Epoch:        1,
+		Round:        1,
 		ExtraHash: [32]byte{
 			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
 			255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,

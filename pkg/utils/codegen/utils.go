@@ -18,10 +18,8 @@ func WriteFiles(dir, localPrefix, tool string, files map[string]string) error {
 		}
 
 		settings := PrettySettings{
-			Tool: tool,
-			GoPrettySettings: GoPrettySettings{
-				LocalPrefix: localPrefix,
-			},
+			Tool:        tool,
+			LocalPrefix: localPrefix,
 		}
 		content, prettyErr := PrettyFile(file, content, settings)
 		if prettyErr != nil {

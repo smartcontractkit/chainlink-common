@@ -95,6 +95,10 @@ flowchart
         PerWorkflow.WASMCompressedBinarySizeLimit{{PerWorkflow.WASMCompressedBinarySizeLimit}}:::bound
         WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
     end
+
+    subgraph syncer.tryEngineCreate
+        CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
+    end
     
     subgraph Engine.init
 %%        TODO move and replace with WorkflowLimit

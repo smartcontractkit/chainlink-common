@@ -50,6 +50,7 @@ flowchart
         VaultOptimizationsEnabled[/VaultOptimizationsEnabled\]:::gate
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultGetSecretsShareAggregationIncludesPublicKeys[/VaultGetSecretsShareAggregationIncludesPublicKeys\]:::gate
+        VaultNodeSettingsConsensusEnabled[/VaultNodeSettingsConsensusEnabled\]:::gate
         VaultOwnerAddressCanonicalizationEnabled[/VaultOwnerAddressCanonicalizationEnabled\]:::gate
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultJSONOmitUnpopulatedEnabled[/VaultJSONOmitUnpopulatedEnabled\]:::gate

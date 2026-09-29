@@ -14,6 +14,7 @@
 	"VaultForceEmptyOCRRounds": "false",
 	"VaultOptimizationsEnabled": "false",
 	"VaultGetSecretsShareAggregationIncludesPublicKeys": "false",
+	"VaultNodeSettingsConsensusEnabled": "false",
 	"VaultOwnerAddressCanonicalizationEnabled": "false",
 	"VaultJSONOmitUnpopulatedEnabled": "false",
 	"VaultGetSecretsRelaxedConsensusEnabled": "false",

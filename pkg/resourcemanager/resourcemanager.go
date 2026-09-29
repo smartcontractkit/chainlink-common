@@ -52,6 +52,7 @@ package resourcemanager
 
 import (
 	"context"
+	"math/big"
 	"strconv"
 	"sync"
 	"time"
@@ -442,6 +443,13 @@ func (rm *ResourceManager) EmitDelta(ctx context.Context, identity ResourceIdent
 // EmitDelta. Same fail-open semantics as EmitDelta.
 func (rm *ResourceManager) EmitUsage(ctx context.Context, identity ResourceIdentity, eventID string, quantity int64, fields UtilizationFields) {
 	rm.emitRecord(ctx, identity, eventID, meteringpb.MeterAction_METER_ACTION_USAGE, NewUtilizationInt(quantity, fields))
+}
+
+// EmitUsageValue is EmitUsage for quantities that do not fit an int64, such as a
+// transaction fee in wei. A nil value emits "0". Same event_id contract and
+// fail-open semantics as EmitUsage.
+func (rm *ResourceManager) EmitUsageValue(ctx context.Context, identity ResourceIdentity, eventID string, value *big.Int, fields UtilizationFields) {
+	rm.emitRecord(ctx, identity, eventID, meteringpb.MeterAction_METER_ACTION_USAGE, NewUtilizationBig(value, fields))
 }
 
 // emitRecord builds and emits a single-utilization MeterRecord for action.

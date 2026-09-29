@@ -42,6 +42,77 @@ func Test_EncodeExecutionID(t *testing.T) {
 	assert.NotEqual(t, reversed, actual)
 }
 
+// Test_ExecutionID_GoldenValues pins the exact execution-ID derivation:
+//
+//	executionID = hex(sha256(workflowID || triggerEventID || strconv.Itoa(triggerIndex)))
+//
+// DO NOT update these expected values to make a failing test pass without
+// coordinating with the CRE observability team.
+//
+// WHO DEPENDS ON THIS: the CRE E2E-integrity monitoring system (epic CRE-5693)
+// — specifically the integrity detectors and the synthetic freshness probe —
+// predicts execution IDs off-platform from (workflowID, triggerEventID,
+// triggerIndex) using this exact derivation. Changing the hash function, the
+// field order, the trigger-index encoding, or the hex encoding will:
+//   - break E2E integrity monitoring (the probe's predicted IDs will never
+//     match emitted events), and
+//   - change every workflow execution ID platform-wide.
+//
+// If this test fails, the derivation changed; treat it as a breaking change to
+// an external contract, not a test to be updated in place.
+func Test_ExecutionID_GoldenValues(t *testing.T) {
+	t.Run("GenerateExecutionIDWithTriggerIndex", func(t *testing.T) {
+		cases := []struct {
+			name           string
+			workflowID     string
+			triggerEventID string
+			triggerIndex   int
+			expected       string
+		}{
+			{
+				name:           "simple inputs, index 0",
+				workflowID:     "workflowID",
+				triggerEventID: "triggerEventID",
+				triggerIndex:   0,
+				expected:       "a47b654c76a2d715a0c5c814ba51fb036a1d467f25e7f56a101066ba6fafeb77",
+			},
+			{
+				name:           "realistic 64-hex workflow ID, index 1",
+				workflowID:     "15c631d295ef5e32deb99a10ee6804bc4af1385568f9b3363f6552ac6dbb2cef",
+				triggerEventID: "trigger_event_id_abc123",
+				triggerIndex:   1,
+				expected:       "f47b82ecfba846d5454e2db711f41240dc9fbffae86d9dc8c1c9e3dc57466b5b",
+			},
+			{
+				name:           "empty IDs, multi-digit index",
+				workflowID:     "",
+				triggerEventID: "",
+				triggerIndex:   42,
+				expected:       "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+			},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				got, err := GenerateExecutionIDWithTriggerIndex(tc.workflowID, tc.triggerEventID, tc.triggerIndex)
+				require.NoError(t, err)
+				require.Len(t, got, 64, "execution ID must be a 64-char hex string")
+				require.Equal(t, tc.expected, got,
+					"execution-ID derivation changed: this breaks the CRE E2E-integrity synthetic freshness probe (CRE-5693) and changes every execution ID platform-wide")
+			})
+		}
+	})
+
+	// EncodeExecutionID is the deprecated no-trigger-index variant:
+	// hex(sha256(workflowID || eventID)). Still pinned because existing
+	// consumers (and the integrity tooling's backwards-compat path) rely on it.
+	t.Run("EncodeExecutionID (deprecated variant)", func(t *testing.T) {
+		got, err := EncodeExecutionID("workflowID", "eventID")
+		require.NoError(t, err)
+		require.Equal(t, "8ea89f1a81727293b00e7abea61a256f4fb33ef10a09ec79b2a526e0e2b5d250", got,
+			"EncodeExecutionID derivation changed: this breaks CRE E2E-integrity monitoring (CRE-5693)")
+	})
+}
+
 func Test_GetTriggerReferenceID_RoundTrip(t *testing.T) {
 	for _, idx := range []int{0, 1, 5, 100} {
 		refID := GetTriggerReferenceID(idx)

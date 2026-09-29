@@ -297,10 +297,6 @@ func (p *Plugin) unsequencedOutcome(aos []types.AttributedObservation, prevOutco
 			// We only count requests for the next sequence number and ignore all other ones.
 			if requestSeqNum == currSeqNum {
 				observationCounts[id]++
-			} else if requestSeqNum > currSeqNum {
-				// This should never happen since we don't include out of sequence requests in the Observation phase
-				p.lggr.Errorf("request seqNum %d for executionID %s is greater than the number of observed don times %d",
-					requestSeqNum, id, currSeqNum)
 			}
 		}
 	}
@@ -374,7 +370,10 @@ func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome
 	outcome := prevOutcome
 	outcome.Timestamp = donTime
 
-	for key, numRequests := range observationCounts {
+	for _, key := range slices.SortedFunc(maps.Keys(observationCounts), func(a, b reqSeq) int {
+		return cmp.Or(cmp.Compare(a.reqID, b.reqID), cmp.Compare(a.seqNum, b.seqNum))
+	}) {
+		numRequests := observationCounts[key]
 		if numRequests > int64(p.config.F) {
 			observedDonTimes, ok := outcome.ObservedDonTimes[key.reqID]
 			if !ok {

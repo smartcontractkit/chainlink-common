@@ -1,21 +1,23 @@
-# nested
+# Nested configurations
 
-When a section must be a pointer.
+Sections of a configuration can be embedded structs, value structs, or pointers to structs:
 
-- `Logging` is embedded, so its fields bind at the top level: `--log-level`, not `--logging.log-level`.
-- `TLS` is `*TLSConfig`: it stays `nil` until one of its keys is set, so its `required` fields
-  only apply once it is configured.
-- `Metrics` and `Tracing` are mutually exclusive, so both are pointers. A value struct with a
-  cross-field rule is rejected at registration.
+- `Logging` is embedded, so its fields are at the top level: `--log-level` and `APP_LOG_LEVEL`, not
+  `--logging.log-level` and `APP_LOGGING_LOG_LEVEL`.
+- `Server` is a value struct, so its field is prefixed: `--server.host` and `APP_SERVER_HOST`.
+- `Metrics` is a pointer, so it stays `nil` until one of its fields is set. Its field is prefixed:
+  `--metrics.endpoint` and `APP_METRICS_ENDPOINT`.
 
 ```sh
-go run . --metrics.endpoint https://m.example/push
-# tls = <nil> (not configured)
+# default values
+go run .
 
-go run . --metrics.endpoint https://m.example/push --tls.cert-file /etc/cert.pem
-# tls.key-file failed on the 'required' tag; set it with --tls.key-file, APP_TLS_KEY_FILE, tls.key-file in a config file
+# TOML values
+go run . --config example.toml
 
-go run . --metrics.endpoint https://m.example/push --tracing.collector https://t.example/v1/traces
-# metrics failed on the 'excluded_with=tracing' tag
-# tracing failed on the 'excluded_with=metrics' tag
+# environment values
+APP_LOG_LEVEL=debug APP_SERVER_HOST=0.0.0.0 APP_METRICS_ENDPOINT=https://metrics.example.com/push go run .
+
+# CLI values
+go run . --log-level debug --server.host 0.0.0.0 --metrics.endpoint https://metrics.example.com/push
 ```

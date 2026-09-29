@@ -1,5 +1,3 @@
-// Command gen writes the DocComments methods of the nested example's config structs. One root is
-// enough: Run follows Config's fields into every section, pointers included.
 package main
 
 import (
@@ -10,6 +8,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
+// Generate the comments for our settings so that the CLI can use them.
 func main() {
 	if err := commentparsing.Run(commentparsing.RunArgs{
 		Markup:      tomlmarkup.New(),

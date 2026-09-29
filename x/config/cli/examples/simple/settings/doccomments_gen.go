@@ -7,8 +7,8 @@ import "github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 func (Config) DocComments() map[string]commentparsing.FieldDoc {
 	return map[string]commentparsing.FieldDoc{
 		"Host":    {Comment: "Host is the host to dial."},
-		"Port":    {Comment: "Port is the port to dial."},
+		"Port":    {Comment: "Port is the port to dial on."},
 		"Tags":    {Comment: "Tags are labels to attach to every request."},
-		"Timeout": {Comment: "Timeout bounds a single request.\nA negative value is rejected."},
+		"Timeout": {Comment: "Timeout bounds a single request."},
 	}
 }

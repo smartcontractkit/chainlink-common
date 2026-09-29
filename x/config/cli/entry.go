@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -14,66 +15,62 @@ import (
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 )
 
+// flattenedMarker names an embedded field the markup flattens, so configKey can drop its segment. It can be any string
+// that is non-empty (the validator replaces "" with the Go name), is never a config key, and has no '.', '[' or ']'
+// (configKey rewrites and splits on those before comparing, so a marker with them would never match).
+const flattenedMarker = "\x00"
+
 type targetEntry struct {
-	b         *Binder
-	cmd       *cobra.Command
-	namespace string
-	target    any
-	keys      []leafKey
+	b      *Binder
+	cmd    *cobra.Command
+	target any
+	keys   []leafKey
 
-	// suppliedFields addresses of every leaf a source set, allowing us to differentiate a decoded default from unset.
-	suppliedFields map[uintptr]bool
-
-	docs         fieldDocs
 	undocumented []string
-
-	// sections maps each nested struct's dotted Go key to its config key, to name it in errors.
-	sections map[string]string
 }
 
-// leafKey ties a field to where each source holds it.
 type leafKey struct {
-	// key is the dotted kebab-case key the flag and env vars are named from.
+	// key names the flag and env vars, such as server.listen-addr.
 	key string
 
-	configPath []string
+	fileKey []string
 
-	// flagName is key with underscores as dashes.
 	flagName string
 
-	// flag is nil for a config-file-only field, which has no env var either. value is its parsed value.
+	// flag is nil for a config-file-only field, which has no env var either.
 	flag  *pflag.Flag
 	value func() reflect.Value
 
-	// goPath and goType locate and type the field without re-walking the struct.
+	// goPath and goType save walking the struct again.
 	goPath []string
 	goType reflect.Type
 }
 
 func (e *targetEntry) envVars(k leafKey) []string {
+	name := strings.ToUpper(strings.NewReplacer(".", "_", "-", "_").Replace(k.key))
+	if len(e.b.opts.Prefixes) == 0 {
+		return []string{name}
+	}
+
 	names := make([]string, len(e.b.opts.Prefixes))
 	for i, prefix := range e.b.opts.Prefixes {
-		names[i] = envVarName(prefix, k.key)
+		names[i] = name
+		if prefix != "" {
+			names[i] = strings.TrimSuffix(strings.ToUpper(prefix), "_") + "_" + name
+		}
 	}
+
 	return names
 }
 
-func (e *targetEntry) namespaced(path []string) []string {
-	if e.namespace == "" {
-		return path
-	}
-	return append(strings.Split(e.namespace, "."), path...)
-}
-
-// sources returns k's value from each source that set it, highest precedence first: changed flag,
-// the first env var set, config file. Each is of k's field type through pointers; an env var is
-// parsed as the flag is. None leaves the struct's default.
-func (e *targetEntry) sources(k leafKey) ([]reflect.Value, error) {
+// Highest precedence first. An env var parses as the flag would, so both accept the same input.
+func (e *targetEntry) sources(k leafKey, cc commandConfig) ([]reflect.Value, error) {
 	var vals []reflect.Value
 	if k.flag != nil {
 		if k.flag.Changed {
 			vals = append(vals, k.value())
 		}
+
 		for _, name := range e.envVars(k) {
 			// Empty counts as unset, so a stray export can't blank a file value.
 			if s := os.Getenv(name); s != "" {
@@ -81,40 +78,37 @@ func (e *targetEntry) sources(k leafKey) ([]reflect.Value, error) {
 				if err != nil {
 					return nil, fmt.Errorf("invalid value %q for %s: %w", s, name, err)
 				}
+
 				vals = append(vals, val)
 				break
 			}
 		}
 	}
-	if raw, ok := e.b.keys.lookup(e.b.config, k.configPath); ok {
-		val, err := fromFile(commentparsing.DerefType(k.goType), raw)
-		if err != nil {
-			return nil, err
-		}
-		vals = append(vals, val)
+
+	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
+		vals = append(vals, raw)
 	}
+
 	return vals, nil
 }
 
-// setTag requires that a source supplied the field.
-const setTag = "set"
-
-// isSupplied is the `set` rule. The validator hands it a field but not its path, so the field is
-// matched by address.
-func (e *targetEntry) isSupplied(fl validator.FieldLevel) bool {
-	field := fl.Field()
-	return field.CanAddr() && e.suppliedFields[field.Addr().Pointer()]
-}
-
-// validate runs the `validate` tags against the decoded target, after a full decode so everything
-// is populated. A failing field is named by its config key, and a leaf by the sources that set it
-// too, not by its Go path.
+// Runs after the full decode so cross-field rules see every value.
 func (e *targetEntry) validate() error {
 	v := validator.New()
-	// Fails only if setTag collides with a built-in rule.
-	if err := v.RegisterValidation(setTag, e.isSupplied, true); err != nil {
-		return err
-	}
+	// With config key names, the validator's namespaces differ from config keys only by the root type's name, [i]
+	// indices, and flattened embeds, which configKey fixes.
+	lang := e.b.opts.Markup
+	v.RegisterTagNameFunc(func(f reflect.StructField) string {
+		key, read := lang.Key(f)
+		switch {
+		case !read:
+			return f.Name
+		case key == "":
+			return flattenedMarker
+		default:
+			return key
+		}
+	})
 
 	err := v.Struct(e.target)
 	fieldErrs, ok := errors.AsType[validator.ValidationErrors](err)
@@ -126,103 +120,66 @@ func (e *targetEntry) validate() error {
 	for _, k := range e.keys {
 		leaves[strings.Join(k.goPath, ".")] = k
 	}
+
 	errs := make([]error, len(fieldErrs))
 	for i, fe := range fieldErrs {
-		// StructNamespace starts with the root struct's type name, which goKey doesn't hold.
+		errs[i] = e.ruleError(fe)
+		// StructNamespace starts with the root struct's type name, which goPath doesn't hold.
 		_, goKey, _ := strings.Cut(fe.StructNamespace(), ".")
-		errs[i] = fe
 		if k, ok := leaves[goKey]; ok {
 			var sources []string
 			if k.flag != nil {
 				sources = append([]string{"--" + k.flagName}, e.envVars(k)...)
 			}
-			sources = append(sources, strings.Join(k.configPath, ".")+" in a config file")
-			errs[i] = fmt.Errorf("%w; set it with %s", e.ruleError(goKey, fe), strings.Join(sources, ", "))
-		} else if _, ok := e.keyOf(goKey); ok {
-			errs[i] = e.ruleError(goKey, fe)
+
+			sources = append(sources, strings.Join(k.fileKey, ".")+" in a config file")
+			errs[i] = fmt.Errorf("%w; set it with %s", errs[i], strings.Join(sources, ", "))
 		}
 	}
+
 	return errors.Join(errs...)
 }
 
-// ruleError names the field at goKey, and any sibling a cross-field rule names, by config key.
-func (e *targetEntry) ruleError(goKey string, fe validator.FieldError) error {
+// Names fields in the error by config key rather than Go path. For example, a field renamed by its tag, which also
+// renames its flag, env vars, and config key, appears in the message under its new name.
+func (e *targetEntry) ruleError(fe validator.FieldError) error {
 	rule := fe.Tag()
 	if params := strings.Fields(fe.Param()); len(params) > 0 {
-		parent := goKey[:max(0, strings.LastIndex(goKey, "."))]
+		ns := fe.Namespace()
+		parent := ns[:strings.LastIndex(ns, ".")]
+		siblings := e.parentType(fe.StructNamespace())
 		for i, p := range params {
-			if key, ok := e.keyOf(strings.TrimPrefix(parent+"."+p, ".")); ok {
-				params[i] = key
+			if f, ok := siblings.FieldByName(p); ok {
+				if key, _ := e.b.opts.Markup.Key(f); key != "" {
+					params[i] = configKey(parent + "." + key)
+				}
 			}
 		}
+
 		rule += "=" + strings.Join(params, " ")
 	}
-	key, _ := e.keyOf(goKey)
-	return fmt.Errorf("%s failed on the '%s' tag", key, rule)
+
+	return fmt.Errorf("%s failed on the '%s' tag", configKey(fe.Namespace()), rule)
 }
 
-// keyOf is the config key for goKey, the validator's path to a field. For a field inside a leaf or
-// section, such as a list element, it is that leaf's or section's config key followed by the path
-// below it, indices as segments the way the core node names them (Nodes.1.Name, not Nodes[1].Name).
-func (e *targetEntry) keyOf(goKey string) (string, bool) {
-	for prefix := goKey; ; {
-		if key, ok := e.sections[prefix]; ok {
-			return key + e.elementKey(nil, goKey[len(prefix):]), true
-		}
-		for _, k := range e.keys {
-			if strings.Join(k.goPath, ".") == prefix {
-				return strings.Join(k.configPath, ".") + e.elementKey(k.goType, goKey[len(prefix):]), true
-			}
-		}
-		i := strings.LastIndexAny(prefix, ".[")
-		if i < 0 {
-			return "", false
-		}
-		prefix = prefix[:i]
-	}
+// List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
+func configKey(ns string) string {
+	_, ns, _ = strings.Cut(ns, ".")
+	segments := strings.Split(strings.NewReplacer("[", ".", "]", "").Replace(ns), ".")
+	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }
 
-// elementKey turns below, the validator's path under a value of type t such as "[0].SecretName",
-// into config key segments such as ".0.secret_name": an index or map key is a segment, a field is
-// the markup's key for it, and a flattened field adds nothing. Where t is nil or can't be followed,
-// fields keep their Go names.
-func (e *targetEntry) elementKey(t reflect.Type, below string) string {
-	var out strings.Builder
-	for below != "" {
-		if t != nil {
-			t = commentparsing.DerefType(t)
+func (e *targetEntry) parentType(structNS string) reflect.Type {
+	t := commentparsing.DerefType(reflect.TypeOf(e.target))
+	segments := strings.Split(structNS, ".")
+	for _, segment := range segments[1 : len(segments)-1] {
+		name, rest, indexed := strings.Cut(segment, "[")
+		f, _ := t.FieldByName(name)
+		t = commentparsing.DerefType(f.Type)
+		for ; indexed; _, rest, indexed = strings.Cut(rest, "[") {
+			t = commentparsing.DerefType(t.Elem())
 		}
-		if below[0] == '[' {
-			end := strings.IndexByte(below, ']')
-			out.WriteString("." + below[1:end])
-			below = below[end+1:]
-			if t != nil && (t.Kind() == reflect.Slice || t.Kind() == reflect.Array || t.Kind() == reflect.Map) {
-				t = t.Elem()
-			} else {
-				t = nil
-			}
-			continue
-		}
-		below = below[1:]
-		end := strings.IndexAny(below, ".[")
-		if end < 0 {
-			end = len(below)
-		}
-		name := below[:end]
-		below = below[end:]
-		f, ok := reflect.StructField{}, false
-		if t != nil && t.Kind() == reflect.Struct {
-			f, ok = t.FieldByName(name)
-		}
-		if !ok {
-			out.WriteString("." + name)
-			t = nil
-			continue
-		}
-		if key, _ := e.b.opts.Markup.Key(f); key != "" {
-			out.WriteString("." + key)
-		}
-		t = f.Type
 	}
-	return out.String()
+
+	return t
 }

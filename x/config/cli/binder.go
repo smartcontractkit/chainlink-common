@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/spf13/cobra"
 
@@ -15,216 +14,241 @@ import (
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
-// Binder binds config structs to the commands of one tree. Everything the tree shares, from the
-// config language to the env prefixes and the --config files, is set once, in [New].
+const defaultConfigName = "config"
+const ConfigFlagName = "config"
+
+// Binder attaches config structs to the commands of one cobra command tree.
 type Binder struct {
-	root *cobra.Command
 	opts Options
 
-	// entries is every target registered anywhere in the tree, so unknown keys are judged against the whole binary
-	entries []*targetEntry
+	entries map[*cobra.Command]*targetEntry
 
-	// keys is where a config file holds every field in entries.
-	keys *keyNode
-
-	// config is Options.BaseConfig with the files layered over it, of keys' fileType, read once
-	// per execution.
-	config         reflect.Value
-	configFileOnce sync.Once
-	configFileErr  error
+	// rootHooks keeps each root's own PersistentPreRunE, which preRun replaces and then runs.
+	rootHooks map[*cobra.Command]func(*cobra.Command, []string) error
 }
 
-// New returns root's Binder and adds a repeatable persistent --config flag to root, which must
-// not already have a flag of that name. Later files win key by key; tables and maps merge. With
-// tomlmarkup:
+// New requires opts.Markup.
 //
-//	app --config base.toml --config prod.toml
-//
-// opts.Markup is required; x/config/markup/tomlmarkup is typical.
-func New(root *cobra.Command, opts Options) (*Binder, error) {
+// New sets cobra.EnableTraverseRunHooks, which must stay set: decoding runs in the root's PersistentPreRunE, which
+// cobra otherwise skips for a subcommand with its own.
+func New(opts Options) (*Binder, error) {
 	if opts.Markup == nil {
 		return nil, markup.Err
 	}
 
-	if root.Flags().Lookup(ConfigFlagName) != nil || root.PersistentFlags().Lookup(ConfigFlagName) != nil {
-		return nil, fmt.Errorf("flag --%s is already defined on %s; New adds it", ConfigFlagName, root.Name())
+	cobra.EnableTraverseRunHooks = true
+	b := &Binder{
+		opts:      opts,
+		entries:   map[*cobra.Command]*targetEntry{},
+		rootHooks: map[*cobra.Command]func(*cobra.Command, []string) error{},
 	}
-
-	b := &Binder{root: root, opts: opts, keys: &keyNode{children: map[string]*keyNode{}}}
 	cobra.OnInitialize(b.wire)
-
-	// StringArray, not StringSlice, so a path may contain a comma.
-	root.PersistentFlags().StringArray(ConfigFlagName, nil,
-		"path to a config file; repeat to layer files, later ones winning")
 	return b, nil
 }
 
-const (
-	// defaultConfigName is the default file's base name when Options.DefaultConfigPath is unset.
-	defaultConfigName = "config"
-
-	// ConfigFlagName is the flag the config files are read from, which [New] adds.
-	ConfigFlagName = "config"
-)
-
-// Register binds target's fields as flags and env vars on cmd, and decodes target (config file, env, flags)
-// before cmd runs. It may be called repeatedly on one command; each target is decoded and validated independently.
+// Register attaches target to cmd. Before cmd or a subcommand runs, target is filled from flags, env vars, and config
+// files, then its `validate` tags are checked.
 //
-// namespace roots target's config keys, env vars, and flags: "database" gives database.url,
-// PREFIX_DATABASE_URL, and --database.url; "" roots them at the top level. It is independent of
-// the command, so one command can take several structs that share field names. Flags are
-// persistent, so cmd's subcommands take them and decode target too. Flags that collide are an error.
+// Scalars, durations, []byte, and [encoding.TextUnmarshaler] types get a persistent flag and env vars; other fields
+// are config file only.
 //
-// `validate` tags run after decoding, with one added rule: `set` requires that a source supplied
-// the field, even if it's the default value set.
+// A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
+// fails every command in the tree when it is executed.
 //
-// Only fields with a single text form get flags and env vars: scalars, durations, text
-// unmarshalers, and lists or maps of those (see list.go, maps.go). Others are config file only.
+// Register adds --config to cmd. Files layer in order over [Options].BaseConfig, later keys winning per key.
 //
-// Help text is the field's doc comment, via the
-// [github.com/smartcontractkit/chainlink-common/x/config/commentparsing] generator; without it,
-// fields bind with no help.
-//
-// opts configure this registration alone.
-func (b *Binder) Register[T any](cmd *cobra.Command, namespace string, target *T, opts ...RegisterOption[T]) error {
-	setups := make([]func(*targetEntry) (func(), error), len(opts))
-	for i, o := range opts {
+//	app --config base.toml --config prod.toml
+func (b *Binder) Register[T any](cmd *cobra.Command, target *T, opts ...RegisterOption[T]) error {
+	setups := make([]func(*targetEntry) (func(), error), 0, len(opts))
+	for _, o := range opts {
 		if o.setup == nil {
-			return errors.New("zero cli.RegisterOption; build one with an option function")
+			continue
 		}
-		setups[i] = o.setup
+
+		setups = append(setups, o.setup)
 	}
-	return b.register(cmd, namespace, target, setups...)
+
+	return b.register(cmd, target, setups...)
 }
 
-func (b *Binder) register(cmd *cobra.Command, namespace string, target any, setups ...func(*targetEntry) (func(), error)) error {
+func (b *Binder) register(cmd *cobra.Command, target any, setups ...func(*targetEntry) (func(), error)) error {
+	if cmd.Flags().Lookup(ConfigFlagName) != nil || cmd.PersistentFlags().Lookup(ConfigFlagName) != nil {
+		return fmt.Errorf("flag --%s is already defined on %s", ConfigFlagName, cmd.Name())
+	}
+
+	// StringArray, not StringSlice, so a path may contain a comma.
+	cmd.PersistentFlags().StringArray(ConfigFlagName, nil,
+		"path to a config file; repeat to layer files, later ones winning")
+
 	entry := &targetEntry{
-		b:         b,
-		cmd:       cmd,
-		namespace: namespace,
-		target:    target,
-		docs:      fieldDocs{},
-		sections:  map[string]string{},
+		b:      b,
+		cmd:    cmd,
+		target: target,
 	}
 	if err := bindStruct(entry); err != nil {
 		return err
 	}
-	for _, k := range entry.keys {
-		if err := b.keys.add(k.configPath, fileValueType(commentparsing.DerefType(k.goType), b.opts.Markup), b.opts.Markup); err != nil {
-			return err
-		}
-	}
 
+	// Options are checked before any take effect, so an errored option leaves none applied.
 	installs := make([]func(), len(setups))
 	for i, setup := range setups {
 		install, err := setup(entry)
 		if err != nil {
 			return err
 		}
+
 		installs[i] = install
 	}
+
 	for _, install := range installs {
 		install()
 	}
 
-	b.entries = append(b.entries, entry)
+	b.entries[cmd] = entry
 	return nil
 }
 
-// Undocumented returns the config key of every flag bound with no help text, usually a struct
-// whose DocComments were never generated. For a test: require.Empty(t, b.Undocumented()).
+// commandConfig merges the keys of every struct c runs with into one tree, so one strict decode of a config file can
+// reject any key none of them holds. A root struct and a subcommand's
+//
+//	struct{ LogLevel string; Server struct{ Host string } }
+//	struct{ Server struct{ Port int } }
+//
+// merge into this tree for the subcommand:
+//
+//	{children: {
+//		"LogLevel": {leaf: string, index: 0},
+//		"Server": {leaf: nil, index: 1, children: {
+//			"Host": {leaf: string, index: 0},
+//			"Port": {leaf: int, index: 1},
+//		}},
+//	}}
+//
+// whose fileValuesType, with the TOML markup for example, is:
+//
+//	struct {
+//		F0 *string `toml:"LogLevel"`
+//		F1 *struct {
+//			F0 *string `toml:"Host"`
+//			F1 *int    `toml:"Port"`
+//		} `toml:"Server"`
+//	}
+func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
+	cc := commandConfig{keys: &keyNode{children: map[string]*keyNode{}}}
+	for ; c != nil; c = c.Parent() {
+		if e := b.entries[c]; e != nil {
+			cc.entries = append(cc.entries, e)
+		}
+	}
+
+	slices.Reverse(cc.entries)
+
+	lang := b.opts.Markup
+	// Env vars fold '.', '-' and '_' to '_', so distinct keys can still share a name.
+	// Env var names are stricter than flag names, so if they don't collide, flags don't either.
+	claimed := map[string]string{}
+	for _, e := range cc.entries {
+		for _, k := range e.keys {
+			leaf := commentparsing.DerefType(k.goType)
+			if err := cc.keys.add(k.fileKey, leaf, lang); err != nil {
+				return commandConfig{}, fmt.Errorf("%s: %w", e.cmd.Name(), err)
+			}
+
+			if k.flag == nil {
+				continue
+			}
+
+			for _, name := range e.envVars(k) {
+				if other, dup := claimed[name]; dup {
+					return commandConfig{}, fmt.Errorf("%s: %s and %s are both %s", e.cmd.Name(), other, k.key, name)
+				}
+
+				claimed[name] = k.key
+			}
+		}
+	}
+
+	return cc, nil
+}
+
+// Undocumented lists, sorted, the keys of flags without help text, usually because their struct's package has no
+// generated DocComments. This can be used in a test, for example, as require.Empty(t, b.Undocumented()).
 func (b *Binder) Undocumented() []string {
 	var keys []string
 	for _, e := range b.entries {
 		keys = append(keys, e.undocumented...)
 	}
+
+	slices.Sort(keys)
 	return keys
 }
 
-type (
-	hookE = func(*cobra.Command, []string) error
-	hook  = func(*cobra.Command, []string)
-)
-
-// wire hooks decoding into the tree as it stands when a command executes, so a hook assigned
-// after Register is wrapped rather than replacing the decode. It runs from cobra.OnInitialize,
-// before any hook. Decoding runs in the root's PersistentPreRunE.
+// wire runs from cobra.OnInitialize, at Execute, so a hook the program assigns after Register runs after the decode
+// rather than replacing it. Execute runs it every time, so a root already wired is left alone.
 func (b *Binder) wire() {
-	b.wrap(&b.root.PersistentPreRunE, &b.root.PersistentPreRun)
-	if cobra.EnableTraverseRunHooks {
-		return
-	}
+	for cmd := range b.entries {
+		root := cmd.Root()
+		if _, wired := b.rootHooks[root]; wired {
+			continue
+		}
 
-	var visit func(*cobra.Command)
-	visit = func(c *cobra.Command) {
-		for _, child := range c.Commands() {
-			// Cobra runs only the nearest persistent hook, so one below the root would skip the
-			// root's decode; it decodes instead.
-			if child.PersistentPreRunE != nil || child.PersistentPreRun != nil {
-				b.wrap(&child.PersistentPreRunE, &child.PersistentPreRun)
-			}
-			visit(child)
-		}
-	}
-	visit(b.root)
-}
-
-// wrap makes *slotE decode before running the hook it held, or the plain hook in *slot, which
-// cobra would otherwise skip in favour of *slotE. A slot already wrapped is left.
-func (b *Binder) wrap(slotE *hookE, slot *hook) {
-	if *slotE != nil && reflect.ValueOf(*slotE).Pointer() == wrapperCode {
-		return
-	}
-	*slotE = b.wrapper(*slotE, slot)
-}
-
-func (b *Binder) wrapper(prev hookE, slot *hook) hookE {
-	return func(c *cobra.Command, args []string) error {
-		if err := b.decode(c); err != nil {
-			return err
-		}
-		if prev != nil {
-			return prev(c, args)
-		}
-		// Read at run time, so a plain hook assigned after wrapping still runs.
-		if *slot != nil {
-			(*slot)(c, args)
-		}
-		return nil
+		b.rootHooks[root] = root.PersistentPreRunE
+		root.PersistentPreRunE = b.preRun
 	}
 }
 
-// wrapperCode identifies wrapper's closures, which is how wrap tells its own hook from a caller's.
-var wrapperCode = reflect.ValueOf((&Binder{}).wrapper(nil, nil)).Pointer()
+func (b *Binder) preRun(c *cobra.Command, args []string) error {
+	if err := b.decode(c); err != nil {
+		return err
+	}
 
-// decode decodes and validates every entry registered on c or an ancestor,
-// whose flags c inherits. Errors are joined so one entry's failure doesn't hide another's.
+	root := c.Root()
+	if hook := b.rootHooks[root]; hook != nil {
+		return hook(c, args)
+	}
+
+	// cobra skips PersistentPreRun when PersistentPreRunE is set,
+	// but we set PersistentPreRunE for the user so run their original PersistentPreRun for them.
+	if root.PersistentPreRun != nil {
+		root.PersistentPreRun(c, args)
+	}
+
+	return nil
+}
+
 func (b *Binder) decode(c *cobra.Command) error {
 	// Help and completion must work without valid config.
 	if IsBuiltinCommand(c) {
 		return nil
 	}
 
-	onPath := map[*cobra.Command]bool{}
-	for p := c; p != nil; p = p.Parent() {
-		onPath[p] = true
-	}
-	entries := slices.DeleteFunc(slices.Clone(b.entries), func(e *targetEntry) bool { return !onPath[e.cmd] })
-	if len(entries) == 0 {
-		return nil
+	// The whole tree, not just c's path: Register can't see commands attached after it, and a clash should fail every
+	// command, not only the ones it affects.
+	for cmd := range b.entries {
+		if cmd.Root() == c.Root() {
+			if _, err := b.commandConfig(cmd); err != nil {
+				return err
+			}
+		}
 	}
 
-	if err := b.loadConfigFilesOnce(c); err != nil {
+	cc, err := b.commandConfig(c)
+	if err != nil || len(cc.entries) == 0 {
+		return err
+	}
+
+	if cc.fileValues, err = b.loadConfigFiles(c, cc.keys); err != nil {
 		return err
 	}
 
 	var errs []error
-	for _, entry := range entries {
-		if err := decodeEntry(entry); err != nil {
+	for _, entry := range cc.entries {
+		if err = decodeEntry(entry, cc); err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		if err := entry.validate(); err != nil {
+
+		if err = entry.validate(); err != nil {
 			errs = append(errs, fmt.Errorf("invalid configuration: %w", err))
 		}
 	}
@@ -232,23 +256,31 @@ func (b *Binder) decode(c *cobra.Command) error {
 	return errors.Join(errs...)
 }
 
-func (b *Binder) loadConfigFilesOnce(cmd *cobra.Command) error {
-	b.configFileOnce.Do(func() { b.config, b.configFileErr = b.loadConfigFiles(cmd) })
-	return b.configFileErr
+// IsBuiltinCommand reports whether cmd is or is under cobra's help or completion commands. A [Binder] skips decoding
+// for them, so help works without valid config; custom PreRunE checks should too.
+func IsBuiltinCommand(cmd *cobra.Command) bool {
+	for c := cmd; c != nil; c = c.Parent() {
+		switch c.Name() {
+		case "help", "completion", cobra.ShellCompRequestCmd, cobra.ShellCompNoDescRequestCmd:
+			return true
+		}
+	}
+
+	return false
 }
 
-// loadConfigFiles layers the --config files, or the default path if none, over the base config,
-// later files winning. Only named files must exist; every file read must decode.
-func (b *Binder) loadConfigFiles(cmd *cobra.Command) (reflect.Value, error) {
+// The markup decodes strictly, so a key the command's structs don't hold is an error.
+func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *keyNode) (reflect.Value, error) {
 	lang := b.opts.Markup
-	fileType := b.keys.fileType(lang)
-	merged := reflect.New(fileType).Elem()
+	fileValuesType := keys.fileValuesType(lang)
+	merged := reflect.New(fileValuesType).Elem()
 	layer := func(data []byte, name string) error {
-		v := reflect.New(fileType)
+		v := reflect.New(fileValuesType)
 		if err := lang.Unmarshal(data, v.Interface()); err != nil {
 			return fmt.Errorf("invalid %s: %w", name, err)
 		}
-		b.keys.overlay(merged, v.Elem())
+
+		keys.overlay(merged, v.Elem())
 		return nil
 	}
 
@@ -258,11 +290,17 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command) (reflect.Value, error) {
 		}
 	}
 
-	// New defined the flag, so it can't be missing or of another type.
-	paths, _ := cmd.Flags().GetStringArray(ConfigFlagName)
+	// A subcommand's own --config shadows the one Register added, and holds no config files.
+	paths, err := cmd.Flags().GetStringArray(ConfigFlagName)
+	if err != nil {
+		return reflect.Value{}, fmt.Errorf("--%s on %s is not the flag Register added: %w",
+			ConfigFlagName, cmd.Name(), err)
+	}
+
 	for i := range paths {
 		paths[i] = strings.TrimSpace(paths[i])
 	}
+
 	paths = slices.DeleteFunc(paths, func(p string) bool { return p == "" })
 	named := len(paths) > 0
 	if !named {
@@ -270,6 +308,7 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command) (reflect.Value, error) {
 		if defaultPath == "" {
 			defaultPath = defaultConfigName + "." + lang.Extension()
 		}
+
 		paths = []string{defaultPath}
 	}
 
@@ -279,11 +318,20 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command) (reflect.Value, error) {
 			if !named && errors.Is(err, os.ErrNotExist) {
 				continue
 			}
+
 			return reflect.Value{}, fmt.Errorf("failed to read config file %q: %w", path, err)
 		}
+
 		if err = layer(data, fmt.Sprintf("config file %q", path)); err != nil {
 			return reflect.Value{}, err
 		}
 	}
+
 	return merged, nil
+}
+
+type commandConfig struct {
+	entries    []*targetEntry
+	keys       *keyNode
+	fileValues reflect.Value
 }

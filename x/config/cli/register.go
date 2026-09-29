@@ -4,6 +4,7 @@ import (
 	"encoding"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,26 +18,26 @@ var durationType = reflect.TypeFor[time.Duration]()
 
 func bindLeafFlag(entry *targetEntry, m fieldMeta) error {
 	flags := entry.cmd.PersistentFlags()
-	key := strings.Join(entry.namespaced([]string{m.key}), ".")
 	leaf := leafKey{
-		key:        key,
-		configPath: entry.namespaced(m.configPath),
-		flagName:   strings.ReplaceAll(key, "_", "-"),
-		goPath:     m.goPath,
-		goType:     m.field.Type,
+		key:      m.key,
+		fileKey:  m.fileKey,
+		flagName: strings.ReplaceAll(m.key, "_", "-"),
+		goPath:   m.goPath,
+		goType:   m.field.Type,
 	}
 	// pflag panics on a redefinition.
 	if flags.Lookup(leaf.flagName) != nil {
-		return fmt.Errorf("%s: flag --%s is already defined on %s; register one of the structs under another namespace or command",
-			m.key, leaf.flagName, entry.cmd.Name())
+		return fmt.Errorf("%s: flag --%s is already defined on %s", m.key, leaf.flagName, entry.cmd.Name())
 	}
 
-	doc := entry.docs.usage(m.owner, m.field.Name)
+	docs, _ := commentparsing.Lookup(m.owner)
+	doc := strings.Join(strings.Fields(docs[m.field.Name].Comment), " ")
 	usage := doc
 	// Under a pointer section the rule applies only once the section is configured.
 	if isRequired(m.field) && !m.inOptional {
 		usage = strings.TrimSpace(usage + " (required)")
 	}
+
 	if envs := entry.envVars(leaf); len(envs) > 0 {
 		usage = strings.TrimSpace(usage + " [env " + strings.Join(envs, ", ") + "]")
 	}
@@ -49,138 +50,170 @@ func bindLeafFlag(entry *targetEntry, m fieldMeta) error {
 			entry.undocumented = append(entry.undocumented, leaf.key)
 		}
 	}
+
 	entry.keys = append(entry.keys, leaf)
 	return nil
 }
 
-// isRequired reports whether field's `validate` tag demands a value: `required`, or `set`.
 func isRequired(field reflect.StructField) bool {
 	for rule := range strings.SplitSeq(field.Tag.Get("validate"), ",") {
 		switch rule {
-		case "required", setTag:
+		case "required":
 			return true
 		case "dive":
-			// The rules after it are a list's or map's elements' (and, between keys and endkeys, a
-			// map's keys'), not the field's own: `dive,required` requires every element, not the list.
+			// The rules after it are a list's or map's elements' (and, between keys and endkeys, a map's keys'), not
+			// the field's own: `dive,required` requires every element, not the list.
 			return false
 		}
 	}
+
 	return false
 }
 
-// newFlag builds, unregistered, the flag for a field of type t with default def, and a getter for
-// its parsed value, of t through its pointers. It returns nil for a type with no text form, which is config file only.
+// A nil flag means the type has no text form, so the field is config file only.
 func newFlag(name string, t reflect.Type, def reflect.Value, usage string) (*pflag.Flag, func() reflect.Value) {
 	t = commentparsing.DerefType(t)
-	fs := pflag.NewFlagSet(name, pflag.ContinueOnError)
+	var value pflag.Value
 	var get func() reflect.Value
 	switch {
-	case readsText(t):
+	case canText(t):
 		v := &textValue{value: reflect.New(t).Elem()}
 		if def.IsValid() && def.Type() == t {
 			v.value.Set(def)
 		}
-		fs.Var(v, name, usage)
-		get = func() reflect.Value { return v.value }
-	case t == durationType:
-		get = typed(fs.DurationVar, name, time.Duration(def.Int()), usage)
-	case t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8:
-		// []byte is text (JSON, PEM), not a list of numbers.
-		text := typed(fs.StringVar, name, string(def.Bytes()), usage)
-		get = func() reflect.Value { return reflect.ValueOf([]byte(text().String())) }
-	case t.Kind() == reflect.Slice:
-		if !isText(t.Elem()) {
-			return nil, nil
-		}
-		l := &textListValue{list: reflect.MakeSlice(t, 0, 0), elems: textListOf(def)}
-		fs.Var(l, name, usage)
-		get = func() reflect.Value { return l.list }
-	case t.Kind() == reflect.Map:
-		// Only text keys and values have a flag form (see maps.go).
-		if !isText(t.Key()) || !isText(t.Elem()) {
-			return nil, nil
-		}
-		m := &textMapValue{m: reflect.MakeMap(t), entries: textMapOf(def), seen: map[any]string{}}
-		fs.Var(m, name, usage)
-		get = func() reflect.Value { return m.m }
+
+		value, get = v, func() reflect.Value { return v.value }
 	default:
-		//nolint:gosec // G115: each conversion is to def's own kind, so none truncates
-		switch t.Kind() {
-		case reflect.String:
-			get = typed(fs.StringVar, name, def.String(), usage)
-		case reflect.Bool:
-			get = typed(fs.BoolVar, name, def.Bool(), usage)
-		case reflect.Int:
-			get = typed(fs.IntVar, name, int(def.Int()), usage)
-		case reflect.Int8:
-			get = typed(fs.Int8Var, name, int8(def.Int()), usage)
-		case reflect.Int16:
-			get = typed(fs.Int16Var, name, int16(def.Int()), usage)
-		case reflect.Int32:
-			get = typed(fs.Int32Var, name, int32(def.Int()), usage)
-		case reflect.Int64:
-			get = typed(fs.Int64Var, name, def.Int(), usage)
-		case reflect.Uint:
-			get = typed(fs.UintVar, name, uint(def.Uint()), usage)
-		case reflect.Uint8:
-			get = typed(fs.Uint8Var, name, uint8(def.Uint()), usage)
-		case reflect.Uint16:
-			get = typed(fs.Uint16Var, name, uint16(def.Uint()), usage)
-		case reflect.Uint32:
-			get = typed(fs.Uint32Var, name, uint32(def.Uint()), usage)
-		case reflect.Uint64:
-			get = typed(fs.Uint64Var, name, def.Uint(), usage)
-		case reflect.Float32:
-			get = typed(fs.Float32Var, name, float32(def.Float()), usage)
-		case reflect.Float64:
-			get = typed(fs.Float64Var, name, def.Float(), usage)
-		default:
-			return nil, nil
-		}
-		// pflag prints the raw value, but a type's own MarshalText may redact it, as
-		// pkg/config.SecretString does. A zero default stays blank rather than looking set.
-		if !def.IsZero() {
-			if text, ok := marshalText(def); ok {
-				fs.Lookup(name).DefValue = text
-			}
-		}
+		return nil, nil
 	}
-	// A named type, such as type Port int, takes pflag's value converted.
-	return fs.Lookup(name), func() reflect.Value { return get().Convert(t) }
+
+	f := &pflag.Flag{Name: name, Usage: usage, Value: value, DefValue: value.String()}
+	// So --flag alone sets it, as with pflag's own bool flags.
+	if t.Kind() == reflect.Bool && !readsText(t) {
+		f.NoOptDefVal = "true"
+	}
+
+	return f, get
 }
 
-// typed defines a flag with one of pflag's XxxVar methods and returns a getter for its value.
-func typed[V any](define func(*V, string, V, string), name string, def V, usage string) func() reflect.Value {
-	p := new(V)
-	define(p, name, def, usage)
-	return func() reflect.Value { return reflect.ValueOf(*p) }
-}
-
-// textValue is a text type's flag: the type parses its own text, as the flag is parsed.
+// Parses into the field's own type, so a named type such as type Port int needs no conversion.
 type textValue struct{ value reflect.Value }
 
 func (v *textValue) Set(s string) error {
 	p := reflect.New(v.value.Type())
-	if err := p.Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(s)); err != nil {
+	if err := setText(p.Elem(), s); err != nil {
 		return err
 	}
+
 	v.value.Set(p.Elem())
 	return nil
 }
 
-// String renders the default with the type's own marshaller, so it parses back; %v can print struct fields.
-func (v *textValue) String() string { return textOf(v.value) }
+// Blank when zero, so it doesn't look set; otherwise the type's marshaller, so it parses back and
+// pkg/config.SecretString stays redacted.
+func (v *textValue) String() string {
+	if v.value.IsZero() {
+		return ""
+	}
 
-func (v *textValue) Type() string { return "string" }
+	return textOf(v.value)
+}
 
-// parseText parses s as a flag of type t would, into a value of t through its pointers. A type with no text form is an error.
+// Named as pflag names its own flags, for consistent --help.
+func (v *textValue) Type() string {
+	switch t := v.value.Type(); {
+	case readsText(t) || t.Kind() == reflect.Slice:
+		return "string"
+	case t == durationType:
+		return "duration"
+	default:
+		return t.Kind().String()
+	}
+}
+
+// Parsed as pflag would: any Go literal base, and sized, so 256 overflows a uint8. []byte is text (JSON, PEM), not a
+// list of numbers.
+func setText(dst reflect.Value, s string) error {
+	t := dst.Type()
+	switch {
+	case readsText(t):
+		return dst.Addr().Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(s))
+	case t == durationType:
+		d, err := time.ParseDuration(s)
+		dst.SetInt(int64(d))
+		return err
+	}
+
+	var err error
+	switch t.Kind() {
+	case reflect.String:
+		dst.SetString(s)
+	case reflect.Slice:
+		dst.SetBytes([]byte(s))
+	case reflect.Bool:
+		var b bool
+		b, err = strconv.ParseBool(s)
+		dst.SetBool(b)
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		var n int64
+		n, err = strconv.ParseInt(s, 0, t.Bits())
+		dst.SetInt(n)
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		var n uint64
+		n, err = strconv.ParseUint(s, 0, t.Bits())
+		dst.SetUint(n)
+	case reflect.Float32, reflect.Float64:
+		var n float64
+		n, err = strconv.ParseFloat(s, t.Bits())
+		dst.SetFloat(n)
+	default:
+		err = fmt.Errorf("%s has no text form", t)
+	}
+
+	return err
+}
+
+// Parsed through a flag, so an env var accepts exactly what the flag does.
 func parseText(t reflect.Type, s string) (reflect.Value, error) {
 	f, get := newFlag("value", t, reflect.Zero(commentparsing.DerefType(t)), "")
 	if f == nil {
 		return reflect.Value{}, fmt.Errorf("%s has no text form", t)
 	}
+
 	if err := f.Value.Set(s); err != nil {
 		return reflect.Value{}, err
 	}
+
 	return get(), nil
+}
+
+// A type's own marshaller, so the default parses back and secrets stay redacted.
+func textOf(v reflect.Value) string {
+	if !v.IsValid() || (v.Kind() == reflect.Pointer && v.IsNil()) {
+		return ""
+	}
+
+	v = reflect.Indirect(v)
+	if text, ok := marshalText(v); ok {
+		return text
+	}
+
+	if v.Kind() == reflect.Slice && v.Type().Elem().Kind() == reflect.Uint8 {
+		return string(v.Bytes())
+	}
+
+	return fmt.Sprint(v.Interface())
+}
+
+// Copied somewhere addressable first, so a pointer-receiver MarshalText is reachable.
+func marshalText(v reflect.Value) (string, bool) {
+	p := reflect.New(v.Type())
+	p.Elem().Set(v)
+	m, ok := p.Interface().(encoding.TextMarshaler)
+	if !ok {
+		return "", false
+	}
+
+	text, err := m.MarshalText()
+	return string(text), err == nil
 }

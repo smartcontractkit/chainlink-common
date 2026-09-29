@@ -1,4 +1,4 @@
-host = "file.example.com"
-port = 9090
-timeout = "30s"
-tags = ["from-file", "toml"]
+Host = "file.example.com"
+Port = 9090
+Timeout = "30s"
+Tags = ["from-file", "toml"]

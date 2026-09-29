@@ -1,14 +1,8 @@
-// Command simple binds one config struct to one command, which is the whole of the API for most
-// binaries. It prints what each setting resolved to, so the precedence chain (flag > env > config
-// file > compiled-in default) is visible by setting one value several ways.
-//
-// The struct itself lives in the settings package, whose doc comments are the flags' help text -
-// see settings/doccomments_gen.go for what the generator makes of them.
 package main
 
 import (
 	"fmt"
-	"os"
+	"log"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,8 +13,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
-// cfg carries the compiled-in defaults, which is the bottom of the precedence chain: a field
-// nobody configures is left exactly as constructed here.
 var cfg = settings.Config{
 	Host:    "localhost",
 	Port:    8080,
@@ -40,17 +32,17 @@ func main() {
 			return nil
 		},
 	}
-	// "APP" is the env var prefix, so host is also settable as APP_HOST.
-	b, err := cli.New(root, cli.Options{Markup: tomlmarkup.New(), Prefixes: []string{"APP"}})
+
+	b, err := cli.New(cli.Options{Markup: tomlmarkup.New(), Prefixes: []string{"APP"}})
 	if err == nil {
-		err = b.Register(root, "", &cfg)
+		err = b.Register(root, &cfg)
 	}
+
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	if err := root.Execute(); err != nil {
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }

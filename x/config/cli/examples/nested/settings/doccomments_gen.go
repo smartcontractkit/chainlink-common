@@ -6,10 +6,8 @@ import "github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 
 func (Config) DocComments() map[string]commentparsing.FieldDoc {
 	return map[string]commentparsing.FieldDoc{
-		"Metrics": {Comment: "Metrics is where metrics go. Exactly one of Metrics and Tracing is configured, which only\na pointer can express."},
-		"Server":  {Comment: "Server is a plain value struct, so the section is always there."},
-		"TLS":     {Comment: "TLS is an optional section: nil until something under it is supplied."},
-		"Tracing": {Comment: "Tracing is where spans go, and the alternative to Metrics."},
+		"Metrics": {Comment: "Metrics is the optional metrics configuration."},
+		"Server":  {Comment: "Server is the server configuration."},
 	}
 }
 
@@ -28,20 +26,5 @@ func (MetricsConfig) DocComments() map[string]commentparsing.FieldDoc {
 func (ServerConfig) DocComments() map[string]commentparsing.FieldDoc {
 	return map[string]commentparsing.FieldDoc{
 		"Host": {Comment: "Host is the address to listen on."},
-		"Idle": {Comment: "Idle is the idle connection timeout."},
-		"Port": {Comment: "Port is the port to listen on."},
-	}
-}
-
-func (TLSConfig) DocComments() map[string]commentparsing.FieldDoc {
-	return map[string]commentparsing.FieldDoc{
-		"CertFile": {Comment: "CertFile is the path to a PEM certificate."},
-		"KeyFile":  {Comment: "KeyFile is the path to the matching PEM private key."},
-	}
-}
-
-func (TracingConfig) DocComments() map[string]commentparsing.FieldDoc {
-	return map[string]commentparsing.FieldDoc{
-		"Collector": {Comment: "Collector is where to send spans."},
 	}
 }

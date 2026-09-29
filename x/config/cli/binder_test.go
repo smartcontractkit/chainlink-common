@@ -1,18 +1,24 @@
 package cli
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	nested "github.com/smartcontractkit/chainlink-common/x/config/cli/examples/nested/settings"
 	simple "github.com/smartcontractkit/chainlink-common/x/config/cli/examples/simple/settings"
+	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 func TestSubcommandFlagsArePersistent(t *testing.T) {
@@ -20,67 +26,58 @@ func TestSubcommandFlagsArePersistent(t *testing.T) {
 	group := &cobra.Command{Use: "sub"}
 	leaf := &cobra.Command{Use: "leaf", RunE: func(*cobra.Command, []string) error { return nil }}
 	var s BasicConfig
-	require.NoError(t, newBinder(t, root, testOptions).Register(group, "sub", &s))
+	bind(t, group, &s, testOptions)
 	group.AddCommand(leaf)
 	root.AddCommand(group)
 
-	root.SetArgs([]string{"sub", "leaf", "--sub.value", "v"})
+	root.SetArgs([]string{"sub", "leaf", "--value", "v"})
 	require.NoError(t, root.Execute())
 	assert.Equal(t, "v", s.Value)
 }
 
-func TestFlagsCollideInOneNamespace(t *testing.T) {
-	b := newBinder(t, newRoot(t), testOptions)
-	sub := &cobra.Command{Use: "sub"}
-	require.NoError(t, b.Register(sub, "a", &BasicConfig{}))
-	require.ErrorContains(t, b.Register(sub, "a", &BasicConfig{}), "flag --a.value is already defined on sub")
+func TestFlagsCollide(t *testing.T) {
+	type embedsTwoValues struct {
+		BasicConfig
+		RequiredField
+	}
+	require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &embedsTwoValues{}), "flag --value is already defined on app")
 }
 
-// Either would let one config file key reach two fields, so registration rejects them.
-func TestRegisterRejectsKeysAConfigFileCantSeparate(t *testing.T) {
+func TestKeysAConfigFileCantSeparateFailEveryCommand(t *testing.T) {
 	type hasCaseOnlyTwins struct {
 		Twin []BasicConfig
 		TWIN []BasicConfig
 	}
+	type hasSection struct{ Value BasicConfig }
+	type hasFoldedEnvVar struct {
+		Folded string `toml:"value_value"`
+	}
 
-	// Each registers on its own command, so pflag has no collision to report first.
 	for _, tc := range []struct {
-		name     string
-		register func(b *Binder, cmd *cobra.Command) error
-		err      string
+		name        string
+		parent, sub any
+		err         string
 	}{
-		{"differ only in case across structs", func(b *Binder, cmd *cobra.Command) error {
-			return errors.Join(b.Register(b.root, "", &BasicConfig{}), b.Register(cmd, "", &struct{ VALUE string }{}))
-		}, "Value and VALUE differ only in case"},
-		{"differ only in case in one struct", func(b *Binder, cmd *cobra.Command) error {
-			return b.Register(cmd, "", &hasCaseOnlyTwins{})
-		}, "Twin and TWIN differ only in case"},
-		{"a value, then a table", func(b *Binder, cmd *cobra.Command) error {
-			return errors.Join(b.Register(b.root, "", &BasicConfig{}), b.Register(cmd, "Value", &BasicConfig{}))
-		}, "Value is a value in one struct and a table in another"},
-		{"a table, then a value", func(b *Binder, cmd *cobra.Command) error {
-			return errors.Join(b.Register(b.root, "Value", &BasicConfig{}), b.Register(cmd, "", &BasicConfig{}))
-		}, "Value is a value in one struct and a table in another"},
+		{"differ only in case in one struct", &struct{}{}, &hasCaseOnlyTwins{}, "sub: Twin and TWIN differ only in case"},
+		{"differ only in case across commands", &BasicConfig{}, &struct{ VALUE string }{}, "sub: Value and VALUE differ only in case"},
+		{"a value, then a section", &BasicConfig{}, &hasSection{}, "sub: two fields hold Value"},
+		{"a section, then a value", &hasSection{}, &BasicConfig{}, "sub: two fields hold Value"},
+		{"one env var", &hasSection{}, &hasFoldedEnvVar{}, "sub: value.value and value-value are both TEST_VALUE_VALUE"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := newRoot(t)
+			b := bind(t, root, tc.parent, testOptions)
 			sub := &cobra.Command{Use: "sub"}
-			root.AddCommand(sub)
-			require.ErrorContains(t, tc.register(newBinder(t, root, testOptions), sub), tc.err)
+			require.NoError(t, b.register(sub, tc.sub))
+			root.AddCommand(sub, &cobra.Command{Use: "other", RunE: func(*cobra.Command, []string) error { return nil }})
+
+			root.SetArgs([]string{"other"})
+			require.ErrorContains(t, root.Execute(), tc.err)
 		})
 	}
-
-	t.Run("the same key from two commands", func(t *testing.T) {
-		root := newRoot(t)
-		b := newBinder(t, root, testOptions)
-		one, two := &cobra.Command{Use: "one"}, &cobra.Command{Use: "two"}
-		root.AddCommand(one, two)
-		require.NoError(t, b.Register(one, "database", &BasicConfig{}))
-		require.NoError(t, b.Register(two, "database", &BasicConfig{}))
-	})
 }
 
-func TestNewRejectsAnExistingConfigFlag(t *testing.T) {
+func TestRegisterRejectsAnExistingConfigFlag(t *testing.T) {
 	for name, define := range map[string]func(*cobra.Command){
 		"local":      func(c *cobra.Command) { c.Flags().String(ConfigFlagName, "", "") },
 		"persistent": func(c *cobra.Command) { c.PersistentFlags().StringArray(ConfigFlagName, nil, "") },
@@ -88,44 +85,44 @@ func TestNewRejectsAnExistingConfigFlag(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := newRoot(t)
 			define(root)
-			_, err := New(root, testOptions)
-			require.ErrorContains(t, err, "flag --config is already defined on app")
+			require.ErrorContains(t, newBinder(t, testOptions).register(root, &BasicConfig{}), "flag --config is already defined on app")
 		})
 	}
 }
 
-func TestEachCommandDecodesOnlyWhenItRuns(t *testing.T) {
-	root := newRoot(t)
-	b := newBinder(t, root, testOptions)
-	var foo, bar BasicConfig
-	fooCmd := &cobra.Command{Use: "foo", RunE: func(*cobra.Command, []string) error { return nil }}
-	barCmd := &cobra.Command{Use: "bar", RunE: func(*cobra.Command, []string) error { return nil }}
-	require.NoError(t, b.Register(fooCmd, "foo", &foo))
-	require.NoError(t, b.Register(barCmd, "bar", &bar))
-	root.AddCommand(fooCmd, barCmd)
+func TestConfigFilesHoldOnlyTheCommandsKeys(t *testing.T) {
+	type runsConfig struct{ Runs string }
+	type siblingConfig struct{ Sibling string }
 
-	t.Setenv("TEST_BAR_VALUE", "theirs")
-	root.SetArgs([]string{"foo", "--foo.value", "mine"})
-	require.NoError(t, root.Execute())
-	assert.Equal(t, "mine", foo.Value)
-	assert.Empty(t, bar.Value)
-}
-
-func TestConfigFileIsDiscoveredInTheWorkingDirectory(t *testing.T) {
-	for _, tc := range []struct{ name, file, want string }{
-		{"present", "Value = 'from-cwd'\n", "from-cwd"},
-		{"absent", "", "default"},
+	for _, tc := range []struct {
+		name, file string
+		want       []string
+	}{
+		{"its own and the root's", "Value = 'v'\nRuns = 'r'\n", nil},
+		{"a sibling's", "Sibling = 's'\n", []string{"unknown configuration key(s)", "Sibling"}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			dir := t.TempDir()
-			if tc.file != "" {
-				require.NoError(t, os.WriteFile(filepath.Join(dir, "config."+testOptions.Markup.Extension()), []byte(tc.file), 0o600))
-			}
-			t.Chdir(dir)
+			root := newRoot(t)
+			runs := &cobra.Command{Use: "runs", RunE: func(*cobra.Command, []string) error { return nil }}
+			sibling := &cobra.Command{Use: "sibling"}
+			root.AddCommand(runs, sibling)
+			var shared BasicConfig
+			var own runsConfig
+			b := bind(t, root, &shared, testOptions)
+			require.NoError(t, b.register(runs, &own))
+			require.NoError(t, b.register(sibling, &siblingConfig{}))
 
-			c := BasicConfig{Value: "default"}
-			require.NoError(t, run(t, &c, testOptions))
-			assert.Equal(t, tc.want, c.Value)
+			root.SetArgs([]string{"runs", "--config", writeConfig(t, tc.file)})
+			err := root.Execute()
+			if tc.want == nil {
+				require.NoError(t, err)
+				assert.Equal(t, BasicConfig{"v"}, shared)
+				assert.Equal(t, runsConfig{"r"}, own)
+			}
+
+			for _, want := range tc.want {
+				require.ErrorContains(t, err, want)
+			}
 		})
 	}
 }
@@ -133,7 +130,6 @@ func TestConfigFileIsDiscoveredInTheWorkingDirectory(t *testing.T) {
 func TestConfigFileErrors(t *testing.T) {
 	type hasMapAndSection struct {
 		Int     int
-		Map     map[string]string
 		Section BasicConfig
 	}
 
@@ -146,14 +142,9 @@ func TestConfigFileErrors(t *testing.T) {
 		{"a malformed file", []string{"--config", writeConfig(t, "Value = \n")}, []string{"invalid config file", "line 1: unexpected character"}},
 		{"unknown keys", []string{"--config", writeConfig(t, "Itn = 5\nVaule = 'x'\n[Section]\nVaule = 1\n")},
 			[]string{"unknown configuration key(s)", "Itn", "Vaule", "Section.Vaule"}},
-		{"a map's own keys are not config keys", []string{"--config", writeConfig(t, "[Map]\nanything = 'goes'\nAnything = 'else'\n")}, nil},
-		{"a casing the decoder accepts", []string{"--config", writeConfig(t, "int = 5\n")}, nil},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			err := run(t, &hasMapAndSection{}, testOptions, tc.args...)
-			if tc.want == nil {
-				require.NoError(t, err)
-			}
 			for _, want := range tc.want {
 				require.ErrorContains(t, err, want)
 			}
@@ -161,45 +152,18 @@ func TestConfigFileErrors(t *testing.T) {
 	}
 }
 
-func TestUnknownKeysSpanTheCommandTree(t *testing.T) {
-	root := newRoot(t)
-	var r BasicConfig
-	b := bind(t, root, &r, testOptions)
-	sub := &cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }}
-	require.NoError(t, b.Register(sub, "sub", &BasicConfig{}))
-	root.AddCommand(sub)
-	root.SetArgs([]string{"--config", writeConfig(t, "Value = 'r'\n[sub]\nValue = 's'\n")})
-	require.NoError(t, root.Execute())
-	assert.Equal(t, "r", r.Value)
-}
-
 func TestConfigFilesAreLayeredInOrder(t *testing.T) {
-	type hasReplacedAndKept struct {
-		Replaced string
-		Kept     string
-	}
-	type hasEveryLayering struct {
-		EveryLayer string
-		FirstOnly  int
-		BaseOnly   int
-		List       []string
-		Table      hasReplacedAndKept
-		Recased    uint32
-	}
-
 	opts := testOptions
-	opts.BaseConfig = []byte("EveryLayer = 'base'\nBaseOnly = 3\n")
-	first := writeConfig(t, "EveryLayer = 'first'\nFirstOnly = 1\nList = ['a', 'b']\nrecased = 1\n[Table]\nReplaced = 'first'\nKept = 'first'\n")
-	// A different casing must still replace the first's, not race it in a map.
-	second := writeConfig(t, "EveryLayer = 'second'\nList = ['c']\nRecased = 2\n[Table]\nReplaced = 'second'\n")
+	opts.BaseConfig = []byte("LogLevel = 'base'\n[Server]\nHost = 'base'\n")
+	first := writeConfig(t, "[Server]\nHost = 'first'\n")
+	second := writeConfig(t, "[Server]\nHost = 'second'\n")
 
-	var c hasEveryLayering
+	var c nested.Config
 	require.NoError(t, run(t, &c, opts, "--config", first, "--config", second))
-	// Tables merge, but a list is one value, or a lower list could never be replaced.
-	assert.Equal(t, hasEveryLayering{"second", 1, 3, []string{"c"}, hasReplacedAndKept{"second", "first"}, 2}, c)
+	assert.Equal(t, "base", c.LogLevel)
+	assert.Equal(t, "second", c.Server.Host)
 }
 
-// It is checked as a file is, when a command first decodes.
 func TestBaseConfigErrors(t *testing.T) {
 	for base, want := range map[string]string{
 		"Value = \n":    "invalid Options.BaseConfig: line 1: unexpected character",
@@ -229,19 +193,10 @@ func TestIgnoredFieldsMatchTheMarkup(t *testing.T) {
 		assert.Equal(t, hasIgnoredAndListsIgnored{hasIgnored{Value: "v"}, []hasIgnored{{Value: "l"}}}, want)
 		assert.Equal(t, want, got)
 
-		// tomlmarkup's decoder skips these alone, but a key no field reads is an error here, a list
-		// element's too.
+		// tomlmarkup's decoder skips these alone, but a key no field reads is an error here, a list element's too.
 		for file, key := range map[string]string{"Ignored = 's'\n": "line 1: Ignored", "'-' = 's'\n": "line 1: -", "[[List]]\nIgnored = 's'\n": "line 2: List.Ignored"} {
 			require.ErrorContains(t, run(t, &hasIgnoredAndListsIgnored{}, testOptions, "--config", writeConfig(t, file)), "unknown configuration key(s): "+key, file)
 		}
-	})
-
-	t.Run("flags and env vars", func(t *testing.T) {
-		assert.Nil(t, flagsOf(t, &hasIgnoredAndListsIgnored{}, testOptions).Lookup("ignored"))
-		t.Setenv("TEST_IGNORED", "s")
-		var c hasIgnoredAndListsIgnored
-		require.NoError(t, run(t, &c, testOptions))
-		assert.Empty(t, c.Ignored)
 	})
 
 	// pflag can't parse the --- its flag would need.
@@ -249,12 +204,21 @@ func TestIgnoredFieldsMatchTheMarkup(t *testing.T) {
 		type hasDashName struct {
 			Dash string `toml:"-,"` //nolint:revive // the key "-" is what's under test
 		}
-		b := newBinder(t, newRoot(t), testOptions)
-		require.ErrorContains(t, b.Register(b.root, "", &hasDashName{}), `Dash is named "-"`)
+		require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &hasDashName{}), `Dash is named "-"`)
 	})
 }
 
 func TestDefaultConfigPath(t *testing.T) {
+	t.Run("config.<extension> in the working directory when unset", func(t *testing.T) {
+		dir := t.TempDir()
+		require.NoError(t, os.WriteFile(filepath.Join(dir, "config."+testOptions.Markup.Extension()), []byte("Value = 'v'\n"), 0o600))
+		t.Chdir(dir)
+
+		var c BasicConfig
+		require.NoError(t, run(t, &c, testOptions))
+		assert.Equal(t, "v", c.Value)
+	})
+
 	opts := testOptions
 	opts.DefaultConfigPath = writeConfig(t, "Value = 'default-path'\n")
 
@@ -264,54 +228,34 @@ func TestDefaultConfigPath(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var c BasicConfig
-			require.NoError(t, run(t, &c, opts, supply(t, "", "", tc.file)...))
+			require.NoError(t, run(t, &c, opts, supplyConfig(t, "", "", tc.file)...))
 			assert.Equal(t, tc.want, c.Value)
 		})
 	}
 }
 
-func TestNamespace(t *testing.T) {
-	for _, tc := range everySource([]string{"--database.value", "v"}, "v", "[database]\nValue = 'v'") {
-		t.Run(tc.name, func(t *testing.T) {
-			var c BasicConfig
-			require.NoError(t, runIn(t, "database", &c, supply(t, "TEST_DATABASE_VALUE", tc.env, tc.file, tc.args...)...))
-			assert.Equal(t, "v", c.Value)
-		})
+func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
+	type hasOther struct {
+		Other string `validate:"required"`
 	}
 
-	t.Run("separates same-named fields", func(t *testing.T) {
-		root := newRoot(t)
-		b := newBinder(t, root, testOptions)
-		var db, evm BasicConfig
-		require.NoError(t, b.Register(root, "database", &db))
-		require.NoError(t, b.Register(root, "evm", &evm))
-
-		root.SetArgs([]string{"--database.value", "d", "--evm.value", "e"})
-		require.NoError(t, root.Execute())
-		assert.Equal(t, "d", db.Value)
-		assert.Equal(t, "e", evm.Value)
-	})
-}
-
-func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
 	root := newRoot(t)
-	require.NoError(t, bind(t, root, &RequiredField{}, testOptions).Register(root, "other", &RequiredField{}))
+	sub := &cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }}
+	root.AddCommand(sub)
+	require.NoError(t, bind(t, root, &RequiredField{}, testOptions).register(sub, &hasOther{}))
+	root.SetArgs([]string{"sub"})
 	err := root.Execute()
 	require.ErrorContains(t, err, "invalid configuration: Value failed")
-	assert.ErrorContains(t, err, "invalid configuration: other.Value failed")
+	assert.ErrorContains(t, err, "invalid configuration: Other failed")
 }
 
 func TestBuiltinCommandsSkipValidation(t *testing.T) {
-	// Cobra only adds help and completion to a command with children.
-	for _, args := range [][]string{{"help"}, {"completion", "bash"}, {"__complete", ""}} {
-		t.Run(strings.Join(args, " "), func(t *testing.T) {
-			root := newRoot(t)
-			bind(t, root, &RequiredField{}, testOptions)
-			root.AddCommand(&cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }})
-			root.SetArgs(args)
-			require.NoError(t, root.Execute())
-		})
-	}
+	root := newRoot(t)
+	bind(t, root, &RequiredField{}, testOptions)
+	// Cobra only adds help to a command with children.
+	root.AddCommand(&cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }})
+	root.SetArgs([]string{"help"})
+	require.NoError(t, root.Execute())
 }
 
 func TestPersistentHooks(t *testing.T) {
@@ -357,4 +301,453 @@ func TestPersistentHooks(t *testing.T) {
 func TestUndocumentedListsFlagsWithoutHelp(t *testing.T) {
 	assert.Equal(t, []string{"value"}, bind(t, newRoot(t), &BasicConfig{}, testOptions).Undocumented())
 	assert.Empty(t, bind(t, newRoot(t), &simple.Config{}, testOptions).Undocumented())
+}
+
+func TestKeyNames(t *testing.T) {
+	type hasUntaggedCamelCase struct {
+		AcronymID uint32
+		TwoWords  config.Duration
+	}
+	type hasLanguageAndOtherTags struct {
+		LanguageTagged string `toml:"renamed"`
+		OtherTagged    string `mapstructure:"other"`
+	}
+	type embedsBasic struct{ BasicConfig }
+	type embedsUnexported struct {
+		unexportedBasicConfig
+		Own int
+	}
+	type embedsAnEmbedder struct{ embedsUnexported }
+	type embedsBasicPointer struct {
+		*BasicConfig
+		Own string
+	}
+	type embedsNamedPointer struct {
+		*BasicConfig `toml:"aws,omitempty"`
+	}
+
+	for _, tc := range []struct {
+		name         string
+		target, want any
+		args         []string
+	}{
+		{"untagged fields are kebab-cased", &hasUntaggedCamelCase{}, &hasUntaggedCamelCase{137, *config.MustNewDuration(7 * time.Second)},
+			[]string{"--acronym-id", "137", "--two-words", "7s"}},
+		{"only the language's tag names a key", &hasLanguageAndOtherTags{}, &hasLanguageAndOtherTags{"l", "o"}, []string{"--renamed", "l", "--other-tagged", "o"}},
+		{"an embedded struct flattens", &embedsBasic{}, &embedsBasic{BasicConfig{"v"}}, []string{"--value", "v"}},
+		{"unexported embeds flatten all the way up", &embedsAnEmbedder{}, &embedsAnEmbedder{embedsUnexported{unexportedBasicConfig{"v"}, 1}},
+			[]string{"--value", "v", "--own", "1"}},
+		{"an embedded pointer flattens and is allocated", &embedsBasicPointer{}, &embedsBasicPointer{&BasicConfig{"v"}, "x"},
+			[]string{"--value", "v", "--own", "x"}},
+		// A named embedded pointer is how a polymorphic section is written, so the name must win.
+		{"a named embedded pointer keeps its section", &embedsNamedPointer{}, &embedsNamedPointer{&BasicConfig{"p"}},
+			[]string{"--aws.value", "p"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.NoError(t, run(t, tc.target, testOptions, tc.args...))
+			assert.Equal(t, tc.want, tc.target)
+		})
+	}
+}
+
+func TestWhatGetsAFlag(t *testing.T) {
+	type nestsItself struct {
+		Value string
+		Child *nestsItself
+	}
+	type hasEveryShape struct {
+		String        string
+		Bytes         []byte
+		ListOfMaps    []map[string]string
+		ListOfStructs []nestsItself
+		MapOfStructs  map[string]nestsItself
+		MapOfBytes    map[string][]byte
+		TextReader    readsItselfAsText
+		TextWriter    writesItselfAsText
+		Nested        nestsItself
+		Complex       complex128
+		unexported    string //nolint:unused // nothing can set it, so nothing binds it
+	}
+
+	flags := flagsOf(t, &hasEveryShape{}, testOptions)
+	for _, name := range []string{"string", "bytes", "text-reader", "text-writer.value", "nested.value"} {
+		assert.NotNil(t, flags.Lookup(name), name)
+	}
+
+	// Without a single text form a flag's default could not be read back, so these are file-only.
+	for _, name := range []string{"map-of-bytes", "list-of-maps", "list-of-structs", "list-of-structs.value", "map-of-structs",
+		"complex", "unexported", "text-reader.value", "nested.child.value"} {
+		assert.Nil(t, flags.Lookup(name), name)
+	}
+}
+
+func TestRegistrationRejects(t *testing.T) {
+	var nilPointer *struct{}
+	host := "example.com"
+	type embedsUnexportedPointer struct {
+		*unexportedBasicConfig
+	}
+
+	for _, tc := range []struct {
+		name   string
+		target any
+		want   string
+	}{
+		{"nil pointer", nilPointer, "target pointer cannot be nil"},
+		{"not a struct", &host, "target must be a struct or pointer to struct"},
+		// Reflect can't allocate it, so decoding would panic.
+		{"an unexported embedded pointer", &embedsUnexportedPointer{}, "embedded *unexportedBasicConfig is unexported"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), tc.target), tc.want)
+		})
+	}
+
+	_, err := New(Options{})
+	require.ErrorIs(t, err, markup.Err)
+}
+
+func TestPointers(t *testing.T) {
+	type hasRequiredAndOptional struct {
+		Required int32 `validate:"required"`
+		Optional int32
+	}
+	type hasPointers struct {
+		*BasicConfig
+		Section *hasRequiredAndOptional
+		String  *string
+	}
+
+	var unset hasPointers
+	require.NoError(t, run(t, &unset, testOptions))
+	assert.Equal(t, hasPointers{}, unset)
+
+	var empty hasPointers
+	require.NoError(t, run(t, &empty, testOptions, "--string", ""))
+	require.NotNil(t, empty.String)
+
+	var partial hasPointers
+	require.ErrorContains(t, run(t, &partial, testOptions, "--section.optional", "9"), "Section.Required failed")
+	require.NotNil(t, partial.Section)
+}
+
+func TestNumericFlagsAreSized(t *testing.T) {
+	type hasEveryNumber struct {
+		Int     int
+		Int8    int8
+		Int16   int16
+		Int32   int32
+		Int64   int64
+		Uint    uint
+		Uint8   uint8
+		Uint16  uint16
+		Uint32  uint32
+		Uint64  uint64
+		Float32 float32
+		Float64 float64
+	}
+
+	for _, tc := range []struct{ flag, limit, past string }{
+		{"int", "9223372036854775807", "9223372036854775808"},
+		{"int-8", "-128", "-129"},
+		{"int-16", "32767", "32768"},
+		{"int-32", "-2147483648", "-2147483649"},
+		{"int-64", "9223372036854775807", "9223372036854775808"},
+		{"uint", "18446744073709551615", "18446744073709551616"},
+		{"uint-8", "255", "256"},
+		{"uint-16", "65535", "65536"},
+		{"uint-32", "4294967295", "4294967296"},
+		{"uint-64", "18446744073709551615", "18446744073709551616"},
+		{"float-32", "3.4e38", "3.5e38"},
+		{"float-64", "1.7e308", "1.8e308"},
+	} {
+		t.Run(tc.flag, func(t *testing.T) {
+			require.NoError(t, run(t, &hasEveryNumber{}, testOptions, "--"+tc.flag, tc.limit))
+			require.ErrorContains(t, run(t, &hasEveryNumber{}, testOptions, "--"+tc.flag, tc.past), "out of range")
+		})
+	}
+}
+
+func TestExplicitDefaultValueOverridesANonDefault(t *testing.T) {
+	flag := []string{"--bool=false", "--uint", "0", "--string", ""}
+	for _, tc := range everySource(flag, "", "Bool = false\nUint = 0\nString = ''") {
+		t.Run(tc.name, func(t *testing.T) {
+			c := hasEveryKind{Bool: true, Uint: 5, String: "set"}
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "", "", tc.file, tc.args...)...))
+			assert.Equal(t, hasEveryKind{}, c)
+		})
+	}
+}
+
+func TestPrecedence(t *testing.T) {
+	type hasTwoStrings struct {
+		Value     string
+		Untouched string
+	}
+
+	for _, tc := range []struct {
+		name, env, file string
+		args            []string
+		want            string
+	}{
+		{"file", "", "Value = 'file'", nil, "file"},
+		{"file and env", "env", "Value = 'file'", nil, "env"},
+		{"file, env and flag", "env", "Value = 'file'", []string{"--value", "flag"}, "flag"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("TEST_VALUE", "")
+			c := hasTwoStrings{Value: "default", Untouched: "untouched"}
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_VALUE", tc.env, tc.file, tc.args...)...))
+			assert.Equal(t, hasTwoStrings{tc.want, "untouched"}, c)
+		})
+	}
+}
+
+func TestEnvPrefixesTriedInOrder(t *testing.T) {
+	t.Setenv("FIRST_VALUE", "first")
+	t.Setenv("SECOND_VALUE", "second")
+
+	var c BasicConfig
+	require.NoError(t, run(t, &c, Options{Markup: tomlmarkup.New(), Prefixes: []string{"FIRST", "SECOND"}}))
+	assert.Equal(t, "first", c.Value)
+}
+
+func TestValidationErrorsUseConfigKeys(t *testing.T) {
+	// Renamed keys show a config file key comes from the tag, not the Go name.
+	type nestsRenamedRequired struct {
+		GoName RequiredField `toml:"Renamed"`
+	}
+	type hasExclusivePointers struct {
+		Excluded *RequiredField `validate:"excluded_with=Excluder"`
+		Excluder *RequiredField `toml:"RenamedExcluder"`
+	}
+
+	for _, tc := range []struct {
+		name   string
+		target any
+		args   []string
+		want   string
+	}{
+		{"a leaf names how to set it", &nestsRenamedRequired{}, nil, "invalid configuration: Renamed.Value failed on the 'required' tag; " +
+			"set it with --renamed.value, TEST_RENAMED_VALUE, Renamed.Value in a config file"},
+		{"a section and its rule's sibling", &hasExclusivePointers{}, []string{"--excluded.value", "v", "--renamed-excluder.value", "v"},
+			"invalid configuration: Excluded failed on the 'excluded_with=RenamedExcluder' tag"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			require.ErrorContains(t, run(t, tc.target, testOptions, tc.args...), tc.want)
+		})
+	}
+}
+
+func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
+	type hasTaggedRequired struct {
+		GoName string `toml:"renamed" validate:"required"`
+	}
+	type hasSiblingRule struct {
+		Rule    string `validate:"required_without=Sibling"`
+		Sibling string `toml:"renamed"`
+	}
+
+	type embedsRequired struct {
+		RequiredField
+	}
+	type hasValidatedCollections struct {
+		Structs []hasTaggedRequired `validate:"dive"`
+		Strings []string            `validate:"dive,required"`
+		Map     map[string]string   `validate:"dive,required"`
+		Rules   []hasSiblingRule    `validate:"dive"`
+		Embeds  []embedsRequired    `validate:"dive"`
+	}
+
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"a list element's field, by its tag", []string{"--config", writeConfig(t, "[[Structs]]\nrenamed = 'a'\n[[Structs]]\nrenamed = ''\n")},
+			"Structs.1.renamed failed on the 'required' tag"},
+		{"a list element", []string{"--config", writeConfig(t, "Strings = ['a', '']\n")}, "Strings.1 failed on the 'required' tag"},
+		{"a map entry", []string{"--config", writeConfig(t, "[Map]\nk = ''\n")}, "Map.k failed on the 'required' tag"},
+		{"a rule's sibling in the same element", []string{"--config", writeConfig(t, "[[Rules]]\n")},
+			"Rules.0.Rule failed on the 'required_without=Rules.0.renamed' tag"},
+		{"a flattened embed adds no segment", []string{"--config", writeConfig(t, "[[Embeds]]\n")},
+			"Embeds.0.Value failed on the 'required' tag"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := run(t, &hasValidatedCollections{}, testOptions, tc.args...)
+			require.ErrorContains(t, err, tc.want)
+			// Nothing falls back to the validator's own text, which names Go fields.
+			assert.NotContains(t, err.Error(), "Key: ")
+		})
+	}
+}
+
+// A byte slice is text (JSON, PEM), so neither a flag nor an env var splits it on its commas.
+func TestByteSliceIsText(t *testing.T) {
+	type hasByteSlice struct {
+		Bytes []byte
+	}
+
+	assert.Equal(t, `{"a":1}`, flagsOf(t, &hasByteSlice{Bytes: []byte(`{"a":1}`)}, testOptions).Lookup("bytes").DefValue)
+	for _, tc := range everySource([]string{"--bytes", `{"a":1,"b":2}`}, `{"a":1,"b":2}`, "") {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasByteSlice
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_BYTES", tc.env, tc.file, tc.args...)...))
+			assert.Equal(t, []byte(`{"a":1,"b":2}`), c.Bytes)
+		})
+	}
+}
+
+func TestSelfDecodingSliceOwnsItsForm(t *testing.T) {
+	type hasSelfSplittingList struct {
+		List selfSplittingList
+	}
+	t.Setenv("TEST_LIST", "80+443")
+
+	var c hasSelfSplittingList
+	require.NoError(t, run(t, &c, testOptions))
+	assert.Equal(t, selfSplittingList{80, 443}, c.List)
+}
+
+type selfSplittingList []int
+
+func (p *selfSplittingList) UnmarshalText(b []byte) error {
+	*p = nil
+	for part := range strings.SplitSeq(string(b), "+") {
+		n, err := strconv.Atoi(part)
+		if err != nil {
+			return err
+		}
+
+		*p = append(*p, n)
+	}
+
+	return nil
+}
+
+func TestHelpDefaultsCanBePassedBackIn(t *testing.T) {
+	type hasText struct {
+		Text *config.URL
+	}
+
+	c := hasText{Text: config.MustParseURL("https://x/rpc")}
+	flags := flagsOf(t, &c, testOptions)
+
+	var back hasText
+	args := []string{"--text", flags.Lookup("text").DefValue}
+	require.NoError(t, run(t, &back, testOptions, args...))
+	assert.Equal(t, c, back)
+}
+
+type intKindText time.Duration
+
+func (d *intKindText) UnmarshalText(text []byte) error {
+	parsed, err := time.ParseDuration(string(text))
+	*d = intKindText(parsed)
+	return err
+}
+
+func TestTextUnmarshalerLeafFromEverySource(t *testing.T) {
+	type hasIntKindText struct {
+		Value intKindText
+	}
+
+	for _, tc := range everySource([]string{"--value", "30m"}, "30m", "Value = '30m'") {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasIntKindText
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_VALUE", tc.env, tc.file, tc.args...)...))
+			assert.Equal(t, 30*time.Minute, time.Duration(c.Value))
+		})
+	}
+
+	require.ErrorContains(t, run(t, &hasIntKindText{}, testOptions, "--value", "not-a-duration"), `time: invalid duration "not-a-duration"`)
+}
+
+func TestLeafNestedInASection(t *testing.T) {
+	type hasDuration struct {
+		Value config.Duration
+	}
+	type hasDurationInASection struct {
+		Section hasDuration
+	}
+	want := hasDurationInASection{Section: hasDuration{*config.MustNewDuration(time.Minute)}}
+
+	for _, tc := range everySource([]string{"--section.value", "1m"}, "", "[Section]\nValue = '1m'") {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasDurationInASection
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "", "", tc.file, tc.args...)...))
+			assert.Equal(t, want, c)
+		})
+	}
+}
+
+type documentedOverTwoLines struct{ Value string }
+
+func (documentedOverTwoLines) DocComments() map[string]commentparsing.FieldDoc {
+	return map[string]commentparsing.FieldDoc{"Value": {Comment: "Value is one line.\nIt continues here."}}
+}
+
+func TestHelpText(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		target   any
+		prefixes []string
+		flag     string
+		want     string
+	}{
+		{"a multi-line comment is one line", &documentedOverTwoLines{}, nil, "value", "Value is one line. It continues here. [env VALUE]"},
+		{"an embedded struct is documented by its own type", &nested.Config{}, nil, "log-level", "LogLevel is the minimum level to log. [env LOG_LEVEL]"},
+		{"env vars in the order tried", &simple.Config{}, []string{"CRE", "CL"}, "host", "Host is the host to dial. [env CRE_HOST, CL_HOST]"},
+		{"an empty prefix adds none", &simple.Config{}, []string{"APP", ""}, "host", "Host is the host to dial. [env APP_HOST, HOST]"},
+		{"required", &RequiredField{}, nil, "value", "(required) [env VALUE]"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, flagsOf(t, tc.target, Options{Markup: tomlmarkup.New(), Prefixes: tc.prefixes}).Lookup(tc.flag).Usage)
+		})
+	}
+}
+
+// pflag would print a string kind's raw default; its own MarshalText is what redacts it.
+func TestSecretDefaultIsRedacted(t *testing.T) {
+	type hasSetAndUnsetSecrets struct {
+		Set   config.SecretString
+		Unset config.SecretString
+	}
+
+	flags := flagsOf(t, &hasSetAndUnsetSecrets{Set: "hunter2"}, testOptions)
+	assert.Equal(t, "xxxxx", flags.Lookup("set").DefValue)
+	assert.Empty(t, flags.Lookup("unset").DefValue)
+
+	c := hasSetAndUnsetSecrets{Set: "hunter2"}
+	require.NoError(t, run(t, &c, testOptions))
+	assert.Equal(t, config.SecretString("hunter2"), c.Set)
+}
+
+type hasEveryKind struct {
+	Int      int
+	Int8     int8
+	Uint     uint
+	Float32  float32
+	Bool     bool
+	String   string
+	Duration time.Duration
+}
+
+func TestParserErrorsArePropagated(t *testing.T) {
+	err := run(t, &hasEveryKind{}, testOptions, "--int=abc")
+	require.ErrorContains(t, err, `invalid argument "abc" for "--int" flag: strconv.ParseInt: parsing "abc": invalid syntax`)
+
+	t.Setenv("TEST_INT", "abc")
+	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions), `invalid value "abc" for TEST_INT: strconv.ParseInt: parsing "abc": invalid syntax`)
+}
+
+func TestASubcommandsOwnConfigFlagIsRejected(t *testing.T) {
+	root := newRoot(t)
+	bind(t, root, &BasicConfig{}, testOptions)
+	sub := &cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }}
+	sub.Flags().String(ConfigFlagName, "", "")
+	root.AddCommand(sub)
+
+	root.SetArgs([]string{"sub"})
+	require.ErrorContains(t, root.Execute(), "--config on sub is not the flag Register added")
 }

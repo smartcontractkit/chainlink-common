@@ -126,8 +126,8 @@ func containedPath(p string) (string, error) {
 // goimports resolves a package from.
 func formatted(args RunArgs, files map[string]string) (map[string]string, error) {
 	settings := codegen.PrettySettings{
-		Tool:             args.Tool,
-		GoPrettySettings: codegen.GoPrettySettings{LocalPrefix: args.LocalPrefix},
+		Tool:        args.Tool,
+		LocalPrefix: args.LocalPrefix,
 	}
 
 	out := make(map[string]string, len(files))

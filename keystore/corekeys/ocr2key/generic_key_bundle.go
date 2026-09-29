@@ -67,11 +67,9 @@ func newKeyBundleFrom[K keyring](chain corekeys.ChainType, newKeyring func(mater
 		return nil, err
 	}
 	k := keyBundle[K]{
-		keyBundleBase: keyBundleBase{
-			chainType:       chain,
-			offchainKeyring: *offchainKeyring,
-		},
-		keyring: kr,
+		chainType:       chain,
+		offchainKeyring: *offchainKeyring,
+		keyring:         kr,
 	}
 	marshalledPrivK, err := k.Marshal()
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/nested"
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/simple"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 const examplesPath = "github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples"
@@ -30,11 +31,27 @@ func fields(t *testing.T, pkgs []commentparsing.Package, importPath, typeName st
 	return nil
 }
 
+// discovered runs the walk and hands back what a generator would have been given. The walk is
+// not exported: a caller reaches it by passing a [commentparsing.Generator] to Files or Run, so
+// that is how it is tested too.
+func discovered(t *testing.T, dir string, roots ...any) []commentparsing.Package {
+	t.Helper()
+
+	var pkgs []commentparsing.Package
+	_, err := commentparsing.Files(
+		commentparsing.RunArgs{Roots: roots, Dir: dir, Tool: "discover_ext_test", Markup: tomlmarkup.New()},
+		func(p []commentparsing.Package) (map[string]string, error) {
+			pkgs = p
+			return nil, nil
+		},
+	)
+	require.NoError(t, err)
+	return pkgs
+}
+
 func TestDiscoverAcrossPackages(t *testing.T) {
 	// Only the root is named. upstream is reached through Config's embedded and nested fields.
-	dir := filepath.Join("examples", "nested")
-	pkgs, err := commentparsing.Discover(dir, &nested.Config{})
-	require.NoError(t, err)
+	pkgs := discovered(t, filepath.Join("examples", "nested"), &nested.Config{})
 
 	t.Run("Reaches a second package without being told about it", func(t *testing.T) {
 		paths := make([]string, 0, len(pkgs))
@@ -79,8 +96,7 @@ func TestDiscoverAcrossPackages(t *testing.T) {
 
 // A duration is decoded from a single string, so it is a leaf value rather than a config section.
 func TestDiscoverSkipsScalarStructs(t *testing.T) {
-	pkgs, err := commentparsing.Discover(filepath.Join("examples", "simple"), &simple.Config{})
-	require.NoError(t, err)
+	pkgs := discovered(t, filepath.Join("examples", "simple"), &simple.Config{})
 	require.Len(t, pkgs, 1)
 	require.Equal(t, "Retries is the attempt count after the first.",
 		fields(t, pkgs, examplesPath+"/simple", "Config")["Retries"].Comment)

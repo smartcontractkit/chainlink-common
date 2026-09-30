@@ -45,6 +45,10 @@ message GetSecretsRequest {
 
 message GetSecretsResponse {
   repeated SecretResponse responses = 1;
+  // raw_vault_public_key is the TDH2 Vault public key of the DKG instance that
+  // produced these shares. When populated, decrypt-side callers read the matching
+  // key live from the response instead of from CapReg / static config.
+  string raw_vault_public_key = 2;
 }
 
 message EncryptedSecret {
@@ -169,6 +173,13 @@ message Observations {
   repeated bytes pending_queue_items = 2;
   bytes sortNonce = 3;
   PendingQueueStallSignal pending_queue_stall_signal = 4;
+  // raw_vault_public_key is this node's view of the DKG instance's TDH2 public
+  // key (marshaled), broadcast once per observation when the include-public-key
+  // gate is open. StateTransition aggregates the quorum-agreed value onto
+  // GetSecrets responses (as GetSecretsResponse.raw_vault_public_key), keeping
+  // the transition a pure function of observations rather than reading node-local
+  // config.
+  bytes raw_vault_public_key = 5;
 }
 
 message Outcome {

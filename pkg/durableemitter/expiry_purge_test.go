@@ -284,7 +284,7 @@ func TestDurableEmitter_ExpiryPurgeLogBreakdownSerializes(t *testing.T) {
 	require.NoError(t, lggr.Sync())
 
 	var line map[string]any
-	for _, l := range bytes.Split(buf.Bytes(), []byte("\n")) {
+	for l := range bytes.SplitSeq(buf.Bytes(), []byte("\n")) {
 		if bytes.Contains(l, []byte("purged expired events")) {
 			require.NoError(t, json.Unmarshal(l, &line), "log line must be valid JSON: %s", l)
 		}

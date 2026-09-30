@@ -60,7 +60,8 @@ var Default = Schema{
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
-	TenantID: Uint64(0),
+	CoordinatedEngineEnabled:                    Bool(false),
+	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
 	PropagateOrgIDInRequestMetadata: Bool(false),
@@ -377,11 +378,14 @@ type Schema struct {
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
 	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
-	TenantID                                  Setting[uint64]
-	VaultOrgIdAsSecretOwnerEnabled            Setting[bool] // Deprecated
-	PropagateOrgIDInRequestMetadata           Setting[bool]
-	VaultBase64EncodingEnabled                Setting[bool]
-	VaultForceEmptyOCRRounds                  Setting[bool]
+	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
+	// trigger-owning Engine for newly created workflows.
+	CoordinatedEngineEnabled        Setting[bool]
+	TenantID                        Setting[uint64]
+	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata Setting[bool]
+	VaultBase64EncodingEnabled      Setting[bool]
+	VaultForceEmptyOCRRounds        Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultOptimizationsEnabled Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
@@ -408,13 +412,13 @@ type Schema struct {
 	// without the per-recipient HArray), so encrypt-only consumers (e.g. the CRE
 	// CLI) are unaffected by reshares. Atomic feature flag consumed in the Vault
 	// capability; flip in lockstep with the on-chain CapReg VaultPublicKey write.
-	VaultPublicKeyEncryptOnlyEnabled Setting[bool]
-	GatewayHTTPGlobalRate            Setting[config.Rate]
-	GatewayHTTPPerNodeRate                      Setting[config.Rate]
-	GatewayConfidentialRelayGlobalRate          Setting[config.Rate]
-	GatewayConfidentialRelayPerNodeRate         Setting[config.Rate]
-	GatewayHTTPActionMtlsRequestRate            Setting[config.Rate]
-	GatewayHTTPActionMtlsConcurrencyLimit       Setting[int] `unit:"{request}"`
+	VaultPublicKeyEncryptOnlyEnabled      Setting[bool]
+	GatewayHTTPGlobalRate                 Setting[config.Rate]
+	GatewayHTTPPerNodeRate                Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate    Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate   Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate      Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit Setting[int] `unit:"{request}"`
 	// GatewayHTTPActionOutboundConcurrencyLimit bounds the number of outbound HTTP action
 	// requests the gateway will have in flight at once, across all nodes. Sized to
 	// GatewayHTTPGlobalRate's ceiling (500rps burst) times observed p99.9 outbound latency

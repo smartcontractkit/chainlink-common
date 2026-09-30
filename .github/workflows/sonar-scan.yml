@@ -2,6 +2,11 @@ name: SonarQube Scan
 
 on: [push]
 
+# Reading other workflows' runs and artifacts takes actions: read.
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   wait_for_workflows:
     name: Wait for workflows

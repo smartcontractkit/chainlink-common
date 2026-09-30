@@ -86,6 +86,7 @@ jobs:
     if: ${{ github.event_name != 'merge_group' }}
     needs: [detect-modules, lint-module]
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Lint complete
         run: echo "All lint jobs completed"

@@ -43,11 +43,10 @@ type RetryThrottlingPolicy struct {
 	TokenRatio float64
 }
 
-// defaultRetryPolicy is the retry policy installed when no WithRetryPolicy override is
-// supplied. It matches the values the client has always intended to use (see the historical,
-// malformed service-config JSON this replaced), except that the backoff durations are now
-// correctly encoded so gRPC actually installs the policy.
-func defaultRetryPolicy() RetryPolicy {
+// DefaultRetryPolicy returns the recommended retry policy: retry UNAVAILABLE and
+// RESOURCE_EXHAUSTED up to 3 attempts with exponential backoff from 100ms capped at 1s. It is NOT
+// applied automatically; pass it to WithRetryPolicy to opt in.
+func DefaultRetryPolicy() RetryPolicy {
 	return RetryPolicy{
 		MaxAttempts:          3,
 		InitialBackoff:       100 * time.Millisecond,
@@ -178,11 +177,12 @@ func buildRetryServiceConfigJSON(policy RetryPolicy, throttling *RetryThrottling
 	return string(b), nil
 }
 
-// WithRetryPolicy overrides the client's default gRPC-level retry policy for the ChipIngress
-// service. If not supplied, the client retries UNAVAILABLE and RESOURCE_EXHAUSTED failures up
-// to 3 times with exponential backoff starting at 100ms and capped at 1s (see
-// defaultRetryPolicy). Retry throttling (see RetryThrottlingPolicy) is always applied alongside
-// whichever retry policy is in effect, so a struggling server isn't amplified by retries.
+// WithRetryPolicy enables gRPC-level retries for the ChipIngress service using policy (see
+// DefaultRetryPolicy for recommended values). Retries are disabled by default because the policy
+// is service-wide and so also replays Publish, PublishBatch and RegisterSchema: an UNAVAILABLE can
+// be returned after the server has already done the work, which can duplicate events unless the
+// caller sets IdempotencyKeyAttr. Retry throttling (see RetryThrottlingPolicy) is applied
+// alongside the policy so a struggling server isn't amplified by retries.
 func WithRetryPolicy(policy RetryPolicy) Opt {
 	return func(c *clientConfig) { c.retryPolicy = &policy }
 }

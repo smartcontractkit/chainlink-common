@@ -64,7 +64,6 @@ type clientConfig struct {
 var _ = map[clientConfig]struct{}{}
 
 func newClientConfig(host string) *clientConfig {
-	defaultPolicy := defaultRetryPolicy()
 	cfg := &clientConfig{
 		headerProvider:    nil,
 		perRPCCredentials: nil,
@@ -73,7 +72,6 @@ func newClientConfig(host string) *clientConfig {
 		insecureConnection:    true,
 		transportCredentials:  insecure.NewCredentials(),
 		nopInfoHeaderProvider: nil,
-		retryPolicy:           &defaultPolicy,
 	}
 	return cfg
 }
@@ -110,20 +108,18 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 			PermitWithoutStream: true,
 		}),
 	}
-	// Retry policy. Built from typed structs (see retry_policy.go) rather than a hand-written
-	// JSON literal - a previous hand-written literal here was malformed (fields missing the
-	// required methodConfig[].retryPolicy nesting) and gRPC's parser silently discarded it
-	// without error, so the client never actually retried anything.
-	policy := defaultRetryPolicy()
+	// Retries are opt-in (see WithRetryPolicy): they can replay non-idempotent RPCs such as
+	// Publish, so they are disabled unless the caller enables them. The service config is built
+	// from typed structs (see retry_policy.go) rather than a hand-written JSON literal - a
+	// previous hand-written literal here was malformed and gRPC's parser silently discarded it.
 	if cfg.retryPolicy != nil {
-		policy = *cfg.retryPolicy
+		throttling := defaultRetryThrottlingPolicy()
+		retryServiceConfig, err := buildRetryServiceConfigJSON(*cfg.retryPolicy, &throttling)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build retry policy service config: %w", err)
+		}
+		grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryServiceConfig))
 	}
-	throttling := defaultRetryThrottlingPolicy()
-	retryServiceConfig, err := buildRetryServiceConfigJSON(policy, &throttling)
-	if err != nil {
-		return nil, fmt.Errorf("failed to build retry policy service config: %w", err)
-	}
-	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryServiceConfig))
 	// Auth
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))

@@ -1,6 +1,7 @@
 package chipingress
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"slices"
@@ -68,7 +69,7 @@ var chipIngressMethodPath = "/" + pb.ChipIngress_ServiceDesc.ServiceName + "/"
 // caught the original bug, since the original malformed JSON also parsed without error.
 func TestBuildRetryServiceConfigJSON_DefaultPolicy(t *testing.T) {
 	throttling := defaultRetryThrottlingPolicy()
-	scJSON, err := buildRetryServiceConfigJSON(defaultRetryPolicy(), &throttling)
+	scJSON, err := buildRetryServiceConfigJSON(DefaultRetryPolicy(), &throttling)
 	require.NoError(t, err)
 
 	scpr := parseServiceConfigJSON(t, scJSON)
@@ -196,24 +197,31 @@ func TestGRPCServiceConfigDuration_Format(t *testing.T) {
 	}
 }
 
-// TestBuildRetryServiceConfigJSON_RetryThrottling asserts the retryThrottling block is present
-// and correctly populated when requested, since it lives alongside - but structurally separate
-// from - the per-method retry policy.
+// TestBuildRetryServiceConfigJSON_RetryThrottling asserts the retryThrottling block is emitted
+// with the requested values, is omitted when nil, and is actually read by gRPC's parser.
+// grpc.ServiceConfig's throttling field is unexported, so the values are checked on the generated
+// JSON and gRPC's own range validation is used to prove the block is parsed.
 func TestBuildRetryServiceConfigJSON_RetryThrottling(t *testing.T) {
 	throttling := RetryThrottlingPolicy{MaxTokens: 20, TokenRatio: 0.2}
-	scJSON, err := buildRetryServiceConfigJSON(defaultRetryPolicy(), &throttling)
+	scJSON, err := buildRetryServiceConfigJSON(DefaultRetryPolicy(), &throttling)
 	require.NoError(t, err)
 
-	scpr := parseServiceConfigJSON(t, scJSON)
-	require.NoError(t, scpr.Err)
+	var decoded serviceConfigJSON
+	require.NoError(t, json.Unmarshal([]byte(scJSON), &decoded))
+	require.NotNil(t, decoded.RetryThrottling, "retryThrottling block missing from generated JSON")
+	assert.InDelta(t, 20.0, decoded.RetryThrottling.MaxTokens, 0.0001)
+	assert.InDelta(t, 0.2, decoded.RetryThrottling.TokenRatio, 0.0001)
+	require.NoError(t, parseServiceConfigJSON(t, scJSON).Err)
 
-	sc, ok := scpr.Config.(*gp.ServiceConfig) //nolint:staticcheck // SA1019: grpc.ParseServiceConfig only ever returns this deprecated concrete type; inspecting it is the point of this test
-	require.True(t, ok)
-	// retryThrottling is unexported on grpc.ServiceConfig, so we can't assert its fields
-	// directly; asserting no parse error with maxTokens/tokenRatio present in range is the
-	// available signal that gRPC accepted and applied it (see service_config.go's range
-	// validation: maxTokens in (0, 1000], tokenRatio > 0).
-	require.NotNil(t, sc)
+	// Omitted entirely when no throttling is requested.
+	noThrottleJSON, err := buildRetryServiceConfigJSON(DefaultRetryPolicy(), nil)
+	require.NoError(t, err)
+	assert.NotContains(t, noThrottleJSON, "retryThrottling")
+
+	// gRPC reads the block: an out-of-range maxTokens (must be in (0, 1000]) is rejected.
+	badJSON, err := buildRetryServiceConfigJSON(DefaultRetryPolicy(), &RetryThrottlingPolicy{MaxTokens: 0, TokenRatio: 0.2})
+	require.NoError(t, err)
+	require.Error(t, parseServiceConfigJSON(t, badJSON).Err)
 }
 
 // TestParseStatusCodes covers mapping config names (codes.Code.String() spelling) to codes.
@@ -237,7 +245,7 @@ func TestParseStatusCodes(t *testing.T) {
 // TestBuildRetryServiceConfigJSON_AllStatusCodesRoundTrip proves every well-known code survives
 // the numeric JSON encoding through gRPC's parser, and that unknown codes are rejected up front.
 func TestBuildRetryServiceConfigJSON_AllStatusCodesRoundTrip(t *testing.T) {
-	policy := defaultRetryPolicy()
+	policy := DefaultRetryPolicy()
 	policy.RetryableStatusCodes = nil
 	for c := codes.OK + 1; c <= maxStatusCode; c++ { // gRPC rejects OK as retryable
 		policy.RetryableStatusCodes = append(policy.RetryableStatusCodes, c)
@@ -259,4 +267,14 @@ func TestBuildRetryServiceConfigJSON_AllStatusCodesRoundTrip(t *testing.T) {
 	policy.RetryableStatusCodes = []codes.Code{maxStatusCode + 1}
 	_, err = buildRetryServiceConfigJSON(policy, nil)
 	require.Error(t, err)
+}
+
+// TestNewClient_RetriesDisabledByDefault guards the opt-in rollout: without WithRetryPolicy the
+// client must not install a retry service config.
+func TestNewClient_RetriesDisabledByDefault(t *testing.T) {
+	assert.Nil(t, newClientConfig("localhost").retryPolicy)
+
+	cfg := newClientConfig("localhost")
+	WithRetryPolicy(DefaultRetryPolicy())(cfg)
+	require.NotNil(t, cfg.retryPolicy)
 }

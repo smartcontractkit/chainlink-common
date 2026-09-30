@@ -17,6 +17,11 @@ import (
 var durationType = reflect.TypeFor[time.Duration]()
 
 func bindLeafFlag(entry targetEntry, m fieldMeta) error {
+	fileType, err := fileValueType(commentparsing.DerefType(m.field.Type), entry.binder().opts.Markup, map[reflect.Type]bool{})
+	if err != nil {
+		return fmt.Errorf("%s: %s: %w", m.owner, m.field.Name, err)
+	}
+
 	flags := entry.command().PersistentFlags()
 	leaf := leafKey{
 		key:      m.key,
@@ -24,6 +29,7 @@ func bindLeafFlag(entry targetEntry, m fieldMeta) error {
 		flagName: strings.ReplaceAll(m.key, "_", "-"),
 		goPath:   m.goPath,
 		goType:   m.field.Type,
+		fileType: fileType,
 	}
 	// pflag panics on a redefinition.
 	if flags.Lookup(leaf.flagName) != nil {
@@ -83,6 +89,13 @@ func newFlag(name string, t reflect.Type, def reflect.Value, usage string) (*pfl
 		}
 
 		value, get = v, func() reflect.Value { return v.value }
+
+	case t.Kind() == reflect.Slice && t.Elem().Kind() != reflect.Pointer && canText(t.Elem()):
+		l := &textListValue{list: def}
+		value, get = l, func() reflect.Value { return l.list }
+	case t.Kind() == reflect.Map && t.Elem().Kind() != reflect.Pointer && canText(t.Key()) && canText(t.Elem()):
+		m := &textMapValue{m: reflect.MakeMap(t), def: def, seen: map[any]string{}}
+		value, get = m, func() reflect.Value { return m.m }
 	default:
 		return nil, nil
 	}
@@ -176,7 +189,7 @@ func setText(dst reflect.Value, s string) error {
 	return err
 }
 
-// Parsed through a flag, so an env var accepts exactly what the flag does.
+// Parsed through a flag, so env vars and config file map keys accept exactly what the flag does.
 func parseText(t reflect.Type, s string) (reflect.Value, error) {
 	f, get := newFlag("value", t, reflect.Zero(commentparsing.DerefType(t)), "")
 	if f == nil {
@@ -190,22 +203,36 @@ func parseText(t reflect.Type, s string) (reflect.Value, error) {
 	return get(), nil
 }
 
+// Shown for a default that can't be written as text. Angle brackets, unlike fmt's {x}, don't look like a value.
+const cannotDisplay = "<cannot display>"
+
 // A type's own marshaller, so the default parses back and secrets stay redacted.
 func textOf(v reflect.Value) string {
-	if !v.IsValid() || (v.Kind() == reflect.Pointer && v.IsNil()) {
-		return ""
-	}
-
-	v = reflect.Indirect(v)
 	if text, ok := marshalText(v); ok {
 		return text
 	}
 
-	if v.Kind() == reflect.Slice && v.Type().Elem().Kind() == reflect.Uint8 {
+	// By kind, as the flag parses it, rather than through fmt, which would use a String method the flag can't read back.
+	switch {
+	// Reads text but can't write it, and its kind's form may not parse back.
+	case readsText(v.Type()):
+	case v.Type() == durationType:
+		return time.Duration(v.Int()).String()
+	case v.CanInt():
+		return strconv.FormatInt(v.Int(), 10)
+	case v.CanUint():
+		return strconv.FormatUint(v.Uint(), 10)
+	case v.CanFloat():
+		return strconv.FormatFloat(v.Float(), 'g', -1, v.Type().Bits())
+	case v.Kind() == reflect.Bool:
+		return strconv.FormatBool(v.Bool())
+	case v.Kind() == reflect.String:
+		return v.String()
+	case v.Kind() == reflect.Slice && v.Type().Elem().Kind() == reflect.Uint8:
 		return string(v.Bytes())
 	}
 
-	return fmt.Sprint(v.Interface())
+	return cannotDisplay
 }
 
 // Copied somewhere addressable first, so a pointer-receiver MarshalText is reachable.

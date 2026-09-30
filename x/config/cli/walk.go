@@ -25,9 +25,10 @@ type fieldMeta struct {
 	inOptional bool
 }
 
-// A flag or env var carries only text.
+// A flag or env var carries only text. An interface can't be parsed into, since there's no concrete type to make.
 func readsText(t reflect.Type) bool {
-	return t.Implements(textUnmarshaler) || reflect.PointerTo(t).Implements(textUnmarshaler)
+	return t.Kind() != reflect.Interface &&
+		(t.Implements(textUnmarshaler) || reflect.PointerTo(t).Implements(textUnmarshaler))
 }
 
 var textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()

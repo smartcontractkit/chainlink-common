@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -361,6 +362,10 @@ func decodesTo[T any](t *testing.T, want T, args ...string) {
 	assert.Equal(t, want, got)
 }
 
+type opaqueWithPointerKeys struct{ byAddress map[*int]string }
+
+func (o *opaqueWithPointerKeys) UnmarshalText([]byte) error { o.byAddress = nil; return nil }
+
 func TestWhatGetsAFlag(t *testing.T) {
 	type nestsItself struct {
 		Value string
@@ -369,11 +374,18 @@ func TestWhatGetsAFlag(t *testing.T) {
 	type hasEveryShape struct {
 		String        string
 		Bytes         []byte
+		ListOfStrings []string
+		ListOfPtrs    []*int
+		MapOfPtrs     map[string]*int
 		ListOfMaps    []map[string]string
 		ListOfStructs []nestsItself
 		MapOfStructs  map[string]nestsItself
 		MapOfBytes    map[string][]byte
 		TextReader    readsItselfAsText
+		Opaque        opaqueWithPointerKeys
+		Interface     encoding.TextUnmarshaler
+		Interfaces    []encoding.TextUnmarshaler
+		InterfaceMap  map[string]encoding.TextUnmarshaler
 		TextWriter    writesItselfAsText
 		Nested        nestsItself
 		Complex       complex128
@@ -381,12 +393,12 @@ func TestWhatGetsAFlag(t *testing.T) {
 	}
 
 	flags := flagsOf(t, &hasEveryShape{}, testOptions)
-	for _, name := range []string{"string", "bytes", "text-reader", "text-writer.value", "nested.value"} {
+	for _, name := range []string{"string", "bytes", "list-of-strings", "map-of-bytes", "text-reader", "opaque", "text-writer.value", "nested.value"} {
 		assert.NotNil(t, flags.Lookup(name), name)
 	}
 
 	// Without a single text form a flag's default could not be read back, so these are file-only.
-	for _, name := range []string{"map-of-bytes", "list-of-maps", "list-of-structs", "list-of-structs.value", "map-of-structs",
+	for _, name := range []string{"interface", "interfaces", "interface-map", "list-of-ptrs", "map-of-ptrs", "list-of-maps", "list-of-structs", "list-of-structs.value", "map-of-structs",
 		"complex", "unexported", "text-reader.value", "nested.child.value"} {
 		assert.Nil(t, flags.Lookup(name), name)
 	}
@@ -398,6 +410,31 @@ func TestRegistrationRejects(t *testing.T) {
 	type embedsUnexportedPointer struct {
 		*unexportedBasicConfig
 	}
+	type hasPointerKeys struct {
+		Keys map[*int]string
+	}
+	type nestsAPointerKey struct {
+		Lists []map[string]hasPointerKeys
+	}
+	type hasAPointerInsideKeys struct {
+		Keys map[struct{ P [1]*int }]string
+	}
+	type hasAnInterfaceInsideKeys struct {
+		Keys map[struct{ V any }]string
+	}
+	type embedsAndHoldsIDs struct {
+		BasicConfig
+		IDs map[uint32]string
+	}
+	type holdsARecursiveUintMap struct {
+		Tree recursiveUintMap
+	}
+	type nestsAnEmbedder struct {
+		Inner embedsAndHoldsIDs
+	}
+	type listsEmbeddersOfIDs struct {
+		List []nestsAnEmbedder
+	}
 
 	t.Run("nil pointer", func(t *testing.T) {
 		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), nilPointer), "target pointer cannot be nil")
@@ -408,6 +445,26 @@ func TestRegistrationRejects(t *testing.T) {
 	// Reflect can't allocate it, so decoding would panic.
 	t.Run("an unexported embedded pointer", func(t *testing.T) {
 		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &embedsUnexportedPointer{}), "embedded *unexportedBasicConfig is unexported")
+	})
+	t.Run("a pointer map key", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &hasPointerKeys{}), "cli.hasPointerKeys: Keys: map[*int]string has keys that hold a pointer, channel or interface")
+	})
+	t.Run("a pointer map key nested in a list, map and struct", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &nestsAPointerKey{}), "cli.nestsAPointerKey: Lists: map[*int]string has keys that hold a pointer, channel or interface")
+	})
+	t.Run("a pointer inside a struct or array key", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &hasAPointerInsideKeys{}), "cli.hasAPointerInsideKeys: Keys: map[struct { P [1]*int }]string has keys that hold a pointer, channel or interface")
+	})
+	t.Run("an interface inside a key", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &hasAnInterfaceInsideKeys{}), "cli.hasAnInterfaceInsideKeys: Keys: map[struct { V interface {} }]string has keys that hold a pointer, channel or interface")
+	})
+	t.Run("a recursive type with non-string keys", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &holdsARecursiveUintMap{}),
+			"cli.holdsARecursiveUintMap: Tree: cli.recursiveUintMap holds itself and a map with non-string keys")
+	})
+	t.Run("a struct nested in a list that embeds a field and holds non-string keys", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &listsEmbeddersOfIDs{}),
+			"cli.listsEmbeddersOfIDs: List: cli.embedsAndHoldsIDs holds a map with non-string keys and embeds a field")
 	})
 
 	_, err := New(Options{})
@@ -566,8 +623,8 @@ func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
 	}{
 		{"a list element's field, by its tag", []string{"--config", writeConfig(t, "[[Structs]]\nrenamed = 'a'\n[[Structs]]\nrenamed = ''\n")},
 			"Structs.1.renamed failed on the 'required' tag"},
-		{"a list element", []string{"--config", writeConfig(t, "Strings = ['a', '']\n")}, "Strings.1 failed on the 'required' tag"},
-		{"a map entry", []string{"--config", writeConfig(t, "[Map]\nk = ''\n")}, "Map.k failed on the 'required' tag"},
+		{"a list element", []string{"--strings", "a,"}, "Strings.1 failed on the 'required' tag"},
+		{"a map entry", []string{"--map", "k="}, "Map.k failed on the 'required' tag"},
 		{"a rule's sibling in the same element", []string{"--config", writeConfig(t, "[[Rules]]\n")},
 			"Rules.0.Rule failed on the 'required_without=Rules.0.renamed' tag"},
 		{"a flattened embed adds no segment", []string{"--config", writeConfig(t, "[[Embeds]]\n")},
@@ -580,6 +637,25 @@ func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
 			assert.NotContains(t, err.Error(), "Key: ")
 		})
 	}
+}
+
+func TestRepeatedListFlagAppends(t *testing.T) {
+	type hasStrings struct{ Strings []string }
+
+	var c hasStrings
+	require.NoError(t, run(t, &c, testOptions, "--strings", "a", "--strings", "b"))
+	assert.Equal(t, []string{"a", "b"}, c.Strings)
+}
+
+func TestListText(t *testing.T) {
+	type hasStrings struct{ Strings []string }
+
+	c := hasStrings{Strings: []string{"default"}}
+	require.NoError(t, run(t, &c, testOptions, "--strings", ""))
+	assert.Empty(t, c.Strings)
+
+	require.ErrorContains(t, run(t, &hasStrings{}, testOptions, "--strings", `"a`), `extraneous or missing " in quoted-field`)
+	require.ErrorContains(t, run(t, &hasStrings{}, testOptions, "--strings", "a\nb"), `"a\nb" must be one line`)
 }
 
 // A byte slice is text (JSON, PEM), so neither a flag nor an env var splits it on its commas.
@@ -625,16 +701,197 @@ func (p *selfSplittingList) UnmarshalText(b []byte) error {
 	return nil
 }
 
-func TestHelpDefaultsCanBePassedBackIn(t *testing.T) {
-	type hasText struct {
-		Text *config.URL
+type hasStringMap struct {
+	Map map[string]string
+}
+
+func TestStringMapFromEverySource(t *testing.T) {
+	cases := everySource([]string{"--map", "a=1,b=2"}, "a=1,b=2", "[Map]\na = '1'\nb = '2'")
+	cases = append(cases, sourceCase{name: "repeated flag", args: []string{"--map", "a=1", "--map", "b=2"}})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasStringMap
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_MAP", tc.env, tc.file, tc.args...)...))
+			assert.Equal(t, map[string]string{"a": "1", "b": "2"}, c.Map)
+		})
+	}
+}
+
+func TestMapsMergeAcrossSources(t *testing.T) {
+	t.Setenv("TEST_MAP", "e=env,a=env")
+	c := hasStringMap{Map: map[string]string{"d": "default", "a": "default"}}
+	require.NoError(t, run(t, &c, testOptions,
+		"--config", writeConfig(t, "[Map]\na = 'first'\nf = 'first'\n"),
+		"--config", writeConfig(t, "[Map]\na = 'second'\ns = 'second'\n"),
+		"--map", "a=flag"))
+	assert.Equal(t, map[string]string{"d": "default", "f": "first", "s": "second", "e": "env", "a": "flag"}, c.Map)
+}
+
+func TestMapEntryText(t *testing.T) {
+	var c hasStringMap
+	require.NoError(t, run(t, &c, testOptions, "--map", `"a=1,b=2",c=3`))
+	assert.Equal(t, map[string]string{"a": "1,b=2", "c": "3"}, c.Map)
+
+	var blank hasStringMap
+	require.NoError(t, run(t, &blank, testOptions, "--map", "a=1,,b=2"))
+	assert.Equal(t, map[string]string{"a": "1", "b": "2"}, blank.Map)
+
+	require.ErrorContains(t, run(t, &hasStringMap{}, testOptions, "--map", `"a=1`), `extraneous or missing " in quoted-field`)
+
+	t.Setenv("TEST_MAP", "a")
+	require.ErrorContains(t, run(t, &hasStringMap{}, testOptions), `invalid value "a" for TEST_MAP: "a" must be formatted as key=value`)
+}
+
+type caseless string
+
+func (c *caseless) UnmarshalText(b []byte) error {
+	*c = caseless(strings.ToLower(string(b)))
+	return nil
+}
+
+func TestMapKeysNeedNotBeStrings(t *testing.T) {
+	type hasNonStringKeys struct {
+		UintKeys map[uint32]string
+		TextKeys map[config.Duration]string
+	}
+	want := hasNonStringKeys{
+		UintKeys: map[uint32]string{1: "a", 42: "b"},
+		TextKeys: map[config.Duration]string{*config.MustNewDuration(45 * time.Second): "c"},
 	}
 
-	c := hasText{Text: config.MustParseURL("https://x/rpc")}
-	flags := flagsOf(t, &c, testOptions)
+	flag := []string{"--uint-keys", "1=a,0x2a=b", "--text-keys", "45s=c"}
+	for _, tc := range everySource(flag, "", "[UintKeys]\n1 = 'a'\n0x2a = 'b'\n[TextKeys]\n45s = 'c'\n") {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasNonStringKeys
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "", "", tc.file, tc.args...)...))
+			assert.Equal(t, want, c)
+		})
+	}
 
-	var back hasText
-	args := []string{"--text", flags.Lookup("text").DefValue}
+	for _, args := range []string{"16=a,0x10=b", "16=a --uint-keys 0x10=b"} {
+		require.ErrorContains(t, run(t, &hasNonStringKeys{}, testOptions, append([]string{"--uint-keys"}, strings.Fields(args)...)...),
+			`keys "16" and "0x10" are both 16`, args)
+	}
+
+	require.ErrorContains(t, run(t, &hasNonStringKeys{}, testOptions, "--config", writeConfig(t, "[UintKeys]\n16 = 'a'\n0x10 = 'b'\n")),
+		`keys "0x10" and "16" are both 16`)
+	require.ErrorContains(t, run(t, &hasNonStringKeys{}, testOptions, "--config", writeConfig(t, "[TextKeys]\n45s = 'a'\n0m45s = 'b'\n")),
+		`keys "0m45s" and "45s" are both 45s`)
+	require.ErrorContains(t, run(t, &struct{ FloatKeys map[float64]string }{}, testOptions, "--float-keys", "NaN=a"),
+		`key "NaN" never equals itself`)
+	require.ErrorContains(t, run(t, &struct{ Caseless map[caseless]string }{}, testOptions, "--config", writeConfig(t, "[Caseless]\na = '1'\nA = '2'\n")),
+		`keys "A" and "a" are both a`)
+	require.ErrorContains(t, run(t, &hasNonStringKeys{}, testOptions, "--config", writeConfig(t, "[UintKeys]\nx = 'a'\n")),
+		`uint-keys: key "x": strconv.ParseUint: parsing "x": invalid syntax`)
+}
+
+func TestMapKeysNestedInAConfigFileOnlyField(t *testing.T) {
+	type holdsIDs struct {
+		IDs         map[uint32]string
+		IgnoredPtrs map[*int]string `toml:"-"`
+		ignore      string          //nolint:unused // the markup never sets it, so the rebuilt struct leaves it out
+	}
+	type hasNestedNonStringKeys struct {
+		Lists    []map[uint32]string
+		Maps     map[string]map[uint32]string
+		Pointers []*map[uint32]string
+		Arrays   [1]map[uint32]string
+		Structs  []holdsIDs
+	}
+
+	var c hasNestedNonStringKeys
+	file := "Lists = [{1 = 'a'}]\nPointers = [{3 = 'c'}]\nArrays = [{4 = 'd'}]\n[Maps.m]\n2 = 'b'\n[[Structs]]\n[Structs.IDs]\n0x10 = 'e'\n"
+	require.NoError(t, run(t, &c, testOptions, "--config", writeConfig(t, file)))
+	assert.Equal(t, hasNestedNonStringKeys{
+		Lists:    []map[uint32]string{{1: "a"}},
+		Maps:     map[string]map[uint32]string{"m": {2: "b"}},
+		Pointers: []*map[uint32]string{{3: "c"}},
+		Arrays:   [1]map[uint32]string{{4: "d"}},
+		Structs:  []holdsIDs{{IDs: map[uint32]string{16: "e"}}},
+	}, c)
+
+	for file, want := range map[string]string{
+		"Lists = [{x = 'a'}]\n":                 `lists: key "x": strconv.ParseUint`,
+		"[Maps.m]\nx = 'b'\n":                   `maps: key "x": strconv.ParseUint`,
+		"Pointers = [{x = 'c'}]\n":              `pointers: key "x": strconv.ParseUint`,
+		"Arrays = [{x = 'd'}]\n":                `arrays: key "x": strconv.ParseUint`,
+		"[[Structs]]\n[Structs.IDs]\nx = 'e'\n": `structs: key "x": strconv.ParseUint`,
+	} {
+		require.ErrorContains(t, run(t, &hasNestedNonStringKeys{}, testOptions, "--config", writeConfig(t, file)), want, file)
+	}
+}
+
+type nodeName string
+
+type recursiveMap map[nodeName]*recursiveMap
+
+type wholeMap map[string]string
+
+func (m *wholeMap) UnmarshalText(b []byte) error { *m = wholeMap{"text": string(b)}; return nil }
+
+func TestAMapReadWholeIsReplacedNotMerged(t *testing.T) {
+	type hasWholeMap struct {
+		Whole wholeMap
+	}
+
+	c := hasWholeMap{Whole: wholeMap{"default": ""}}
+	require.NoError(t, run(t, &c, testOptions, "--config", writeConfig(t, "Whole = 'a'\n"), "--config", writeConfig(t, "Whole = 'b'\n")))
+	assert.Equal(t, wholeMap{"text": "b"}, c.Whole)
+
+	require.NoError(t, run(t, &c, testOptions, "--whole", "c"))
+	assert.Equal(t, wholeMap{"text": "c"}, c.Whole)
+}
+
+type recursiveUintMap map[uint32]*recursiveUintMap
+
+func TestRecursiveConfigFileOnlyType(t *testing.T) {
+	type hasRecursiveMap struct {
+		Tree recursiveMap
+	}
+
+	var c hasRecursiveMap
+	require.NoError(t, run(t, &c, testOptions, "--config", writeConfig(t, "[Tree.a.b]\n")))
+	assert.Equal(t, hasRecursiveMap{Tree: recursiveMap{"a": {"b": new(recursiveMap)}}}, c)
+}
+
+type namedIntWithAString int
+
+func (namedIntWithAString) String() string { return "name" }
+
+func TestHelpDefaultsCanBePassedBackIn(t *testing.T) {
+	type hasListMapAndText struct {
+		Named     namedIntWithAString
+		NamedList []namedIntWithAString
+		Wait      time.Duration
+		Ratio     float32
+		List      []string
+		LoneEmpty []string
+		Map       map[string]string
+		Text      *config.URL
+	}
+
+	c := hasListMapAndText{Named: 2, NamedList: []namedIntWithAString{3}, Wait: 90 * time.Second, Ratio: 0.1, List: []string{"a", "b,c", "d "}, LoneEmpty: []string{""}, Map: map[string]string{"a": "1", "b": "2,3", "c": " 4"}, Text: config.MustParseURL("https://x/rpc")}
+	flags := flagsOf(t, &c, testOptions)
+	assert.Equal(t, "value,...", flags.Lookup("list").Value.Type())
+	assert.Equal(t, "key=value,...", flags.Lookup("map").Value.Type())
+
+	type hasTextWithoutAWriter struct {
+		Reader  readsItselfAsText
+		Readers []readsItselfAsText
+		ByName  map[string]readsItselfAsText
+	}
+
+	reader := readsItselfAsText{Value: "x"}
+	readers := flagsOf(t, &hasTextWithoutAWriter{reader, []readsItselfAsText{reader}, map[string]readsItselfAsText{"a": reader}}, testOptions)
+	for name, want := range map[string]string{"reader": cannotDisplay, "readers": cannotDisplay, "by-name": "a=" + cannotDisplay} {
+		assert.Equal(t, want, readers.Lookup(name).DefValue, name)
+	}
+
+	var back hasListMapAndText
+	args := []string{"--named", flags.Lookup("named").DefValue, "--named-list", flags.Lookup("named-list").DefValue,
+		"--wait", flags.Lookup("wait").DefValue, "--ratio", flags.Lookup("ratio").DefValue,
+		"--list", flags.Lookup("list").DefValue, "--lone-empty", flags.Lookup("lone-empty").DefValue, "--map", flags.Lookup("map").DefValue,
+		"--text", flags.Lookup("text").DefValue}
 	require.NoError(t, run(t, &back, testOptions, args...))
 	assert.Equal(t, c, back)
 }
@@ -663,18 +920,25 @@ func TestTextUnmarshalerLeafFromEverySource(t *testing.T) {
 	require.ErrorContains(t, run(t, &hasIntKindText{}, testOptions, "--value", "not-a-duration"), `time: invalid duration "not-a-duration"`)
 }
 
-func TestLeafNestedInASection(t *testing.T) {
+func TestLeafNestedInASectionListAndMap(t *testing.T) {
 	type hasDuration struct {
 		Value config.Duration
 	}
-	type hasDurationInASection struct {
+	type hasDurationEverywhere struct {
 		Section hasDuration
+		List    []config.Duration
+		Map     map[string]config.Duration
 	}
-	want := hasDurationInASection{Section: hasDuration{*config.MustNewDuration(time.Minute)}}
+	want := hasDurationEverywhere{
+		Section: hasDuration{*config.MustNewDuration(time.Minute)},
+		List:    []config.Duration{*config.MustNewDuration(time.Second), *config.MustNewDuration(2 * time.Second)},
+		Map:     map[string]config.Duration{"a": *config.MustNewDuration(3 * time.Second)},
+	}
 
-	for _, tc := range everySource([]string{"--section.value", "1m"}, "", "[Section]\nValue = '1m'") {
+	flag := []string{"--section.value", "1m", "--list", "1s,2s", "--map", "a=3s"}
+	for _, tc := range everySource(flag, "", "List = ['1s', '2s']\n[Section]\nValue = '1m'\n[Map]\na = '3s'") {
 		t.Run(tc.name, func(t *testing.T) {
-			var c hasDurationInASection
+			var c hasDurationEverywhere
 			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "", "", tc.file, tc.args...)...))
 			assert.Equal(t, want, c)
 		})
@@ -732,11 +996,16 @@ type hasEveryKind struct {
 	Bool     bool
 	String   string
 	Duration time.Duration
+	IntList  []int
+	IntMap   map[string]int
 }
 
 func TestParserErrorsArePropagated(t *testing.T) {
 	err := run(t, &hasEveryKind{}, testOptions, "--int=abc")
 	require.ErrorContains(t, err, `invalid argument "abc" for "--int" flag: strconv.ParseInt: parsing "abc": invalid syntax`)
+
+	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions, "--int-list=1,x"), `element "x": strconv.ParseInt: parsing "x"`)
+	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions, "--int-map=a=x"), `value of "a": strconv.ParseInt: parsing "x"`)
 
 	t.Setenv("TEST_INT", "abc")
 	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions), `invalid value "abc" for TEST_INT: strconv.ParseInt: parsing "abc": invalid syntax`)

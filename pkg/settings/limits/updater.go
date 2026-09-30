@@ -76,9 +76,8 @@ func (u *updater[N]) updateLoop(ctx context.Context) {
 	if u.subFn != nil {
 		updates, cancelSub = u.subFn(ctx)
 		defer func() { cancelSub() }() // extra func wrapper is required to ensure we get the final cancelSub value
-		// Subscriptions only deliver changes, not the current value.
+		// opt: poll now to initialize
 	} else {
-		// The first tick fires immediately, but asynchronously, so it cannot size a limiter before first use.
 		t := services.TickerConfig{}.NewTicker(pollPeriod)
 		defer t.Stop()
 		c = t.C

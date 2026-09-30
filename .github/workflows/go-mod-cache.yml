@@ -1,7 +1,7 @@
 name: Go Module Cache
 
 # This workflow is responsible for updating the Go Module Cache.
-# It will maintain the cache: linux-gomod-1-<hash>
+# It will maintain a cache per module: linux-gomod-1-<hash of its go.sum>
 # All other workflows should only restore this cache.
 
 # This workflow is useful because it will:
@@ -25,9 +25,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  go-cache:
-    name: Go Mod Cache
+  modules:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      modules: ${{ steps.modules.outputs.modules }}
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: List modules
+        id: modules
+        run: echo "modules=$(script/go-modules.sh | jq -Rsc 'split("\n") | map(select(. != ""))')" | tee -a "$GITHUB_OUTPUT"
+
+  go-cache:
+    # Each module's cache is keyed by its own go.sum, so each is filled by its own run.
+    name: Go Mod Cache (${{ matrix.module }})
+    needs: modules
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.modules.outputs.modules) }}
     permissions:
       contents: read
       pull-requests: read
@@ -41,13 +63,21 @@ jobs:
         id: setup-go
         uses: ./.github/actions/setup-go
         with:
+          # hashFiles rejects ./go.sum, so the root module's files are named bare.
+          go-version-file: ${{ matrix.module == '.' && 'go.mod' || format('{0}/go.mod', matrix.module) }}
+          go-module-file: ${{ matrix.module == '.' && 'go.sum' || format('{0}/go.sum', matrix.module) }}
           only-modules: "true"
           restore-module-cache-only: "false"
 
       - name: Install Dependencies
         if: ${{ steps.setup-go.outputs.primary-cache-hit-modules != 'true' }}
         shell: bash
+        env:
+          MODULE: ${{ matrix.module }}
         run: |
           echo "::group::go mod download"
-          go mod download
+          # A module's examples are built in its run, so their dependencies share its cache.
+          for module in "$MODULE" $(script/go-modules.sh examples "$MODULE"); do
+            go -C "$module" mod download
+          done
           echo "::endgroup::"

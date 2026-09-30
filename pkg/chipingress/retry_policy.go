@@ -75,49 +75,34 @@ func grpcServiceConfigDuration(d time.Duration) string {
 	return strconv.FormatFloat(d.Seconds(), 'f', -1, 64) + "s"
 }
 
-// grpcStatusCodeName returns the canonical gRPC service-config string name for a status code
-// (e.g. "UNAVAILABLE"), per https://github.com/grpc/grpc/blob/master/doc/statuscodes.md. Falls
-// back to the numeric code for values without a well-known name; gRPC's parser accepts either
-// form.
-func grpcStatusCodeName(c codes.Code) string {
-	switch c {
-	case codes.OK:
-		return "OK"
-	case codes.Canceled:
-		return "CANCELLED"
-	case codes.Unknown:
-		return "UNKNOWN"
-	case codes.InvalidArgument:
-		return "INVALID_ARGUMENT"
-	case codes.DeadlineExceeded:
-		return "DEADLINE_EXCEEDED"
-	case codes.NotFound:
-		return "NOT_FOUND"
-	case codes.AlreadyExists:
-		return "ALREADY_EXISTS"
-	case codes.PermissionDenied:
-		return "PERMISSION_DENIED"
-	case codes.ResourceExhausted:
-		return "RESOURCE_EXHAUSTED"
-	case codes.FailedPrecondition:
-		return "FAILED_PRECONDITION"
-	case codes.Aborted:
-		return "ABORTED"
-	case codes.OutOfRange:
-		return "OUT_OF_RANGE"
-	case codes.Unimplemented:
-		return "UNIMPLEMENTED"
-	case codes.Internal:
-		return "INTERNAL"
-	case codes.Unavailable:
-		return "UNAVAILABLE"
-	case codes.DataLoss:
-		return "DATA_LOSS"
-	case codes.Unauthenticated:
-		return "UNAUTHENTICATED"
-	default:
-		return strconv.Itoa(int(c))
-	}
+// grpcStatusCodeNames maps each well-known gRPC status code to the canonical name the
+// service-config parser accepts, per https://github.com/grpc/grpc/blob/master/doc/statuscodes.md.
+//
+// This is NOT codes.Code.String(): String() returns CamelCase ("Unavailable"), which the parser
+// rejects, and diverges even in spelling for Canceled - String() is "Canceled" while the canonical
+// name is "CANCELLED" [sic]. The service-config parser resolves retryableStatusCodes through
+// codes.Code.UnmarshalJSON, whose lookup (grpc-go codes/codes.go strToCode) accepts only these
+// canonical names (or bare, unquoted numeric codes, which json.Marshal of []string can never
+// produce). The canonical form is not reachable from outside grpc - codes.canonicalString is
+// wired into grpc's internal package - so the mapping must live here.
+var grpcStatusCodeNames = map[codes.Code]string{
+	codes.OK:                 "OK",
+	codes.Canceled:           "CANCELLED",
+	codes.Unknown:            "UNKNOWN",
+	codes.InvalidArgument:    "INVALID_ARGUMENT",
+	codes.DeadlineExceeded:   "DEADLINE_EXCEEDED",
+	codes.NotFound:           "NOT_FOUND",
+	codes.AlreadyExists:      "ALREADY_EXISTS",
+	codes.PermissionDenied:   "PERMISSION_DENIED",
+	codes.ResourceExhausted:  "RESOURCE_EXHAUSTED",
+	codes.FailedPrecondition: "FAILED_PRECONDITION",
+	codes.Aborted:            "ABORTED",
+	codes.OutOfRange:         "OUT_OF_RANGE",
+	codes.Unimplemented:      "UNIMPLEMENTED",
+	codes.Internal:           "INTERNAL",
+	codes.Unavailable:        "UNAVAILABLE",
+	codes.DataLoss:           "DATA_LOSS",
+	codes.Unauthenticated:    "UNAUTHENTICATED",
 }
 
 // serviceConfigJSON mirrors (the small subset of) the gRPC service-config JSON schema this
@@ -159,7 +144,11 @@ type retryThrottlingJSON struct {
 func buildRetryServiceConfigJSON(policy RetryPolicy, throttling *RetryThrottlingPolicy) (string, error) {
 	codeNames := make([]string, 0, len(policy.RetryableStatusCodes))
 	for _, c := range policy.RetryableStatusCodes {
-		codeNames = append(codeNames, grpcStatusCodeName(c))
+		name, ok := grpcStatusCodeNames[c]
+		if !ok {
+			return "", fmt.Errorf("status code %v has no canonical gRPC service-config name; use a well-known google.golang.org/grpc/codes code", c)
+		}
+		codeNames = append(codeNames, name)
 	}
 
 	sc := serviceConfigJSON{

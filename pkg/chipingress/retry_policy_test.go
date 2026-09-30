@@ -2,6 +2,8 @@ package chipingress
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"testing"
 	"time"
 
@@ -78,7 +80,7 @@ func TestBuildRetryServiceConfigJSON_DefaultPolicy(t *testing.T) {
 	require.NotNil(t, sc.Methods, "MethodConfig must be populated - this is exactly what the old malformed JSON failed to do")
 
 	mc, ok := sc.Methods[chipIngressMethodPath]
-	require.True(t, ok, "expected a MethodConfig entry for %q, got keys %v", chipIngressMethodPath, mapKeys(sc.Methods))
+	require.True(t, ok, "expected a MethodConfig entry for %q, got keys %v", chipIngressMethodPath, slices.Collect(maps.Keys(sc.Methods)))
 	require.NotNil(t, mc.RetryPolicy, "expected a retry policy to be installed for the ChipIngress service")
 
 	assert.Equal(t, 3, mc.RetryPolicy.MaxAttempts)
@@ -214,10 +216,26 @@ func TestBuildRetryServiceConfigJSON_RetryThrottling(t *testing.T) {
 	require.NotNil(t, sc)
 }
 
-func mapKeys[K comparable, V any](m map[K]V) []K {
-	keys := make([]K, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
+// TestGRPCStatusCodeNames_RoundTripThroughParser is the proof behind keeping a custom name
+// mapping rather than codes.Code.String(): the service-config parser resolves
+// retryableStatusCodes through codes.Code.UnmarshalJSON, so every name this package emits must be
+// accepted by that entry point and round-trip back to the same code. String() itself is not valid
+// parser input - it yields CamelCase ("Unavailable"), and even a different spelling for Canceled
+// ("Canceled" vs canonical "CANCELLED" [sic]).
+func TestGRPCStatusCodeNames_RoundTripThroughParser(t *testing.T) {
+	for c := codes.OK; c <= codes.Unauthenticated; c++ {
+		name, ok := grpcStatusCodeNames[c]
+		require.True(t, ok, "missing canonical service-config name for %v", c)
+
+		var got codes.Code
+		require.NoError(t, got.UnmarshalJSON([]byte(`"`+name+`"`)),
+			"canonical name %q for %v is not accepted by gRPC's service-config parser", name, c)
+		assert.Equal(t, c, got, "canonical name %q parsed back to a different code", name)
 	}
-	return keys
+
+	// And the negative case: String() output is rejected by the parser. (codes.OK is the one
+	// exception where String() happens to coincide, so assert with a code where they differ.)
+	var got codes.Code
+	err := got.UnmarshalJSON([]byte(`"` + codes.Unavailable.String() + `"`))
+	require.Error(t, err, "codes.Code.String() output must not be accepted by the service-config parser")
 }

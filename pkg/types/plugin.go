@@ -19,6 +19,7 @@ const (
 	DonTimePlugin  OCR2PluginType = "dontime"
 	RingPlugin     OCR2PluginType = "ring"
 	SecureMint     OCR2PluginType = "securemint"
+	ConsensusQueue   OCR2PluginType = "consensus-queue"
 
 	CCIPCommit    OCR2PluginType = "ccip-commit"
 	CCIPExecution OCR2PluginType = "ccip-execution"

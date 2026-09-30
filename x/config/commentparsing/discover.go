@@ -188,8 +188,7 @@ func promotedNames(t reflect.Type, crossed bool, walked map[embedVisit]bool) map
 	walked[visit] = true
 
 	names := make(map[string]bool)
-	for i := range t.NumField() {
-		field := t.Field(i)
+	for field := range t.Fields() {
 		if !field.Anonymous {
 			continue
 		}
@@ -199,8 +198,8 @@ func promotedNames(t reflect.Type, crossed bool, walked map[embedVisit]bool) map
 		}
 		through := crossed || field.Type.Kind() == reflect.Pointer
 
-		for j := range embedded.NumField() {
-			if promoted := embedded.Field(j); promoted.IsExported() {
+		for promoted := range embedded.Fields() {
+			if promoted.IsExported() {
 				names[promoted.Name] = names[promoted.Name] || !through
 			}
 		}
@@ -262,8 +261,7 @@ func collectStructs(roots []any, isLeaf func(reflect.Type) bool) []reflect.Type 
 				return
 			}
 			found = append(found, t)
-			for i := range t.NumField() {
-				field := t.Field(i)
+			for field := range t.Fields() {
 				// An unexported embed still contributes its exported fields; an unexported
 				// named field cannot be set from a config file.
 				if field.IsExported() || field.Anonymous {

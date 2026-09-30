@@ -216,26 +216,47 @@ func TestBuildRetryServiceConfigJSON_RetryThrottling(t *testing.T) {
 	require.NotNil(t, sc)
 }
 
-// TestGRPCStatusCodeNames_RoundTripThroughParser is the proof behind keeping a custom name
-// mapping rather than codes.Code.String(): the service-config parser resolves
-// retryableStatusCodes through codes.Code.UnmarshalJSON, so every name this package emits must be
-// accepted by that entry point and round-trip back to the same code. String() itself is not valid
-// parser input - it yields CamelCase ("Unavailable"), and even a different spelling for Canceled
-// ("Canceled" vs canonical "CANCELLED" [sic]).
-func TestGRPCStatusCodeNames_RoundTripThroughParser(t *testing.T) {
-	for c := codes.OK; c <= codes.Unauthenticated; c++ {
-		name, ok := grpcStatusCodeNames[c]
-		require.True(t, ok, "missing canonical service-config name for %v", c)
+// TestParseStatusCodes covers mapping config names (codes.Code.String() spelling) to codes.
+func TestParseStatusCodes(t *testing.T) {
+	got, err := ParseStatusCodes([]string{"Unavailable", "ResourceExhausted"})
+	require.NoError(t, err)
+	assert.Equal(t, []codes.Code{codes.Unavailable, codes.ResourceExhausted}, got)
 
-		var got codes.Code
-		require.NoError(t, got.UnmarshalJSON([]byte(`"`+name+`"`)),
-			"canonical name %q for %v is not accepted by gRPC's service-config parser", name, c)
-		assert.Equal(t, c, got, "canonical name %q parsed back to a different code", name)
+	for c := codes.OK; c <= maxStatusCode; c++ {
+		got, err := ParseStatusCodes([]string{c.String()})
+		require.NoError(t, err)
+		assert.Equal(t, []codes.Code{c}, got)
 	}
 
-	// And the negative case: String() output is rejected by the parser. (codes.OK is the one
-	// exception where String() happens to coincide, so assert with a code where they differ.)
-	var got codes.Code
-	err := got.UnmarshalJSON([]byte(`"` + codes.Unavailable.String() + `"`))
-	require.Error(t, err, "codes.Code.String() output must not be accepted by the service-config parser")
+	_, err = ParseStatusCodes([]string{"UNAVAILABLE"})
+	require.Error(t, err, "canonical upper-case names are not codes.Code.String() names")
+	_, err = ParseStatusCodes([]string{"Bogus"})
+	require.Error(t, err)
+}
+
+// TestBuildRetryServiceConfigJSON_AllStatusCodesRoundTrip proves every well-known code survives
+// the numeric JSON encoding through gRPC's parser, and that unknown codes are rejected up front.
+func TestBuildRetryServiceConfigJSON_AllStatusCodesRoundTrip(t *testing.T) {
+	policy := defaultRetryPolicy()
+	policy.RetryableStatusCodes = nil
+	for c := codes.OK + 1; c <= maxStatusCode; c++ { // gRPC rejects OK as retryable
+		policy.RetryableStatusCodes = append(policy.RetryableStatusCodes, c)
+	}
+	scJSON, err := buildRetryServiceConfigJSON(policy, nil)
+	require.NoError(t, err)
+
+	scpr := parseServiceConfigJSON(t, scJSON)
+	require.NoError(t, scpr.Err)
+	sc, ok := scpr.Config.(*gp.ServiceConfig) //nolint:staticcheck // SA1019: grpc.ParseServiceConfig only ever returns this deprecated concrete type; inspecting it is the point of this test
+	require.True(t, ok)
+	mc := sc.Methods[chipIngressMethodPath]
+	require.NotNil(t, mc.RetryPolicy)
+	for _, c := range policy.RetryableStatusCodes {
+		assert.True(t, mc.RetryPolicy.RetryableStatusCodes[c], "code %v not installed", c)
+	}
+	assert.Len(t, mc.RetryPolicy.RetryableStatusCodes, len(policy.RetryableStatusCodes))
+
+	policy.RetryableStatusCodes = []codes.Code{maxStatusCode + 1}
+	_, err = buildRetryServiceConfigJSON(policy, nil)
+	require.Error(t, err)
 }

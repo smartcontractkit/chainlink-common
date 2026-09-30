@@ -16,7 +16,7 @@ import (
 // hand-writing a gRPC "retryPolicy" service-config JSON block, which is easy to get wrong: the
 // nesting (methodConfig[].retryPolicy, not top-level), the duration encoding (protobuf JSON
 // duration, e.g. "0.1s", not Go's "100ms"), and the status-code names are all silently ignored
-// by gRPC's parser if malformed, rather than rejected - see the client_test.go regression test
+// by gRPC's parser if malformed, rather than rejected - see the retry_policy_test.go regression test
 // for what that looks like.
 type RetryPolicy struct {
 	// MaxAttempts is the maximum number of call attempts, including the original attempt.
@@ -75,34 +75,34 @@ func grpcServiceConfigDuration(d time.Duration) string {
 	return strconv.FormatFloat(d.Seconds(), 'f', -1, 64) + "s"
 }
 
-// grpcStatusCodeNames maps each well-known gRPC status code to the canonical name the
-// service-config parser accepts, per https://github.com/grpc/grpc/blob/master/doc/statuscodes.md.
-//
-// This is NOT codes.Code.String(): String() returns CamelCase ("Unavailable"), which the parser
-// rejects, and diverges even in spelling for Canceled - String() is "Canceled" while the canonical
-// name is "CANCELLED" [sic]. The service-config parser resolves retryableStatusCodes through
-// codes.Code.UnmarshalJSON, whose lookup (grpc-go codes/codes.go strToCode) accepts only these
-// canonical names (or bare, unquoted numeric codes, which json.Marshal of []string can never
-// produce). The canonical form is not reachable from outside grpc - codes.canonicalString is
-// wired into grpc's internal package - so the mapping must live here.
-var grpcStatusCodeNames = map[codes.Code]string{
-	codes.OK:                 "OK",
-	codes.Canceled:           "CANCELLED",
-	codes.Unknown:            "UNKNOWN",
-	codes.InvalidArgument:    "INVALID_ARGUMENT",
-	codes.DeadlineExceeded:   "DEADLINE_EXCEEDED",
-	codes.NotFound:           "NOT_FOUND",
-	codes.AlreadyExists:      "ALREADY_EXISTS",
-	codes.PermissionDenied:   "PERMISSION_DENIED",
-	codes.ResourceExhausted:  "RESOURCE_EXHAUSTED",
-	codes.FailedPrecondition: "FAILED_PRECONDITION",
-	codes.Aborted:            "ABORTED",
-	codes.OutOfRange:         "OUT_OF_RANGE",
-	codes.Unimplemented:      "UNIMPLEMENTED",
-	codes.Internal:           "INTERNAL",
-	codes.Unavailable:        "UNAVAILABLE",
-	codes.DataLoss:           "DATA_LOSS",
-	codes.Unauthenticated:    "UNAUTHENTICATED",
+// statusCodesByName maps each well-known gRPC status code's codes.Code.String() name (e.g.
+// "Unavailable", "ResourceExhausted") back to the code. Built from String() itself, so it can't
+// drift from grpc's own naming.
+var statusCodesByName = func() map[string]codes.Code {
+	m := make(map[string]codes.Code, maxStatusCode+1)
+	for c := codes.OK; c <= maxStatusCode; c++ {
+		m[c.String()] = c
+	}
+	return m
+}()
+
+// maxStatusCode is the highest well-known gRPC status code; gRPC's service-config parser rejects
+// anything above it.
+const maxStatusCode = codes.Unauthenticated
+
+// ParseStatusCodes converts gRPC status code names, as spelled by codes.Code.String() (e.g.
+// ["Unavailable", "ResourceExhausted"]), into codes suitable for RetryPolicy.RetryableStatusCodes.
+// Intended for building a RetryPolicy from string-based configuration.
+func ParseStatusCodes(names []string) ([]codes.Code, error) {
+	out := make([]codes.Code, 0, len(names))
+	for _, name := range names {
+		c, ok := statusCodesByName[name]
+		if !ok {
+			return nil, fmt.Errorf("unknown gRPC status code name %q", name)
+		}
+		out = append(out, c)
+	}
+	return out, nil
 }
 
 // serviceConfigJSON mirrors (the small subset of) the gRPC service-config JSON schema this
@@ -125,11 +125,13 @@ type methodNameJSON struct {
 }
 
 type retryPolicyJSON struct {
-	MaxAttempts          int      `json:"maxAttempts"`
-	InitialBackoff       string   `json:"initialBackoff"`
-	MaxBackoff           string   `json:"maxBackoff"`
-	BackoffMultiplier    float64  `json:"backoffMultiplier"`
-	RetryableStatusCodes []string `json:"retryableStatusCodes"`
+	MaxAttempts       int     `json:"maxAttempts"`
+	InitialBackoff    string  `json:"initialBackoff"`
+	MaxBackoff        string  `json:"maxBackoff"`
+	BackoffMultiplier float64 `json:"backoffMultiplier"`
+	// RetryableStatusCodes marshal as bare numbers (codes.Code has no JSON marshaler), which
+	// gRPC's parser accepts alongside canonical names.
+	RetryableStatusCodes []codes.Code `json:"retryableStatusCodes"`
 }
 
 type retryThrottlingJSON struct {
@@ -142,13 +144,10 @@ type retryThrottlingJSON struct {
 // ChipIngress gRPC service via its fully-qualified name (from the generated
 // pb.ChipIngress_ServiceDesc, so it can't drift from the actual service).
 func buildRetryServiceConfigJSON(policy RetryPolicy, throttling *RetryThrottlingPolicy) (string, error) {
-	codeNames := make([]string, 0, len(policy.RetryableStatusCodes))
 	for _, c := range policy.RetryableStatusCodes {
-		name, ok := grpcStatusCodeNames[c]
-		if !ok {
-			return "", fmt.Errorf("status code %v has no canonical gRPC service-config name; use a well-known google.golang.org/grpc/codes code", c)
+		if c > maxStatusCode {
+			return "", fmt.Errorf("status code %v is not a well-known gRPC status code; use a google.golang.org/grpc/codes code", c)
 		}
-		codeNames = append(codeNames, name)
 	}
 
 	sc := serviceConfigJSON{
@@ -160,7 +159,7 @@ func buildRetryServiceConfigJSON(policy RetryPolicy, throttling *RetryThrottling
 					InitialBackoff:       grpcServiceConfigDuration(policy.InitialBackoff),
 					MaxBackoff:           grpcServiceConfigDuration(policy.MaxBackoff),
 					BackoffMultiplier:    policy.BackoffMultiplier,
-					RetryableStatusCodes: codeNames,
+					RetryableStatusCodes: policy.RetryableStatusCodes,
 				},
 			},
 		},

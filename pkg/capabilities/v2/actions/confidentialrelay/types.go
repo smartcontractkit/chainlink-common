@@ -104,10 +104,17 @@ type SecretEntry struct {
 }
 
 // SecretsResponseResult is the JSON-RPC result for "confidential.secrets.get".
-// The enclave uses its own config for MasterPublicKey and threshold (config.T),
-// so the relay handler only returns the encrypted shares per secret.
+// The enclave uses config.T for the threshold. It prefers RawVaultPublicKey when
+// present (the key of the DKG instance that produced these shares) and falls back
+// to its configured MasterPublicKey otherwise, so runtime reads stay correct
+// across DKG reshares.
 type SecretsResponseResult struct {
 	Secrets []SecretEntry `json:"secrets"`
+	// RawVaultPublicKey is the hex-encoded TDH2 Vault public key of the DKG instance
+	// that produced these shares, forwarded from the Vault GetSecrets response. Empty
+	// when the Vault plugin did not supply one (gate off or older nodes), in which
+	// case the enclave uses its configured MasterPublicKey. Bound into Hash().
+	RawVaultPublicKey string `json:"raw_vault_public_key,omitempty"`
 }
 
 // Validate rejects request params that are missing fields the canonical hash binds to,
@@ -166,6 +173,15 @@ func (r *SecretsResponseResult) Hash(params SecretsRequestParams) ([32]byte, err
 	h.Write([]byte("\nSecretsResponseResult\n"))
 
 	writeSecretsRequestParams(h, params)
+
+	// Bind the forwarded Vault public key so the enclave can trust it as the key to
+	// aggregate/verify these shares. Only written when present, so a response
+	// without it hashes identically to the pre-field format and stays compatible
+	// with peers that predate this field. A populated value cannot be stripped
+	// without invalidating the signature, so this is safe.
+	if r.RawVaultPublicKey != "" {
+		writeString(h, r.RawVaultPublicKey)
+	}
 
 	secrets := append([]SecretEntry(nil), r.Secrets...)
 	sortSecretEntries(secrets)

@@ -144,6 +144,18 @@ func newRateLimiter(scope settings.Scope, limit rate.Limit, burst int) RateLimit
 }
 
 func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLimiter, error) {
+	var lggr logger.Logger = logger.Nop()
+	if f.Logger != nil {
+		lggr = logger.Sugared(f.Logger).Named("RateLimiter").With("key", limit.Key)
+	}
+
+	// Resolved up front for the same reason as scopedRateLimiter.newRateLimiter.
+	initial, err := limit.GetOrDefault(context.Background(), f.Settings)
+	if err != nil {
+		lggr.Errorw("Failed to get limit. Using default value", "default", limit.DefaultValue, "err", err)
+		initial = limit.DefaultValue
+	}
+
 	l := &rateLimiter{
 		updater: newUpdater[config.Rate](nil, func(ctx context.Context) (config.Rate, error) {
 			return limit.GetOrDefault(ctx, f.Settings)
@@ -154,12 +166,9 @@ func (f Factory) globalRateLimiter(limit settings.Setting[config.Rate]) (RateLim
 		addUsage:     func(ctx context.Context, incr int64) {},
 		recordDenied: func(ctx context.Context, incr int) {},
 
-		limiter: rate.NewLimiter(limit.DefaultValue.Limit, limit.DefaultValue.Burst),
+		limiter: rate.NewLimiter(initial.Limit, initial.Burst),
 	}
-
-	if f.Logger != nil {
-		l.lggr = logger.Sugared(f.Logger).Named("RateLimiter").With("key", limit.Key)
-	}
+	l.lggr = lggr
 
 	if f.Meter != nil {
 		if limitGauge, err := f.Meter.Float64Gauge("rate."+limit.Key+".limit", metric.WithUnit("rps")); err != nil {
@@ -442,25 +451,40 @@ func (s *scopedRateLimiter) getOrCreate(ctx context.Context) (RateLimiter, func(
 		return nil, nil, fmt.Errorf("failed to get rate limiter: %w", ErrMissingTenant{Scope: s.scope})
 	}
 
-	limiter := s.newRateLimiter(tenant)
-	actual, loaded := s.limiters.LoadOrStore(tenant, limiter)
 	creCtx := contexts.WithCRE(ctx, s.scope.RoundCRE(contexts.CREValue(ctx)))
+	if actual, ok := s.limiters.Load(tenant); ok {
+		limiter := actual.(*rateLimiter)
+		limiter.updateCtx(creCtx)
+		return limiter, s.wg.Done, nil
+	}
+
+	limiter := s.newRateLimiter(creCtx, tenant)
+	actual, loaded := s.limiters.LoadOrStore(tenant, limiter)
 	if !loaded {
 		go limiter.updateLoop(creCtx)
 	} else {
+		// The discarded limiter never started its updateLoop, so it holds no goroutine or subscription.
 		limiter = actual.(*rateLimiter)
 		limiter.updateCtx(creCtx)
 	}
 	return limiter, s.wg.Done, nil
 }
 
-func (s *scopedRateLimiter) newRateLimiter(tenant string) *rateLimiter {
+// newRateLimiter sizes the bucket from the setting resolved for ctx, because a bucket starts full and raising its
+// burst later adds no tokens.
+func (s *scopedRateLimiter) newRateLimiter(ctx context.Context, tenant string) *rateLimiter {
+	lggr := logger.With(s.lggr, s.scope.String(), tenant)
+	initial, err := s.rateFn(ctx)
+	if err != nil {
+		lggr.Errorw("Failed to get limit. Using default value", "default", s.defaultRate, "err", err)
+		initial = s.defaultRate
+	}
 	l := &rateLimiter{
 		key:     s.key,
 		scope:   s.scope,
 		tenant:  tenant,
-		updater: newUpdater[config.Rate](logger.With(s.lggr, s.scope.String(), tenant), s.rateFn, s.subFn),
-		limiter: rate.NewLimiter(s.defaultRate.Limit, s.defaultRate.Burst),
+		updater: newUpdater[config.Rate](lggr, s.rateFn, s.subFn),
+		limiter: rate.NewLimiter(initial.Limit, initial.Burst),
 		recordLimit: func(ctx context.Context, value float64) {
 			if s.limitGauge != nil {
 				s.limitGauge.Record(ctx, value, withScope(ctx, s.scope))

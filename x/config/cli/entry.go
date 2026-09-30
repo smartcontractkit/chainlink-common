@@ -86,7 +86,12 @@ func (e *targetEntry) sources(k leafKey, cc commandConfig) ([]reflect.Value, err
 	}
 
 	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
-		vals = append(vals, raw)
+		val, err := fromFile(commentparsing.DerefType(k.goType), raw)
+		if err != nil {
+			return nil, err
+		}
+
+		vals = append(vals, val)
 	}
 
 	return vals, nil

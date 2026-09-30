@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"reflect"
@@ -83,6 +84,8 @@ func (n *keyNode) overlay(dst, src reflect.Value) {
 			d.Set(s)
 		case child.leaf == nil:
 			child.overlay(d.Elem(), s.Elem())
+		case child.leaf.Kind() == reflect.Map:
+			d.Elem().Set(mergeMaps(child.leaf, d.Elem(), s.Elem()))
 		default:
 			d.Set(s)
 		}
@@ -101,6 +104,101 @@ func (n *keyNode) lookup(v reflect.Value, path []string) (reflect.Value, bool) {
 	}
 
 	return v, true
+}
+
+var stringType = reflect.TypeFor[string]()
+
+// Config file map keys are text, so a number or bool key is read as a string and parsed as its flag would be
+// (see fromFile).
+func fileValueType(t reflect.Type, lang markup.Markup) reflect.Type {
+	switch t.Kind() {
+	case reflect.Map:
+		key := t.Key()
+		if key.Kind() != reflect.String && !lang.IsLeaf(key) {
+			key = stringType
+		}
+
+		return reflect.MapOf(key, fileValueType(t.Elem(), lang))
+	case reflect.Slice:
+		return reflect.SliceOf(fileValueType(t.Elem(), lang))
+	case reflect.Pointer:
+		return reflect.PointerTo(fileValueType(t.Elem(), lang))
+	default:
+		return t
+	}
+}
+
+func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
+	if v.Type() == t {
+		return v, nil
+	}
+
+	switch t.Kind() {
+	case reflect.Map:
+		out := reflect.MakeMapWithSize(t, v.Len())
+		seen := map[any]string{}
+		// Sorted, so a collision is reported the same way every run.
+		byText := func(a, b reflect.Value) int { return cmp.Compare(a.String(), b.String()) }
+		for _, rawKey := range slices.SortedFunc(slices.Values(v.MapKeys()), byText) {
+			key := rawKey
+			if key.Type() != t.Key() {
+				var err error
+				if key, err = mapKey(t.Key(), key.String(), seen); err != nil {
+					return reflect.Value{}, err
+				}
+			}
+
+			elem, err := fromFile(t.Elem(), v.MapIndex(rawKey))
+			if err != nil {
+				return reflect.Value{}, err
+			}
+
+			out.SetMapIndex(key, elem)
+		}
+
+		return out, nil
+	case reflect.Slice:
+		out := reflect.MakeSlice(t, v.Len(), v.Len())
+		for i := range v.Len() {
+			elem, err := fromFile(t.Elem(), v.Index(i))
+			if err != nil {
+				return reflect.Value{}, err
+			}
+
+			out.Index(i).Set(elem)
+		}
+
+		return out, nil
+	default: // reflect.Pointer, the only other kind fileValueType changes
+		if v.IsNil() {
+			return reflect.Zero(t), nil
+		}
+
+		elem, err := fromFile(t.Elem(), v.Elem())
+		if err != nil {
+			return reflect.Value{}, err
+		}
+
+		out := reflect.New(t.Elem())
+		out.Elem().Set(elem)
+		return out, nil
+	}
+}
+
+// seen makes two texts that parse to one key, such as 16 and 0x10, an error rather than one silently replacing the
+// other.
+func mapKey(t reflect.Type, text string, seen map[any]string) (reflect.Value, error) {
+	key, err := parseText(t, text)
+	if err != nil {
+		return reflect.Value{}, fmt.Errorf("key %q: %w", text, err)
+	}
+
+	if other, dup := seen[key.Interface()]; dup && other != text {
+		return reflect.Value{}, fmt.Errorf("keys %q and %q are both %v", other, text, key.Interface())
+	}
+
+	seen[key.Interface()] = text
+	return key, nil
 }
 
 // Only pointer sections on the way to a set field are allocated, so an untouched optional *struct stays nil for
@@ -126,7 +224,13 @@ func decodeEntry(entry *targetEntry, cc commandConfig) error {
 			f = f.Elem()
 		}
 
-		f.Set(vals[0])
+		if f.Kind() != reflect.Map {
+			f.Set(vals[0])
+		} else {
+			// The struct's own entries first, then sources lowest precedence first, so the highest wins a key.
+			slices.Reverse(vals)
+			f.Set(mergeMaps(f.Type(), append([]reflect.Value{f}, vals...)...))
+		}
 	}
 
 	return nil

@@ -49,8 +49,8 @@ func New(opts Options) (*Binder, error) {
 // Register attaches target to cmd. Before cmd or a subcommand runs, target is filled from flags, env vars, and config
 // files, then its `validate` tags are checked.
 //
-// Scalars, durations, []byte, and [encoding.TextUnmarshaler] types get a persistent flag and env vars; other fields
-// are config file only.
+// Scalars, durations, []byte, [encoding.TextUnmarshaler] types, and lists and maps of those get a persistent flag and
+// env vars; other fields are config file only.
 //
 // A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
 // fails every command in the tree when it is executed.
@@ -149,7 +149,7 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 	claimed := map[string]string{}
 	for _, e := range cc.entries {
 		for _, k := range e.keys {
-			leaf := commentparsing.DerefType(k.goType)
+			leaf := fileValueType(commentparsing.DerefType(k.goType), lang)
 			if err := cc.keys.add(k.fileKey, leaf, lang); err != nil {
 				return commandConfig{}, fmt.Errorf("%s: %w", e.cmd.Name(), err)
 			}

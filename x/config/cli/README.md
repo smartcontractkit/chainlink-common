@@ -31,7 +31,8 @@ assigned after `Register` still sees the decoded struct.
 
 ## Config files
 
-`--config` may be repeated; later files win key by key. Sections and maps merge. A list is one value, so a later
+`--config` may be repeated; later files win key by key. Sections and maps merge, and so does a map
+from an env var or flag, over the file's and the default's. A list is one value, so a later
 source's replaces an earlier one's. With the TOML markup from the example above:
 
 ```

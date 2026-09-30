@@ -370,12 +370,12 @@ func TestWhatGetsAFlag(t *testing.T) {
 	}
 
 	flags := flagsOf(t, &hasEveryShape{}, testOptions)
-	for _, name := range []string{"string", "bytes", "text-reader", "text-writer.value", "nested.value"} {
+	for _, name := range []string{"string", "bytes", "map-of-bytes", "text-reader", "text-writer.value", "nested.value"} {
 		assert.NotNil(t, flags.Lookup(name), name)
 	}
 
 	// Without a single text form a flag's default could not be read back, so these are file-only.
-	for _, name := range []string{"map-of-bytes", "list-of-maps", "list-of-structs", "list-of-structs.value", "map-of-structs",
+	for _, name := range []string{"list-of-maps", "list-of-structs", "list-of-structs.value", "map-of-structs",
 		"complex", "unexported", "text-reader.value", "nested.child.value"} {
 		assert.Nil(t, flags.Lookup(name), name)
 	}
@@ -566,8 +566,8 @@ func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
 	}{
 		{"a list element's field, by its tag", []string{"--config", writeConfig(t, "[[Structs]]\nrenamed = 'a'\n[[Structs]]\nrenamed = ''\n")},
 			"Structs.1.renamed failed on the 'required' tag"},
-		{"a list element", []string{"--config", writeConfig(t, "Strings = ['a', '']\n")}, "Strings.1 failed on the 'required' tag"},
-		{"a map entry", []string{"--config", writeConfig(t, "[Map]\nk = ''\n")}, "Map.k failed on the 'required' tag"},
+		{"a list element", []string{"--strings", "a,"}, "Strings.1 failed on the 'required' tag"},
+		{"a map entry", []string{"--map", "k="}, "Map.k failed on the 'required' tag"},
 		{"a rule's sibling in the same element", []string{"--config", writeConfig(t, "[[Rules]]\n")},
 			"Rules.0.Rule failed on the 'required_without=Rules.0.renamed' tag"},
 		{"a flattened embed adds no segment", []string{"--config", writeConfig(t, "[[Embeds]]\n")},
@@ -578,6 +578,30 @@ func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
 			require.ErrorContains(t, err, tc.want)
 			// Nothing falls back to the validator's own text, which names Go fields.
 			assert.NotContains(t, err.Error(), "Key: ")
+		})
+	}
+}
+
+func TestListFromEverySource(t *testing.T) {
+	type hasStringAndIntLists struct {
+		Strings []string
+		Ints    []int
+	}
+
+	for _, tc := range []struct {
+		name, env string
+		args      []string
+		want      hasStringAndIntLists
+	}{
+		{"repeated flag", "", []string{"--strings", "a", "--strings", "b"}, hasStringAndIntLists{Strings: []string{"a", "b"}}},
+		{"comma-separated env", "a,b", nil, hasStringAndIntLists{Strings: []string{"a", "b"}}},
+		{"comma-separated flag, non-string elements", "", []string{"--ints", "1,2,3"}, hasStringAndIntLists{Ints: []int{1, 2, 3}}},
+		{"an element holding the separator is quoted", "", []string{"--strings", `"a,b",c`}, hasStringAndIntLists{Strings: []string{"a,b", "c"}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasStringAndIntLists
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_STRINGS", tc.env, "", tc.args...)...))
+			assert.Equal(t, tc.want, c)
 		})
 	}
 }
@@ -625,16 +649,83 @@ func (p *selfSplittingList) UnmarshalText(b []byte) error {
 	return nil
 }
 
+type hasStringMap struct {
+	Map map[string]string
+}
+
+func TestStringMapFromEverySource(t *testing.T) {
+	cases := everySource([]string{"--map", "a=1,b=2"}, "a=1,b=2", "[Map]\na = '1'\nb = '2'")
+	cases = append(cases, sourceCase{name: "repeated flag", args: []string{"--map", "a=1", "--map", "b=2"}})
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasStringMap
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_MAP", tc.env, tc.file, tc.args...)...))
+			assert.Equal(t, map[string]string{"a": "1", "b": "2"}, c.Map)
+		})
+	}
+}
+
+func TestMapsMergeAcrossSources(t *testing.T) {
+	t.Setenv("TEST_MAP", "e=env,a=env")
+	c := hasStringMap{Map: map[string]string{"d": "default", "a": "default"}}
+	require.NoError(t, run(t, &c, testOptions,
+		"--config", writeConfig(t, "[Map]\na = 'first'\nf = 'first'\n"),
+		"--config", writeConfig(t, "[Map]\na = 'second'\ns = 'second'\n"),
+		"--map", "a=flag"))
+	assert.Equal(t, map[string]string{"d": "default", "f": "first", "s": "second", "e": "env", "a": "flag"}, c.Map)
+}
+
+func TestMapEntryText(t *testing.T) {
+	var c hasStringMap
+	require.NoError(t, run(t, &c, testOptions, "--map", `"a=1,b=2",c=3`))
+	assert.Equal(t, map[string]string{"a": "1,b=2", "c": "3"}, c.Map)
+
+	t.Setenv("TEST_MAP", "a")
+	require.ErrorContains(t, run(t, &hasStringMap{}, testOptions), `invalid value "a" for TEST_MAP: "a" must be formatted as key=value`)
+}
+
+func TestMapKeysNeedNotBeStrings(t *testing.T) {
+	type hasNonStringKeys struct {
+		UintKeys map[uint32]string
+		TextKeys map[config.Duration]string
+	}
+	want := hasNonStringKeys{
+		UintKeys: map[uint32]string{1: "a", 42: "b"},
+		TextKeys: map[config.Duration]string{*config.MustNewDuration(45 * time.Second): "c"},
+	}
+
+	flag := []string{"--uint-keys", "1=a,0x2a=b", "--text-keys", "45s=c"}
+	for _, tc := range everySource(flag, "", "[UintKeys]\n1 = 'a'\n0x2a = 'b'\n[TextKeys]\n45s = 'c'\n") {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasNonStringKeys
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "", "", tc.file, tc.args...)...))
+			assert.Equal(t, want, c)
+		})
+	}
+
+	for args, want := range map[string]string{"16=a,0x10=b": `keys "0x10" and "16" are both 16`, "16=a --uint-keys 0x10=b": `keys "16" and "0x10" are both 16`} {
+		require.ErrorContains(t, run(t, &hasNonStringKeys{}, testOptions, append([]string{"--uint-keys"}, strings.Fields(args)...)...), want, args)
+	}
+
+	require.ErrorContains(t, run(t, &hasNonStringKeys{}, testOptions, "--config", writeConfig(t, "[UintKeys]\n16 = 'a'\n0x10 = 'b'\n")),
+		`keys "0x10" and "16" are both 16`)
+}
+
 func TestHelpDefaultsCanBePassedBackIn(t *testing.T) {
-	type hasText struct {
+	type hasListMapAndText struct {
+		List []string
+		Map  map[string]string
 		Text *config.URL
 	}
 
-	c := hasText{Text: config.MustParseURL("https://x/rpc")}
+	c := hasListMapAndText{List: []string{"a", "b,c"}, Map: map[string]string{"a": "1", "b": "2,3"}, Text: config.MustParseURL("https://x/rpc")}
 	flags := flagsOf(t, &c, testOptions)
+	assert.Equal(t, "value,...", flags.Lookup("list").Value.Type())
+	assert.Equal(t, "key=value,...", flags.Lookup("map").Value.Type())
 
-	var back hasText
-	args := []string{"--text", flags.Lookup("text").DefValue}
+	var back hasListMapAndText
+	args := []string{"--list", flags.Lookup("list").DefValue, "--map", flags.Lookup("map").DefValue,
+		"--text", flags.Lookup("text").DefValue}
 	require.NoError(t, run(t, &back, testOptions, args...))
 	assert.Equal(t, c, back)
 }
@@ -663,18 +754,25 @@ func TestTextUnmarshalerLeafFromEverySource(t *testing.T) {
 	require.ErrorContains(t, run(t, &hasIntKindText{}, testOptions, "--value", "not-a-duration"), `time: invalid duration "not-a-duration"`)
 }
 
-func TestLeafNestedInASection(t *testing.T) {
+func TestLeafNestedInASectionListAndMap(t *testing.T) {
 	type hasDuration struct {
 		Value config.Duration
 	}
-	type hasDurationInASection struct {
+	type hasDurationEverywhere struct {
 		Section hasDuration
+		List    []config.Duration
+		Map     map[string]config.Duration
 	}
-	want := hasDurationInASection{Section: hasDuration{*config.MustNewDuration(time.Minute)}}
+	want := hasDurationEverywhere{
+		Section: hasDuration{*config.MustNewDuration(time.Minute)},
+		List:    []config.Duration{*config.MustNewDuration(time.Second), *config.MustNewDuration(2 * time.Second)},
+		Map:     map[string]config.Duration{"a": *config.MustNewDuration(3 * time.Second)},
+	}
 
-	for _, tc := range everySource([]string{"--section.value", "1m"}, "", "[Section]\nValue = '1m'") {
+	flag := []string{"--section.value", "1m", "--list", "1s,2s", "--map", "a=3s"}
+	for _, tc := range everySource(flag, "", "List = ['1s', '2s']\n[Section]\nValue = '1m'\n[Map]\na = '3s'") {
 		t.Run(tc.name, func(t *testing.T) {
-			var c hasDurationInASection
+			var c hasDurationEverywhere
 			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "", "", tc.file, tc.args...)...))
 			assert.Equal(t, want, c)
 		})
@@ -724,18 +822,37 @@ func TestSecretDefaultIsRedacted(t *testing.T) {
 }
 
 type hasEveryKind struct {
-	Int      int
-	Int8     int8
-	Uint     uint
-	Float32  float32
-	Bool     bool
-	String   string
-	Duration time.Duration
+	Int          int
+	Int8         int8
+	Uint         uint
+	Float32      float32
+	Bool         bool
+	String       string
+	Duration     time.Duration
+	IntList      []int
+	IntMap       map[string]int
+	UintKeyedMap map[uint32]string
+}
+
+func TestMapKeysAreParsedAsTheKeyType(t *testing.T) {
+	for _, tc := range everySource([]string{"--uint-keyed-map", "1=mainnet,0x2a=kovan"}, "1=mainnet,0x2a=kovan", "[UintKeyedMap]\n1 = 'mainnet'\n0x2a = 'kovan'") {
+		t.Run(tc.name, func(t *testing.T) {
+			var c hasEveryKind
+			require.NoError(t, run(t, &c, testOptions, supplyConfig(t, "TEST_UINT_KEYED_MAP", tc.env, tc.file, tc.args...)...))
+			assert.Equal(t, map[uint32]string{1: "mainnet", 42: "kovan"}, c.UintKeyedMap)
+		})
+	}
+
+	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions, "--config", writeConfig(t, "[UintKeyedMap]\nx = 'mainnet'")),
+		`key "x": strconv.ParseUint: parsing "x": invalid syntax`)
 }
 
 func TestParserErrorsArePropagated(t *testing.T) {
 	err := run(t, &hasEveryKind{}, testOptions, "--int=abc")
 	require.ErrorContains(t, err, `invalid argument "abc" for "--int" flag: strconv.ParseInt: parsing "abc": invalid syntax`)
+
+	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions, "--int-list=1,x"), `element "x": strconv.ParseInt: parsing "x"`)
+	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions, "--int-map=a=x"), `value of "a": strconv.ParseInt: parsing "x"`)
 
 	t.Setenv("TEST_INT", "abc")
 	require.ErrorContains(t, run(t, &hasEveryKind{}, testOptions), `invalid value "abc" for TEST_INT: strconv.ParseInt: parsing "abc": invalid syntax`)

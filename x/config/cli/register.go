@@ -83,6 +83,12 @@ func newFlag(name string, t reflect.Type, def reflect.Value, usage string) (*pfl
 		}
 
 		value, get = v, func() reflect.Value { return v.value }
+	case t.Kind() == reflect.Slice && canText(t.Elem()):
+		l := &textListValue{list: reflect.MakeSlice(t, 0, 0), elems: textListOf(def)}
+		value, get = l, func() reflect.Value { return l.list }
+	case t.Kind() == reflect.Map && canText(t.Key()) && canText(t.Elem()):
+		m := &textMapValue{m: reflect.MakeMap(t), entries: textMapOf(def), seen: map[any]string{}}
+		value, get = m, func() reflect.Value { return m.m }
 	default:
 		return nil, nil
 	}
@@ -173,7 +179,7 @@ func setText(dst reflect.Value, s string) error {
 	return err
 }
 
-// Parsed through a flag, so an env var accepts exactly what the flag does.
+// Parsed through a flag, so env vars and config file map keys accept exactly what the flag does.
 func parseText(t reflect.Type, s string) (reflect.Value, error) {
 	f, get := newFlag("value", t, reflect.Zero(commentparsing.DerefType(t)), "")
 	if f == nil {

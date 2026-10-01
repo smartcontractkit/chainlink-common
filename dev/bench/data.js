@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790859710824,
+  "lastUpdate": 1790878896202,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62460,6 +62460,66 @@ window.BENCHMARK_DATA = {
             "value": 127543,
             "unit": "ns/op",
             "extra": "8618 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9dc1a59bedf7eec7a2225574b0fa4ada37e1f4f9",
+          "message": "Add OTel metric export batching support (#2337)\n\n* beholder: support OTEL_GO_X_METRIC_EXPORT_BATCH_SIZE via MetricExportBatchSize\n\nExpose the OTel SDK's experimental metric export batching as\nConfig.MetricExportBatchSize, applied through a mutex-guarded helper that\nsets/restores the env var around PeriodicReader construction so library code\nnever leaves the process environment mutated. Forward the resolved value to\nLOOP plugin subprocesses via CL_TELEMETRY_METRIC_EXPORT_BATCH_SIZE, matching\nthe existing metric-config passthrough pattern.\n\n* beholder: route NewWriterClient through newPeriodicReader; note v1.47 batch-size migration",
+          "timestamp": "2026-10-01T18:13:22Z",
+          "tree_id": "49f47d9157dc5f159004d37877bb6ea16dcc232f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9dc1a59bedf7eec7a2225574b0fa4ada37e1f4f9"
+        },
+        "date": 1790878891687,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 350.4,
+            "unit": "ns/op",
+            "extra": "3408273 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78066,
+            "unit": "ns/op",
+            "extra": "15338 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 376,
+            "unit": "ns/op",
+            "extra": "3182736 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 76664,
+            "unit": "ns/op",
+            "extra": "15504 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28553,
+            "unit": "ns/op",
+            "extra": "40123 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 126594,
+            "unit": "ns/op",
+            "extra": "9451 times\n4 procs"
           }
         ]
       }

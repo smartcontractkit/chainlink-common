@@ -84,6 +84,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryEmitterExportMaxBatchSize: "100",
 				envTelemetryEmitterMaxQueueSize:       "1000",
 				envTelemetryLogStreamingEnabled:       "false",
+				envTelemetryMetricExportBatchSize:     "200",
 				envTelemetryMetricViewsDenyAttributes: "event_id",
 				envTelemetryPrometheusBridgeEnabled:   "true",
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
@@ -224,6 +225,7 @@ var envCfgFull = EnvConfig{
 	TelemetryEmitterExportMaxBatchSize: 100,
 	TelemetryEmitterMaxQueueSize:       1000,
 	TelemetryLogStreamingEnabled:       false,
+	TelemetryMetricExportBatchSize:     200,
 	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
 	TelemetryMetricViewsDenyAttributes: []string{"event_id"},
 	TelemetryPrometheusBridgeEnabled:   true,
@@ -307,6 +309,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "100", got[envTelemetryEmitterExportMaxBatchSize])
 	assert.Equal(t, "1000", got[envTelemetryEmitterMaxQueueSize])
 	assert.Equal(t, "false", got[envTelemetryLogStreamingEnabled])
+	assert.Equal(t, "200", got[envTelemetryMetricExportBatchSize])
 	assert.Equal(t, strconv.Itoa(beholder.DefaultMetricCardinalityLimit), got[envTelemetryMetricCardinalityLimit])
 	assert.Equal(t, "event_id", got[envTelemetryMetricViewsDenyAttributes])
 	assert.Equal(t, "true", got[envTelemetryPrometheusBridgeEnabled])

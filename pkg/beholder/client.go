@@ -602,7 +602,7 @@ func newMeterProvider(cfg Config, resource *sdkresource.Resource, auth Auth, cre
 	}
 
 	mpOpts := append(cfg.metricOptions(),
-		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(metered, readerOpts...)),
+		sdkmetric.WithReader(newPeriodicReader(metered, cfg.MetricExportBatchSize, readerOpts...)),
 		sdkmetric.WithResource(resource),
 	)
 	return sdkmetric.NewMeterProvider(mpOpts...), metered, nil

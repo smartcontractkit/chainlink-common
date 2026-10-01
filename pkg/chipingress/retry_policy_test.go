@@ -231,8 +231,8 @@ func TestParseStatusCodes(t *testing.T) {
 	assert.Equal(t, []codes.Code{codes.Unavailable, codes.ResourceExhausted}, got)
 
 	for c := codes.OK; c <= maxStatusCode; c++ {
-		one, err := ParseStatusCodes([]string{c.String()})
-		require.NoError(t, err)
+		one, perr := ParseStatusCodes([]string{c.String()})
+		require.NoError(t, perr)
 		assert.Equal(t, []codes.Code{c}, one)
 	}
 

@@ -114,9 +114,9 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 	// previous hand-written literal here was malformed and gRPC's parser silently discarded it.
 	if cfg.retryPolicy != nil {
 		throttling := defaultRetryThrottlingPolicy()
-		retryServiceConfig, err := buildRetryServiceConfigJSON(*cfg.retryPolicy, &throttling)
-		if err != nil {
-			return nil, fmt.Errorf("failed to build retry policy service config: %w", err)
+		retryServiceConfig, rerr := buildRetryServiceConfigJSON(*cfg.retryPolicy, &throttling)
+		if rerr != nil {
+			return nil, fmt.Errorf("failed to build retry policy service config: %w", rerr)
 		}
 		grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryServiceConfig))
 	}

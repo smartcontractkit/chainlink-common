@@ -61,6 +61,9 @@ type leafKey struct {
 	// entries set values inside a map's entries, such as chains.<key>.rpc; each is the one that sets a whole entry.
 	entries []*entryLeaf
 	each    *entryLeaf
+
+	// required is a `required` rule on the field, which a profile's help leaves to the sources.
+	required bool
 }
 
 type typedEntry[T any] struct {
@@ -71,6 +74,9 @@ type typedEntry[T any] struct {
 
 	// ns, if set, is the first segment of every key.
 	ns string
+
+	// profiles run after the sources are decoded, given which leaves a source set.
+	profiles []func(supplied map[string]bool)
 
 	undocumentedKeys []string
 }
@@ -228,12 +234,15 @@ func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
 
 func (e *typedEntry[T]) decode(cc commandConfig) error {
 	dst := reflect.ValueOf(e.dst).Elem()
+	supplied := map[string]bool{}
 	for _, k := range e.leaves {
 		if len(k.entries) > 0 {
-			if err := e.decodeEntries(k, cc, dst); err != nil {
+			set, err := e.decodeEntries(k, cc, dst)
+			if err != nil {
 				return fmt.Errorf("%s: %w", k.key, err)
 			}
 
+			supplied[k.key] = set
 			continue
 		}
 
@@ -245,6 +254,8 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 		if len(vals) == 0 {
 			continue
 		}
+
+		supplied[k.key] = true
 
 		f := allocateField(dst, k.goPath)
 		for f.Kind() == reflect.Pointer {
@@ -263,6 +274,10 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 		} else {
 			f.Set(vals[0])
 		}
+	}
+
+	for _, apply := range e.profiles {
+		apply(supplied)
 	}
 
 	return nil

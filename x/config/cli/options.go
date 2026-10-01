@@ -19,8 +19,7 @@ type Options struct {
 	DefaultConfigPath string
 }
 
-// RegisterOption customizes one [Binder.Register] call. None exist yet; the parameter lets options be added without
-// breaking callers.
+// RegisterOption customizes one [Binder.Register] call, such as a [Profile].
 type RegisterOption[T any] struct {
 	setup func(*typedEntry[T]) (func(), error)
 }

@@ -265,15 +265,15 @@ type entrySet struct {
 }
 
 // decodeEntries layers a map's sources lowest first, each setting whole entries or values inside them, so
-// --chains.mainnet.rpc changes only rpc in the file's mainnet.
-func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) error {
+// --chains.mainnet.rpc changes only rpc in the file's mainnet. It reports whether any source set the map.
+func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) (bool, error) {
 	t := commentparsing.DerefType(k.goType)
 	m := mergeMaps(t, readField(dst, k.goPath))
 	changed := false
 	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
 		file, err := fromFile(t, raw)
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		m, changed = mergeMaps(t, m, file), true
@@ -281,12 +281,12 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 
 	envSets, err := e.envEntrySets(k, m)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	for _, layer := range [][]entrySet{envSets, e.flagEntrySets(k, cc.flags)} {
 		if layer, err = oneValueEach(layer); err != nil {
-			return err
+			return false, err
 		}
 
 		for _, s := range layer {
@@ -297,7 +297,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 	}
 
 	if !changed {
-		return nil
+		return false, nil
 	}
 
 	f := allocateField(dst, k.goPath)
@@ -310,7 +310,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 	}
 
 	f.Set(m)
-	return nil
+	return true, nil
 }
 
 // Keys in env var names are matched against base's, which holds every source below env vars.

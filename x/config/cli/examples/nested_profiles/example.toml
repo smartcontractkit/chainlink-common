@@ -1,0 +1,5 @@
+LogLevel = "debug"
+
+[Chain]
+ID = 137
+RPC = "https://my.otherchain.example.com"

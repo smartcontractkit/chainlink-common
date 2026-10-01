@@ -29,6 +29,8 @@ type targetEntry struct {
 	// namespace, if set, is the first segment of every key.
 	namespace string
 
+	profiles []func(commandConfig)
+
 	// suppliedFields lets the `set` rule tell a field was explicitly set, even if it is a default value like zero.
 	suppliedFields map[uintptr]bool
 
@@ -50,6 +52,9 @@ type leafKey struct {
 	// goPath and goType save walking the struct again.
 	goPath []string
 	goType reflect.Type
+
+	// required is a `required` or `set` rule on the field, which a profile's help leaves to the sources.
+	required bool
 }
 
 func (e *targetEntry) envVars(k leafKey) []string {

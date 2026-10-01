@@ -69,6 +69,9 @@ type typedEntry[T any] struct {
 	dst    *T
 	leaves []leafKey
 
+	// ns, if set, is the first segment of every key.
+	ns string
+
 	undocumentedKeys []string
 }
 
@@ -197,7 +200,7 @@ func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
 		for i, p := range params {
 			if f, ok := siblings.FieldByName(p); ok {
 				if key, _ := e.b.opts.Markup.Key(f); key != "" {
-					params[i] = configKey(parent + "." + key)
+					params[i] = configKey(e.ns, parent+"."+key)
 				}
 			}
 		}
@@ -205,7 +208,7 @@ func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
 		rule += "=" + strings.Join(params, " ")
 	}
 
-	return fmt.Errorf("%s failed on the '%s' tag", configKey(fe.Namespace()), rule)
+	return fmt.Errorf("%s failed on the '%s' tag", configKey(e.ns, fe.Namespace()), rule)
 }
 
 func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
@@ -295,8 +298,12 @@ func allocateField(v reflect.Value, path []string) reflect.Value {
 var indexReplacer = strings.NewReplacer("[", ".", "]", "")
 
 // List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
-func configKey(ns string) string {
+func configKey(namespace, ns string) string {
 	_, ns, _ = strings.Cut(ns, ".")
+	if namespace != "" {
+		ns = namespace + "." + ns
+	}
+
 	segments := strings.Split(indexReplacer.Replace(ns), ".")
 	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }

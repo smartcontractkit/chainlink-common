@@ -62,7 +62,12 @@ func bindStruct[T any](entry *typedEntry[T]) error {
 		return errors.New("target must be a struct or pointer to struct")
 	}
 
-	return entry.walk(v, walkScope{ancestors: []reflect.Type{v.Type()}})
+	scope := walkScope{ancestors: []reflect.Type{v.Type()}}
+	if ns := entry.ns; ns != "" {
+		scope.key, scope.fileKey = strcase.ToKebab(ns), []string{ns}
+	}
+
+	return entry.walk(v, scope)
 }
 
 type walkScope struct {

@@ -256,6 +256,24 @@ func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
 	assert.ErrorContains(t, err, "invalid configuration: Other failed")
 }
 
+func TestNamespacesSeparateOneCommandsTargets(t *testing.T) {
+	root := newRoot(t)
+	b := newBinder(t, testOptions)
+	var first BasicConfig
+	var second RequiredField
+	require.NoError(t, b.RegisterInNamespace(root, "First", &first))
+	require.NoError(t, b.RegisterInNamespace(root, "Second", &second))
+
+	root.SetArgs([]string{"--first.value", "f"})
+	require.ErrorContains(t, root.Execute(), "invalid configuration: Second.Value failed on the 'required' tag; "+
+		"set it with --second.value, TEST_SECOND_VALUE, Second.Value in a config file")
+
+	root.SetArgs([]string{"--config", writeConfig(t, "[Second]\nValue = 's'\n")})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, BasicConfig{"f"}, first)
+	assert.Equal(t, RequiredField{"s"}, second)
+}
+
 func TestBuiltinCommandsSkipValidation(t *testing.T) {
 	root := newRoot(t)
 	bind(t, root, &RequiredField{}, testOptions)

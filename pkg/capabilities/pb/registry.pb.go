@@ -677,17 +677,18 @@ func (x *CapabilityConfig) GetSpecConfig() *pb.Map {
 
 // OffchainCapabilitiesRegistry is the offchain-distributed consolidation of the capability
 // configuration that today is split across the on-chain CapabilitiesRegistry, job specs, and
-// node TOML. It is delivered to nodes out-of-band (via the cresettings job with
-// config_type=capabilities_registry) and is cross-validated against the on-chain registry
-// before being applied. It reuses CapabilityConfig so the offchain and on-chain shapes stay
-// identical and can be compared field-by-field.
+// node TOML. It is the top-level versioned container delivered to nodes as proto JSON in a
+// cresettings job spec (config_type = "capabilities_registry"). Its DON structure mirrors the
+// on-chain CapabilitiesRegistry contract, and it reuses CapabilityConfig so the offchain and
+// on-chain shapes stay identical and can be compared field-by-field.
 type OffchainCapabilitiesRegistry struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Monotonic version. A node applies a payload only when its version is strictly greater
-	// than the version already applied, so out-of-order deliveries are ignored.
-	Version uint64 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
-	// Per-DON configuration, keyed by on-chain DON ID.
-	Dons          map[uint32]*OffchainDONConfig `protobuf:"bytes,2,rep,name=dons,proto3" json:"dons,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Domain string                 `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+	Env    string                 `protobuf:"bytes,2,opt,name=env,proto3" json:"env,omitempty"`
+	// Monotonically increasing; 0 = unset.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	// Per-DON configuration, keyed by on-chain DON name (e.g. "workflow_1_zone-a").
+	Dons          map[string]*DONConfig `protobuf:"bytes,4,rep,name=dons,proto3" json:"dons,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -722,6 +723,20 @@ func (*OffchainCapabilitiesRegistry) Descriptor() ([]byte, []int) {
 	return file_registry_proto_rawDescGZIP(), []int{6}
 }
 
+func (x *OffchainCapabilitiesRegistry) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *OffchainCapabilitiesRegistry) GetEnv() string {
+	if x != nil {
+		return x.Env
+	}
+	return ""
+}
+
 func (x *OffchainCapabilitiesRegistry) GetVersion() uint64 {
 	if x != nil {
 		return x.Version
@@ -729,40 +744,36 @@ func (x *OffchainCapabilitiesRegistry) GetVersion() uint64 {
 	return 0
 }
 
-func (x *OffchainCapabilitiesRegistry) GetDons() map[uint32]*OffchainDONConfig {
+func (x *OffchainCapabilitiesRegistry) GetDons() map[string]*DONConfig {
 	if x != nil {
 		return x.Dons
 	}
 	return nil
 }
 
-// OffchainDONConfig carries the offchain capability configuration for a single DON.
-type OffchainDONConfig struct {
+// DONConfig carries the offchain capability configuration for a single DON.
+type DONConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// On-chain DON ID this config applies to. Redundant with the map key in
-	// OffchainCapabilitiesRegistry.dons but kept so a DONConfig is self-describing.
-	DonId uint32 `protobuf:"varint,1,opt,name=don_id,json=donId,proto3" json:"don_id,omitempty"`
-	// Capability configuration keyed by capability ID (e.g. "consensus@1.0.0"), using the same
-	// CapabilityConfig message the on-chain registry stores.
-	CapabilityConfigs map[string]*CapabilityConfig `protobuf:"bytes,2,rep,name=capability_configs,json=capabilityConfigs,proto3" json:"capability_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Capability ID (e.g. "streams-trigger@1.0.0") -> capability config.
+	Capabilities  map[string]*CapabilityConfig `protobuf:"bytes,1,rep,name=capabilities,proto3" json:"capabilities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *OffchainDONConfig) Reset() {
-	*x = OffchainDONConfig{}
+func (x *DONConfig) Reset() {
+	*x = DONConfig{}
 	mi := &file_registry_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *OffchainDONConfig) String() string {
+func (x *DONConfig) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OffchainDONConfig) ProtoMessage() {}
+func (*DONConfig) ProtoMessage() {}
 
-func (x *OffchainDONConfig) ProtoReflect() protoreflect.Message {
+func (x *DONConfig) ProtoReflect() protoreflect.Message {
 	mi := &file_registry_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -774,21 +785,14 @@ func (x *OffchainDONConfig) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OffchainDONConfig.ProtoReflect.Descriptor instead.
-func (*OffchainDONConfig) Descriptor() ([]byte, []int) {
+// Deprecated: Use DONConfig.ProtoReflect.Descriptor instead.
+func (*DONConfig) Descriptor() ([]byte, []int) {
 	return file_registry_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *OffchainDONConfig) GetDonId() uint32 {
+func (x *DONConfig) GetCapabilities() map[string]*CapabilityConfig {
 	if x != nil {
-		return x.DonId
-	}
-	return 0
-}
-
-func (x *OffchainDONConfig) GetCapabilityConfigs() map[string]*CapabilityConfig {
-	if x != nil {
-		return x.CapabilityConfigs
+		return x.Capabilities
 	}
 	return nil
 }
@@ -849,17 +853,18 @@ const file_registry_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x10.loop.OCR3ConfigR\x05value:\x028\x01\x1aW\n" +
 	"\x19OracleFactoryConfigsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12$\n" +
-	"\x05value\x18\x02 \x01(\v2\x0e.values.v1.MapR\x05value:\x028\x01J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x04\x10\x05\"\xcc\x01\n" +
-	"\x1cOffchainCapabilitiesRegistry\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\x04R\aversion\x12@\n" +
-	"\x04dons\x18\x02 \x03(\v2,.loop.OffchainCapabilitiesRegistry.DonsEntryR\x04dons\x1aP\n" +
+	"\x05value\x18\x02 \x01(\v2\x0e.values.v1.MapR\x05value:\x028\x01J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x04\x10\x05\"\xee\x01\n" +
+	"\x1cOffchainCapabilitiesRegistry\x12\x16\n" +
+	"\x06domain\x18\x01 \x01(\tR\x06domain\x12\x10\n" +
+	"\x03env\x18\x02 \x01(\tR\x03env\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\x04R\aversion\x12@\n" +
+	"\x04dons\x18\x04 \x03(\v2,.loop.OffchainCapabilitiesRegistry.DonsEntryR\x04dons\x1aH\n" +
 	"\tDonsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\rR\x03key\x12-\n" +
-	"\x05value\x18\x02 \x01(\v2\x17.loop.OffchainDONConfigR\x05value:\x028\x01\"\xe7\x01\n" +
-	"\x11OffchainDONConfig\x12\x15\n" +
-	"\x06don_id\x18\x01 \x01(\rR\x05donId\x12]\n" +
-	"\x12capability_configs\x18\x02 \x03(\v2..loop.OffchainDONConfig.CapabilityConfigsEntryR\x11capabilityConfigs\x1a\\\n" +
-	"\x16CapabilityConfigsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
+	"\x05value\x18\x02 \x01(\v2\x0f.loop.DONConfigR\x05value:\x028\x01\"\xab\x01\n" +
+	"\tDONConfig\x12E\n" +
+	"\fcapabilities\x18\x01 \x03(\v2!.loop.DONConfig.CapabilitiesEntryR\fcapabilities\x1aW\n" +
+	"\x11CapabilitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
 	"\x05value\x18\x02 \x01(\v2\x16.loop.CapabilityConfigR\x05value:\x028\x01*5\n" +
 	"\x14TransmissionSchedule\x12\r\n" +
@@ -899,12 +904,12 @@ var file_registry_proto_goTypes = []any{
 	(*OCR3Config)(nil),                   // 7: loop.OCR3Config
 	(*CapabilityConfig)(nil),             // 8: loop.CapabilityConfig
 	(*OffchainCapabilitiesRegistry)(nil), // 9: loop.OffchainCapabilitiesRegistry
-	(*OffchainDONConfig)(nil),            // 10: loop.OffchainDONConfig
+	(*DONConfig)(nil),                    // 10: loop.DONConfig
 	nil,                                  // 11: loop.CapabilityConfig.MethodConfigsEntry
 	nil,                                  // 12: loop.CapabilityConfig.Ocr3ConfigsEntry
 	nil,                                  // 13: loop.CapabilityConfig.OracleFactoryConfigsEntry
 	nil,                                  // 14: loop.OffchainCapabilitiesRegistry.DonsEntry
-	nil,                                  // 15: loop.OffchainDONConfig.CapabilityConfigsEntry
+	nil,                                  // 15: loop.DONConfig.CapabilitiesEntry
 	(*durationpb.Duration)(nil),          // 16: google.protobuf.Duration
 	(*pb.Map)(nil),                       // 17: values.v1.Map
 }
@@ -928,12 +933,12 @@ var file_registry_proto_depIdxs = []int32{
 	13, // 16: loop.CapabilityConfig.oracle_factory_configs:type_name -> loop.CapabilityConfig.OracleFactoryConfigsEntry
 	17, // 17: loop.CapabilityConfig.spec_config:type_name -> values.v1.Map
 	14, // 18: loop.OffchainCapabilitiesRegistry.dons:type_name -> loop.OffchainCapabilitiesRegistry.DonsEntry
-	15, // 19: loop.OffchainDONConfig.capability_configs:type_name -> loop.OffchainDONConfig.CapabilityConfigsEntry
+	15, // 19: loop.DONConfig.capabilities:type_name -> loop.DONConfig.CapabilitiesEntry
 	6,  // 20: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
 	7,  // 21: loop.CapabilityConfig.Ocr3ConfigsEntry.value:type_name -> loop.OCR3Config
 	17, // 22: loop.CapabilityConfig.OracleFactoryConfigsEntry.value:type_name -> values.v1.Map
-	10, // 23: loop.OffchainCapabilitiesRegistry.DonsEntry.value:type_name -> loop.OffchainDONConfig
-	8,  // 24: loop.OffchainDONConfig.CapabilityConfigsEntry.value:type_name -> loop.CapabilityConfig
+	10, // 23: loop.OffchainCapabilitiesRegistry.DonsEntry.value:type_name -> loop.DONConfig
+	8,  // 24: loop.DONConfig.CapabilitiesEntry.value:type_name -> loop.CapabilityConfig
 	25, // [25:25] is the sub-list for method output_type
 	25, // [25:25] is the sub-list for method input_type
 	25, // [25:25] is the sub-list for extension type_name

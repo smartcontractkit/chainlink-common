@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
@@ -52,6 +53,7 @@ type clientConfig struct {
 	meterProvider         metric.MeterProvider
 	tracerProvider        trace.TracerProvider
 	nopInfoHeaderProvider HeaderProvider
+	clientName            string
 }
 
 func newClientConfig(host string) *clientConfig {
@@ -89,6 +91,14 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 		otelOpts = append(otelOpts, otelgrpc.WithTracerProvider(cfg.tracerProvider))
 	}
 
+	if cfg.clientName != "" {
+		clientNameAttr := attribute.String("client_name", cfg.clientName)
+		otelOpts = append(otelOpts,
+			otelgrpc.WithSpanAttributes(clientNameAttr),
+			otelgrpc.WithMetricAttributes(clientNameAttr),
+		)
+	}
+
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
@@ -98,6 +108,9 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 			Timeout:             1 * time.Second,
 			PermitWithoutStream: true,
 		}),
+	}
+	if cfg.clientName != "" {
+		grpcOpts = append(grpcOpts, grpc.WithUserAgent(cfg.clientName))
 	}
 	// Retry policy
 	retryPolicy := `{
@@ -250,6 +263,13 @@ func WithTLS() Opt {
 // If not set, the global meter provider will be used.
 func WithMeterProvider(provider metric.MeterProvider) Opt {
 	return func(c *clientConfig) { c.meterProvider = provider }
+}
+
+// WithClientName identifies this client to chip-ingress and in telemetry: it is sent as the gRPC
+// user-agent and recorded as a client_name attribute on the otelgrpc spans and metrics. An empty
+// name is a no-op.
+func WithClientName(name string) Opt {
+	return func(c *clientConfig) { c.clientName = name }
 }
 
 // WithTracerProvider sets a custom OpenTelemetry TracerProvider for distributed tracing.

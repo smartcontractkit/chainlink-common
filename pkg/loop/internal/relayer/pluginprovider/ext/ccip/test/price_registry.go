@@ -37,34 +37,22 @@ var PriceRegistryReader = staticPriceRegistryReader{
 		},
 		getGasPriceUpdatesCreatedAfterResponse: []ccip.GasPriceUpdateWithTxMeta{
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 1,
-					BlockNumber:             1,
-					TxHash:                  "gas update tx 1",
-					LogIndex:                1,
-				},
-				GasPriceUpdate: ccip.GasPriceUpdate{
-					GasPrice: ccip.GasPrice{
-						DestChainSelector: 1,
-						Value:             big.NewInt(1),
-					},
-					TimestampUnixSec: big.NewInt(1),
-				},
+				BlockTimestampUnixMilli: 1,
+				BlockNumber:             1,
+				TxHash:                  "gas update tx 1",
+				LogIndex:                1,
+				DestChainSelector:       1,
+				Value:                   big.NewInt(1),
+				TimestampUnixSec:        big.NewInt(1),
 			},
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 2,
-					BlockNumber:             2,
-					TxHash:                  "gas update 2",
-					LogIndex:                2,
-				},
-				GasPriceUpdate: ccip.GasPriceUpdate{
-					GasPrice: ccip.GasPrice{
-						DestChainSelector: 2,
-						Value:             big.NewInt(2),
-					},
-					TimestampUnixSec: big.NewInt(2),
-				},
+				BlockTimestampUnixMilli: 2,
+				BlockNumber:             2,
+				TxHash:                  "gas update 2",
+				LogIndex:                2,
+				DestChainSelector:       2,
+				Value:                   big.NewInt(2),
+				TimestampUnixSec:        big.NewInt(2),
 			},
 		},
 
@@ -75,34 +63,22 @@ var PriceRegistryReader = staticPriceRegistryReader{
 		},
 		getAllGasPriceUpdatesCreatedAfterResponse: []ccip.GasPriceUpdateWithTxMeta{
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 10,
-					BlockNumber:             10,
-					TxHash:                  "gas update tx 10",
-					LogIndex:                10,
-				},
-				GasPriceUpdate: ccip.GasPriceUpdate{
-					GasPrice: ccip.GasPrice{
-						DestChainSelector: 10,
-						Value:             big.NewInt(10),
-					},
-					TimestampUnixSec: big.NewInt(10),
-				},
+				BlockTimestampUnixMilli: 10,
+				BlockNumber:             10,
+				TxHash:                  "gas update tx 10",
+				LogIndex:                10,
+				DestChainSelector:       10,
+				Value:                   big.NewInt(10),
+				TimestampUnixSec:        big.NewInt(10),
 			},
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 20,
-					BlockNumber:             20,
-					TxHash:                  "gas update 20",
-					LogIndex:                20,
-				},
-				GasPriceUpdate: ccip.GasPriceUpdate{
-					GasPrice: ccip.GasPrice{
-						DestChainSelector: 20,
-						Value:             big.NewInt(20),
-					},
-					TimestampUnixSec: big.NewInt(20),
-				},
+				BlockTimestampUnixMilli: 20,
+				BlockNumber:             20,
+				TxHash:                  "gas update 20",
+				LogIndex:                20,
+				DestChainSelector:       20,
+				Value:                   big.NewInt(20),
+				TimestampUnixSec:        big.NewInt(20),
 			},
 		},
 
@@ -113,19 +89,13 @@ var PriceRegistryReader = staticPriceRegistryReader{
 		},
 		getTokenPriceUpdatesCreatedAfterResponse: []ccip.TokenPriceUpdateWithTxMeta{
 			{
-				TxMeta: ccip.TxMeta{
-					BlockTimestampUnixMilli: 1,
-					BlockNumber:             1,
-					TxHash:                  "token update 1",
-					LogIndex:                1,
-				},
-				TokenPriceUpdate: ccip.TokenPriceUpdate{
-					TokenPrice: ccip.TokenPrice{
-						Token: ccip.Address("token 1"),
-						Value: big.NewInt(1),
-					},
-					TimestampUnixSec: big.NewInt(1),
-				},
+				BlockTimestampUnixMilli: 1,
+				BlockNumber:             1,
+				TxHash:                  "token update 1",
+				LogIndex:                1,
+				Token:                   ccip.Address("token 1"),
+				Value:                   big.NewInt(1),
+				TimestampUnixSec:        big.NewInt(1),
 			},
 		},
 
@@ -136,17 +106,13 @@ var PriceRegistryReader = staticPriceRegistryReader{
 		},
 		getTokenPricesResponse: []ccip.TokenPriceUpdate{
 			{
-				TokenPrice: ccip.TokenPrice{
-					Token: ccip.Address("token price request 1"),
-					Value: big.NewInt(1),
-				},
+				Token:            ccip.Address("token price request 1"),
+				Value:            big.NewInt(1),
 				TimestampUnixSec: big.NewInt(1),
 			},
 			{
-				TokenPrice: ccip.TokenPrice{
-					Token: ccip.Address("token price request 2"),
-					Value: big.NewInt(2),
-				},
+				Token:            ccip.Address("token price request 2"),
+				Value:            big.NewInt(2),
 				TimestampUnixSec: big.NewInt(2),
 			},
 		},

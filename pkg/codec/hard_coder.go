@@ -38,14 +38,12 @@ func NewPathTraverseHardCoder(
 	myHooks[len(hooks)] = hardCodeManyHook
 
 	m := &onChainHardCoder{
-		modifierBase: modifierBase[any]{
-			enablePathTraverse: enablePathTraverse,
-			fields:             offChain,
-			onToOffChainType:   map[reflect.Type]reflect.Type{},
-			offToOnChainType:   map[reflect.Type]reflect.Type{},
-		},
-		onChain: onChain,
-		hooks:   myHooks,
+		enablePathTraverse: enablePathTraverse,
+		fields:             offChain,
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
+		onChain:            onChain,
+		hooks:              myHooks,
 	}
 	m.modifyFieldForInput = func(_ string, field *reflect.StructField, key string, v any) error {
 		// if we are typing it differently, we need to make sure it's hard-coded the other way

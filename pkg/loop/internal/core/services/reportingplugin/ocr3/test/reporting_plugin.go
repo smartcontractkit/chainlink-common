@@ -24,68 +24,66 @@ var (
 	query = libocr.Query{1, 2, 3}
 )
 var ReportingPlugin = ocr3staticReportingPlugin{
-	ocr3staticReportingPluginConfig: ocr3staticReportingPluginConfig{
-		expectedOutcomeContext: outcomeCtx,
-		queryRequest:           queryRequest{outcomeCtx: outcomeCtx},
-		queryResponse:          queryResponse{query: query},
-		observationRequest: observationRequest{
-			outcomeCtx: outcomeCtx,
-			query:      query,
-		},
-		observationResponse: observationResponse{
-			observation: libocr.Observation{1, 2, 3},
-		},
-		observationQuorumRequest: observationQuorumRequest{
-			outcomeCtx:   outcomeCtx,
-			query:        query,
-			observations: []libocr.AttributedObservation{{Observer: 1, Observation: []byte{1, 2, 3}}},
-		},
-		observationQuorumResponse: observationQuorumResponse{
-			quorumReached: true,
-		},
-		validateObservationRequest: validateObservationRequest{
-			outcomeCtx:            outcomeCtx,
-			query:                 query,
-			attributedObservation: libocr.AttributedObservation{Observer: 1, Observation: []byte{1, 2, 3}},
-		},
-		outcomeRequest: outcomeRequest{
-			outcomeCtx:   outcomeCtx,
-			query:        query,
-			observations: []libocr.AttributedObservation{{Observer: 1, Observation: []byte{1, 2, 3}}},
-		},
-		outcomeResponse: outcomeResponse{
-			outcome: ocr3types.Outcome{1, 2, 3},
-		},
-		reportsRequest: reportsRequest{
-			seq:     1,
-			outcome: ocr3types.Outcome{1, 2, 3},
-		},
-		reportsResponse: reportsResponse{
-			reportPlus: []ocr3types.ReportPlus[[]byte]{
-				{
-					ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
-					TransmissionScheduleOverride: &ocr3types.TransmissionSchedule{
-						Transmitters:       []commontypes.OracleID{1, 2, 3},
-						TransmissionDelays: []time.Duration{time.Second, time.Millisecond},
-					},
+	expectedOutcomeContext: outcomeCtx,
+	queryRequest:           queryRequest{outcomeCtx: outcomeCtx},
+	queryResponse:          queryResponse{query: query},
+	observationRequest: observationRequest{
+		outcomeCtx: outcomeCtx,
+		query:      query,
+	},
+	observationResponse: observationResponse{
+		observation: libocr.Observation{1, 2, 3},
+	},
+	observationQuorumRequest: observationQuorumRequest{
+		outcomeCtx:   outcomeCtx,
+		query:        query,
+		observations: []libocr.AttributedObservation{{Observer: 1, Observation: []byte{1, 2, 3}}},
+	},
+	observationQuorumResponse: observationQuorumResponse{
+		quorumReached: true,
+	},
+	validateObservationRequest: validateObservationRequest{
+		outcomeCtx:            outcomeCtx,
+		query:                 query,
+		attributedObservation: libocr.AttributedObservation{Observer: 1, Observation: []byte{1, 2, 3}},
+	},
+	outcomeRequest: outcomeRequest{
+		outcomeCtx:   outcomeCtx,
+		query:        query,
+		observations: []libocr.AttributedObservation{{Observer: 1, Observation: []byte{1, 2, 3}}},
+	},
+	outcomeResponse: outcomeResponse{
+		outcome: ocr3types.Outcome{1, 2, 3},
+	},
+	reportsRequest: reportsRequest{
+		seq:     1,
+		outcome: ocr3types.Outcome{1, 2, 3},
+	},
+	reportsResponse: reportsResponse{
+		reportPlus: []ocr3types.ReportPlus[[]byte]{
+			{
+				ReportWithInfo: ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
+				TransmissionScheduleOverride: &ocr3types.TransmissionSchedule{
+					Transmitters:       []commontypes.OracleID{1, 2, 3},
+					TransmissionDelays: []time.Duration{time.Second, time.Millisecond},
 				},
 			},
 		},
-		shouldAcceptAttestedReportRequest: shouldAcceptAttestedReportRequest{
-			seq: 1,
-			r:   ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
-		},
-		shouldAcceptAttestedReportResponse: shouldAcceptAttestedReportResponse{
-			shouldAccept: true,
-		},
-		shouldTransmitAcceptedReportRequest: shouldTransmitAcceptedReportRequest{
-			seq: 1,
+	},
+	shouldAcceptAttestedReportRequest: shouldAcceptAttestedReportRequest{
+		seq: 1,
+		r:   ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
+	},
+	shouldAcceptAttestedReportResponse: shouldAcceptAttestedReportResponse{
+		shouldAccept: true,
+	},
+	shouldTransmitAcceptedReportRequest: shouldTransmitAcceptedReportRequest{
+		seq: 1,
 
-			r: ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
-		},
-		shouldTransmitAcceptedReportResponse: shouldTransmitAcceptedReportResponse{
-			shouldTransmit: true,
-		},
+		r: ocr3types.ReportWithInfo[[]byte]{Report: []byte{1, 2, 3}, Info: []byte{1, 2, 3}},
+	},
+	shouldTransmitAcceptedReportResponse: shouldTransmitAcceptedReportResponse{
+		shouldTransmit: true,
 	},
 }
 

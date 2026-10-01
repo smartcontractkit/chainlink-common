@@ -36,11 +36,9 @@ func main() {
 		Plugins: map[string]plugin.Plugin{
 			loop.PluginRelayerName: &loop.GRPCPluginRelayer{
 				PluginServer: p,
-				BrokerConfig: loop.BrokerConfig{
-					StopCh:   stopCh,
-					Logger:   s.Logger,
-					GRPCOpts: s.GRPCOpts,
-				},
+				StopCh:       stopCh,
+				Logger:       s.Logger,
+				GRPCOpts:     s.GRPCOpts,
 			},
 		},
 		GRPCServer: s.GRPCOpts.NewServer,

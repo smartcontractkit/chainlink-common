@@ -50,10 +50,8 @@ func main() {
 
 	const outFile = "requirements_helper_gen.go"
 	settings := codegen.PrettySettings{
-		Tool: "requirements_gen",
-		GoPrettySettings: codegen.GoPrettySettings{
-			LocalPrefix: "github.com/smartcontractkit/chainlink-common",
-		},
+		Tool:        "requirements_gen",
+		LocalPrefix: "github.com/smartcontractkit/chainlink-common",
 	}
 
 	content, err := codegen.PrettyFile(outFile, buf.String(), settings)

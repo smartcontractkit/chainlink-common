@@ -554,10 +554,14 @@ func (x *GetSecretsRequest) GetWorkflowOwner() string {
 }
 
 type GetSecretsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Responses     []*SecretResponse      `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Responses []*SecretResponse      `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty"`
+	// raw_vault_public_key is the TDH2 Vault public key of the DKG instance that
+	// produced these shares. When populated, decrypt-side callers read the matching
+	// key live from the response instead of from CapReg / static config.
+	RawVaultPublicKey string `protobuf:"bytes,2,opt,name=raw_vault_public_key,json=rawVaultPublicKey,proto3" json:"raw_vault_public_key,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetSecretsResponse) Reset() {
@@ -595,6 +599,13 @@ func (x *GetSecretsResponse) GetResponses() []*SecretResponse {
 		return x.Responses
 	}
 	return nil
+}
+
+func (x *GetSecretsResponse) GetRawVaultPublicKey() string {
+	if x != nil {
+		return x.RawVaultPublicKey
+	}
+	return ""
 }
 
 type EncryptedSecret struct {
@@ -1649,8 +1660,15 @@ type Observations struct {
 	PendingQueueItems       [][]byte                `protobuf:"bytes,2,rep,name=pending_queue_items,json=pendingQueueItems,proto3" json:"pending_queue_items,omitempty"`
 	SortNonce               []byte                  `protobuf:"bytes,3,opt,name=sortNonce,proto3" json:"sortNonce,omitempty"`
 	PendingQueueStallSignal PendingQueueStallSignal `protobuf:"varint,4,opt,name=pending_queue_stall_signal,json=pendingQueueStallSignal,proto3,enum=vault.PendingQueueStallSignal" json:"pending_queue_stall_signal,omitempty"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	// raw_vault_public_key is this node's view of the DKG instance's TDH2 public
+	// key (marshaled), broadcast once per observation when the include-public-key
+	// gate is open. StateTransition aggregates the quorum-agreed value onto
+	// GetSecrets responses (as GetSecretsResponse.raw_vault_public_key), keeping
+	// the transition a pure function of observations rather than reading node-local
+	// config.
+	RawVaultPublicKey []byte `protobuf:"bytes,5,opt,name=raw_vault_public_key,json=rawVaultPublicKey,proto3" json:"raw_vault_public_key,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Observations) Reset() {
@@ -1709,6 +1727,13 @@ func (x *Observations) GetPendingQueueStallSignal() PendingQueueStallSignal {
 		return x.PendingQueueStallSignal
 	}
 	return PendingQueueStallSignal_PENDING_QUEUE_STALL_SIGNAL_CONTINUE
+}
+
+func (x *Observations) GetRawVaultPublicKey() []byte {
+	if x != nil {
+		return x.RawVaultPublicKey
+	}
+	return nil
 }
 
 type Outcome struct {
@@ -2511,9 +2536,10 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x11GetSecretsRequest\x120\n" +
 	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\x12\x19\n" +
 	"\x06org_id\x18\x02 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
-	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\"I\n" +
+	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\"z\n" +
 	"\x12GetSecretsResponse\x123\n" +
-	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\"c\n" +
+	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\x12/\n" +
+	"\x14raw_vault_public_key\x18\x02 \x01(\tR\x11rawVaultPublicKey\"c\n" +
 	"\x0fEncryptedSecret\x12'\n" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x0fencrypted_value\x18\x02 \x01(\tR\x0eencryptedValue\"\xc0\x01\n" +
@@ -2591,12 +2617,13 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x05error\x18\r \x01(\v2\x17.vault.ObservationErrorR\x05errorB\t\n" +
 	"\arequestB\n" +
 	"\n" +
-	"\bresponse\"\xf1\x01\n" +
+	"\bresponse\"\xa2\x02\n" +
 	"\fObservations\x126\n" +
 	"\fobservations\x18\x01 \x03(\v2\x12.vault.ObservationR\fobservations\x12.\n" +
 	"\x13pending_queue_items\x18\x02 \x03(\fR\x11pendingQueueItems\x12\x1c\n" +
 	"\tsortNonce\x18\x03 \x01(\fR\tsortNonce\x12[\n" +
-	"\x1apending_queue_stall_signal\x18\x04 \x01(\x0e2\x1e.vault.PendingQueueStallSignalR\x17pendingQueueStallSignal\"\xe8\a\n" +
+	"\x1apending_queue_stall_signal\x18\x04 \x01(\x0e2\x1e.vault.PendingQueueStallSignalR\x17pendingQueueStallSignal\x12/\n" +
+	"\x14raw_vault_public_key\x18\x05 \x01(\fR\x11rawVaultPublicKey\"\xe8\a\n" +
 	"\aOutcome\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x125\n" +
 	"\frequest_type\x18\x02 \x01(\x0e2\x12.vault.RequestTypeR\vrequestType\x12S\n" +

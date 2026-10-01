@@ -15,13 +15,11 @@ import (
 )
 
 var Telemetry = staticTelemetry{
-	staticTelemetryConfig: staticTelemetryConfig{
-		chainID:    "some-chainID",
-		contractID: "some-contractID",
-		network:    "some-network",
-		payload:    []byte("some-data"),
-		telemType:  "some-telemetryType",
-	},
+	chainID:    "some-chainID",
+	contractID: "some-contractID",
+	network:    "some-network",
+	payload:    []byte("some-data"),
+	telemType:  "some-telemetryType",
 }
 
 var _ testtypes.TelemetryEvaluator = staticTelemetry{}

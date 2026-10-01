@@ -20,7 +20,6 @@ func TestRegressionClockTimeGetResultPointerOverflowDoesNotPanic(t *testing.T) {
 		IsUncompressed: true,
 	}, binary)
 	require.NoError(t, err)
-	require.False(t, m.IsLegacyDAG())
 	m.Start()
 	defer m.Close()
 

@@ -771,14 +771,12 @@ func convertSequencesFromProto(pbSequences []*pb.Sequence, sequenceDataType any)
 		}
 
 		sequences[idx] = types.Sequence{
-			Cursor: pbSequences[idx].SequenceCursor,
-			TxHash: pbSequences[idx].TxHash,
-			Head: types.Head{
-				Height:    pbSequences[idx].Head.Height,
-				Hash:      pbSequences[idx].Head.Hash,
-				Timestamp: pbSequences[idx].Head.Timestamp,
-			},
-			Data: cpy,
+			Cursor:    pbSequences[idx].SequenceCursor,
+			TxHash:    pbSequences[idx].TxHash,
+			Height:    pbSequences[idx].Head.Height,
+			Hash:      pbSequences[idx].Head.Hash,
+			Timestamp: pbSequences[idx].Head.Timestamp,
+			Data:      cpy,
 		}
 	}
 

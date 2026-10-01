@@ -602,10 +602,8 @@ func executionStateChangedWithTxMetaSliceToPB(in []cciptypes.ExecutionStateChang
 
 func executionStateChangedWithTxMeta(in *ccippb.ExecutionStateChangeWithTxMeta) cciptypes.ExecutionStateChangedWithTxMeta {
 	return cciptypes.ExecutionStateChangedWithTxMeta{
-		TxMeta: txMeta(in.TxMeta),
-		ExecutionStateChanged: cciptypes.ExecutionStateChanged{
-			SequenceNumber: in.ExecutionStateChange.SeqNum,
-		},
+		TxMeta:         txMeta(in.TxMeta),
+		SequenceNumber: in.ExecutionStateChange.SeqNum,
 	}
 }
 

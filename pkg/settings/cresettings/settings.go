@@ -60,7 +60,8 @@ var Default = Schema{
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
-	TenantID: Uint64(0),
+	CoordinatedEngineEnabled:                    Bool(false),
+	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
 	PropagateOrgIDInRequestMetadata: Bool(false),
@@ -79,22 +80,24 @@ var Default = Schema{
 	VaultIncludeInvalidPendingItemsEnabled: Bool(false),
 	VaultPendingQueueStallThreshold:        Int(0),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultSignedResponseRequestIDEnabled:               Bool(false),
-	VaultZoneBWorkflowGetSecretsRestrictEnabled:       Bool(false),
-	GatewayHTTPGlobalRate:                             Rate(rate.Limit(500), 500),
-	GatewayHTTPPerNodeRate:                            Rate(rate.Limit(100), 100),
-	GatewayConfidentialRelayGlobalRate:                Rate(rate.Limit(50), 10),
-	GatewayConfidentialRelayPerNodeRate:               Rate(rate.Limit(10), 10),
-	GatewayHTTPActionMtlsRequestRate:                  Rate(rate.Every(30*time.Second), 0),
-	GatewayHTTPActionMtlsConcurrencyLimit:             Int(50),
-	GatewayHTTPActionOutboundConcurrencyLimit:         Int(875),
-	GatewayHTTPActionOutboundPerNodeConcurrencyLimit:  Int(175),
-	TriggerRegistrationStatusUpdateTimeout:            Duration(0 * time.Second),
-	BaseTriggerRetryInterval:                          Duration(30 * time.Second),
-	BaseTriggerMaxRetries:                             Int(20),
-	BaseTriggerPruneAge:                               Duration(24 * time.Hour),
-	BaseTriggerMaxSendsPerTick:                        Int(20),
-	WASMPollOneoffSubscriptionLimit:                   Int(128),
+	VaultSignedResponseRequestIDEnabled:              Bool(false),
+	VaultZoneBWorkflowGetSecretsRestrictEnabled:      Bool(false),
+	VaultGetSecretsIncludePublicKeyEnabled:           Bool(false),
+	VaultPublicKeyEncryptOnlyEnabled:                 Bool(false),
+	GatewayHTTPGlobalRate:                            Rate(rate.Limit(500), 500),
+	GatewayHTTPPerNodeRate:                           Rate(rate.Limit(100), 100),
+	GatewayConfidentialRelayGlobalRate:               Rate(rate.Limit(50), 10),
+	GatewayConfidentialRelayPerNodeRate:              Rate(rate.Limit(10), 10),
+	GatewayHTTPActionMtlsRequestRate:                 Rate(rate.Every(30*time.Second), 0),
+	GatewayHTTPActionMtlsConcurrencyLimit:            Int(50),
+	GatewayHTTPActionOutboundConcurrencyLimit:        Int(875),
+	GatewayHTTPActionOutboundPerNodeConcurrencyLimit: Int(175),
+	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
+	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
+	BaseTriggerMaxRetries:                            Int(20),
+	BaseTriggerPruneAge:                              Duration(24 * time.Hour),
+	BaseTriggerMaxSendsPerTick:                       Int(20),
+	WASMPollOneoffSubscriptionLimit:                  Int(128),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -150,6 +153,9 @@ var Default = Schema{
 	// Per docs, this should allow some additional buffer to allow for reaping time.
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit: Size(31457280 * config.Byte),
 	VaultMaxPerOracleUnexpiredBlobCount:                      Int(1000),
+
+	// MissingRequestRecoveryEnabled
+	MissingRequestRecoveryEnabled: Bool(false),
 
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
@@ -239,7 +245,7 @@ var Default = Schema{
 		UserMetricEnabled:             Bool(false),
 		UserMetricPayloadLimit:        Size(4 * config.KByte),
 		UserMetricNameLengthLimit:     Int(128),
-		UserMetricLabelsPerMetric:     Int(10),
+		UserMetricLabelsPerMetric:     Int(20),
 		UserMetricLabelValueLength:    Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
@@ -326,14 +332,7 @@ var Default = Schema{
 			RequestTimeout: Duration(30 * time.Second),
 		},
 
-		FeatureMultiTriggerExecutionIDsActiveAt: Time(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureMultiTriggerExecutionIDsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureHTTPTriggerNewExecutionIDsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureUseSingleDONTimeProviderPerExecutionActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
@@ -359,6 +358,9 @@ var Default = Schema{
 		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureConsensusStricterMedianQuorumActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -376,11 +378,14 @@ type Schema struct {
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
 	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
-	TenantID                                  Setting[uint64]
-	VaultOrgIdAsSecretOwnerEnabled            Setting[bool] // Deprecated
-	PropagateOrgIDInRequestMetadata           Setting[bool]
-	VaultBase64EncodingEnabled                Setting[bool]
-	VaultForceEmptyOCRRounds                  Setting[bool]
+	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
+	// trigger-owning Engine for newly created workflows.
+	CoordinatedEngineEnabled        Setting[bool]
+	TenantID                        Setting[uint64]
+	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
+	PropagateOrgIDInRequestMetadata Setting[bool]
+	VaultBase64EncodingEnabled      Setting[bool]
+	VaultForceEmptyOCRRounds        Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultOptimizationsEnabled Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
@@ -394,14 +399,26 @@ type Schema struct {
 	VaultIncludeInvalidPendingItemsEnabled Setting[bool]
 	VaultPendingQueueStallThreshold        Setting[int] `unit:"{observation}"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultSignedResponseRequestIDEnabled               Setting[bool]
-	VaultZoneBWorkflowGetSecretsRestrictEnabled       Setting[bool]
-	GatewayHTTPGlobalRate                             Setting[config.Rate]
-	GatewayHTTPPerNodeRate                            Setting[config.Rate]
-	GatewayConfidentialRelayGlobalRate                Setting[config.Rate]
-	GatewayConfidentialRelayPerNodeRate               Setting[config.Rate]
-	GatewayHTTPActionMtlsRequestRate                  Setting[config.Rate]
-	GatewayHTTPActionMtlsConcurrencyLimit             Setting[int] `unit:"{request}"`
+	VaultSignedResponseRequestIDEnabled         Setting[bool]
+	VaultZoneBWorkflowGetSecretsRestrictEnabled Setting[bool]
+	// VaultGetSecretsIncludePublicKeyEnabled, when true, makes the Vault plugin
+	// include the raw Vault public key (the key used to produce the shares) in the
+	// GetSecrets OCR response body, so decrypt-side callers read it live from the
+	// response instead of from CapReg / static config. Gate flag consumed in the
+	// Vault plugin.
+	VaultGetSecretsIncludePublicKeyEnabled Setting[bool]
+	// VaultPublicKeyEncryptOnlyEnabled, when true, makes the Vault capability's
+	// GetPublicKey return only the stable encrypt-only sub-key (Group/G_bar/H,
+	// without the per-recipient HArray), so encrypt-only consumers (e.g. the CRE
+	// CLI) are unaffected by reshares. Atomic feature flag consumed in the Vault
+	// capability; flip in lockstep with the on-chain CapReg VaultPublicKey write.
+	VaultPublicKeyEncryptOnlyEnabled      Setting[bool]
+	GatewayHTTPGlobalRate                 Setting[config.Rate]
+	GatewayHTTPPerNodeRate                Setting[config.Rate]
+	GatewayConfidentialRelayGlobalRate    Setting[config.Rate]
+	GatewayConfidentialRelayPerNodeRate   Setting[config.Rate]
+	GatewayHTTPActionMtlsRequestRate      Setting[config.Rate]
+	GatewayHTTPActionMtlsConcurrencyLimit Setting[int] `unit:"{request}"`
 	// GatewayHTTPActionOutboundConcurrencyLimit bounds the number of outbound HTTP action
 	// requests the gateway will have in flight at once, across all nodes. Sized to
 	// GatewayHTTPGlobalRate's ceiling (500rps burst) times observed p99.9 outbound latency
@@ -447,6 +464,8 @@ type Schema struct {
 	VaultMaxBlobPayloadSizeLimit                             Setting[config.Size]
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
+
+	MissingRequestRecoveryEnabled Setting[bool]
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute
@@ -525,15 +544,13 @@ type Workflows struct {
 	Secrets               secrets
 	DONTime               donTime
 
-	FeatureMultiTriggerExecutionIDsActiveAt                 Setting[config.Timestamp] // Deprecated
-	FeatureMultiTriggerExecutionIDsActivePeriod             Setting[Range[config.Timestamp]]
-	FeatureHTTPTriggerNewExecutionIDsActivePeriod           Setting[Range[config.Timestamp]]
-	FeatureUseSingleDONTimeProviderPerExecutionActivePeriod Setting[Range[config.Timestamp]]
-	FeatureChainCapabilityHashBasedOCRActivePeriod          Setting[Range[config.Timestamp]]
-	FeatureEVMWriteReportL1FeeActivePeriod                  Setting[Range[config.Timestamp]]
-	FeatureAptosWriteReportBlockTimestampActivePeriod       Setting[Range[config.Timestamp]]
-	FeatureRequestHashIncludeWorkflowTagActivePeriod        Setting[Range[config.Timestamp]]
-	FeatureWorkflowTagBackfillActivePeriod                  Setting[Range[config.Timestamp]]
+	FeatureHTTPTriggerNewExecutionIDsActivePeriod     Setting[Range[config.Timestamp]]
+	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]]
+	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
+	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
+	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

@@ -41,21 +41,17 @@ func TestPipelineRunnerService(t *testing.T) {
 	originalResults := []core.TaskResult{
 		{
 			ID: "1",
-			TaskValue: core.TaskValue{
-				Value: jsonserializable.JSONSerializable{
-					Val:   123.123,
-					Valid: true,
-				},
+			Value: jsonserializable.JSONSerializable{
+				Val:   123.123,
+				Valid: true,
 			},
 			Index: 0,
 		},
 		{
 			ID: "2",
 
-			TaskValue: core.TaskValue{
-				Value: jsonserializable.JSONSerializable{},
-				Error: errors.New("Error task"),
-			},
+			Value: jsonserializable.JSONSerializable{},
+			Error: errors.New("Error task"),
 			Index: 1,
 		},
 	}

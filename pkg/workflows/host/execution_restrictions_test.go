@@ -940,6 +940,27 @@ func TestRequirementSelectingModule_GetRawSecretsWithRestrictions(t *testing.T) 
 		require.Error(t, err)
 		assert.Nil(t, resp)
 	})
+
+	t.Run("GetRawSecretsResponse forwards the vault public key and applies restrictions", func(t *testing.T) {
+		inner, h := newHelper(t)
+		inner.EXPECT().GetOwner().Return("owner-1")
+		inner.EXPECT().GetRawSecretsResponse(matches.AnyContext, mock.MatchedBy(func(r *sdk.GetSecretsRequest) bool {
+			return len(r.Requests) == 1 && r.Requests[0].Id == "allowed-secret"
+		}), mock.Anything).Return(&vault.GetSecretsResponse{
+			Responses:         []*vault.SecretResponse{{}},
+			RawVaultPublicKey: "abc123",
+		}, nil)
+
+		resp, err := h.GetRawSecretsResponse(t.Context(), &sdk.GetSecretsRequest{
+			Requests: []*sdk.SecretRequest{
+				{Id: "allowed-secret", Namespace: "ns"},
+				{Id: "blocked-secret", Namespace: "ns"},
+			},
+		}, fetcher)
+		require.NoError(t, err)
+		require.Len(t, resp.Responses, 2)
+		assert.Equal(t, "abc123", resp.RawVaultPublicKey, "the response public key must be forwarded")
+	})
 }
 
 func TestRequirementSelectingModule_GetOwner(t *testing.T) {

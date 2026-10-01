@@ -146,14 +146,14 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 				require.Eventually(t, func() bool {
 					contractFilter := types.ContractKeyFilter{
 						Contract:         boundContract,
-						KeyFilter:        query.KeyFilter{Key: EventName},
+						Key:              EventName,
 						SequenceDataType: ts,
 					}
 
 					ds := SomeDynamicTopicEvent{}
 					secondContractFilter := types.ContractKeyFilter{
 						Contract:         boundContract,
-						KeyFilter:        query.KeyFilter{Key: DynamicTopicEventName},
+						Key:              DynamicTopicEventName,
 						SequenceDataType: &ds,
 					}
 
@@ -184,7 +184,7 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 
 				contractFilter := types.ContractKeyFilter{
 					Contract:         bound,
-					KeyFilter:        query.KeyFilter{Key: EventName},
+					Key:              EventName,
 					SequenceDataType: &TestStruct{},
 				}
 
@@ -215,13 +215,13 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 				require.Eventually(t, func() bool {
 					contractFilter := types.ContractKeyFilter{
 						Contract:         bound,
-						KeyFilter:        query.KeyFilter{Key: EventName},
+						Key:              EventName,
 						SequenceDataType: &value,
 					}
 
 					secondContractFilter := types.ContractKeyFilter{
 						Contract:         bound,
-						KeyFilter:        query.KeyFilter{Key: DynamicTopicEventName},
+						Key:              DynamicTopicEventName,
 						SequenceDataType: &value,
 					}
 
@@ -282,25 +282,25 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 				require.Eventually(t, func() bool {
 					contractFilter := types.ContractKeyFilter{
 						Contract: boundContract,
-						KeyFilter: query.KeyFilter{Key: EventName,
-							Expressions: []query.Expression{
-								query.Comparator("Field",
-									primitives.ValueComparator{
-										Value:    2,
-										Operator: primitives.Gte,
-									},
-									primitives.ValueComparator{
-										Value:    3,
-										Operator: primitives.Lte,
-									}),
-							}},
+						Key:      EventName,
+						Expressions: []query.Expression{
+							query.Comparator("Field",
+								primitives.ValueComparator{
+									Value:    2,
+									Operator: primitives.Gte,
+								},
+								primitives.ValueComparator{
+									Value:    3,
+									Operator: primitives.Lte,
+								}),
+						},
 						SequenceDataType: ts,
 					}
 
 					ds := SomeDynamicTopicEvent{}
 					secondContractFilter := types.ContractKeyFilter{
 						Contract:         boundContract,
-						KeyFilter:        query.KeyFilter{Key: DynamicTopicEventName},
+						Key:              DynamicTopicEventName,
 						SequenceDataType: &ds,
 					}
 
@@ -359,18 +359,18 @@ func runQueryKeysInterfaceTests[T TestingT[T]](t T, tester ChainComponentsInterf
 					var allSequences []sequenceWithKey
 					contractFilter := types.ContractKeyFilter{
 						Contract: boundContract,
-						KeyFilter: query.KeyFilter{Key: EventName, Expressions: []query.Expression{
+						Key:      EventName, Expressions: []query.Expression{
 							query.Confidence(primitives.Finalized),
-						}},
+						},
 						SequenceDataType: &TestStruct{},
 					}
 
 					ds := SomeDynamicTopicEvent{}
 					secondContractFilter := types.ContractKeyFilter{
 						Contract: boundContract,
-						KeyFilter: query.KeyFilter{Key: DynamicTopicEventName, Expressions: []query.Expression{
+						Key:      DynamicTopicEventName, Expressions: []query.Expression{
 							query.Confidence(primitives.Finalized),
-						}},
+						},
 						SequenceDataType: &ds,
 					}
 

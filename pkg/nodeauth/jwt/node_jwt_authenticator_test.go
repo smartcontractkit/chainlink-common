@@ -49,12 +49,10 @@ func createValidJWT(privateKey ed25519.PrivateKey, csaPubKey ed25519.PublicKey) 
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 		PublicKey: hex.EncodeToString(csaPubKey),
 		Digest:    digest,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hex.EncodeToString(csaPubKey), // Issuer: Node's CSA PubKey
-			Subject:   hex.EncodeToString(csaPubKey), // Subject: Node's CSA PubKey
-			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
-			IssuedAt:  jwt.NewNumericDate(now),
-		},
+		Issuer:    hex.EncodeToString(csaPubKey), // Issuer: Node's CSA PubKey
+		Subject:   hex.EncodeToString(csaPubKey), // Subject: Node's CSA PubKey
+		ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
+		IssuedAt:  jwt.NewNumericDate(now),
 	})
 
 	tokenString, err := token.SignedString(privateKey)
@@ -120,12 +118,10 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_ExpiredToken(t *testing.T) {
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 		PublicKey: hex.EncodeToString(csaPubKey),
 		Digest:    digest,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hex.EncodeToString(csaPubKey),           // Issuer: Node's CSA PubKey
-			Subject:   hex.EncodeToString(csaPubKey),           // Subject: Node's CSA PubKey
-			ExpiresAt: jwt.NewNumericDate(now.Add(-time.Hour)), // Expired
-			IssuedAt:  jwt.NewNumericDate(now.Add(-2 * time.Hour)),
-		},
+		Issuer:    hex.EncodeToString(csaPubKey),           // Issuer: Node's CSA PubKey
+		Subject:   hex.EncodeToString(csaPubKey),           // Subject: Node's CSA PubKey
+		ExpiresAt: jwt.NewNumericDate(now.Add(-time.Hour)), // Expired
+		IssuedAt:  jwt.NewNumericDate(now.Add(-2 * time.Hour)),
 	})
 
 	jwtToken, err := token.SignedString(privateKey)
@@ -157,12 +153,10 @@ func TestNodeJWTAuthenticator_AuthenticateJWT_InvalidPublicKeySignature(t *testi
 	token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 		PublicKey: hex.EncodeToString(csaPubKey2),
 		Digest:    digest,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    hex.EncodeToString(csaPubKey2), // Issuer: Node's CSA PubKey
-			Subject:   hex.EncodeToString(csaPubKey2), // Subject: Node's CSA PubKey
-			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
-			IssuedAt:  jwt.NewNumericDate(now),
-		},
+		Issuer:    hex.EncodeToString(csaPubKey2), // Issuer: Node's CSA PubKey
+		Subject:   hex.EncodeToString(csaPubKey2), // Subject: Node's CSA PubKey
+		ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
+		IssuedAt:  jwt.NewNumericDate(now),
 	})
 	jwtToken, err := token.SignedString(privateKey1)
 	require.NoError(t, err)
@@ -302,12 +296,10 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 			PublicKey: hex.EncodeToString(csaPubKey),
 			Digest:    digest,
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    hex.EncodeToString(csaPubKey),
-				Subject:   hex.EncodeToString(csaPubKey),
-				ExpiresAt: jwt.NewNumericDate(now.Add(-3 * time.Second)),
-				IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
-			},
+			Issuer:    hex.EncodeToString(csaPubKey),
+			Subject:   hex.EncodeToString(csaPubKey),
+			ExpiresAt: jwt.NewNumericDate(now.Add(-3 * time.Second)),
+			IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
 		})
 
 		jwtToken, err := token.SignedString(privateKey)
@@ -338,12 +330,10 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 			PublicKey: hex.EncodeToString(csaPubKey),
 			Digest:    digest,
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    hex.EncodeToString(csaPubKey),
-				Subject:   hex.EncodeToString(csaPubKey),
-				ExpiresAt: jwt.NewNumericDate(now.Add(-10 * time.Second)),
-				IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
-			},
+			Issuer:    hex.EncodeToString(csaPubKey),
+			Subject:   hex.EncodeToString(csaPubKey),
+			ExpiresAt: jwt.NewNumericDate(now.Add(-10 * time.Second)),
+			IssuedAt:  jwt.NewNumericDate(now.Add(-1 * time.Hour)),
 		})
 
 		jwtToken, err := token.SignedString(privateKey)
@@ -375,12 +365,10 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 			PublicKey: hex.EncodeToString(csaPubKey),
 			Digest:    digest,
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    hex.EncodeToString(csaPubKey),
-				Subject:   hex.EncodeToString(csaPubKey),
-				ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
-				IssuedAt:  jwt.NewNumericDate(now.Add(3 * time.Second)),
-			},
+			Issuer:    hex.EncodeToString(csaPubKey),
+			Subject:   hex.EncodeToString(csaPubKey),
+			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration)),
+			IssuedAt:  jwt.NewNumericDate(now.Add(3 * time.Second)),
 		})
 
 		jwtToken, err := token.SignedString(privateKey)
@@ -411,12 +399,10 @@ func TestNewNodeJWTAuthenticator_WithAndWithoutLeeway(t *testing.T) {
 		token := jwt.NewWithClaims(jwt.SigningMethodEdDSA, types.NodeJWTClaims{
 			PublicKey: hex.EncodeToString(csaPubKey),
 			Digest:    digest,
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    hex.EncodeToString(csaPubKey),
-				Subject:   hex.EncodeToString(csaPubKey),
-				ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration + 10*time.Second)),
-				IssuedAt:  jwt.NewNumericDate(now.Add(10 * time.Second)),
-			},
+			Issuer:    hex.EncodeToString(csaPubKey),
+			Subject:   hex.EncodeToString(csaPubKey),
+			ExpiresAt: jwt.NewNumericDate(now.Add(workflowJWTExpiration + 10*time.Second)),
+			IssuedAt:  jwt.NewNumericDate(now.Add(10 * time.Second)),
 		})
 
 		jwtToken, err := token.SignedString(privateKey)

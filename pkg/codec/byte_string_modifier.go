@@ -79,13 +79,11 @@ func NewPathTraverseAddressBytesToStringModifier(
 	}
 
 	m := &bytesToStringModifier{
-		modifier: modifier,
-		modifierBase: modifierBase[bool]{
-			enablePathTraverse: enablePathTraverse,
-			fields:             fieldMap,
-			onToOffChainType:   map[reflect.Type]reflect.Type{},
-			offToOnChainType:   map[reflect.Type]reflect.Type{},
-		},
+		modifier:           modifier,
+		enablePathTraverse: enablePathTraverse,
+		fields:             fieldMap,
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
 	}
 
 	// Modify field for input using the modifier to convert the byte array to string

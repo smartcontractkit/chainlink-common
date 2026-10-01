@@ -12,29 +12,27 @@ import (
 
 var GasPriceEstimatorExec = staticGasPriceEstimatorExec{
 	commonStaticGasPriceEstimator: commonGasPriceEstimator,
-	staticGasPriceEstimatorExecConfig: staticGasPriceEstimatorExecConfig{
-		estimateMsgCostUSDRequest: estimateMsgCostUSDRequest{
-			p:                  big.NewInt(1),
-			wrappedNativePrice: big.NewInt(2),
-			msg: cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta{
-				EVM2EVMMessage: cciptypes.EVM2EVMMessage{
-					SequenceNumber: 1,
-					GasLimit:       big.NewInt(3),
-					Data:           []byte{4},
-					TokenAmounts: []cciptypes.TokenAmount{
-						{
-							Token:  cciptypes.Address("token1"),
-							Amount: big.NewInt(5),
-						},
+	estimateMsgCostUSDRequest: estimateMsgCostUSDRequest{
+		p:                  big.NewInt(1),
+		wrappedNativePrice: big.NewInt(2),
+		msg: cciptypes.EVM2EVMOnRampCCIPSendRequestedWithMeta{
+			EVM2EVMMessage: cciptypes.EVM2EVMMessage{
+				SequenceNumber: 1,
+				GasLimit:       big.NewInt(3),
+				Data:           []byte{4},
+				TokenAmounts: []cciptypes.TokenAmount{
+					{
+						Token:  cciptypes.Address("token1"),
+						Amount: big.NewInt(5),
 					},
-					SourceTokenData: [][]byte{
-						{6},
-					},
+				},
+				SourceTokenData: [][]byte{
+					{6},
 				},
 			},
 		},
-		estimateMsgCostUSDResponse: big.NewInt(7),
 	},
+	estimateMsgCostUSDResponse: big.NewInt(7),
 }
 
 type GasPriceEstimatorExecEvaluator interface {

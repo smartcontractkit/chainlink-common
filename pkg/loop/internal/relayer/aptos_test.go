@@ -25,9 +25,7 @@ func TestAptosDomainRoundTripThroughGRPC(t *testing.T) {
 
 	aptosService := &staticAptosService{}
 	aptospb.RegisterAptosServer(s, newAptosServer(aptosService, &loopnet.BrokerExt{
-		BrokerConfig: loopnet.BrokerConfig{
-			Logger: logger.Test(t),
-		},
+		Logger: logger.Test(t),
 	}))
 
 	go func() { _ = s.Serve(lis) }()

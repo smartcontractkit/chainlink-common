@@ -20,12 +20,10 @@ func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemana
 		return resourcemanager.Config{}
 	}
 	return resourcemanager.Config{
-		ResourceManagerConfig: resourcemanager.ResourceManagerConfig{
-			MeterRecordsEnabled:   e.MeterRecordsEnabled,
-			MeterSnapshotsEnabled: e.MeterSnapshotsEnabled,
-			Emitter:               emitter,
-			SnapshotInterval:      resourcemanager.DefaultSnapshotInterval,
-		},
+		MeterRecordsEnabled:   e.MeterRecordsEnabled,
+		MeterSnapshotsEnabled: e.MeterSnapshotsEnabled,
+		Emitter:               emitter,
+		SnapshotInterval:      resourcemanager.DefaultSnapshotInterval,
 		DeploymentIdentity: resourcemanager.DeploymentIdentity{
 			Product:         e.MeterProduct,
 			Tenant:          e.MeterTenant,

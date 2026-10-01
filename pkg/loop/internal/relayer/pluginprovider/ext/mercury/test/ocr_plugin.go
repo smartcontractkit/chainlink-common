@@ -18,24 +18,18 @@ import (
 // MercuryPlugin is a test helper for testing [ocr3types.MercuryPlugin] implementations.
 // the name is adopted because ocr3 has a special mercury plugin type
 var OCR3Plugin = staticMercuryPlugin{
-	staticMercuryPluginConfig: staticMercuryPluginConfig{
-		observationRequest: observationRequest{
-			reportTimestamp: reportContext.ReportTimestamp,
-			previousReport:  previousReport,
-		},
-		observationResponse: observationResponse{
-			observation: libocr.Observation{1, 2, 3},
-		},
-		reportRequest: reportRequest{
-			reportTimestamp: reportContext.ReportTimestamp,
-			previousReport:  previousReport,
-			observations:    obs,
-		},
-		reportResponse: reportResponse{
-			shouldReport: true,
-			report:       report,
-		},
+	observationRequest: observationRequest{
+		reportTimestamp: reportContext.ReportTimestamp,
+		previousReport:  previousReport,
 	},
+	observation: libocr.Observation{1, 2, 3},
+	reportRequest: reportRequest{
+		reportTimestamp: reportContext.ReportTimestamp,
+		previousReport:  previousReport,
+		observations:    obs,
+	},
+	shouldReport: true,
+	report:       report,
 }
 
 type observationRequest struct {

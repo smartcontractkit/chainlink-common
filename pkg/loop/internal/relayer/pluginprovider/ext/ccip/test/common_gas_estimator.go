@@ -3,22 +3,18 @@ package test
 import "math/big"
 
 var commonGasPriceEstimator = commonStaticGasPriceEstimator{
-	commonStaticGasPriceEstimatorConfig: commonStaticGasPriceEstimatorConfig{
-		getGasPriceResponse: big.NewInt(7),
+	getGasPriceResponse: big.NewInt(7),
 
-		denoteInUSDRequest: denoteInUSDRequest{
-			p:                  big.NewInt(8),
-			wrappedNativePrice: big.NewInt(9),
-		},
-		denoteInUSDResponse: denoteInUSDResponse{
-			result: big.NewInt(10),
-		},
-
-		medianRequest: medianRequest{
-			gasPrices: []*big.Int{big.NewInt(11), big.NewInt(13), big.NewInt(17)},
-		},
-		medianResponse: big.NewInt(13),
+	denoteInUSDRequest: denoteInUSDRequest{
+		p:                  big.NewInt(8),
+		wrappedNativePrice: big.NewInt(9),
 	},
+	denoteInUSDResponse: denoteInUSDResponse{
+		result: big.NewInt(10),
+	},
+
+	gasPrices:      []*big.Int{big.NewInt(11), big.NewInt(13), big.NewInt(17)},
+	medianResponse: big.NewInt(13),
 }
 
 type commonStaticGasPriceEstimator struct {

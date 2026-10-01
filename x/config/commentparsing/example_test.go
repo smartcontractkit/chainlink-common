@@ -7,6 +7,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/simple"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
 // A generator names one root and nothing else. [commentparsing.Files] returns the output rather
@@ -14,9 +15,10 @@ import (
 // [commentparsing.Run] and lets the files reach disk.
 func Example() {
 	files, err := commentparsing.Files(commentparsing.RunArgs{
-		Dir:   filepath.Join("examples", "simple"),
-		Roots: []any{&simple.Config{}},
-		Tool:  "github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/simple/gen",
+		Dir:    filepath.Join("examples", "simple"),
+		Roots:  []any{&simple.Config{}},
+		Markup: tomlmarkup.New(),
+		Tool:   "github.com/smartcontractkit/chainlink-common/x/config/commentparsing/examples/simple/gen",
 	})
 	if err != nil {
 		panic(err)

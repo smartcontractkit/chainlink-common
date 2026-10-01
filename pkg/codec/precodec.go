@@ -27,13 +27,11 @@ func NewPathTraversePreCodec(
 	enablePathTraverse bool,
 ) (Modifier, error) {
 	m := &preCodec{
-		modifierBase: modifierBase[string]{
-			enablePathTraverse: enablePathTraverse,
-			fields:             fields,
-			onToOffChainType:   map[reflect.Type]reflect.Type{},
-			offToOnChainType:   map[reflect.Type]reflect.Type{},
-		},
-		codecs: codecs,
+		enablePathTraverse: enablePathTraverse,
+		fields:             fields,
+		onToOffChainType:   map[reflect.Type]reflect.Type{},
+		offToOnChainType:   map[reflect.Type]reflect.Type{},
+		codecs:             codecs,
 	}
 
 	// validate that there is a codec for each unique type definition

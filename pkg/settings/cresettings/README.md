@@ -61,6 +61,8 @@ flowchart
         %% Deprecated: feature flag has been retired; behavior is now always enabled.
         VaultSignedResponseRequestIDEnabled[/VaultSignedResponseRequestIDEnabled\]:::gate
         VaultZoneBWorkflowGetSecretsRestrictEnabled[/VaultZoneBWorkflowGetSecretsRestrictEnabled\]:::gate
+        VaultGetSecretsIncludePublicKeyEnabled[/VaultGetSecretsIncludePublicKeyEnabled\]:::gate
+        VaultPublicKeyEncryptOnlyEnabled[/VaultPublicKeyEncryptOnlyEnabled\]:::gate
         PerOwner.VaultZoneBGetSecretsAllowed[/PerOwner.VaultZoneBGetSecretsAllowed\]:::gate
     end
 
@@ -92,6 +94,10 @@ flowchart
     subgraph host.NewModule
         PerWorkflow.WASMCompressedBinarySizeLimit{{PerWorkflow.WASMCompressedBinarySizeLimit}}:::bound
         WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
+    end
+
+    subgraph syncer.tryEngineCreate
+        CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
     end
     
     subgraph Engine.init
@@ -175,17 +181,15 @@ flowchart
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
-        PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt[/PerWorkflow.FeatureMultiTriggerExecutionIDsActiveAt\]:::gate
-        PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod[/PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod\]:::gate
         PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod[/PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod\]:::gate
-        PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod[/PerWorkflow.FeatureUseSingleDONTimeProviderPerExecutionActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
         PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod\]:::gate
         PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod[/PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod\]:::gate
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
+        PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate
 
-        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.FeatureMultiTriggerExecutionIDsActivePeriod-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
+        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
         
     subgraph ExecutionHelper.GetSecrets
@@ -294,6 +298,7 @@ flowchart
         VaultMaxBlobPayloadSizeLimit{{VaultMaxBlobPayloadSizeLimit}}:::bound
         VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit{{VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit}}:::bound
         VaultMaxPerOracleUnexpiredBlobCount{{VaultMaxPerOracleUnexpiredBlobCount}}:::bound
+        MissingRequestRecoveryEnabled{{MissingRequestRecoveryEnabled}}:::bound
         PerOwner.VaultCiphertextSizeLimit{{PerOwner.VaultCiphertextSizeLimit}}:::bound
         PerOwner.VaultSecretsLimit{{PerOwner.VaultSecretsLimit}}:::bound
     end

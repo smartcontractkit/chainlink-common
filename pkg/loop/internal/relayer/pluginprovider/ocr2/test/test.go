@@ -17,33 +17,27 @@ const (
 var (
 	// ContractTransmitter is a static implementation of the ContractTransmitterTester interface for testing
 	ContractTransmitter = staticContractTransmitter{
-		contractTransmitterTestConfig: contractTransmitterTestConfig{
-			ConfigDigest:  configDigest,
-			Account:       libocr.Account("some-account"),
-			Epoch:         epoch,
-			ReportContext: libocr.ReportContext{ReportTimestamp: reportTimestamp, ExtraHash: [32]byte{1: 3, 3: 5, 7: 11}},
-			Report:        libocr.Report{41: 131},
-			Sigs:          sigs,
-		},
+		ConfigDigest:  configDigest,
+		Account:       libocr.Account("some-account"),
+		Epoch:         epoch,
+		ReportContext: libocr.ReportContext{ReportTimestamp: reportTimestamp, ExtraHash: [32]byte{1: 3, 3: 5, 7: 11}},
+		Report:        libocr.Report{41: 131},
+		Sigs:          sigs,
 	}
 
 	// OffchainConfigDigester is a static implementation of the OffchainConfigDigesterTester interface for testing
 	OffchainConfigDigester = staticOffchainConfigDigester{
-		staticOffchainConfigDigesterConfig: staticOffchainConfigDigesterConfig{
-			contractConfig:     contractConfig,
-			configDigest:       configDigest,
-			configDigestPrefix: configDigestPrefix,
-		},
+		contractConfig:     contractConfig,
+		configDigest:       configDigest,
+		configDigestPrefix: configDigestPrefix,
 	}
 
 	// ContractConfigTracker is a static implementation of the ContractConfigTrackerTester interface for testing
 	ContractConfigTracker = staticContractConfigTracker{
-		staticConfigTrackerConfig: staticConfigTrackerConfig{
-			contractConfig: contractConfig,
-			configDigest:   configDigest,
-			changedInBlock: changedInBlock,
-			blockHeight:    blockHeight,
-		},
+		contractConfig: contractConfig,
+		configDigest:   configDigest,
+		changedInBlock: changedInBlock,
+		blockHeight:    blockHeight,
 	}
 
 	configDigest       = libocr.ConfigDigest([32]byte{1: 7, 13: 11, 31: 23})

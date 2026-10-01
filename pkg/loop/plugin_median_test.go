@@ -27,7 +27,7 @@ func TestPluginMedian(t *testing.T) {
 		test.PluginTest(t, loop.PluginMedianName,
 			&loop.GRPCPluginMedian{
 				PluginServer: mediantest.NewMedianFactoryServer(lggr),
-				BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh},
+				Logger:       lggr, StopCh: stopCh,
 			},
 			mediantest.PluginMedian)
 	})
@@ -37,14 +37,14 @@ func TestPluginMedian(t *testing.T) {
 		test.PluginTest(t, loop.PluginRelayerName,
 			&loop.GRPCPluginRelayer{
 				PluginServer: relayertest.NewPluginRelayer(lggr, false),
-				BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+				Logger:       logger.Test(t), StopCh: stopCh},
 			func(t *testing.T, pr loop.PluginRelayer) {
 				p := newMedianProvider(t, pr)
 				pm := mediantest.PluginMedianTest{MedianProvider: p}
 				test.PluginTest(t, loop.PluginMedianName,
 					&loop.GRPCPluginMedian{
 						PluginServer: mediantest.NewMedianFactoryServer(lggr),
-						BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}},
+						Logger:       logger.Test(t), StopCh: stopCh},
 					pm.TestPluginMedian)
 			})
 	})
@@ -53,7 +53,7 @@ func TestPluginMedian(t *testing.T) {
 func TestPluginMedianExec(t *testing.T) {
 	t.Parallel()
 	stopCh := newStopCh(t)
-	median := loop.GRPCPluginMedian{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	median := loop.GRPCPluginMedian{Logger: logger.Test(t), StopCh: stopCh}
 	cc := median.ClientConfig()
 	cc.Cmd = NewHelperProcessCommand(loop.PluginMedianName, false, 0)
 	c := plugin.NewClient(cc)

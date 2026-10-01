@@ -56,15 +56,8 @@ func (e *executionRestrictionsWithRawSecrets) GetOwner() string {
 	return e.ExecutionHelper.(ExecutionHelperWithRawSecrets).GetOwner()
 }
 
-func (e *executionRestrictionsWithRawSecrets) GetRawSecrets(ctx context.Context, request *sdk.GetSecretsRequest, fetcher EncryptionKeyFetcher) ([]*vault.SecretResponse, error) {
-	rawSecretsHelper := e.ExecutionHelper.(ExecutionHelperWithRawSecrets)
-	owner := rawSecretsHelper.GetOwner()
-
-	getter := func(request *sdk.GetSecretsRequest) ([]*vault.SecretResponse, error) {
-		return rawSecretsHelper.GetRawSecrets(ctx, request, fetcher)
-	}
-
-	failer := func(id, ns string) *vault.SecretResponse {
+func (e *executionRestrictionsWithRawSecrets) rawSecretsFailer(owner string) func(id, ns string) *vault.SecretResponse {
+	return func(id, ns string) *vault.SecretResponse {
 		return &vault.SecretResponse{
 			Id: &vault.SecretIdentifier{
 				Key:       id,
@@ -76,8 +69,42 @@ func (e *executionRestrictionsWithRawSecrets) GetRawSecrets(ctx context.Context,
 			},
 		}
 	}
+}
 
-	return getSecretsHelper(e.executionRestrictions, request, getter, failer)
+// Deprecated: use GetRawSecretsResponse. Retained for backward compatibility; it
+// drops the response-level RawVaultPublicKey.
+func (e *executionRestrictionsWithRawSecrets) GetRawSecrets(ctx context.Context, request *sdk.GetSecretsRequest, fetcher EncryptionKeyFetcher) ([]*vault.SecretResponse, error) {
+	rawSecretsHelper := e.ExecutionHelper.(ExecutionHelperWithRawSecrets)
+	owner := rawSecretsHelper.GetOwner()
+
+	getter := func(request *sdk.GetSecretsRequest) ([]*vault.SecretResponse, error) {
+		return rawSecretsHelper.GetRawSecrets(ctx, request, fetcher)
+	}
+
+	return getSecretsHelper(e.executionRestrictions, request, getter, e.rawSecretsFailer(owner))
+}
+
+func (e *executionRestrictionsWithRawSecrets) GetRawSecretsResponse(ctx context.Context, request *sdk.GetSecretsRequest, fetcher EncryptionKeyFetcher) (*vault.GetSecretsResponse, error) {
+	rawSecretsHelper := e.ExecutionHelper.(ExecutionHelperWithRawSecrets)
+	owner := rawSecretsHelper.GetOwner()
+
+	// Capture the response-level public key from the underlying fetch so it can be
+	// carried back alongside the restriction-filtered secret responses.
+	var rawVaultPublicKey string
+	getter := func(request *sdk.GetSecretsRequest) ([]*vault.SecretResponse, error) {
+		resp, err := rawSecretsHelper.GetRawSecretsResponse(ctx, request, fetcher)
+		if err != nil {
+			return nil, err
+		}
+		rawVaultPublicKey = resp.GetRawVaultPublicKey()
+		return resp.GetResponses(), nil
+	}
+
+	responses, err := getSecretsHelper(e.executionRestrictions, request, getter, e.rawSecretsFailer(owner))
+	if err != nil {
+		return nil, err
+	}
+	return &vault.GetSecretsResponse{Responses: responses, RawVaultPublicKey: rawVaultPublicKey}, nil
 }
 
 func getSecretsHelper[T proto.Message](

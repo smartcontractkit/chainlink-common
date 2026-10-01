@@ -74,7 +74,7 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginRelayerName: &loop.GRPCPluginRelayer{
 					PluginServer: relayertest.NewPluginRelayer(lggr, staticChecks),
-					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh},
+					Logger:       lggr, StopCh: stopCh,
 				},
 			},
 			GRPCServer: grpcServer,
@@ -101,7 +101,7 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMedianName: &loop.GRPCPluginMedian{
 					PluginServer: mediantest.NewMedianFactoryServer(lggr),
-					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+					Logger:       lggr, StopCh: stopCh},
 			},
 			GRPCServer: grpcServer,
 		})
@@ -124,10 +124,8 @@ func main() {
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.PluginProvider]{
 					PluginServer: ocr2test.AgnosticProviderServer(lggr),
 
-					BrokerConfig: loop.BrokerConfig{
-						Logger: lggr,
-						StopCh: stopCh,
-					},
+					Logger: lggr,
+					StopCh: stopCh,
 				},
 			},
 			GRPCServer: grpcServer,
@@ -140,10 +138,8 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				reportingplugins.PluginServiceName: &reportingplugins.GRPCService[types.MedianProvider]{
 					PluginServer: ocr2test.MedianProviderServer(lggr),
-					BrokerConfig: loop.BrokerConfig{
-						Logger: lggr,
-						StopCh: stopCh,
-					},
+					Logger:       lggr,
+					StopCh:       stopCh,
 				},
 			},
 			GRPCServer: grpcServer,
@@ -157,7 +153,7 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				loop.PluginMercuryName: &loop.GRPCPluginMercury{
 					PluginServer: mercurytest.FactoryServer(lggr),
-					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+					Logger:       lggr, StopCh: stopCh},
 			},
 			GRPCServer: grpcServer,
 		})
@@ -171,7 +167,7 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				loop.CCIPExecutionLOOPName: &loop.ExecutionLoop{
 					PluginServer: cciptest.ExecFactoryServer(lggr),
-					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+					Logger:       lggr, StopCh: stopCh},
 			},
 			GRPCServer: grpcServer,
 		})
@@ -185,7 +181,7 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				loop.CCIPCommitLOOPName: &loop.CommitLoop{
 					PluginServer: cciptest.CommitFactoryServer(lggr),
-					BrokerConfig: loop.BrokerConfig{Logger: lggr, StopCh: stopCh}},
+					Logger:       lggr, StopCh: stopCh},
 			},
 			GRPCServer: grpcServer,
 		})
@@ -198,10 +194,8 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				ocr3.PluginServiceName: &ocr3.GRPCService[types.PluginProvider]{
 					PluginServer: ocr3test.AgnosticPluginServer(lggr),
-					BrokerConfig: loop.BrokerConfig{
-						Logger: lggr,
-						StopCh: stopCh,
-					},
+					Logger:       lggr,
+					StopCh:       stopCh,
 				},
 			},
 			GRPCServer: grpcServer,
@@ -214,10 +208,8 @@ func main() {
 			Plugins: map[string]plugin.Plugin{
 				ocr3.PluginServiceName: &ocr3.GRPCService[types.MedianProvider]{
 					PluginServer: ocr3test.MedianServer(lggr),
-					BrokerConfig: loop.BrokerConfig{
-						Logger: lggr,
-						StopCh: stopCh,
-					},
+					Logger:       lggr,
+					StopCh:       stopCh,
 				},
 			},
 			GRPCServer: grpcServer,

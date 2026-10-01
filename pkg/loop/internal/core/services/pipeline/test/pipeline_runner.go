@@ -17,26 +17,22 @@ answer;
 `
 
 var PipelineRunner = staticPipelineRunnerService{
-	staticPipelineRunnerConfig: staticPipelineRunnerConfig{
-		spec: pipleineSpec,
-		vars: core.Vars{
-			Vars: map[string]any{"foo": "baz"},
-		},
-		options: core.Options{
-			MaxTaskDuration: 10 * time.Second,
-		},
-		taskResults: core.TaskResults([]core.TaskResult{
-			{
-				TaskValue: core.TaskValue{
-					Value: jsonserializable.JSONSerializable{
-						Val:   "hello",
-						Valid: true,
-					},
-				},
-				Index: 0,
-			},
-		}),
+	spec: pipleineSpec,
+	vars: core.Vars{
+		Vars: map[string]any{"foo": "baz"},
 	},
+	options: core.Options{
+		MaxTaskDuration: 10 * time.Second,
+	},
+	taskResults: core.TaskResults([]core.TaskResult{
+		{
+			Value: jsonserializable.JSONSerializable{
+				Val:   "hello",
+				Valid: true,
+			},
+			Index: 0,
+		},
+	}),
 }
 
 var _ testtypes.PipelineEvaluator = (*staticPipelineRunnerService)(nil)

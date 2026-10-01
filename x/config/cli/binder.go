@@ -46,8 +46,9 @@ func New(opts Options) (*Binder, error) {
 	return b, nil
 }
 
-// Register attaches target to cmd. Before cmd or a subcommand runs, target is filled from flags, env vars, and config
-// files, then its `validate` tags are checked. The extra rule `set` requires that some source supplied the field.
+// Register attaches target to cmd. Before cmd or a subcommand runs, target is filled from flags, env vars, config
+// files, and any [Profile], then its `validate` tags are checked. The extra rule `set` requires that some source
+// supplied the field.
 //
 // Scalars, durations, []byte, [encoding.TextUnmarshaler] types, and lists and maps of those get a persistent flag and
 // env vars; other fields are config file only.
@@ -259,6 +260,10 @@ func (b *Binder) decode(c *cobra.Command) error {
 		if err = decodeEntry(entry, cc); err != nil {
 			errs = append(errs, err)
 			continue
+		}
+
+		for _, apply := range entry.profiles {
+			apply(cc)
 		}
 
 		if err = entry.validate(); err != nil {

@@ -1,0 +1,19 @@
+package settings
+
+//go:generate go run ./gen
+
+import "github.com/smartcontractkit/chainlink-common/pkg/config"
+
+type ChainConfig struct {
+	// ID is the chain to connect to. A built-in chain fills in the fields below.
+	ID uint64 `validate:"set"` //nolint:revive // set is the cli package's own rule
+
+	// RPC is the node to dial.
+	RPC string `validate:"required"`
+
+	// BlockTime is how often the chain produces a block.
+	BlockTime config.Duration
+
+	// Finality is how many blocks until a block is final.
+	Finality uint32
+}

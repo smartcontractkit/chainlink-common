@@ -21,6 +21,7 @@ import (
 	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
@@ -354,8 +355,10 @@ func (s *Server) start(opts ...ServerOpt) error {
 
 	s.LimitsFactory.Logger = s.Logger.Named("LimitsFactory")
 	var meter otelmetric.Meter
+	var tracerProvider oteltrace.TracerProvider
 	if bc := beholder.GetClient(); bc != nil {
 		meter = bc.Meter
+		tracerProvider = bc.TracerProvider
 		s.LimitsFactory.Meter = bc.Meter
 		s.LimitsFactory.Settings = s.cfg.settingsGetter
 	}
@@ -380,6 +383,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			RetransmitEnabled: false, // LOOP plugins do not run the retransmit loop; the host process handles it.
 			EmitterConfig:     &emitterCfg,
 			Meter:             meter,
+			TracerProvider:    tracerProvider,
 		}
 		store := durableemitter.NewPgDurableEventStore(s.DataSource)
 		var err error

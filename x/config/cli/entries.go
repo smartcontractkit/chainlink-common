@@ -310,6 +310,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 	}
 
 	f.Set(m)
+	e.suppliedFields[f.Addr().Pointer()] = true
 	return nil
 }
 

@@ -59,7 +59,7 @@ func New(opts Options) (*Binder, error) {
 }
 
 // Register attaches target to cmd. Before cmd or a subcommand runs, target is filled from flags, env vars, and config
-// files, then its `validate` tags are checked.
+// files, then its `validate` tags are checked. The extra rule `set` requires that some source supplied the field.
 //
 // Scalars, durations, []byte, [encoding.TextUnmarshaler] types, and lists and maps of those get a persistent flag and
 // env vars; other fields are config file only. A list of pointers or interfaces, a map of them, and a map whose keys

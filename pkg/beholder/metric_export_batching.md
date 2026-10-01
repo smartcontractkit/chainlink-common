@@ -20,3 +20,9 @@ the Core TOML before node startup.
 LOOP plugin subprocesses do not read `beholder.Config` directly; Core forwards
 its resolved value to each plugin via the `CL_TELEMETRY_METRIC_EXPORT_BATCH_SIZE`
 environment variable (see `pkg/loop/config.go`).
+
+The environment feature is read by `go.opentelemetry.io/otel/sdk/metric`
+through v1.46. Later releases remove it in favor of the
+`WithMaxExportBatchSize` reader option; when bumping past v1.46, switch
+`newPeriodicReader` to that option or batching silently stops
+(`TestPeriodicReaderMetricExportBatchSize` fails in that case).

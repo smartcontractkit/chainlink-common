@@ -58,7 +58,7 @@ func bindLeafFlag(entry *targetEntry, m fieldMeta) error {
 func isRequired(field reflect.StructField) bool {
 	for rule := range strings.SplitSeq(field.Tag.Get("validate"), ",") {
 		switch rule {
-		case "required":
+		case "required", setTag:
 			return true
 		case "dive":
 			// The rules after it are a list's or map's elements' (and, between keys and endkeys, a map's keys'), not

@@ -20,7 +20,8 @@ b, err := cli.New(cli.Options{Markup: tomlmarkup.New(), Prefixes: []string{"APP"
 err = b.Register(root, &cfg)
 ```
 
-When `RunE` runs, `cfg` is populated and its `validate` tags have passed. A failure names the key and how to set it:
+When `RunE` runs, `cfg` is populated and its `validate` tags have passed. The extra `set` rule requires that a source
+supplied the field, whatever its value. A failure names the key and how to set it:
 
 ```
 invalid configuration: Host failed on the 'required' tag; set it with --host, APP_HOST, Host in a config file
@@ -74,7 +75,7 @@ A flag's help text is the field's doc comment, via the `DocComments` method
 `//go:generate` directive; see [`examples/simple`](examples/simple). Without it, flags bind with no
 help text; `require.Empty(t, b.Undocumented())` in a test catches that.
 
-Help also names each flag's env vars, and marks `required` fields `(required)` unless they
+Help also names each flag's env vars, and marks `required` / `set` fields `(required)` unless they
 sit in an optional (pointer) section. A default is shown as its type's `MarshalText` renders it, so
 hold a secret in `pkg/config.SecretString` or `SecretURL` to show it redacted.
 

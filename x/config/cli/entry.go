@@ -29,6 +29,9 @@ type targetEntry struct {
 	// namespace, if set, is the first segment of every key.
 	namespace string
 
+	// suppliedFields lets the `set` rule tell a field was explicitly set, even if it is a default value like zero.
+	suppliedFields map[uintptr]bool
+
 	undocumented []string
 }
 
@@ -100,9 +103,22 @@ func (e *targetEntry) sources(k leafKey, cc commandConfig) ([]reflect.Value, err
 	return vals, nil
 }
 
+const setTag = "set"
+
+// The validator passes a field's value but not its path, so fields are matched by address.
+func (e *targetEntry) isSupplied(fl validator.FieldLevel) bool {
+	field := fl.Field()
+	return field.CanAddr() && e.suppliedFields[field.Addr().Pointer()]
+}
+
 // Runs after the full decode so cross-field rules see every value.
 func (e *targetEntry) validate() error {
 	v := validator.New()
+	if err := v.RegisterValidation(setTag, e.isSupplied, true); err != nil {
+		// This should never happen; it errors only if setTag collides with a built-in rule.
+		return err
+	}
+
 	// With config key names, the validator's namespaces differ from config keys only by the root type's name, [i]
 	// indices, and flattened embeds, which configKey fixes.
 	lang := e.b.opts.Markup

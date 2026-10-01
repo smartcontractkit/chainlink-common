@@ -600,6 +600,32 @@ func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
 	}
 }
 
+// `set` failing is also what shows the `validate` tags run at all.
+func TestSetRequiresASource(t *testing.T) {
+	type hasSetBool struct {
+		Value bool `validate:"set"` //nolint:revive // set is the Binder's own rule
+	}
+
+	for _, tc := range everySource([]string{"--value=false"}, "false", "Value = false") {
+		t.Run(tc.name, func(t *testing.T) {
+			require.NoError(t, run(t, &hasSetBool{}, testOptions, supplyConfig(t, "TEST_VALUE", tc.env, tc.file, tc.args...)...))
+		})
+	}
+
+	require.ErrorContains(t, run(t, &hasSetBool{}, testOptions), "Value failed on the 'set' tag")
+}
+
+func TestSetInANestedSection(t *testing.T) {
+	type nestsSetString struct {
+		Section struct {
+			Value string `validate:"set"` //nolint:revive // set is the Binder's own rule
+		}
+	}
+
+	require.ErrorContains(t, run(t, &nestsSetString{}, testOptions), "Section.Value failed")
+	require.NoError(t, run(t, &nestsSetString{}, testOptions, "--section.value", ""))
+}
+
 func TestListFromEverySource(t *testing.T) {
 	type hasStringAndIntLists struct {
 		Strings []string
@@ -804,6 +830,11 @@ func (documentedOverTwoLines) DocComments() map[string]commentparsing.FieldDoc {
 }
 
 func TestHelpText(t *testing.T) {
+	type hasEveryRule struct {
+		Required string `validate:"required"`
+		Set      int    `validate:"set"` //nolint:revive // set is the Binder's own rule
+	}
+
 	for _, tc := range []struct {
 		name     string
 		target   any
@@ -815,7 +846,8 @@ func TestHelpText(t *testing.T) {
 		{"an embedded struct is documented by its own type", &nested.Config{}, nil, "log-level", "LogLevel is the minimum level to log. [env LOG_LEVEL]"},
 		{"env vars in the order tried", &simple.Config{}, []string{"CRE", "CL"}, "host", "Host is the host to dial. [env CRE_HOST, CL_HOST]"},
 		{"an empty prefix adds none", &simple.Config{}, []string{"APP", ""}, "host", "Host is the host to dial. [env APP_HOST, HOST]"},
-		{"required", &RequiredField{}, nil, "value", "(required) [env VALUE]"},
+		{"required", &hasEveryRule{}, nil, "required", "(required) [env REQUIRED]"},
+		{"set", &hasEveryRule{}, nil, "set", "(required) [env SET]"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			assert.Equal(t, tc.want, flagsOf(t, tc.target, Options{Markup: tomlmarkup.New(), Prefixes: tc.prefixes}).Lookup(tc.flag).Usage)

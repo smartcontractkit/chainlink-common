@@ -204,6 +204,7 @@ func mapKey(t reflect.Type, text string, seen map[any]string) (reflect.Value, er
 // Only pointer sections on the way to a set field are allocated, so an untouched optional *struct stays nil for
 // `required_without` and `excluded_with`.
 func decodeEntry(entry *targetEntry, cc commandConfig) error {
+	entry.suppliedFields = map[uintptr]bool{}
 	dst := reflect.Indirect(reflect.ValueOf(entry.target))
 	for _, k := range entry.keys {
 		vals, err := entry.sources(k, cc)
@@ -231,6 +232,8 @@ func decodeEntry(entry *targetEntry, cc commandConfig) error {
 			slices.Reverse(vals)
 			f.Set(mergeMaps(f.Type(), append([]reflect.Value{f}, vals...)...))
 		}
+
+		entry.suppliedFields[f.Addr().Pointer()] = true
 	}
 
 	return nil

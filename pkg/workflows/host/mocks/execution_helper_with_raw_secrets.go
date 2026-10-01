@@ -387,6 +387,66 @@ func (_c *MockExecutionHelperWithRawSecrets_GetRawSecrets_Call) RunAndReturn(run
 	return _c
 }
 
+// GetRawSecretsResponse provides a mock function with given fields: ctx, request, fetcher
+func (_m *MockExecutionHelperWithRawSecrets) GetRawSecretsResponse(ctx context.Context, request *sdk.GetSecretsRequest, fetcher host.EncryptionKeyFetcher) (*vault.GetSecretsResponse, error) {
+	ret := _m.Called(ctx, request, fetcher)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRawSecretsResponse")
+	}
+
+	var r0 *vault.GetSecretsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *sdk.GetSecretsRequest, host.EncryptionKeyFetcher) (*vault.GetSecretsResponse, error)); ok {
+		return rf(ctx, request, fetcher)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *sdk.GetSecretsRequest, host.EncryptionKeyFetcher) *vault.GetSecretsResponse); ok {
+		r0 = rf(ctx, request, fetcher)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*vault.GetSecretsResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *sdk.GetSecretsRequest, host.EncryptionKeyFetcher) error); ok {
+		r1 = rf(ctx, request, fetcher)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRawSecretsResponse'
+type MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call struct {
+	*mock.Call
+}
+
+// GetRawSecretsResponse is a helper method to define mock.On call
+//   - ctx context.Context
+//   - request *sdk.GetSecretsRequest
+//   - fetcher host.EncryptionKeyFetcher
+func (_e *MockExecutionHelperWithRawSecrets_Expecter) GetRawSecretsResponse(ctx interface{}, request interface{}, fetcher interface{}) *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call {
+	return &MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call{Call: _e.mock.On("GetRawSecretsResponse", ctx, request, fetcher)}
+}
+
+func (_c *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call) Run(run func(ctx context.Context, request *sdk.GetSecretsRequest, fetcher host.EncryptionKeyFetcher)) *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*sdk.GetSecretsRequest), args[2].(host.EncryptionKeyFetcher))
+	})
+	return _c
+}
+
+func (_c *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call) Return(_a0 *vault.GetSecretsResponse, _a1 error) *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call) RunAndReturn(run func(context.Context, *sdk.GetSecretsRequest, host.EncryptionKeyFetcher) (*vault.GetSecretsResponse, error)) *MockExecutionHelperWithRawSecrets_GetRawSecretsResponse_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetSecrets provides a mock function with given fields: ctx, request
 func (_m *MockExecutionHelperWithRawSecrets) GetSecrets(ctx context.Context, request *sdk.GetSecretsRequest) ([]*sdk.SecretResponse, error) {
 	ret := _m.Called(ctx, request)

@@ -49,7 +49,14 @@ type ExecutionHelper interface {
 
 type ExecutionHelperWithRawSecrets interface {
 	ExecutionHelper
+	// Deprecated: use GetRawSecretsResponse, which also returns the top-level
+	// RawVaultPublicKey of the DKG instance that produced the shares, needed to
+	// verify/aggregate against the live key across reshares. This method drops it.
 	GetRawSecrets(ctx context.Context, request *sdkpb.GetSecretsRequest, fetcher EncryptionKeyFetcher) ([]*vault.SecretResponse, error)
+	// GetRawSecretsResponse returns the full vault GetSecrets response, including
+	// the top-level RawVaultPublicKey of the DKG instance that produced the shares,
+	// so decrypt-side callers stay correct across DKG reshares.
+	GetRawSecretsResponse(ctx context.Context, request *sdkpb.GetSecretsRequest, fetcher EncryptionKeyFetcher) (*vault.GetSecretsResponse, error)
 	GetOwner() string
 }
 

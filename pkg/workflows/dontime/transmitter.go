@@ -5,10 +5,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
 var _ ocr3types.ContractTransmitter[[]byte] = (*Transmitter)(nil)
@@ -50,8 +51,17 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 
 		// Nodes behind on multiple requests may wait one OCR round per request.
 		// Caching future times locally could be added as an optimization.
-		if len(donTimes.Timestamps) > request.SeqNum {
-			donTime := donTimes.Timestamps[request.SeqNum]
+		var donTime int64
+		var ok bool
+		if len(donTimes.TimestampsBySequence) > 0 {
+			donTime, ok = donTimes.TimestampsBySequence[int64(request.SeqNum)]
+		} else {
+			ok = len(donTimes.Timestamps) > request.SeqNum
+			if ok {
+				donTime = donTimes.Timestamps[request.SeqNum]
+			}
+		}
+		if ok {
 			t.store.RemoveRequest(executionID) // Make space for next request before delivering
 			request.SendResponse(Response{
 				WorkflowExecutionID: executionID,

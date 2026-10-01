@@ -265,39 +265,50 @@ type entrySet struct {
 }
 
 // decodeEntries layers a map's sources lowest first, each setting whole entries or values inside them, so
-// --chains.mainnet.rpc changes only rpc in the file's mainnet.
-func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) error {
+// --chains.mainnet.rpc changes only rpc in the file's mainnet. It returns how the sources layer over a map, nil if
+// none set it.
+func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) (sourceLayer, error) {
 	t := commentparsing.DerefType(k.goType)
-	m := mergeMaps(t, readField(dst, k.goPath))
-	changed := false
+	base := readField(dst, k.goPath)
+	var file reflect.Value
 	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
-		file, err := fromFile(t, raw)
-		if err != nil {
-			return err
+		var err error
+		if file, err = fromFile(t, raw); err != nil {
+			return nil, err
 		}
 
-		m, changed = mergeMaps(t, m, file), true
+		base = mergeMaps(t, base, file)
 	}
 
-	envSets, err := e.envEntrySets(k, m)
+	envSets, err := e.envEntrySets(k, base)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, layer := range [][]entrySet{envSets, e.flagEntrySets(k, cc.flags)} {
-		if layer, err = oneValueEach(layer); err != nil {
-			return err
+	layers := [][]entrySet{envSets, e.flagEntrySets(k, cc.flags)}
+	for i := range layers {
+		if layers[i], err = oneValueEach(layers[i]); err != nil {
+			return nil, err
 		}
-
-		for _, s := range layer {
-			setEntry(m, s.leaf, s.keys, 0, s.value)
-		}
-
-		changed = changed || len(layer) > 0
 	}
 
-	if !changed {
-		return nil
+	if !file.IsValid() && len(layers[0]) == 0 && len(layers[1]) == 0 {
+		return nil, nil
+	}
+
+	layer := func(under reflect.Value) reflect.Value {
+		m := mergeMaps(t, under)
+		if file.IsValid() {
+			m = mergeMaps(t, m, file)
+		}
+
+		for _, sets := range layers {
+			for _, s := range sets {
+				setEntry(m, s.leaf, s.keys, 0, s.value)
+			}
+		}
+
+		return m
 	}
 
 	f := allocateField(dst, k.goPath)
@@ -309,8 +320,8 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		f = f.Elem()
 	}
 
-	f.Set(m)
-	return nil
+	f.Set(layer(readField(dst, k.goPath)))
+	return layer, nil
 }
 
 // Keys in env var names are matched against base's, which holds every source below env vars.

@@ -40,7 +40,7 @@ func TestFlagsCollide(t *testing.T) {
 		BasicConfig
 		RequiredField
 	}
-	require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &embedsTwoValues{}), "flag --value is already defined on app")
+	require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &embedsTwoValues{}, ""), "flag --value is already defined on app")
 }
 
 func TestKeysAConfigFileCantSeparateFailEveryCommand(t *testing.T) {
@@ -68,7 +68,7 @@ func TestKeysAConfigFileCantSeparateFailEveryCommand(t *testing.T) {
 			root := newRoot(t)
 			b := bind(t, root, tc.parent, testOptions)
 			sub := &cobra.Command{Use: "sub"}
-			require.NoError(t, b.register(sub, tc.sub))
+			require.NoError(t, b.register(sub, tc.sub, ""))
 			root.AddCommand(sub, &cobra.Command{Use: "other", RunE: func(*cobra.Command, []string) error { return nil }})
 
 			root.SetArgs([]string{"other"})
@@ -85,7 +85,7 @@ func TestRegisterRejectsAnExistingConfigFlag(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := newRoot(t)
 			define(root)
-			require.ErrorContains(t, newBinder(t, testOptions).register(root, &BasicConfig{}), "flag --config is already defined on app")
+			require.ErrorContains(t, newBinder(t, testOptions).register(root, &BasicConfig{}, ""), "flag --config is already defined on app")
 		})
 	}
 }
@@ -109,8 +109,8 @@ func TestConfigFilesHoldOnlyTheCommandsKeys(t *testing.T) {
 			var shared BasicConfig
 			var own runsConfig
 			b := bind(t, root, &shared, testOptions)
-			require.NoError(t, b.register(runs, &own))
-			require.NoError(t, b.register(sibling, &siblingConfig{}))
+			require.NoError(t, b.register(runs, &own, ""))
+			require.NoError(t, b.register(sibling, &siblingConfig{}, ""))
 
 			root.SetArgs([]string{"runs", "--config", writeConfig(t, tc.file)})
 			err := root.Execute()
@@ -204,7 +204,7 @@ func TestIgnoredFieldsMatchTheMarkup(t *testing.T) {
 		type hasDashName struct {
 			Dash string `toml:"-,"` //nolint:revive // the key "-" is what's under test
 		}
-		require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &hasDashName{}), `Dash is named "-"`)
+		require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &hasDashName{}, ""), `Dash is named "-"`)
 	})
 }
 
@@ -242,11 +242,29 @@ func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
 	root := newRoot(t)
 	sub := &cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }}
 	root.AddCommand(sub)
-	require.NoError(t, bind(t, root, &RequiredField{}, testOptions).register(sub, &hasOther{}))
+	require.NoError(t, bind(t, root, &RequiredField{}, testOptions).register(sub, &hasOther{}, ""))
 	root.SetArgs([]string{"sub"})
 	err := root.Execute()
 	require.ErrorContains(t, err, "invalid configuration: Value failed")
 	assert.ErrorContains(t, err, "invalid configuration: Other failed")
+}
+
+func TestNamespacesSeparateOneCommandsTargets(t *testing.T) {
+	root := newRoot(t)
+	b := newBinder(t, testOptions)
+	var first BasicConfig
+	var second RequiredField
+	require.NoError(t, b.RegisterInNamespace(root, "First", &first))
+	require.NoError(t, b.RegisterInNamespace(root, "Second", &second))
+
+	root.SetArgs([]string{"--first.value", "f"})
+	require.ErrorContains(t, root.Execute(), "invalid configuration: Second.Value failed on the 'required' tag; "+
+		"set it with --second.value, TEST_SECOND_VALUE, Second.Value in a config file")
+
+	root.SetArgs([]string{"--config", writeConfig(t, "[Second]\nValue = 's'\n")})
+	require.NoError(t, root.Execute())
+	assert.Equal(t, BasicConfig{"f"}, first)
+	assert.Equal(t, RequiredField{"s"}, second)
 }
 
 func TestBuiltinCommandsSkipValidation(t *testing.T) {
@@ -399,7 +417,7 @@ func TestRegistrationRejects(t *testing.T) {
 		{"an unexported embedded pointer", &embedsUnexportedPointer{}, "embedded *unexportedBasicConfig is unexported"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), tc.target), tc.want)
+			require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), tc.target, ""), tc.want)
 		})
 	}
 

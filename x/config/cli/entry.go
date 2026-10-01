@@ -26,6 +26,9 @@ type targetEntry struct {
 	target any
 	keys   []leafKey
 
+	// namespace, if set, is the first segment of every key.
+	namespace string
+
 	undocumented []string
 }
 
@@ -156,7 +159,7 @@ func (e *targetEntry) ruleError(fe validator.FieldError) error {
 		for i, p := range params {
 			if f, ok := siblings.FieldByName(p); ok {
 				if key, _ := e.b.opts.Markup.Key(f); key != "" {
-					params[i] = configKey(parent + "." + key)
+					params[i] = configKey(e.namespace, parent+"."+key)
 				}
 			}
 		}
@@ -164,12 +167,16 @@ func (e *targetEntry) ruleError(fe validator.FieldError) error {
 		rule += "=" + strings.Join(params, " ")
 	}
 
-	return fmt.Errorf("%s failed on the '%s' tag", configKey(fe.Namespace()), rule)
+	return fmt.Errorf("%s failed on the '%s' tag", configKey(e.namespace, fe.Namespace()), rule)
 }
 
 // List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
-func configKey(ns string) string {
+func configKey(namespace, ns string) string {
 	_, ns, _ = strings.Cut(ns, ".")
+	if namespace != "" {
+		ns = namespace + "." + ns
+	}
+
 	segments := strings.Split(strings.NewReplacer("[", ".", "]", "").Replace(ns), ".")
 	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }

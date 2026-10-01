@@ -21,7 +21,7 @@ const ConfigFlagName = "config"
 type Binder struct {
 	opts Options
 
-	entries map[*cobra.Command]*targetEntry
+	entries map[*cobra.Command][]*targetEntry
 
 	// rootHooks keeps each root's own PersistentPreRunE, which preRun replaces and then runs.
 	rootHooks map[*cobra.Command]func(*cobra.Command, []string) error
@@ -39,7 +39,7 @@ func New(opts Options) (*Binder, error) {
 	cobra.EnableTraverseRunHooks = true
 	b := &Binder{
 		opts:      opts,
-		entries:   map[*cobra.Command]*targetEntry{},
+		entries:   map[*cobra.Command][]*targetEntry{},
 		rootHooks: map[*cobra.Command]func(*cobra.Command, []string) error{},
 	}
 	cobra.OnInitialize(b.wire)
@@ -53,12 +53,22 @@ func New(opts Options) (*Binder, error) {
 // env vars; other fields are config file only.
 //
 // A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
-// fails every command in the tree when it is executed.
+// fails every command in the tree when it is executed. Register may be called more than once for a command;
+// [Binder.RegisterInNamespace] keeps its structs' keys apart.
 //
-// Register adds --config to cmd. Files layer in order over [Options].BaseConfig, later keys winning per key.
+// Register adds --config to cmd once. Files layer in order over [Options].BaseConfig, later keys winning per key.
 //
 //	app --config base.toml --config prod.toml
 func (b *Binder) Register[T any](cmd *cobra.Command, target *T, opts ...RegisterOption[T]) error {
+	return b.RegisterInNamespace(cmd, "", target, opts...)
+}
+
+// RegisterInNamespace is [Binder.Register] with every key of target under namespace, so structs registered on one
+// command can share field names. With namespace "Database", URL is --database.url, APP_DATABASE_URL, and URL in a
+// Database section of a config file. An empty namespace is the same as Register.
+func (b *Binder) RegisterInNamespace[T any](
+	cmd *cobra.Command, namespace string, target *T, opts ...RegisterOption[T],
+) error {
 	setups := make([]func(*targetEntry) (func(), error), 0, len(opts))
 	for _, o := range opts {
 		if o.setup == nil {
@@ -68,22 +78,27 @@ func (b *Binder) Register[T any](cmd *cobra.Command, target *T, opts ...Register
 		setups = append(setups, o.setup)
 	}
 
-	return b.register(cmd, target, setups...)
+	return b.register(cmd, target, namespace, setups...)
 }
 
-func (b *Binder) register(cmd *cobra.Command, target any, setups ...func(*targetEntry) (func(), error)) error {
-	if cmd.Flags().Lookup(ConfigFlagName) != nil || cmd.PersistentFlags().Lookup(ConfigFlagName) != nil {
-		return fmt.Errorf("flag --%s is already defined on %s", ConfigFlagName, cmd.Name())
+func (b *Binder) register(
+	cmd *cobra.Command, target any, namespace string, setups ...func(*targetEntry) (func(), error),
+) error {
+	if len(b.entries[cmd]) == 0 {
+		if cmd.Flags().Lookup(ConfigFlagName) != nil || cmd.PersistentFlags().Lookup(ConfigFlagName) != nil {
+			return fmt.Errorf("flag --%s is already defined on %s", ConfigFlagName, cmd.Name())
+		}
+
+		// StringArray, not StringSlice, so a path may contain a comma.
+		cmd.PersistentFlags().StringArray(ConfigFlagName, nil,
+			"path to a config file; repeat to layer files, later ones winning")
 	}
 
-	// StringArray, not StringSlice, so a path may contain a comma.
-	cmd.PersistentFlags().StringArray(ConfigFlagName, nil,
-		"path to a config file; repeat to layer files, later ones winning")
-
 	entry := &targetEntry{
-		b:      b,
-		cmd:    cmd,
-		target: target,
+		b:         b,
+		cmd:       cmd,
+		target:    target,
+		namespace: namespace,
 	}
 	if err := bindStruct(entry); err != nil {
 		return err
@@ -104,7 +119,7 @@ func (b *Binder) register(cmd *cobra.Command, target any, setups ...func(*target
 		install()
 	}
 
-	b.entries[cmd] = entry
+	b.entries[cmd] = append(b.entries[cmd], entry)
 	return nil
 }
 
@@ -136,12 +151,8 @@ func (b *Binder) register(cmd *cobra.Command, target any, setups ...func(*target
 func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 	cc := commandConfig{keys: &keyNode{children: map[string]*keyNode{}}}
 	for ; c != nil; c = c.Parent() {
-		if e := b.entries[c]; e != nil {
-			cc.entries = append(cc.entries, e)
-		}
+		cc.entries = append(slices.Clone(b.entries[c]), cc.entries...)
 	}
-
-	slices.Reverse(cc.entries)
 
 	lang := b.opts.Markup
 	// Env vars fold '.', '-' and '_' to '_', so distinct keys can still share a name.
@@ -175,8 +186,10 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 // generated DocComments. This can be used in a test, for example, as require.Empty(t, b.Undocumented()).
 func (b *Binder) Undocumented() []string {
 	var keys []string
-	for _, e := range b.entries {
-		keys = append(keys, e.undocumented...)
+	for _, entries := range b.entries {
+		for _, e := range entries {
+			keys = append(keys, e.undocumented...)
+		}
 	}
 
 	slices.Sort(keys)

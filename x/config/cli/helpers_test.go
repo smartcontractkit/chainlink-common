@@ -39,7 +39,7 @@ func bind(t *testing.T, cmd *cobra.Command, target any, opts Options) *Binder {
 	t.Helper()
 
 	b := newBinder(t, opts)
-	require.NoError(t, b.register(cmd, target))
+	require.NoError(t, b.register(cmd, target, ""))
 	return b
 }
 

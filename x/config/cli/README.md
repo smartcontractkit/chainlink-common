@@ -41,8 +41,8 @@ app --config base.toml --config prod.toml
 
 ## Subcommands
 
-A command runs with its own struct and every ancestor's, and each command takes at most one. So
-subcommands can share the root's config and keep their own apart:
+A command runs with its own structs and every ancestor's. So subcommands can share the root's
+config and keep their own apart:
 
 ```go
 b.Register(root, &shared)    // every command
@@ -53,6 +53,19 @@ b.Register(run, &runCfg)     // run only
 `embed`'s flags, env vars, and config file keys are those of `shared` and `embedCfg`; a `run` key in
 its config file is unknown. A key, flag, or env var that a command and an ancestor both use fails
 every command in the tree when it runs. Siblings may reuse keys.
+
+## Namespaces
+
+`Register` may be called more than once for a command. `RegisterInNamespace` puts a struct's
+keys under a name, so structs from several packages can share field names:
+
+```go
+b.RegisterInNamespace(root, "Database", &dbCfg) // --database.url, APP_DATABASE_URL
+b.RegisterInNamespace(root, "EVM", &evmCfg)     // --evm.url, APP_EVM_URL
+```
+
+In a config file each struct's keys sit in a section of that name. See
+[`examples/namespaced`](examples/namespaced).
 
 ## Help text
 
@@ -99,7 +112,5 @@ takes a string.
 
 - [`Options`](options.go): env var prefixes, base config, default config path.
 - [`New` / `Binder.Register`](binder.go): registration, on the root or a subcommand. Flags are
-  persistent, so subcommands take them too. To bind structs from several packages to one command,
-  wrap them in one: a `Database` field gives `Database.URL`, `--database.url` and
-  `APP_DATABASE_URL`.
+  persistent, so subcommands take them too.
 - [`examples/`](examples): runnable programs.

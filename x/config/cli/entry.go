@@ -61,6 +61,9 @@ type leafKey struct {
 	// entries set values inside a map's entries, such as chains.<key>.rpc; each is the one that sets a whole entry.
 	entries []*entryLeaf
 	each    *entryLeaf
+
+	// required is a `required` rule on the field, which a profile's help leaves to the sources.
+	required bool
 }
 
 type typedEntry[T any] struct {
@@ -71,6 +74,13 @@ type typedEntry[T any] struct {
 
 	// ns, if set, is the first segment of every key.
 	ns string
+
+	// profiles run after the sources are decoded, given the leaves a source set.
+	profiles []func(supplied map[string]sourceLayer) error
+
+	// profileSelectors holds each registered profile's selector, so a new one overlapping its section fails Register:
+	// each profile rebuilds its whole section, so two on one section would drop each other's values.
+	profileSelectors []leafKey
 
 	undocumentedKeys []string
 }
@@ -226,12 +236,23 @@ func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
 	return t
 }
 
+// sourceLayer puts a map's source values over under, key by key, since maps merge by key at every source. A value that
+// isn't a map has none: its source replaces it whole. Keys an env var names resolve against under, which can hold keys
+// a profile added, so applying one can fail.
+type sourceLayer func(under reflect.Value) (reflect.Value, error)
+
 func (e *typedEntry[T]) decode(cc commandConfig) error {
 	dst := reflect.ValueOf(e.dst).Elem()
+	supplied := map[string]sourceLayer{}
 	for _, k := range e.leaves {
 		if len(k.entries) > 0 {
-			if err := e.decodeEntries(k, cc, dst); err != nil {
+			layer, err := e.decodeEntries(k, cc, dst)
+			if err != nil {
 				return fmt.Errorf("%s: %w", k.key, err)
+			}
+
+			if layer != nil {
+				supplied[k.key] = layer
 			}
 
 			continue
@@ -257,11 +278,26 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 
 		if mergesByKey(f.Type(), e.b.opts.Markup) {
 			// The struct's own entries first, then sources lowest precedence first, so the highest wins a key.
-			vals = append(vals, f)
 			slices.Reverse(vals)
-			f.Set(mergeMaps(f.Type(), vals...))
+			t := f.Type()
+			supplied[k.key] = func(under reflect.Value) (reflect.Value, error) {
+				return mergeMaps(t, append([]reflect.Value{under}, vals...)...), nil
+			}
+			v, err := supplied[k.key](f)
+			if err != nil {
+				return fmt.Errorf("%s: %w", k.key, err)
+			}
+
+			f.Set(v)
 		} else {
+			supplied[k.key] = nil
 			f.Set(vals[0])
+		}
+	}
+
+	for _, apply := range e.profiles {
+		if err := apply(supplied); err != nil {
+			return err
 		}
 	}
 

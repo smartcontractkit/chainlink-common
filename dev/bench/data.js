@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790955979440,
+  "lastUpdate": 1790980485293,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62640,6 +62640,66 @@ window.BENCHMARK_DATA = {
             "value": 134535,
             "unit": "ns/op",
             "extra": "8815 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3e181f9aaed854bce5af454d67bdc65815120792",
+          "message": "durableemitter: add tracing spans and chip ingress client name (#2432)\n\n* durableemitter: add tracing spans and chip ingress client name\n\nEmit, delivery (linked to the emit span), retransmit tick and expiry tick now create otel spans via Config/SetupConfig.TracerProvider (global provider when nil). Setup passes the provider and client name durable_emitter to the chip ingress client. Temporarily pins pkg/chipingress to the chipingress-client-name branch; bump to the released version once that PR merges.\n\n* durableemitter: parent deliver span on the emit span, record background errors, tidy go.mod\n\nThe deliver span now uses the originating span as its remote parent so sampling follows the emit span (it stays linked too). Expiry and retransmit failures set error status on their tick spans. Adds tests for expiry_tick, the retransmit-phase deliver link, background error status and the nil tracer provider default, drops the stale go.sum lines flagged by check-tidy, and re-pins pkg/chipingress to the updated chipingress-client-name branch.\n\n* go.mod: pin pkg/chipingress to the main commit with WithClientName\n\nReplaces the dev-branch pin now that chipingress-client-name is merged (dbc6c2240). Bump to a tagged release once pkg/chipingress is released.\n\n* durableemitter: do not trace idle retransmit and expiry ticks\n\nretransmit_tick is started only when rows are pending (a ListPending failure still records an error span). expiry_tick is recorded after the pass, back-dated to its start, only when rows were purged or an error occurred. Idle ticks previously produced a root span every interval on every node.\n\n* durableemitter: start expiry_tick span in real time\n\nStart the span when the expiry pass begins and set the purged count and error status when it ends, instead of recording a back-dated span afterwards. DB calls in the pass are now children of the span. Idle expiry passes (once per ExpiryInterval) are traced again; idle retransmit ticks still are not.",
+          "timestamp": "2026-10-02T22:24:12Z",
+          "tree_id": "743a9f7ca944e37d104b48de7d40c0a2f623ad45",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/3e181f9aaed854bce5af454d67bdc65815120792"
+        },
+        "date": 1790980480530,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 837.3,
+            "unit": "ns/op",
+            "extra": "1433511 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 119054,
+            "unit": "ns/op",
+            "extra": "10239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 725.7,
+            "unit": "ns/op",
+            "extra": "1476807 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92584,
+            "unit": "ns/op",
+            "extra": "12831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26027,
+            "unit": "ns/op",
+            "extra": "45535 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136716,
+            "unit": "ns/op",
+            "extra": "8973 times\n4 procs"
           }
         ]
       }

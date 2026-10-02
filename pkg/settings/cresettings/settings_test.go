@@ -130,6 +130,7 @@ func TestSchema_Unmarshal(t *testing.T) {
 	assert.Equal(t, 500, cfg.WorkflowLimit.DefaultValue)
 	assert.Equal(t, 14*config.KByte, cfg.GatewayIncomingPayloadSizeLimit.DefaultValue)
 	assert.True(t, cfg.GatewayVaultManagementEnabled.DefaultValue)
+	assert.False(t, cfg.GatewayVaultNodeSignaturesEnabled.DefaultValue)
 	assert.False(t, cfg.VaultJWTAuthEnabled.DefaultValue)
 	assert.False(t, cfg.VaultBase64EncodingEnabled.DefaultValue)
 	assert.False(t, cfg.VaultForceEmptyOCRRounds.DefaultValue)

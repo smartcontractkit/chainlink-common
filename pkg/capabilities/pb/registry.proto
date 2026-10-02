@@ -102,3 +102,25 @@ message CapabilityConfig {
   values.v1.Map spec_config = 11;
 }
 
+// OffchainCapabilitiesRegistry is the offchain-distributed consolidation of the capability
+// configuration that today is split across the on-chain CapabilitiesRegistry, job specs, and
+// node TOML. It is the top-level versioned container delivered to nodes as proto JSON in a
+// cresettings job spec (config_type = "capabilities_registry"). Its DON structure mirrors the
+// on-chain CapabilitiesRegistry contract, and it reuses CapabilityConfig so the offchain and
+// on-chain shapes stay identical and can be compared field-by-field.
+message OffchainCapabilitiesRegistry {
+  string domain = 1;
+  string env = 2;
+  // Monotonically increasing; 0 = unset.
+  uint64 version = 3;
+
+  // Per-DON configuration, keyed by on-chain DON name (e.g. "workflow_1_zone-a").
+  map<string, DONConfig> dons = 4;
+}
+
+// DONConfig carries the offchain capability configuration for a single DON.
+message DONConfig {
+  // Capability ID (e.g. "streams-trigger@1.0.0") -> capability config.
+  map<string, CapabilityConfig> capabilities = 1;
+}
+

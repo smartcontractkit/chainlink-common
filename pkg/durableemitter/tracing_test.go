@@ -1,6 +1,7 @@
 package durableemitter
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -48,7 +49,9 @@ func TestDurableEmitter_TracingEmitAndLinkedDeliver(t *testing.T) {
 	deliver := endedSpan(rec, spanDeliver)
 	require.Len(t, deliver.Links(), 1)
 	assert.Equal(t, emit.SpanContext().SpanID(), deliver.Links()[0].SpanContext.SpanID())
-	assert.False(t, deliver.Parent().IsValid(), "delivery is linked, not parented")
+	assert.Equal(t, emit.SpanContext().SpanID(), deliver.Parent().SpanID(), "emit is the remote parent so sampling is consistent")
+	assert.True(t, deliver.Parent().IsRemote())
+	assert.Equal(t, emit.SpanContext().TraceID(), deliver.SpanContext().TraceID())
 }
 
 func TestDurableEmitter_TracingDeliverFailureRecorded(t *testing.T) {
@@ -96,8 +99,103 @@ func TestDurableEmitter_TracingRetransmitTick(t *testing.T) {
 	require.Eventually(t, func() bool { return endedSpan(rec, spanRetransmitTick) != nil }, 3*time.Second, 10*time.Millisecond)
 }
 
-func TestSetup_BuildChipOptsIncludesTracerProvider(t *testing.T) {
+func TestDurableEmitter_TracingRetransmitDeliverLinksToTick(t *testing.T) {
+	tp, rec := newTestTracerProvider()
+	cfg := DefaultConfig()
+	cfg.TracerProvider = tp
+	cfg.RetransmitInterval = 50 * time.Millisecond
+	cfg.RetransmitAfter = 10 * time.Millisecond
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("connection refused"))
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	servicetest.Run(t, em)
+
+	require.NoError(t, em.Emit(t.Context(), []byte("hello"), testEmitAttrs()...))
+	retransmitDeliver := func() sdktrace.ReadOnlySpan {
+		for _, s := range rec.Ended() {
+			if s.Name() != spanDeliver {
+				continue
+			}
+			for _, a := range s.Attributes() {
+				if a.Key == "phase" && a.Value.AsString() == publishPhaseRetransmit.String() {
+					return s
+				}
+			}
+		}
+		return nil
+	}
+	require.Eventually(t, func() bool { return retransmitDeliver() != nil }, 3*time.Second, 10*time.Millisecond)
+	retransmit := retransmitDeliver()
+	require.NotNil(t, retransmit, "retransmit-phase deliver span")
+	require.Len(t, retransmit.Links(), 1)
+	assert.Equal(t, retransmit.Links()[0].SpanContext.SpanID(), retransmit.Parent().SpanID())
+	tick := endedSpan(rec, spanRetransmitTick)
+	require.NotNil(t, tick)
+}
+
+func TestDurableEmitter_TracingExpiryTick(t *testing.T) {
+	tp, rec := newTestTracerProvider()
+	cfg := DefaultConfig()
+	cfg.TracerProvider = tp
+	cfg.ExpiryInterval = 50 * time.Millisecond
+	cfg.EventTTL = 10 * time.Millisecond
+	cfg.RetransmitInterval = 10 * time.Minute
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	be.setPublishErr(errors.New("always fail"))
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	servicetest.Run(t, em)
+
+	require.NoError(t, em.Emit(t.Context(), []byte("will-expire"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return endedSpan(rec, spanExpiryTick) != nil }, 3*time.Second, 10*time.Millisecond)
+	assert.Equal(t, otelcodes.Unset, endedSpan(rec, spanExpiryTick).Status().Code)
+}
+
+type failingStore struct {
+	*MemDurableEventStore
+	listErr   error
+	expireErr error
+}
+
+func (s *failingStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+	return nil, s.listErr
+}
+
+func (s *failingStore) DeleteExpiredBatch(context.Context, time.Duration, int) ([][]byte, error) {
+	return nil, s.expireErr
+}
+
+func TestDurableEmitter_TracingBackgroundErrorsSetStatus(t *testing.T) {
+	tp, rec := newTestTracerProvider()
+	cfg := DefaultConfig()
+	cfg.TracerProvider = tp
+	cfg.RetransmitInterval = 50 * time.Millisecond
+	cfg.ExpiryInterval = 50 * time.Millisecond
+
+	store := &failingStore{MemDurableEventStore: NewMemDurableEventStore(), listErr: errors.New("list failed"), expireErr: errors.New("expire failed")}
+	em := newTestDurableEmitter(t, store, newTestBatchEmitter(), &cfg)
+	servicetest.Run(t, em)
+
+	require.Eventually(t, func() bool {
+		return endedSpan(rec, spanRetransmitTick) != nil && endedSpan(rec, spanExpiryTick) != nil
+	}, 3*time.Second, 10*time.Millisecond)
+	assert.Equal(t, otelcodes.Error, endedSpan(rec, spanRetransmitTick).Status().Code)
+	assert.Equal(t, otelcodes.Error, endedSpan(rec, spanExpiryTick).Status().Code)
+}
+
+func TestDurableEmitter_NilTracerProviderUsesGlobal(t *testing.T) {
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), newTestBatchEmitter(), nil)
+	require.NotNil(t, em.tracer)
+	servicetest.Run(t, em)
+	require.NoError(t, em.Emit(t.Context(), []byte("hello"), testEmitAttrs()...))
+}
+
+func TestSetup_BuildChipOptsTracerProvider(t *testing.T) {
 	tp, _ := newTestTracerProvider()
-	assert.Len(t, buildChipOpts(SetupConfig{}, nil), 2) // TLS + client name
-	assert.Len(t, buildChipOpts(SetupConfig{TracerProvider: tp}, nil), 3)
+	without := len(buildChipOpts(SetupConfig{}, nil))
+	with := len(buildChipOpts(SetupConfig{TracerProvider: tp}, nil))
+	assert.Equal(t, without+1, with, "a tracer provider adds exactly one chipingress option")
 }

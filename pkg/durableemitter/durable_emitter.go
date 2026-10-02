@@ -505,9 +505,10 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
 
-		// Delivery runs on the batcher goroutine, so link to the originating
-		// emit/retransmit span instead of parenting under it.
-		_, span := d.tracer.Start(context.Background(), spanDeliver,
+		// Delivery runs on the batcher goroutine, so it does not inherit the
+		// emit/retransmit ctx. The origin is its remote parent so sampling follows
+		// the originating span, and it is also linked for correlation.
+		_, span := d.tracer.Start(trace.ContextWithRemoteSpanContext(context.Background(), origin), spanDeliver,
 			trace.WithLinks(trace.Link{SpanContext: origin}),
 			trace.WithAttributes(attribute.String("phase", phase.String())))
 		defer span.End()
@@ -738,6 +739,7 @@ func (d *DurableEmitter) retransmitPending() {
 	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, d.cfg.RetransmitBatchSize)
 	if err != nil {
 		d.eng.Errorw("failed to list pending events", "error", err)
+		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return
 	}
@@ -786,6 +788,9 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		eventPb := new(chipingress.CloudEventPb)
 		if err := proto.Unmarshal(pe.Payload, eventPb); err != nil {
 			d.eng.Errorw("DurableEmitter: failed to unmarshal event for retransmit", "id", pe.ID, "error", err)
+			span := trace.SpanFromContext(ctx)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			continue
 		}
 
@@ -888,6 +893,8 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 		deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return
 		}
 		if deleted > 0 {
@@ -908,6 +915,8 @@ drain:
 		payloads, err := purger.DeleteExpiredBatch(ctx, d.cfg.EventTTL, batch)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err, "purged_before_error", total)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			break
 		}
 		for _, p := range payloads {

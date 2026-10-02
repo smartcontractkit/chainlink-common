@@ -186,6 +186,21 @@ func TestDurableEmitter_TracingBackgroundErrorsSetStatus(t *testing.T) {
 	assert.Equal(t, otelcodes.Error, endedSpan(rec, spanExpiryTick).Status().Code)
 }
 
+func TestDurableEmitter_TracingIdleTicksAreNotTraced(t *testing.T) {
+	tp, rec := newTestTracerProvider()
+	cfg := DefaultConfig()
+	cfg.TracerProvider = tp
+	cfg.RetransmitInterval = 10 * time.Millisecond
+	cfg.ExpiryInterval = 10 * time.Millisecond
+
+	em := newTestDurableEmitter(t, NewMemDurableEventStore(), newTestBatchEmitter(), &cfg)
+	servicetest.Run(t, em)
+
+	time.Sleep(200 * time.Millisecond) // ~20 ticks of each loop with nothing to do
+	assert.Nil(t, endedSpan(rec, spanRetransmitTick))
+	assert.Nil(t, endedSpan(rec, spanExpiryTick))
+}
+
 func TestDurableEmitter_NilTracerProviderUsesGlobal(t *testing.T) {
 	em := newTestDurableEmitter(t, NewMemDurableEventStore(), newTestBatchEmitter(), nil)
 	require.NotNil(t, em.tracer)

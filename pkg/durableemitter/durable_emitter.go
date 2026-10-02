@@ -732,15 +732,15 @@ func (d *DurableEmitter) retransmitLoop() {
 func (d *DurableEmitter) retransmitPending() {
 	ctx, cancel := d.stopCh.NewCtx()
 	defer cancel()
-	ctx, span := d.tracer.Start(ctx, spanRetransmitTick)
-	defer span.End()
 
 	cutoff := time.Now().Add(-d.cfg.RetransmitAfter)
 	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, d.cfg.RetransmitBatchSize)
 	if err != nil {
 		d.eng.Errorw("failed to list pending events", "error", err)
+		_, span := d.tracer.Start(ctx, spanRetransmitTick)
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
+		span.End()
 		return
 	}
 
@@ -770,6 +770,9 @@ func (d *DurableEmitter) retransmitPending() {
 		return
 	}
 
+	// Idle ticks (nothing pending) are not traced to avoid a constant stream of empty spans.
+	ctx, span := d.tracer.Start(ctx, spanRetransmitTick, trace.WithAttributes(attribute.Int("pending", len(pending))))
+	defer span.End()
 	d.retransmit(ctx, pending)
 }
 
@@ -886,17 +889,32 @@ func expiredPurgerOf(s DurableEventStore) (ExpiredPurger, bool) {
 }
 
 func (d *DurableEmitter) purgeExpired(ctx context.Context) {
-	ctx, span := d.tracer.Start(ctx, spanExpiryTick)
-	defer span.End()
+	// Traced only when rows were purged or an error occurred, so idle passes add no spans.
+	// The span is recorded after the pass, back-dated to its start.
+	t0 := time.Now()
+	var purged int64
+	var purgeErr error
+	defer func() {
+		if purged == 0 && purgeErr == nil {
+			return
+		}
+		_, span := d.tracer.Start(ctx, spanExpiryTick, trace.WithTimestamp(t0),
+			trace.WithAttributes(attribute.Int64("purged", purged)))
+		if purgeErr != nil {
+			span.RecordError(purgeErr)
+			span.SetStatus(codes.Error, purgeErr.Error())
+		}
+		span.End()
+	}()
 	purger, ok := expiredPurgerOf(d.store)
 	if !ok {
 		deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
+			purgeErr = err
 			return
 		}
+		purged = deleted
 		if deleted > 0 {
 			d.metrics.recordExpiredPurged(ctx, purgeUnknown, purgeUnknown, deleted)
 			d.eng.Infow("purged expired events", "count", deleted)
@@ -915,8 +933,7 @@ drain:
 		payloads, err := purger.DeleteExpiredBatch(ctx, d.cfg.EventTTL, batch)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err, "purged_before_error", total)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
+			purgeErr = err
 			break
 		}
 		for _, p := range payloads {
@@ -939,6 +956,7 @@ drain:
 		default:
 		}
 	}
+	purged = total
 	if total == 0 {
 		return
 	}

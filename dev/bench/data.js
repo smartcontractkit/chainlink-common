@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790878896202,
+  "lastUpdate": 1790902467419,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62520,6 +62520,66 @@ window.BENCHMARK_DATA = {
             "value": 126594,
             "unit": "ns/op",
             "extra": "9451 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dbc6c2240029e291344864c3f4825f5fb7419479",
+          "message": "chipingress: add WithClientName option (#2433)\n\nSets the gRPC user-agent and a client_name attribute on the otelgrpc spans and metrics so callers can be identified by chip-ingress and in telemetry. An empty name is a no-op.",
+          "timestamp": "2026-10-02T00:45:36Z",
+          "tree_id": "ab78af770ce8bc949b6fc7e8ba68bf27b0db4d2e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/dbc6c2240029e291344864c3f4825f5fb7419479"
+        },
+        "date": 1790902464793,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 421.4,
+            "unit": "ns/op",
+            "extra": "2743394 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90376,
+            "unit": "ns/op",
+            "extra": "13242 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 390.4,
+            "unit": "ns/op",
+            "extra": "3016290 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93932,
+            "unit": "ns/op",
+            "extra": "12745 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25713,
+            "unit": "ns/op",
+            "extra": "46671 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135984,
+            "unit": "ns/op",
+            "extra": "8086 times\n4 procs"
           }
         ]
       }

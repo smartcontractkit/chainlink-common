@@ -889,17 +889,11 @@ func expiredPurgerOf(s DurableEventStore) (ExpiredPurger, bool) {
 }
 
 func (d *DurableEmitter) purgeExpired(ctx context.Context) {
-	// Traced only when rows were purged or an error occurred, so idle passes add no spans.
-	// The span is recorded after the pass, back-dated to its start.
-	t0 := time.Now()
+	ctx, span := d.tracer.Start(ctx, spanExpiryTick)
 	var purged int64
 	var purgeErr error
 	defer func() {
-		if purged == 0 && purgeErr == nil {
-			return
-		}
-		_, span := d.tracer.Start(ctx, spanExpiryTick, trace.WithTimestamp(t0),
-			trace.WithAttributes(attribute.Int64("purged", purged)))
+		span.SetAttributes(attribute.Int64("purged", purged))
 		if purgeErr != nil {
 			span.RecordError(purgeErr)
 			span.SetStatus(codes.Error, purgeErr.Error())

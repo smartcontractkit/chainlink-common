@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
@@ -43,6 +44,11 @@ type client struct {
 type Opt func(*clientConfig)
 
 // clientConfig is the configuration for the ChipIngressClient.
+//
+// clientConfig must remain comparable: it is referenced by the exported Opt type, and a
+// comparability break (e.g. adding a slice-valued field) is reported by api-diff CI as a
+// breaking change. That is also why retryPolicy is a pointer. The compile-time guard below
+// enforces comparability.
 type clientConfig struct {
 	transportCredentials  credentials.TransportCredentials
 	perRPCCredentials     credentials.PerRPCCredentials
@@ -52,7 +58,12 @@ type clientConfig struct {
 	meterProvider         metric.MeterProvider
 	tracerProvider        trace.TracerProvider
 	nopInfoHeaderProvider HeaderProvider
+	clientName            string
+	retryPolicy           *RetryPolicy
 }
+
+// Compile-time assertion that clientConfig stays comparable (fails to build otherwise).
+var _ = map[clientConfig]struct{}{}
 
 func newClientConfig(host string) *clientConfig {
 	cfg := &clientConfig{
@@ -89,6 +100,14 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 		otelOpts = append(otelOpts, otelgrpc.WithTracerProvider(cfg.tracerProvider))
 	}
 
+	if cfg.clientName != "" {
+		clientNameAttr := attribute.String("client_name", cfg.clientName)
+		otelOpts = append(otelOpts,
+			otelgrpc.WithSpanAttributes(clientNameAttr),
+			otelgrpc.WithMetricAttributes(clientNameAttr),
+		)
+	}
+
 	grpcOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(cfg.transportCredentials),
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelOpts...)),
@@ -99,15 +118,21 @@ func NewClient(address string, opts ...Opt) (Client, error) {
 			PermitWithoutStream: true,
 		}),
 	}
-	// Retry policy
-	retryPolicy := `{
-		"maxAttempts": 3,
-		"initialBackoff": "100ms",
-		"maxBackoff": "1s",
-		"backoffMultiplier": 2,
-		"retryableStatusCodes": ["UNAVAILABLE", "RESOURCE_EXHAUSTED"]
-	}`
-	grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryPolicy))
+	if cfg.clientName != "" {
+		grpcOpts = append(grpcOpts, grpc.WithUserAgent(cfg.clientName))
+	}
+	// Retries are opt-in (see WithRetryPolicy): they can replay non-idempotent RPCs such as
+	// Publish, so they are disabled unless the caller enables them. The service config is built
+	// from typed structs (see retry_policy.go) rather than a hand-written JSON literal - a
+	// previous hand-written literal here was malformed and gRPC's parser silently discarded it.
+	if cfg.retryPolicy != nil {
+		throttling := defaultRetryThrottlingPolicy()
+		retryServiceConfig, rerr := buildRetryServiceConfigJSON(*cfg.retryPolicy, &throttling)
+		if rerr != nil {
+			return nil, fmt.Errorf("failed to build retry policy service config: %w", rerr)
+		}
+		grpcOpts = append(grpcOpts, grpc.WithDefaultServiceConfig(retryServiceConfig))
+	}
 	// Auth
 	if cfg.perRPCCredentials != nil {
 		grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(cfg.perRPCCredentials))
@@ -250,6 +275,13 @@ func WithTLS() Opt {
 // If not set, the global meter provider will be used.
 func WithMeterProvider(provider metric.MeterProvider) Opt {
 	return func(c *clientConfig) { c.meterProvider = provider }
+}
+
+// WithClientName identifies this client to chip-ingress and in telemetry: it is sent as the gRPC
+// user-agent and recorded as a client_name attribute on the otelgrpc spans and metrics. An empty
+// name is a no-op.
+func WithClientName(name string) Opt {
+	return func(c *clientConfig) { c.clientName = name }
 }
 
 // WithTracerProvider sets a custom OpenTelemetry TracerProvider for distributed tracing.

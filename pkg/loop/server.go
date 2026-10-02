@@ -203,6 +203,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 			ChipIngressMaxGRPCRequestSize:  s.EnvConfig.ChipIngressMaxGRPCRequestSize,
 			ChipIngressLogger:              s.Logger,
 			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
+			MetricExportBatchSize:          s.EnvConfig.TelemetryMetricExportBatchSize,
 			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
 			MetricViewsDenyAttributes:      s.EnvConfig.TelemetryMetricViewsDenyAttributes,
 		}

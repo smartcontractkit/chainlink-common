@@ -91,6 +91,7 @@ const (
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
 	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
+	envCapabilityUsageEnabled             = "CL_CAPABILITY_USAGE_ENABLED"
 	envMeterProduct                       = "CL_METER_PRODUCT"
 	envMeterTenant                        = "CL_METER_TENANT"
 	envMeterNumericTenantID               = "CL_METER_NUMERIC_TENANT_ID"
@@ -211,6 +212,10 @@ type EnvConfig struct {
 	TelemetryLogCompressor             string
 	MeterRecordsEnabled                bool
 	MeterSnapshotsEnabled              bool
+	// CapabilityUsageEnabled enables per-capability workflow usage MeterRecords
+	// (compute, gas) for eventually consistent billing. Independent of
+	// MeterRecordsEnabled, which gates durable resource metering.
+	CapabilityUsageEnabled bool
 
 	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /
 	// MeterZone / MeterNodeID are
@@ -332,6 +337,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
 	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
+	add(envCapabilityUsageEnabled, strconv.FormatBool(e.CapabilityUsageEnabled))
 	add(envMeterProduct, e.MeterProduct)
 	add(envMeterTenant, e.MeterTenant)
 	add(envMeterNumericTenantID, e.MeterNumericTenantID)
@@ -657,6 +663,10 @@ func (e *EnvConfig) parse() error {
 	e.MeterSnapshotsEnabled, err = getBool(envMeterSnapshotsEnabled)
 	if err != nil {
 		return fmt.Errorf("failed to parse %s: %w", envMeterSnapshotsEnabled, err)
+	}
+	e.CapabilityUsageEnabled, err = getBool(envCapabilityUsageEnabled)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envCapabilityUsageEnabled, err)
 	}
 
 	e.MeterProduct = os.Getenv(envMeterProduct)

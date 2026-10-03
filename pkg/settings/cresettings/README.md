@@ -84,6 +84,12 @@ flowchart
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
+    subgraph handleMessage[dispatcher.handleMessage]
+%%      DON peer → DON peer P2P capability messages
+        DispatcherGlobalRate[\DispatcherGlobalRate/]:::rate
+        DispatcherPerSenderRate[\DispatcherPerSenderRate/]:::rate
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -355,6 +361,9 @@ flowchart
 
 %%  enclave → gateway → relay DON node is likewise its own entry point
     HandleGatewayMessage
+
+%%  DON peer → DON peer is likewise its own entry point
+    handleMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

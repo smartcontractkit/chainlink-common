@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin/plugintest"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	mercurytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/pluginprovider/ext/mercury/test"
 	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
@@ -21,17 +22,17 @@ func TestPluginMercury(t *testing.T) {
 
 	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer(lggr), Logger: lggr, StopCh: stopCh}, mercurytest.PluginMercury)
+	plugintest.PluginTest(t, loop.PluginMercuryName, &loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer(lggr), Logger: lggr, StopCh: stopCh}, mercurytest.PluginMercury)
 
 	t.Run("proxy", func(t *testing.T) {
-		test.PluginTest(t, loop.PluginRelayerName,
+		plugintest.PluginTest(t, loop.PluginRelayerName,
 			&loop.GRPCPluginRelayer{
 				PluginServer: relayertest.NewPluginRelayer(lggr, false),
 				Logger:       lggr, StopCh: stopCh},
 			func(t *testing.T, pr loop.PluginRelayer) {
 				p := newMercuryProvider(t, pr)
 				pm := mercurytest.PluginMercuryTest{MercuryProvider: p}
-				test.PluginTest(t, loop.PluginMercuryName,
+				plugintest.PluginTest(t, loop.PluginMercuryName,
 					&loop.GRPCPluginMercury{PluginServer: mercurytest.FactoryServer(lggr),
 						Logger: lggr, StopCh: stopCh},
 					pm.TestPluginMercury)

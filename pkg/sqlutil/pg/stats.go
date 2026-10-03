@@ -66,21 +66,24 @@ type (
 )
 
 type StatsReporter struct {
-	statFn   StatFn
-	reportFn ReportFn
-	interval time.Duration
-	cancel   context.CancelFunc
-	lggr     logger.Logger
-	once     sync.Once
-	wg       sync.WaitGroup
+	statFn          StatFn
+	reportFn        ReportFn
+	beholderMetrics *dbStatsBeholderMetrics
+	interval        time.Duration
+	cancel          context.CancelFunc
+	lggr            logger.Logger
+	once            sync.Once
+	wg              sync.WaitGroup
 }
 
 func NewStatsReporter(fn StatFn, lggr logger.Logger, opts ...StatsReporterOpt) *StatsReporter {
+	namedLggr := logger.Named(lggr, "StatsReporter")
 	r := &StatsReporter{
-		statFn:   fn,
-		reportFn: publishStats,
-		interval: dbStatsInternal,
-		lggr:     logger.Named(lggr, "StatsReporter"),
+		statFn:          fn,
+		reportFn:        publishStats,
+		beholderMetrics: newDBStatsBeholderMetrics(namedLggr),
+		interval:        dbStatsInternal,
+		lggr:            namedLggr,
 	}
 
 	for _, opt := range opts {
@@ -119,14 +122,20 @@ func (r *StatsReporter) loop(ctx context.Context) {
 	ticker := time.NewTicker(r.interval)
 	defer ticker.Stop()
 
-	r.reportFn(r.statFn())
+	r.report(ctx)
 	for {
 		select {
 		case <-ticker.C:
-			r.reportFn(r.statFn())
+			r.report(ctx)
 		case <-ctx.Done():
 			r.lggr.Debug("stat reporter loop received done. stopping...")
 			return
 		}
 	}
+}
+
+func (r *StatsReporter) report(ctx context.Context) {
+	stats := r.statFn()
+	r.reportFn(stats)
+	r.beholderMetrics.record(ctx, stats)
 }

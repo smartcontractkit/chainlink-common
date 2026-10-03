@@ -1,6 +1,10 @@
 name: golangci-lint
 
 on:
+  # Pushes to main give Sonar's view of main a lint report of its own commit.
+  push:
+    branches:
+      - main
   pull_request:
   merge_group:
   schedule:
@@ -13,7 +17,7 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      modules: ${{ steps.changed-modules.outputs.modules-json }}
+      modules: ${{ steps.changed-modules.outputs.modules }}
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v5
@@ -23,21 +27,7 @@ jobs:
 
       - name: Changed modules
         id: changed-modules
-        uses: smartcontractkit/.github/actions/changed-modules-go@changed-modules-go/v1
-        with:
-          # when scheduled/workflow_dispatch, run against all modules
-          no-change-behaviour: all
-          file-patterns: |
-            **/*.go
-            **/go.mod
-            **/go.sum
-          # The commentparsing examples are modules only so they can model a downstream consumer
-          # of the library, which takes the local replace directives gomoddirectives rejects.
-          # x-config.yml still builds them, regenerates them and fails on a diff.
-          module-patterns: |
-            **
-            !**/vendor/**
-            !x/config/commentparsing/examples/**
+        uses: ./.github/actions/changed-modules
 
   lint-module:
     # Avoid running in merge queue since we run in PR's and have an optional
@@ -96,6 +86,7 @@ jobs:
     if: ${{ github.event_name != 'merge_group' }}
     needs: [detect-modules, lint-module]
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - name: Lint complete
         run: echo "All lint jobs completed"

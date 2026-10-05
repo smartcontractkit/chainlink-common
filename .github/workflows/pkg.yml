@@ -9,8 +9,7 @@ on:
       - main
   merge_group:
 
-permissions:
-  contents: read
+permissions: {}
 
 # Every check runs in one job per module the change touches, so a module's run can be re-run and
 # read on its own, and the checks share one runner and one setup. The checks run in turn, each even
@@ -29,7 +28,7 @@ jobs:
       modules: ${{ steps.changed-modules.outputs.modules }}
     steps:
       - name: Checkout the repo
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -50,11 +49,13 @@ jobs:
     defaults:
       run:
         working-directory: ${{ matrix.module }}
+    permissions:
+      contents: read
     env:
       MODULE: ${{ matrix.module }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
         uses: ./.github/actions/setup-go

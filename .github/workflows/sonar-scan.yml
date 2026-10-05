@@ -53,7 +53,7 @@ jobs:
           search_artifacts: true
           workflow_conclusion: ""
           # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.
-          if_no_artifact_found: ${{ github.ref == 'refs/heads/main' && 'fail' || 'warn' }}
+          if_no_artifact_found: ${{ github.ref_name == 'main' && 'fail' || 'warn' }}
           path: sonar-reports/coverage
 
       - name: Download lint reports
@@ -66,7 +66,7 @@ jobs:
           search_artifacts: true
           workflow_conclusion: ""
           # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.
-          if_no_artifact_found: ${{ github.ref == 'refs/heads/main' && 'fail' || 'warn' }}
+          if_no_artifact_found: ${{ github.ref_name == 'main' && 'fail' || 'warn' }}
           path: sonar-reports/lint
 
       - name: Set SonarQube Report Paths

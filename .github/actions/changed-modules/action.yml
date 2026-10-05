@@ -1,10 +1,13 @@
 name: Changed Go modules
 description: |
-  The Go modules a run checks: every module on a push, on a run without a changeset, or when
-  anything under .github changes; otherwise each module with a changed file anywhere under it
-  outside a nested module, since a file need not be Go to be built in, as an embedded one is.
-  An example module counts as its parent, as script/go-modules.sh describes. Expects a checkout
-  with full history.
+  Lists the Go modules a run should check, for a matrix of per-module jobs.
+
+  Every module is listed on a push, on a run with no changeset, and when any file under .github
+  changes. Otherwise a module is listed when any file in its directory changed, Go or not, since
+  embedded files are built in too. A file belongs to the deepest module containing it, and an
+  example module counts as its parent (see script/go-modules.sh).
+
+  Expects a checkout with full history.
 
 outputs:
   modules:

@@ -34,12 +34,31 @@ const (
 	// workflow engine for compute usage records.
 	EmittingServiceWorkflowEngine = "workflow-engine"
 
-	// WorkflowUsageResourcePool is the Identity.ResourcePool for workflow
-	// capability usage records.
-	WorkflowUsageResourcePool = "workflow_usage"
+	// WorkflowGasResourcePool is the Identity.ResourcePool for gas usage
+	// records; ResourcePoolID is the fully qualified resource type
+	// (cre:workflow:gas:<chain_selector>). See WithWorkflowUsagePool.
+	WorkflowGasResourcePool = WorkflowRecordType + ":gas"
+	// WorkflowComputeResourcePool is the Identity.ResourcePool for compute
+	// usage records; ResourcePoolID is the same value.
+	WorkflowComputeResourcePool = ResourceTypeWorkflowCompute
 )
 
 var errWorkflowUsageResourceID = errors.New("workflow usage resource id: workflow id and execution id must be non-empty and contain no ':'")
+
+// WithWorkflowUsagePool returns id with ResourcePool and ResourcePoolID set
+// for a workflow usage resource type, per the billing payload contract:
+// pool is the resource type without its chain selector
+// ("cre:workflow:gas", "cre:workflow:compute") and pool id is the fully
+// qualified resource type.
+func WithWorkflowUsagePool(id ResourceIdentity, resourceType string) ResourceIdentity {
+	if strings.HasPrefix(resourceType, ResourceTypeWorkflowGasPrefix) {
+		id.ResourcePool = WorkflowGasResourcePool
+	} else {
+		id.ResourcePool = resourceType
+	}
+	id.ResourcePoolID = resourceType
+	return id
+}
 
 // WorkflowGasResourceType returns the gas resource type for a chain selector,
 // e.g. "cre:workflow:gas:421614".

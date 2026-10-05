@@ -81,7 +81,7 @@ func (o *ReportingPluginServiceClient) NewReportingPluginFactory(
 		deps.Add(errorLogRes)
 
 		capRegistryID, capRegistryRes, err := o.ServeNew("CapRegistry", func(s *grpc.Server) {
-			pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(o.BrokerExt, capRegistry))
+			capability.RegisterCapabilitiesRegistryServer(s, o.BrokerExt, capRegistry)
 		})
 		if err != nil {
 			return 0, deps, err

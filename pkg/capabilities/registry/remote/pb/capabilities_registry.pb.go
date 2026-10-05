@@ -342,11 +342,16 @@ func (x *GetRequest) GetId() string {
 	return ""
 }
 
-// GetReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin) and type indicating client wrapper that we need to use on the client side.
+// GetReply locates the capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Get],
+// and indicates which client wrapper the caller should use to reach it.
 type GetReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CapabilityID  uint32                 `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
-	Type          ExecuteAPIType         `protobuf:"varint,2,opt,name=type,proto3,enum=loop.ExecuteAPIType" json:"type,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
+	CapabilityID uint32         `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	Type         ExecuteAPIType `protobuf:"varint,2,opt,name=type,proto3,enum=loop.ExecuteAPIType" json:"type,omitempty"`
+	// target is a GRPC target the caller dials to reach the capability. Its scheme is
+	// chosen by the serving host, which is also the only party that must understand it.
+	Target        string `protobuf:"bytes,3,opt,name=target,proto3" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -395,6 +400,13 @@ func (x *GetReply) GetType() ExecuteAPIType {
 	return ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN
 }
 
+func (x *GetReply) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
 // GetTrigger has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger].
 type GetTriggerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -440,10 +452,13 @@ func (x *GetTriggerRequest) GetId() string {
 	return ""
 }
 
-// GetTriggerReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+// GetTriggerReply locates the capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetTrigger].
 type GetTriggerReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CapabilityID  uint32                 `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
+	CapabilityID uint32 `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	// target is a GRPC target the caller dials to reach the capability.
+	Target        string `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -483,6 +498,13 @@ func (x *GetTriggerReply) GetCapabilityID() uint32 {
 		return x.CapabilityID
 	}
 	return 0
+}
+
+func (x *GetTriggerReply) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
 }
 
 // GetExecutableRequest has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable].
@@ -530,10 +552,13 @@ func (x *GetExecutableRequest) GetId() string {
 	return ""
 }
 
-// GetExecutableReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+// GetExecutableReply locates the capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.GetExecutable].
 type GetExecutableReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CapabilityID  uint32                 `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
+	CapabilityID uint32 `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	// target is a GRPC target the caller dials to reach the capability.
+	Target        string `protobuf:"bytes,2,opt,name=target,proto3" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -575,10 +600,21 @@ func (x *GetExecutableReply) GetCapabilityID() uint32 {
 	return 0
 }
 
-// ListReply has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.List], expressed as a capabilityID (this is a GRPC connectionID internal to go-hashicorp-plugin).
+func (x *GetExecutableReply) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+// ListReply locates each capability returned by [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.List].
+// targets, when set, replaces capabilityID entirely rather than being parallel to it.
 type ListReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CapabilityID  []uint32               `protobuf:"varint,1,rep,packed,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deprecated: GRPC connectionIDs internal to go-hashicorp-plugin. Use targets.
+	CapabilityID []uint32 `protobuf:"varint,1,rep,packed,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	// targets are GRPC targets the caller dials to reach each capability.
+	Targets       []string `protobuf:"bytes,2,rep,name=targets,proto3" json:"targets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -616,6 +652,13 @@ func (*ListReply) Descriptor() ([]byte, []int) {
 func (x *ListReply) GetCapabilityID() []uint32 {
 	if x != nil {
 		return x.CapabilityID
+	}
+	return nil
+}
+
+func (x *ListReply) GetTargets() []string {
+	if x != nil {
+		return x.Targets
 	}
 	return nil
 }
@@ -667,9 +710,12 @@ func (x *GetTargetReply) GetCapabilityID() uint32 {
 
 // Add has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Add].
 type AddRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CapabilityID  uint32                 `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
-	Type          ExecuteAPIType         `protobuf:"varint,2,opt,name=type,proto3,enum=loop.ExecuteAPIType" json:"type,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deprecated: a GRPC connectionID internal to go-hashicorp-plugin. Use target.
+	CapabilityID uint32         `protobuf:"varint,1,opt,name=capabilityID,proto3" json:"capabilityID,omitempty"`
+	Type         ExecuteAPIType `protobuf:"varint,2,opt,name=type,proto3,enum=loop.ExecuteAPIType" json:"type,omitempty"`
+	// target is a GRPC target the registry dials to reach the capability being added.
+	Target        string `protobuf:"bytes,3,opt,name=target,proto3" json:"target,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -716,6 +762,13 @@ func (x *AddRequest) GetType() ExecuteAPIType {
 		return x.Type
 	}
 	return ExecuteAPIType_EXECUTE_API_TYPE_UNKNOWN
+}
+
+func (x *AddRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
 }
 
 // Remove has arguments for [github.com/smartcontractkit/chainlink-common/pkg/types.CapabilitiesRegistry.Remove].
@@ -1111,26 +1164,31 @@ const file_capabilities_registry_proto_rawDesc = "" +
 	"\x13encryptionPublicKey\x18\x06 \x01(\fR\x13encryptionPublicKey\"\x1c\n" +
 	"\n" +
 	"GetRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"X\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"p\n" +
 	"\bGetReply\x12\"\n" +
 	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\x12(\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x14.loop.ExecuteAPITypeR\x04type\"#\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x14.loop.ExecuteAPITypeR\x04type\x12\x16\n" +
+	"\x06target\x18\x03 \x01(\tR\x06target\"#\n" +
 	"\x11GetTriggerRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"5\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"M\n" +
 	"\x0fGetTriggerReply\x12\"\n" +
-	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\"&\n" +
+	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\x12\x16\n" +
+	"\x06target\x18\x02 \x01(\tR\x06target\"&\n" +
 	"\x14GetExecutableRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
 	"\x12GetExecutableReply\x12\"\n" +
-	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\"/\n" +
+	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\x12\x16\n" +
+	"\x06target\x18\x02 \x01(\tR\x06target\"I\n" +
 	"\tListReply\x12\"\n" +
-	"\fcapabilityID\x18\x01 \x03(\rR\fcapabilityID\"4\n" +
+	"\fcapabilityID\x18\x01 \x03(\rR\fcapabilityID\x12\x18\n" +
+	"\atargets\x18\x02 \x03(\tR\atargets\"4\n" +
 	"\x0eGetTargetReply\x12\"\n" +
-	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\"Z\n" +
+	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\"r\n" +
 	"\n" +
 	"AddRequest\x12\"\n" +
 	"\fcapabilityID\x18\x01 \x01(\rR\fcapabilityID\x12(\n" +
-	"\x04type\x18\x02 \x01(\x0e2\x14.loop.ExecuteAPITypeR\x04type\"\x1f\n" +
+	"\x04type\x18\x02 \x01(\x0e2\x14.loop.ExecuteAPITypeR\x04type\x12\x16\n" +
+	"\x06target\x18\x03 \x01(\tR\x06target\"\x1f\n" +
 	"\rRemoveRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"V\n" +
 	"\x1aConfigForCapabilityRequest\x12\"\n" +
@@ -1166,7 +1224,7 @@ const file_capabilities_registry_proto_rawDesc = "" +
 	"\rGetExecutable\x12\x1a.loop.GetExecutableRequest\x1a\x18.loop.GetExecutableReply\"\x00\x121\n" +
 	"\x04List\x12\x16.google.protobuf.Empty\x1a\x0f.loop.ListReply\"\x00\x121\n" +
 	"\x03Add\x12\x10.loop.AddRequest\x1a\x16.google.protobuf.Empty\"\x00\x127\n" +
-	"\x06Remove\x12\x13.loop.RemoveRequest\x1a\x16.google.protobuf.Empty\"\x00BCZAgithub.com/smartcontractkit/chainlink-common/pkg/loop/internal/pbb\x06proto3"
+	"\x06Remove\x12\x13.loop.RemoveRequest\x1a\x16.google.protobuf.Empty\"\x00BRZPgithub.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pbb\x06proto3"
 
 var (
 	file_capabilities_registry_proto_rawDescOnce sync.Once

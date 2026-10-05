@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791192863384,
+  "lastUpdate": 1791207264019,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62760,6 +62760,66 @@ window.BENCHMARK_DATA = {
             "value": 126072,
             "unit": "ns/op",
             "extra": "9471 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b7d63d5fd5495af3e47be353fa6814c2e7beca1c",
+          "message": "Move registry GRPC code to registry/remote (#2392)\n\n* Move registry GRPC code to registry/remote\n\n* - Add targets to abstract away capability broker ids\n- Move capability registry wrappers behind a transport abstraction\n- Add a plain-gRPC transport for the capability registry\n- Simplify code\n\n* Simplify listener transport implementation",
+          "timestamp": "2026-10-05T13:25:39Z",
+          "tree_id": "2cef3591da44ec42b848f916a4c030f75e1e0ade",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b7d63d5fd5495af3e47be353fa6814c2e7beca1c"
+        },
+        "date": 1791207260095,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 225.4,
+            "unit": "ns/op",
+            "extra": "5239510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 49985,
+            "unit": "ns/op",
+            "extra": "23288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 251.2,
+            "unit": "ns/op",
+            "extra": "4724080 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 48132,
+            "unit": "ns/op",
+            "extra": "24688 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 15649,
+            "unit": "ns/op",
+            "extra": "76548 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 76787,
+            "unit": "ns/op",
+            "extra": "15573 times\n4 procs"
           }
         ]
       }

@@ -13,8 +13,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
@@ -76,6 +79,9 @@ type Config struct {
 	// Hooks is optional instrumentation (load tests, profiling). Nil fields are skipped.
 	// Callbacks may run from many goroutines; implementations must be thread-safe.
 	Hooks *Hooks
+	// TracerProvider creates the emit/deliver/retransmit/expiry spans. Nil uses
+	// the global otel tracer provider (a no-op unless one is installed).
+	TracerProvider trace.TracerProvider
 	// Metrics enables OpenTelemetry instruments (queue, publish, store, optional process stats).
 	// When non-nil, a meter must be supplied to NewDurableEmitter; nil disables instrumentation.
 	Metrics *DurableEmitterMetricsConfig
@@ -175,6 +181,7 @@ type DurableEmitter struct {
 	cfg               Config
 
 	metrics *durableEmitterMetrics
+	tracer  trace.Tracer
 
 	// batchInserter is non-nil when the store supports multi-row INSERTs
 	// and InsertBatchSize > 0.
@@ -255,7 +262,12 @@ func NewDurableEmitter(
 		}
 		store = newMetricsInstrumentedStore(store, m)
 	}
+	tp := cfg.TracerProvider
+	if tp == nil {
+		tp = otel.GetTracerProvider()
+	}
 	d := &DurableEmitter{
+		tracer:            tp.Tracer(tracerName),
 		store:             store,
 		isStoreQueue:      isQueue,
 		batchEmitter:      batchEmitter,
@@ -348,7 +360,15 @@ func (d *DurableEmitter) EmitAsync(ctx context.Context, body []byte, attrKVs ...
 // completes successfully). Returns an error when the service is not in the
 // Started state (e.g. before Start or after Close).
 func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
-	return d.eng.IfStarted(func() error {
+	return d.eng.IfStarted(func() (err error) {
+		ctx, span := d.tracer.Start(ctx, spanEmit)
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+			}
+			span.End()
+		}()
 		tEmitTotal := time.Now()
 		defer func() {
 			if d.metrics != nil {
@@ -365,6 +385,11 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			emitFail()
 			return err
 		}
+
+		span.SetAttributes(
+			attribute.String("source_domain", sourceDomain),
+			attribute.String("entity_type", entityType),
+		)
 
 		attrs := parseAttrs(attrKVs...)
 		ensureIdempotencyKey(attrs, sourceDomain, entityType, body)
@@ -462,7 +487,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure).
 		t0Publish := time.Now()
-		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch)); qErr != nil {
+		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch, span.SpanContext())); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
@@ -476,9 +501,21 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 // deliveryCallback returns the function passed to BatchEmitter.QueueMessage.
 // On success, it deletes the delivered event. On failure, it leaves the event
 // in the DB for the retransmit loop.
-func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase) func(error) {
+func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase, origin trace.SpanContext) func(error) {
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
+
+		// Delivery runs on the batcher goroutine, so it does not inherit the
+		// emit/retransmit ctx. The origin is its remote parent so sampling follows
+		// the originating span, and it is also linked for correlation.
+		_, span := d.tracer.Start(trace.ContextWithRemoteSpanContext(context.Background(), origin), spanDeliver,
+			trace.WithLinks(trace.Link{SpanContext: origin}),
+			trace.WithAttributes(attribute.String("phase", phase.String())))
+		defer span.End()
+		if sendErr != nil {
+			span.RecordError(sendErr)
+			span.SetStatus(codes.Error, sendErr.Error())
+		}
 
 		if h := d.cfg.Hooks; h != nil && h.OnBatchPublish != nil {
 			h.OnBatchPublish(publishElapsed, 1, sendErr)
@@ -700,6 +737,10 @@ func (d *DurableEmitter) retransmitPending() {
 	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, d.cfg.RetransmitBatchSize)
 	if err != nil {
 		d.eng.Errorw("failed to list pending events", "error", err)
+		_, span := d.tracer.Start(ctx, spanRetransmitTick)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		span.End()
 		return
 	}
 
@@ -729,6 +770,9 @@ func (d *DurableEmitter) retransmitPending() {
 		return
 	}
 
+	// Idle ticks (nothing pending) are not traced to avoid a constant stream of empty spans.
+	ctx, span := d.tracer.Start(ctx, spanRetransmitTick, trace.WithAttributes(attribute.Int("pending", len(pending))))
+	defer span.End()
 	d.retransmit(ctx, pending)
 }
 
@@ -747,11 +791,14 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		eventPb := new(chipingress.CloudEventPb)
 		if err := proto.Unmarshal(pe.Payload, eventPb); err != nil {
 			d.eng.Errorw("DurableEmitter: failed to unmarshal event for retransmit", "id", pe.ID, "error", err)
+			span := trace.SpanFromContext(ctx)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			continue
 		}
 
 		id := pe.ID
-		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit)); err != nil {
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit, trace.SpanContextFromContext(ctx))); err != nil {
 			skipped++
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
@@ -768,6 +815,14 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		"total_pending", len(pending),
 	)
 }
+
+const (
+	tracerName         = "github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
+	spanEmit           = "durable_emitter.emit"
+	spanDeliver        = "durable_emitter.deliver"
+	spanRetransmitTick = "durable_emitter.retransmit_tick"
+	spanExpiryTick     = "durable_emitter.expiry_tick"
+)
 
 const defaultExpiryBatchSize = 5000
 
@@ -834,13 +889,26 @@ func expiredPurgerOf(s DurableEventStore) (ExpiredPurger, bool) {
 }
 
 func (d *DurableEmitter) purgeExpired(ctx context.Context) {
+	ctx, span := d.tracer.Start(ctx, spanExpiryTick)
+	var purged int64
+	var purgeErr error
+	defer func() {
+		span.SetAttributes(attribute.Int64("purged", purged))
+		if purgeErr != nil {
+			span.RecordError(purgeErr)
+			span.SetStatus(codes.Error, purgeErr.Error())
+		}
+		span.End()
+	}()
 	purger, ok := expiredPurgerOf(d.store)
 	if !ok {
 		deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err)
+			purgeErr = err
 			return
 		}
+		purged = deleted
 		if deleted > 0 {
 			d.metrics.recordExpiredPurged(ctx, purgeUnknown, purgeUnknown, deleted)
 			d.eng.Infow("purged expired events", "count", deleted)
@@ -859,6 +927,7 @@ drain:
 		payloads, err := purger.DeleteExpiredBatch(ctx, d.cfg.EventTTL, batch)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err, "purged_before_error", total)
+			purgeErr = err
 			break
 		}
 		for _, p := range payloads {
@@ -881,6 +950,7 @@ drain:
 		default:
 		}
 	}
+	purged = total
 	if total == 0 {
 		return
 	}

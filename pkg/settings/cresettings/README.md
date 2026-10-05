@@ -84,6 +84,12 @@ flowchart
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
+    subgraph handleMessage[dispatcher.handleMessage]
+%%      DON peer → DON peer P2P capability messages
+        DispatcherGlobalRate[\DispatcherGlobalRate/]:::rate
+        DispatcherPerSenderRate[\DispatcherPerSenderRate/]:::rate
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -188,6 +194,7 @@ flowchart
         PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod[/PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod\]:::gate
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate
+        PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
@@ -354,6 +361,9 @@ flowchart
 
 %%  enclave → gateway → relay DON node is likewise its own entry point
     HandleGatewayMessage
+
+%%  DON peer → DON peer is likewise its own entry point
+    handleMessage
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

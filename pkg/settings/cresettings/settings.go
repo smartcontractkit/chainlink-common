@@ -92,6 +92,8 @@ var Default = Schema{
 	GatewayHTTPActionMtlsConcurrencyLimit:            Int(50),
 	GatewayHTTPActionOutboundConcurrencyLimit:        Int(875),
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit: Int(175),
+	DispatcherGlobalRate:                             Rate(rate.Limit(5000), 5000),
+	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -361,6 +363,9 @@ var Default = Schema{
 		FeatureConsensusStricterMedianQuorumActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureConsensusIncludeAllTimestampsActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -431,7 +436,11 @@ type Schema struct {
 	// GatewayHTTPActionOutboundConcurrencyLimit, against GatewayHTTPPerNodeRate's ceiling
 	// (100rps burst): 100 * 1.75 ~= 175.
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit Setting[int] `unit:"{request}"`
-	TriggerRegistrationStatusUpdateTimeout           Setting[time.Duration]
+	// DispatcherGlobalRate bounds inbound P2P message rate across all senders.
+	DispatcherGlobalRate Setting[config.Rate]
+	// DispatcherPerSenderRate bounds inbound P2P message rate per sender.
+	DispatcherPerSenderRate                Setting[config.Rate]
+	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
@@ -551,6 +560,7 @@ type Workflows struct {
 	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

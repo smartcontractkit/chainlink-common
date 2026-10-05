@@ -111,8 +111,9 @@ func NewWriterClient(w io.Writer) (*Client, error) {
 	}
 	mpOpts := append(cfg.metricOptions(),
 		sdkmetric.WithReader(
-			sdkmetric.NewPeriodicReader(
+			newPeriodicReader(
 				metricExporter,
+				0,
 				sdkmetric.WithInterval(100*time.Millisecond), // Default is 10s
 			)),
 	)

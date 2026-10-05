@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
@@ -641,6 +642,40 @@ func TestOptions(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "true", headers["x-include-nop-info"])
 	})
+
+	t.Run("WithClientName", func(t *testing.T) {
+		config := defaultCfg
+		WithClientName("durable_emitter")(&config)
+		assert.Equal(t, "durable_emitter", config.clientName)
+	})
+}
+
+// WithClientName must reach the server as part of the gRPC user-agent, and an unset name must
+// leave the default user-agent untouched.
+func TestClient_ClientNameUserAgent(t *testing.T) {
+	userAgent := func(t *testing.T, opts ...Opt) string {
+		lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+		defer lis.Close()
+
+		srv := gp.NewServer()
+		capture := &capturingServer{}
+		pb.RegisterChipIngressServer(srv, capture)
+		go func() { _ = srv.Serve(lis) }()
+		defer srv.Stop()
+
+		client, err := NewClient(lis.Addr().String(), append([]Opt{WithInsecureConnection()}, opts...)...)
+		require.NoError(t, err)
+		defer client.Close() //nolint:errcheck
+
+		_, err = client.Ping(t.Context(), &EmptyRequest{})
+		require.NoError(t, err)
+		require.NotNil(t, capture.lastMD)
+		return strings.Join(capture.lastMD.Get("user-agent"), " ")
+	}
+
+	assert.Contains(t, userAgent(t, WithClientName("durable_emitter")), "durable_emitter")
+	assert.NotContains(t, userAgent(t, WithClientName("")), "durable_emitter")
 }
 
 func TestHeaderInterceptor(t *testing.T) {

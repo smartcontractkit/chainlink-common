@@ -19,6 +19,7 @@ def main():
     )
     parser.add_argument("--ci", required=False, help="In CI mode we run each parser only briefly once", action="store_true")
     parser.add_argument("--seconds", required=False, help="Run for this many seconds of total fuzz time before exiting")
+    parser.add_argument("--root", default=LIBROOT, help="Directory to discover and run fuzzers under, relative to the working directory")
     args = parser.parse_args()
 
     # use float for remaining_seconds so we can represent infinity
@@ -27,7 +28,7 @@ def main():
     else:
         remaining_seconds = float("inf")
 
-    fuzzers = discover_fuzzers()
+    fuzzers = discover_fuzzers(args.root)
     print(f"🐝 Discovered fuzzers:", file=sys.stderr)
     for fuzzfn, path in fuzzers.items():
         print(f"{fuzzfn} in {path}", file=sys.stderr)
@@ -50,12 +51,12 @@ def main():
             remaining_seconds -= next_duration_seconds
 
             print(f"🐝 Running {fuzzfn} in {path} for {next_duration_seconds}s before switching to next fuzzer", file=sys.stderr)
-            run_fuzzer(fuzzfn, path, next_duration_seconds)
+            run_fuzzer(args.root, fuzzfn, path, next_duration_seconds)
             print(f"🐝 Completed running {fuzzfn} in {path} for {next_duration_seconds}s. Total remaining time is {remaining_seconds}s", file=sys.stderr)
 
-def discover_fuzzers():
+def discover_fuzzers(libroot):
     fuzzers = {}
-    for root, dirs, files in os.walk(LIBROOT):
+    for root, dirs, files in os.walk(libroot):
         for file in files:
             if not file.endswith("test.go"): continue
             with open(os.path.join(root, file), "r") as f:
@@ -68,11 +69,11 @@ def discover_fuzzers():
             for fuzzfn in re.findall(r"func\s+(Fuzz\w+)", text):
                 if fuzzfn in fuzzers:
                     raise Exception(f"Duplicate fuzz function: {fuzzfn}")
-                fuzzers[fuzzfn] = os.path.relpath(root, LIBROOT)
+                fuzzers[fuzzfn] = os.path.relpath(root, libroot)
     return fuzzers
 
-def run_fuzzer(fuzzfn, dir, duration_seconds):
-    subprocess.check_call(["go", "test", "-run=^$", f"-fuzz=^{fuzzfn}$", f"-fuzztime={duration_seconds}s", f"github.com/smartcontractkit/chainlink-common/pkg/{dir}"], cwd=LIBROOT)
+def run_fuzzer(libroot, fuzzfn, dir, duration_seconds):
+    subprocess.check_call(["go", "test", "-run=^$", f"-fuzz=^{fuzzfn}$", f"-fuzztime={duration_seconds}s", f"./{dir}"], cwd=libroot)
 
 if __name__ == "__main__":
     main()

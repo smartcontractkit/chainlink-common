@@ -55,3 +55,22 @@ func TestEnvConfig_MeteringConfig(t *testing.T) {
 		assert.Equal(t, "clp-cre-wf-zone-a-1", cfg.DeploymentIdentity.NodeID)
 	})
 }
+
+func TestEnvConfig_CapabilityUsageConfig(t *testing.T) {
+	t.Run("gated by CapabilityUsageEnabled only", func(t *testing.T) {
+		e := &EnvConfig{MeterRecordsEnabled: false, MeterSnapshotsEnabled: true, CapabilityUsageEnabled: true, MeterProduct: "cre", MeterNodeID: "n1"}
+		cfg := e.CapabilityUsageConfig(nil)
+		assert.True(t, cfg.MeterRecordsEnabled, "usage records on even though durable MeterRecordsEnabled is off")
+		assert.False(t, cfg.MeterSnapshotsEnabled, "usage records never snapshot")
+		assert.Equal(t, "cre", cfg.DeploymentIdentity.Product)
+		assert.Equal(t, "n1", cfg.DeploymentIdentity.NodeID)
+	})
+	t.Run("off when CapabilityUsageEnabled is false regardless of MeterRecordsEnabled", func(t *testing.T) {
+		e := &EnvConfig{MeterRecordsEnabled: true, CapabilityUsageEnabled: false}
+		assert.False(t, e.CapabilityUsageConfig(nil).MeterRecordsEnabled)
+	})
+	t.Run("nil receiver", func(t *testing.T) {
+		var e *EnvConfig
+		assert.Equal(t, resourcemanager.Config{}, e.CapabilityUsageConfig(nil))
+	})
+}

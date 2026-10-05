@@ -210,7 +210,9 @@ type EnvConfig struct {
 	MeterSnapshotsEnabled              bool
 	// CapabilityUsageEnabled enables per-capability workflow usage MeterRecords
 	// (compute, gas) for eventually consistent billing. Independent of
-	// MeterRecordsEnabled, which gates durable resource metering.
+	// MeterRecordsEnabled, which gates durable resource metering: producers
+	// run a dedicated ResourceManager for usage records built from
+	// CapabilityUsageConfig, so the two flags never share a gate.
 	CapabilityUsageEnabled bool
 
 	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /

@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -29,6 +30,9 @@ type capabilitiesRegistryClient struct {
 	lggr      logger.Logger
 	transport Transport
 	grpc      registrypb.CapabilitiesRegistryClient
+
+	mu        sync.Mutex
+	published map[string]io.Closer
 }
 
 func toDON(don *registrypb.DON) capabilities.DON {
@@ -352,6 +356,9 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		return err
 	}
 
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+
 	_, err = cr.grpc.Add(ctx, &registrypb.AddRequest{
 		CapabilityID: loc.LegacyHandle,
 		Target:       loc.Target,
@@ -361,6 +368,9 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		cRes.Close()
 		return err
 	}
+
+	cr.published[info.ID] = cRes
+
 	return nil
 }
 
@@ -369,11 +379,19 @@ func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) err
 		Id: ID,
 	}
 
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
 	_, err := cr.grpc.Remove(ctx, req)
 	if err != nil {
 		return err
 	}
 
+	res, ok := cr.published[ID]
+	delete(cr.published, ID)
+
+	if ok {
+		return res.Close()
+	}
 	return nil
 }
 
@@ -385,6 +403,7 @@ func NewCapabilitiesRegistryClient(lggr logger.Logger, cc grpc.ClientConnInterfa
 		lggr:      logger.Named(lggr, "CapabilitiesRegistryClient"),
 		transport: t,
 		grpc:      registrypb.NewCapabilitiesRegistryClient(cc),
+		published: map[string]io.Closer{},
 	}
 }
 
@@ -395,9 +414,46 @@ type capabilitiesRegistryServer struct {
 	lggr      logger.Logger
 	transport Transport
 	impl      registry.CapabilitiesRegistry
+
+	mu        sync.Mutex
+	published map[publishKey]publishedCapability
+}
+
+// publishKey includes the registered type because GetTrigger serves a combined
+// capability as a trigger only, which is a different server from the one Get serves.
+type publishKey struct {
+	id  string
+	typ capabilities.CapabilityType
+}
+
+type publishedCapability struct {
+	loc Locator
+	res io.Closer
+}
+
+// publish serves capability at most once per key, so repeated lookups share a server.
+// Callers must hold c.mu from the impl lookup through publish, otherwise a concurrent
+// Remove can land in between and the removed capability stays published.
+func (c *capabilitiesRegistryServer) publish(id string, capability capabilities.BaseCapability, typ capabilities.CapabilityType) (Locator, error) {
+	key := publishKey{id: id, typ: typ}
+	if p, ok := c.published[key]; ok {
+		return p.loc, nil
+	}
+
+	loc, res, err := c.transport.Publish(id, func(s *grpc.Server) {
+		RegisterCapabilityServer(s, c.lggr, capability, typ)
+	})
+	if err != nil {
+		return Locator{}, err
+	}
+	c.published[key] = publishedCapability{loc: loc, res: res}
+	return loc, nil
 }
 
 func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registrypb.GetRequest) (*registrypb.GetReply, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	capability, err := c.impl.Get(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -408,9 +464,7 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registryp
 		return nil, err
 	}
 
-	loc, _, err := c.transport.Publish("Get", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
-	})
+	loc, err := c.publish(info.ID, capability, info.CapabilityType)
 	if err != nil {
 		return nil, err
 	}
@@ -602,6 +656,9 @@ func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *
 }
 
 func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *registrypb.GetTriggerRequest) (*registrypb.GetTriggerReply, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	capability, err := c.impl.GetTrigger(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -618,9 +675,7 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *re
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	loc, _, err := c.transport.Publish("GetTrigger", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, capabilities.CapabilityTypeTrigger)
-	})
+	loc, err := c.publish(info.ID, capability, capabilities.CapabilityTypeTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -632,6 +687,9 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *re
 }
 
 func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request *registrypb.GetExecutableRequest) (*registrypb.GetExecutableReply, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	capability, err := c.impl.GetExecutable(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -648,9 +706,7 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	loc, _, err := c.transport.Publish("GetExecutable", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
-	})
+	loc, err := c.publish(info.ID, capability, info.CapabilityType)
 	if err != nil {
 		return nil, err
 	}
@@ -662,30 +718,25 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 }
 
 func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty) (*registrypb.ListReply, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	capabilities, err := c.impl.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		locs      []Locator
-		resources []io.Closer
-	)
+	var locs []Locator
 	for _, cap := range capabilities {
 		info, err := cap.Info(ctx)
 		if err != nil {
-			c.closeAll(resources...)
 			return nil, err
 		}
 
-		loc, res, err := c.transport.Publish("List", func(s *grpc.Server) {
-			RegisterCapabilityServer(s, c.lggr, cap, info.CapabilityType)
-		})
+		loc, err := c.publish(info.ID, cap, info.CapabilityType)
 		if err != nil {
-			c.closeAll(resources...)
 			return nil, err
 		}
-		resources = append(resources, res)
 		locs = append(locs, loc)
 	}
 
@@ -721,9 +772,25 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registryp
 }
 
 func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *registrypb.RemoveRequest) (*emptypb.Empty, error) {
-	err := c.impl.Remove(ctx, request.Id)
-	if err != nil {
+	id := request.Id
+	c.mu.Lock()
+	if err := c.impl.Remove(ctx, id); err != nil {
+		c.mu.Unlock()
 		return &emptypb.Empty{}, err
+	}
+	var closers []io.Closer
+	for key, p := range c.published {
+		if key.id == id {
+			closers = append(closers, p.res)
+			delete(c.published, key)
+		}
+	}
+	c.mu.Unlock()
+
+	for _, cl := range closers {
+		if err := cl.Close(); err != nil {
+			c.lggr.Errorw("Error closing served capability", "id", id, "err", err)
+		}
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -740,14 +807,7 @@ func NewCapabilitiesRegistryServer(lggr logger.Logger, i registry.CapabilitiesRe
 		lggr:      logger.Named(lggr, "CapabilitiesRegistryServer"),
 		transport: t,
 		impl:      i,
-	}
-}
-
-func (c *capabilitiesRegistryServer) closeAll(closers ...io.Closer) {
-	for _, cl := range closers {
-		if err := cl.Close(); err != nil {
-			c.lggr.Errorw("Error closing served capability", "err", err)
-		}
+		published: map[publishKey]publishedCapability{},
 	}
 }
 

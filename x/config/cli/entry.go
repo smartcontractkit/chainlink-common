@@ -37,7 +37,6 @@ type targetEntry interface {
 	validate() error
 }
 
-
 type leafKey struct {
 	// key names the flag and env vars, such as server.listen-addr.
 	key string

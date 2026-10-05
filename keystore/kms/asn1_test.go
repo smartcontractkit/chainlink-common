@@ -30,8 +30,8 @@ func TestSEC1ToASN1PublicKey(t *testing.T) {
 	require.Len(t, sec1PubKey2, 65)
 	require.Equal(t, byte(0x04), sec1PubKey2[0])
 	pubKey := privateKey.PublicKey
-	require.Equal(t, pubKey.X.Bytes(), sec1PubKey2[1:33])
-	require.Equal(t, pubKey.Y.Bytes(), sec1PubKey2[33:65])
+	require.Equal(t, pubKey.X.FillBytes(make([]byte, 32)), sec1PubKey2[1:33])  //nolint:staticcheck // SA1019: kept to test against the raw coordinates
+	require.Equal(t, pubKey.Y.FillBytes(make([]byte, 32)), sec1PubKey2[33:65]) //nolint:staticcheck // SA1019: kept to test against the raw coordinates
 }
 
 func TestASN1SignatureToSEC1Signature(t *testing.T) {

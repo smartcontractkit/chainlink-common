@@ -90,6 +90,11 @@ flowchart
         DispatcherPerSenderRate[\DispatcherPerSenderRate/]:::rate
     end
 
+    subgraph CentralTriggerQueue.Put
+%%      trigger coordinator reader → central trigger queue (pre-admission buffer)
+        CentralTriggerEventQueueLimit{{CentralTriggerEventQueueLimit}}:::bound
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -364,6 +369,9 @@ flowchart
 
 %%  DON peer → DON peer is likewise its own entry point
     handleMessage
+
+%%  the trigger coordinator's reader is likewise its own entry point
+    CentralTriggerQueue.Put
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

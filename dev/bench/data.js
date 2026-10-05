@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790980485293,
+  "lastUpdate": 1791192863384,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62700,6 +62700,66 @@ window.BENCHMARK_DATA = {
             "value": 136716,
             "unit": "ns/op",
             "extra": "8973 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "a8a36dd4316cc38e60d93018201a00c47a4f030e",
+          "message": "cresettings: add Dispatcher global/per-sender rate limit settings (#2437)\n\nAdds DispatcherGlobalRate and DispatcherPerSenderRate, mirroring the\nGatewayHTTP rate pattern, with defaults matching the current\nCapabilities.Dispatcher.RateLimit TOML values (800rps:1000 / 10rps:50).\nFirst step of moving Dispatcher rate limiting off TOML onto cresettings\n(CRE-1925). Runtime wiring in chainlink core is a follow-up.\n\nCo-authored-by: Claude Sonnet 5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-05T09:26:20Z",
+          "tree_id": "f77bcdabf2309415b060ce000a6d7487851b927c",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/a8a36dd4316cc38e60d93018201a00c47a4f030e"
+        },
+        "date": 1791192858734,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352.6,
+            "unit": "ns/op",
+            "extra": "3406663 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78942,
+            "unit": "ns/op",
+            "extra": "15044 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.8,
+            "unit": "ns/op",
+            "extra": "2950437 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 77517,
+            "unit": "ns/op",
+            "extra": "15396 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28054,
+            "unit": "ns/op",
+            "extra": "42858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 126072,
+            "unit": "ns/op",
+            "extra": "9471 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791207264019,
+  "lastUpdate": 1791226560648,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62820,6 +62820,66 @@ window.BENCHMARK_DATA = {
             "value": 76787,
             "unit": "ns/op",
             "extra": "15573 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "402c2b5bf55c11150dab33234708e4cecd00a0e4",
+          "message": "Sonar on all mods (#2421)\n\n* Sonar on all mods\n\n* Apply suggestion from @jmank88\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>\n\n* Tests should run when there's changes too\n\n* Try to run all tests for everything when they change\n\n* Fix permissions and a flake in a test that I hit last run\n\n* Ignore lint on the lines we modified in a test\n\n* Auto detect new modules and examples\n\n* Exclude all example directories from sonar coverage, not just the one\n\n* PR feedback\n\n---------\n\nCo-authored-by: Jordan Krage <jmank88@gmail.com>",
+          "timestamp": "2026-10-05T18:40:19Z",
+          "tree_id": "3466da112c6e80928045fa21e8f8546c8833de32",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/402c2b5bf55c11150dab33234708e4cecd00a0e4"
+        },
+        "date": 1791226555114,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 273.4,
+            "unit": "ns/op",
+            "extra": "4384074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 58588,
+            "unit": "ns/op",
+            "extra": "20211 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 296.7,
+            "unit": "ns/op",
+            "extra": "3973214 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57559,
+            "unit": "ns/op",
+            "extra": "20728 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22319,
+            "unit": "ns/op",
+            "extra": "54399 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 96077,
+            "unit": "ns/op",
+            "extra": "12460 times\n4 procs"
           }
         ]
       }

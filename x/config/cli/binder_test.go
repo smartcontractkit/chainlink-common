@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
-	nested "github.com/smartcontractkit/chainlink-common/x/config/cli/examples/nested/settings"
-	simple "github.com/smartcontractkit/chainlink-common/x/config/cli/examples/simple/settings"
+	nested "github.com/smartcontractkit/chainlink-common/x/config/cli/examples/nested/appconfig"
+	simple "github.com/smartcontractkit/chainlink-common/x/config/cli/examples/simple/appconfig"
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"

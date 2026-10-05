@@ -9,11 +9,11 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/x/config/cli"
-	"github.com/smartcontractkit/chainlink-common/x/config/cli/examples/simple/settings"
+	"github.com/smartcontractkit/chainlink-common/x/config/cli/examples/simple/appconfig"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
-var cfg = settings.Config{
+var cfg = appconfig.Config{
 	Host:    "localhost",
 	Port:    8080,
 	Timeout: *config.MustNewDuration(5 * time.Second),

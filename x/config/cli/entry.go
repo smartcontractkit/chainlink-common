@@ -77,8 +77,10 @@ func (e *typedEntry[T]) addUndocumented(key string) {
 	e.undocumentedKeys = append(e.undocumentedKeys, key)
 }
 
+var envVarReplacer = strings.NewReplacer(".", "_", "-", "_")
+
 func (e *typedEntry[T]) envVars(k leafKey) []string {
-	name := strings.ToUpper(strings.NewReplacer(".", "_", "-", "_").Replace(k.key))
+	name := strings.ToUpper(envVarReplacer.Replace(k.key))
 	if len(e.b.opts.Prefixes) == 0 {
 		return []string{name}
 	}
@@ -261,9 +263,11 @@ func allocateField(v reflect.Value, path []string) reflect.Value {
 	return v
 }
 
+var indexReplacer = strings.NewReplacer("[", ".", "]", "")
+
 // List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
 func configKey(ns string) string {
 	_, ns, _ = strings.Cut(ns, ".")
-	segments := strings.Split(strings.NewReplacer("[", ".", "]", "").Replace(ns), ".")
+	segments := strings.Split(indexReplacer.Replace(ns), ".")
 	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }

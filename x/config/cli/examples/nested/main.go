@@ -7,14 +7,14 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/cli"
-	"github.com/smartcontractkit/chainlink-common/x/config/cli/examples/nested/settings"
+	"github.com/smartcontractkit/chainlink-common/x/config/cli/examples/nested/appconfig"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
 )
 
-var cfg = settings.Config{
+var cfg = appconfig.Config{
 	// LogLevel is on an embedded struct
 	LogLevel: "info",
-	Server:   settings.ServerConfig{Host: "127.0.0.1"},
+	Server:   appconfig.ServerConfig{Host: "127.0.0.1"},
 }
 
 func main() {

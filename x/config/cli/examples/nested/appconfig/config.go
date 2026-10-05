@@ -1,4 +1,4 @@
-package settings
+package appconfig
 
 //go:generate go run ./gen
 

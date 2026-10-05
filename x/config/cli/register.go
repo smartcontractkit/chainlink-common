@@ -122,9 +122,12 @@ func (v *textValue) String() string {
 // Named as pflag names its own flags, for consistent --help.
 func (v *textValue) Type() string {
 	switch t := v.value.Type(); {
-	case readsText(t) || t.Kind() == reflect.Slice:
+	// []byte is set as raw text, such as JSON or PEM, rather than pflag's hex or base64, so the user types a string.
+	// Non-byte arrays should already be filtered before this struct is created; the check is for defence in depth.
+	case readsText(t) || (t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8):
 		return "string"
 	case t == durationType:
+		// pflag's own duration flag reports duration. Without this case it would show int64
 		return "duration"
 	default:
 		return t.Kind().String()

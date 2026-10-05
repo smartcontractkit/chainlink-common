@@ -11,6 +11,7 @@ import (
 	otelcodes "go.opentelemetry.io/otel/codes"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
@@ -126,13 +127,28 @@ func TestDurableEmitter_TracingRetransmitDeliverLinksToTick(t *testing.T) {
 		}
 		return nil
 	}
-	require.Eventually(t, func() bool { return retransmitDeliver() != nil }, 3*time.Second, 10*time.Millisecond)
-	retransmit := retransmitDeliver()
-	require.NotNil(t, retransmit, "retransmit-phase deliver span")
-	require.Len(t, retransmit.Links(), 1)
-	assert.Equal(t, retransmit.Links()[0].SpanContext.SpanID(), retransmit.Parent().SpanID())
-	tick := endedSpan(rec, spanRetransmitTick)
-	require.NotNil(t, tick)
+	// The tick that queued the row ends after the delivery callback may have run,
+	// so wait until the deliver span's parent tick has ended before asserting.
+	tickByID := func(id trace.SpanID) sdktrace.ReadOnlySpan {
+		for _, s := range rec.Ended() {
+			if s.Name() == spanRetransmitTick && s.SpanContext().SpanID() == id {
+				return s
+			}
+		}
+		return nil
+	}
+	require.Eventually(t, func() bool {
+		d := retransmitDeliver()
+		return d != nil && tickByID(d.Parent().SpanID()) != nil
+	}, 3*time.Second, 10*time.Millisecond)
+
+	deliver := retransmitDeliver()
+	tick := tickByID(deliver.Parent().SpanID())
+	require.NotNil(t, tick, "retransmit-phase deliver span is parented on a retransmit tick")
+	require.Len(t, deliver.Links(), 1)
+	assert.Equal(t, tick.SpanContext().SpanID(), deliver.Links()[0].SpanContext.SpanID(), "link points at the tick")
+	assert.Equal(t, tick.SpanContext().SpanID(), deliver.Parent().SpanID(), "parent is the tick")
+	assert.Equal(t, tick.SpanContext().TraceID(), deliver.SpanContext().TraceID())
 }
 
 func TestDurableEmitter_TracingExpiryTick(t *testing.T) {

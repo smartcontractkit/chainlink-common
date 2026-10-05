@@ -34,23 +34,22 @@ func newBinder(t *testing.T, opts Options) *Binder {
 	return b
 }
 
-// bind takes any, so a test can register targets the typed Register would not compile.
-func bind(t *testing.T, cmd *cobra.Command, target any, opts Options) *Binder {
+func bind[T any](t *testing.T, cmd *cobra.Command, target *T, opts Options) *Binder {
 	t.Helper()
 
 	b := newBinder(t, opts)
-	require.NoError(t, b.register(cmd, target))
+	require.NoError(t, b.Register(cmd, target))
 	return b
 }
 
-func flagsOf(t *testing.T, target any, opts Options) *pflag.FlagSet {
+func flagsOf[T any](t *testing.T, target *T, opts Options) *pflag.FlagSet {
 	t.Helper()
 	root := newRoot(t)
 	bind(t, root, target, opts)
 	return root.PersistentFlags()
 }
 
-func run(t *testing.T, target any, opts Options, args ...string) error {
+func run[T any](t *testing.T, target *T, opts Options, args ...string) error {
 	t.Helper()
 
 	root := newRoot(t)

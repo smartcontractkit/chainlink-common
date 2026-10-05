@@ -21,7 +21,7 @@ const ConfigFlagName = "config"
 type Binder struct {
 	opts Options
 
-	entries map[*cobra.Command]*targetEntry
+	entries map[*cobra.Command]targetEntry
 
 	// rootHooks keeps each root's own PersistentPreRunE, which preRun replaces and then runs.
 	rootHooks map[*cobra.Command]func(*cobra.Command, []string) error
@@ -39,7 +39,7 @@ func New(opts Options) (*Binder, error) {
 	cobra.EnableTraverseRunHooks = true
 	b := &Binder{
 		opts:      opts,
-		entries:   map[*cobra.Command]*targetEntry{},
+		entries:   map[*cobra.Command]targetEntry{},
 		rootHooks: map[*cobra.Command]func(*cobra.Command, []string) error{},
 	}
 	cobra.OnInitialize(b.wire)
@@ -59,19 +59,6 @@ func New(opts Options) (*Binder, error) {
 //
 //	app --config base.toml --config prod.toml
 func (b *Binder) Register[T any](cmd *cobra.Command, target *T, opts ...RegisterOption[T]) error {
-	setups := make([]func(*targetEntry) (func(), error), 0, len(opts))
-	for _, o := range opts {
-		if o.setup == nil {
-			continue
-		}
-
-		setups = append(setups, o.setup)
-	}
-
-	return b.register(cmd, target, setups...)
-}
-
-func (b *Binder) register(cmd *cobra.Command, target any, setups ...func(*targetEntry) (func(), error)) error {
 	if cmd.Flags().Lookup(ConfigFlagName) != nil || cmd.PersistentFlags().Lookup(ConfigFlagName) != nil {
 		return fmt.Errorf("flag --%s is already defined on %s", ConfigFlagName, cmd.Name())
 	}
@@ -80,24 +67,28 @@ func (b *Binder) register(cmd *cobra.Command, target any, setups ...func(*target
 	cmd.PersistentFlags().StringArray(ConfigFlagName, nil,
 		"path to a config file; repeat to layer files, later ones winning")
 
-	entry := &targetEntry{
-		b:      b,
-		cmd:    cmd,
-		target: target,
+	entry := &typedEntry[T]{
+		b:   b,
+		cmd: cmd,
+		dst: target,
 	}
 	if err := bindStruct(entry); err != nil {
 		return err
 	}
 
 	// Options are checked before any take effect, so an errored option leaves none applied.
-	installs := make([]func(), len(setups))
-	for i, setup := range setups {
-		install, err := setup(entry)
+	installs := make([]func(), 0, len(opts))
+	for _, o := range opts {
+		if o.setup == nil {
+			continue
+		}
+
+		install, err := o.setup(entry)
 		if err != nil {
 			return err
 		}
 
-		installs[i] = install
+		installs = append(installs, install)
 	}
 
 	for _, install := range installs {
@@ -148,10 +139,10 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 	// Env var names are stricter than flag names, so if they don't collide, flags don't either.
 	claimed := map[string]string{}
 	for _, e := range cc.entries {
-		for _, k := range e.keys {
+		for _, k := range e.keys() {
 			leaf := commentparsing.DerefType(k.goType)
 			if err := cc.keys.add(k.fileKey, leaf, lang); err != nil {
-				return commandConfig{}, fmt.Errorf("%s: %w", e.cmd.Name(), err)
+				return commandConfig{}, fmt.Errorf("%s: %w", e.command().Name(), err)
 			}
 
 			if k.flag == nil {
@@ -160,7 +151,7 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 
 			for _, name := range e.envVars(k) {
 				if other, dup := claimed[name]; dup {
-					return commandConfig{}, fmt.Errorf("%s: %s and %s are both %s", e.cmd.Name(), other, k.key, name)
+					return commandConfig{}, fmt.Errorf("%s: %s and %s are both %s", e.command().Name(), other, k.key, name)
 				}
 
 				claimed[name] = k.key
@@ -176,7 +167,7 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 func (b *Binder) Undocumented() []string {
 	var keys []string
 	for _, e := range b.entries {
-		keys = append(keys, e.undocumented...)
+		keys = append(keys, e.undocumented()...)
 	}
 
 	slices.Sort(keys)
@@ -243,7 +234,7 @@ func (b *Binder) decode(c *cobra.Command) error {
 
 	var errs []error
 	for _, entry := range cc.entries {
-		if err = decodeEntry(entry, cc); err != nil {
+		if err = entry.decode(cc); err != nil {
 			errs = append(errs, err)
 			continue
 		}
@@ -331,7 +322,7 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *keyNode) (reflect.Val
 }
 
 type commandConfig struct {
-	entries    []*targetEntry
+	entries    []targetEntry
 	keys       *keyNode
 	fileValues reflect.Value
 }

@@ -16,8 +16,8 @@ import (
 // durationType tells time.Duration apart from int64, which shares its Kind.
 var durationType = reflect.TypeFor[time.Duration]()
 
-func bindLeafFlag(entry *targetEntry, m fieldMeta) error {
-	flags := entry.cmd.PersistentFlags()
+func bindLeafFlag(entry targetEntry, m fieldMeta) error {
+	flags := entry.command().PersistentFlags()
 	leaf := leafKey{
 		key:      m.key,
 		fileKey:  m.fileKey,
@@ -27,7 +27,7 @@ func bindLeafFlag(entry *targetEntry, m fieldMeta) error {
 	}
 	// pflag panics on a redefinition.
 	if flags.Lookup(leaf.flagName) != nil {
-		return fmt.Errorf("%s: flag --%s is already defined on %s", m.key, leaf.flagName, entry.cmd.Name())
+		return fmt.Errorf("%s: flag --%s is already defined on %s", m.key, leaf.flagName, entry.command().Name())
 	}
 
 	docs, _ := commentparsing.Lookup(m.owner)
@@ -47,11 +47,11 @@ func bindLeafFlag(entry *targetEntry, m fieldMeta) error {
 		flags.AddFlag(f)
 		leaf.flag, leaf.value = f, get
 		if doc == "" {
-			entry.undocumented = append(entry.undocumented, leaf.key)
+			entry.addUndocumented(leaf.key)
 		}
 	}
 
-	entry.keys = append(entry.keys, leaf)
+	entry.addKey(leaf)
 	return nil
 }
 

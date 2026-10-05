@@ -40,7 +40,7 @@ func TestFlagsCollide(t *testing.T) {
 		BasicConfig
 		RequiredField
 	}
-	require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &embedsTwoValues{}), "flag --value is already defined on app")
+	require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &embedsTwoValues{}), "flag --value is already defined on app")
 }
 
 func TestKeysAConfigFileCantSeparateFailEveryCommand(t *testing.T) {
@@ -53,28 +53,34 @@ func TestKeysAConfigFileCantSeparateFailEveryCommand(t *testing.T) {
 		Folded string `toml:"value_value"`
 	}
 
-	for _, tc := range []struct {
-		name        string
-		parent, sub any
-		err         string
-	}{
-		{"differ only in case in one struct", &struct{}{}, &hasCaseOnlyTwins{}, "sub: Twin and TWIN differ only in case"},
-		{"differ only in case across commands", &BasicConfig{}, &struct{ VALUE string }{}, "sub: Value and VALUE differ only in case"},
-		{"a value, then a section", &BasicConfig{}, &hasSection{}, "sub: two fields hold Value"},
-		{"a section, then a value", &hasSection{}, &BasicConfig{}, "sub: two fields hold Value"},
-		{"one env var", &hasSection{}, &hasFoldedEnvVar{}, "sub: value.value and value-value are both TEST_VALUE_VALUE"},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			root := newRoot(t)
-			b := bind(t, root, tc.parent, testOptions)
-			sub := &cobra.Command{Use: "sub"}
-			require.NoError(t, b.register(sub, tc.sub))
-			root.AddCommand(sub, &cobra.Command{Use: "other", RunE: func(*cobra.Command, []string) error { return nil }})
+	t.Run("differ only in case in one struct", func(t *testing.T) {
+		requireClashFailsSibling(t, &struct{}{}, &hasCaseOnlyTwins{}, "sub: Twin and TWIN differ only in case")
+	})
+	t.Run("differ only in case across commands", func(t *testing.T) {
+		requireClashFailsSibling(t, &BasicConfig{}, &struct{ VALUE string }{}, "sub: Value and VALUE differ only in case")
+	})
+	t.Run("a value, then a section", func(t *testing.T) {
+		requireClashFailsSibling(t, &BasicConfig{}, &hasSection{}, "sub: two fields hold Value")
+	})
+	t.Run("a section, then a value", func(t *testing.T) {
+		requireClashFailsSibling(t, &hasSection{}, &BasicConfig{}, "sub: two fields hold Value")
+	})
+	t.Run("one env var", func(t *testing.T) {
+		requireClashFailsSibling(t, &hasSection{}, &hasFoldedEnvVar{}, "sub: value.value and value-value are both TEST_VALUE_VALUE")
+	})
+}
 
-			root.SetArgs([]string{"other"})
-			require.ErrorContains(t, root.Execute(), tc.err)
-		})
-	}
+func requireClashFailsSibling[P, S any](t *testing.T, parent *P, sub *S, want string) {
+	t.Helper()
+
+	root := newRoot(t)
+	b := bind(t, root, parent, testOptions)
+	subCmd := &cobra.Command{Use: "sub"}
+	require.NoError(t, b.Register(subCmd, sub))
+	root.AddCommand(subCmd, &cobra.Command{Use: "other", RunE: func(*cobra.Command, []string) error { return nil }})
+
+	root.SetArgs([]string{"other"})
+	require.ErrorContains(t, root.Execute(), want)
 }
 
 func TestRegisterRejectsAnExistingConfigFlag(t *testing.T) {
@@ -85,7 +91,7 @@ func TestRegisterRejectsAnExistingConfigFlag(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			root := newRoot(t)
 			define(root)
-			require.ErrorContains(t, newBinder(t, testOptions).register(root, &BasicConfig{}), "flag --config is already defined on app")
+			require.ErrorContains(t, newBinder(t, testOptions).Register(root, &BasicConfig{}), "flag --config is already defined on app")
 		})
 	}
 }
@@ -109,8 +115,8 @@ func TestConfigFilesHoldOnlyTheCommandsKeys(t *testing.T) {
 			var shared BasicConfig
 			var own runsConfig
 			b := bind(t, root, &shared, testOptions)
-			require.NoError(t, b.register(runs, &own))
-			require.NoError(t, b.register(sibling, &siblingConfig{}))
+			require.NoError(t, b.Register(runs, &own))
+			require.NoError(t, b.Register(sibling, &siblingConfig{}))
 
 			root.SetArgs([]string{"runs", "--config", writeConfig(t, tc.file)})
 			err := root.Execute()
@@ -204,7 +210,7 @@ func TestIgnoredFieldsMatchTheMarkup(t *testing.T) {
 		type hasDashName struct {
 			Dash string `toml:"-,"` //nolint:revive // the key "-" is what's under test
 		}
-		require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), &hasDashName{}), `Dash is named "-"`)
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &hasDashName{}), `Dash is named "-"`)
 	})
 }
 
@@ -242,7 +248,7 @@ func TestMultipleTargetsBothReportTheirOwnErrors(t *testing.T) {
 	root := newRoot(t)
 	sub := &cobra.Command{Use: "sub", RunE: func(*cobra.Command, []string) error { return nil }}
 	root.AddCommand(sub)
-	require.NoError(t, bind(t, root, &RequiredField{}, testOptions).register(sub, &hasOther{}))
+	require.NoError(t, bind(t, root, &RequiredField{}, testOptions).Register(sub, &hasOther{}))
 	root.SetArgs([]string{"sub"})
 	err := root.Execute()
 	require.ErrorContains(t, err, "invalid configuration: Value failed")
@@ -326,28 +332,33 @@ func TestKeyNames(t *testing.T) {
 		*BasicConfig `toml:"aws,omitempty"`
 	}
 
-	for _, tc := range []struct {
-		name         string
-		target, want any
-		args         []string
-	}{
-		{"untagged fields are kebab-cased", &hasUntaggedCamelCase{}, &hasUntaggedCamelCase{137, *config.MustNewDuration(7 * time.Second)},
-			[]string{"--acronym-id", "137", "--two-words", "7s"}},
-		{"only the language's tag names a key", &hasLanguageAndOtherTags{}, &hasLanguageAndOtherTags{"l", "o"}, []string{"--renamed", "l", "--other-tagged", "o"}},
-		{"an embedded struct flattens", &embedsBasic{}, &embedsBasic{BasicConfig{"v"}}, []string{"--value", "v"}},
-		{"unexported embeds flatten all the way up", &embedsAnEmbedder{}, &embedsAnEmbedder{embedsUnexported{unexportedBasicConfig{"v"}, 1}},
-			[]string{"--value", "v", "--own", "1"}},
-		{"an embedded pointer flattens and is allocated", &embedsBasicPointer{}, &embedsBasicPointer{&BasicConfig{"v"}, "x"},
-			[]string{"--value", "v", "--own", "x"}},
-		// A named embedded pointer is how a polymorphic section is written, so the name must win.
-		{"a named embedded pointer keeps its section", &embedsNamedPointer{}, &embedsNamedPointer{&BasicConfig{"p"}},
-			[]string{"--aws.value", "p"}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			require.NoError(t, run(t, tc.target, testOptions, tc.args...))
-			assert.Equal(t, tc.want, tc.target)
-		})
-	}
+	t.Run("untagged fields are kebab-cased", func(t *testing.T) {
+		decodesTo(t, hasUntaggedCamelCase{137, *config.MustNewDuration(7 * time.Second)}, "--acronym-id", "137", "--two-words", "7s")
+	})
+	t.Run("only the language's tag names a key", func(t *testing.T) {
+		decodesTo(t, hasLanguageAndOtherTags{"l", "o"}, "--renamed", "l", "--other-tagged", "o")
+	})
+	t.Run("an embedded struct flattens", func(t *testing.T) {
+		decodesTo(t, embedsBasic{BasicConfig{"v"}}, "--value", "v")
+	})
+	t.Run("unexported embeds flatten all the way up", func(t *testing.T) {
+		decodesTo(t, embedsAnEmbedder{embedsUnexported{unexportedBasicConfig{"v"}, 1}}, "--value", "v", "--own", "1")
+	})
+	t.Run("an embedded pointer flattens and is allocated", func(t *testing.T) {
+		decodesTo(t, embedsBasicPointer{&BasicConfig{"v"}, "x"}, "--value", "v", "--own", "x")
+	})
+	// A named embedded pointer is how a polymorphic section is written, so the name must win.
+	t.Run("a named embedded pointer keeps its section", func(t *testing.T) {
+		decodesTo(t, embedsNamedPointer{&BasicConfig{"p"}}, "--aws.value", "p")
+	})
+}
+
+func decodesTo[T any](t *testing.T, want T, args ...string) {
+	t.Helper()
+
+	var got T
+	require.NoError(t, run(t, &got, testOptions, args...))
+	assert.Equal(t, want, got)
 }
 
 func TestWhatGetsAFlag(t *testing.T) {
@@ -388,20 +399,16 @@ func TestRegistrationRejects(t *testing.T) {
 		*unexportedBasicConfig
 	}
 
-	for _, tc := range []struct {
-		name   string
-		target any
-		want   string
-	}{
-		{"nil pointer", nilPointer, "target pointer cannot be nil"},
-		{"not a struct", &host, "target must be a struct or pointer to struct"},
-		// Reflect can't allocate it, so decoding would panic.
-		{"an unexported embedded pointer", &embedsUnexportedPointer{}, "embedded *unexportedBasicConfig is unexported"},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			require.ErrorContains(t, newBinder(t, testOptions).register(newRoot(t), tc.target), tc.want)
-		})
-	}
+	t.Run("nil pointer", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), nilPointer), "target pointer cannot be nil")
+	})
+	t.Run("not a struct", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &host), "target must be a struct or pointer to struct")
+	})
+	// Reflect can't allocate it, so decoding would panic.
+	t.Run("an unexported embedded pointer", func(t *testing.T) {
+		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &embedsUnexportedPointer{}), "embedded *unexportedBasicConfig is unexported")
+	})
 
 	_, err := New(Options{})
 	require.ErrorIs(t, err, markup.Err)
@@ -522,21 +529,14 @@ func TestValidationErrorsUseConfigKeys(t *testing.T) {
 		Excluder *RequiredField `toml:"RenamedExcluder"`
 	}
 
-	for _, tc := range []struct {
-		name   string
-		target any
-		args   []string
-		want   string
-	}{
-		{"a leaf names how to set it", &nestsRenamedRequired{}, nil, "invalid configuration: Renamed.Value failed on the 'required' tag; " +
-			"set it with --renamed.value, TEST_RENAMED_VALUE, Renamed.Value in a config file"},
-		{"a section and its rule's sibling", &hasExclusivePointers{}, []string{"--excluded.value", "v", "--renamed-excluder.value", "v"},
-			"invalid configuration: Excluded failed on the 'excluded_with=RenamedExcluder' tag"},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			require.ErrorContains(t, run(t, tc.target, testOptions, tc.args...), tc.want)
-		})
-	}
+	t.Run("a leaf names how to set it", func(t *testing.T) {
+		require.ErrorContains(t, run(t, &nestsRenamedRequired{}, testOptions), "invalid configuration: Renamed.Value failed on the 'required' tag; "+
+			"set it with --renamed.value, TEST_RENAMED_VALUE, Renamed.Value in a config file")
+	})
+	t.Run("a section and its rule's sibling", func(t *testing.T) {
+		require.ErrorContains(t, run(t, &hasExclusivePointers{}, testOptions, "--excluded.value", "v", "--renamed-excluder.value", "v"),
+			"invalid configuration: Excluded failed on the 'excluded_with=RenamedExcluder' tag")
+	})
 }
 
 func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
@@ -688,23 +688,24 @@ func (documentedOverTwoLines) DocComments() map[string]commentparsing.FieldDoc {
 }
 
 func TestHelpText(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		target   any
-		prefixes []string
-		flag     string
-		want     string
-	}{
-		{"a multi-line comment is one line", &documentedOverTwoLines{}, nil, "value", "Value is one line. It continues here. [env VALUE]"},
-		{"an embedded struct is documented by its own type", &nested.Config{}, nil, "log-level", "LogLevel is the minimum level to log. [env LOG_LEVEL]"},
-		{"env vars in the order tried", &simple.Config{}, []string{"CRE", "CL"}, "host", "Host is the host to dial. [env CRE_HOST, CL_HOST]"},
-		{"an empty prefix adds none", &simple.Config{}, []string{"APP", ""}, "host", "Host is the host to dial. [env APP_HOST, HOST]"},
-		{"required", &RequiredField{}, nil, "value", "(required) [env VALUE]"},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			assert.Equal(t, tc.want, flagsOf(t, tc.target, Options{Markup: tomlmarkup.New(), Prefixes: tc.prefixes}).Lookup(tc.flag).Usage)
-		})
-	}
+	noPrefix := Options{Markup: tomlmarkup.New()}
+	t.Run("a multi-line comment is one line", func(t *testing.T) {
+		assert.Equal(t, "Value is one line. It continues here. [env VALUE]", flagsOf(t, &documentedOverTwoLines{}, noPrefix).Lookup("value").Usage)
+	})
+	t.Run("an embedded struct is documented by its own type", func(t *testing.T) {
+		assert.Equal(t, "LogLevel is the minimum level to log. [env LOG_LEVEL]", flagsOf(t, &nested.Config{}, noPrefix).Lookup("log-level").Usage)
+	})
+	t.Run("env vars in the order tried", func(t *testing.T) {
+		opts := Options{Markup: tomlmarkup.New(), Prefixes: []string{"CRE", "CL"}}
+		assert.Equal(t, "Host is the host to dial. [env CRE_HOST, CL_HOST]", flagsOf(t, &simple.Config{}, opts).Lookup("host").Usage)
+	})
+	t.Run("an empty prefix adds none", func(t *testing.T) {
+		opts := Options{Markup: tomlmarkup.New(), Prefixes: []string{"APP", ""}}
+		assert.Equal(t, "Host is the host to dial. [env APP_HOST, HOST]", flagsOf(t, &simple.Config{}, opts).Lookup("host").Usage)
+	})
+	t.Run("required", func(t *testing.T) {
+		assert.Equal(t, "(required) [env VALUE]", flagsOf(t, &RequiredField{}, noPrefix).Lookup("value").Usage)
+	})
 }
 
 // pflag would print a string kind's raw default; its own MarshalText is what redacts it.

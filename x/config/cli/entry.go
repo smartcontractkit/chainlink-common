@@ -20,14 +20,23 @@ import (
 // (configKey rewrites and splits on those before comparing, so a marker with them would never match).
 const flattenedMarker = "\x00"
 
-type targetEntry struct {
-	b      *Binder
-	cmd    *cobra.Command
-	target any
-	keys   []leafKey
+type targetEntry interface {
+	binder() *Binder
+	command() *cobra.Command
+	keys() []leafKey
+	addKey(k leafKey)
+	undocumented() []string
+	addUndocumented(key string)
+	envVars(k leafKey) []string
 
-	undocumented []string
+	// Only pointer sections on the way to a set field are allocated, so an untouched optional *struct stays nil for
+	// `required_without` and `excluded_with`.
+	decode(cc commandConfig) error
+
+	// Runs after the full decode so cross-field rules see every value.
+	validate() error
 }
+
 
 type leafKey struct {
 	// key names the flag and env vars, such as server.listen-addr.
@@ -46,7 +55,30 @@ type leafKey struct {
 	goType reflect.Type
 }
 
-func (e *targetEntry) envVars(k leafKey) []string {
+type typedEntry[T any] struct {
+	b      *Binder
+	cmd    *cobra.Command
+	dst    *T
+	leaves []leafKey
+
+	undocumentedKeys []string
+}
+
+func (e *typedEntry[T]) binder() *Binder { return e.b }
+
+func (e *typedEntry[T]) command() *cobra.Command { return e.cmd }
+
+func (e *typedEntry[T]) keys() []leafKey { return e.leaves }
+
+func (e *typedEntry[T]) addKey(k leafKey) { e.leaves = append(e.leaves, k) }
+
+func (e *typedEntry[T]) undocumented() []string { return e.undocumentedKeys }
+
+func (e *typedEntry[T]) addUndocumented(key string) {
+	e.undocumentedKeys = append(e.undocumentedKeys, key)
+}
+
+func (e *typedEntry[T]) envVars(k leafKey) []string {
 	name := strings.ToUpper(strings.NewReplacer(".", "_", "-", "_").Replace(k.key))
 	if len(e.b.opts.Prefixes) == 0 {
 		return []string{name}
@@ -64,7 +96,7 @@ func (e *targetEntry) envVars(k leafKey) []string {
 }
 
 // Highest precedence first. An env var parses as the flag would, so both accept the same input.
-func (e *targetEntry) sources(k leafKey, cc commandConfig) ([]reflect.Value, error) {
+func (e *typedEntry[T]) sources(k leafKey, cc commandConfig) ([]reflect.Value, error) {
 	var vals []reflect.Value
 	if k.flag != nil {
 		if k.flag.Changed {
@@ -92,8 +124,7 @@ func (e *targetEntry) sources(k leafKey, cc commandConfig) ([]reflect.Value, err
 	return vals, nil
 }
 
-// Runs after the full decode so cross-field rules see every value.
-func (e *targetEntry) validate() error {
+func (e *typedEntry[T]) validate() error {
 	v := validator.New()
 	// With config key names, the validator's namespaces differ from config keys only by the root type's name, [i]
 	// indices, and flattened embeds, which configKey fixes.
@@ -110,14 +141,14 @@ func (e *targetEntry) validate() error {
 		}
 	})
 
-	err := v.Struct(e.target)
+	err := v.Struct(e.dst)
 	fieldErrs, ok := errors.AsType[validator.ValidationErrors](err)
 	if !ok {
 		return err
 	}
 
-	leaves := make(map[string]leafKey, len(e.keys))
-	for _, k := range e.keys {
+	leaves := make(map[string]leafKey, len(e.leaves))
+	for _, k := range e.leaves {
 		leaves[strings.Join(k.goPath, ".")] = k
 	}
 
@@ -142,7 +173,7 @@ func (e *targetEntry) validate() error {
 
 // Names fields in the error by config key rather than Go path. For example, a field renamed by its tag, which also
 // renames its flag, env vars, and config key, appears in the message under its new name.
-func (e *targetEntry) ruleError(fe validator.FieldError) error {
+func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
 	rule := fe.Tag()
 	if params := strings.Fields(fe.Param()); len(params) > 0 {
 		ns := fe.Namespace()
@@ -162,15 +193,8 @@ func (e *targetEntry) ruleError(fe validator.FieldError) error {
 	return fmt.Errorf("%s failed on the '%s' tag", configKey(fe.Namespace()), rule)
 }
 
-// List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
-func configKey(ns string) string {
-	_, ns, _ = strings.Cut(ns, ".")
-	segments := strings.Split(strings.NewReplacer("[", ".", "]", "").Replace(ns), ".")
-	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
-}
-
-func (e *targetEntry) parentType(structNS string) reflect.Type {
-	t := commentparsing.DerefType(reflect.TypeOf(e.target))
+func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
+	t := commentparsing.DerefType(reflect.TypeOf(e.dst))
 	segments := strings.Split(structNS, ".")
 	for _, segment := range segments[1 : len(segments)-1] {
 		name, rest, indexed := strings.Cut(segment, "[")
@@ -182,4 +206,65 @@ func (e *targetEntry) parentType(structNS string) reflect.Type {
 	}
 
 	return t
+}
+
+func (e *typedEntry[T]) decode(cc commandConfig) error {
+	dst := reflect.ValueOf(e.dst).Elem()
+	for _, k := range e.leaves {
+		vals, err := e.sources(k, cc)
+		if err != nil {
+			return fmt.Errorf("%s: %w", k.key, err)
+		}
+
+		if len(vals) == 0 {
+			continue
+		}
+
+		f := allocateField(dst, k.goPath)
+		for f.Kind() == reflect.Pointer {
+			if f.IsNil() {
+				f.Set(reflect.New(f.Type().Elem()))
+			}
+
+			f = f.Elem()
+		}
+
+		f.Set(vals[0])
+	}
+
+	return nil
+}
+
+// Call only to write, so sections are allocated only when something in them is set.
+func allocateField(v reflect.Value, path []string) reflect.Value {
+	for _, p := range path {
+		for v.Kind() == reflect.Pointer {
+			if v.IsNil() {
+				if !v.CanSet() {
+					return reflect.Value{}
+				}
+
+				v.Set(reflect.New(v.Type().Elem()))
+			}
+
+			v = v.Elem()
+		}
+
+		if v.Kind() != reflect.Struct {
+			return reflect.Value{}
+		}
+
+		if v = v.FieldByName(p); !v.IsValid() {
+			return reflect.Value{}
+		}
+	}
+
+	return v
+}
+
+// List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
+func configKey(ns string) string {
+	_, ns, _ = strings.Cut(ns, ".")
+	segments := strings.Split(strings.NewReplacer("[", ".", "]", "").Replace(ns), ".")
+	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }

@@ -21,10 +21,6 @@ type Options struct {
 
 // RegisterOption customizes one [Binder.Register] call. None exist yet; the parameter lets options be added without
 // breaking callers.
-// The type parameter T binds the instance to the correct type in T.
-// For example, a RegisterOption[Foo] can be used with [Binder.Register][Foo] ensuring type safety.
 type RegisterOption[T any] struct {
-	// targetEntry holds any because the [Binder] can hold many types.
-	// T binds back to the original type the [RegisterOption] was created for
-	setup func(*targetEntry) (func(), error)
+	setup func(*typedEntry[T]) (func(), error)
 }

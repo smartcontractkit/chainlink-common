@@ -47,8 +47,8 @@ func canText(t reflect.Type) bool {
 	}
 }
 
-func bindStruct(entry *targetEntry) error {
-	v := reflect.ValueOf(entry.target)
+func bindStruct[T any](entry *typedEntry[T]) error {
+	v := reflect.ValueOf(entry.dst)
 	if v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			return errors.New("target pointer cannot be nil")
@@ -73,7 +73,7 @@ type walkScope struct {
 	ancestors []reflect.Type
 }
 
-func (e *targetEntry) walk(v reflect.Value, scope walkScope) error {
+func (e *typedEntry[T]) walk(v reflect.Value, scope walkScope) error {
 	for i := range v.NumField() {
 		if err := e.walkField(v, i, scope); err != nil {
 			return err
@@ -83,7 +83,7 @@ func (e *targetEntry) walk(v reflect.Value, scope walkScope) error {
 	return nil
 }
 
-func (e *targetEntry) walkField(v reflect.Value, i int, scope walkScope) error {
+func (e *typedEntry[T]) walkField(v reflect.Value, i int, scope walkScope) error {
 	field := v.Type().Field(i)
 	key, ok := e.b.opts.Markup.Key(field)
 	// The markup's decoder never reads it, so no flag or env var may either.
@@ -144,7 +144,7 @@ func derefOrZero(f reflect.Value) reflect.Value {
 }
 
 // A struct already being walked is a leaf, callers are expected to have dereferenced the field already.
-func (e *targetEntry) isLeaf(field reflect.StructField, elem reflect.Value, scope walkScope) bool {
+func (e *typedEntry[T]) isLeaf(field reflect.StructField, elem reflect.Value, scope walkScope) bool {
 	lang := e.b.opts.Markup
 	return elem.Kind() != reflect.Struct || lang.IsLeaf(field.Type) || lang.IsLeaf(elem.Type()) ||
 		slices.Contains(scope.ancestors, elem.Type())

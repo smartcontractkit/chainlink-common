@@ -193,7 +193,7 @@ func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
 }
 
 func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
-	t := commentparsing.DerefType(reflect.TypeOf(e.dst))
+	t := commentparsing.DerefType(reflect.TypeFor[T]())
 	segments := strings.Split(structNS, ".")
 	for _, segment := range segments[1 : len(segments)-1] {
 		name, rest, indexed := strings.Cut(segment, "[")

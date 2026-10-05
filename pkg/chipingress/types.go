@@ -13,6 +13,24 @@ import (
 // Kafka headers named "ce_<name>" (e.g., ce_idempotencykey), enabling downstream deduplication.
 const IdempotencyKeyAttr = "idempotencykey"
 
+// OrderKeyField names a server-resolved field used as the Kafka ordering key.
+// The set is intentionally closed: adding a value is a hot-partition risk and
+// requires a PR + INFOPLAT team approval (keep in sync with chip-ingress allowlist).
+type OrderKeyField string
+
+const (
+	// OrderKeyFieldAttr is the CloudEvent extension attribute name carrying the OrderKeyField name.
+	// The client never sends a key value; chip-ingress resolves it from the named field.
+	OrderKeyFieldAttr = "orderkeyfield"
+
+	// OrderKeyFieldCSAPublicKey orders events by the authenticated CSA public key.
+	OrderKeyFieldCSAPublicKey OrderKeyField = "csapublickey"
+)
+
+var validOrderKeyFields = map[OrderKeyField]struct{}{
+	OrderKeyFieldCSAPublicKey: {},
+}
+
 // resourceAttributeHeaders is the closed whitelist of producer resource attributes sent as gRPC
 // metadata, mapping each attribute key (lowercased — SanitizeMetadataHeaders matches
 // case-insensitively) to the fixed chainlink-* metadata header name it travels under. For example

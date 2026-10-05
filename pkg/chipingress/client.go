@@ -328,6 +328,10 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 // Resource attributes are deliberately not stamped here. They describe the producer rather than any
 // individual event, so they travel once per request as gRPC metadata (see
 // WithResourceAttributeHeaders) instead of being repeated on every event in a batch.
+//
+// To opt an event into per-node ordering, set attributes[OrderKeyFieldAttr] to an OrderKeyField
+// constant (e.g. OrderKeyFieldCSAPublicKey). Only the typed value is honored: a plain string is
+// ignored like any other unknown attribute, and an OrderKeyField outside the allowlist returns an error.
 func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
 	event := ce.NewEvent()
 	event.SetSource(domain)
@@ -360,6 +364,12 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	}
 	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
 		event.SetExtension(IdempotencyKeyAttr, val)
+	}
+	if val, ok := attributes[OrderKeyFieldAttr].(OrderKeyField); ok {
+		if _, valid := validOrderKeyFields[val]; !valid {
+			return ce.Event{}, fmt.Errorf("unsupported order key field %q", val)
+		}
+		event.SetExtension(OrderKeyFieldAttr, string(val))
 	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)

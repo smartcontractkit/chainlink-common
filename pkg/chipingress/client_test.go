@@ -169,6 +169,49 @@ func TestNewEvent_IdempotencyKey(t *testing.T) {
 	})
 }
 
+func TestNewEvent_OrderKeyField(t *testing.T) {
+	payload := []byte("body")
+
+	t.Run("typed constant sets extension", func(t *testing.T) {
+		attrs := map[string]any{OrderKeyFieldAttr: OrderKeyFieldCSAPublicKey}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		assert.Equal(t, "csapublickey", event.Extensions()[OrderKeyFieldAttr])
+	})
+
+	t.Run("plain string is ignored", func(t *testing.T) {
+		attrs := map[string]any{OrderKeyFieldAttr: "csapublickey"}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		_, present := event.Extensions()[OrderKeyFieldAttr]
+		assert.False(t, present)
+	})
+
+	t.Run("unknown typed value returns error", func(t *testing.T) {
+		attrs := map[string]any{OrderKeyFieldAttr: OrderKeyField("bogus")}
+		_, err := NewEvent("domain", "entity", payload, attrs)
+		require.ErrorContains(t, err, "unsupported order key field")
+	})
+
+	t.Run("absent leaves extension unset", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, nil)
+		require.NoError(t, err)
+		_, present := event.Extensions()[OrderKeyFieldAttr]
+		assert.False(t, present)
+	})
+
+	t.Run("round-trips through EventToProto", func(t *testing.T) {
+		attrs := map[string]any{OrderKeyFieldAttr: OrderKeyFieldCSAPublicKey}
+		event, err := NewEvent("domain", "entity", payload, attrs)
+		require.NoError(t, err)
+		eventPb, err := EventToProto(event)
+		require.NoError(t, err)
+		attr, ok := eventPb.Attributes[OrderKeyFieldAttr]
+		require.True(t, ok)
+		assert.Equal(t, "csapublickey", attr.GetCeString())
+	})
+}
+
 func TestEventToProto(t *testing.T) {
 	// Create a test protobuf message
 	testProto := pb.PingResponse{Message: "test message"}

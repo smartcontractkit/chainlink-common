@@ -209,6 +209,21 @@ func (s *Server) start(opts ...ServerOpt) error {
 			MetricViewsDenyAttributes:      s.EnvConfig.TelemetryMetricViewsDenyAttributes,
 		}
 
+		// Resolve the chip ingress retry settings into a policy; nil (retries off) unless
+		// the host enabled them. Zero fields fall back to chipingress.DefaultRetryPolicy.
+		retryPolicy, err := beholder.ChipIngressRetryConfig{
+			Enabled:              s.EnvConfig.ChipIngressRetryEnabled,
+			MaxAttempts:          s.EnvConfig.ChipIngressRetryMaxAttempts,
+			InitialBackoff:       s.EnvConfig.ChipIngressRetryInitialBackoff,
+			MaxBackoff:           s.EnvConfig.ChipIngressRetryMaxBackoff,
+			BackoffMultiplier:    s.EnvConfig.ChipIngressRetryBackoffMultiplier,
+			RetryableStatusCodes: s.EnvConfig.ChipIngressRetryableStatusCodes,
+		}.RetryPolicy()
+		if err != nil {
+			return fmt.Errorf("failed to build chip ingress retry policy: %w", err)
+		}
+		beholderCfg.ChipIngressRetryPolicy = retryPolicy
+
 		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {
 			var bridgeOpts []prombridge.Option
 			if prefixes := s.EnvConfig.TelemetryPrometheusBridgePrefixes; len(prefixes) > 0 {

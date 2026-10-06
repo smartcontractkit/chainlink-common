@@ -40,6 +40,7 @@
   "ChipIngressEmitterEnabled": false,
   "ChipIngressEmitterGRPCEndpoint": "",
   "ChipIngressInsecureConnection": false,
+  "ChipIngressRetryPolicy": null,
   "ChipIngressBatchEmitterEnabled": false,
   "ChipIngressBufferSize": 0,
   "ChipIngressMaxBatchSize": 0,

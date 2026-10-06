@@ -111,6 +111,13 @@ const (
 	envChipIngressDrainTimeout       = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
 	envChipIngressMaxGRPCRequestSize = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
 
+	envChipIngressRetryEnabled           = "CL_CHIP_INGRESS_RETRY_ENABLED"
+	envChipIngressRetryMaxAttempts       = "CL_CHIP_INGRESS_RETRY_MAX_ATTEMPTS"
+	envChipIngressRetryInitialBackoff    = "CL_CHIP_INGRESS_RETRY_INITIAL_BACKOFF"
+	envChipIngressRetryMaxBackoff        = "CL_CHIP_INGRESS_RETRY_MAX_BACKOFF"
+	envChipIngressRetryBackoffMultiplier = "CL_CHIP_INGRESS_RETRY_BACKOFF_MULTIPLIER"
+	envChipIngressRetryableStatusCodes   = "CL_CHIP_INGRESS_RETRYABLE_STATUS_CODES"
+
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
 )
@@ -132,6 +139,19 @@ type EnvConfig struct {
 	ChipIngressSendTimeout        time.Duration
 	ChipIngressDrainTimeout       time.Duration
 	ChipIngressMaxGRPCRequestSize int
+
+	// ChipIngressRetry* configures gRPC-level retries on the LOOP's own beholder
+	// chip ingress client. The host sends fully resolved values; the server resolves
+	// them into a policy via chipingress.RetryPolicyConfig, where zero fields fall
+	// back to chipingress.DefaultRetryPolicy and Enabled=false keeps retries off.
+	ChipIngressRetryEnabled           bool
+	ChipIngressRetryMaxAttempts       int
+	ChipIngressRetryInitialBackoff    time.Duration
+	ChipIngressRetryMaxBackoff        time.Duration
+	ChipIngressRetryBackoffMultiplier float64
+	// ChipIngressRetryableStatusCodes lists gRPC status code names (per
+	// chipingress.ParseStatusCodes) eligible for retry. Empty keeps defaults.
+	ChipIngressRetryableStatusCodes []string
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -350,6 +370,15 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envChipIngressSendTimeout, e.ChipIngressSendTimeout.String())
 	add(envChipIngressDrainTimeout, e.ChipIngressDrainTimeout.String())
 	add(envChipIngressMaxGRPCRequestSize, strconv.Itoa(e.ChipIngressMaxGRPCRequestSize))
+
+	add(envChipIngressRetryEnabled, strconv.FormatBool(e.ChipIngressRetryEnabled))
+	add(envChipIngressRetryMaxAttempts, strconv.Itoa(e.ChipIngressRetryMaxAttempts))
+	add(envChipIngressRetryInitialBackoff, e.ChipIngressRetryInitialBackoff.String())
+	add(envChipIngressRetryMaxBackoff, e.ChipIngressRetryMaxBackoff.String())
+	add(envChipIngressRetryBackoffMultiplier, strconv.FormatFloat(e.ChipIngressRetryBackoffMultiplier, 'f', -1, 64))
+	if len(e.ChipIngressRetryableStatusCodes) > 0 {
+		add(envChipIngressRetryableStatusCodes, strings.Join(e.ChipIngressRetryableStatusCodes, ","))
+	}
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -644,6 +673,34 @@ func (e *EnvConfig) parse() error {
 		}
 		if e.ChipIngressMaxGRPCRequestSize < 0 {
 			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxGRPCRequestSize, e.ChipIngressMaxGRPCRequestSize)
+		}
+		e.ChipIngressRetryEnabled, err = getBool(envChipIngressRetryEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressRetryEnabled, err)
+		}
+		e.ChipIngressRetryMaxAttempts, err = getInt(envChipIngressRetryMaxAttempts)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressRetryMaxAttempts, err)
+		}
+		e.ChipIngressRetryInitialBackoff, err = getDuration(envChipIngressRetryInitialBackoff)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressRetryInitialBackoff, err)
+		}
+		e.ChipIngressRetryMaxBackoff, err = getDuration(envChipIngressRetryMaxBackoff)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressRetryMaxBackoff, err)
+		}
+		e.ChipIngressRetryBackoffMultiplier, err = getEnv(envChipIngressRetryBackoffMultiplier, func(s string) (float64, error) {
+			if s == "" {
+				return 0, nil
+			}
+			return strconv.ParseFloat(s, 64)
+		})
+		if err != nil {
+			return err
+		}
+		if v, ok := os.LookupEnv(envChipIngressRetryableStatusCodes); ok && v != "" {
+			e.ChipIngressRetryableStatusCodes = splitCommaTrimmed(v)
 		}
 	}
 

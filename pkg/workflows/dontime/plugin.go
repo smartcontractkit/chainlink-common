@@ -340,6 +340,7 @@ func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome
 	observationCounts := map[reqSeq]int64{}
 
 	// At the transition point, we need to convert from the old slice format to maps
+	//TODO consider reverse when disabling...
 	for _, observedTimes := range prevOutcome.ObservedDonTimes {
 		if len(observedTimes.Timestamps) > 0 {
 			for seqNum, ts := range observedTimes.Timestamps {
@@ -378,6 +379,8 @@ func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome
 			observedDonTimes, ok := outcome.ObservedDonTimes[key.reqID]
 			if !ok {
 				observedDonTimes = &pb.ObservedDonTimes{TimestampsBySequence: make(map[int64]int64)}
+			} else if observedDonTimes.TimestampsBySequence == nil {
+				observedDonTimes.TimestampsBySequence = make(map[int64]int64)
 			}
 			observedDonTimes.TimestampsBySequence[key.seqNum] = donTime
 			outcome.ObservedDonTimes[key.reqID] = observedDonTimes

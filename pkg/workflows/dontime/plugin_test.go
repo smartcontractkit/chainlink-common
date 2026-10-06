@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -13,7 +14,10 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
@@ -176,13 +180,26 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 }
 
 func TestPlugin_Outcome(t *testing.T) {
+	t.Run("sequenced", func(t *testing.T) { testPlugin_Outcome(t, true) })
+	t.Run("unsequenced", func(t *testing.T) { testPlugin_Outcome(t, false) })
+}
+
+func testPlugin_Outcome(t *testing.T, sequenced bool) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)
-	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	cfg, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+	plugin, err := NewPlugin(store, cfg, offchainCfg, lggr)
 	require.NoError(t, err)
+	if sequenced {
+		plugin.setSequencedTSEnabled(limits.NewRangeLimiter(
+			settings.Range[config.Timestamp]{
+				Lower: config.NewTimestamp(time.Now()),
+				Upper: config.NewTimestamp(time.Now().Add(time.Hour)),
+			},
+		))
+	}
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
 	require.NoError(t, err)
@@ -238,7 +255,15 @@ func TestPlugin_Outcome(t *testing.T) {
 	err = proto.Unmarshal(outcome, outcomeProto)
 	require.NoError(t, err)
 	require.Equal(t, timestamp, outcomeProto.Timestamp)
-	require.Equal(t, []int64{timestamp}, outcomeProto.ObservedDonTimes[executionID].Timestamps)
+	if observed, ok := outcomeProto.ObservedDonTimes[executionID]; assert.True(t, ok) {
+		if sequenced {
+			require.Equal(t, map[int64]int64{0: timestamp}, observed.TimestampsBySequence)
+			require.Empty(t, observed.Timestamps)
+		} else {
+			require.Equal(t, []int64{timestamp}, observed.Timestamps)
+			require.Empty(t, observed.TimestampsBySequence)
+		}
+	}
 }
 
 func TestPlugin_Outcome_SequenceNumberHandling(t *testing.T) {

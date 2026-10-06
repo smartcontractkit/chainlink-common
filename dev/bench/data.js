@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791238947083,
+  "lastUpdate": 1791249370354,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -62940,6 +62940,66 @@ window.BENCHMARK_DATA = {
             "value": 126862,
             "unit": "ns/op",
             "extra": "9414 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9626e353995ddac439c64e3b762d087827295e9d",
+          "message": "loop: pass beholder TracerProvider to the durable emitter (#2434)\n\n* loop: pass beholder TracerProvider to the durable emitter\n\nMirrors how the beholder Meter is passed, so the LOOP-plugin durable emitter and its chip ingress client use the beholder client's tracer provider.\n\n* durableemitter: compare retransmit deliver parent and link to the tick span\n\nThe retransmit link test only compared the link to the parent, so both could point at the same wrong span, and it looked up the tick immediately, which could race with the delivery callback. It now waits for the parent tick to end and asserts the parent, link and trace ID against that tick.\n\n* go.mod: bump pkg/chipingress to the latest main commit\n\nMoves the pin from dbc6c2240 to b7d63d5fd (v0.0.11-0.20261005132539-b7d63d5fd549). No release tag exists for the WithClientName changes yet.",
+          "timestamp": "2026-10-06T01:04:45Z",
+          "tree_id": "c0ec9ec7849ab6e4d37a6048abd0e646f2590f2b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9626e353995ddac439c64e3b762d087827295e9d"
+        },
+        "date": 1791249368203,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 310.7,
+            "unit": "ns/op",
+            "extra": "3515498 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 26229,
+            "unit": "ns/op",
+            "extra": "46077 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 226.5,
+            "unit": "ns/op",
+            "extra": "5184063 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 26027,
+            "unit": "ns/op",
+            "extra": "46662 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 14588,
+            "unit": "ns/op",
+            "extra": "81525 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 48724,
+            "unit": "ns/op",
+            "extra": "24787 times\n4 procs"
           }
         ]
       }

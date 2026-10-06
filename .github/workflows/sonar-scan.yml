@@ -14,6 +14,11 @@ jobs:
     # The steps of smartcontractkit/.github's ci-sonarqube-go, pinned to this commit's reports. That
     # action takes the newest artifact of one fixed name from any branch, and lint artifacts here
     # are named per module.
+    env:
+      # The event whose runs report on this commit. A merge queue commit reaches main as the same
+      # commit, so its finished merge_group runs, which check only the changed modules, must not
+      # stand in for main's push runs.
+      REPORT_EVENT: ${{ github.ref_name == 'main' && 'push' || startsWith(github.ref_name, 'gh-readonly-queue/') && 'merge_group' || 'pull_request' }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -34,7 +39,7 @@ jobs:
           for workflow in pkg.yml golangci_lint.yml; do
             while true; do
               # true when every run completed, none when no run exists yet; a failed call retries.
-              state=$(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --commit "$GITHUB_SHA" \
+              state=$(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --commit "$GITHUB_SHA" --event "$REPORT_EVENT" \
                 --json status --jq 'if length == 0 then "none" else (all(.status == "completed") | tostring) end' \
                 || echo retry)
               if [[ "$state" == true ]]; then
@@ -57,6 +62,7 @@ jobs:
           name: go-test-coverage-.*
           name_is_regexp: true
           commit: ${{ github.sha }}
+          event: ${{ env.REPORT_EVENT }}
           search_artifacts: true
           workflow_conclusion: ""
           # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.
@@ -70,6 +76,7 @@ jobs:
           name: golangci-lint-report-.*
           name_is_regexp: true
           commit: ${{ github.sha }}
+          event: ${{ env.REPORT_EVENT }}
           search_artifacts: true
           workflow_conclusion: ""
           # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.

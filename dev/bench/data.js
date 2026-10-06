@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791308106535,
+  "lastUpdate": 1791309688957,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63180,6 +63180,66 @@ window.BENCHMARK_DATA = {
             "value": 143587,
             "unit": "ns/op",
             "extra": "7562 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "29594528f4649ad4cdb69e59becc863890fb560d",
+          "message": "Billing: Contract + Emit Values (#2428)\n\n* resourcemanager: EmitUsageValue and workflow usage constants; loop: CL_CAPABILITY_USAGE_ENABLED\n\nGroundwork for capability-centric workflow billing (CRE-6778):\n\n- ResourceManager.EmitUsageValue emits a METER_ACTION_USAGE record from a\n  *big.Int so chain-write capabilities can report gas fees in wei without\n  truncation.\n- resourcemanager/workflow_usage.go pins the producer side of the billing\n  contract: record type cre:workflow, resource types cre:workflow:compute and\n  cre:workflow:gas:<chain_selector>, ResourceId \"<workflow_id>:<execution_id>\",\n  emitting service names and resource pool. Matches the consumer in\n  billing-platform-service (ConstructCapabilityUsageEventID).\n- loop.EnvConfig.CapabilityUsageEnabled (CL_CAPABILITY_USAGE_ENABLED) carries\n  the new [Metering].CapabilityUsageEnabled node setting to LOOP capability\n  plugins, independent of MeterRecordsEnabled.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* loop: CapabilityUsageConfig, a usage ResourceManager config gated only by CapabilityUsageEnabled\n\nReview follow-up. ResourceManager drops every emit when its own\nMeterRecordsEnabled is false, so a usage manager built from MeteringConfig\nwould be silently gated by the durable-metering flag. CapabilityUsageConfig\nreturns a Config for a dedicated usage ResourceManager: records enabled iff\nCapabilityUsageEnabled, snapshots off, same emitter and deployment identity.\nProducers run that manager next to the durable one, so the two settings\nnever share a gate.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: workflow usage resource pools per the billing payload contract\n\nIdentity.ResourcePool / ResourcePoolID follow the Billing <-> Decentralized\nstack contract: pool \"cre:workflow:gas\" with pool id\n\"cre:workflow:gas:<chain_selector>\" for gas, \"cre:workflow:compute\" for\nboth on compute. WithWorkflowUsagePool derives them from the resource type\nso producers cannot drift. Replaces the single \"workflow_usage\" pool.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* loop: trim CapabilityUsageEnabled and CapabilityUsageConfig comments\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* loop: drop CapabilityUsageEnabled; usage records share MeterRecordsEnabled\n\nPer review, capability usage records (compute, gas) do not need their own\ngate. The existing MeterRecordsEnabled / MeterSnapshotsEnabled knobs already\ncontrol emission per node and are sufficient for local-cre tuning, so\nproducers reuse EnvConfig.MeteringConfig for the usage ResourceManager.\n\nRemoves CL_CAPABILITY_USAGE_ENABLED, EnvConfig.CapabilityUsageEnabled and\nEnvConfig.CapabilityUsageConfig with their tests.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-06T17:52:40Z",
+          "tree_id": "b1414ef91ba765dcdff0154984cee7408c01e15e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/29594528f4649ad4cdb69e59becc863890fb560d"
+        },
+        "date": 1791309684361,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 351.4,
+            "unit": "ns/op",
+            "extra": "3373582 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 94457,
+            "unit": "ns/op",
+            "extra": "12692 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 389.3,
+            "unit": "ns/op",
+            "extra": "3079600 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 93330,
+            "unit": "ns/op",
+            "extra": "12792 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25663,
+            "unit": "ns/op",
+            "extra": "46615 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 147749,
+            "unit": "ns/op",
+            "extra": "8218 times\n4 procs"
           }
         ]
       }

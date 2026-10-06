@@ -34,9 +34,17 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		return err
 	}
 
-	currentDonTimes := make(map[string][]int64, len(outcome.ObservedDonTimes))
+	currentDonTimes := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
-		currentDonTimes[id] = observedDonTimes.Timestamps
+		if len(observedDonTimes.Timestamps) > 0 {
+			m := make(map[int64]int64)
+			for i, t := range observedDonTimes.Timestamps {
+				m[int64(i)] = t
+			}
+			currentDonTimes[id] = m
+		} else {
+			currentDonTimes[id] = observedDonTimes.TimestampsBySequence
+		}
 	}
 	t.store.replaceDonTimes(currentDonTimes)
 	t.store.setLastObservedDonTime(outcome.Timestamp)

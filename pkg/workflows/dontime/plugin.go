@@ -280,6 +280,21 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 
 // unsequencedOutcome executes the original outcome logic to produce an unsequenced slice of [pb.ObservedDonTimes.Timestamps].
 func (p *Plugin) unsequencedOutcome(aos []types.AttributedObservation, prevOutcome *pb.Outcome, donTime int64) *pb.Outcome {
+	// If disabling the feature flag, then at the transition point, we need to convert from the map format to the slices
+	for _, observedTimes := range prevOutcome.ObservedDonTimes {
+		if mapLen := len(observedTimes.TimestampsBySequence); mapLen > 0 {
+			observedTimes.Timestamps = make([]int64, mapLen)
+			for seqNum, ts := range observedTimes.TimestampsBySequence {
+				if sliceLen := len(observedTimes.Timestamps); seqNum > int64(sliceLen) {
+					// There must have been a gap in the sequence so grow the slice
+					observedTimes.Timestamps = slices.Grow(observedTimes.Timestamps, int(seqNum)-sliceLen)
+				}
+				observedTimes.Timestamps[seqNum] = ts
+			}
+			observedTimes.TimestampsBySequence = nil
+		}
+	}
+
 	// req_id->count - how many nodes reported where a new DON timestamp might be needed
 	observationCounts := map[string]int64{}
 	for _, ao := range aos {
@@ -340,7 +355,6 @@ func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome
 	observationCounts := map[reqSeq]int64{}
 
 	// At the transition point, we need to convert from the old slice format to maps
-	//TODO consider reverse when disabling...
 	for _, observedTimes := range prevOutcome.ObservedDonTimes {
 		if len(observedTimes.Timestamps) > 0 {
 			for seqNum, ts := range observedTimes.Timestamps {

@@ -564,7 +564,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
-		store.setDonTimes("workflow-123", []int64{time.Now().UnixMilli()})
+		store.setDonTimes("workflow-123", map[int64]int64{0: time.Now().UnixMilli()})
 
 		r := ocr3types.ReportWithInfo[[]byte]{}
 		r.Report, err = proto.Marshal(outcomeProto)

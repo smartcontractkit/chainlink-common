@@ -89,7 +89,6 @@ func TestEnvConfig_parse(t *testing.T) {
 				envTelemetryPrometheusBridgePrefixes:  "foo,bar",
 				envMeterRecordsEnabled:                "true",
 				envMeterSnapshotsEnabled:              "false",
-				envCapabilityUsageEnabled:             "true",
 				envMeterProduct:                       "cre-mainline",
 				envMeterTenant:                        "mainline",
 				envMeterNumericTenantID:               "42",
@@ -231,7 +230,6 @@ var envCfgFull = EnvConfig{
 	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 	MeterRecordsEnabled:                true,
 	MeterSnapshotsEnabled:              false,
-	CapabilityUsageEnabled:             true,
 	MeterProduct:                       "cre-mainline",
 	MeterTenant:                        "mainline",
 	MeterNumericTenantID:               "42",
@@ -315,7 +313,6 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "foo,bar", got[envTelemetryPrometheusBridgePrefixes])
 	assert.Equal(t, "true", got[envMeterRecordsEnabled])
 	assert.Equal(t, "false", got[envMeterSnapshotsEnabled])
-	assert.Equal(t, "true", got[envCapabilityUsageEnabled])
 	assert.Equal(t, "cre-mainline", got[envMeterProduct])
 	assert.Equal(t, "mainline", got[envMeterTenant])
 	assert.Equal(t, "42", got[envMeterNumericTenantID])

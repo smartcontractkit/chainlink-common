@@ -34,16 +34,3 @@ func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemana
 		},
 	}
 }
-
-// CapabilityUsageConfig maps this EnvConfig to the resourcemanager.Config for
-// a dedicated workflow capability usage ResourceManager (compute, gas
-// records).
-func (e *EnvConfig) CapabilityUsageConfig(emitter resourcemanager.Emitter) resourcemanager.Config {
-	if e == nil {
-		return resourcemanager.Config{}
-	}
-	cfg := e.MeteringConfig(emitter)
-	cfg.MeterRecordsEnabled = e.CapabilityUsageEnabled
-	cfg.MeterSnapshotsEnabled = false
-	return cfg
-}

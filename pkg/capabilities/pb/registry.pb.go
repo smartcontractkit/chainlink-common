@@ -674,6 +674,128 @@ func (x *CapabilityConfig) GetSpecConfig() *pb.Map {
 	return nil
 }
 
+// OffchainCapabilitiesRegistry is the offchain-distributed consolidation of the capability
+// configuration that today is split across the on-chain CapabilitiesRegistry, job specs, and
+// node TOML. It is the top-level versioned container delivered to nodes as proto JSON in a
+// cresettings job spec (config_type = "capabilities_registry"). Its DON structure mirrors the
+// on-chain CapabilitiesRegistry contract, and it reuses CapabilityConfig so the offchain and
+// on-chain shapes stay identical and can be compared field-by-field.
+type OffchainCapabilitiesRegistry struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Domain string                 `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+	Env    string                 `protobuf:"bytes,2,opt,name=env,proto3" json:"env,omitempty"`
+	// Monotonically increasing; 0 = unset.
+	Version uint64 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	// Per-DON configuration, keyed by on-chain DON name (e.g. "workflow_1_zone-a").
+	Dons          map[string]*DONConfig `protobuf:"bytes,4,rep,name=dons,proto3" json:"dons,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OffchainCapabilitiesRegistry) Reset() {
+	*x = OffchainCapabilitiesRegistry{}
+	mi := &file_registry_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OffchainCapabilitiesRegistry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OffchainCapabilitiesRegistry) ProtoMessage() {}
+
+func (x *OffchainCapabilitiesRegistry) ProtoReflect() protoreflect.Message {
+	mi := &file_registry_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OffchainCapabilitiesRegistry.ProtoReflect.Descriptor instead.
+func (*OffchainCapabilitiesRegistry) Descriptor() ([]byte, []int) {
+	return file_registry_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *OffchainCapabilitiesRegistry) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *OffchainCapabilitiesRegistry) GetEnv() string {
+	if x != nil {
+		return x.Env
+	}
+	return ""
+}
+
+func (x *OffchainCapabilitiesRegistry) GetVersion() uint64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *OffchainCapabilitiesRegistry) GetDons() map[string]*DONConfig {
+	if x != nil {
+		return x.Dons
+	}
+	return nil
+}
+
+// DONConfig carries the offchain capability configuration for a single DON.
+type DONConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Capability ID (e.g. "streams-trigger@1.0.0") -> capability config.
+	Capabilities  map[string]*CapabilityConfig `protobuf:"bytes,1,rep,name=capabilities,proto3" json:"capabilities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DONConfig) Reset() {
+	*x = DONConfig{}
+	mi := &file_registry_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DONConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DONConfig) ProtoMessage() {}
+
+func (x *DONConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_registry_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DONConfig.ProtoReflect.Descriptor instead.
+func (*DONConfig) Descriptor() ([]byte, []int) {
+	return file_registry_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DONConfig) GetCapabilities() map[string]*CapabilityConfig {
+	if x != nil {
+		return x.Capabilities
+	}
+	return nil
+}
+
 var File_registry_proto protoreflect.FileDescriptor
 
 const file_registry_proto_rawDesc = "" +
@@ -730,7 +852,20 @@ const file_registry_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x10.loop.OCR3ConfigR\x05value:\x028\x01\x1aW\n" +
 	"\x19OracleFactoryConfigsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12$\n" +
-	"\x05value\x18\x02 \x01(\v2\x0e.values.v1.MapR\x05value:\x028\x01J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x04\x10\x05*5\n" +
+	"\x05value\x18\x02 \x01(\v2\x0e.values.v1.MapR\x05value:\x028\x01J\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x04\x10\x05\"\xee\x01\n" +
+	"\x1cOffchainCapabilitiesRegistry\x12\x16\n" +
+	"\x06domain\x18\x01 \x01(\tR\x06domain\x12\x10\n" +
+	"\x03env\x18\x02 \x01(\tR\x03env\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\x04R\aversion\x12@\n" +
+	"\x04dons\x18\x04 \x03(\v2,.loop.OffchainCapabilitiesRegistry.DonsEntryR\x04dons\x1aH\n" +
+	"\tDonsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
+	"\x05value\x18\x02 \x01(\v2\x0f.loop.DONConfigR\x05value:\x028\x01\"\xab\x01\n" +
+	"\tDONConfig\x12E\n" +
+	"\fcapabilities\x18\x01 \x03(\v2!.loop.DONConfig.CapabilitiesEntryR\fcapabilities\x1aW\n" +
+	"\x11CapabilitiesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12,\n" +
+	"\x05value\x18\x02 \x01(\v2\x16.loop.CapabilityConfigR\x05value:\x028\x01*5\n" +
 	"\x14TransmissionSchedule\x12\r\n" +
 	"\tAllAtOnce\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -756,50 +891,58 @@ func file_registry_proto_rawDescGZIP() []byte {
 }
 
 var file_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_registry_proto_goTypes = []any{
-	(TransmissionSchedule)(0),      // 0: loop.TransmissionSchedule
-	(RequestHasherType)(0),         // 1: loop.RequestHasherType
-	(AggregatorType)(0),            // 2: loop.AggregatorType
-	(*RemoteTriggerConfig)(nil),    // 3: loop.RemoteTriggerConfig
-	(*RemoteExecutableConfig)(nil), // 4: loop.RemoteExecutableConfig
-	(*AggregatorConfig)(nil),       // 5: loop.AggregatorConfig
-	(*CapabilityMethodConfig)(nil), // 6: loop.CapabilityMethodConfig
-	(*OCR3Config)(nil),             // 7: loop.OCR3Config
-	(*CapabilityConfig)(nil),       // 8: loop.CapabilityConfig
-	nil,                            // 9: loop.CapabilityConfig.MethodConfigsEntry
-	nil,                            // 10: loop.CapabilityConfig.Ocr3ConfigsEntry
-	nil,                            // 11: loop.CapabilityConfig.OracleFactoryConfigsEntry
-	(*durationpb.Duration)(nil),    // 12: google.protobuf.Duration
-	(*pb.Map)(nil),                 // 13: values.v1.Map
+	(TransmissionSchedule)(0),            // 0: loop.TransmissionSchedule
+	(RequestHasherType)(0),               // 1: loop.RequestHasherType
+	(AggregatorType)(0),                  // 2: loop.AggregatorType
+	(*RemoteTriggerConfig)(nil),          // 3: loop.RemoteTriggerConfig
+	(*RemoteExecutableConfig)(nil),       // 4: loop.RemoteExecutableConfig
+	(*AggregatorConfig)(nil),             // 5: loop.AggregatorConfig
+	(*CapabilityMethodConfig)(nil),       // 6: loop.CapabilityMethodConfig
+	(*OCR3Config)(nil),                   // 7: loop.OCR3Config
+	(*CapabilityConfig)(nil),             // 8: loop.CapabilityConfig
+	(*OffchainCapabilitiesRegistry)(nil), // 9: loop.OffchainCapabilitiesRegistry
+	(*DONConfig)(nil),                    // 10: loop.DONConfig
+	nil,                                  // 11: loop.CapabilityConfig.MethodConfigsEntry
+	nil,                                  // 12: loop.CapabilityConfig.Ocr3ConfigsEntry
+	nil,                                  // 13: loop.CapabilityConfig.OracleFactoryConfigsEntry
+	nil,                                  // 14: loop.OffchainCapabilitiesRegistry.DonsEntry
+	nil,                                  // 15: loop.DONConfig.CapabilitiesEntry
+	(*durationpb.Duration)(nil),          // 16: google.protobuf.Duration
+	(*pb.Map)(nil),                       // 17: values.v1.Map
 }
 var file_registry_proto_depIdxs = []int32{
-	12, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
-	12, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
-	12, // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
-	12, // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
+	16, // 0: loop.RemoteTriggerConfig.registrationRefresh:type_name -> google.protobuf.Duration
+	16, // 1: loop.RemoteTriggerConfig.registrationExpiry:type_name -> google.protobuf.Duration
+	16, // 2: loop.RemoteTriggerConfig.messageExpiry:type_name -> google.protobuf.Duration
+	16, // 3: loop.RemoteTriggerConfig.batchCollectionPeriod:type_name -> google.protobuf.Duration
 	0,  // 4: loop.RemoteExecutableConfig.transmission_schedule:type_name -> loop.TransmissionSchedule
-	12, // 5: loop.RemoteExecutableConfig.delta_stage:type_name -> google.protobuf.Duration
-	12, // 6: loop.RemoteExecutableConfig.request_timeout:type_name -> google.protobuf.Duration
+	16, // 5: loop.RemoteExecutableConfig.delta_stage:type_name -> google.protobuf.Duration
+	16, // 6: loop.RemoteExecutableConfig.request_timeout:type_name -> google.protobuf.Duration
 	1,  // 7: loop.RemoteExecutableConfig.request_hasher_type:type_name -> loop.RequestHasherType
 	2,  // 8: loop.AggregatorConfig.aggregator_type:type_name -> loop.AggregatorType
 	3,  // 9: loop.CapabilityMethodConfig.remote_trigger_config:type_name -> loop.RemoteTriggerConfig
 	4,  // 10: loop.CapabilityMethodConfig.remote_executable_config:type_name -> loop.RemoteExecutableConfig
 	5,  // 11: loop.CapabilityMethodConfig.aggregator_config:type_name -> loop.AggregatorConfig
-	13, // 12: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
-	13, // 13: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
-	9,  // 14: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
-	10, // 15: loop.CapabilityConfig.ocr3_configs:type_name -> loop.CapabilityConfig.Ocr3ConfigsEntry
-	11, // 16: loop.CapabilityConfig.oracle_factory_configs:type_name -> loop.CapabilityConfig.OracleFactoryConfigsEntry
-	13, // 17: loop.CapabilityConfig.spec_config:type_name -> values.v1.Map
-	6,  // 18: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
-	7,  // 19: loop.CapabilityConfig.Ocr3ConfigsEntry.value:type_name -> loop.OCR3Config
-	13, // 20: loop.CapabilityConfig.OracleFactoryConfigsEntry.value:type_name -> values.v1.Map
-	21, // [21:21] is the sub-list for method output_type
-	21, // [21:21] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	17, // 12: loop.CapabilityConfig.default_config:type_name -> values.v1.Map
+	17, // 13: loop.CapabilityConfig.restricted_config:type_name -> values.v1.Map
+	11, // 14: loop.CapabilityConfig.method_configs:type_name -> loop.CapabilityConfig.MethodConfigsEntry
+	12, // 15: loop.CapabilityConfig.ocr3_configs:type_name -> loop.CapabilityConfig.Ocr3ConfigsEntry
+	13, // 16: loop.CapabilityConfig.oracle_factory_configs:type_name -> loop.CapabilityConfig.OracleFactoryConfigsEntry
+	17, // 17: loop.CapabilityConfig.spec_config:type_name -> values.v1.Map
+	14, // 18: loop.OffchainCapabilitiesRegistry.dons:type_name -> loop.OffchainCapabilitiesRegistry.DonsEntry
+	15, // 19: loop.DONConfig.capabilities:type_name -> loop.DONConfig.CapabilitiesEntry
+	6,  // 20: loop.CapabilityConfig.MethodConfigsEntry.value:type_name -> loop.CapabilityMethodConfig
+	7,  // 21: loop.CapabilityConfig.Ocr3ConfigsEntry.value:type_name -> loop.OCR3Config
+	17, // 22: loop.CapabilityConfig.OracleFactoryConfigsEntry.value:type_name -> values.v1.Map
+	10, // 23: loop.OffchainCapabilitiesRegistry.DonsEntry.value:type_name -> loop.DONConfig
+	8,  // 24: loop.DONConfig.CapabilitiesEntry.value:type_name -> loop.CapabilityConfig
+	25, // [25:25] is the sub-list for method output_type
+	25, // [25:25] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_registry_proto_init() }
@@ -817,7 +960,7 @@ func file_registry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_registry_proto_rawDesc), len(file_registry_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   9,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

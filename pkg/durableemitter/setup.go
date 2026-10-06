@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	chipingressbatch "github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
@@ -88,6 +89,9 @@ type SetupConfig struct {
 	EmitterConfig *Config
 	// Meter is the OpenTelemetry meter for instrumentation. Nil disables metrics.
 	Meter metric.Meter
+	// TracerProvider is used for the emitter's spans and the chip ingress gRPC
+	// client spans. Nil uses the global otel tracer provider.
+	TracerProvider trace.TracerProvider
 }
 
 // Setup creates a DurableEmitter with a dedicated batch chip ingress client,
@@ -138,6 +142,9 @@ func Setup(
 	if cfg.EmitterConfig != nil {
 		emitterCfg = *cfg.EmitterConfig
 	}
+	if emitterCfg.TracerProvider == nil {
+		emitterCfg.TracerProvider = cfg.TracerProvider
+	}
 
 	emitter, err := NewDurableEmitter(store, batchClient, cfg.RetransmitEnabled, emitterCfg, lggr, cfg.Meter)
 	if err != nil {
@@ -155,7 +162,7 @@ func Setup(
 }
 
 func buildChipOpts(cfg SetupConfig, auth chipingress.HeaderProvider) []chipingress.Opt {
-	var opts []chipingress.Opt
+	opts := []chipingress.Opt{chipingress.WithClientName(chipingressbatch.ClientNameDurableEmitter)}
 	if cfg.InsecureConnection {
 		opts = append(opts, chipingress.WithInsecureConnection())
 	} else {
@@ -163,6 +170,9 @@ func buildChipOpts(cfg SetupConfig, auth chipingress.HeaderProvider) []chipingre
 	}
 	if auth != nil {
 		opts = append(opts, chipingress.WithTokenAuth(auth))
+	}
+	if cfg.TracerProvider != nil {
+		opts = append(opts, chipingress.WithTracerProvider(cfg.TracerProvider))
 	}
 	return opts
 }

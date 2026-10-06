@@ -97,6 +97,9 @@ var Default = Schema{
 	GatewayHTTPActionMtlsConcurrencyLimit:            Int(50),
 	GatewayHTTPActionOutboundConcurrencyLimit:        Int(875),
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit: Int(175),
+	DispatcherGlobalRate:                             Rate(rate.Limit(5000), 5000),
+	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
+	CentralTriggerEventQueueLimit:                    Int(1000),
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -355,6 +358,7 @@ var Default = Schema{
 		// hash divergence during the fill window.
 		FeatureWorkflowTagBackfillActivePeriod: disabledFeatureTimeRange,
 		FeatureConsensusStricterMedianQuorumActivePeriod: disabledFeatureTimeRange,
+		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
 	},
 }
 
@@ -425,7 +429,15 @@ type Schema struct {
 	// GatewayHTTPActionOutboundConcurrencyLimit, against GatewayHTTPPerNodeRate's ceiling
 	// (100rps burst): 100 * 1.75 ~= 175.
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit Setting[int] `unit:"{request}"`
-	TriggerRegistrationStatusUpdateTimeout           Setting[time.Duration]
+	// DispatcherGlobalRate bounds inbound P2P message rate across all senders.
+	DispatcherGlobalRate Setting[config.Rate]
+	// DispatcherPerSenderRate bounds inbound P2P message rate per sender.
+	DispatcherPerSenderRate Setting[config.Rate]
+	// CentralTriggerEventQueueLimit is the node-wide cap on trigger events buffered in the
+	// central trigger queue, across all workflows and orgs. It is re-read on every Put; when
+	// the queue is full, new events are dropped (and counted) rather than blocking.
+	CentralTriggerEventQueueLimit          Setting[int] `unit:"{trigger}"`
+	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`
@@ -547,6 +559,7 @@ type Workflows struct {
 	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

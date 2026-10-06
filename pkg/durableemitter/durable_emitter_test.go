@@ -815,6 +815,53 @@ func TestDurableEmitter_MetricsRegistersQueueTTLBudget(t *testing.T) {
 	}, 2*time.Second, 10*time.Millisecond, "expected durable_emitter.queue.ttl_budget_seconds Int64 gauge in exported metrics")
 }
 
+func TestDurableEmitter_MetricsRecordsInsertBatchSize(t *testing.T) {
+	meter, reader := newTestMeter(t)
+
+	store := NewMemDurableEventStore()
+	be := newTestBatchEmitter()
+	cfg := DefaultConfig()
+	cfg.RetransmitInterval = time.Hour
+	cfg.InsertBatchSize = 10
+	cfg.InsertBatchWorkers = 1
+	cfg.InsertBatchFlushInterval = 100 * time.Millisecond
+	cfg.Metrics = &DurableEmitterMetricsConfig{PollInterval: 25 * time.Millisecond}
+
+	em, err := NewDurableEmitter(store, be, true, cfg, logger.Test(t), meter)
+	require.NoError(t, err)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	const n = 25
+	var wg sync.WaitGroup
+	for range n {
+		wg.Go(func() { assert.NoError(t, em.Emit(ctx, []byte("m"), testEmitAttrs()...)) })
+	}
+	wg.Wait()
+
+	var rm metricdata.ResourceMetrics
+	require.NoError(t, reader.Collect(ctx, &rm))
+
+	var found bool
+	for _, sm := range rm.ScopeMetrics {
+		for _, m := range sm.Metrics {
+			if m.Name != "durable_emitter.insert_batch.size" {
+				continue
+			}
+			h, ok := m.Data.(metricdata.Histogram[int64])
+			require.True(t, ok, "expected Histogram[int64] for %s, got %T", m.Name, m.Data)
+			for _, dp := range h.DataPoints {
+				if hasMetricBoolAttr(dp.Attributes, "error", false) {
+					found = true
+					assert.Equal(t, int64(n), dp.Sum)
+					assert.Less(t, dp.Count, uint64(n), "batches should be coalesced, not one flush per event")
+				}
+			}
+		}
+	}
+	assert.True(t, found, "expected durable_emitter.insert_batch.size in exported metrics")
+}
+
 func counterSumByPhase(t *testing.T, rm metricdata.ResourceMetrics, name, phase string) int64 {
 	t.Helper()
 	var total int64
@@ -877,6 +924,15 @@ func hasMetricStringAttr(set attribute.Set, key, want string) bool {
 	for _, kv := range set.ToSlice() {
 		if string(kv.Key) == key {
 			return kv.Value.AsString() == want
+		}
+	}
+	return false
+}
+
+func hasMetricBoolAttr(set attribute.Set, key string, want bool) bool {
+	for _, kv := range set.ToSlice() {
+		if string(kv.Key) == key {
+			return kv.Value.AsBool() == want
 		}
 	}
 	return false

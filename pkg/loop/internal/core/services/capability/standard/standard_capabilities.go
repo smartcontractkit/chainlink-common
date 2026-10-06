@@ -10,6 +10,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	capabilitiespb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
@@ -117,7 +118,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	resources = append(resources, keyValueStoreRes)
 
 	capabilitiesRegistryID, capabilityRegistryResource, err := c.ServeNew("CapabilitiesRegistry", func(s *grpc.Server) {
-		pb.RegisterCapabilitiesRegistryServer(s, capability.NewCapabilitiesRegistryServer(c.BrokerExt, capabilitiesRegistry))
+		capability.RegisterCapabilitiesRegistryServer(s, c.BrokerExt, capabilitiesRegistry)
 	})
 	if err != nil {
 		c.CloseAll(resources...)
@@ -248,7 +249,7 @@ func (c *StandardCapabilitiesClient) Infos(ctx context.Context) ([]capabilities.
 
 	var infos []capabilities.CapabilityInfo
 	for _, infoResponse := range infosResponse.Infos {
-		info, err := capability.InfoReplyToInfo(infoResponse)
+		info, err := remote.InfoReplyToInfo(infoResponse)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert capability info: %w", err)
 		}
@@ -440,7 +441,7 @@ func (s *standardCapabilitiesServer) Infos(ctx context.Context, request *emptypb
 
 	var infosReply []*capabilitiespb.CapabilityInfoReply
 	for _, info := range infos {
-		infosReply = append(infosReply, capability.InfoToReply(info))
+		infosReply = append(infosReply, remote.InfoToReply(info))
 	}
 
 	return &capabilitiespb.CapabilityInfosReply{Infos: infosReply}, nil

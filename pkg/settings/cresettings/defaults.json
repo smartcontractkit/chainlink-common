@@ -33,6 +33,7 @@
 	"GatewayHTTPActionOutboundPerNodeConcurrencyLimit": "175",
 	"DispatcherGlobalRate": "5000rps:5000",
 	"DispatcherPerSenderRate": "500rps:1000",
+	"CentralTriggerEventQueueLimit": "1000",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",

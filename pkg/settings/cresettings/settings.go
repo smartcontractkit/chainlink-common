@@ -94,6 +94,7 @@ var Default = Schema{
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit: Int(175),
 	DispatcherGlobalRate:                             Rate(rate.Limit(5000), 5000),
 	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
+	CentralTriggerEventQueueLimit:                    Int(1000),
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -439,7 +440,11 @@ type Schema struct {
 	// DispatcherGlobalRate bounds inbound P2P message rate across all senders.
 	DispatcherGlobalRate Setting[config.Rate]
 	// DispatcherPerSenderRate bounds inbound P2P message rate per sender.
-	DispatcherPerSenderRate                Setting[config.Rate]
+	DispatcherPerSenderRate Setting[config.Rate]
+	// CentralTriggerEventQueueLimit is the node-wide cap on trigger events buffered in the
+	// central trigger queue, across all workflows and orgs. It is re-read on every Put; when
+	// the queue is full, new events are dropped (and counted) rather than blocking.
+	CentralTriggerEventQueueLimit          Setting[int] `unit:"{trigger}"`
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]

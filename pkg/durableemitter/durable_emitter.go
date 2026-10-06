@@ -624,6 +624,7 @@ func (d *DurableEmitter) insertBatchLoop() {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
+		d.metrics.recordInsertBatchSize(ctx, len(payloads), batchErr)
 		cancel()
 		if batchErr == nil {
 			d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))

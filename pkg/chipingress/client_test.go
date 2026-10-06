@@ -169,47 +169,115 @@ func TestNewEvent_IdempotencyKey(t *testing.T) {
 	})
 }
 
-func TestNewEvent_OrderKeyField(t *testing.T) {
+func TestNewOrderKey(t *testing.T) {
+	t.Run("single field", func(t *testing.T) {
+		k, err := NewOrderKey(OrderKeyFieldCSAPublicKey)
+		require.NoError(t, err)
+		assert.Equal(t, OrderKey("csapublickey"), k)
+	})
+	t.Run("no fields errors", func(t *testing.T) {
+		_, err := NewOrderKey()
+		require.ErrorContains(t, err, "at least one field")
+	})
+	t.Run("unknown field errors", func(t *testing.T) {
+		_, err := NewOrderKey(OrderKeyField("bogus"))
+		require.ErrorContains(t, err, "unsupported order key field")
+	})
+	t.Run("empty field errors", func(t *testing.T) {
+		_, err := NewOrderKey(OrderKeyField(""))
+		require.Error(t, err)
+	})
+	t.Run("duplicate errors", func(t *testing.T) {
+		_, err := NewOrderKey(OrderKeyFieldCSAPublicKey, OrderKeyFieldCSAPublicKey)
+		require.ErrorContains(t, err, "duplicate")
+	})
+	t.Run("more than 4 fields errors", func(t *testing.T) {
+		f := OrderKeyFieldCSAPublicKey
+		_, err := NewOrderKey(f, f, f, f, f)
+		require.ErrorContains(t, err, "max is 4")
+	})
+}
+
+func TestNewEvent_OrderKey(t *testing.T) {
 	payload := []byte("body")
 
-	t.Run("typed constant sets extension", func(t *testing.T) {
-		attrs := map[string]any{OrderKeyFieldAttr: OrderKeyFieldCSAPublicKey}
-		event, err := NewEvent("domain", "entity", payload, attrs)
+	t.Run("typed OrderKey sets extension", func(t *testing.T) {
+		k, err := NewOrderKey(OrderKeyFieldCSAPublicKey)
 		require.NoError(t, err)
-		assert.Equal(t, "csapublickey", event.Extensions()[OrderKeyFieldAttr])
+		event, err := NewEvent("domain", "entity", payload, map[string]any{OrderKeyAttr: k})
+		require.NoError(t, err)
+		assert.Equal(t, "csapublickey", event.Extensions()[OrderKeyAttr])
+	})
+
+	t.Run("bare OrderKeyField is accepted", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, map[string]any{OrderKeyAttr: OrderKeyFieldCSAPublicKey})
+		require.NoError(t, err)
+		assert.Equal(t, "csapublickey", event.Extensions()[OrderKeyAttr])
+	})
+
+	t.Run("bare unknown OrderKeyField errors", func(t *testing.T) {
+		_, err := NewEvent("domain", "entity", payload, map[string]any{OrderKeyAttr: OrderKeyField("bogus")})
+		require.ErrorContains(t, err, "unsupported order key field")
 	})
 
 	t.Run("plain string is ignored", func(t *testing.T) {
-		attrs := map[string]any{OrderKeyFieldAttr: "csapublickey"}
-		event, err := NewEvent("domain", "entity", payload, attrs)
+		event, err := NewEvent("domain", "entity", payload, map[string]any{OrderKeyAttr: "csapublickey"})
 		require.NoError(t, err)
-		_, present := event.Extensions()[OrderKeyFieldAttr]
+		_, present := event.Extensions()[OrderKeyAttr]
 		assert.False(t, present)
 	})
 
-	t.Run("unknown typed value returns error", func(t *testing.T) {
-		attrs := map[string]any{OrderKeyFieldAttr: OrderKeyField("bogus")}
-		_, err := NewEvent("domain", "entity", payload, attrs)
-		require.ErrorContains(t, err, "unsupported order key field")
+	t.Run("hand-converted invalid OrderKey errors", func(t *testing.T) {
+		for _, bad := range []OrderKey{"", "bogus", "csapublickey:bogus", "csapublickey:", "csapublickey:csapublickey"} {
+			_, err := NewEvent("domain", "entity", payload, map[string]any{OrderKeyAttr: bad})
+			require.Error(t, err, "key %q", bad)
+		}
 	})
 
 	t.Run("absent leaves extension unset", func(t *testing.T) {
 		event, err := NewEvent("domain", "entity", payload, nil)
 		require.NoError(t, err)
-		_, present := event.Extensions()[OrderKeyFieldAttr]
+		_, present := event.Extensions()[OrderKeyAttr]
 		assert.False(t, present)
 	})
+}
 
-	t.Run("round-trips through EventToProto", func(t *testing.T) {
-		attrs := map[string]any{OrderKeyFieldAttr: OrderKeyFieldCSAPublicKey}
-		event, err := NewEvent("domain", "entity", payload, attrs)
+func TestNewEvent_PartitionKey(t *testing.T) {
+	payload := []byte("body")
+
+	t.Run("string forwarded unchanged", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, map[string]any{PartitionKeyAttr: "a:b:c"})
 		require.NoError(t, err)
-		eventPb, err := EventToProto(event)
-		require.NoError(t, err)
-		attr, ok := eventPb.Attributes[OrderKeyFieldAttr]
-		require.True(t, ok)
-		assert.Equal(t, "csapublickey", attr.GetCeString())
+		assert.Equal(t, "a:b:c", event.Extensions()[PartitionKeyAttr])
 	})
+	t.Run("empty string means no extension", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, map[string]any{PartitionKeyAttr: ""})
+		require.NoError(t, err)
+		_, present := event.Extensions()[PartitionKeyAttr]
+		assert.False(t, present)
+	})
+	t.Run("non-string ignored", func(t *testing.T) {
+		event, err := NewEvent("domain", "entity", payload, map[string]any{PartitionKeyAttr: 42})
+		require.NoError(t, err)
+		_, present := event.Extensions()[PartitionKeyAttr]
+		assert.False(t, present)
+	})
+}
+
+func TestNewEvent_OrderKeyAndPartitionKeyRoundTrip(t *testing.T) {
+	k, err := NewOrderKey(OrderKeyFieldCSAPublicKey)
+	require.NoError(t, err)
+	event, err := NewEvent("domain", "entity", []byte("body"), map[string]any{
+		OrderKeyAttr:     k,
+		PartitionKeyAttr: "x:y",
+	})
+	require.NoError(t, err)
+	eventPb, err := EventToProto(event)
+	require.NoError(t, err)
+	require.Contains(t, eventPb.Attributes, OrderKeyAttr)
+	assert.Equal(t, "csapublickey", eventPb.Attributes[OrderKeyAttr].GetCeString())
+	require.Contains(t, eventPb.Attributes, PartitionKeyAttr)
+	assert.Equal(t, "x:y", eventPb.Attributes[PartitionKeyAttr].GetCeString())
 }
 
 func TestEventToProto(t *testing.T) {

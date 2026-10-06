@@ -1,0 +1,50 @@
+name: Changed Go modules
+description: |
+  Lists the Go modules a run should check, for a matrix of per-module jobs.
+
+  Every module is listed on a push, on a run with no changeset, and when any file under .github
+  changes. Otherwise a module is listed when any file in its directory changed, Go or not, since
+  embedded files are built in too. A file belongs to the deepest module containing it, and an
+  example module counts as its parent (see script/go-modules.sh).
+
+  Expects a checkout with full history.
+
+outputs:
+  modules:
+    description: A JSON array of module paths relative to the repository root, the root module as ".".
+    value: ${{ steps.resolve.outputs.modules }}
+
+runs:
+  using: composite
+  steps:
+    - name: Modules with changed files
+      id: changed
+      uses: smartcontractkit/.github/actions/changed-modules-go@changed-modules-go/v1
+      with:
+        no-change-behaviour: all
+        file-patterns: "**"
+        module-patterns: |
+          **
+          !**/vendor/**
+
+    - name: Workflow changes
+      id: workflows
+      uses: smartcontractkit/.github/actions/changed-modules-go@changed-modules-go/v1
+      with:
+        no-change-behaviour: none
+        file-patterns: .github/**
+
+    - name: Resolve modules
+      id: resolve
+      shell: bash
+      env:
+        CHANGED: ${{ steps.changed.outputs.modules-json }}
+        WORKFLOWS: ${{ steps.workflows.outputs.modules-json }}
+      run: |
+        if [[ "$GITHUB_EVENT_NAME" == push || ( -n "$WORKFLOWS" && "$WORKFLOWS" != "[]" ) ]]; then
+          modules=$(script/go-modules.sh)
+        else
+          modules=$(jq -r '.[]' <<< "$CHANGED" | while read -r module; do script/go-modules.sh parent "$module"; done)
+        fi
+        modules=$(jq -Rsc 'split("\n") | map(select(. != "")) | unique' <<< "$modules")
+        echo "modules=$modules" | tee -a "$GITHUB_OUTPUT"

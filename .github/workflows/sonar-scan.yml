@@ -2,6 +2,11 @@ name: SonarQube Scan
 
 on: [push]
 
+# Reading other workflows' runs and artifacts takes actions: read.
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   wait_for_workflows:
     name: Wait for workflows
@@ -29,12 +34,56 @@ jobs:
     needs: [wait_for_workflows]
     runs-on: ubuntu-latest
     if: always()
+    # The steps of smartcontractkit/.github's ci-sonarqube-go, pinned to this commit's reports. That
+    # action takes the newest artifact of one fixed name from any branch, and lint artifacts here
+    # are named per module.
     steps:
-      - name: SonarQube Scan
-        uses: smartcontractkit/.github/actions/ci-sonarqube-go@ci-sonarqube-go/0.4.0
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
-          include-lint: "true"
-          test-report-workflow: pkg.yml
-          lint-report-workflow: golangci_lint.yml
-          sonar-token: ${{ secrets.SONAR_TOKEN }}
-          sonar-host-url: ${{ secrets.SONAR_HOST_URL }}
+          fetch-depth: 0
+
+      - name: Download coverage reports
+        uses: dawidd6/action-download-artifact@634d83b91986fcec9be314054943fa5c976aeb0e # v25
+        with:
+          workflow: pkg.yml
+          name: go-test-coverage-.*
+          name_is_regexp: true
+          commit: ${{ github.sha }}
+          search_artifacts: true
+          workflow_conclusion: ""
+          # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.
+          if_no_artifact_found: ${{ github.ref_name == 'main' && 'fail' || 'warn' }}
+          path: sonar-reports/coverage
+
+      - name: Download lint reports
+        uses: dawidd6/action-download-artifact@634d83b91986fcec9be314054943fa5c976aeb0e # v25
+        with:
+          workflow: golangci_lint.yml
+          name: golangci-lint-report-.*
+          name_is_regexp: true
+          commit: ${{ github.sha }}
+          search_artifacts: true
+          workflow_conclusion: ""
+          # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.
+          if_no_artifact_found: ${{ github.ref_name == 'main' && 'fail' || 'warn' }}
+          path: sonar-reports/lint
+
+      - name: Set SonarQube Report Paths
+        # Lint runs only when Go files change, so a commit may have no reports to pass.
+        run: |
+          mkdir -p sonar-reports
+          coverage=$(find sonar-reports -type f -name coverage.txt -printf "%p,")
+          lint=$(find sonar-reports -type f -name golangci-lint-report.xml -printf "%p,")
+          args=""
+          [[ -n "$coverage" ]] && args="$args -Dsonar.go.coverage.reportPaths=$coverage"
+          [[ -n "$lint" ]] && args="$args -Dsonar.go.golangci-lint.reportPaths=$lint"
+          echo "SONARQUBE_ARGS=$args" >> "$GITHUB_ENV"
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+        with:
+          args: ${{ env.SONARQUBE_ARGS }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}

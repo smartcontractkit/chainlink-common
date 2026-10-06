@@ -19,6 +19,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
@@ -153,9 +154,8 @@ type malformedExecutablePlugin struct {
 	brokerCfg net.BrokerConfig
 }
 
-func (p *malformedExecutablePlugin) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
-	bext := &net.BrokerExt{BrokerConfig: p.brokerCfg, Broker: broker}
-	return NewExecutableCapabilityClient(bext, client), nil
+func (p *malformedExecutablePlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
+	return remote.NewExecutableCapabilityClient(p.brokerCfg.Logger, client), nil
 }
 
 func (p *malformedExecutablePlugin) GRPCServer(_ *plugin.GRPCBroker, server *grpc.Server) error {
@@ -169,27 +169,23 @@ type capabilityPlugin struct {
 	capability capabilities.BaseCapability
 }
 
-func (c *capabilityPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
-	bext := &net.BrokerExt{
-		BrokerConfig: c.brokerCfg,
-		Broker:       broker,
-	}
+func (c *capabilityPlugin) GRPCClient(ctx context.Context, _ *plugin.GRPCBroker, client *grpc.ClientConn) (any, error) {
 	switch c.capability.(type) {
 	case capabilities.TriggerExecutable:
-		return NewTriggerCapabilityClient(bext, client), nil
+		return remote.NewTriggerCapabilityClient(c.brokerCfg.Logger, client), nil
 	case capabilities.Executable:
-		return NewExecutableCapabilityClient(bext, client), nil
+		return remote.NewExecutableCapabilityClient(c.brokerCfg.Logger, client), nil
 	}
 
 	panic(fmt.Sprintf("unexpected capability type %T", c.capability))
 }
 
-func (c *capabilityPlugin) GRPCServer(broker *plugin.GRPCBroker, server *grpc.Server) error {
+func (c *capabilityPlugin) GRPCServer(_ *plugin.GRPCBroker, server *grpc.Server) error {
 	switch tc := c.capability.(type) {
 	case capabilities.TriggerCapability:
-		return RegisterTriggerCapabilityServer(server, broker, c.brokerCfg, tc)
-	case ExecutableCapability:
-		return RegisterExecutableCapabilityServer(server, broker, c.brokerCfg, tc)
+		return remote.RegisterTriggerCapabilityServer(server, c.brokerCfg.Logger, tc)
+	case remote.ExecutableCapability:
+		return remote.RegisterExecutableCapabilityServer(server, c.brokerCfg.Logger, tc)
 	}
 
 	return nil

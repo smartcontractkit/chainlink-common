@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791249370354,
+  "lastUpdate": 1791284186879,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63000,6 +63000,66 @@ window.BENCHMARK_DATA = {
             "value": 48724,
             "unit": "ns/op",
             "extra": "24787 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0bee41504b4da8156a22f0d5e7486ed52483c2d5",
+          "message": "Add x/config/cli (#2423)\n\n* Add x/config/cli\n\n* Remove namespaces (can add it as a RegisterOption later if needed), remove list, map and set validations for later PRs. Remove redundant test coverage. Redo comments and divide everything up clearer.\n\n* Add comment about T on RegisterOption\n\n* Make targetEntry generic so RegisterOption doens't lose the type\n\n* fix lint\n\n* typeOf => typeFor in one place\n\n* appconfig for example config package, use a pre-created splitter, other small PR comments",
+          "timestamp": "2026-10-06T10:53:00Z",
+          "tree_id": "a46b3ebd0da1f9265be5eb589aeac6f9ed1a6c6f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0bee41504b4da8156a22f0d5e7486ed52483c2d5"
+        },
+        "date": 1791284182449,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 348.8,
+            "unit": "ns/op",
+            "extra": "3400894 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 88940,
+            "unit": "ns/op",
+            "extra": "13449 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 388.5,
+            "unit": "ns/op",
+            "extra": "3072787 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 89608,
+            "unit": "ns/op",
+            "extra": "13429 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26175,
+            "unit": "ns/op",
+            "extra": "44386 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135593,
+            "unit": "ns/op",
+            "extra": "8428 times\n4 procs"
           }
         ]
       }

@@ -37,12 +37,7 @@ func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemana
 
 // CapabilityUsageConfig maps this EnvConfig to the resourcemanager.Config for
 // a dedicated workflow capability usage ResourceManager (compute, gas
-// records). It is gated by CapabilityUsageEnabled alone: MeterRecordsEnabled
-// governs durable resource metering and must not switch billing records on or
-// off, so the usage manager gets its own ResourceManagerConfig with records
-// enabled iff CapabilityUsageEnabled, and snapshots always off (usage records
-// have no level to snapshot). Same emitter and deployment identity as
-// MeteringConfig.
+// records).
 func (e *EnvConfig) CapabilityUsageConfig(emitter resourcemanager.Emitter) resourcemanager.Config {
 	if e == nil {
 		return resourcemanager.Config{}

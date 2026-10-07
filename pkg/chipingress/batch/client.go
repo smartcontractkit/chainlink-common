@@ -355,10 +355,19 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			if err != nil {
 				b.log.Errorw("failed to publish batch", "error", err)
 				b.completeBatchCallbacks(batchMessages, err)
-			} else if !b.transactionEnabled {
-				// always call, even when no results
+			} else if !b.transactionEnabled && resp != nil && len(resp.Results) > 0 {
+				// A nil-error response with a non-empty results array is correlated
+				// per event below; partial arrays still mismatch for the missing tail.
 				b.completeBatchCallbacksFromResults(batchMessages, resp.Results)
 			} else {
+				// A nil-error response with NO per-event results means the server
+				// accepted the batch without per-event detail — e.g. local-cre
+				// chip-router v1.x forwards every event to Kafka but returns an
+				// empty results array. Reporting RESULTS_MISMATCH here makes the
+				// durable emitter retransmit every event forever (it never sees an
+				// ack), duplicating the whole stream and flooding the topic, while
+				// the events were in fact delivered. Treat empty results as
+				// delivered.
 				b.completeBatchCallbacks(batchMessages, nil)
 			}
 		}

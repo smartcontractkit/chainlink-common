@@ -2132,6 +2132,43 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		assert.Contains(t, results["e3"].Error(), "server returned 1 results for 3 events")
 	})
 
+	t.Run("no results with nil error counts as delivered, no retransmit", func(t *testing.T) {
+		// Servers that accept a batch without per-event detail (e.g. local-cre
+		// chip-router v1.x forwards everything to Kafka but returns an empty
+		// results array) must not trip RESULTS_MISMATCH: the durable emitter
+		// would retransmit every event forever, duplicating the whole stream.
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.
+			On("PublishBatch", mock.Anything, mock.Anything).
+			Return(&chipingress.PublishResponse{
+				Results: []*chipingress.PublishResult{},
+			}, nil)
+
+		client, err := NewBatchClient(mockClient, WithTransactionEnabled(false))
+		require.NoError(t, err)
+
+		var mu sync.Mutex
+		results := make(map[string]error)
+		messages := []*messageWithCallback{
+			{event: &chipingress.CloudEventPb{Id: "e1", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e1"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e2", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e2"] = err; mu.Unlock() }},
+			{event: &chipingress.CloudEventPb{Id: "e3", Source: "s", SpecVersion: "1.0", Type: "t"}, callback: func(err error) { mu.Lock(); results["e3"] = err; mu.Unlock() }},
+		}
+
+		client.sendBatch(t.Context(), messages)
+		// Wait for send goroutine to finish (acquire+release semaphore slot).
+		client.maxConcurrentSends <- struct{}{}
+		<-client.maxConcurrentSends
+		client.callbackWg.Wait()
+
+		mu.Lock()
+		defer mu.Unlock()
+		require.NoError(t, results["e1"])
+		require.NoError(t, results["e2"])
+		require.NoError(t, results["e3"])
+	})
+
 	t.Run("more results than messages does not panic", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()

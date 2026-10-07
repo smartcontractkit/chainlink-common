@@ -41,6 +41,8 @@ message GetSecretsRequest {
   repeated SecretRequest requests = 1;
   string org_id = 2 [deprecated = true];
   string workflow_owner = 3 [deprecated = true];
+  // Serve from each Vault node's local state instead of through OCR.
+  bool get_secrets_directly = 4;
 }
 
 message GetSecretsResponse {

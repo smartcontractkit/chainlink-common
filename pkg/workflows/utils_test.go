@@ -11,34 +11,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_EncodeExecutionID(t *testing.T) {
+func Test_GenerateExecutionIDWithTriggerIndex(t *testing.T) {
 	var (
-		workflowID = "workflowID"
-		eventID    = "eventID"
-		s          = sha256.New()
+		workflowID     = "workflowID"
+		triggerEventID = "eventID"
+		triggerIndex   = 3
+		s              = sha256.New()
 	)
 
 	_, err := s.Write([]byte(workflowID))
 	assert.NoError(t, err)
 
-	_, err = s.Write([]byte(eventID))
+	_, err = s.Write([]byte(triggerEventID))
+	assert.NoError(t, err)
+
+	_, err = s.Write([]byte("3"))
 	assert.NoError(t, err)
 
 	expected := hex.EncodeToString(s.Sum(nil))
-	actual, err := EncodeExecutionID(workflowID, eventID)
+	actual, err := GenerateExecutionIDWithTriggerIndex(workflowID, triggerEventID, triggerIndex)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 
-	// Test ordering
-	s.Reset()
-	_, err = s.Write([]byte(eventID))
+	// Deterministic across repeated calls
+	again, err := GenerateExecutionIDWithTriggerIndex(workflowID, triggerEventID, triggerIndex)
 	assert.NoError(t, err)
+	assert.Equal(t, actual, again)
 
-	_, err = s.Write([]byte(workflowID))
+	// Different trigger index yields a different ID
+	otherIndex, err := GenerateExecutionIDWithTriggerIndex(workflowID, triggerEventID, triggerIndex+1)
 	assert.NoError(t, err)
+	assert.NotEqual(t, actual, otherIndex)
 
-	reversed := hex.EncodeToString(s.Sum(nil))
+	// Test ordering; workflowID/eventID aren't interchangeable
+	reversed, err := GenerateExecutionIDWithTriggerIndex(triggerEventID, workflowID, triggerIndex)
+	assert.NoError(t, err)
 	assert.NotEqual(t, reversed, actual)
 }
 

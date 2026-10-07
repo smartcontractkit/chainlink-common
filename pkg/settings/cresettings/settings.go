@@ -53,7 +53,8 @@ var Config Schema
 
 var (
 	year2100                 = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
-	disabledFeatureTimeRange = TimeRange(year2100, time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC))
+	year2101                 = time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)
+	disabledFeatureTimeRange = TimeRange(year2100, year2101)
 )
 
 var Default = Schema{
@@ -342,10 +343,10 @@ var Default = Schema{
 			RequestTimeout: Duration(30 * time.Second),
 		},
 
-		FeatureHTTPTriggerNewExecutionIDsActivePeriod:           disabledFeatureTimeRange,
-		FeatureChainCapabilityHashBasedOCRActivePeriod:          disabledFeatureTimeRange,
-		FeatureEVMWriteReportL1FeeActivePeriod:                  disabledFeatureTimeRange,
-		FeatureAptosWriteReportBlockTimestampActivePeriod:       disabledFeatureTimeRange,
+		FeatureHTTPTriggerNewExecutionIDsActivePeriod:     disabledFeatureTimeRange,
+		FeatureChainCapabilityHashBasedOCRActivePeriod:    disabledFeatureTimeRange,
+		FeatureEVMWriteReportL1FeeActivePeriod:            disabledFeatureTimeRange,
+		FeatureAptosWriteReportBlockTimestampActivePeriod: disabledFeatureTimeRange,
 		// ON by default: covers all possible timestamps including zero time.Time{},
 		// so WorkflowTag is included in the hash matching current prod behavior.
 		// After rollout, set to far-future window to exclude WorkflowTag.
@@ -356,7 +357,7 @@ var Default = Schema{
 		// cover "now" only after FeatureRequestHashIncludeWorkflowTag is muted
 		// on every DON member, so DBs can heal without producing tag-driven
 		// hash divergence during the fill window.
-		FeatureWorkflowTagBackfillActivePeriod: disabledFeatureTimeRange,
+		FeatureWorkflowTagBackfillActivePeriod:           disabledFeatureTimeRange,
 		FeatureConsensusStricterMedianQuorumActivePeriod: disabledFeatureTimeRange,
 		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
 	},

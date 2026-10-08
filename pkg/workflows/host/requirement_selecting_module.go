@@ -94,16 +94,15 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 		return nil, err
 	}
 
-	if err := r.primeCache(ctx, result.GetTriggerSubscriptions().GetSubscriptions()); err != nil {
+	if err := r.PrimeTriggerCache(ctx, result.GetTriggerSubscriptions().GetSubscriptions()); err != nil {
 		return nil, err
 	}
 
 	return result, nil
 }
 
-// primeCache matches each subscription against the modules' requirements and records the
-// winning module for later trigger() lookups, starting that module if it hasn't run yet.
-func (r *requirementSelectingModule) primeCache(ctx context.Context, subs []*sdk.TriggerSubscription) error {
+// PrimeTriggerCache routes each subscription to the first module satisfying its requirements.
+func (r *requirementSelectingModule) PrimeTriggerCache(ctx context.Context, subs []*sdk.TriggerSubscription) error {
 	for i, sub := range subs {
 		matched := false
 		for j, m := range r.modules {
@@ -119,13 +118,6 @@ func (r *requirementSelectingModule) primeCache(ctx context.Context, subs []*sdk
 		}
 	}
 	return nil
-}
-
-// PrimeTriggerCache populates the trigger-routing cache from subscriptions obtained
-// without calling Execute (e.g. a trigger-subscription cache persisted across engine
-// restarts), so trigger() can route correctly even though subscribe() never ran.
-func (r *requirementSelectingModule) PrimeTriggerCache(ctx context.Context, subs []*sdk.TriggerSubscription) error {
-	return r.primeCache(ctx, subs)
 }
 
 func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
@@ -164,9 +156,8 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 	return nil, errors.New("cannot trigger before gathering subscriptions")
 }
 
-// TriggerCachePrimer is implemented by modules that can have their trigger-routing state
-// populated from subscriptions obtained without an Execute(Subscribe) call, e.g. when a
-// caller reuses a previously gathered and persisted set of trigger subscriptions.
+// TriggerCachePrimer lets callers that skip Execute(Subscribe), e.g. using cached
+// subscriptions, still set up trigger routing.
 type TriggerCachePrimer interface {
 	PrimeTriggerCache(ctx context.Context, subscriptions []*sdk.TriggerSubscription) error
 }

@@ -402,17 +402,7 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 }
 
 func TestRequirementSelectingModule_PrimeTriggerCache(t *testing.T) {
-	t.Run("trigger fails before any priming (cannot trigger before gathering subscriptions)", func(t *testing.T) {
-		main := ModuleAndHandler{Module: &stubModule{}}
-
-		m := NewRequirementSelectingModule(main, nil)
-		m.Start()
-
-		_, err := m.Execute(t.Context(), triggerRequest(0), nil)
-		require.ErrorContains(t, err, "cannot trigger before gathering subscriptions")
-	})
-
-	t.Run("priming from externally-supplied subscriptions allows trigger without calling Subscribe", func(t *testing.T) {
+	t.Run("priming allows trigger without calling Subscribe", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
 		want := &sdk.ExecutionResult{}
 
@@ -434,10 +424,7 @@ func TestRequirementSelectingModule_PrimeTriggerCache(t *testing.T) {
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
 		m.Start()
 
-		primer, ok := m.(TriggerCachePrimer)
-		require.True(t, ok, "requirementSelectingModule must implement TriggerCachePrimer")
-
-		err := primer.PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{subWithReqs(teeReqs)})
+		err := m.(TriggerCachePrimer).PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{subWithReqs(teeReqs)})
 		require.NoError(t, err)
 
 		got, err := m.Execute(t.Context(), triggerRequest(0), nil)

@@ -72,6 +72,8 @@ type walkScope struct {
 	inOptional bool
 	// ancestors stops recursion into self-referential types.
 	ancestors []reflect.Type
+	// entry is set inside a map's entries, where goPath restarts at each entry.
+	entry *entryScope
 }
 
 func (e *typedEntry[T]) walk(v reflect.Value, scope walkScope) error {
@@ -103,7 +105,23 @@ func (e *typedEntry[T]) walkField(v reflect.Value, i int, scope walkScope) error
 	next := scope.child(field, key)
 	elem := derefOrZero(v.Field(i))
 	if e.isLeaf(field, elem, scope) {
-		return bindLeafFlag(e, fieldMeta{next.key, next.fileKey, field, v.Type(), elem, next.goPath, scope.inOptional})
+		doc := fieldDoc(v.Type(), field.Name)
+		if scope.entry != nil {
+			_, err := e.bindEntryLeaf(next, field.Type, doc)
+			return err
+		}
+
+		leaf, err := bindLeafFlag(e, fieldMeta{next.key, next.fileKey, field, v.Type(), elem, next.goPath, scope.inOptional}, doc)
+		if err != nil {
+			return err
+		}
+
+		if leaf.each, err = e.bindEntries(&leaf, field.Type, next, doc); err != nil {
+			return err
+		}
+
+		e.addKey(leaf)
+		return nil
 	}
 
 	// reflect can't allocate an unexported embedded pointer, so none of its fields could be set.

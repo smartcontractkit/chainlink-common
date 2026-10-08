@@ -72,8 +72,8 @@ func mergesByKey(t reflect.Type, lang markup.Markup) bool {
 func mergeMaps(t reflect.Type, srcs ...reflect.Value) reflect.Value {
 	out := reflect.MakeMap(t)
 	for _, m := range srcs {
-		for iter := m.MapRange(); iter.Next(); {
-			out.SetMapIndex(iter.Key(), iter.Value())
+		for key, val := range m.Seq2() {
+			out.SetMapIndex(key, val)
 		}
 	}
 

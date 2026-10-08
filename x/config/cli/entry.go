@@ -57,6 +57,10 @@ type leafKey struct {
 	// is decoded into it rather than goType, so fromFile can parse each key as its flag would and catch two texts for
 	// one key, such as 16 and 0x10. Flags and env vars are already text, so they don't use it.
 	fileType reflect.Type
+
+	// entries set values inside a map's entries, such as chains.<key>.rpc; each is the one that sets a whole entry.
+	entries []*entryLeaf
+	each    *entryLeaf
 }
 
 type typedEntry[T any] struct {
@@ -222,6 +226,14 @@ func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
 func (e *typedEntry[T]) decode(cc commandConfig) error {
 	dst := reflect.ValueOf(e.dst).Elem()
 	for _, k := range e.leaves {
+		if len(k.entries) > 0 {
+			if err := e.decodeEntries(k, cc, dst); err != nil {
+				return fmt.Errorf("%s: %w", k.key, err)
+			}
+
+			continue
+		}
+
 		vals, err := e.sources(k, cc)
 		if err != nil {
 			return fmt.Errorf("%s: %w", k.key, err)

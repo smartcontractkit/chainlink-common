@@ -74,10 +74,43 @@ hold a secret in `pkg/config.SecretString` or `SecretURL` to show it redacted. A
 | pointer struct                                          | same; stays `nil` until one of its keys is set |
 | list of those                                           | `--tags a,b` or `--tags a --tags b`       |
 | map of those                                            | `--labels env=prod,region=us`             |
+| map entry, like a struct's field                        | `--labels.env prod`, `--chains.mainnet.rpc x` |
 
 Map keys parse like values, so `map[uint32]string` binds as `--chains 1=mainnet`. A config file's
 keys are parsed as their flag would be, too; two texts that parse to one key, such as `16` and `0x10`,
 are an error. Anything more structured is config file only.
+
+## Map entries
+
+A map's entries are set like a struct's fields, with the key in the flag or env var name. For
+
+```go
+type Config struct {
+	Chains map[string]Chain
+}
+
+type Chain struct {
+	RPC string
+	WS  string
+}
+```
+
+`--chains.mainnet.rpc x` and `APP_CHAINS_MAINNET_RPC=x` set `RPC` in entry `mainnet`, leaving the
+config file's `WS` for it alone. A map inside an entry works the same way, one more key deep.
+`--help` shows these as `--chains.<key>.rpc`.
+
+A key here is one segment: no `.` in a flag name, no `_` in an env var name. So a name reads one
+way or not at all; `--chains.main.net.rpc` is an unknown flag. Set such a key in a whole map,
+`--labels main.net=x`, or a config file. An env var name is upper case, so its key is the existing
+key, from the struct or a config file, that matches ignoring case, or else its lower case:
+`APP_LABELS_MAINNET` sets `MainNet` if the map has it, and `mainnet` if not.
+
+`--labels env=prod` and `--labels.env prod` both set entry `env`, so giving both is an error, as
+are `APP_LABELS=env=prod` and `APP_LABELS_ENV=prod`. Across sources, precedence is as for any field.
+
+Register sets the command's global normalization func, which pflag calls on each name it parses,
+to add these flags as they appear. It wraps one set before `Register`; one set after replaces it,
+and entry flags are then unknown.
 
 Lists and maps are CSV; quote an element or whole entry containing a comma:
 

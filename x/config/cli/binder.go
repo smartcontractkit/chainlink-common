@@ -3,12 +3,14 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"reflect"
 	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
@@ -24,6 +26,13 @@ type Binder struct {
 
 	// rootHooks keeps each root's own PersistentPreRunE, which preRun replaces and then runs.
 	rootHooks map[*cobra.Command]func(*cobra.Command, []string) error
+
+	// entryTemplates are the --help flags for values inside map entries, such as chains.<key>.rpc; entryFlags those
+	// pflag parsed, such as chains.mainnet.rpc.
+	entryTemplates  map[*pflag.Flag]*entryLeaf
+	entryFlags      map[*pflag.Flag]entryFlag
+	addingEntryFlag bool
+	normalizing     map[*cobra.Command]bool
 }
 
 // New requires opts.Markup.
@@ -40,6 +49,10 @@ func New(opts Options) (*Binder, error) {
 		opts:      opts,
 		entries:   map[*cobra.Command]targetEntry{},
 		rootHooks: map[*cobra.Command]func(*cobra.Command, []string) error{},
+
+		entryTemplates: map[*pflag.Flag]*entryLeaf{},
+		entryFlags:     map[*pflag.Flag]entryFlag{},
+		normalizing:    map[*cobra.Command]bool{},
 	}
 	cobra.OnInitialize(b.wire)
 	return b, nil
@@ -49,7 +62,15 @@ func New(opts Options) (*Binder, error) {
 // files, then its `validate` tags are checked.
 //
 // Scalars, durations, []byte, [encoding.TextUnmarshaler] types, and lists and maps of those get a persistent flag and
-// env vars; other fields are config file only.
+// env vars; other fields are config file only. A list of pointers or interfaces, a map of them, and a map whose keys
+// have no text form get no flag for the whole value; a map of pointers can still be set an entry at a time, below.
+//
+// A map's entries are also set like a struct's fields, with the key in the name: --chains.mainnet.rpc and
+// APP_CHAINS_MAINNET_RPC for Chains map[string]Chain where Chain has an RPC field. --help shows these as
+// --chains.<key>.rpc. A key there is one segment, holding no '.' in a flag name or '_' in an env var's; set others in
+// a whole map or a config file. An env var's key is the existing key that matches it ignoring case, or else its lower
+// case. Register sets cmd's global normalization func to add these flags as they are parsed, wrapping any set before;
+// one set after replaces it.
 //
 // A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
 // fails every command in the tree when it is executed.
@@ -65,6 +86,11 @@ func (b *Binder) Register[T any](cmd *cobra.Command, target *T, opts ...Register
 	// StringArray, not StringSlice, so a path may contain a comma.
 	cmd.PersistentFlags().StringArray(ConfigFlagName, nil,
 		"path to a config file; repeat to layer files, later ones winning")
+
+	if !b.normalizes(cmd) {
+		cmd.SetGlobalNormalizationFunc(b.addsEntryFlags(cmd.GlobalNormalizationFunc()))
+		b.normalizing[cmd] = true
+	}
 
 	entry := &typedEntry[T]{
 		b:   b,
@@ -96,6 +122,17 @@ func (b *Binder) Register[T any](cmd *cobra.Command, target *T, opts ...Register
 
 	b.entries[cmd] = entry
 	return nil
+}
+
+// cobra passes a command's normalization func on to its subcommands.
+func (b *Binder) normalizes(cmd *cobra.Command) bool {
+	for c := cmd; c != nil; c = c.Parent() {
+		if b.normalizing[c] {
+			return true
+		}
+	}
+
+	return false
 }
 
 // commandConfig merges the keys of every struct c runs with into one tree, so one strict decode of a config file can
@@ -157,7 +194,47 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 		}
 	}
 
+	if err := entryEnvVarsClash(cc.entries, claimed); err != nil {
+		return commandConfig{}, err
+	}
+
 	return cc, nil
+}
+
+// A map entry's env vars are found by matching names, so none may match a name another key uses.
+func entryEnvVarsClash(entries []targetEntry, claimed map[string]string) error {
+	type template struct {
+		cmd, owner, key, name string
+	}
+
+	var templates []template
+	for _, e := range entries {
+		for _, k := range e.keys() {
+			for _, leaf := range k.entries {
+				for _, name := range e.envVars(leafKey{key: leaf.key}) {
+					templates = append(templates, template{e.command().Name(), k.key, leaf.key, name})
+				}
+			}
+		}
+	}
+
+	names := slices.Sorted(maps.Keys(claimed))
+	for _, t := range templates {
+		if i := slices.IndexFunc(names, func(name string) bool {
+			_, ok := matchKeys(t.name, envKeyPlaceholder, "_", name)
+			return ok
+		}); i >= 0 {
+			return fmt.Errorf("%s: %s and %s could both be %s", t.cmd, claimed[names[i]], t.key, names[i])
+		}
+
+		for _, other := range templates {
+			if name, ok := overlap(t.name, other.name, envKeyPlaceholder, "_"); ok && other.owner != t.owner {
+				return fmt.Errorf("%s: %s and %s could both be %s", t.cmd, other.key, t.key, name)
+			}
+		}
+	}
+
+	return nil
 }
 
 // Undocumented lists, sorted, the keys of flags without help text, usually because their struct's package has no
@@ -224,6 +301,11 @@ func (b *Binder) decode(c *cobra.Command) error {
 	cc, err := b.commandConfig(c)
 	if err != nil || len(cc.entries) == 0 {
 		return err
+	}
+
+	cc.flags = c.Flags()
+	if err = b.shadowedEntries(cc.flags); err != nil {
+		return fmt.Errorf("%s: %w", c.Name(), err)
 	}
 
 	if cc.fileValues, err = b.loadConfigFiles(c, cc.keys); err != nil {
@@ -323,4 +405,5 @@ type commandConfig struct {
 	entries    []targetEntry
 	keys       *keyNode
 	fileValues reflect.Value
+	flags      *pflag.FlagSet
 }

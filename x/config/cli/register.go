@@ -16,10 +16,10 @@ import (
 // durationType tells time.Duration apart from int64, which shares its Kind.
 var durationType = reflect.TypeFor[time.Duration]()
 
-func bindLeafFlag(entry targetEntry, m fieldMeta) error {
+func bindLeafFlag(entry targetEntry, m fieldMeta, doc string) (leafKey, error) {
 	fileType, err := fileValueType(commentparsing.DerefType(m.field.Type), entry.binder().opts.Markup, map[reflect.Type]bool{})
 	if err != nil {
-		return fmt.Errorf("%s: %s: %w", m.owner, m.field.Name, err)
+		return leafKey{}, fmt.Errorf("%s: %s: %w", m.owner, m.field.Name, err)
 	}
 
 	flags := entry.command().PersistentFlags()
@@ -33,11 +33,9 @@ func bindLeafFlag(entry targetEntry, m fieldMeta) error {
 	}
 	// pflag panics on a redefinition.
 	if flags.Lookup(leaf.flagName) != nil {
-		return fmt.Errorf("%s: flag --%s is already defined on %s", m.key, leaf.flagName, entry.command().Name())
+		return leafKey{}, fmt.Errorf("%s: flag --%s is already defined on %s", m.key, leaf.flagName, entry.command().Name())
 	}
 
-	docs, _ := commentparsing.Lookup(m.owner)
-	doc := strings.Join(strings.Fields(docs[m.field.Name].Comment), " ")
 	usage := doc
 	// Under a pointer section the rule applies only once the section is configured.
 	if isRequired(m.field) && !m.inOptional {
@@ -57,8 +55,12 @@ func bindLeafFlag(entry targetEntry, m fieldMeta) error {
 		}
 	}
 
-	entry.addKey(leaf)
-	return nil
+	return leaf, nil
+}
+
+func fieldDoc(owner reflect.Type, name string) string {
+	docs, _ := commentparsing.Lookup(owner)
+	return strings.Join(strings.Fields(docs[name].Comment), " ")
 }
 
 func isRequired(field reflect.StructField) bool {

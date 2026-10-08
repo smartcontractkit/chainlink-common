@@ -245,7 +245,7 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 
 	var outcome *pb.Outcome
 	if err := p.sequencedTSEnabled.Check(ctx, config.NewTimestamp(time.UnixMilli(donTime))); err != nil {
-		if !errors.Is(err, limits.ErrorBoundLimited[config.Timestamp]{}) {
+		if !errors.Is(err, limits.ErrorRangeLimited[config.Timestamp]{}) {
 			p.lggr.Warnw("Failed to check for sequenced timestamp feature flag", "err", err)
 		}
 		outcome = p.unsequencedOutcome(aos, prevOutcome, donTime)

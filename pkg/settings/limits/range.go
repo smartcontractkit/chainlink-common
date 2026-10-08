@@ -15,14 +15,14 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
-// BoundLimiter is a limiter for simple bounds checks.
+// RangeLimiter is a limiter for bounded range checks.
 type RangeLimiter[N Number] interface {
 	Limiter[settings.Range[N]]
-	// Check returns ErrorBoundLimited if the value is above the limit.
+	// Check returns ErrorRangeLimited if the value is above the limit.
 	Check(context.Context, N) error
 }
 
-// NewRangeLimiter returns a RangeLimiter with the given lower bounds.
+// NewRangeLimiter returns a RangeLimiter with the given bounds.
 func NewRangeLimiter[N Number](bounds settings.Range[N]) RangeLimiter[N] {
 	return &simpleRangeLimiter[N]{bounds: bounds}
 }

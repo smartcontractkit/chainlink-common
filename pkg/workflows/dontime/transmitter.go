@@ -34,22 +34,24 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		return err
 	}
 
+	var total int
 	currentDonTimes := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
 		if len(observedDonTimes.Timestamps) > 0 {
 			m := make(map[int64]int64)
-			for i, t := range observedDonTimes.Timestamps {
-				m[int64(i)] = t
+			for i, ts := range observedDonTimes.Timestamps {
+				m[int64(i)] = ts
 			}
 			currentDonTimes[id] = m
 		} else {
 			currentDonTimes[id] = observedDonTimes.TimestampsBySequence
 		}
+		total += len(currentDonTimes[id])
 	}
 	t.store.replaceDonTimes(currentDonTimes)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
 
-	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp)
+	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "executions", len(currentDonTimes), "total", total)
 
 	for executionID, donTimes := range outcome.ObservedDonTimes {
 		request := t.store.GetRequest(executionID)
@@ -67,6 +69,9 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 			ok = len(donTimes.Timestamps) > request.SeqNum
 			if ok {
 				donTime = donTimes.Timestamps[request.SeqNum]
+				if donTime == 0 { // feature flag was disabled, and we had a gap in the sequence
+					ok = false
+				}
 			}
 		}
 		if ok {

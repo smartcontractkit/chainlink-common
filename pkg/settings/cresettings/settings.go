@@ -166,7 +166,7 @@ var Default = Schema{
 	// MissingRequestRecoveryEnabled
 	MissingRequestRecoveryEnabled: Bool(false),
 
-	DonTimeSequencedTimestampsEnabled: disabledFeatureTimeRange,
+	DonTimeSequencedTimestampsActivePeriod: disabledFeatureTimeRange,
 
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
@@ -474,7 +474,7 @@ type Schema struct {
 
 	MissingRequestRecoveryEnabled Setting[bool]
 
-	DonTimeSequencedTimestampsEnabled Setting[Range[config.Timestamp]]
+	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]]
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute

@@ -374,7 +374,7 @@ flowchart
     CentralTriggerQueue.Put
 
 %% TODO placating test for now since this flowchart no longer renders
-    DonTimeSequencedTimestampsEnabled 
+    DonTimeSequencedTimestampsActivePeriod 
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

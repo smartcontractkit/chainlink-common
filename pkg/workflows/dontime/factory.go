@@ -40,12 +40,12 @@ func NewFactory(s *Store, lggr logger.Logger) (*Factory, error) {
 	return &Factory{
 		store:              s,
 		lggr:               logger.Named(lggr, "OCR3DonTimeFactory"),
-		sequencedTSEnabled: limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsEnabled.DefaultValue),
+		sequencedTSEnabled: limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsActivePeriod.DefaultValue),
 	}, nil
 }
 
 func (o *Factory) InitLimits(lf limits.Factory) error {
-	sequencedTSEnabled, err := limits.MakeRangeLimiter[config.Timestamp](lf, cresettings.Default.DonTimeSequencedTimestampsEnabled)
+	sequencedTSEnabled, err := limits.MakeRangeLimiter[config.Timestamp](lf, cresettings.Default.DonTimeSequencedTimestampsActivePeriod)
 	if err != nil {
 		return err
 	}

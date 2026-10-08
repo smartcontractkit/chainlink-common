@@ -126,7 +126,7 @@ func NewPlugin(store *Store, config ocr3types.ReportingPluginConfig, offchainCfg
 		batchSize:          int(offchainCfg.MaxBatchSize),
 		minTimeIncrease:    offchainCfg.MinTimeIncrease / int64(time.Millisecond),
 		metrics:            metrics,
-		sequencedTSEnabled: limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsEnabled.DefaultValue),
+		sequencedTSEnabled: limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsActivePeriod.DefaultValue),
 	}, nil
 }
 

@@ -408,7 +408,7 @@ func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome
 			p.store.deleteExecutionID(id)
 			continue
 		}
-		if donTime >= observedTimes.EarliestTS()+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
+		if ts := observedTimes.EarliestTS(); ts != nil && donTime >= *ts+p.offChainConfig.ExecutionRemovalTime.AsDuration().Milliseconds() {
 			delete(outcome.ObservedDonTimes, id)
 			p.store.deleteExecutionID(id)
 		}

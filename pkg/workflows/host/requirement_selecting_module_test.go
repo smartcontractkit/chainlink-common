@@ -401,6 +401,86 @@ func TestRequirementSelectingModule_Execute(t *testing.T) {
 	})
 }
 
+func TestRequirementSelectingModule_PrimeTriggerCache(t *testing.T) {
+	t.Run("trigger fails before any priming (cannot trigger before gathering subscriptions)", func(t *testing.T) {
+		main := ModuleAndHandler{Module: &stubModule{}}
+
+		m := NewRequirementSelectingModule(main, nil)
+		m.Start()
+
+		_, err := m.Execute(t.Context(), triggerRequest(0), nil)
+		require.ErrorContains(t, err, "cannot trigger before gathering subscriptions")
+	})
+
+	t.Run("priming from externally-supplied subscriptions allows trigger without calling Subscribe", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+		want := &sdk.ExecutionResult{}
+
+		main := ModuleAndHandler{Module: &stubModule{
+			executeFn: func(_ context.Context, req *sdk.ExecuteRequest, _ ExecutionHelper) (*sdk.ExecutionResult, error) {
+				assert.Fail(t, "Subscribe should never run on the cached-subscriptions path")
+				return nil, errors.New("unexpected Execute call")
+			},
+		}}
+		add := ModuleAndHandler{
+			Module: &stubModule{
+				executeFn: func(context.Context, *sdk.ExecuteRequest, ExecutionHelper) (*sdk.ExecutionResult, error) {
+					return want, nil
+				},
+			},
+			Tee: func(context.Context, *sdk.Tee) bool { return true },
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+
+		primer, ok := m.(TriggerCachePrimer)
+		require.True(t, ok, "requirementSelectingModule must implement TriggerCachePrimer")
+
+		err := primer.PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{subWithReqs(teeReqs)})
+		require.NoError(t, err)
+
+		got, err := m.Execute(t.Context(), triggerRequest(0), nil)
+		require.NoError(t, err)
+		assert.Equal(t, want, got)
+	})
+
+	t.Run("priming starts the matched additional module", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+
+		main := ModuleAndHandler{Module: &stubModule{}}
+		additional := &stubModule{}
+		add := ModuleAndHandler{
+			Module: additional,
+			Tee:    func(context.Context, *sdk.Tee) bool { return true },
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add})
+		m.Start()
+		assert.Equal(t, int32(0), additional.startCount.Load())
+
+		primer := m.(TriggerCachePrimer)
+		err := primer.PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{subWithReqs(teeReqs)})
+		require.NoError(t, err)
+
+		assert.Equal(t, int32(1), additional.startCount.Load())
+	})
+
+	t.Run("priming with unmatched requirements returns error", func(t *testing.T) {
+		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}
+
+		main := ModuleAndHandler{Module: &stubModule{}, Tee: func(context.Context, *sdk.Tee) bool { return false }}
+
+		m := NewRequirementSelectingModule(main, nil)
+		m.Start()
+
+		primer := m.(TriggerCachePrimer)
+		err := primer.PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{subWithReqs(teeReqs)})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot find a runner that can satisfy the requirements")
+	})
+}
+
 func TestRequirementSelectingModule_TriggerCache(t *testing.T) {
 	t.Run("cached trigger skips main on subsequent calls", func(t *testing.T) {
 		teeReqs := &sdk.Requirements{Tee: &sdk.Tee{}}

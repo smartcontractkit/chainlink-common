@@ -62,7 +62,8 @@ help text; `require.Empty(t, b.Undocumented())` in a test catches that.
 
 Help also names each flag's env vars, and marks `required` fields `(required)` unless they
 sit in an optional (pointer) section. A default is shown as its type's `MarshalText` renders it, so
-hold a secret in `pkg/config.SecretString` or `SecretURL` to show it redacted.
+hold a secret in `pkg/config.SecretString` or `SecretURL` to show it redacted. A type with
+`UnmarshalText` but no `MarshalText` shows its default as `<cannot display>`.
 
 ## What gets a flag
 
@@ -74,10 +75,9 @@ hold a secret in `pkg/config.SecretString` or `SecretURL` to show it redacted.
 | list of those                                           | `--tags a,b` or `--tags a --tags b`       |
 | map of those                                            | `--labels env=prod,region=us`             |
 
-Map keys parse like values, so `map[uint32]string` binds as `--chains 1=mainnet`. In a config file,
-where keys are text, a key type the markup reads whole is used as it is, and any other is parsed as
-its flag would be; two texts that parse to one key, such as `16` and `0x10`, are an error. Anything more
-structured is config file only.
+Map keys parse like values, so `map[uint32]string` binds as `--chains 1=mainnet`. A config file's
+keys are parsed as their flag would be, too; two texts that parse to one key, such as `16` and `0x10`,
+are an error. Anything more structured is config file only.
 
 Lists and maps are CSV; quote an element or whole entry containing a comma:
 
@@ -85,6 +85,8 @@ Lists and maps are CSV; quote an element or whole entry containing a comma:
 --tags '"a,b",c'               a,b and c
 --labels '"env=a,b",region=us' env=a,b and region=us
 ```
+
+A map key can't contain `=`, since an entry splits at its first `=`; set such keys in a config file.
 
 ## Types
 

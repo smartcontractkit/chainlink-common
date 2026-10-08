@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
@@ -49,8 +48,8 @@ func New(opts Options) (*Binder, error) {
 // Register attaches target to cmd. Before cmd or a subcommand runs, target is filled from flags, env vars, and config
 // files, then its `validate` tags are checked.
 //
-// Scalars, durations, []byte, and [encoding.TextUnmarshaler] types get a persistent flag and env vars; other fields
-// are config file only.
+// Scalars, durations, []byte, [encoding.TextUnmarshaler] types, and lists and maps of those get a persistent flag and
+// env vars; other fields are config file only.
 //
 // A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
 // fails every command in the tree when it is executed.
@@ -140,8 +139,7 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 	claimed := map[string]string{}
 	for _, e := range cc.entries {
 		for _, k := range e.keys() {
-			leaf := commentparsing.DerefType(k.goType)
-			if err := cc.keys.add(k.fileKey, leaf, lang); err != nil {
+			if err := cc.keys.add(k.fileKey, k.fileType, lang); err != nil {
 				return commandConfig{}, fmt.Errorf("%s: %w", e.command().Name(), err)
 			}
 
@@ -271,7 +269,7 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *keyNode) (reflect.Val
 			return fmt.Errorf("invalid %s: %w", name, err)
 		}
 
-		keys.overlay(merged, v.Elem())
+		keys.overlay(merged, v.Elem(), lang)
 		return nil
 	}
 

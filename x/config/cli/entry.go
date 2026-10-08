@@ -52,6 +52,11 @@ type leafKey struct {
 	// goPath and goType save walking the struct again.
 	goPath []string
 	goType reflect.Type
+
+	// fileType is goType with every map key a string, such as map[string]string for map[uint32]string. A config file
+	// is decoded into it rather than goType, so fromFile can parse each key as its flag would and catch two texts for
+	// one key, such as 16 and 0x10. Flags and env vars are already text, so they don't use it.
+	fileType reflect.Type
 }
 
 type typedEntry[T any] struct {
@@ -119,7 +124,12 @@ func (e *typedEntry[T]) sources(k leafKey, cc commandConfig) ([]reflect.Value, e
 	}
 
 	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
-		vals = append(vals, raw)
+		val, err := fromFile(commentparsing.DerefType(k.goType), raw)
+		if err != nil {
+			return nil, err
+		}
+
+		vals = append(vals, val)
 	}
 
 	return vals, nil
@@ -230,7 +240,14 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 			f = f.Elem()
 		}
 
-		f.Set(vals[0])
+		if mergesByKey(f.Type(), e.b.opts.Markup) {
+			// The struct's own entries first, then sources lowest precedence first, so the highest wins a key.
+			vals = append(vals, f)
+			slices.Reverse(vals)
+			f.Set(mergeMaps(f.Type(), vals...))
+		} else {
+			f.Set(vals[0])
+		}
 	}
 
 	return nil

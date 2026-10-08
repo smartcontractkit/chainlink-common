@@ -15,10 +15,10 @@ go run .
 go run . --config example.toml
 
 # environment values
-APP_HOST=env.example.com APP_PORT=7070 APP_TIMEOUT=4s go run .
+APP_HOST=env.example.com APP_PORT=7070 APP_TAGS=a,b APP_TIMEOUT=4s go run .
 
 # CLI values
-go run . --host cli.example.com --port 6060 --timeout 11s
+go run . --host cli.example.com --port 6060 --tags a --tags b --timeout 11s
 
 # all sources: host from the CLI, port from the environment, the rest from TOML
 # APP_HOST is intentionally left in the call to demonstrate precedence.

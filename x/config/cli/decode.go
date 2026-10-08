@@ -157,7 +157,7 @@ func convertFileValueType(t reflect.Type, lang markup.Markup, visiting map[refle
 	var wrap func(reflect.Type) reflect.Type
 	switch t.Kind() {
 	case reflect.Map:
-		if holdsIdentity(t.Key()) {
+		if holdsIdentityKind(t.Key()) {
 			return nil, fmt.Errorf("%s has keys that hold a pointer, channel or interface, which can compare by address, "+
 				"so 2 and 2 could be different keys; key it by value", t)
 		}
@@ -303,15 +303,15 @@ func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 // Pointers and channels compare by identity, so two parses of one text are different keys. An interface may hold
 // either, or a value that can't be a key at all. Arrays and structs are the only composite key types, and neither can
 // hold itself except through a pointer.
-func holdsIdentity(t reflect.Type) bool {
+func holdsIdentityKind(t reflect.Type) bool {
 	switch t.Kind() {
 	case reflect.Pointer, reflect.UnsafePointer, reflect.Chan, reflect.Interface:
 		return true
 	case reflect.Array:
-		return holdsIdentity(t.Elem())
+		return holdsIdentityKind(t.Elem())
 	case reflect.Struct:
-		for i := range t.NumField() {
-			if holdsIdentity(t.Field(i).Type) {
+		for field := range t.Fields() {
+			if holdsIdentityKind(field.Type) {
 				return true
 			}
 		}
@@ -324,21 +324,21 @@ func holdsIdentity(t reflect.Type) bool {
 
 // seen makes two texts that parse to one key, such as 16 and 0x10, an error rather than one silently replacing the
 // other.
-func mapKey(t reflect.Type, text string, seen map[any]string) (reflect.Value, error) {
-	key, err := parseText(t, text)
+func mapKey(keyType reflect.Type, keyText string, seen map[any]string) (reflect.Value, error) {
+	key, err := parseText(keyType, keyText)
 	if err != nil {
-		return reflect.Value{}, fmt.Errorf("key %q: %w", text, err)
+		return reflect.Value{}, fmt.Errorf("key %q: %w", keyText, err)
 	}
 
 	// NaN never equals itself, nor does a key holding one, so each would be its own key and no lookup could find one.
 	if !key.Equal(key) {
-		return reflect.Value{}, fmt.Errorf("key %q never equals itself, as NaN doesn't, so it can't be looked up", text)
+		return reflect.Value{}, fmt.Errorf("key %q never equals itself, as NaN doesn't, so it can't be looked up", keyText)
 	}
 
-	if other, dup := seen[key.Interface()]; dup && other != text {
-		return reflect.Value{}, fmt.Errorf("keys %q and %q are both %v", other, text, key.Interface())
+	if other, dup := seen[key.Interface()]; dup && other != keyText {
+		return reflect.Value{}, fmt.Errorf("keys %q and %q are both %v", other, keyText, key.Interface())
 	}
 
-	seen[key.Interface()] = text
+	seen[key.Interface()] = keyText
 	return key, nil
 }

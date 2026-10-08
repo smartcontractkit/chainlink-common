@@ -27,10 +27,6 @@ func (m *textMapValue) Set(s string) error {
 	}
 
 	for _, entry := range entries {
-		if entry == "" {
-			continue
-		}
-
 		k, v, ok := strings.Cut(entry, mapKVSep)
 		if !ok {
 			return fmt.Errorf("%q must be formatted as key%svalue", entry, mapKVSep)
@@ -60,8 +56,8 @@ func (m *textMapValue) Type() string { return "key=value,..." }
 // Sorted for stable --help output.
 func textMapOf(v reflect.Value) []string {
 	pairs := make([]string, 0, v.Len())
-	for iter := v.MapRange(); iter.Next(); {
-		pairs = append(pairs, textOf(iter.Key())+mapKVSep+textOf(iter.Value()))
+	for key, val := range v.Seq2() {
+		pairs = append(pairs, textOf(key)+mapKVSep+textOf(val))
 	}
 
 	slices.Sort(pairs)

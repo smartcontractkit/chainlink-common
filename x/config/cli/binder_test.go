@@ -732,9 +732,7 @@ func TestMapEntryText(t *testing.T) {
 	require.NoError(t, run(t, &c, testOptions, "--map", `"a=1,b=2",c=3`))
 	assert.Equal(t, map[string]string{"a": "1,b=2", "c": "3"}, c.Map)
 
-	var blank hasStringMap
-	require.NoError(t, run(t, &blank, testOptions, "--map", "a=1,,b=2"))
-	assert.Equal(t, map[string]string{"a": "1", "b": "2"}, blank.Map)
+	require.ErrorContains(t, run(t, &hasStringMap{}, testOptions, "--map", "a=1,,b=2"), `"" must be formatted as key=value`)
 
 	require.ErrorContains(t, run(t, &hasStringMap{}, testOptions, "--map", `"a=1`), `extraneous or missing " in quoted-field`)
 

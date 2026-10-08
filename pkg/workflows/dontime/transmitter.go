@@ -34,26 +34,29 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		return err
 	}
 
-	var total int
-	currentDonTimes := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
+	var totalCount int
+	entriesCount := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
 		if len(observedDonTimes.Timestamps) > 0 {
 			m := make(map[int64]int64)
-			for i, ts := range observedDonTimes.Timestamps {
-				m[int64(i)] = ts
+			for i, donTime := range observedDonTimes.Timestamps {
+				if donTime == 0 { // feature flag was disabled, and we had a gap in the sequence
+					continue
+				}
+				m[int64(i)] = donTime
 			}
-			currentDonTimes[id] = m
+			entriesCount[id] = m
 		} else {
-			currentDonTimes[id] = observedDonTimes.TimestampsBySequence
+			entriesCount[id] = observedDonTimes.TimestampsBySequence
 		}
-		total += len(currentDonTimes[id])
+		totalCount += len(entriesCount[id])
 	}
-	t.store.replaceDonTimes(currentDonTimes)
+	t.store.replaceDonTimes(entriesCount)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
 
-	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "executions", len(currentDonTimes), "total", total)
+	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimeEntries", len(entriesCount), "donTimeTotal", totalCount)
 
-	for executionID, donTimes := range outcome.ObservedDonTimes {
+	for executionID, donTimes := range entriesCount {
 		request := t.store.GetRequest(executionID)
 		if request == nil {
 			continue
@@ -61,20 +64,7 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 
 		// Nodes behind on multiple requests may wait one OCR round per request.
 		// Caching future times locally could be added as an optimization.
-		var donTime int64
-		var ok bool
-		if len(donTimes.TimestampsBySequence) > 0 {
-			donTime, ok = donTimes.TimestampsBySequence[int64(request.SeqNum)]
-		} else {
-			ok = len(donTimes.Timestamps) > request.SeqNum
-			if ok {
-				donTime = donTimes.Timestamps[request.SeqNum]
-				if donTime == 0 { // feature flag was disabled, and we had a gap in the sequence
-					ok = false
-				}
-			}
-		}
-		if ok {
+		if donTime, ok := donTimes[int64(request.SeqNum)]; ok {
 			t.store.RemoveRequest(executionID) // Make space for next request before delivering
 			request.SendResponse(Response{
 				WorkflowExecutionID: executionID,

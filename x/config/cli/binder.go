@@ -66,11 +66,11 @@ func New(opts Options) (*Binder, error) {
 // have no text form get no flag for the whole value; a map of pointers can still be set an entry at a time, below.
 //
 // A map's entries are also set like a struct's fields, with the key in the name: --chains.mainnet.rpc and
-// APP_CHAINS_MAINNET_RPC for Chains map[string]struct{ RPC string }, or --labels.env for Labels map[string]string.
-// --help shows these as --chains.<key>.rpc. A key there is one segment, holding no '.' in a flag name or '_' in an env
-// var's; set others in a whole map or a config file. An env var's key is the existing key that matches it ignoring
-// case, or else its lower case. Register sets cmd's global normalization func to add these flags as they are
-// parsed, wrapping any set before; one set after replaces it.
+// APP_CHAINS_MAINNET_RPC for Chains map[string]Chain where Chain has an RPC field. --help shows these as
+// --chains.<key>.rpc. A key there is one segment, holding no '.' in a flag name or '_' in an env var's; set others in
+// a whole map or a config file. An env var's key is the existing key that matches it ignoring case, or else its lower
+// case. Register sets cmd's global normalization func to add these flags as they are parsed, wrapping any set before;
+// one set after replaces it.
 //
 // A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
 // fails every command in the tree when it is executed.
@@ -220,10 +220,11 @@ func entryEnvVarsClash(entries []targetEntry, claimed map[string]string) error {
 
 	names := slices.Sorted(maps.Keys(claimed))
 	for _, t := range templates {
-		for _, name := range names {
-			if _, ok := matchKeys(t.name, envKeyPlaceholder, "_", name); ok {
-				return fmt.Errorf("%s: %s and %s could both be %s", t.cmd, claimed[name], t.key, name)
-			}
+		if i := slices.IndexFunc(names, func(name string) bool {
+			_, ok := matchKeys(t.name, envKeyPlaceholder, "_", name)
+			return ok
+		}); i >= 0 {
+			return fmt.Errorf("%s: %s and %s could both be %s", t.cmd, claimed[names[i]], t.key, names[i])
 		}
 
 		for _, other := range templates {

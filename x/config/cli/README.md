@@ -86,13 +86,18 @@ A map's entries are set like a struct's fields, with the key in the flag or env 
 
 ```go
 type Config struct {
-	Chains map[string]struct{ RPC, WS string }
+	Chains map[string]Chain
+}
+
+type Chain struct {
+	RPC string
+	WS  string
 }
 ```
 
 `--chains.mainnet.rpc x` and `APP_CHAINS_MAINNET_RPC=x` set `RPC` in entry `mainnet`, leaving the
-config file's `WS` for it alone. Maps nest, so `--chains.mainnet.labels.env prod` works for a map
-inside an entry. `--help` shows these as `--chains.<key>.rpc`.
+config file's `WS` for it alone. A map inside an entry works the same way, one more key deep.
+`--help` shows these as `--chains.<key>.rpc`.
 
 A key here is one segment: no `.` in a flag name, no `_` in an env var name. So a name reads one
 way or not at all; `--chains.main.net.rpc` is an unknown flag. Set such a key in a whole map,

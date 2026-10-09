@@ -299,8 +299,13 @@ type ConfidentialWorkflowResponse struct {
 	// the same sdk.v1alpha.ExecutionResult as the serialized execution_result
 	// bytes field; the two are independent on the wire.
 	SdkExecutionResult *sdk.ExecutionResult `protobuf:"bytes,2,opt,name=sdk_execution_result,json=sdkExecutionResult,proto3" json:"sdk_execution_result,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// execution_duration_ms is the enclave-measured wall-clock duration of the
+	// WASM execution in milliseconds, used to meter confidential compute
+	// (cre:workflow:compute). Presence distinguishes an unavailable measurement
+	// from a measured zero; older enclaves leave it unset.
+	ExecutionDurationMs *int64 `protobuf:"varint,3,opt,name=execution_duration_ms,json=executionDurationMs,proto3,oneof" json:"execution_duration_ms,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ConfidentialWorkflowResponse) Reset() {
@@ -345,6 +350,13 @@ func (x *ConfidentialWorkflowResponse) GetSdkExecutionResult() *sdk.ExecutionRes
 		return x.SdkExecutionResult
 	}
 	return nil
+}
+
+func (x *ConfidentialWorkflowResponse) GetExecutionDurationMs() int64 {
+	if x != nil && x.ExecutionDurationMs != nil {
+		return *x.ExecutionDurationMs
+	}
+	return 0
 }
 
 type ProvidedTeesResponse struct {
@@ -420,10 +432,12 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
 	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\x12!\n" +
 	"\n" +
-	"binary_url\x18\x03 \x01(\tB\x02\x18\x01R\tbinaryUrl\"\x99\x01\n" +
+	"binary_url\x18\x03 \x01(\tB\x02\x18\x01R\tbinaryUrl\"\xec\x01\n" +
 	"\x1cConfidentialWorkflowResponse\x12)\n" +
 	"\x10execution_result\x18\x01 \x01(\fR\x0fexecutionResult\x12N\n" +
-	"\x14sdk_execution_result\x18\x02 \x01(\v2\x1c.sdk.v1alpha.ExecutionResultR\x12sdkExecutionResult\"H\n" +
+	"\x14sdk_execution_result\x18\x02 \x01(\v2\x1c.sdk.v1alpha.ExecutionResultR\x12sdkExecutionResult\x127\n" +
+	"\x15execution_duration_ms\x18\x03 \x01(\x03H\x00R\x13executionDurationMs\x88\x01\x01B\x18\n" +
+	"\x16_execution_duration_ms\"H\n" +
 	"\x14ProvidedTeesResponse\x120\n" +
 	"\x03tee\x18\x01 \x03(\v2\x1e.sdk.v1alpha.TeeTypeAndRegionsR\x03tee2\xd2\x02\n" +
 	"\x06Client\x12\xaa\x01\n" +
@@ -481,6 +495,7 @@ func file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() 
 		return
 	}
 	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0].OneofWrappers = []any{}
+	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

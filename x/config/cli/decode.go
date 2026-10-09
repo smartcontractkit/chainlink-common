@@ -196,8 +196,7 @@ func convertFileValueType(t reflect.Type, lang markup.Markup, visiting map[refle
 func fileStructType(t reflect.Type, lang markup.Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
 	var fields []reflect.StructField
 	changed, embeds := false, false
-	for i := range t.NumField() {
-		f := t.Field(i)
+	for f := range t.Fields() {
 		if _, read := lang.Key(f); !read || (!f.IsExported() && !f.Anonymous) {
 			continue
 		}

@@ -500,7 +500,7 @@ func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionRes
 	}
 
 	resp := &SubmitTransactionResponse{
-		TxStatus:         txStatus,
+		TxStatus:         &txStatus,
 		TxHash:           reply.TxHash,
 		TxIdempotencyKey: reply.TxIdempotencyKey,
 		ResultXdr:        resultXDR,
@@ -520,6 +520,9 @@ func ConvertSubmitTransactionResponseToProto(reply *stellar.SubmitTransactionRes
 func ConvertSubmitTransactionResponseFromProto(p *SubmitTransactionResponse) (*stellar.SubmitTransactionResponse, error) {
 	if p == nil {
 		return nil, errors.New("submit transaction reply is nil")
+	}
+	if p.TxStatus == nil {
+		return nil, errors.New("txStatus is required")
 	}
 	txStatus, err := convertTxStatusFromProto(p.GetTxStatus())
 	if err != nil {
@@ -828,7 +831,7 @@ func convertEventInfoToProto(e stellar.EventInfo) (*EventInfo, error) {
 	}
 
 	return &EventInfo{
-		EventType:        eventType,
+		EventType:        &eventType,
 		Ledger:           e.Ledger,
 		LedgerClosedAt:   e.LedgerClosedAt,
 		ContractId:       e.ContractID,
@@ -844,6 +847,9 @@ func convertEventInfoToProto(e stellar.EventInfo) (*EventInfo, error) {
 func convertEventInfoFromProto(p *EventInfo) (stellar.EventInfo, error) {
 	if p == nil {
 		return stellar.EventInfo{}, errors.New("event info is nil")
+	}
+	if p.EventType == nil {
+		return stellar.EventInfo{}, errors.New("eventType is required")
 	}
 
 	eventType, err := convertEventTypeFromProto(p.GetEventType())

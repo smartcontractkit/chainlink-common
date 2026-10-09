@@ -56,6 +56,7 @@ var Default = Schema{
 	WorkflowExecutionConcurrencyLimit: Int(1000),
 	GatewayIncomingPayloadSizeLimit:   Size(1 * config.MByte),
 	GatewayVaultManagementEnabled:     Bool(true),
+	GatewayVaultNodeSignaturesEnabled: Bool(false),
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
@@ -375,6 +376,7 @@ type Schema struct {
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
 	GatewayVaultManagementEnabled     Setting[bool]
+	GatewayVaultNodeSignaturesEnabled Setting[bool]
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
 	VaultJWTAuthEnabled                         Setting[bool]
 	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]

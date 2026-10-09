@@ -249,13 +249,14 @@ func entryEnvVarsClash(entries []targetEntry, claimed map[string]string) error {
 // Undocumented lists, sorted, the keys of flags without help text, usually because their struct's package has no
 // generated DocComments. This can be used in a test, for example, as require.Empty(t, b.Undocumented()).
 func (b *Binder) Undocumented() []string {
-	var keys []string
+	var lists [][]string
 	for _, entries := range b.entries {
 		for _, e := range entries {
-			keys = append(keys, e.undocumented()...)
+			lists = append(lists, e.undocumented())
 		}
 	}
 
+	keys := slices.Concat(lists...)
 	slices.Sort(keys)
 	return keys
 }

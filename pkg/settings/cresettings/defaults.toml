@@ -142,6 +142,7 @@ FeatureRequestHashIncludeWorkflowTagActivePeriod = '[0001-01-01 00:00:00 +0000 U
 FeatureWorkflowTagBackfillActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureConsensusStricterMedianQuorumActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 FeatureConsensusIncludeAllTimestampsActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
+FeatureVaultGetSecretsDirectlyActivePeriod = '[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]'
 
 [PerWorkflow.ChainAllowed]
 Default = 'false'

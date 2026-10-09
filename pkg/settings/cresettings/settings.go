@@ -367,6 +367,9 @@ var Default = Schema{
 		FeatureConsensusIncludeAllTimestampsActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureVaultGetSecretsDirectlyActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -566,6 +569,7 @@ type Workflows struct {
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureVaultGetSecretsDirectlyActivePeriod        Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

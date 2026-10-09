@@ -657,6 +657,32 @@ func TestValidationErrorsInsideAListOrMapUseConfigKeys(t *testing.T) {
 	}
 }
 
+// `set` failing is also what shows the `validate` tags run at all.
+func TestSetRequiresASource(t *testing.T) {
+	type hasSetBool struct {
+		Value bool `validate:"set"` //nolint:revive // set is the Binder's own rule
+	}
+
+	for _, tc := range everySource([]string{"--value=false"}, "false", "Value = false") {
+		t.Run(tc.name, func(t *testing.T) {
+			require.NoError(t, run(t, &hasSetBool{}, testOptions, supplyConfig(t, "TEST_VALUE", tc.env, tc.file, tc.args...)...))
+		})
+	}
+
+	require.ErrorContains(t, run(t, &hasSetBool{}, testOptions), "Value failed on the 'set' tag")
+}
+
+func TestSetInANestedSection(t *testing.T) {
+	type nestsSetString struct {
+		Section struct {
+			Value string `validate:"set"` //nolint:revive // set is the Binder's own rule
+		}
+	}
+
+	require.ErrorContains(t, run(t, &nestsSetString{}, testOptions), "Section.Value failed")
+	require.NoError(t, run(t, &nestsSetString{}, testOptions, "--section.value", ""))
+}
+
 func TestRepeatedListFlagAppends(t *testing.T) {
 	type hasStrings struct{ Strings []string }
 
@@ -985,6 +1011,12 @@ func TestHelpText(t *testing.T) {
 	})
 	t.Run("required", func(t *testing.T) {
 		assert.Equal(t, "(required) [env VALUE]", flagsOf(t, &RequiredField{}, noPrefix).Lookup("value").Usage)
+	})
+	t.Run("set", func(t *testing.T) {
+		type hasSetInt struct {
+			Set int `validate:"set"` //nolint:revive // set is the Binder's own rule
+		}
+		assert.Equal(t, "(required) [env SET]", flagsOf(t, &hasSetInt{}, noPrefix).Lookup("set").Usage)
 	})
 }
 

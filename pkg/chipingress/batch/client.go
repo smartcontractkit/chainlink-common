@@ -21,14 +21,25 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 )
 
+// DefaultMaxMessageBufferBytes is the default live-byte cap for the message buffer channel.
+const DefaultMaxMessageBufferBytes = 1 << 30 // 1 GiB
+
+// defaultMaxMessageBufferBytes is an alias kept for internal use.
+const defaultMaxMessageBufferBytes = DefaultMaxMessageBufferBytes
+
 var (
+	// ErrClientShutdown is returned when the client is shut down.
+	ErrClientShutdown = errors.New("client is shutdown")
+	// ErrMessageBufferFull is returned when the message-count buffer is full.
 	ErrMessageBufferFull = errors.New("message buffer is full")
-	ErrClientShutdown    = errors.New("client is shutdown")
+	// ErrMessageBufferBytesExceeded is returned when enqueueing would exceed the byte cap.
+	ErrMessageBufferBytesExceeded = errors.New("message buffer bytes exceeded")
 )
 
 type messageWithCallback struct {
 	event    *chipingress.CloudEventPb
 	callback func(error)
+	byteSize int
 }
 
 type seqnumKey struct {
@@ -102,6 +113,9 @@ type Client struct {
 	batchInterval           time.Duration
 	maxPublishTimeout       time.Duration
 	messageBuffer           chan *messageWithCallback
+	maxMessageBufferBytes   int
+	bufferedBytes           atomic.Int64
+	bufferMu                sync.Mutex
 	stopCh                  stopCh
 	log                     *zap.SugaredLogger
 	callbackWg              sync.WaitGroup
@@ -123,6 +137,7 @@ type batchClientMetrics struct {
 	requestSizeBytes     otelmetric.Int64Histogram
 	requestLatencyMS     otelmetric.Float64Histogram
 	configInfo           otelmetric.Int64Gauge
+	bufferLiveBytes      otelmetric.Int64ObservableGauge
 	batchSplitsTotal     otelmetric.Int64Counter
 	resultsMismatchTotal otelmetric.Int64Counter
 	batchSizeAttr        otelmetric.MeasurementOption
@@ -147,6 +162,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 		transactionEnabled:      false,
 		maxConcurrentSends:      make(chan struct{}, 1),
 		messageBuffer:           make(chan *messageWithCallback, 200),
+		maxMessageBufferBytes:   defaultMaxMessageBufferBytes,
 		batchInterval:           100 * time.Millisecond,
 		maxPublishTimeout:       5 * time.Second,
 		stopCh:                  make(chan struct{}),
@@ -174,6 +190,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 // context that is cancelled when Stop is called.
 func (b *Client) Start(ctx context.Context) {
 	b.metrics.recordConfig(ctx, b)
+	b.metrics.registerBufferLiveBytesCallback(b)
 	b.started = true
 
 	// Detach from the caller's cancellation but keep its values (trace IDs, etc.).
@@ -199,6 +216,11 @@ func (b *Client) Start(ctx context.Context) {
 				// Detach from cancellation so final flush can still publish during shutdown.
 				// sendBatch still enforces maxPublishTimeout for each publish call.
 				b.sendBatch(context.WithoutCancel(batcherCtx), batch)
+			},
+			func(msg *messageWithCallback) {
+				if msg.byteSize > 0 {
+					b.bufferedBytes.Add(-int64(msg.byteSize))
+				}
 			},
 		)
 	}()
@@ -307,15 +329,29 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 		},
 	}
 
+	msgSize := proto.Size(eventToQueue)
 	msg := &messageWithCallback{
 		event:    eventToQueue,
 		callback: callback,
+		byteSize: msgSize,
+	}
+
+	b.bufferMu.Lock()
+	if b.maxMessageBufferBytes > 0 {
+		nextBytes := b.bufferedBytes.Load() + int64(msgSize)
+		if nextBytes > int64(b.maxMessageBufferBytes) {
+			b.bufferMu.Unlock()
+			return ErrMessageBufferBytesExceeded
+		}
 	}
 
 	select {
 	case b.messageBuffer <- msg:
+		b.bufferedBytes.Add(int64(msgSize))
+		b.bufferMu.Unlock()
 		return nil
 	default:
+		b.bufferMu.Unlock()
 		return ErrMessageBufferFull
 	}
 }
@@ -540,6 +576,14 @@ func WithMessageBuffer(messageBufferSize int) Opt {
 	}
 }
 
+// WithMaxMessageBufferBytes sets the maximum live byte size of messages buffered in the
+// message channel. Zero disables the byte cap (intended for tests).
+func WithMaxMessageBufferBytes(maxBytes int) Opt {
+	return func(c *Client) {
+		c.maxMessageBufferBytes = maxBytes
+	}
+}
+
 // WithMaxPublishTimeout sets the maximum time to wait for a batch publish operation
 func WithMaxPublishTimeout(maxPublishTimeout time.Duration) Opt {
 	return func(c *Client) {
@@ -638,6 +682,14 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 	if err != nil {
 		return batchClientMetrics{}, err
 	}
+	bufferLiveBytes, err := meter.Int64ObservableGauge(
+		"chip_ingress.batch.buffer_live_bytes",
+		otelmetric.WithDescription("Live byte size of messages currently buffered in the batch client message channel"),
+		otelmetric.WithUnit("By"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
 	batchSplitsTotal, err := meter.Int64Counter(
 		"chip_ingress.batch.batch_splits_total",
 		otelmetric.WithDescription("Total number of times a batch was split due to exceeding the effective gRPC request size limit (max request size minus reserved framing overhead)"),
@@ -668,6 +720,7 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 		requestSizeBytes:     requestSizeBytes,
 		requestLatencyMS:     requestLatencyMS,
 		configInfo:           configInfo,
+		bufferLiveBytes:      bufferLiveBytes,
 		batchSplitsTotal:     batchSplitsTotal,
 		resultsMismatchTotal: resultsMismatchTotal,
 		clientNameAttr:       clientNameAttr,
@@ -685,6 +738,19 @@ func (m *batchClientMetrics) clientNameAddOpts() []otelmetric.AddOption {
 		return []otelmetric.AddOption{m.clientNameAttr}
 	}
 	return nil
+}
+
+func (m *batchClientMetrics) registerBufferLiveBytesCallback(c *Client) {
+	if m.bufferLiveBytes == nil {
+		return
+	}
+	_, _ = otel.Meter("chipingress/batch_client").RegisterCallback(
+		func(_ context.Context, o otelmetric.Observer) error {
+			o.ObserveInt64(m.bufferLiveBytes, c.bufferedBytes.Load())
+			return nil
+		},
+		m.bufferLiveBytes,
+	)
 }
 
 func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
@@ -705,6 +771,7 @@ func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
 		attribute.Bool("clone_event", c.cloneEvent),
 		attribute.Bool("transaction_enabled", c.transactionEnabled),
 		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
+		attribute.Int("max_message_buffer_bytes", c.maxMessageBufferBytes),
 	)))
 }
 

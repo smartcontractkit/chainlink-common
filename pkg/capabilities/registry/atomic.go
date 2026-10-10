@@ -100,8 +100,10 @@ func (a *atomicTriggerCapability) Load() *capabilities.TriggerCapability {
 }
 
 func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	// A read lock suffices because registrations is thread-safe; it allows multiple triggers to
+	// be registered concurrently, while Update rebinds registrations under the exclusive write lock.
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	if a.cap == nil {
 		return nil, errors.New("capability unavailable")
 	}
@@ -109,8 +111,10 @@ func (a *atomicTriggerCapability) RegisterTrigger(ctx context.Context, request c
 }
 
 func (a *atomicTriggerCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	// A read lock suffices because registrations is thread-safe; it allows triggers to be
+	// unregistered concurrently, while Update rebinds registrations under the exclusive write lock.
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}
@@ -277,8 +281,10 @@ func (a *atomicExecuteAndTriggerCapability) Load() *capabilities.ExecutableAndTr
 }
 
 func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	// A read lock suffices because registrations is thread-safe; it allows multiple triggers to
+	// be registered concurrently, while Update rebinds registrations under the exclusive write lock.
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	if a.cap == nil {
 		return nil, errors.New("capability unavailable")
 	}
@@ -286,8 +292,10 @@ func (a *atomicExecuteAndTriggerCapability) RegisterTrigger(ctx context.Context,
 }
 
 func (a *atomicExecuteAndTriggerCapability) UnregisterTrigger(ctx context.Context, request capabilities.TriggerRegistrationRequest) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+	// A read lock suffices because registrations is thread-safe; it allows triggers to be
+	// unregistered concurrently, while Update rebinds registrations under the exclusive write lock.
+	a.mu.RLock()
+	defer a.mu.RUnlock()
 	if a.cap == nil {
 		return errors.New("capability unavailable")
 	}

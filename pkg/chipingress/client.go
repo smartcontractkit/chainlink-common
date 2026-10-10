@@ -328,6 +328,17 @@ func newHeaderInterceptor(provider HeaderProvider) grpc.UnaryClientInterceptor {
 // Resource attributes are deliberately not stamped here. They describe the producer rather than any
 // individual event, so they travel once per request as gRPC metadata (see
 // WithResourceAttributeHeaders) instead of being repeated on every event in a batch.
+//
+// To opt an event into server-resolved ordering, set attributes[OrderKeyAttr] to an OrderKey built
+// with NewOrderKey (e.g. NewOrderKey(OrderKeyFieldCSAPublicKey)). chip-ingress resolves each named
+// field and uses the ":"-joined values as the Kafka record key; the raw field-name list is also
+// forwarded as the ce_orderkey header. For convenience a single bare OrderKeyField is accepted too.
+// OrderKey is re-validated here and an invalid value returns an error. A plain string is ignored
+// like any other unknown attribute, so an ordering key can never be set by accident.
+//
+// attributes[PartitionKeyAttr], when a non-empty string, is forwarded unchanged as the opaque
+// ce_partitionkey header (INFOPLAT-2274). It is a header-only pass-through for downstream sinks
+// and does not affect Kafka partitioning; plain strings are allowed (colon-delimited by convention).
 func NewEvent(domain, entity string, payload []byte, attributes map[string]any) (CloudEvent, error) {
 	event := ce.NewEvent()
 	event.SetSource(domain)
@@ -360,6 +371,26 @@ func NewEvent(domain, entity string, payload []byte, attributes map[string]any) 
 	}
 	if val, ok := attributes[IdempotencyKeyAttr].(string); ok && val != "" {
 		event.SetExtension(IdempotencyKeyAttr, val)
+	}
+	var orderKey OrderKey
+	switch val := attributes[OrderKeyAttr].(type) {
+	case OrderKey:
+		orderKey = val
+		if err := orderKey.validate(); err != nil {
+			return ce.Event{}, err
+		}
+	case OrderKeyField:
+		k, err := NewOrderKey(val)
+		if err != nil {
+			return ce.Event{}, err
+		}
+		orderKey = k
+	}
+	if orderKey != "" {
+		event.SetExtension(OrderKeyAttr, string(orderKey))
+	}
+	if val, ok := attributes[PartitionKeyAttr].(string); ok && val != "" {
+		event.SetExtension(PartitionKeyAttr, val)
 	}
 
 	err := event.SetData(ceformat.ContentTypeProtobuf, payload)

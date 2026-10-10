@@ -1,0 +1,47 @@
+name: SonarQube Rescan
+
+# A branch pushed before its pull request is opened gets no report runs, so its push scan runs
+# without coverage or lint. Opening the pull request starts those runs; rerunning the push scan
+# then waits for them, keeping the push's branch analysis.
+on:
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  actions: write
+
+jobs:
+  rescan:
+    # A fork's token can't rerun runs here.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Rerun the push scan if it found no reports
+        run: |
+          run=$(gh run list -R "$GITHUB_REPOSITORY" --workflow sonar-scan.yml --commit "$HEAD_SHA" --event push \
+            --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [[ -z "$run" ]]; then
+            echo "No push scan for $HEAD_SHA"
+            exit 0
+          fi
+          # A scan that found no pull request finishes within a few minutes; one still running past
+          # that is waiting on this pull request's runs, so it needs no rerun.
+          for _ in $(seq 18); do
+            status=$(gh run view -R "$GITHUB_REPOSITORY" "$run" --json status --jq .status)
+            [[ "$status" == completed ]] && break
+            sleep 10
+          done
+          if [[ "$status" != completed ]]; then
+            echo "Push scan $run is waiting on this pull request's runs"
+            exit 0
+          fi
+          missing=$(gh run view -R "$GITHUB_REPOSITORY" "$run" --json jobs \
+            --jq '[.jobs[].steps[] | select(.name == "No reports found" and .conclusion == "success")] | length')
+          if [[ "$missing" -gt 0 ]]; then
+            gh run rerun -R "$GITHUB_REPOSITORY" "$run"
+          else
+            echo "Push scan $run found its reports"
+          fi

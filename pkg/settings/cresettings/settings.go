@@ -51,6 +51,12 @@ var DefaultGetter Getter
 // Deprecated: use Default
 var Config Schema
 
+var (
+	year2100                 = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
+	year2101                 = time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)
+	disabledFeatureTimeRange = TimeRange(year2100, year2101)
+)
+
 var Default = Schema{
 	WorkflowLimit:                     Int(1000),
 	WorkflowExecutionConcurrencyLimit: Int(1000),
@@ -159,6 +165,8 @@ var Default = Schema{
 
 	// MissingRequestRecoveryEnabled
 	MissingRequestRecoveryEnabled: Bool(false),
+
+	DonTimeSequencedTimestampsActivePeriod: disabledFeatureTimeRange,
 
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
@@ -335,38 +343,23 @@ var Default = Schema{
 			RequestTimeout: Duration(30 * time.Second),
 		},
 
-		FeatureHTTPTriggerNewExecutionIDsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureHTTPTriggerNewExecutionIDsActivePeriod:     disabledFeatureTimeRange,
+		FeatureChainCapabilityHashBasedOCRActivePeriod:    disabledFeatureTimeRange,
+		FeatureEVMWriteReportL1FeeActivePeriod:            disabledFeatureTimeRange,
+		FeatureAptosWriteReportBlockTimestampActivePeriod: disabledFeatureTimeRange,
 		// ON by default: covers all possible timestamps including zero time.Time{},
 		// so WorkflowTag is included in the hash matching current prod behavior.
 		// After rollout, set to far-future window to exclude WorkflowTag.
 		FeatureRequestHashIncludeWorkflowTagActivePeriod: TimeRange(
-			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC), year2100),
 		// OFF by default: the workflow_specs_v2.workflow_tag reconcile backfill
 		// is intentionally disabled on a fresh deploy. Ops narrows the range to
 		// cover "now" only after FeatureRequestHashIncludeWorkflowTag is muted
 		// on every DON member, so DBs can heal without producing tag-driven
 		// hash divergence during the fill window.
-		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureConsensusStricterMedianQuorumActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureConsensusIncludeAllTimestampsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureWorkflowTagBackfillActivePeriod:           disabledFeatureTimeRange,
+		FeatureConsensusStricterMedianQuorumActivePeriod: disabledFeatureTimeRange,
+		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
 	},
 }
 
@@ -480,6 +473,8 @@ type Schema struct {
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
 	MissingRequestRecoveryEnabled Setting[bool]
+
+	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]]
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute

@@ -9,7 +9,7 @@ import (
 
 	evmpb "github.com/smartcontractkit/chainlink-common/pkg/chains/evm"
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"

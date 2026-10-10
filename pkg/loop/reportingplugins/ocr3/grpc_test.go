@@ -16,7 +16,7 @@ import (
 	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin/plugintest"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
@@ -59,7 +59,7 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 
 	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(
+	plugintest.PluginTest(
 		t,
 		ocr3test.OCR3ReportingPluginWithMedianProviderName,
 		&GRPCService[types.MedianProvider]{
@@ -76,7 +76,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 
 	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(
+	plugintest.PluginTest(
 		t,
 		PluginServiceName,
 		&GRPCService[types.PluginProvider]{

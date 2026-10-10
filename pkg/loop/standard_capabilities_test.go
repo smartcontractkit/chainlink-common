@@ -10,8 +10,8 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin/plugintest"
 	sctest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability/standard/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -21,7 +21,7 @@ func TestPluginStandardCapabilities(t *testing.T) {
 	log := logger.Test(t)
 
 	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginStandardCapabilitiesName,
+	plugintest.PluginTest(t, loop.PluginStandardCapabilitiesName,
 		&loop.StandardCapabilitiesLoop{
 			Logger:       log,
 			PluginServer: sctest.StandardCapabilitiesService{},

@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	libocr "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3 "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"

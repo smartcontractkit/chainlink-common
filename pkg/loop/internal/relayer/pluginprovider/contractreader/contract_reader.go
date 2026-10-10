@@ -12,7 +12,7 @@ import (
 
 	codecpb "github.com/smartcontractkit/chainlink-common/pkg/internal/codec"
 	chaincommonpb "github.com/smartcontractkit/chainlink-common/pkg/loop/chain-common"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"

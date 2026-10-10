@@ -13,7 +13,7 @@ import (
 	"github.com/smartcontractkit/freeport"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin"
 	loopnet "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	loopnettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 )

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-plugin"
+	"github.com/jpillora/backoff"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -42,6 +43,10 @@ type PluginService[P grpcPlugin, S services.Service] struct {
 
 	client         *plugin.Client
 	clientProtocol plugin.ClientProtocol
+
+	relaunch            RelaunchPolicy
+	relaunchBackoff     *backoff.Backoff
+	nextRelaunchAttempt time.Time
 
 	newService NewService[S]
 
@@ -78,6 +83,30 @@ func (s *PluginService[P, S]) Init(
 	s.serviceCh = make(chan struct{})
 }
 
+// RelaunchPolicy optionally throttles plugin relaunches and reports them. The zero value
+// preserves the default behavior: a relaunch attempt on every keep-alive tick.
+type RelaunchPolicy struct {
+	// MinBackoff is the delay before the first throttled relaunch attempt, doubling per
+	// consecutive attempt. Zero disables backoff.
+	MinBackoff time.Duration
+	// MaxBackoff caps the delay. When MinBackoff is set and MaxBackoff is not, it defaults
+	// to defaultMaxRelaunchBackoff.
+	MaxBackoff time.Duration
+	// OnRelaunch is called after a relaunch replaces an exited or unhealthy client.
+	// It is not called for the initial launch.
+	OnRelaunch func()
+}
+
+const defaultMaxRelaunchBackoff = 5 * time.Minute
+
+// SetRelaunchPolicy sets the relaunch policy. It must be called after Init and before Start.
+func (s *PluginService[P, S]) SetRelaunchPolicy(p RelaunchPolicy) {
+	if p.MinBackoff > 0 && p.MaxBackoff <= 0 {
+		p.MaxBackoff = defaultMaxRelaunchBackoff
+	}
+	s.relaunch = p
+}
+
 func (s *PluginService[P, S]) keepAlive() {
 	defer s.wg.Done()
 
@@ -90,13 +119,21 @@ func (s *PluginService[P, S]) keepAlive() {
 			// launched
 			err := cp.Ping()
 			if err == nil {
-				return // healthy
+				s.resetRelaunchBackoff() // healthy
+				return
 			}
 			s.lggr.Errorw("Relaunching unhealthy plugin", "err", err)
+		}
+		if !s.nextRelaunchAttempt.IsZero() && time.Now().Before(s.nextRelaunchAttempt) {
+			return // throttled
 		}
 		if err := s.tryLaunch(cp); err != nil {
 			s.lggr.Errorw("Failed to launch plugin", "err", err)
 		}
+		if (c != nil || cp != nil) && s.relaunch.OnRelaunch != nil {
+			s.relaunch.OnRelaunch()
+		}
+		s.noteRelaunchAttempt()
 	}
 
 	check() // no delay
@@ -113,6 +150,21 @@ func (s *PluginService[P, S]) keepAlive() {
 			fn(s)
 		}
 	}
+}
+
+func (s *PluginService[P, S]) resetRelaunchBackoff() {
+	s.relaunchBackoff = nil
+	s.nextRelaunchAttempt = time.Time{}
+}
+
+func (s *PluginService[P, S]) noteRelaunchAttempt() {
+	if s.relaunch.MinBackoff <= 0 {
+		return
+	}
+	if s.relaunchBackoff == nil {
+		s.relaunchBackoff = &backoff.Backoff{Min: s.relaunch.MinBackoff, Max: s.relaunch.MaxBackoff, Factor: 2}
+	}
+	s.nextRelaunchAttempt = time.Now().Add(s.relaunchBackoff.Duration())
 }
 
 func (s *PluginService[P, S]) tryLaunch(old plugin.ClientProtocol) (err error) {

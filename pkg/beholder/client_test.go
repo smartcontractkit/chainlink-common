@@ -490,6 +490,38 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 		require.NotNil(t, client)
 		assert.NotNil(t, client.Emitter)
 	})
+
+	t.Run("chip ingress emitter enabled with retry policy", func(t *testing.T) {
+		// Wiring-level check that a configured retry policy flows through client
+		// construction; the policy's own semantics (including that the built service
+		// config actually installs retries in gRPC) are covered by pkg/chipingress's
+		// retry_policy_test.go and chip_ingress_retry_test.go.
+		retryPolicy, err := beholder.ChipIngressRetryConfig{
+			Enabled:              true,
+			MaxAttempts:          5,
+			RetryableStatusCodes: []string{"Unavailable"},
+		}.RetryPolicy()
+		require.NoError(t, err)
+
+		cfg := beholder.Config{
+			OtelExporterGRPCEndpoint:       "localhost:4317",
+			ChipIngressEmitterEnabled:      true,
+			ChipIngressEmitterGRPCEndpoint: "localhost:8080",
+			ChipIngressInsecureConnection:  true,
+			ChipIngressRetryPolicy:         retryPolicy,
+		}
+
+		otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		}
+
+		client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		assert.NotNil(t, client.Emitter)
+		_, ok := client.Emitter.(*beholder.DualSourceEmitter)
+		assert.True(t, ok, "Expected Emitter to be a DualSourceEmitter")
+	})
 }
 
 // capturingChipServer records the gRPC metadata of the last Publish it handles.

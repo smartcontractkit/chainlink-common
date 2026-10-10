@@ -196,9 +196,8 @@ func (p *Plugin) Observation(ctx context.Context, outctx ocr3types.OutcomeContex
 	p.metrics.observationBatchOverflow.Record(ctx, int64(overflowCount))
 
 	observation := &pb.Observation{
-		Timestamp:            time.Now().UTC().UnixMilli(),
-		Requests:             requests,
-		LimitByBatchSizeFlag: true,
+		Timestamp: time.Now().UTC().UnixMilli(),
+		Requests:  requests,
 	}
 
 	return proto.MarshalOptions{Deterministic: true}.Marshal(observation)

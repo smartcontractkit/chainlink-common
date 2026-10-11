@@ -63,12 +63,15 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 	for executionID, donTimes := range currentDonTimes {
 		request := t.store.GetRequest(executionID)
 		if request == nil {
+			//TODO remove
+			t.lggr.Debugw("No request found for execution ID", "executionID", executionID)
 			continue
 		}
 
 		// Nodes behind on multiple requests may wait one OCR round per request.
 		// Caching future times locally could be added as an optimization.
 		if donTime, ok := donTimes[int64(request.SeqNum)]; ok {
+			t.lggr.Debugw("Sending response to request", "executionID", executionID, "seqNum", request.SeqNum, "donTime", donTime)
 			t.store.RemoveRequest(executionID) // Make space for next request before delivering
 			request.SendResponse(Response{
 				WorkflowExecutionID: executionID,

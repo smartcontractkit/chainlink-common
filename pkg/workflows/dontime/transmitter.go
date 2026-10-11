@@ -35,7 +35,7 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 	}
 
 	var totalCount int
-	entriesCount := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
+	currentDonTimes := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
 		if len(observedDonTimes.Timestamps) > 0 {
 			m := make(map[int64]int64)
@@ -45,18 +45,22 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 				}
 				m[int64(i)] = donTime
 			}
-			entriesCount[id] = m
+			currentDonTimes[id] = m
 		} else {
-			entriesCount[id] = observedDonTimes.TimestampsBySequence
+			currentDonTimes[id] = observedDonTimes.TimestampsBySequence
 		}
-		totalCount += len(entriesCount[id])
+		totalCount += len(currentDonTimes[id])
 	}
-	t.store.replaceDonTimes(entriesCount)
+	t.lggr.Debugw("Storing current timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimes", currentDonTimes)
+	t.store.replaceDonTimes(currentDonTimes)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
+	t.store.mu.Lock() //TODO remove
+	t.lggr.Debugw("Stored current timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimes", t.store.donTimes)
+	t.store.mu.Unlock()
 
-	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimeEntries", len(entriesCount), "donTimeTotal", totalCount)
+	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimeEntries", len(currentDonTimes), "donTimeTotal", totalCount)
 
-	for executionID, donTimes := range entriesCount {
+	for executionID, donTimes := range currentDonTimes {
 		request := t.store.GetRequest(executionID)
 		if request == nil {
 			continue

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"slices"
 	"sync"
 	"testing"
 
@@ -21,69 +22,131 @@ const (
 
 // Observer is a test helper that provides assertion methods on received messages within the beholder client.
 type Observer struct {
-	emitter *assertMessageEmitter
+	*Recorder
+}
+
+// NewObserver sets the global beholder client as a message collector and returns an Observer that provides helper assertion
+// functions on received messages.
+//
+// NewObserver affects the whole process, it cannot be used in parallel tests or tests with parallel ancestors.
+// Prefer NewRecorder and injecting it; NewObserver mutates process-global state.
+func NewObserver(t *testing.T) Observer {
+	t.Helper()
+
+	// Fail fast if this test runs in parallel: swapping the process-global client is unsafe there.
+	t.Setenv(packageNameBeholder, packageNameBeholder)
+
+	rec := NewRecorder()
+
+	client := beholder.NoopClientConfig{Lggr: logger.Test(t)}.New()
+	client.Emitter = rec
+	require.NoError(t, client.Start(t.Context()))
+
+	// reset NewObserver state after the test
+	prevClient := beholder.GetClient()
+	t.Cleanup(func() {
+		require.NoError(t, client.Close())
+		beholder.SetClient(prevClient)
+	})
+	beholder.SetClient(client)
+
+	return Observer{Recorder: rec}
+}
+
+// Recorder is a beholder.Emitter that records every emitted message for test assertions.
+// It is safe for concurrent use, so it may be shared across parallel tests.
+type Recorder struct {
+	mu   sync.RWMutex
+	msgs []beholder.Message
+}
+
+// NewRecorder returns an empty Recorder.
+func NewRecorder() *Recorder {
+	return &Recorder{}
+}
+
+var _ beholder.Emitter = (*Recorder)(nil)
+
+func (r *Recorder) Close() error { return nil }
+
+func (r *Recorder) Emit(_ context.Context, msg []byte, attrKVs ...any) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.msgs = append(r.msgs, beholder.NewMessage(msg, attrKVs...))
+
+	return nil
+}
+
+func (r *Recorder) EmitMessage(_ context.Context, msg beholder.Message) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.msgs = append(r.msgs, msg)
+
+	return nil
 }
 
 // Len returns the total number of messages received that match the provided attribute key/value pairs.
-func (o Observer) Len(t *testing.T, attrKVs ...any) int {
+func (r *Recorder) Len(t *testing.T, attrKVs ...any) int {
 	t.Helper()
 
-	found := o.msgsForKVs(t, attrKVs...)
+	found := r.msgsForKVs(t, attrKVs...)
 
 	return len(found)
 }
 
 // Messages returns messages matching the provided keys and values.
-func (o Observer) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
+// A message matching multiple pairs is returned once.
+func (r *Recorder) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
 
 	if attrKVs == nil {
-		return o.emitter.msgs
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+
+		return slices.Clone(r.msgs)
 	}
 
-	return o.msgsForKVs(t, attrKVs...)
+	return r.msgsForKVs(t, attrKVs...)
 }
-func (o Observer) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
+
+// msgsForKVs returns messages matching any of the provided attribute key/value pairs.
+func (r *Recorder) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
 
-	o.emitter.mu.RLock()
-	defer o.emitter.mu.RUnlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
 	found := []beholder.Message{}
 
-	for _, eMsg := range o.emitter.msgs {
-		var i, j int
-
-		for i < len(attrKVs)-1 {
-			j = i + 1
-
+	for _, eMsg := range r.msgs {
+		for i := 0; i+1 < len(attrKVs); i += 2 {
 			key, ok := attrKVs[i].(string)
 			require.True(t, ok)
 
-			value := attrKVs[j]
-			val, ok := eMsg.Attrs[key]
-
-			if ok && reflect.DeepEqual(value, val) {
+			value := attrKVs[i+1]
+			if val, ok := eMsg.Attrs[key]; ok && reflect.DeepEqual(value, val) {
 				found = append(found, eMsg)
+				break
 			}
-
-			i = i + 2
 		}
 	}
 
 	return found
 }
 
-func (o Observer) BaseMessagesForLabels(t *testing.T, labels map[string]string) ([]*pb.BaseMessage, error) {
+// BaseMessagesForLabels returns the decoded BaseMessage payloads received with all the provided labels.
+func (r *Recorder) BaseMessagesForLabels(t *testing.T, labels map[string]string) ([]*pb.BaseMessage, error) {
 	t.Helper()
 
-	o.emitter.mu.RLock()
-	defer o.emitter.mu.RUnlock()
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
 	var found []*pb.BaseMessage
 
 messageLoop:
-	for _, eMsg := range o.emitter.msgs {
+	for _, eMsg := range r.msgs {
 		dataSchema, ok := eMsg.Attrs["beholder_entity"].(string)
 		if !ok {
 			continue
@@ -109,61 +172,4 @@ messageLoop:
 	}
 
 	return found, nil
-}
-
-// NewObserver sets the global beholder client as a message collector and returns an Observer that provides helper assertion
-// functions on received messages.
-//
-// NewObserver affects the whole process, it cannot be used in parallel tests or tests with parallel ancestors.
-func NewObserver(t *testing.T) Observer {
-	t.Helper()
-
-	messageEmitter := &assertMessageEmitter{t: t}
-
-	client := beholder.NoopClientConfig{Lggr: logger.Test(t)}.New()
-	client.Emitter = messageEmitter
-	require.NoError(t, client.Start(t.Context()))
-
-	//reset NewObserver state after the test
-	prevClient := beholder.GetClient()
-	t.Cleanup(func() {
-		require.NoError(t, client.Close())
-		beholder.SetClient(prevClient)
-		t.Setenv(packageNameBeholder, packageNameBeholder)
-	})
-	beholder.SetClient(client)
-
-	return Observer{emitter: messageEmitter}
-}
-
-// assertMessageEmitter is implemented with the same interface as the noopMessageEmitter in pkg/beholder/noop.go
-// it is unknown at this time whether EmitMessage is needed, but it exists in the case that it is needed
-type assertMessageEmitter struct {
-	t    *testing.T
-	mu   sync.RWMutex
-	msgs []beholder.Message
-}
-
-func (e *assertMessageEmitter) Close() error { return nil }
-
-func (e *assertMessageEmitter) Emit(_ context.Context, msg []byte, attrKVs ...any) error {
-	e.t.Helper()
-
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	e.msgs = append(e.msgs, beholder.NewMessage(msg, attrKVs...))
-
-	return nil
-}
-
-func (e *assertMessageEmitter) EmitMessage(_ context.Context, msg beholder.Message) error {
-	e.t.Helper()
-
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	e.msgs = append(e.msgs, msg)
-
-	return nil
 }

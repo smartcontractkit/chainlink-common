@@ -1,6 +1,7 @@
 package beholder_test
 
 import (
+	"context"
 	"strings"
 	"testing"
 
@@ -97,6 +98,50 @@ type providers struct {
 	tracerProvider    oteltrace.TracerProvider
 	textMapPropagator propagation.TextMapPropagator
 	meterProvider     otelmetric.MeterProvider
+}
+
+func TestGlobalEmitter(t *testing.T) {
+	prevClient := beholder.GetClient()
+	defer beholder.SetClient(prevClient)
+
+	e1 := &fakeEmitter{}
+	c1 := beholder.NoopClientConfig{Lggr: pkglogger.Test(t)}.New()
+	c1.Emitter = e1
+	beholder.SetClient(c1)
+
+	ge := beholder.GlobalEmitter()
+	require.NoError(t, ge.Emit(t.Context(), []byte("one")))
+	require.Equal(t, []string{"one"}, e1.emitted)
+
+	// Late binding: a client swapped after GlobalEmitter() was obtained is the one used at emit time.
+	e2 := &fakeEmitter{}
+	c2 := beholder.NoopClientConfig{Lggr: pkglogger.Test(t)}.New()
+	c2.Emitter = e2
+	beholder.SetClient(c2)
+
+	require.NoError(t, ge.Emit(t.Context(), []byte("two")))
+	require.Equal(t, []string{"two"}, e2.emitted)
+	require.Empty(t, e1.emitted[1:])
+
+	// Close is a no-op: the global client owns its emitter.
+	require.NoError(t, ge.Close())
+	require.False(t, e1.closed)
+	require.False(t, e2.closed)
+}
+
+type fakeEmitter struct {
+	emitted []string
+	closed  bool
+}
+
+func (e *fakeEmitter) Emit(_ context.Context, body []byte, _ ...any) error {
+	e.emitted = append(e.emitted, string(body))
+	return nil
+}
+
+func (e *fakeEmitter) Close() error {
+	e.closed = true
+	return nil
 }
 
 func restoreProviders(t *testing.T, p providers) {

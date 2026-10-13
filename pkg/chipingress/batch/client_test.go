@@ -2231,8 +2231,9 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		require.ErrorAs(t, err2, &re2)
 	})
 
-	t.Run("nil response with partial delivery enabled treats as all success", func(t *testing.T) {
-		t.Skip("Failing before CI required all modules run tests")
+	t.Run("nil response with partial delivery fails all with RESULTS_MISMATCH", func(t *testing.T) {
+		// A nil response with a nil error is a protocol violation (generated gRPC stubs never
+		// return it, but other Client implementations can). It must fail every event, not panic.
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
 		mockClient.
@@ -2249,15 +2250,21 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		}
 
 		client.sendBatch(t.Context(), messages)
-		client.callbackWg.Wait()
 
 		for range 2 {
-			assert.NoError(t, <-errs)
+			select {
+			case err := <-errs:
+				var pubErr *PublishError
+				require.ErrorAs(t, err, &pubErr)
+				assert.Equal(t, ErrCodeResultsMismatch, pubErr.Code)
+				assert.Equal(t, "server returned 0 results for 2 events", pubErr.Reason)
+			case <-time.After(time.Second):
+				t.Fatal("timeout waiting for callback")
+			}
 		}
 	})
 
-	t.Run("empty results with partial delivery enabled treats as all success", func(t *testing.T) {
-		t.Skip("Failing before CI required all modules run tests")
+	t.Run("empty results with partial delivery fails all with RESULTS_MISMATCH", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
 		mockClient.
@@ -2273,9 +2280,16 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		}
 
 		client.sendBatch(t.Context(), messages)
-		client.callbackWg.Wait()
 
-		assert.NoError(t, <-errs)
+		select {
+		case err := <-errs:
+			var pubErr *PublishError
+			require.ErrorAs(t, err, &pubErr)
+			assert.Equal(t, ErrCodeResultsMismatch, pubErr.Code)
+			assert.Equal(t, "server returned 0 results for 1 events", pubErr.Reason)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
+		}
 	})
 
 	t.Run("PublishError with unknown code", func(t *testing.T) {

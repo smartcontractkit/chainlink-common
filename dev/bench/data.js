@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791558875910,
+  "lastUpdate": 1791895674149,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63540,6 +63540,66 @@ window.BENCHMARK_DATA = {
             "value": 136895,
             "unit": "ns/op",
             "extra": "8265 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "011ac3c7dbe10e688c3b36f298fe2f5fe026fe68",
+          "message": "Deprecate oracle factory config in CapabilityConfig (#2459)\n\nOracle factory config no longer needs to be explicitly configured; it is\nderived automatically at runtime. Marks the proto field as deprecated and\nremoves the now-dead encode/decode plumbing for it.\n\nCo-authored-by: Claude Sonnet 5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-13T12:37:58Z",
+          "tree_id": "a62f9a32a0ab0086f01c4342bef814e3ef9d806b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/011ac3c7dbe10e688c3b36f298fe2f5fe026fe68"
+        },
+        "date": 1791895671006,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 213,
+            "unit": "ns/op",
+            "extra": "5283313 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 24724,
+            "unit": "ns/op",
+            "extra": "50018 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 233.9,
+            "unit": "ns/op",
+            "extra": "5122357 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 24999,
+            "unit": "ns/op",
+            "extra": "47908 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 14700,
+            "unit": "ns/op",
+            "extra": "80696 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 45121,
+            "unit": "ns/op",
+            "extra": "25870 times\n4 procs"
           }
         ]
       }

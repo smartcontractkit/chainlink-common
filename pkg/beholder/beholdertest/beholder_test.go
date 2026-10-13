@@ -29,7 +29,30 @@ func TestRecorder_Emit(t *testing.T) {
 	msgs[0] = beholder.Message{}
 	require.Equal(t, []byte("m1"), rec.Messages(t)[0].Body)
 
+	// Len with no filter returns total count.
+	require.Equal(t, 2, rec.Len(t))
+	require.Equal(t, 2, len(rec.Messages(t, []any{}...)))
+
 	require.NoError(t, rec.Close())
+}
+
+func TestRecorder_BufferIsolation(t *testing.T) {
+	t.Parallel()
+
+	rec := NewRecorder()
+	buf := []byte("original")
+	require.NoError(t, rec.Emit(t.Context(), buf))
+	buf[0] = 'x'
+	require.Equal(t, []byte("original"), rec.Messages(t)[0].Body)
+
+	msg := beholder.NewMessage([]byte("original-msg"), "k", "v")
+	require.NoError(t, rec.EmitMessage(t.Context(), msg))
+	msg.Body[0] = 'x'
+	msg.Attrs["k"] = "mutated"
+
+	recorded := rec.Messages(t)[1]
+	require.Equal(t, []byte("original-msg"), recorded.Body)
+	require.Equal(t, "v", recorded.Attrs["k"])
 }
 
 func TestRecorder_MessagesFiltersWithOR(t *testing.T) {

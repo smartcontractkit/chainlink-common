@@ -45,8 +45,8 @@ func NewObserver(t *testing.T) Observer {
 	// reset NewObserver state after the test
 	prevClient := beholder.GetClient()
 	t.Cleanup(func() {
+		defer beholder.SetClient(prevClient)
 		require.NoError(t, client.Close())
-		beholder.SetClient(prevClient)
 	})
 	beholder.SetClient(client)
 
@@ -73,7 +73,7 @@ func (r *Recorder) Emit(_ context.Context, msg []byte, attrKVs ...any) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.msgs = append(r.msgs, beholder.NewMessage(msg, attrKVs...))
+	r.msgs = append(r.msgs, beholder.NewMessage(slices.Clone(msg), attrKVs...))
 
 	return nil
 }
@@ -82,7 +82,7 @@ func (r *Recorder) EmitMessage(_ context.Context, msg beholder.Message) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.msgs = append(r.msgs, msg)
+	r.msgs = append(r.msgs, msg.Copy())
 
 	return nil
 }
@@ -90,6 +90,13 @@ func (r *Recorder) EmitMessage(_ context.Context, msg beholder.Message) error {
 // Len returns the total number of messages received that match the provided attribute key/value pairs.
 func (r *Recorder) Len(t *testing.T, attrKVs ...any) int {
 	t.Helper()
+
+	if len(attrKVs) == 0 {
+		r.mu.RLock()
+		defer r.mu.RUnlock()
+
+		return len(r.msgs)
+	}
 
 	found := r.msgsForKVs(t, attrKVs...)
 
@@ -101,7 +108,7 @@ func (r *Recorder) Len(t *testing.T, attrKVs ...any) int {
 func (r *Recorder) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
 
-	if attrKVs == nil {
+	if len(attrKVs) == 0 {
 		r.mu.RLock()
 		defer r.mu.RUnlock()
 
@@ -114,6 +121,7 @@ func (r *Recorder) Messages(t *testing.T, attrKVs ...any) []beholder.Message {
 // msgsForKVs returns messages matching any of the provided attribute key/value pairs.
 func (r *Recorder) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
+	require.True(t, len(attrKVs)%2 == 0, "attribute key-value pairs must have an even length")
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -147,12 +155,8 @@ func (r *Recorder) BaseMessagesForLabels(t *testing.T, labels map[string]string)
 
 messageLoop:
 	for _, eMsg := range r.msgs {
-		dataSchema, ok := eMsg.Attrs["beholder_entity"].(string)
-		if !ok {
-			continue
-		}
-
-		if dataSchema != "BaseMessage" {
+		entity, ok := eMsg.Attrs[beholder.AttrKeyEntity].(string)
+		if !ok || entity != "BaseMessage" {
 			continue
 		}
 

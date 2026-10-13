@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791895674149,
+  "lastUpdate": 1791905223328,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63600,6 +63600,66 @@ window.BENCHMARK_DATA = {
             "value": 45121,
             "unit": "ns/op",
             "extra": "25870 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "177363085+pkcll@users.noreply.github.com",
+            "name": "Pavel",
+            "username": "pkcll"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8ce51b3803fe338bfaec53b29025fc174d990569",
+          "message": "chipingress/batch: treat nil PublishBatch response as RESULTS_MISMATCH (#2460)\n\nA (nil, nil) PublishBatch response dereferenced resp.Results in the send goroutine and panicked. Use the nil-safe resp.GetResults() so a nil response fails every event with RESULTS_MISMATCH. Re-enable the nil/empty results tests (skipped in #2421) with strict-policy expectations.",
+          "timestamp": "2026-10-13T15:22:46Z",
+          "tree_id": "7b140d8e9b016bf9720228d46b52995dbc8865cf",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8ce51b3803fe338bfaec53b29025fc174d990569"
+        },
+        "date": 1791905219648,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 354.1,
+            "unit": "ns/op",
+            "extra": "3366871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 79053,
+            "unit": "ns/op",
+            "extra": "15200 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 404.6,
+            "unit": "ns/op",
+            "extra": "2955884 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78599,
+            "unit": "ns/op",
+            "extra": "15255 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25361,
+            "unit": "ns/op",
+            "extra": "47391 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 127944,
+            "unit": "ns/op",
+            "extra": "9715 times\n4 procs"
           }
         ]
       }

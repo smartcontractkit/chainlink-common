@@ -690,10 +690,6 @@ type CapabilityConfiguration struct {
 	// When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
 	Ocr3Configs map[string]ocrtypes.ContractConfig
 
-	// Oracle factory configs for OCR-based capabilities (moved from job specs).
-	// Map key is an OCR instance name (same as above).
-	OracleFactoryConfigs map[string]values.Map
-
 	// Config moved from job specs.
 	SpecConfig *values.Map
 }

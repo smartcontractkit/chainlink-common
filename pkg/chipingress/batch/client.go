@@ -205,10 +205,11 @@ func (b *Client) Start(ctx context.Context) {
 }
 
 // Stop ensures:
-// - current batch is flushed
+// - every message already queued is published, in batches of at most the batch size
 // - all current network calls are completed
 // - all callbacks are completed
-// Forcibly shutdowns down after timeout if not completed.
+// Forcibly shuts down after the shutdown timeout if not completed; batches still being
+// drained then fail against the closed client and report the error to their callbacks.
 func (b *Client) Stop() {
 	b.shutdownOnce.Do(func() {
 		// Use a standalone timeout context so the shutdown wait isn't cancelled

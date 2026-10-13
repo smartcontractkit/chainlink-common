@@ -18,6 +18,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -1214,6 +1215,81 @@ func TestStop(t *testing.T) {
 		client.Stop()
 
 		assert.Equal(t, 0, countCounters(&client.counters))
+	})
+
+	t.Run("Stop publishes messages still queued behind in-flight sends", func(t *testing.T) {
+		const queued = 100
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+
+		firstSendStarted := make(chan struct{})
+		release := make(chan struct{})
+		var mu sync.Mutex
+		published := map[string]bool{}
+		mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
+			RunAndReturn(func(_ context.Context, batch *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+				mu.Lock()
+				first := len(published) == 0
+				results := make([]*chipingress.PublishResult, len(batch.Events))
+				for i, e := range batch.Events {
+					published[e.Id] = true
+					results[i] = &chipingress.PublishResult{EventId: e.Id}
+				}
+				mu.Unlock()
+				if first {
+					close(firstSendStarted)
+					<-release // hold the only send slot so the rest of the messages stay queued
+				}
+				return &chipingress.PublishResponse{Results: results}, nil
+			})
+
+		client, err := NewBatchClient(mockClient,
+			WithBatchSize(2),
+			WithMaxConcurrentSends(1),
+			WithMessageBuffer(queued),
+			WithBatchInterval(time.Hour),
+			WithShutdownTimeout(5*time.Second),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		callbackCount := 0
+		var callbackErrs []error
+		for i := range queued {
+			require.NoError(t, client.QueueMessage(&chipingress.CloudEventPb{
+				Id: strconv.Itoa(i), Source: "test-source", Type: "test.event.type",
+			}, func(err error) {
+				mu.Lock()
+				defer mu.Unlock()
+				callbackCount++
+				if err != nil {
+					callbackErrs = append(callbackErrs, err)
+				}
+			}))
+		}
+		<-firstSendStarted
+
+		stopped := make(chan struct{})
+		go func() {
+			client.Stop()
+			close(stopped)
+		}()
+		require.Eventually(t, func() bool {
+			select {
+			case <-client.stopCh:
+				return true
+			default:
+				return false
+			}
+		}, time.Second, time.Millisecond)
+		close(release)
+		<-stopped // Stop waits for in-flight sends and callbacks
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Len(t, published, queued, "every queued message must be published on Stop")
+		assert.Equal(t, queued, callbackCount, "every queued message must get its callback")
+		assert.Empty(t, callbackErrs)
 	})
 }
 

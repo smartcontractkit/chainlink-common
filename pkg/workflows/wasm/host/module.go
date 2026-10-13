@@ -66,6 +66,10 @@ type ModuleConfig struct {
 	MaxMemoryMBs   uint64
 	MinMemoryMBs   uint64
 	MemoryLimiter  limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
+	// MaxTableElementsLimiter bounds the element count of the guest's table;
+	// a negative limit leaves it unbounded. Defaults to
+	// cresettings.Default.PerWorkflow.WASMTableElementsLimit.
+	MaxTableElementsLimiter limits.BoundLimiter[int]
 
 	Logger         logger.Logger
 	IsUncompressed bool
@@ -151,6 +155,7 @@ type moduleLimiters struct {
 	maxUserMetricLabelsPerMetric  limits.BoundLimiter[int]
 	maxUserMetricLabelValueLength limits.BoundLimiter[int]
 	memory                        limits.BoundLimiter[config.Size]
+	maxTableElements              limits.BoundLimiter[int]
 	maxCompressedBinary           limits.BoundLimiter[config.Size]
 	maxDecompressedBinary         limits.BoundLimiter[config.Size]
 	maxResponseSize               limits.BoundLimiter[config.Size]
@@ -166,6 +171,7 @@ func (l *moduleLimiters) close() {
 		l.maxUserMetricLabelsPerMetric,
 		l.maxUserMetricLabelValueLength,
 		l.memory,
+		l.maxTableElements,
 		l.maxCompressedBinary,
 		l.maxDecompressedBinary,
 		l.maxResponseSize,
@@ -299,6 +305,9 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		// binaries may error sporadically.
 		modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 		defaultLimiters.memory = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
+	}
+	if modCfg.MaxTableElementsLimiter == nil {
+		defaultLimiters.maxTableElements = limits.NewUpperBoundLimiter(cresettings.Default.PerWorkflow.WASMTableElementsLimit.DefaultValue)
 	}
 	if modCfg.MaxCompressedBinaryLimiter == nil {
 		defaultLimiters.maxCompressedBinary = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxCompressedBinarySize))
@@ -612,12 +621,16 @@ func runWasm[I, O proto.Message](
 	if err != nil {
 		return o, fmt.Errorf("failed to get memory limit: %w", err)
 	}
+	maxTableElements, err := limiterOrDefault(m.cfg.MaxTableElementsLimiter, m.defaultLimiters.maxTableElements).Limit(ctx)
+	if err != nil {
+		return o, fmt.Errorf("failed to get table elements limit: %w", err)
+	}
 	store.Limiter(
 		int64(maxMemoryBytes/config.MByte)*int64(math.Pow(10, 6)),
-		-1, // tableElements, -1 == default
-		1,  // instances
-		1,  // tables
-		1,  // memories
+		int64(maxTableElements), // negative == unlimited
+		1,                       // instances
+		1,                       // tables
+		1,                       // memories
 	)
 
 	deadline := maxTimeout / eng.engineTickInterval

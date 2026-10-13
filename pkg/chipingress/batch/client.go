@@ -356,8 +356,9 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 				b.log.Errorw("failed to publish batch", "error", err)
 				b.completeBatchCallbacks(batchMessages, err)
 			} else if !b.transactionEnabled {
-				// always call, even when no results
-				b.completeBatchCallbacksFromResults(batchMessages, resp.Results)
+				// always call, even when no results: a nil response (protocol violation) or an
+				// empty/short result set fails the unmatched events with RESULTS_MISMATCH.
+				b.completeBatchCallbacksFromResults(batchMessages, resp.GetResults())
 			} else {
 				b.completeBatchCallbacks(batchMessages, nil)
 			}

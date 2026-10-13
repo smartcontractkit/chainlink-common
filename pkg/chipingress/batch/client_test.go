@@ -3,10 +3,12 @@ package batch
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -1290,6 +1292,119 @@ func TestStop(t *testing.T) {
 		assert.Len(t, published, queued, "every queued message must be published on Stop")
 		assert.Equal(t, queued, callbackCount, "every queued message must get its callback")
 		assert.Empty(t, callbackErrs)
+	})
+
+	t.Run("Stop returns at the shutdown timeout and late batches report errors", func(t *testing.T) {
+		const queued = 20
+		mockClient := mocks.NewClient(t)
+		var closed atomic.Bool
+		mockClient.EXPECT().Close().RunAndReturn(func() error { closed.Store(true); return nil }).Once()
+
+		firstSendStarted := make(chan struct{})
+		release := make(chan struct{})
+		var firstOnce sync.Once
+		mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
+			RunAndReturn(func(_ context.Context, batch *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+				if closed.Load() {
+					return nil, errors.New("client connection is closing")
+				}
+				firstOnce.Do(func() {
+					close(firstSendStarted)
+					<-release // outlive the shutdown timeout
+				})
+				results := make([]*chipingress.PublishResult, len(batch.Events))
+				for i, e := range batch.Events {
+					results[i] = &chipingress.PublishResult{EventId: e.Id}
+				}
+				return &chipingress.PublishResponse{Results: results}, nil
+			})
+
+		const shutdownTimeout = 100 * time.Millisecond
+		client, err := NewBatchClient(mockClient,
+			WithBatchSize(2),
+			WithMaxConcurrentSends(1),
+			WithMessageBuffer(queued),
+			WithBatchInterval(time.Hour),
+			WithShutdownTimeout(shutdownTimeout),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		var mu sync.Mutex
+		var ok, failed int
+		for i := range queued {
+			require.NoError(t, client.QueueMessage(&chipingress.CloudEventPb{
+				Id: strconv.Itoa(i), Source: "test-source", Type: "test.event.type",
+			}, func(err error) {
+				mu.Lock()
+				defer mu.Unlock()
+				if err != nil {
+					failed++
+				} else {
+					ok++
+				}
+			}))
+		}
+		<-firstSendStarted
+
+		start := time.Now()
+		client.Stop()
+		elapsed := time.Since(start)
+		assert.GreaterOrEqual(t, elapsed, shutdownTimeout)
+		assert.Less(t, elapsed, shutdownTimeout+time.Second, "Stop must return at the shutdown timeout")
+		require.True(t, closed.Load(), "Stop must close the client after the timeout")
+
+		close(release)
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			mu.Lock()
+			defer mu.Unlock()
+			assert.Equal(c, queued, ok+failed, "every queued message must get its callback")
+		}, 5*time.Second, 10*time.Millisecond)
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Equal(t, 2, ok, "only the batch in flight before the timeout succeeds")
+		assert.Equal(t, queued-2, failed, "batches drained after the timeout report the closed-client error")
+	})
+
+	t.Run("every message accepted while Stop races producers gets a callback", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+		mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
+			RunAndReturn(func(_ context.Context, batch *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+				results := make([]*chipingress.PublishResult, len(batch.Events))
+				for i, e := range batch.Events {
+					results[i] = &chipingress.PublishResult{EventId: e.Id}
+				}
+				return &chipingress.PublishResponse{Results: results}, nil
+			}).Maybe()
+
+		client, err := NewBatchClient(mockClient, WithBatchSize(50), WithMessageBuffer(100_000), WithBatchInterval(time.Millisecond))
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		var accepted, callbacks atomic.Int64
+		var producers sync.WaitGroup
+		for p := range 8 {
+			producers.Go(func() {
+				for i := 0; ; i++ {
+					err := client.QueueMessage(&chipingress.CloudEventPb{
+						Id: fmt.Sprintf("%d-%d", p, i), Source: "test-source", Type: "test.event.type",
+					}, func(error) { callbacks.Add(1) })
+					if errors.Is(err, ErrClientShutdown) {
+						return
+					}
+					if err == nil {
+						accepted.Add(1)
+					}
+				}
+			})
+		}
+		time.Sleep(20 * time.Millisecond)
+		client.Stop()
+		producers.Wait()
+
+		require.Positive(t, accepted.Load())
+		assert.Equal(t, accepted.Load(), callbacks.Load(), "a message QueueMessage accepted was abandoned")
 	})
 }
 

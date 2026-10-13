@@ -545,8 +545,12 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			return
 		}
 
+		// Not derived from stopCh: stop closes it before the batch emitter's final
+		// flush, which would cancel the delete for every event acked during shutdown.
+		delCtx, delCancel := d.deleteContext()
+		defer delCancel()
 		tDelete := time.Now()
-		deleted, deleteErr := d.store.BatchDelete(cbCtx, []int64{id})
+		deleted, deleteErr := d.store.BatchDelete(delCtx, []int64{id})
 		deleteElapsed := time.Since(tDelete)
 
 		if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
@@ -557,9 +561,17 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			return
 		}
 		if d.metrics != nil {
-			d.metrics.deliverComplete.Add(cbCtx, deleted)
+			d.metrics.deliverComplete.Add(delCtx, deleted)
 		}
 	}
+}
+
+// deleteContext bounds an inline delivery delete by PublishTimeout.
+func (d *DurableEmitter) deleteContext() (context.Context, context.CancelFunc) {
+	if d.cfg.PublishTimeout > 0 {
+		return context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
+	}
+	return context.WithCancel(context.Background())
 }
 
 // stop signals background loops to stop and waits for them to finish, then

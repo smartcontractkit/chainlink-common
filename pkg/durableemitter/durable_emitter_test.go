@@ -264,24 +264,33 @@ func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
 	assert.Equal(t, 0, store.Len(), "Close must flush buffered marks before returning")
 }
 
-// timedOutBatchEmitter models batch.Client.Stop returning at its shutdown timeout:
-// Stop returns without waiting, and the queued callbacks run afterwards.
-type timedOutBatchEmitter struct {
-	mu        sync.Mutex
-	callbacks []func(error)
+// heldBatchEmitter holds every callback until the test runs it. Stop either returns
+// at once, like batch.Client.Stop hitting its shutdown timeout, or with flushOnStop
+// runs the held callbacks with success first, like its final flush.
+type heldBatchEmitter struct {
+	mu          sync.Mutex
+	callbacks   []func(error)
+	flushOnStop bool
 }
 
-func (b *timedOutBatchEmitter) QueueMessage(_ *chipingress.CloudEventPb, cb func(error)) error {
+func (b *heldBatchEmitter) QueueMessage(_ *chipingress.CloudEventPb, cb func(error)) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.callbacks = append(b.callbacks, cb)
 	return nil
 }
 
-func (b *timedOutBatchEmitter) Start(context.Context) {}
-func (b *timedOutBatchEmitter) Stop()                 {}
+func (b *heldBatchEmitter) Start(context.Context) {}
 
-func (b *timedOutBatchEmitter) queued() []func(error) {
+func (b *heldBatchEmitter) Stop() {
+	if b.flushOnStop {
+		for _, cb := range b.queued() {
+			cb(nil)
+		}
+	}
+}
+
+func (b *heldBatchEmitter) queued() []func(error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return append([]func(error){}, b.callbacks...)
@@ -289,7 +298,7 @@ func (b *timedOutBatchEmitter) queued() []func(error) {
 
 func TestDurableEmitter_DeliveryCallbackAfterTimedOutStop(t *testing.T) {
 	store := NewMemDurableEventStore()
-	be := &timedOutBatchEmitter{}
+	be := &heldBatchEmitter{}
 
 	cfg := DefaultConfig()
 	cfg.DisablePruning = true
@@ -306,6 +315,80 @@ func TestDurableEmitter_DeliveryCallbackAfterTimedOutStop(t *testing.T) {
 	// The batch emitter reports success after DurableEmitter has shut down its delete coalescer.
 	assert.NotPanics(t, func() { be.queued()[0](nil) }, "late success callback must not send on the closed delete channel")
 	assert.Equal(t, 1, store.Len(), "the event stays persisted, so the next start retransmits it")
+}
+
+func TestDurableEmitter_DeliveryCallbacksRacingStop(t *testing.T) {
+	const n = 200
+	store := NewMemDurableEventStore()
+	be := &heldBatchEmitter{}
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.DeleteBatchSize = 100
+	cfg.DeleteBatchWorkers = 1
+	cfg.InsertBatchSize = 0 // insert inline so 200 Emits don't each wait out the coalescing linger
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	for range n {
+		require.NoError(t, em.Emit(t.Context(), []byte("race"), testEmitAttrs()...))
+	}
+	require.Eventually(t, func() bool { return len(be.queued()) == n }, 5*time.Second, 10*time.Millisecond)
+
+	var panics atomic.Int64
+	var callbacks sync.WaitGroup
+	start := make(chan struct{})
+	for _, cb := range be.queued() {
+		callbacks.Go(func() {
+			defer func() {
+				if recover() != nil {
+					panics.Add(1)
+				}
+			}()
+			<-start
+			cb(nil)
+		})
+	}
+	close(start)
+	require.NoError(t, em.Close())
+	callbacks.Wait()
+
+	assert.Zero(t, panics.Load(), "success callbacks racing Close must not send on the closed delete channel")
+}
+
+// slowDeleteStore makes BatchDelete take time and abort on cancellation, like a SQL store.
+type slowDeleteStore struct {
+	*MemDurableEventStore
+}
+
+func (s *slowDeleteStore) BatchDelete(ctx context.Context, ids []int64) (int64, error) {
+	select {
+	case <-ctx.Done():
+		return 0, ctx.Err()
+	case <-time.After(20 * time.Millisecond):
+	}
+	return s.MemDurableEventStore.BatchDelete(ctx, ids)
+}
+
+func TestDurableEmitter_InlineDeletesSurviveShutdownFlush(t *testing.T) {
+	const n = 3
+	store := &slowDeleteStore{MemDurableEventStore: NewMemDurableEventStore()}
+	be := &heldBatchEmitter{flushOnStop: true}
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.DeleteBatchSize = 0 // inline deletes
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	for range n {
+		require.NoError(t, em.Emit(t.Context(), []byte("ack-during-stop"), testEmitAttrs()...))
+	}
+	require.Eventually(t, func() bool { return len(be.queued()) == n }, 2*time.Second, 10*time.Millisecond)
+
+	require.NoError(t, em.Close()) // the final flush acks every held event
+
+	assert.Zero(t, store.Len(), "events acked during shutdown must be deleted, not re-sent on the next start")
 }
 
 func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {

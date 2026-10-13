@@ -196,12 +196,17 @@ type DurableEmitter struct {
 
 	// deleteCh funnels delivered event ids to the delete coalescer. Nil when delete
 	// coalescing is disabled (DeleteBatchSize <= 0). Its only producers are the
-	// delivery callbacks, so it is closed during shutdown only after they have
-	// quiesced (see stop). deleteWg tracks
-	// the deleteBatchLoop workers, which must outlive d.wg so callbacks running
-	// during the batch emitter's final flush can still enqueue deletes.
-	deleteCh chan int64
-	deleteWg sync.WaitGroup
+	// delivery callbacks. deleteWg tracks the deleteBatchLoop workers, which must
+	// outlive d.wg so callbacks running during the batch emitter's final flush can
+	// still enqueue deletes.
+	//
+	// batchEmitter.Stop can return at its shutdown timeout while callbacks are still
+	// running, so deleteCh is closed under deleteMu and sends happen under its read
+	// lock; a callback that arrives after deleteClosed leaves the event persisted.
+	deleteCh     chan int64
+	deleteWg     sync.WaitGroup
+	deleteMu     sync.RWMutex
+	deleteClosed bool
 
 	// stopCh signals background loops to exit.
 	stopCh services.StopChan
@@ -574,10 +579,15 @@ func (d *DurableEmitter) stop() error {
 	// Stop the batch emitter: flushes remaining queued events, waits for all
 	// in-flight PublishBatch RPCs, and waits for all delivery callbacks.
 	d.batchEmitter.Stop()
-	// The delivery callbacks (drained by batchEmitter.Stop) are the only producers
-	// of deleteCh, so it is now safe to close it and let the workers flush any buffered deletes.
+	// Delivery callbacks are deleteCh's only producers. Most have finished once
+	// batchEmitter.Stop returns, but it can return at its shutdown timeout with some
+	// still running; closing under deleteMu waits for in-progress sends (the workers
+	// keep draining) and turns any later send into a no-op.
 	if d.deleteCh != nil {
+		d.deleteMu.Lock()
+		d.deleteClosed = true
 		close(d.deleteCh)
+		d.deleteMu.Unlock()
 		d.deleteWg.Wait()
 	}
 	return nil
@@ -642,10 +652,17 @@ func (d *DurableEmitter) insertBatchLoop() {
 // enqueueDelete hands a delivered event id to the delete coalescer. It returns
 // false when coalescing is disabled so the caller can delete inline.
 // Send is a blocking hand-off; back-pressure here slows the delivery callback
-// rather than dropping a delete.
+// rather than dropping a delete. After shutdown it skips the delete: the event
+// stays persisted and is retransmitted on the next start (at-least-once).
 func (d *DurableEmitter) enqueueDelete(id int64) bool {
 	if d.deleteCh == nil {
 		return false
+	}
+	d.deleteMu.RLock()
+	defer d.deleteMu.RUnlock()
+	if d.deleteClosed {
+		d.eng.Debugw("DurableEmitter: delivery confirmed after shutdown; event left for retransmit", "id", id)
+		return true
 	}
 	d.deleteCh <- id
 	return true

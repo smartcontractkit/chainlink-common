@@ -264,6 +264,50 @@ func TestDurableEmitter_MarkCoalescingFlushesPendingOnClose(t *testing.T) {
 	assert.Equal(t, 0, store.Len(), "Close must flush buffered marks before returning")
 }
 
+// timedOutBatchEmitter models batch.Client.Stop returning at its shutdown timeout:
+// Stop returns without waiting, and the queued callbacks run afterwards.
+type timedOutBatchEmitter struct {
+	mu        sync.Mutex
+	callbacks []func(error)
+}
+
+func (b *timedOutBatchEmitter) QueueMessage(_ *chipingress.CloudEventPb, cb func(error)) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.callbacks = append(b.callbacks, cb)
+	return nil
+}
+
+func (b *timedOutBatchEmitter) Start(context.Context) {}
+func (b *timedOutBatchEmitter) Stop()                 {}
+
+func (b *timedOutBatchEmitter) queued() []func(error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return append([]func(error){}, b.callbacks...)
+}
+
+func TestDurableEmitter_DeliveryCallbackAfterTimedOutStop(t *testing.T) {
+	store := NewMemDurableEventStore()
+	be := &timedOutBatchEmitter{}
+
+	cfg := DefaultConfig()
+	cfg.DisablePruning = true
+	cfg.DeleteBatchSize = 100
+	cfg.DeleteBatchWorkers = 1
+
+	em := newTestDurableEmitter(t, store, be, &cfg)
+	require.NoError(t, em.Start(t.Context()))
+	require.NoError(t, em.Emit(t.Context(), []byte("late"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return len(be.queued()) == 1 }, 2*time.Second, 10*time.Millisecond)
+
+	require.NoError(t, em.Close())
+
+	// The batch emitter reports success after DurableEmitter has shut down its delete coalescer.
+	assert.NotPanics(t, func() { be.queued()[0](nil) }, "late success callback must not send on the closed delete channel")
+	assert.Equal(t, 1, store.Len(), "the event stays persisted, so the next start retransmits it")
+}
+
 func TestDurableEmitter_MarkCoalescingDisabledMarksInline(t *testing.T) {
 	store := &deleteRecordingStore{MemDurableEventStore: NewMemDurableEventStore()}
 	be := newTestBatchEmitter()

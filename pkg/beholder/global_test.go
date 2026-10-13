@@ -102,7 +102,9 @@ type providers struct {
 
 func TestGlobalEmitter(t *testing.T) {
 	prevClient := beholder.GetClient()
-	defer beholder.SetClient(prevClient)
+	t.Cleanup(func() {
+		beholder.SetClient(prevClient)
+	})
 
 	e1 := &fakeEmitter{}
 	c1 := beholder.NoopClientConfig{Lggr: pkglogger.Test(t)}.New()
@@ -121,7 +123,7 @@ func TestGlobalEmitter(t *testing.T) {
 
 	require.NoError(t, ge.Emit(t.Context(), []byte("two")))
 	require.Equal(t, []string{"two"}, e2.emitted)
-	require.Empty(t, e1.emitted[1:])
+	require.Equal(t, []string{"one"}, e1.emitted)
 
 	// Close is a no-op: the global client owns its emitter.
 	require.NoError(t, ge.Close())

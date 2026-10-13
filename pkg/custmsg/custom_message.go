@@ -58,13 +58,12 @@ func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 
 // With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
 func (l Labeler) With(keyValues ...string) MessageEmitter {
-	newCustomMessageLabeler := NewLabeler()
-
 	if len(keyValues)%2 != 0 {
 		// If an odd number of key-value arguments is passed, return the original CustomMessageLabeler unchanged
 		return l
 	}
 
+	newCustomMessageLabeler := NewLabeler()
 	newCustomMessageLabeler.emitter = l.emitter
 
 	// Copy existing labels from the current agent

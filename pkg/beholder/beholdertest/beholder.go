@@ -123,6 +123,11 @@ func (r *Recorder) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
 	t.Helper()
 	require.True(t, len(attrKVs)%2 == 0, "attribute key-value pairs must have an even length")
 
+	for i := 0; i < len(attrKVs); i += 2 {
+		_, ok := attrKVs[i].(string)
+		require.True(t, ok, "attribute key at index %d must be a string", i)
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -130,9 +135,7 @@ func (r *Recorder) msgsForKVs(t *testing.T, attrKVs ...any) []beholder.Message {
 
 	for _, eMsg := range r.msgs {
 		for i := 0; i+1 < len(attrKVs); i += 2 {
-			key, ok := attrKVs[i].(string)
-			require.True(t, ok)
-
+			key := attrKVs[i].(string)
 			value := attrKVs[i+1]
 			if val, ok := eMsg.Attrs[key]; ok && reflect.DeepEqual(value, val) {
 				found = append(found, eMsg)

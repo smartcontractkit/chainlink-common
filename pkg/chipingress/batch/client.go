@@ -106,6 +106,7 @@ type Client struct {
 	// admission makes "check stopCh, then enqueue" atomic with respect to Stop closing stopCh,
 	// so every message QueueMessage accepted is on messageBuffer before the batcher drains it.
 	admission       sync.RWMutex
+	afterFastPath   func() // test-only hook between the fast-path stop check and admission; nil in production
 	log             *zap.SugaredLogger
 	callbackWg      sync.WaitGroup
 	shutdownTimeout time.Duration
@@ -290,6 +291,9 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	case <-b.stopCh:
 		return ErrClientShutdown
 	default:
+	}
+	if b.afterFastPath != nil {
+		b.afterFastPath()
 	}
 
 	eventToQueue := event

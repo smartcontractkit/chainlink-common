@@ -3,7 +3,6 @@ package batch
 import (
 	"context"
 	"errors"
-	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -1366,45 +1365,36 @@ func TestStop(t *testing.T) {
 		assert.Equal(t, queued-2, failed, "batches drained after the timeout report the closed-client error")
 	})
 
-	t.Run("every message accepted while Stop races producers gets a callback", func(t *testing.T) {
+	t.Run("QueueMessage that passed the fast-path check before Stop is rejected, not abandoned", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
-		mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
-			RunAndReturn(func(_ context.Context, batch *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
-				results := make([]*chipingress.PublishResult, len(batch.Events))
-				for i, e := range batch.Events {
-					results[i] = &chipingress.PublishResult{EventId: e.Id}
-				}
-				return &chipingress.PublishResponse{Results: results}, nil
-			}).Maybe()
 
-		client, err := NewBatchClient(mockClient, WithBatchSize(50), WithMessageBuffer(100_000), WithBatchInterval(time.Millisecond))
+		client, err := NewBatchClient(mockClient, WithBatchInterval(time.Hour))
 		require.NoError(t, err)
 		client.Start(t.Context())
 
-		var accepted, callbacks atomic.Int64
-		var producers sync.WaitGroup
-		for p := range 8 {
-			producers.Go(func() {
-				for i := 0; ; i++ {
-					err := client.QueueMessage(&chipingress.CloudEventPb{
-						Id: fmt.Sprintf("%d-%d", p, i), Source: "test-source", Type: "test.event.type",
-					}, func(error) { callbacks.Add(1) })
-					if errors.Is(err, ErrClientShutdown) {
-						return
-					}
-					if err == nil {
-						accepted.Add(1)
-					}
-				}
-			})
+		reachedHook := make(chan struct{})
+		resume := make(chan struct{})
+		client.afterFastPath = func() {
+			close(reachedHook)
+			<-resume // hold the producer between the fast-path check and admission
 		}
-		time.Sleep(20 * time.Millisecond)
-		client.Stop()
-		producers.Wait()
 
-		require.Positive(t, accepted.Load())
-		assert.Equal(t, accepted.Load(), callbacks.Load(), "a message QueueMessage accepted was abandoned")
+		var callbackRan atomic.Bool
+		queueErr := make(chan error, 1)
+		go func() {
+			queueErr <- client.QueueMessage(&chipingress.CloudEventPb{
+				Id: "late", Source: "test-source", Type: "test.event.type",
+			}, func(error) { callbackRan.Store(true) })
+		}()
+		<-reachedHook
+
+		client.Stop() // drains an empty buffer and returns while the producer is parked
+		close(resume)
+
+		require.ErrorIs(t, <-queueErr, ErrClientShutdown,
+			"a message accepted after the drain would never be published or called back")
+		assert.False(t, callbackRan.Load())
 	})
 }
 

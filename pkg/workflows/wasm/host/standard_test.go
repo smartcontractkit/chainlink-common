@@ -59,6 +59,7 @@ func TestStandardConfig(t *testing.T) {
 		return time.Now()
 	}).Maybe()
 	wrappedConfig := runWithBasicTrigger(t, mockExecutionHelper)
+	require.NotNil(t, wrappedConfig.ComputeDurationMs, "host reports the guest run duration")
 	wrappedValue := wrappedConfig.GetValue()
 	require.NotNil(t, wrappedValue, "Expected a value in the response")
 	actualConfig := wrappedConfig.GetValue().GetBytesValue()

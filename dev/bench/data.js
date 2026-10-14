@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792005385979,
+  "lastUpdate": 1792010131075,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63960,6 +63960,66 @@ window.BENCHMARK_DATA = {
             "value": 53236,
             "unit": "ns/op",
             "extra": "22300 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "165708424+pavel-raykov@users.noreply.github.com",
+            "name": "pavel-raykov",
+            "username": "pavel-raykov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d375ab88facede3a4bdd0014ecd8045dddd4fbba",
+          "message": "cresettings: add ShardingFailoverEnabled gate (#2468)\n\nchainlink core builds this gate ad hoc (settings.Bool(false) with\nKey \"ShardingFailoverEnabled\", global scope), so it cannot be overridden\nvia CRE settings files: chainlink-deployments rejects it as an unknown\nfield. Add it to the Schema so environments can enable it.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-14T20:24:58Z",
+          "tree_id": "ab4a7b81efcde1d3dc27662f2ad134bef2e68755",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/d375ab88facede3a4bdd0014ecd8045dddd4fbba"
+        },
+        "date": 1792010126407,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 358.4,
+            "unit": "ns/op",
+            "extra": "3316132 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92812,
+            "unit": "ns/op",
+            "extra": "12867 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 400,
+            "unit": "ns/op",
+            "extra": "3005074 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92313,
+            "unit": "ns/op",
+            "extra": "12978 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25687,
+            "unit": "ns/op",
+            "extra": "46668 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 145635,
+            "unit": "ns/op",
+            "extra": "8341 times\n4 procs"
           }
         ]
       }

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791998993771,
+  "lastUpdate": 1792005249577,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63840,6 +63840,66 @@ window.BENCHMARK_DATA = {
             "value": 136768,
             "unit": "ns/op",
             "extra": "8497 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "adam.hamrick@smartcontract.com",
+            "name": "Adam Hamrick",
+            "username": "kalverra"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "194aaaf49d3751f8eec01f19dc42b8e866c9b038",
+          "message": "beholder/custmsg: injectable emitters for parallel-safe tests (#2458)\n\n* beholder/custmsg: injectable emitters for parallel-safe tests\n\n- beholder.GlobalEmitter() late-binds to the global client's emitter at\n  emit time, so production code can hold a default without pinning the\n  client chosen at construction. Close is a no-op.\n- beholdertest: export Recorder, a concurrency-safe beholder.Emitter for\n  per-test recording. Observer embeds *Recorder, so its API is\n  unchanged. NewObserver now guards t.Setenv first to fail fast on\n  parallel tests, Messages returns a copy under the read lock, and\n  multi-pair filters no longer duplicate matching messages.\n- custmsg.NewLabelerWithEmitter(e) emits to e instead of the global\n  emitter; With/WithMapLabels carry e along. A nil emitter still\n  resolves the global one at emit time.\n\n* fix: messages append\n\n* fix: validations",
+          "timestamp": "2026-10-14T19:04:08Z",
+          "tree_id": "e7aebabf5c16da4089aee04156153a97e482adf5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/194aaaf49d3751f8eec01f19dc42b8e866c9b038"
+        },
+        "date": 1792005244416,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 357.4,
+            "unit": "ns/op",
+            "extra": "3308858 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90705,
+            "unit": "ns/op",
+            "extra": "13183 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 398.4,
+            "unit": "ns/op",
+            "extra": "3011281 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92101,
+            "unit": "ns/op",
+            "extra": "13011 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25635,
+            "unit": "ns/op",
+            "extra": "46791 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136546,
+            "unit": "ns/op",
+            "extra": "8323 times\n4 procs"
           }
         ]
       }

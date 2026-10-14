@@ -668,6 +668,9 @@ func runWasm[I, O proto.Message](
 	)
 
 	deadline := maxTimeout / eng.engineTickInterval
+	if maxTimeout%eng.engineTickInterval > 0 {
+		deadline++
+	}
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()
@@ -695,9 +698,7 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
 
-	startTime := time.Now()
 	_, err = callStart(m, instance, store)
-	executionDuration := time.Since(startTime)
 
 	// A guest that ran to completion exits with WASI status wasiExitSuccess
 	// after delivering its response via the send_response import.
@@ -708,11 +709,14 @@ func runWasm[I, O proto.Message](
 		return exec.response, nil
 	}
 
-	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
-	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
-	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
-	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= maxTimeout-engineTickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	// Epoch interrupts can precede the wall-clock deadline because the ticker is shared.
+	var trap *wasmtime.Trap
+	epochExpired := false
+	if errors.As(err, &trap) {
+		code := trap.Code()
+		epochExpired = code != nil && *code == wasmtime.Interrupt
+	}
+	if err != nil && (epochExpired || ctxWithTimeout.Err() != nil) {
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

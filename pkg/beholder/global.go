@@ -1,6 +1,7 @@
 package beholder
 
 import (
+	"context"
 	"sync/atomic"
 
 	"go.opentelemetry.io/otel"
@@ -42,6 +43,17 @@ func GetMeter() otelmetric.Meter {
 func GetEmitter() Emitter {
 	return GetClient().Emitter
 }
+
+// GlobalEmitter returns an Emitter that delegates to the current global client's
+// Emitter at call time. Close is a no-op; the global client owns its emitter.
+func GlobalEmitter() Emitter { return globalEmitter{} }
+
+type globalEmitter struct{}
+
+func (globalEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) error {
+	return GetEmitter().Emit(ctx, body, attrKVs...)
+}
+func (globalEmitter) Close() error { return nil }
 
 // Sets global OTel logger, tracer, meter providers from Client.
 // Makes them accessible from anywhere in the code via global otel getters.

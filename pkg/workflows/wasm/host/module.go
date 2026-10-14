@@ -191,6 +191,35 @@ func limiterOrDefault[T io.Closer](configured, defaultLimiter T) T {
 // Limiter fields may be set or replaced after construction, but must not be
 // reset to nil.
 func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
+	return newModule(modCfg, func(defaults moduleLimiters) (*wasmtime.Module, error) {
+		return compileModule(ctx, modCfg, defaults, binary)
+	}, opts...)
+}
+
+// NewModuleFromSerializedFile loads a trusted artifact produced by Serialize.
+// Deserialization accepts native code: never pass files supplied by an untrusted
+// party. The file must not be modified or truncated while any module loaded from
+// it is alive: Wasmtime retains a file-backed mapping. Unlinking or renaming the
+// file after this call returns is safe. The filesystem must allow executable
+// mappings. Producer and consumer must use compatible engine settings, Wasmtime
+// versions and target architectures.
+//
+// Source binary limits are enforced by NewModule before serialization, not by
+// this loader. Runtime limits and module validation apply to both paths.
+func NewModuleFromSerializedFile(ctx context.Context, modCfg *ModuleConfig, path string, opts ...func(*ModuleConfig)) (*module, error) {
+	return newModule(modCfg, func(_ moduleLimiters) (*wasmtime.Module, error) {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		native, err := wasmtime.NewModuleDeserializeFile(GetEngine(modCfg.Logger).Engine, path)
+		if err != nil {
+			return nil, fmt.Errorf("error deserializing wasmtime module: %w", err)
+		}
+		return native, nil
+	}, opts...)
+}
+
+func newModule(modCfg *ModuleConfig, load func(moduleLimiters) (*wasmtime.Module, error), opts ...func(*ModuleConfig)) (*module, error) {
 	var defaultLimiters moduleLimiters
 	cleanupLimiters := true
 	defer func() {
@@ -313,6 +342,25 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		defaultLimiters.maxSubscriptions = limits.NewUpperBoundLimiter(cresettings.Default.WASMPollOneoffSubscriptionLimit.DefaultValue)
 	}
 
+	metrics, err := newModuleMetrics()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create module metrics: %w", err)
+	}
+
+	native, err := load(defaultLimiters)
+	if err != nil {
+		return nil, err
+	}
+	m, err := wrapModule(modCfg, native, metrics)
+	if err != nil {
+		return nil, err
+	}
+	m.defaultLimiters = defaultLimiters
+	cleanupLimiters = false
+	return m, nil
+}
+
+func compileModule(ctx context.Context, modCfg *ModuleConfig, defaultLimiters moduleLimiters, binary []byte) (*wasmtime.Module, error) {
 	maxCompressedBinaryLimiter := limiterOrDefault(modCfg.MaxCompressedBinaryLimiter, defaultLimiters.maxCompressedBinary)
 	maxDecompressedBinaryLimiter := limiterOrDefault(modCfg.MaxDecompressedBinaryLimiter, defaultLimiters.maxDecompressedBinary)
 
@@ -348,31 +396,19 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		return nil, fmt.Errorf("failed to check decompressed binary size limit: %w", err)
 	}
 
-	metrics, err := newModuleMetrics()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create module metrics: %w", err)
-	}
-
-	m, err := newModule(modCfg, binary, metrics)
-	if err != nil {
-		return nil, err
-	}
-	m.defaultLimiters = defaultLimiters
-	cleanupLimiters = false
-	return m, nil
-}
-
-func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
-	mod, err := wasmtime.NewModule(GetEngine(modCfg.Logger).Engine, binary)
+	native, err := wasmtime.NewModule(GetEngine(modCfg.Logger).Engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
+	return native, nil
+}
 
+func wrapModule(modCfg *ModuleConfig, mod *wasmtime.Module, metrics moduleMetrics) (*module, error) {
 	// Every host callback reaches the guest through its exported linear memory,
 	// so a module that doesn't export one under the expected name can't be run
 	// at all. Reject it here rather than letting the first callback dereference
 	// a missing or wrong-typed export.
-	if err = requireMemoryExport(mod); err != nil {
+	if err := requireMemoryExport(mod); err != nil {
 		mod.Close()
 		return nil, err
 	}
@@ -509,6 +545,12 @@ func (m *module) Start() {}
 func (m *module) Close() {
 	m.defaultLimiters.close()
 	m.module.Close()
+}
+
+// Serialize returns compiled native code for a compatible engine. Treat the
+// artifact as executable code; its integrity must be protected until loading.
+func (m *module) Serialize() ([]byte, error) {
+	return m.module.Serialize()
 }
 
 func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {

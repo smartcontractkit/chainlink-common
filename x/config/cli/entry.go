@@ -72,6 +72,9 @@ type typedEntry[T any] struct {
 	// ns, if set, is the first segment of every key.
 	ns string
 
+	// suppliedFields lets the `set` rule tell a field was explicitly set, even if it is a default value like zero.
+	suppliedFields map[uintptr]bool
+
 	undocumentedKeys []string
 }
 
@@ -142,8 +145,21 @@ func (e *typedEntry[T]) sources(k leafKey, cc commandConfig) ([]reflect.Value, e
 	return vals, nil
 }
 
+const setTag = "set"
+
+// The validator passes a field's value but not its path, so fields are matched by address.
+func (e *typedEntry[T]) isSupplied(fl validator.FieldLevel) bool {
+	field := fl.Field()
+	return field.CanAddr() && e.suppliedFields[field.Addr().Pointer()]
+}
+
 func (e *typedEntry[T]) validate() error {
 	v := validator.New()
+	if err := v.RegisterValidation(setTag, e.isSupplied, true); err != nil {
+		// This should never happen; it errors only if setTag collides with a built-in rule.
+		return err
+	}
+
 	// With config key names, the validator's namespaces differ from config keys only by the root type's name, [i]
 	// indices, and flattened embeds, which configKey fixes.
 	lang := e.b.opts.Markup
@@ -227,6 +243,7 @@ func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
 }
 
 func (e *typedEntry[T]) decode(cc commandConfig) error {
+	e.suppliedFields = map[uintptr]bool{}
 	dst := reflect.ValueOf(e.dst).Elem()
 	for _, k := range e.leaves {
 		if len(k.entries) > 0 {
@@ -263,6 +280,8 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 		} else {
 			f.Set(vals[0])
 		}
+
+		e.suppliedFields[f.Addr().Pointer()] = true
 	}
 
 	return nil

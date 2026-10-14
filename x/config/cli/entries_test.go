@@ -34,6 +34,11 @@ func TestMapEntriesAreSetLikeFields(t *testing.T) {
 	require.NoError(t, run(t, &c, testOptions, "--chains.mainnet.rpc", "flag"))
 	assert.Equal(t, map[string]chain{"mainnet": {RPC: "flag"}}, c.Chains)
 
+	type hasSetMap struct {
+		Map map[string]string `validate:"set"` //nolint:revive // set is the Binder's own rule
+	}
+	require.NoError(t, run(t, &hasSetMap{}, testOptions, "--map.a", "1"))
+
 	var pointerMap struct{ Map *map[string]string }
 	require.NoError(t, run(t, &pointerMap, testOptions, "--map.a", "1"))
 	assert.Equal(t, map[string]string{"a": "1"}, *pointerMap.Map)

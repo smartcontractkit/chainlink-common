@@ -7,6 +7,7 @@
 	"CentralizedWorkflowOwnerVerificationEnabled": "false",
 	"RemoteExecutableWorkflowDONBindingEnabled": "false",
 	"CoordinatedEngineEnabled": "false",
+	"ShardingFailoverEnabled": "false",
 	"TenantID": "0",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",

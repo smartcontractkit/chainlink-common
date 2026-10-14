@@ -30,6 +30,7 @@ func bindLeafFlag(entry targetEntry, m fieldMeta, doc string) (leafKey, error) {
 		goPath:   m.goPath,
 		goType:   m.field.Type,
 		fileType: fileType,
+		required: isRequired(m.field),
 	}
 	// pflag panics on a redefinition.
 	if flags.Lookup(leaf.flagName) != nil {
@@ -38,7 +39,7 @@ func bindLeafFlag(entry targetEntry, m fieldMeta, doc string) (leafKey, error) {
 
 	usage := doc
 	// Under a pointer section the rule applies only once the section is configured.
-	if isRequired(m.field) && !m.inOptional {
+	if leaf.required && !m.inOptional {
 		usage = strings.TrimSpace(usage + " (required)")
 	}
 

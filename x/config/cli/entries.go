@@ -256,48 +256,93 @@ func overlap(a, b, placeholder, sep string) (string, bool) {
 
 // entrySet is one value a source sets inside a map, such as rpc in entry mainnet.
 type entrySet struct {
-	leaf   *entryLeaf
-	keys   []reflect.Value
+	leaf *entryLeaf
+	keys []reflect.Value
+	// texts holds the leading keys still to resolve, named by env vars; keys holds the rest, already parsed.
+	texts  []string
 	value  reflect.Value
 	source string
 	// rank is the env var prefix's index, as the first prefix set wins.
 	rank int
 }
 
-// decodeEntries layers a map's sources lowest first, each setting whole entries or values inside them, so
-// --chains.mainnet.rpc changes only rpc in the file's mainnet.
-func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) error {
-	t := commentparsing.DerefType(k.goType)
-	m := mergeMaps(t, readField(dst, k.goPath))
-	changed := false
-	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
-		file, err := fromFile(t, raw)
+// Keys named by an env var resolve against the map the entry layers over, which holds every source below env vars.
+func (s entrySet) resolve(m reflect.Value) ([]reflect.Value, error) {
+	if s.texts == nil {
+		return s.keys, nil
+	}
+
+	keys := make([]reflect.Value, 0, len(s.texts)+len(s.keys))
+	for i, text := range s.texts {
+		keyText, err := envKeyText(entryMap(m, s.leaf, keys), text)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("%s: %w", s.source, err)
 		}
 
-		m, changed = mergeMaps(t, m, file), true
+		key, err := mapKey(s.leaf.keyTypes[i], keyText, map[any]string{})
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", s.source, err)
+		}
+
+		keys = append(keys, key)
 	}
 
-	envSets, err := e.envEntrySets(k, m)
+	return append(keys, s.keys...), nil
+}
+
+// decodeEntries layers a map's sources lowest first, each setting whole entries or values inside them, so
+// --chains.mainnet.rpc changes only rpc in the file's mainnet. It returns how the sources layer over a map, nil if
+// none set it.
+func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) (sourceLayer, error) {
+	t := commentparsing.DerefType(k.goType)
+	var file reflect.Value
+	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
+		var err error
+		if file, err = fromFile(t, raw); err != nil {
+			return nil, err
+		}
+	}
+
+	envSets, err := e.envEntrySets(k)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for _, layer := range [][]entrySet{envSets, e.flagEntrySets(k, cc.flags)} {
-		if layer, err = oneValueEach(layer); err != nil {
-			return err
-		}
-
-		for _, s := range layer {
-			setEntry(m, s.leaf, s.keys, 0, s.value)
-		}
-
-		changed = changed || len(layer) > 0
+	layers := [][]entrySet{envSets, e.flagEntrySets(k, cc.flags)}
+	if !file.IsValid() && len(layers[0]) == 0 && len(layers[1]) == 0 {
+		return nil, nil
 	}
 
-	if !changed {
-		return nil
+	layer := func(under reflect.Value) (reflect.Value, error) {
+		m := mergeMaps(t, under)
+		if file.IsValid() {
+			m = mergeMaps(t, m, file)
+		}
+
+		for _, sets := range layers {
+			// Resolved against m, before any set entry can add a key another set's name would then match.
+			resolved := make([]entrySet, 0, len(sets))
+			for _, s := range sets {
+				keys, kerr := s.resolve(m)
+				if kerr != nil {
+					return reflect.Value{}, kerr
+				}
+
+				s.keys, s.texts = keys, nil
+				resolved = append(resolved, s)
+			}
+
+			unique, uerr := oneValueEach(resolved)
+			if uerr != nil {
+				return reflect.Value{}, uerr
+			}
+
+			for _, s := range unique {
+				setEntry(m, s.leaf, s.keys, 0, s.value)
+			}
+		}
+
+		return m, nil
 	}
 
 	f := allocateField(dst, k.goPath)
@@ -309,12 +354,22 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		f = f.Elem()
 	}
 
-	f.Set(m)
-	return nil
+	// A profile replaces its section's maps, so the keys an env var names are resolved against the profile's map
+	// when it applies this layer, not the one here.
+	if slices.ContainsFunc(e.profileSelectors, func(s leafKey) bool { return inScope(k, s.goPath[:len(s.goPath)-1]) }) {
+		return layer, nil
+	}
+
+	v, err := layer(readField(dst, k.goPath))
+	if err != nil {
+		return nil, err
+	}
+
+	f.Set(v)
+	return layer, nil
 }
 
-// Keys in env var names are matched against base's, which holds every source below env vars.
-func (e *typedEntry[T]) envEntrySets(k leafKey, base reflect.Value) ([]entrySet, error) {
+func (e *typedEntry[T]) envEntrySets(k leafKey) ([]entrySet, error) {
 	var sets []entrySet
 	if k.flag != nil {
 		for rank, name := range e.envVars(k) {
@@ -324,7 +379,7 @@ func (e *typedEntry[T]) envEntrySets(k leafKey, base reflect.Value) ([]entrySet,
 					return nil, fmt.Errorf("invalid value %q for %s: %w", s, name, err)
 				}
 
-				sets = splitEntries(k.each, nil, val, name, rank)
+				sets = splitEntries(k.each, nil, nil, val, name, rank)
 				break
 			}
 		}
@@ -343,24 +398,12 @@ func (e *typedEntry[T]) envEntrySets(k leafKey, base reflect.Value) ([]entrySet,
 			continue
 		}
 
-		keys := make([]reflect.Value, len(texts))
-		for i, text := range texts {
-			keyText, err := envKeyText(entryMap(base, leaf, keys[:i]), text)
-			if err != nil {
-				return nil, fmt.Errorf("%s: %w", name, err)
-			}
-
-			if keys[i], err = mapKey(leaf.keyTypes[i], keyText, map[any]string{}); err != nil {
-				return nil, fmt.Errorf("%s: %w", name, err)
-			}
-		}
-
 		val, err := parseText(leaf.goType, s)
 		if err != nil {
 			return nil, fmt.Errorf("invalid value %q for %s: %w", s, name, err)
 		}
 
-		sets = append(sets, entrySets(leaf, keys, val, name, rank)...)
+		sets = append(sets, entrySets(leaf, nil, texts, val, name, rank)...)
 	}
 
 	return sets, nil
@@ -381,12 +424,12 @@ func (e *typedEntry[T]) envEntry(k leafKey, name string) (*entryLeaf, int, []str
 func (e *typedEntry[T]) flagEntrySets(k leafKey, flags *pflag.FlagSet) []entrySet {
 	var sets []entrySet
 	if k.flag != nil && k.flag.Changed {
-		sets = splitEntries(k.each, nil, k.value(), "--"+k.flagName, 0)
+		sets = splitEntries(k.each, nil, nil, k.value(), "--"+k.flagName, 0)
 	}
 
 	flags.Visit(func(f *pflag.Flag) {
 		if ef, ok := e.b.entryFlags[f]; ok && slices.Contains(k.entries, ef.leaf) {
-			sets = append(sets, entrySets(ef.leaf, ef.keys, ef.value(), "--"+f.Name, 0)...)
+			sets = append(sets, entrySets(ef.leaf, ef.keys, nil, ef.value(), "--"+f.Name, 0)...)
 		}
 	})
 
@@ -439,22 +482,22 @@ func readField(v reflect.Value, path []string) reflect.Value {
 
 // Splits a whole map into its entries: --labels a=1,b=2 becomes the same as --labels.a 1 --labels.b 2, so giving
 // --labels a=1 --labels.a 3 is caught as setting it twice.
-func splitEntries(each *entryLeaf, keys []reflect.Value, m reflect.Value, source string, rank int) []entrySet {
+func splitEntries(each *entryLeaf, keys []reflect.Value, texts []string, m reflect.Value, source string, rank int) []entrySet {
 	var sets []entrySet
 	for key, val := range m.Seq2() {
 		entrySource := fmt.Sprintf("%s (key %q)", source, textOf(key))
-		sets = append(sets, entrySets(each, append(slices.Clone(keys), key), val, entrySource, rank)...)
+		sets = append(sets, entrySets(each, append(slices.Clone(keys), key), texts, val, entrySource, rank)...)
 	}
 
 	return sets
 }
 
-func entrySets(leaf *entryLeaf, keys []reflect.Value, val reflect.Value, source string, rank int) []entrySet {
+func entrySets(leaf *entryLeaf, keys []reflect.Value, texts []string, val reflect.Value, source string, rank int) []entrySet {
 	if leaf.each != nil && val.Kind() == reflect.Map {
-		return splitEntries(leaf.each, keys, val, source, rank)
+		return splitEntries(leaf.each, keys, texts, val, source, rank)
 	}
 
-	return []entrySet{{leaf, keys, val, source, rank}}
+	return []entrySet{{leaf: leaf, keys: keys, texts: texts, value: val, source: source, rank: rank}}
 }
 
 // Within one source, two values for one entry are an error, as two keys for one are. Across env var prefixes the

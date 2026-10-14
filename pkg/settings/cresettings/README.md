@@ -109,6 +109,7 @@ flowchart
 
     subgraph syncer.tryEngineCreate
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
+        ShardingFailoverEnabled[/ShardingFailoverEnabled\]:::gate
     end
     
     subgraph Engine.init

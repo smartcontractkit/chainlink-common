@@ -529,7 +529,12 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	case *sdkpb.ExecuteRequest_PreHook:
 		timeout = *m.cfg.PrehookTimeout
 	}
-	return runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
+	start := time.Now()
+	result, err := runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
+	if result != nil {
+		result.ComputeDurationMs = proto.Int64(time.Since(start).Milliseconds())
+	}
+	return result, err
 }
 
 // callStart looks up and invokes the wasm module's _start function, but

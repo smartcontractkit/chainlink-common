@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792005249577,
+  "lastUpdate": 1792005385979,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63900,6 +63900,66 @@ window.BENCHMARK_DATA = {
             "value": 136546,
             "unit": "ns/op",
             "extra": "8323 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chet.sharma@smartcontract.com",
+            "name": "skippaDaBitFlippa",
+            "username": "skippaDaBitFlippa"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52438789c68853745069412750750c84b05b6717",
+          "message": "durableemitter: don't panic when a delivery callback runs after stop (#2465)\n\n* durableemitter: don't panic when a delivery callback runs after stop\n\nstop closed deleteCh as soon as batchEmitter.Stop returned, but Stop can\nreturn at its shutdown timeout with callbacks still running, so a late\nsuccess callback panicked on send. The close now happens under a lock and\nlate callbacks skip the delete, so the event is retransmitted on the next\nstart.\n\n* durableemitter: bound inline deletes by PublishTimeout instead of stopCh\n\nstop closes stopCh before the batch emitter's final flush, so with\ncoalescing off every event acked during shutdown had its delete cancelled\nand was re-sent on the next start. Inline deletes now use PublishTimeout,\nas the Config doc already describes. Also adds a test for success callbacks\nracing Close.",
+          "timestamp": "2026-10-14T19:05:42Z",
+          "tree_id": "670c122154cb977a09f8670f4e1d192f51804a8a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/52438789c68853745069412750750c84b05b6717"
+        },
+        "date": 1792005382618,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 222.2,
+            "unit": "ns/op",
+            "extra": "5378850 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 27800,
+            "unit": "ns/op",
+            "extra": "42526 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 254.4,
+            "unit": "ns/op",
+            "extra": "4934100 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 32790,
+            "unit": "ns/op",
+            "extra": "42056 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 15308,
+            "unit": "ns/op",
+            "extra": "78195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 53236,
+            "unit": "ns/op",
+            "extra": "22300 times\n4 procs"
           }
         ]
       }

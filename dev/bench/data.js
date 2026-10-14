@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791905223328,
+  "lastUpdate": 1791993958103,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -63660,6 +63660,66 @@ window.BENCHMARK_DATA = {
             "value": 127944,
             "unit": "ns/op",
             "extra": "9715 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "53eae87f5bdd70a46e9c42609824ca5ace1e8f47",
+          "message": "Billing: Set compute duration on execution result (#2464)\n\n* workflows/wasm/host: set compute_duration_ms on the execution result (CRE-6779)\n\nThe engine meters it as compute. Confidential runs get the same field set\ninside the enclave, which executes workflows with this host.\n\nBump chainlink-protos/cre/go to 94b3b3de (#473).\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* Pin chainlink-protos/cre/go to the capabilities-development merge of #472\n\nCI requires protos pins from capabilities-development; the main-based\n#473 head also lacks capdev-only protos, which broke go generate.\nRegenerated the affected descriptors.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-14T15:54:51Z",
+          "tree_id": "b3aa73eb3e1335c7d07482d3a0d55c05a7fe69a0",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/53eae87f5bdd70a46e9c42609824ca5ace1e8f47"
+        },
+        "date": 1791993954723,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 230.6,
+            "unit": "ns/op",
+            "extra": "4616404 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 26255,
+            "unit": "ns/op",
+            "extra": "47682 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 235.9,
+            "unit": "ns/op",
+            "extra": "5087272 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 25835,
+            "unit": "ns/op",
+            "extra": "46873 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 15079,
+            "unit": "ns/op",
+            "extra": "80853 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 46221,
+            "unit": "ns/op",
+            "extra": "26300 times\n4 procs"
           }
         ]
       }

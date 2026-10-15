@@ -126,7 +126,7 @@ func maybeCritical(msg string, l logger.SugaredLogger, args ...any) bool {
 		case "fatal":
 			l.Criticalw("[FATAL] "+log.Message, flattenExtraArgs(log)...)
 			return true
-		case "critical", "dpanic":
+		case "critical", "crit", "dpanic":
 			l.Criticalw(log.Message, flattenExtraArgs(log)...)
 			return true
 		}

@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	keystorepb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/keystore"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"

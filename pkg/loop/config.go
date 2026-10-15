@@ -675,11 +675,35 @@ func (e *EnvConfig) parse() error {
 // to enable host process restarts without restarting the plugin. To do that we would also need
 // supply the appropriate ReattachConfig to the plugin.ClientConfig.
 func ManagedGRPCClientConfig(clientConfig *plugin.ClientConfig, c BrokerConfig) *plugin.ClientConfig {
+	return ManagedGRPCClientConfigWithOpts(clientConfig, c)
+}
+
+// ManagedGRPCClientConfigWithOpts is ManagedGRPCClientConfig with additional GRPCClientConfigOpt
+// customizations, such as WithAutoMTLS or WithSecureConfigFactory.
+func ManagedGRPCClientConfigWithOpts(clientConfig *plugin.ClientConfig, c BrokerConfig, opts ...GRPCClientConfigOpt) *plugin.ClientConfig {
 	clientConfig.AllowedProtocols = []plugin.Protocol{plugin.ProtocolGRPC}
 	clientConfig.GRPCDialOptions = c.DialOpts
 	clientConfig.Logger = HCLogLogger(c.Logger)
 	clientConfig.Managed = true
+	for _, opt := range opts {
+		opt(clientConfig)
+	}
 	return clientConfig
+}
+
+// GRPCClientConfigOpt customizes the *plugin.ClientConfig built by ManagedGRPCClientConfigWithOpts.
+type GRPCClientConfigOpt func(*plugin.ClientConfig)
+
+// WithAutoMTLS enables go-plugin's automatic mutual TLS between the host and the plugin process.
+func WithAutoMTLS() GRPCClientConfigOpt {
+	return func(c *plugin.ClientConfig) { c.AutoMTLS = true }
+}
+
+// WithSecureConfigFactory sets a fresh *plugin.SecureConfig from f on each built config. A factory
+// is needed because go-plugin's SecureConfig.Check mutates its hash state, so one SecureConfig
+// cannot be reused across plugin relaunches (ClientConfig is called per launch).
+func WithSecureConfigFactory(f func() *plugin.SecureConfig) GRPCClientConfigOpt {
+	return func(c *plugin.ClientConfig) { c.SecureConfig = f() }
 }
 
 func getBool(envKey string) (bool, error) {

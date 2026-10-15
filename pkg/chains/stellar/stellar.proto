@@ -156,11 +156,22 @@ message GetTransactionRequest {
   string tx_hash = 1;
 }
 
-// GetTransactionResponse carries fee and ledger metadata for a confirmed transaction.
+enum GetTransactionStatus {
+  GET_TRANSACTION_STATUS_UNSPECIFIED = 0;
+  GET_TRANSACTION_STATUS_NOT_FOUND = 1;
+  GET_TRANSACTION_STATUS_FAILED = 2;
+  GET_TRANSACTION_STATUS_SUCCESS = 3;
+}
+
+// GetTransactionResponse carries the result of looking up a transaction by hash.
 message GetTransactionResponse {
-  uint64 fee_stroops = 1;
-  uint32 ledger_sequence = 2;
-  int64 ledger_close_time = 3;
+  optional uint64 fee_stroops = 1;
+  optional uint32 ledger_sequence = 2;
+  optional int64 ledger_close_time = 3;
+  GetTransactionStatus status = 4;
+  string tx_hash = 5;
+  bytes result_xdr = 6;
+  bytes result_meta_xdr = 7;
 }
 
 // GetSigningAccountResponse is the relayer default TXM signing account.

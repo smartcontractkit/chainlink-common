@@ -1352,12 +1352,59 @@ func TestConvertGetTransactionRequestFromProto_EmptyTxHash(t *testing.T) {
 }
 
 func TestConvertGetTransactionResponse_RoundTrip(t *testing.T) {
+	fee := uint64(42)
+	ledger := uint32(100)
+	closeTime := int64(1_700_000_000)
 	domain := stellartypes.GetTransactionResponse{
-		FeeStroops:      42,
-		LedgerSequence:  100,
-		LedgerCloseTime: 1_700_000_000,
+		Status:          stellartypes.GetTransactionStatusSuccess,
+		TxHash:          "abc123hash",
+		ResultXDR:       base64.StdEncoding.EncodeToString([]byte("result")),
+		ResultMetaXDR:   base64.StdEncoding.EncodeToString([]byte("meta")),
+		FeeStroops:      &fee,
+		LedgerSequence:  &ledger,
+		LedgerCloseTime: &closeTime,
 	}
-	proto := conv.ConvertGetTransactionResponseToProto(domain)
+	proto, err := conv.ConvertGetTransactionResponseToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, conv.GetTransactionStatus_GET_TRANSACTION_STATUS_SUCCESS, proto.GetStatus())
+
+	got, err := conv.ConvertGetTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetTransactionResponse_RoundTrip_Failed(t *testing.T) {
+	ledger := uint32(100)
+	closeTime := int64(1_700_000_000)
+	domain := stellartypes.GetTransactionResponse{
+		Status:          stellartypes.GetTransactionStatusFailed,
+		TxHash:          "abc123hash",
+		ResultXDR:       base64.StdEncoding.EncodeToString([]byte("failed-result")),
+		LedgerSequence:  &ledger,
+		LedgerCloseTime: &closeTime,
+	}
+	proto, err := conv.ConvertGetTransactionResponseToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, conv.GetTransactionStatus_GET_TRANSACTION_STATUS_FAILED, proto.GetStatus())
+	require.Nil(t, proto.FeeStroops)
+
+	got, err := conv.ConvertGetTransactionResponseFromProto(proto)
+	require.NoError(t, err)
+	require.Equal(t, domain, got)
+}
+
+func TestConvertGetTransactionResponse_RoundTrip_NotFound(t *testing.T) {
+	domain := stellartypes.GetTransactionResponse{
+		Status: stellartypes.GetTransactionStatusNotFound,
+		TxHash: "abc123hash",
+	}
+	proto, err := conv.ConvertGetTransactionResponseToProto(domain)
+	require.NoError(t, err)
+	require.Equal(t, conv.GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND, proto.GetStatus())
+	require.Nil(t, proto.FeeStroops)
+	require.Nil(t, proto.LedgerSequence)
+	require.Nil(t, proto.LedgerCloseTime)
+	require.Empty(t, proto.GetResultXdr())
 
 	got, err := conv.ConvertGetTransactionResponseFromProto(proto)
 	require.NoError(t, err)
@@ -1368,6 +1415,78 @@ func TestConvertGetTransactionResponseFromProto_Nil(t *testing.T) {
 	_, err := conv.ConvertGetTransactionResponseFromProto(nil)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "nil")
+}
+
+func TestConvertGetTransactionResponseToProto_UnspecifiedStatus(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseToProto(stellartypes.GetTransactionResponse{
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "status")
+	require.Contains(t, err.Error(), "get transaction status is required")
+}
+
+func TestConvertGetTransactionResponseToProto_UnsupportedStatus(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseToProto(stellartypes.GetTransactionResponse{
+		Status: stellartypes.GetTransactionStatus(99),
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "status")
+	require.Contains(t, err.Error(), "unsupported get transaction status")
+}
+
+func TestConvertGetTransactionResponseFromProto_UnspecifiedStatus(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseFromProto(&conv.GetTransactionResponse{
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "status")
+	require.Contains(t, err.Error(), "get transaction status is required")
+}
+
+func TestConvertGetTransactionResponseFromProto_UnsupportedStatus(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseFromProto(&conv.GetTransactionResponse{
+		Status: conv.GetTransactionStatus(99),
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "status")
+	require.Contains(t, err.Error(), "unsupported proto get transaction status")
+}
+
+func TestConvertGetTransactionResponseToProto_SuccessMissingFields(t *testing.T) {
+	_, err := conv.ConvertGetTransactionResponseToProto(stellartypes.GetTransactionResponse{
+		Status: stellartypes.GetTransactionStatusSuccess,
+		TxHash: "abc123hash",
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "ledgerSequence is required")
+}
+
+func TestConvertGetTransactionResponseFromProto_NotFoundWithFoundFields(t *testing.T) {
+	ledger := uint32(100)
+	_, err := conv.ConvertGetTransactionResponseFromProto(&conv.GetTransactionResponse{
+		Status:         conv.GetTransactionStatus_GET_TRANSACTION_STATUS_NOT_FOUND,
+		TxHash:         "abc123hash",
+		LedgerSequence: &ledger,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "ledgerSequence must be unset")
+}
+
+func TestConvertGetTransactionResponseToProto_InvalidResultXDR(t *testing.T) {
+	ledger := uint32(100)
+	closeTime := int64(1_700_000_000)
+	_, err := conv.ConvertGetTransactionResponseToProto(stellartypes.GetTransactionResponse{
+		Status:          stellartypes.GetTransactionStatusSuccess,
+		TxHash:          "abc123hash",
+		ResultXDR:       "!!!invalid!!!",
+		LedgerSequence:  &ledger,
+		LedgerCloseTime: &closeTime,
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid result xdr")
 }
 
 func TestConvertGetSigningAccountResponse_RoundTrip(t *testing.T) {

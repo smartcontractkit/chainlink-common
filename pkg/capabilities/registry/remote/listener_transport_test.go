@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"sync"
 	"testing"
@@ -104,15 +105,20 @@ func (c *testTrigger) AckEvent(_ context.Context, _, eventID, _ string) error {
 // newRegistryOverBufnet serves a local registry over plain gRPC and returns a client
 // for it. No broker is involved on either side.
 func newRegistryOverBufnet(t *testing.T) (registry.CapabilitiesRegistry, *registry.Registry) {
+	return newRegistryOverBufnetWith(t, func(tr Transport) Transport { return tr })
+}
+
+func newRegistryOverBufnetWith(t *testing.T, wrap func(Transport) Transport) (registry.CapabilitiesRegistry, *registry.Registry) {
 	t.Helper()
 	lggr := logger.Test(t)
 	bn := newBufnet()
-	transport, err := NewListenerTransport(ListenerTransportParams{
+	lt, err := NewListenerTransport(ListenerTransportParams{
 		Lggr:    lggr,
 		Listen:  bn.listen,
 		Connect: bn.connect,
 	})
 	require.NoError(t, err)
+	transport := wrap(lt)
 
 	local := registry.NewRegistry(lggr)
 	lis, err := bn.listen()
@@ -311,4 +317,95 @@ func TestListenerTransport_getBaseCapability(t *testing.T) {
 	info, err := got.Info(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "action-two@1.0.0", info.ID)
+}
+
+// servingTransport records which published capabilities are still being served.
+type servingTransport struct {
+	Transport
+
+	mu      sync.Mutex
+	serving map[string]int
+}
+
+func (t *servingTransport) Publish(name string, register func(*grpc.Server)) (Locator, io.Closer, error) {
+	loc, res, err := t.Transport.Publish(name, register)
+	if err != nil {
+		return loc, res, err
+	}
+	t.mu.Lock()
+	t.serving[name]++
+	t.mu.Unlock()
+	return loc, closeFunc(func() error {
+		t.mu.Lock()
+		t.serving[name]--
+		t.mu.Unlock()
+		return res.Close()
+	}), nil
+}
+
+func (t *servingTransport) servingCount(name string) int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.serving[name]
+}
+
+func newRegistryWithServingTransport(t *testing.T) (registry.CapabilitiesRegistry, *registry.Registry, *servingTransport) {
+	st := &servingTransport{serving: map[string]int{}}
+	client, local := newRegistryOverBufnetWith(t, func(tr Transport) Transport {
+		st.Transport = tr
+		return st
+	})
+	return client, local, st
+}
+
+func TestListenerTransport_removeStopsServing(t *testing.T) {
+	client, _, st := newRegistryWithServingTransport(t)
+	ctx := t.Context()
+
+	id := "action-three@1.0.0"
+	require.NoError(t, client.Add(ctx, &testAction{info: capabilities.CapabilityInfo{
+		ID:             id,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}}))
+	require.Equal(t, 1, st.servingCount(id))
+
+	require.NoError(t, client.Remove(ctx, id))
+
+	assert.Equal(t, 0, st.servingCount(id))
+}
+
+func TestListenerTransport_rejectedAddStopsServingDuplicate(t *testing.T) {
+	client, _, st := newRegistryWithServingTransport(t)
+	ctx := t.Context()
+
+	id := "action-dup@1.0.0"
+	action := &testAction{info: capabilities.CapabilityInfo{ID: id, CapabilityType: capabilities.CapabilityTypeAction}}
+	require.NoError(t, client.Add(ctx, action))
+	require.Error(t, client.Add(ctx, action))
+
+	assert.Equal(t, 1, st.servingCount(id), "only the rejected duplicate is closed")
+}
+
+func TestListenerTransport_serverPublishesEachCapabilityOnce(t *testing.T) {
+	client, local, st := newRegistryWithServingTransport(t)
+	ctx := t.Context()
+
+	id := "action-local@1.0.0"
+	require.NoError(t, local.Add(ctx, &testAction{info: capabilities.CapabilityInfo{
+		ID:             id,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}}))
+
+	for range 2 {
+		_, err := client.Get(ctx, id)
+		require.NoError(t, err)
+		_, err = client.GetExecutable(ctx, id)
+		require.NoError(t, err)
+		_, err = client.List(ctx)
+		require.NoError(t, err)
+	}
+	assert.Equal(t, 1, st.servingCount(id))
+
+	require.NoError(t, client.Remove(ctx, id))
+	assert.Equal(t, 0, st.servingCount(id))
 }

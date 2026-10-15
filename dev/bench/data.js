@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792078292115,
+  "lastUpdate": 1792084035901,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64140,6 +64140,66 @@ window.BENCHMARK_DATA = {
             "value": 140016,
             "unit": "ns/op",
             "extra": "8487 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "e7116f300fb5e771e1142cad15ecbeddf89e22e0",
+          "message": "cre-6798: add ShardIndex to confidential relay request params (#2470)\n\ncre-6798: default ShardIndex to 0 when omitted\n\nSimplify from *int to plain int: an omitted shard_index now defaults\nto shard 0 instead of being rejected by the gateway.\n\nCo-authored-by: Claude Sonnet 5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-15T16:58:31Z",
+          "tree_id": "d7c3dae70160f0e3835300bc15a861a2d156719f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e7116f300fb5e771e1142cad15ecbeddf89e22e0"
+        },
+        "date": 1792084029923,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 352,
+            "unit": "ns/op",
+            "extra": "3369340 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78267,
+            "unit": "ns/op",
+            "extra": "15331 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 377.6,
+            "unit": "ns/op",
+            "extra": "3170167 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78182,
+            "unit": "ns/op",
+            "extra": "15308 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28054,
+            "unit": "ns/op",
+            "extra": "42774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 125768,
+            "unit": "ns/op",
+            "extra": "9319 times\n4 procs"
           }
         ]
       }

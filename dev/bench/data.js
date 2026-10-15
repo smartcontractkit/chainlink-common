@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792064947436,
+  "lastUpdate": 1792078292115,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64080,6 +64080,66 @@ window.BENCHMARK_DATA = {
             "value": 135707,
             "unit": "ns/op",
             "extra": "8311 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1f2b6d3bd57fbc72e28aee3d17fd5ad9998c6a1",
+          "message": "ResourceManager Cardinality: drop resource_id from usage records (#2472)\n\n* resourcemanager: drop resource_id from the utilization gauge for usage records\n\nUsage record resource ids are per-execution, so labeling the gauge with them\ncreates an unbounded series set per node. On CRE staging zone-a this grew by\nthousands of series per hour until the OTLP export exceeded the collector's\n16 MiB limit and every platform_engine_* metric was dropped. Snapshots keep\nthe label: their resource id is the workflow id, which is bounded.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: keep resource_id on the gauge for delta records\n\nOnly usage records have per-execution ids. Deltas address durable resources\nand must share a series with the matching snapshot.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: never label the utilization gauge with resource_id\n\nThe id can be per-execution, so it stays on the durable MeterRecord and\nMeterSnapshot events only. No caller option.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-15T15:20:47Z",
+          "tree_id": "1c4699542ed6ec6490f87befb8580a5f6abd83dc",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f1f2b6d3bd57fbc72e28aee3d17fd5ad9998c6a1"
+        },
+        "date": 1792078289384,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.7,
+            "unit": "ns/op",
+            "extra": "3328342 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93084,
+            "unit": "ns/op",
+            "extra": "12794 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 411,
+            "unit": "ns/op",
+            "extra": "2819532 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91450,
+            "unit": "ns/op",
+            "extra": "13195 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25788,
+            "unit": "ns/op",
+            "extra": "46579 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 140016,
+            "unit": "ns/op",
+            "extra": "8487 times\n4 procs"
           }
         ]
       }

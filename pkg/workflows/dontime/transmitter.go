@@ -5,10 +5,11 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/types"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
 var _ ocr3types.ContractTransmitter[[]byte] = (*Transmitter)(nil)
@@ -33,25 +34,44 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 		return err
 	}
 
-	currentDonTimes := make(map[string][]int64, len(outcome.ObservedDonTimes))
+	var totalCount int
+	currentDonTimes := make(map[string]map[int64]int64, len(outcome.ObservedDonTimes))
 	for id, observedDonTimes := range outcome.ObservedDonTimes {
-		currentDonTimes[id] = observedDonTimes.Timestamps
+		if len(observedDonTimes.Timestamps) > 0 {
+			m := make(map[int64]int64)
+			for i, donTime := range observedDonTimes.Timestamps {
+				if donTime == 0 { // feature flag was disabled, and we had a gap in the sequence
+					continue
+				}
+				m[int64(i)] = donTime
+			}
+			currentDonTimes[id] = m
+		} else {
+			currentDonTimes[id] = observedDonTimes.TimestampsBySequence
+		}
+		totalCount += len(currentDonTimes[id])
 	}
+	t.lggr.Debugw("Storing current timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimes", currentDonTimes)
 	t.store.replaceDonTimes(currentDonTimes)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
+	t.store.mu.Lock() //TODO remove
+	t.lggr.Debugw("Stored current timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimes", t.store.donTimes)
+	t.store.mu.Unlock()
 
-	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp)
+	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimeEntries", len(currentDonTimes), "donTimeTotal", totalCount)
 
-	for executionID, donTimes := range outcome.ObservedDonTimes {
+	for executionID, donTimes := range currentDonTimes {
 		request := t.store.GetRequest(executionID)
 		if request == nil {
+			//TODO remove
+			t.lggr.Debugw("No request found for execution ID", "executionID", executionID)
 			continue
 		}
 
 		// Nodes behind on multiple requests may wait one OCR round per request.
 		// Caching future times locally could be added as an optimization.
-		if len(donTimes.Timestamps) > request.SeqNum {
-			donTime := donTimes.Timestamps[request.SeqNum]
+		if donTime, ok := donTimes[int64(request.SeqNum)]; ok {
+			t.lggr.Debugw("Sending response to request", "executionID", executionID, "seqNum", request.SeqNum, "donTime", donTime)
 			t.store.RemoveRequest(executionID) // Make space for next request before delivering
 			request.SendResponse(Response{
 				WorkflowExecutionID: executionID,

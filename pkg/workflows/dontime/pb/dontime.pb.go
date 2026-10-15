@@ -82,10 +82,12 @@ func (x *Observation) GetLimitByBatchSizeFlag() bool {
 }
 
 type ObservedDonTimes struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Timestamps    []int64                `protobuf:"varint,1,rep,packed,name=timestamps,proto3" json:"timestamps,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Deprecated: Marked as deprecated in dontime.proto.
+	Timestamps           []int64         `protobuf:"varint,1,rep,packed,name=timestamps,proto3" json:"timestamps,omitempty"`
+	TimestampsBySequence map[int64]int64 `protobuf:"bytes,2,rep,name=timestampsBySequence,proto3" json:"timestampsBySequence,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ObservedDonTimes) Reset() {
@@ -118,9 +120,17 @@ func (*ObservedDonTimes) Descriptor() ([]byte, []int) {
 	return file_dontime_proto_rawDescGZIP(), []int{1}
 }
 
+// Deprecated: Marked as deprecated in dontime.proto.
 func (x *ObservedDonTimes) GetTimestamps() []int64 {
 	if x != nil {
 		return x.Timestamps
+	}
+	return nil
+}
+
+func (x *ObservedDonTimes) GetTimestampsBySequence() map[int64]int64 {
+	if x != nil {
+		return x.TimestampsBySequence
 	}
 	return nil
 }
@@ -188,11 +198,15 @@ const file_dontime_proto_rawDesc = "" +
 	"\x18limit_by_batch_size_flag\x18\x04 \x01(\bR\x14limitByBatchSizeFlag\x1a;\n" +
 	"\rRequestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01J\x04\b\x03\x10\x04\"2\n" +
-	"\x10ObservedDonTimes\x12\x1e\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01J\x04\b\x03\x10\x04\"\xe0\x01\n" +
+	"\x10ObservedDonTimes\x12\"\n" +
 	"\n" +
-	"timestamps\x18\x01 \x03(\x03R\n" +
-	"timestamps\"\xcd\x01\n" +
+	"timestamps\x18\x01 \x03(\x03B\x02\x18\x01R\n" +
+	"timestamps\x12_\n" +
+	"\x14timestampsBySequence\x18\x02 \x03(\v2+.ObservedDonTimes.TimestampsBySequenceEntryR\x14timestampsBySequence\x1aG\n" +
+	"\x19TimestampsBySequenceEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x03R\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"\xcd\x01\n" +
 	"\aOutcome\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x12L\n" +
 	"\x12observed_don_times\x18\x02 \x03(\v2\x1e.Outcome.ObservedDonTimesEntryR\x10observedDonTimes\x1aV\n" +
@@ -212,23 +226,25 @@ func file_dontime_proto_rawDescGZIP() []byte {
 	return file_dontime_proto_rawDescData
 }
 
-var file_dontime_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_dontime_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_dontime_proto_goTypes = []any{
 	(*Observation)(nil),      // 0: Observation
 	(*ObservedDonTimes)(nil), // 1: ObservedDonTimes
 	(*Outcome)(nil),          // 2: Outcome
 	nil,                      // 3: Observation.RequestsEntry
-	nil,                      // 4: Outcome.ObservedDonTimesEntry
+	nil,                      // 4: ObservedDonTimes.TimestampsBySequenceEntry
+	nil,                      // 5: Outcome.ObservedDonTimesEntry
 }
 var file_dontime_proto_depIdxs = []int32{
 	3, // 0: Observation.requests:type_name -> Observation.RequestsEntry
-	4, // 1: Outcome.observed_don_times:type_name -> Outcome.ObservedDonTimesEntry
-	1, // 2: Outcome.ObservedDonTimesEntry.value:type_name -> ObservedDonTimes
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 1: ObservedDonTimes.timestampsBySequence:type_name -> ObservedDonTimes.TimestampsBySequenceEntry
+	5, // 2: Outcome.observed_don_times:type_name -> Outcome.ObservedDonTimesEntry
+	1, // 3: Outcome.ObservedDonTimesEntry.value:type_name -> ObservedDonTimes
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_dontime_proto_init() }
@@ -242,7 +258,7 @@ func file_dontime_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_dontime_proto_rawDesc), len(file_dontime_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

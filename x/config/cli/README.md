@@ -147,4 +147,7 @@ takes a string.
 - [`Options`](options.go): env var prefixes, base config, default config path.
 - [`New` / `Binder.Register`](binder.go): registration, on the root or a subcommand. Flags are
   persistent, so subcommands take them too.
+- [`Profile` / `ProfileWithSelector`](profile.go): build a struct's or a section's defaults with a
+  function picked by one of its top-level fields; see [`examples/profiles`](examples/profiles) and
+  [`examples/nested_profiles`](examples/nested_profiles).
 - [`examples/`](examples): runnable programs.

@@ -61,6 +61,7 @@ var Default = Schema{
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
 	CoordinatedEngineEnabled:                    Bool(false),
+	ShardingFailoverEnabled:                     Bool(false),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -386,7 +387,12 @@ type Schema struct {
 	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
 	// trigger-owning Engine for newly created workflows.
-	CoordinatedEngineEnabled        Setting[bool]
+	CoordinatedEngineEnabled Setting[bool]
+	// ShardingFailoverEnabled, when true, makes a sharded workflow DON cache
+	// trigger events for workflows owned by another shard (instead of dropping
+	// them) so it can take over execution if the owning shard fails. Only
+	// applies when sharding is enabled on the node.
+	ShardingFailoverEnabled         Setting[bool]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata Setting[bool]

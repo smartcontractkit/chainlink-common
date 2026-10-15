@@ -237,7 +237,6 @@ func TestCapabilityConfiguration_Unmarshal(t *testing.T) {
 		assert.Nil(t, got.SpecConfig)
 		assert.Nil(t, got.RestrictedConfig)
 		assert.Nil(t, got.Ocr3Configs)
-		assert.Nil(t, got.OracleFactoryConfigs)
 	})
 
 	t.Run("invalid proto returns error", func(t *testing.T) {
@@ -345,24 +344,6 @@ func TestCapabilityConfiguration_Unmarshal(t *testing.T) {
 		)
 	})
 
-	t.Run("OracleFactoryConfigs", func(t *testing.T) {
-		raw := mustMarshalProto(t, &capabilitiespb.CapabilityConfig{
-			OracleFactoryConfigs: map[string]*valuespb.Map{
-				"blue": makeStringMap(map[string]string{"mode": "blue"}),
-			},
-		})
-		cc := CapabilityConfiguration{Config: raw}
-
-		got, err := cc.Unmarshal()
-		require.NoError(t, err)
-
-		require.Contains(t, got.OracleFactoryConfigs, "blue")
-		blueMap := got.OracleFactoryConfigs["blue"]
-		unwrapped, err := blueMap.Unwrap()
-		require.NoError(t, err)
-		assert.Equal(t, "blue", unwrapped.(map[string]any)["mode"])
-	})
-
 	t.Run("LocalOnly flag", func(t *testing.T) {
 		raw := mustMarshalProto(t, &capabilitiespb.CapabilityConfig{
 			LocalOnly: true,
@@ -386,9 +367,6 @@ func TestCapabilityConfiguration_Unmarshal(t *testing.T) {
 					ConfigCount:  7,
 				},
 			},
-			OracleFactoryConfigs: map[string]*valuespb.Map{
-				"green": makeStringMap(map[string]string{"x": "y"}),
-			},
 			LocalOnly: true,
 		})
 		cc := CapabilityConfiguration{Config: raw}
@@ -399,7 +377,6 @@ func TestCapabilityConfiguration_Unmarshal(t *testing.T) {
 		assert.NotNil(t, got.DefaultConfig)
 		assert.NotNil(t, got.SpecConfig)
 		assert.Len(t, got.Ocr3Configs, 1)
-		assert.Len(t, got.OracleFactoryConfigs, 1)
 		assert.True(t, got.LocalOnly)
 	})
 }

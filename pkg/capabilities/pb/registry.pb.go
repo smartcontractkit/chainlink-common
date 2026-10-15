@@ -579,8 +579,10 @@ type CapabilityConfig struct {
 	//   - Custom keys for multi-instance scenarios (e.g., "methodXYZ" or "blue"/"green")
 	// When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
 	Ocr3Configs map[string]*OCR3Config `protobuf:"bytes,9,rep,name=ocr3_configs,json=ocr3Configs,proto3" json:"ocr3_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// Oracle factory configs for OCR-based capabilities (moved from job specs).
-	// Map key is an OCR instance name (same as above).
+	// Deprecated: oracle factory config no longer needs to be explicitly configured;
+	// it is derived automatically at runtime.
+	//
+	// Deprecated: Marked as deprecated in registry.proto.
 	OracleFactoryConfigs map[string]*pb.Map `protobuf:"bytes,10,rep,name=oracle_factory_configs,json=oracleFactoryConfigs,proto3" json:"oracle_factory_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Config moved from job specs.
 	SpecConfig    *pb.Map `protobuf:"bytes,11,opt,name=spec_config,json=specConfig,proto3" json:"spec_config,omitempty"`
@@ -660,6 +662,7 @@ func (x *CapabilityConfig) GetOcr3Configs() map[string]*OCR3Config {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in registry.proto.
 func (x *CapabilityConfig) GetOracleFactoryConfigs() map[string]*pb.Map {
 	if x != nil {
 		return x.OracleFactoryConfigs
@@ -831,7 +834,7 @@ const file_registry_proto_rawDesc = "" +
 	"\x0eonchain_config\x18\x04 \x01(\fR\ronchainConfig\x126\n" +
 	"\x17offchain_config_version\x18\x05 \x01(\x04R\x15offchainConfigVersion\x12'\n" +
 	"\x0foffchain_config\x18\x06 \x01(\fR\x0eoffchainConfig\x12!\n" +
-	"\fconfig_count\x18\a \x01(\x04R\vconfigCount\"\xa2\x06\n" +
+	"\fconfig_count\x18\a \x01(\x04R\vconfigCount\"\xa6\x06\n" +
 	"\x10CapabilityConfig\x125\n" +
 	"\x0edefault_config\x18\x01 \x01(\v2\x0e.values.v1.MapR\rdefaultConfig\x12;\n" +
 	"\x11restricted_config\x18\x05 \x01(\v2\x0e.values.v1.MapR\x10restrictedConfig\x12'\n" +
@@ -839,9 +842,9 @@ const file_registry_proto_rawDesc = "" +
 	"\x0emethod_configs\x18\a \x03(\v2).loop.CapabilityConfig.MethodConfigsEntryR\rmethodConfigs\x12\x1d\n" +
 	"\n" +
 	"local_only\x18\b \x01(\bR\tlocalOnly\x12J\n" +
-	"\focr3_configs\x18\t \x03(\v2'.loop.CapabilityConfig.Ocr3ConfigsEntryR\vocr3Configs\x12f\n" +
+	"\focr3_configs\x18\t \x03(\v2'.loop.CapabilityConfig.Ocr3ConfigsEntryR\vocr3Configs\x12j\n" +
 	"\x16oracle_factory_configs\x18\n" +
-	" \x03(\v20.loop.CapabilityConfig.OracleFactoryConfigsEntryR\x14oracleFactoryConfigs\x12/\n" +
+	" \x03(\v20.loop.CapabilityConfig.OracleFactoryConfigsEntryB\x02\x18\x01R\x14oracleFactoryConfigs\x12/\n" +
 	"\vspec_config\x18\v \x01(\v2\x0e.values.v1.MapR\n" +
 	"specConfig\x1a^\n" +
 	"\x12MethodConfigsEntry\x12\x10\n" +

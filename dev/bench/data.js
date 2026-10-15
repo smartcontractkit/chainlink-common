@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792084035901,
+  "lastUpdate": 1792084048488,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64200,6 +64200,66 @@ window.BENCHMARK_DATA = {
             "value": 125768,
             "unit": "ns/op",
             "extra": "9319 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chet.sharma@smartcontract.com",
+            "name": "skippaDaBitFlippa",
+            "username": "skippaDaBitFlippa"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b866ad79d5fdc307ea9828e3d402cdc7da8263ed",
+          "message": "chipingress/batch: publish queued messages on Stop instead of discarding them (#2461)\n\n* chipingress/batch: publish queued messages on Stop instead of discarding them\n\nOn Stop the batcher flushed only the batch it was filling. Messages still\nqueued on the buffer channel, typically when sends are saturated, were\nabandoned: never published and their callbacks never ran, so callers could\nnot count them as dropped or failed.\n\nThe batcher now drains everything already queued, in batches of at most\nbatchSize, before returning. Stop's shutdown timeout still bounds the wait;\nbatches drained after it expires fail against the closed client and report\nthe error to their callbacks.\n\n* chipingress/batch: close enqueue race with Stop; test the timeout path\n\nQueueMessage checked stopCh and enqueued later, so a producer could add a\nmessage after the batcher had drained and returned; that message was never\npublished and its callback never ran. An admission RWMutex now makes the\ncheck-and-enqueue atomic with Stop closing stopCh.\n\nAdd tests for the shutdown-timeout path (Stop returns at the bound, closes\nthe client, late batches report errors to every callback) and for producers\nracing Stop (every accepted message gets a callback).\n\n* chipingress/batch: test the Stop admission race deterministically\n\nThe producers-vs-Stop stress test passed with the admission lock removed:\nthe window between the fast-path stop check and the enqueue is too narrow\nto hit by chance. Replace it with a test that parks a producer in that\nwindow through a per-client test hook (nil in production), runs Stop, then\nresumes the producer and requires ErrClientShutdown. It fails without the\nadmission re-check.",
+          "timestamp": "2026-10-15T17:03:56Z",
+          "tree_id": "1ef4379636f3deb00b6abb02eb2ce0259f470905",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b866ad79d5fdc307ea9828e3d402cdc7da8263ed"
+        },
+        "date": 1792084043825,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 273.3,
+            "unit": "ns/op",
+            "extra": "4314811 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 59423,
+            "unit": "ns/op",
+            "extra": "19970 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 292.4,
+            "unit": "ns/op",
+            "extra": "4064964 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58795,
+            "unit": "ns/op",
+            "extra": "20264 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21774,
+            "unit": "ns/op",
+            "extra": "55092 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 97616,
+            "unit": "ns/op",
+            "extra": "12255 times\n4 procs"
           }
         ]
       }

@@ -7,6 +7,7 @@ import (
 	"github.com/jonboulle/clockwork"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 
@@ -54,7 +55,32 @@ func TestUtilizationGauge_ResourceIDLabel(t *testing.T) {
 		assert.Equal(t, "cre:workflow:compute", rt.AsString())
 	})
 
-	t.Run("snapshots keep resource_id", func(t *testing.T) {
+	t.Run("deltas keep resource_id", func(t *testing.T) {
+		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: &fakeEmitter{}})
+		rm.utilization = gauge
+
+		for _, id := range []string{"trigger-1", "trigger-2"} {
+			rm.EmitDelta(t.Context(), testIdentity, "register:wf-1:"+id, 1, UtilizationFields{
+				ResourceType: "registrations",
+				ResourceID:   id,
+				OrgID:        "org-1",
+			})
+		}
+
+		var ids []string
+		for _, p := range collectUtilizationPoints(t, reader) {
+			rt, _ := p.Attributes.Value("resource_type")
+			if rt.AsString() != "registrations" {
+				continue
+			}
+			id, hasID := p.Attributes.Value("resource_id")
+			require.True(t, hasID)
+			ids = append(ids, id.AsString())
+		}
+		assert.ElementsMatch(t, []string{"trigger-1", "trigger-2"}, ids)
+	})
+
+	t.Run("snapshots keep resource_id and share the delta series", func(t *testing.T) {
 		emitter := &fakeEmitter{}
 		clock := clockwork.NewFakeClockAt(time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))
 		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{
@@ -65,6 +91,11 @@ func TestUtilizationGauge_ResourceIDLabel(t *testing.T) {
 			Clock:                 clock,
 		})
 		rm.utilization = gauge
+
+		rm.EmitDelta(t.Context(), testIdentity, "register:wf-1:trigger-1", 1, UtilizationFields{
+			ResourceType: "operations", ResourceID: "trigger-1", OrgID: "org-1",
+		})
+		deltaSet := attributeSetFor(t, collectUtilizationPoints(t, reader), "operations")
 
 		m := &fakeMeterable{identity: testIdentity}
 		m.set([]SnapshotEntry{{
@@ -81,17 +112,24 @@ func TestUtilizationGauge_ResourceIDLabel(t *testing.T) {
 		clock.Advance(30 * time.Second)
 		waitForSnapshotCount(t, emitter, 1)
 
-		var found bool
-		for _, p := range collectUtilizationPoints(t, reader) {
-			rt, _ := p.Attributes.Value("resource_type")
-			if rt.AsString() != "operations" {
-				continue
-			}
-			found = true
-			id, hasID := p.Attributes.Value("resource_id")
-			assert.True(t, hasID)
-			assert.Equal(t, "trigger-1", id.AsString())
-		}
-		assert.True(t, found)
+		points := collectUtilizationPoints(t, reader)
+		snapSet := attributeSetFor(t, points, "operations")
+		id, hasID := snapSet.Value("resource_id")
+		require.True(t, hasID)
+		assert.Equal(t, "trigger-1", id.AsString())
+		assert.True(t, deltaSet.Equals(&snapSet), "delta and snapshot must land on the same series")
 	})
+}
+
+// attributeSetFor returns the attribute set of the single point with the given resource_type.
+func attributeSetFor(t *testing.T, points []metricdata.DataPoint[int64], resourceType string) attribute.Set {
+	t.Helper()
+	var sets []attribute.Set
+	for _, p := range points {
+		if rt, _ := p.Attributes.Value("resource_type"); rt.AsString() == resourceType {
+			sets = append(sets, p.Attributes)
+		}
+	}
+	require.Len(t, sets, 1)
+	return sets[0]
 }

@@ -95,8 +95,8 @@ const (
 	snapshotEmitFailureCounterName = "resource_manager_snapshot_emit_failure_total"
 )
 
-// utilizationGaugeName is labeled with every ResourceIdentity dimension; resource_id
-// is only attached for snapshots, since usage record ids are per-execution.
+// utilizationGaugeName is labeled with every ResourceIdentity dimension; usage
+// records omit resource_id because their ids are per-execution.
 const utilizationGaugeName = "resource_manager_utilization"
 
 // DefaultSnapshotInterval is the recommended snapshot period. It is NOT
@@ -480,7 +480,7 @@ func (rm *ResourceManager) emitRecord(ctx context.Context, identity ResourceIden
 		u.EventId = eventID
 	}
 	utilizations := []*meteringpb.Utilization{u}
-	rm.recordUtilization(ctx, identity, u, false)
+	rm.recordUtilization(ctx, identity, u, action != meteringpb.MeterAction_METER_ACTION_USAGE)
 
 	if rm.emitter == nil {
 		return

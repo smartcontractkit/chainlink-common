@@ -244,6 +244,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		opts = append(opts, chipingress.WithMeterProvider(meterProvider))
 		opts = append(opts, chipingress.WithTracerProvider(tracerProvider))
 
+		// Optional gRPC-level retries; nil keeps retries off (see WithRetryPolicy).
+		if cfg.ChipIngressRetryPolicy != nil {
+			opts = append(opts, chipingress.WithRetryPolicy(*cfg.ChipIngressRetryPolicy))
+		}
+
 		if len(resourceAttrs) > 0 {
 			opts = append(opts, chipingress.WithResourceAttributeHeaders(resourceAttrs))
 		}

@@ -90,6 +90,7 @@ func buildVersion() string {
 // NewWith returns a new Logger from a modified [zap.Config].
 func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.EncodeLevel = EncodeLevel
 	cfgFn(&cfg)
 	core, err := cfg.Build()
 	if err != nil {
@@ -101,6 +102,7 @@ func NewWith(cfgFn func(*zap.Config)) (Logger, error) {
 // NewCore returns a new Logger core from a modified [zap.Config].
 func NewCore(cfgFn func(*zap.Config)) (zapcore.Core, error) {
 	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.EncodeLevel = EncodeLevel
 	cfgFn(&cfg)
 	logger, err := cfg.Build()
 	if err != nil {
@@ -111,7 +113,9 @@ func NewCore(cfgFn func(*zap.Config)) (zapcore.Core, error) {
 
 // NewWithSync returns a new Logger with a given SyncWriter.
 func NewWithSync(w io.Writer) Logger {
-	core := zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(w), zapcore.InfoLevel)
+	cfg := zap.NewProductionEncoderConfig()
+	cfg.EncodeLevel = EncodeLevel
+	core := zapcore.NewCore(zapcore.NewJSONEncoder(cfg), zapcore.AddSync(w), zapcore.InfoLevel)
 	return &logger{zap.New(core).Sugar()}
 }
 
@@ -125,6 +129,7 @@ func NewWithCores(cores ...zapcore.Core) Logger {
 func Test(tb testing.TB) Logger {
 	cfg := zap.NewDevelopmentEncoderConfig()
 	cfg.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05.000000000")
+	cfg.EncodeLevel = EncodeLevel
 	lggr := zap.New(
 		zapcore.NewCore(
 			zapcore.NewConsoleEncoder(cfg),
@@ -133,6 +138,15 @@ func Test(tb testing.TB) Logger {
 		),
 	)
 	return &logger{lggr.With(zap.String("version", buildVersion())).Sugar()}
+}
+
+// EncodeLevel is a [zapcore.EncodeLevel] that encodes 'crit' in place of dpanic for our custom Critical* level.
+func EncodeLevel(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+	if l == zapcore.DPanicLevel {
+		enc.AppendString("crit")
+	} else {
+		zapcore.LowercaseLevelEncoder(l, enc)
+	}
 }
 
 // TestSugared returns a new test SugaredLogger.

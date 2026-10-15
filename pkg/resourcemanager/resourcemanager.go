@@ -95,8 +95,8 @@ const (
 	snapshotEmitFailureCounterName = "resource_manager_snapshot_emit_failure_total"
 )
 
-// utilizationGaugeName is labeled with every ResourceIdentity dimension; usage
-// records omit resource_id because their ids are per-execution.
+// utilizationGaugeName is labeled with every ResourceIdentity dimension but never
+// resource_id, which can be per-execution.
 const utilizationGaugeName = "resource_manager_utilization"
 
 // DefaultSnapshotInterval is the recommended snapshot period. It is NOT
@@ -374,7 +374,7 @@ func (rm *ResourceManager) emitSnapshot(ctx context.Context, m Meterable, tickTi
 					bucketUnix,
 				)
 			}
-			rm.recordUtilization(ctx, e.Identity, u, true)
+			rm.recordUtilization(ctx, e.Identity, u)
 		}
 
 		snapshot := &meteringpb.MeterSnapshot{
@@ -480,7 +480,7 @@ func (rm *ResourceManager) emitRecord(ctx context.Context, identity ResourceIden
 		u.EventId = eventID
 	}
 	utilizations := []*meteringpb.Utilization{u}
-	rm.recordUtilization(ctx, identity, u, action != meteringpb.MeterAction_METER_ACTION_USAGE)
+	rm.recordUtilization(ctx, identity, u)
 
 	if rm.emitter == nil {
 		return
@@ -523,8 +523,8 @@ func (rm *ResourceManager) emitRecord(ctx context.Context, identity ResourceIden
 	rm.countRecord(ctx, rm.emitSuccess, identity, action)
 }
 
-// recordUtilization records value to the utilization gauge; withResourceID adds the resource_id label.
-func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, u *meteringpb.Utilization, withResourceID bool) {
+// recordUtilization records value to the utilization gauge.
+func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, u *meteringpb.Utilization) {
 	if rm.utilization == nil {
 		return
 	}
@@ -543,7 +543,7 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 		)
 		return
 	}
-	attrs := []attribute.KeyValue{
+	rm.utilization.Record(ctx, value, metric.WithAttributes(
 		attribute.String("product", id.Product),
 		attribute.String("tenant", id.Tenant),
 		attribute.String("numeric_tenant_id", id.NumericTenantID),
@@ -556,11 +556,7 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 		attribute.String("resource_pool_id", id.ResourcePoolID),
 		attribute.String("resource_type", u.GetResourceType()),
 		attribute.String("org_id", u.GetOrgId()),
-	}
-	if withResourceID {
-		attrs = append(attrs, attribute.String("resource_id", u.GetResourceId()))
-	}
-	rm.utilization.Record(ctx, value, metric.WithAttributes(attrs...))
+	))
 }
 
 // countRecord records a MeterRecord emit outcome. Labels are intentionally

@@ -8,6 +8,8 @@
 	"RemoteExecutableWorkflowDONBindingEnabled": "false",
 	"CoordinatedEngineEnabled": "false",
 	"ShardingFailoverEnabled": "false",
+	"ShardingFailoverAutoExecutionEnabled": "false",
+	"ShardingFailoverAutoWindow": "5m0s",
 	"TenantID": "0",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",

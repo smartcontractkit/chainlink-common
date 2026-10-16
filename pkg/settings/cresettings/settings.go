@@ -62,6 +62,8 @@ var Default = Schema{
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
 	CoordinatedEngineEnabled:                    Bool(false),
 	ShardingFailoverEnabled:                     Bool(false),
+	ShardingFailoverAutoExecutionEnabled:        Bool(false),
+	ShardingFailoverAutoWindow:                  Duration(5 * time.Minute),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -392,7 +394,18 @@ type Schema struct {
 	// trigger events for workflows owned by another shard (instead of dropping
 	// them) so it can take over execution if the owning shard fails. Only
 	// applies when sharding is enabled on the node.
-	ShardingFailoverEnabled         Setting[bool]
+	ShardingFailoverEnabled Setting[bool]
+	// ShardingFailoverAutoExecutionEnabled, when true, makes a shard that
+	// cached a trigger event for a workflow owned by another shard execute
+	// the cached event itself if no execution outcome from the owning shard
+	// arrives within ShardingFailoverAutoWindow. Covers an owning shard dying
+	// silently, where no execution status update is ever sent. Only applies
+	// when ShardingFailoverEnabled is true.
+	ShardingFailoverAutoExecutionEnabled Setting[bool]
+	// ShardingFailoverAutoWindow is how long a cached trigger event waits for
+	// the owning shard's execution outcome before the caching shard may
+	// execute it itself.
+	ShardingFailoverAutoWindow      Setting[time.Duration]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata Setting[bool]

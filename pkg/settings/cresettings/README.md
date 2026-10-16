@@ -111,7 +111,14 @@ flowchart
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
         ShardingFailoverEnabled[/ShardingFailoverEnabled\]:::gate
     end
-    
+
+    subgraph ShardFailoverManager.autoFailoverLoop
+%%      cached trigger events whose failover window elapsed without an
+%%      execution outcome from the owning shard
+        ShardingFailoverAutoExecutionEnabled[/ShardingFailoverAutoExecutionEnabled\]:::gate
+        ShardingFailoverAutoWindow>ShardingFailoverAutoWindow]:::time
+    end
+
     subgraph Engine.init
 %%        TODO move and replace with WorkflowLimit
         WorkflowLimit([WorkflowLimit]):::resource

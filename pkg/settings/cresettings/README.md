@@ -115,7 +115,7 @@ flowchart
     subgraph ShardFailoverManager.autoFailoverLoop
 %%      cached trigger events whose failover window elapsed without an
 %%      execution outcome from the owning shard
-        ShardingFailoverAutoExecutionEnabled[/ShardingFailoverAutoExecutionEnabled\]:::gate
+        TimeoutBasedFailover[/TimeoutBasedFailover\]:::gate
         ShardingFailoverAutoWindow>ShardingFailoverAutoWindow]:::time
     end
 

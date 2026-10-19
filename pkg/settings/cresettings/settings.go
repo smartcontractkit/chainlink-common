@@ -63,7 +63,7 @@ var Default = Schema{
 	CoordinatedEngineEnabled:                    Bool(false),
 	ShardingFailoverEnabled:                     Bool(false),
 	TimeoutBasedFailover:                        Bool(false),
-	ShardingFailoverAutoWindow:                  Duration(5 * time.Minute),
+	TimeoutBasedFailoverWindow:                  Duration(5 * time.Minute),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -398,14 +398,14 @@ type Schema struct {
 	// TimeoutBasedFailover, when true, makes a shard that
 	// cached a trigger event for a workflow owned by another shard execute
 	// the cached event itself if no execution outcome from the owning shard
-	// arrives within ShardingFailoverAutoWindow. Covers an owning shard dying
+	// arrives within TimeoutBasedFailoverWindow. Covers an owning shard dying
 	// silently, where no execution status update is ever sent. Only applies
 	// when ShardingFailoverEnabled is true.
 	TimeoutBasedFailover Setting[bool]
-	// ShardingFailoverAutoWindow is how long a cached trigger event waits for
+	// TimeoutBasedFailoverWindow is how long a cached trigger event waits for
 	// the owning shard's execution outcome before the caching shard may
 	// execute it itself.
-	ShardingFailoverAutoWindow      Setting[time.Duration]
+	TimeoutBasedFailoverWindow      Setting[time.Duration]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata Setting[bool]

@@ -116,7 +116,7 @@ flowchart
 %%      cached trigger events whose failover window elapsed without an
 %%      execution outcome from the owning shard
         TimeoutBasedFailover[/TimeoutBasedFailover\]:::gate
-        ShardingFailoverAutoWindow>ShardingFailoverAutoWindow]:::time
+        TimeoutBasedFailoverWindow>TimeoutBasedFailoverWindow]:::time
     end
 
     subgraph Engine.init

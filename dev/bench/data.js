@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792488527435,
+  "lastUpdate": 1792489602262,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64440,6 +64440,66 @@ window.BENCHMARK_DATA = {
             "value": 136639,
             "unit": "ns/op",
             "extra": "8235 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "0127cb4d6ae5756cef2d1ec05a30f6a49d7f6da6",
+          "message": "Limit wasm table elements per workflow (#2466)\n\nThe store limiter left table elements unbounded, so a guest could grow a\nfuncref table outside the linear-memory limit and exhaust host memory.\nAdd PerWorkflow.WASMTableElementsLimit (default 1M, negative = unlimited)\nand ModuleConfig.MaxTableElementsLimiter, and pass it to store.Limiter.\n\nI asked Claude to report on max table elements for Go, and it's roughly 17k based\non existing test workflows, and 850 for typescript workflows. The default of 1 million\ngives us a lot of additional headroom and only increases memory usage by 8-16 mb.",
+          "timestamp": "2026-10-20T09:37:34Z",
+          "tree_id": "872d24a39440ab75ec09f6bbd3b28233b3ad7b90",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0127cb4d6ae5756cef2d1ec05a30f6a49d7f6da6"
+        },
+        "date": 1792489597715,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 360.8,
+            "unit": "ns/op",
+            "extra": "3317434 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91533,
+            "unit": "ns/op",
+            "extra": "13052 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 414.5,
+            "unit": "ns/op",
+            "extra": "2883382 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91143,
+            "unit": "ns/op",
+            "extra": "13147 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25763,
+            "unit": "ns/op",
+            "extra": "46665 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135750,
+            "unit": "ns/op",
+            "extra": "8090 times\n4 procs"
           }
         ]
       }

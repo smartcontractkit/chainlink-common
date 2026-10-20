@@ -2,6 +2,7 @@ package chipingress
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -740,10 +741,10 @@ func (s *capturingServer) PublishBatchNoAck(ctx context.Context, _ *pb.CloudEven
 	return &pb.PublishResponse{}, nil
 }
 
-// TestClient_PublishBatchNoAck_HeadersReachServer pins the property the header-routing
-// migration (OTI, INFOPLAT-19544) relies on: custom metadata attached via
-// WithHeaderProvider travels as HTTP/2 request headers on the PublishBatchNoAck RPC,
-// so an ALB http-header listener rule can route these calls before chip-ingress sees them.
+// TestClient_PublishBatchNoAck_HeadersReachServer pins the property the OTI
+// header-routing migration (INFOPLAT-19544) relies on: WithHeaderProvider
+// metadata travels as HTTP/2 request headers on PublishBatchNoAck, so an ALB
+// can route on it before chip-ingress sees the request.
 func TestClient_PublishBatchNoAck_HeadersReachServer(t *testing.T) {
 	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -970,7 +971,7 @@ func TestClient_PublishBatchNoAck(t *testing.T) {
 	t.Run("returns the underlying error", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		ctx := t.Context()
-		mockClient.EXPECT().PublishBatchNoAck(ctx, batch).Return(nil, fmt.Errorf("unavailable"))
+		mockClient.EXPECT().PublishBatchNoAck(ctx, batch).Return(nil, errors.New("unavailable"))
 
 		client := &client{
 			client: mockClient,

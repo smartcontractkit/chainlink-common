@@ -174,9 +174,8 @@ func (c *client) PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...
 	return c.client.PublishBatch(ctx, in, opts...)
 }
 
-// PublishBatchNoAck is PublishBatch with server-side Kafka acks=0: no broker
-// acknowledgement, so success means handed to the producer, not persisted.
-// Use only for loss-tolerant telemetry.
+// PublishBatchNoAck is PublishBatch with server-side Kafka acks=0; see
+// chip_ingress.proto for the delivery contract.
 func (c *client) PublishBatchNoAck(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error) {
 	return c.client.PublishBatchNoAck(ctx, in, opts...)
 }

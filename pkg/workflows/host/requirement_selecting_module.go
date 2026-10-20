@@ -94,7 +94,16 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 		return nil, err
 	}
 
-	for i, sub := range result.GetTriggerSubscriptions().GetSubscriptions() {
+	if err := r.PrimeTriggerCache(ctx, result.GetTriggerSubscriptions().GetSubscriptions()); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// PrimeTriggerCache routes each subscription to the first module satisfying its requirements.
+func (r *requirementSelectingModule) PrimeTriggerCache(ctx context.Context, subs []*sdk.TriggerSubscription) error {
+	for i, sub := range subs {
 		matched := false
 		for j, m := range r.modules {
 			if CheckRequirements(ctx, m.RequirementsHandler, sub.Requirements) {
@@ -105,11 +114,10 @@ func (r *requirementSelectingModule) subscribe(ctx context.Context, request *sdk
 			}
 		}
 		if !matched {
-			return nil, fmt.Errorf("cannot find a runner that can satisfy the requirements for trigger %d", i)
+			return fmt.Errorf("cannot find a runner that can satisfy the requirements for trigger %d", i)
 		}
 	}
-
-	return result, nil
+	return nil
 }
 
 func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.ExecuteRequest, handler ExecutionHelper) (*sdk.ExecutionResult, error) {
@@ -148,4 +156,11 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 	return nil, errors.New("cannot trigger before gathering subscriptions")
 }
 
+// TriggerCachePrimer lets callers that skip Execute(Subscribe), e.g. using cached
+// subscriptions, still set up trigger routing.
+type TriggerCachePrimer interface {
+	PrimeTriggerCache(ctx context.Context, subscriptions []*sdk.TriggerSubscription) error
+}
+
 var _ Module = &requirementSelectingModule{}
+var _ TriggerCachePrimer = &requirementSelectingModule{}

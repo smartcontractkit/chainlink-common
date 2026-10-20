@@ -12,8 +12,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 	"github.com/smartcontractkit/libocr/ragep2p/peeridhelper"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/teeattestation"
 )
 
 const (
@@ -94,6 +95,11 @@ type SecretsRequestParams struct {
 	// authorized identity from PublicData (the WorkflowExecution proto). Like
 	// Attestation, it is authorization input and is excluded from the response hash.
 	SignedComputeRequests []SignedComputeRequest `json:"signed_compute_requests,omitempty"`
+
+	// ShardIndex selects which gateway DON shard relays this request. It is gateway
+	// routing metadata: the relay DON does not read it and it is excluded from
+	// the response hash. A request that omits it defaults to shard 0.
+	ShardIndex int `json:"shard_index,omitempty"`
 }
 
 // SecretEntry is a single secret in the relay DON's response.
@@ -227,6 +233,9 @@ type CapabilityRequestParams struct {
 	// that omit the field. When present, it is validated and hash-bound.
 	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
 	Attestation   string         `json:"attestation,omitempty"`
+
+	// ShardIndex selects which gateway DON shard relays this request.
+	ShardIndex int `json:"shard_index,omitempty"`
 }
 
 // CapabilityResponseResult is the JSON-RPC result for "confidential.capability.execute".

@@ -52,6 +52,18 @@ type leafKey struct {
 	// goPath and goType save walking the struct again.
 	goPath []string
 	goType reflect.Type
+
+	// fileType is goType with every map key a string, such as map[string]string for map[uint32]string. A config file
+	// is decoded into it rather than goType, so fromFile can parse each key as its flag would and catch two texts for
+	// one key, such as 16 and 0x10. Flags and env vars are already text, so they don't use it.
+	fileType reflect.Type
+
+	// entries set values inside a map's entries, such as chains.<key>.rpc; each is the one that sets a whole entry.
+	entries []*entryLeaf
+	each    *entryLeaf
+
+	// required is a `required` rule on the field, which a profile's help leaves to the sources.
+	required bool
 }
 
 type typedEntry[T any] struct {
@@ -59,6 +71,16 @@ type typedEntry[T any] struct {
 	cmd    *cobra.Command
 	dst    *T
 	leaves []leafKey
+
+	// ns, if set, is the first segment of every key.
+	ns string
+
+	// profiles run after the sources are decoded, given the leaves a source set.
+	profiles []func(supplied map[string]sourceLayer) error
+
+	// profileSelectors holds each registered profile's selector, so a new one overlapping its section fails Register:
+	// each profile rebuilds its whole section, so two on one section would drop each other's values.
+	profileSelectors []leafKey
 
 	undocumentedKeys []string
 }
@@ -119,7 +141,12 @@ func (e *typedEntry[T]) sources(k leafKey, cc commandConfig) ([]reflect.Value, e
 	}
 
 	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
-		vals = append(vals, raw)
+		val, err := fromFile(commentparsing.DerefType(k.goType), raw)
+		if err != nil {
+			return nil, err
+		}
+
+		vals = append(vals, val)
 	}
 
 	return vals, nil
@@ -183,7 +210,7 @@ func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
 		for i, p := range params {
 			if f, ok := siblings.FieldByName(p); ok {
 				if key, _ := e.b.opts.Markup.Key(f); key != "" {
-					params[i] = configKey(parent + "." + key)
+					params[i] = configKey(e.ns, parent+"."+key)
 				}
 			}
 		}
@@ -191,7 +218,7 @@ func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
 		rule += "=" + strings.Join(params, " ")
 	}
 
-	return fmt.Errorf("%s failed on the '%s' tag", configKey(fe.Namespace()), rule)
+	return fmt.Errorf("%s failed on the '%s' tag", configKey(e.ns, fe.Namespace()), rule)
 }
 
 func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
@@ -209,9 +236,28 @@ func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
 	return t
 }
 
+// sourceLayer puts a map's source values over under, key by key, since maps merge by key at every source. A value that
+// isn't a map has none: its source replaces it whole. Keys an env var names resolve against under, which can hold keys
+// a profile added, so applying one can fail.
+type sourceLayer func(under reflect.Value) (reflect.Value, error)
+
 func (e *typedEntry[T]) decode(cc commandConfig) error {
 	dst := reflect.ValueOf(e.dst).Elem()
+	supplied := map[string]sourceLayer{}
 	for _, k := range e.leaves {
+		if len(k.entries) > 0 {
+			layer, err := e.decodeEntries(k, cc, dst)
+			if err != nil {
+				return fmt.Errorf("%s: %w", k.key, err)
+			}
+
+			if layer != nil {
+				supplied[k.key] = layer
+			}
+
+			continue
+		}
+
 		vals, err := e.sources(k, cc)
 		if err != nil {
 			return fmt.Errorf("%s: %w", k.key, err)
@@ -230,7 +276,29 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 			f = f.Elem()
 		}
 
-		f.Set(vals[0])
+		if mergesByKey(f.Type(), e.b.opts.Markup) {
+			// The struct's own entries first, then sources lowest precedence first, so the highest wins a key.
+			slices.Reverse(vals)
+			t := f.Type()
+			supplied[k.key] = func(under reflect.Value) (reflect.Value, error) {
+				return mergeMaps(t, append([]reflect.Value{under}, vals...)...), nil
+			}
+			v, err := supplied[k.key](f)
+			if err != nil {
+				return fmt.Errorf("%s: %w", k.key, err)
+			}
+
+			f.Set(v)
+		} else {
+			supplied[k.key] = nil
+			f.Set(vals[0])
+		}
+	}
+
+	for _, apply := range e.profiles {
+		if err := apply(supplied); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -266,8 +334,12 @@ func allocateField(v reflect.Value, path []string) reflect.Value {
 var indexReplacer = strings.NewReplacer("[", ".", "]", "")
 
 // List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
-func configKey(ns string) string {
+func configKey(namespace, ns string) string {
 	_, ns, _ = strings.Cut(ns, ".")
+	if namespace != "" {
+		ns = namespace + "." + ns
+	}
+
 	segments := strings.Split(indexReplacer.Replace(ns), ".")
 	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }

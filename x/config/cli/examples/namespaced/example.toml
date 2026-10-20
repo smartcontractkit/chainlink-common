@@ -1,0 +1,7 @@
+[Database]
+URL = "postgres://file.example.com:5432/app"
+DialTimeout = "10s"
+
+[EVM]
+URL = "https://file.example.com:8545"
+ChainID = 137

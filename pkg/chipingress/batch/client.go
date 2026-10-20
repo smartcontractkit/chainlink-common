@@ -103,14 +103,18 @@ type Client struct {
 	maxPublishTimeout       time.Duration
 	messageBuffer           chan *messageWithCallback
 	stopCh                  stopCh
-	log                     *zap.SugaredLogger
-	callbackWg              sync.WaitGroup
-	shutdownTimeout         time.Duration
-	shutdownOnce            sync.Once
-	batcherDone             chan struct{}
-	started                 bool
-	counters                sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
-	clientName              string
+	// admission makes "check stopCh, then enqueue" atomic with respect to Stop closing stopCh,
+	// so every message QueueMessage accepted is on messageBuffer before the batcher drains it.
+	admission       sync.RWMutex
+	afterFastPath   func() // test-only hook between the fast-path stop check and admission; nil in production
+	log             *zap.SugaredLogger
+	callbackWg      sync.WaitGroup
+	shutdownTimeout time.Duration
+	shutdownOnce    sync.Once
+	batcherDone     chan struct{}
+	started         bool
+	counters        sync.Map // map[seqnumKey]*atomic.Uint64 for per-(source,type) seqnum, cleared on Stop()
+	clientName      string
 
 	metrics batchClientMetrics
 
@@ -205,10 +209,11 @@ func (b *Client) Start(ctx context.Context) {
 }
 
 // Stop ensures:
-// - current batch is flushed
+// - every message already queued is published, in batches of at most the batch size
 // - all current network calls are completed
 // - all callbacks are completed
-// Forcibly shutdowns down after timeout if not completed.
+// Forcibly shuts down after the shutdown timeout if not completed; batches still being
+// drained then fail against the closed client and report the error to their callbacks.
 func (b *Client) Stop() {
 	b.shutdownOnce.Do(func() {
 		// Use a standalone timeout context so the shutdown wait isn't cancelled
@@ -216,7 +221,9 @@ func (b *Client) Stop() {
 		ctx, cancel := context.WithTimeout(context.Background(), b.shutdownTimeout)
 		defer cancel()
 
+		b.admission.Lock()
 		close(b.stopCh)
+		b.admission.Unlock()
 
 		// Only wait for the batcher goroutine when Start() was called;
 		// otherwise batcherDone is never closed and we'd block until timeout.
@@ -279,11 +286,14 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 		return nil
 	}
 
-	// Check shutdown first to avoid race with buffer send
+	// Fast path: skip cloning and seqnum stamping once shut down. Rechecked under admission below.
 	select {
 	case <-b.stopCh:
 		return ErrClientShutdown
 	default:
+	}
+	if b.afterFastPath != nil {
+		b.afterFastPath()
 	}
 
 	eventToQueue := event
@@ -312,6 +322,13 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 		callback: callback,
 	}
 
+	b.admission.RLock()
+	defer b.admission.RUnlock()
+	select {
+	case <-b.stopCh:
+		return ErrClientShutdown
+	default:
+	}
 	select {
 	case b.messageBuffer <- msg:
 		return nil
@@ -356,8 +373,9 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 				b.log.Errorw("failed to publish batch", "error", err)
 				b.completeBatchCallbacks(batchMessages, err)
 			} else if !b.transactionEnabled {
-				// always call, even when no results
-				b.completeBatchCallbacksFromResults(batchMessages, resp.Results)
+				// always call, even when no results: a nil response (protocol violation) or an
+				// empty/short result set fails the unmatched events with RESULTS_MISMATCH.
+				b.completeBatchCallbacksFromResults(batchMessages, resp.GetResults())
 			} else {
 				b.completeBatchCallbacks(batchMessages, nil)
 			}

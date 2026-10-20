@@ -25,9 +25,10 @@ type fieldMeta struct {
 	inOptional bool
 }
 
-// A flag or env var carries only text.
+// A flag or env var carries only text. An interface can't be parsed into, since there's no concrete type to make.
 func readsText(t reflect.Type) bool {
-	return t.Implements(textUnmarshaler) || reflect.PointerTo(t).Implements(textUnmarshaler)
+	return t.Kind() != reflect.Interface &&
+		(t.Implements(textUnmarshaler) || reflect.PointerTo(t).Implements(textUnmarshaler))
 }
 
 var textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()
@@ -61,7 +62,12 @@ func bindStruct[T any](entry *typedEntry[T]) error {
 		return errors.New("target must be a struct or pointer to struct")
 	}
 
-	return entry.walk(v, walkScope{ancestors: []reflect.Type{v.Type()}})
+	scope := walkScope{ancestors: []reflect.Type{v.Type()}}
+	if ns := entry.ns; ns != "" {
+		scope.key, scope.fileKey = strcase.ToKebab(ns), []string{ns}
+	}
+
+	return entry.walk(v, scope)
 }
 
 type walkScope struct {
@@ -71,6 +77,8 @@ type walkScope struct {
 	inOptional bool
 	// ancestors stops recursion into self-referential types.
 	ancestors []reflect.Type
+	// entry is set inside a map's entries, where goPath restarts at each entry.
+	entry *entryScope
 }
 
 func (e *typedEntry[T]) walk(v reflect.Value, scope walkScope) error {
@@ -102,7 +110,23 @@ func (e *typedEntry[T]) walkField(v reflect.Value, i int, scope walkScope) error
 	next := scope.child(field, key)
 	elem := derefOrZero(v.Field(i))
 	if e.isLeaf(field, elem, scope) {
-		return bindLeafFlag(e, fieldMeta{next.key, next.fileKey, field, v.Type(), elem, next.goPath, scope.inOptional})
+		doc := fieldDoc(v.Type(), field.Name)
+		if scope.entry != nil {
+			_, err := e.bindEntryLeaf(next, field.Type, doc)
+			return err
+		}
+
+		leaf, err := bindLeafFlag(e, fieldMeta{next.key, next.fileKey, field, v.Type(), elem, next.goPath, scope.inOptional}, doc)
+		if err != nil {
+			return err
+		}
+
+		if leaf.each, err = e.bindEntries(&leaf, field.Type, next, doc); err != nil {
+			return err
+		}
+
+		e.addKey(leaf)
+		return nil
 	}
 
 	// reflect can't allocate an unexported embedded pointer, so none of its fields could be set.

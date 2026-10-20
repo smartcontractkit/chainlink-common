@@ -17,7 +17,6 @@ import (
 	registrypb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
-	valuespb "github.com/smartcontractkit/chainlink-protos/cre/go/values/pb"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 	p2ptypes "github.com/smartcontractkit/libocr/ragep2p/types"
@@ -178,20 +177,6 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		}
 	}
 
-	var oracleFactoryConfigs map[string]values.Map
-	if res.CapabilityConfig.OracleFactoryConfigs != nil {
-		oracleFactoryConfigs = make(map[string]values.Map, len(res.CapabilityConfig.OracleFactoryConfigs))
-		for key, pbMap := range res.CapabilityConfig.OracleFactoryConfigs {
-			m, err := values.FromMapValueProto(pbMap)
-			if err != nil {
-				return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode oracle factory config for key %s: %w", key, err)
-			}
-			if m != nil {
-				oracleFactoryConfigs[key] = *m
-			}
-		}
-	}
-
 	specConfig, err := values.FromMapValueProto(res.CapabilityConfig.SpecConfig)
 	if err != nil {
 		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode spec config: %w", err)
@@ -202,7 +187,6 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		CapabilityMethodConfig: methodConfig,
 		LocalOnly:              res.CapabilityConfig.LocalOnly,
 		Ocr3Configs:            ocr3Configs,
-		OracleFactoryConfigs:   oracleFactoryConfigs,
 		SpecConfig:             specConfig,
 	}, nil
 }
@@ -506,14 +490,6 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				OffchainConfig:        cfg.OffchainConfig,
 				// NOTE: ConfigDigest is not passed in the proto, nor stored directly onchain.
 			}
-		}
-	}
-
-	// Handle Oracle factory configs
-	if cc.OracleFactoryConfigs != nil {
-		ccp.OracleFactoryConfigs = make(map[string]*valuespb.Map, len(cc.OracleFactoryConfigs))
-		for key, m := range cc.OracleFactoryConfigs {
-			ccp.OracleFactoryConfigs[key] = values.Proto(&m).GetMapValue()
 		}
 	}
 

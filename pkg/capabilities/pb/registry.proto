@@ -94,9 +94,9 @@ message CapabilityConfig {
   // When present, OCRConfigService uses this to provide ContractConfigTracker to libocr.
   map<string, OCR3Config> ocr3_configs = 9;
 
-  // Oracle factory configs for OCR-based capabilities (moved from job specs).
-  // Map key is an OCR instance name (same as above).
-  map<string, values.v1.Map> oracle_factory_configs = 10;
+  // Deprecated: oracle factory config no longer needs to be explicitly configured;
+  // it is derived automatically at runtime.
+  map<string, values.v1.Map> oracle_factory_configs = 10 [deprecated = true];
 
   // Config moved from job specs.
   values.v1.Map spec_config = 11;

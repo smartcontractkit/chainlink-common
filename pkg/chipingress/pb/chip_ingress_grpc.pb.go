@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChipIngress_Publish_FullMethodName        = "/chipingress.pb.ChipIngress/Publish"
-	ChipIngress_PublishBatch_FullMethodName   = "/chipingress.pb.ChipIngress/PublishBatch"
-	ChipIngress_Ping_FullMethodName           = "/chipingress.pb.ChipIngress/Ping"
-	ChipIngress_StreamEvents_FullMethodName   = "/chipingress.pb.ChipIngress/StreamEvents"
-	ChipIngress_RegisterSchema_FullMethodName = "/chipingress.pb.ChipIngress/RegisterSchema"
+	ChipIngress_Publish_FullMethodName           = "/chipingress.pb.ChipIngress/Publish"
+	ChipIngress_PublishBatch_FullMethodName      = "/chipingress.pb.ChipIngress/PublishBatch"
+	ChipIngress_PublishBatchNoAck_FullMethodName = "/chipingress.pb.ChipIngress/PublishBatchNoAck"
+	ChipIngress_Ping_FullMethodName              = "/chipingress.pb.ChipIngress/Ping"
+	ChipIngress_StreamEvents_FullMethodName      = "/chipingress.pb.ChipIngress/StreamEvents"
+	ChipIngress_RegisterSchema_FullMethodName    = "/chipingress.pb.ChipIngress/RegisterSchema"
 )
 
 // ChipIngressClient is the client API for ChipIngress service.
@@ -44,6 +45,12 @@ type ChipIngressClient interface {
 	// entire batch (all-or-nothing).
 	// Results in PublishResponse are positionally ordered: results[i] corresponds to events[i].
 	PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error)
+	// PublishBatchNoAck behaves like PublishBatch (same validation, partial-delivery
+	// and transaction_enabled semantics, positional results) but the server produces
+	// to Kafka with acks=0: it does not wait for broker acknowledgement. A successful
+	// response means the events were validated and handed to the producer, not that
+	// they were persisted. Use only for loss-tolerant telemetry.
+	PublishBatchNoAck(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error)
 	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
@@ -75,6 +82,16 @@ func (c *chipIngressClient) PublishBatch(ctx context.Context, in *CloudEventBatc
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PublishResponse)
 	err := c.cc.Invoke(ctx, ChipIngress_PublishBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chipIngressClient) PublishBatchNoAck(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PublishResponse)
+	err := c.cc.Invoke(ctx, ChipIngress_PublishBatchNoAck_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +148,12 @@ type ChipIngressServer interface {
 	// entire batch (all-or-nothing).
 	// Results in PublishResponse are positionally ordered: results[i] corresponds to events[i].
 	PublishBatch(context.Context, *CloudEventBatch) (*PublishResponse, error)
+	// PublishBatchNoAck behaves like PublishBatch (same validation, partial-delivery
+	// and transaction_enabled semantics, positional results) but the server produces
+	// to Kafka with acks=0: it does not wait for broker acknowledgement. A successful
+	// response means the events were validated and handed to the producer, not that
+	// they were persisted. Use only for loss-tolerant telemetry.
+	PublishBatchNoAck(context.Context, *CloudEventBatch) (*PublishResponse, error)
 	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(context.Context, *EmptyRequest) (*PingResponse, error)
 	// StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.
@@ -153,6 +176,9 @@ func (UnimplementedChipIngressServer) Publish(context.Context, *pb.CloudEvent) (
 }
 func (UnimplementedChipIngressServer) PublishBatch(context.Context, *CloudEventBatch) (*PublishResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PublishBatch not implemented")
+}
+func (UnimplementedChipIngressServer) PublishBatchNoAck(context.Context, *CloudEventBatch) (*PublishResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PublishBatchNoAck not implemented")
 }
 func (UnimplementedChipIngressServer) Ping(context.Context, *EmptyRequest) (*PingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
@@ -220,6 +246,24 @@ func _ChipIngress_PublishBatch_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChipIngress_PublishBatchNoAck_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloudEventBatch)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChipIngressServer).PublishBatchNoAck(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChipIngress_PublishBatchNoAck_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChipIngressServer).PublishBatchNoAck(ctx, req.(*CloudEventBatch))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChipIngress_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(EmptyRequest)
 	if err := dec(in); err != nil {
@@ -277,6 +321,10 @@ var ChipIngress_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishBatch",
 			Handler:    _ChipIngress_PublishBatch_Handler,
+		},
+		{
+			MethodName: "PublishBatchNoAck",
+			Handler:    _ChipIngress_PublishBatchNoAck_Handler,
 		},
 		{
 			MethodName: "Ping",

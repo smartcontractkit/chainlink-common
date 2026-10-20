@@ -174,6 +174,13 @@ func (c *client) PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...
 	return c.client.PublishBatch(ctx, in, opts...)
 }
 
+// PublishBatchNoAck is PublishBatch with server-side Kafka acks=0: no broker
+// acknowledgement, so success means handed to the producer, not persisted.
+// Use only for loss-tolerant telemetry.
+func (c *client) PublishBatchNoAck(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error) {
+	return c.client.PublishBatchNoAck(ctx, in, opts...)
+}
+
 // StreamEvents - Experimental, this API is subject to change.
 func (c *client) StreamEvents(_ context.Context, _ ...grpc.CallOption) (grpc.BidiStreamingClient[StreamEventsRequest, StreamEventsResponse], error) {
 	return nil, fmt.Errorf("not implemented: StreamEvents is experimental and not supported yet")
@@ -461,6 +468,11 @@ func (NoopClient) Publish(ctx context.Context, in *cepb.CloudEvent, opts ...grpc
 
 // PublishBatch is a no-op
 func (NoopClient) PublishBatch(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+	return &pb.PublishResponse{}, nil
+}
+
+// PublishBatchNoAck is a no-op
+func (NoopClient) PublishBatchNoAck(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
 	return &pb.PublishResponse{}, nil
 }
 

@@ -735,6 +735,43 @@ func (s *capturingServer) Ping(ctx context.Context, _ *pb.EmptyRequest) (*pb.Pin
 	return &pb.PingResponse{}, nil
 }
 
+func (s *capturingServer) PublishBatchNoAck(ctx context.Context, _ *pb.CloudEventBatch) (*pb.PublishResponse, error) {
+	s.lastMD, _ = metadata.FromIncomingContext(ctx)
+	return &pb.PublishResponse{}, nil
+}
+
+// TestClient_PublishBatchNoAck_HeadersReachServer pins the property the header-routing
+// migration (OTI, INFOPLAT-19544) relies on: custom metadata attached via
+// WithHeaderProvider travels as HTTP/2 request headers on the PublishBatchNoAck RPC,
+// so an ALB http-header listener rule can route these calls before chip-ingress sees them.
+func TestClient_PublishBatchNoAck_HeadersReachServer(t *testing.T) {
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer lis.Close()
+
+	srv := gp.NewServer()
+	capture := &capturingServer{}
+	pb.RegisterChipIngressServer(srv, capture)
+	go func() { _ = srv.Serve(lis) }()
+	defer srv.Stop()
+
+	client, err := NewClient(lis.Addr().String(),
+		WithInsecureConnection(),
+		WithHeaderProvider(&mockHeaderProvider{
+			headers: map[string]string{"x-chip-traffic-class": "legacy-telemetry"},
+		}),
+	)
+	require.NoError(t, err)
+	defer client.Close() //nolint:errcheck
+
+	_, err = client.PublishBatchNoAck(t.Context(), &pb.CloudEventBatch{})
+	require.NoError(t, err)
+
+	require.NotNil(t, capture.lastMD)
+	// grpc lower-cases metadata keys on the wire.
+	assert.Equal(t, []string{"legacy-telemetry"}, capture.lastMD.Get("x-chip-traffic-class"))
+}
+
 // TestClient_ChainedHeaderProviders is a regression test for the fix that switched from
 // grpc.WithUnaryInterceptor (last-one-wins) to grpc.WithChainUnaryInterceptor: when both
 // WithHeaderProvider and WithNOPLookup are configured, both providers' headers must reach
@@ -906,6 +943,52 @@ func TestClient_RegisterSchemas(t *testing.T) {
 		result, err := client.RegisterSchemas(ctx, schemas...)
 		assert.Nil(t, result)
 		assert.EqualError(t, err, "failed to register schema: registration failed")
+	})
+}
+
+func TestClient_PublishBatchNoAck(t *testing.T) {
+	batch := &pb.CloudEventBatch{
+		Events: []*cepb.CloudEvent{{Id: "e1", Source: "src", SpecVersion: "1.0", Type: "t"}},
+	}
+
+	t.Run("passes through to the underlying client", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		ctx := t.Context()
+		wantResp := &pb.PublishResponse{}
+		mockClient.EXPECT().PublishBatchNoAck(ctx, batch).Return(wantResp, nil)
+
+		client := &client{
+			client: mockClient,
+			conn:   nil,
+		}
+
+		gotResp, err := client.PublishBatchNoAck(ctx, batch)
+		require.NoError(t, err)
+		assert.Same(t, wantResp, gotResp)
+	})
+
+	t.Run("returns the underlying error", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		ctx := t.Context()
+		mockClient.EXPECT().PublishBatchNoAck(ctx, batch).Return(nil, fmt.Errorf("unavailable"))
+
+		client := &client{
+			client: mockClient,
+			conn:   nil,
+		}
+
+		resp, err := client.PublishBatchNoAck(ctx, batch)
+		assert.Nil(t, resp)
+		assert.EqualError(t, err, "unavailable")
+	})
+
+	t.Run("NoopClient returns an empty response", func(t *testing.T) {
+		noop := NoopClient{}
+
+		resp, err := noop.PublishBatchNoAck(t.Context(), batch)
+		require.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Empty(t, resp.Results)
 	})
 }
 

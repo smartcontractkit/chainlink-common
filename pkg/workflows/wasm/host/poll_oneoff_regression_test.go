@@ -25,7 +25,7 @@ func TestRegressionPollOneoffRejectsExcessiveSubscriptions(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := &ModuleConfig{MaxSubscriptionsLimiter: limiter}
-	exec := &execution[*sdkpb.ExecutionResult]{ctx: t.Context(), module: &module{cfg: cfg}}
+	exec := &execution[*sdkpb.ExecutionResult]{ctx: t.Context(), module: &module{cfg: cfg, metrics: &fakeModuleMetrics{}}}
 
 	tests := []struct {
 		name           string

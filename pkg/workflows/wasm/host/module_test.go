@@ -357,10 +357,63 @@ func Test_CallAwaitRace(t *testing.T) {
 
 type fakeModuleMetrics struct {
 	hostFnPanicRecoveredCount int
+	hostCalls                 map[string]int
+	executions                []executionStats
 }
 
 func (f *fakeModuleMetrics) IncHostFnPanicRecovered() {
 	f.hostFnPanicRecoveredCount++
+}
+
+func (f *fakeModuleMetrics) RecordHostCall(_ context.Context, function string, _ time.Duration) {
+	if f.hostCalls == nil {
+		f.hostCalls = map[string]int{}
+	}
+	f.hostCalls[function]++
+}
+
+func (f *fakeModuleMetrics) RecordExecution(_ context.Context, stats executionStats) {
+	f.executions = append(f.executions, stats)
+}
+
+func Test_Integration_Execute_RecordsExecutionMetrics(t *testing.T) {
+	m := makeTestModuleByName(t, testPath, "logging", defaultNoDAGModCfg(t), true)
+	m.Start()
+	defer m.Close()
+
+	metrics := &fakeModuleMetrics{}
+	m.metrics = metrics
+
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("test-execution-id")
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+	mockExecutionHelper.EXPECT().GetDONTime().RunAndReturn(func() (time.Time, error) {
+		return time.Now(), nil
+	}).Maybe()
+	mockExecutionHelper.EXPECT().EmitUserLog(mock.Anything).Return(nil)
+
+	trigger := &basictrigger.Outputs{CoolOutput: anyTestTriggerValue}
+	_, err := m.Execute(t.Context(), triggerExecuteRequest(t, 0, trigger), mockExecutionHelper)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.executions, 1)
+	stats := metrics.executions[0]
+
+	totalHostCalls := 0
+	for _, n := range metrics.hostCalls {
+		totalHostCalls += n
+	}
+	assert.Equal(t, int64(totalHostCalls), stats.hostCalls)
+	assert.Positive(t, metrics.hostCalls["log"])
+	assert.Equal(t, 1, metrics.hostCalls["send_response"])
+
+	assert.Positive(t, stats.memoryBytes)
+	assert.Zero(t, stats.memoryBytes%(64*1024), "linear memory is sized in 64KiB pages")
+	assert.Positive(t, stats.hostDuration)
+	assert.Greater(t, stats.runDuration, stats.hostDuration)
+	assert.Equal(t, stats.runDuration-stats.hostDuration, stats.guestDuration())
 }
 
 func Test_Integration_Execute_RecoversHostFunctionPanic(t *testing.T) {

@@ -26,17 +26,26 @@ type MessageEmitter interface {
 }
 
 type Labeler struct {
-	labels map[string]string
+	labels  map[string]string
+	emitter beholder.Emitter
 }
 
 func NewLabeler() Labeler {
 	return Labeler{labels: make(map[string]string)}
 }
 
+// NewLabelerWithEmitter returns a Labeler that emits to e instead of the
+// process-global beholder emitter. WithMapLabels and With carry e along.
+// A nil e emits to the global emitter, resolved at emit time.
+func NewLabelerWithEmitter(e beholder.Emitter) Labeler {
+	return Labeler{labels: make(map[string]string), emitter: e}
+}
+
 // WithMapLabels adds multiple key-value pairs to the CustomMessageLabeler for transmission
 // With SendLogAsCustomMessage
 func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 	newCustomMessageLabeler := NewLabeler()
+	newCustomMessageLabeler.emitter = l.emitter
 
 	// Copy existing labels from the current agent
 	maps.Copy(newCustomMessageLabeler.labels, l.labels)
@@ -49,12 +58,13 @@ func (l Labeler) WithMapLabels(labels map[string]string) MessageEmitter {
 
 // With adds multiple key-value pairs to the CustomMessageLabeler for transmission With SendLogAsCustomMessage
 func (l Labeler) With(keyValues ...string) MessageEmitter {
-	newCustomMessageLabeler := NewLabeler()
-
 	if len(keyValues)%2 != 0 {
 		// If an odd number of key-value arguments is passed, return the original CustomMessageLabeler unchanged
 		return l
 	}
+
+	newCustomMessageLabeler := NewLabeler()
+	newCustomMessageLabeler.emitter = l.emitter
 
 	// Copy existing labels from the current agent
 	maps.Copy(newCustomMessageLabeler.labels, l.labels)
@@ -70,7 +80,7 @@ func (l Labeler) With(keyValues ...string) MessageEmitter {
 }
 
 func (l Labeler) Emit(ctx context.Context, msg string) error {
-	return sendLogAsCustomMessageW(ctx, msg, l.labels)
+	return sendLogAsCustomMessageW(ctx, msg, l.labels, l.emitter)
 }
 
 func (l Labeler) Labels() map[string]string {
@@ -84,10 +94,10 @@ func (l Labeler) Labels() map[string]string {
 // SendLogAsCustomMessage emits a BaseMessage With msg and labels as data.
 // any key in labels that is not part of orderedLabelKeys will not be transmitted
 func (l Labeler) SendLogAsCustomMessage(ctx context.Context, msg string) error {
-	return sendLogAsCustomMessageW(ctx, msg, l.labels)
+	return sendLogAsCustomMessageW(ctx, msg, l.labels, l.emitter)
 }
 
-func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]string) error {
+func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]string, emitter beholder.Emitter) error {
 	// TODO un-comment after INFOPLAT-1386
 	// cast to map[string]any
 	//newLabels := map[string]any{}
@@ -110,7 +120,12 @@ func sendLogAsCustomMessageW(ctx context.Context, msg string, labels map[string]
 		return fmt.Errorf("sending custom message failed to marshal protobuf: %w", err)
 	}
 
-	err = beholder.GetEmitter().Emit(ctx, payloadBytes,
+	// A nil emitter resolves the global one at emit time, as before this parameter existed.
+	if emitter == nil {
+		emitter = beholder.GetEmitter()
+	}
+
+	err = emitter.Emit(ctx, payloadBytes,
 		beholder.AttrKeyDataSchema, "/beholder-base-message/versions/1", // required
 		beholder.AttrKeyDomain, "platform", // required
 		beholder.AttrKeyEntity, "BaseMessage", // required

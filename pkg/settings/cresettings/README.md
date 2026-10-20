@@ -109,8 +109,16 @@ flowchart
 
     subgraph syncer.tryEngineCreate
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
+        ShardingFailoverEnabled[/ShardingFailoverEnabled\]:::gate
     end
-    
+
+    subgraph ShardFailoverManager.autoFailoverLoop
+%%      cached trigger events whose failover window elapsed without an
+%%      execution outcome from the owning shard
+        TimeoutBasedFailover[/TimeoutBasedFailover\]:::gate
+        TimeoutBasedFailoverWindow>TimeoutBasedFailoverWindow]:::time
+    end
+
     subgraph Engine.init
 %%        TODO move and replace with WorkflowLimit
         WorkflowLimit([WorkflowLimit]):::resource

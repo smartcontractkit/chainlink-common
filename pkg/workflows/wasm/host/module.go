@@ -197,6 +197,35 @@ func limiterOrDefault[T io.Closer](configured, defaultLimiter T) T {
 // Limiter fields may be set or replaced after construction, but must not be
 // reset to nil.
 func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ...func(*ModuleConfig)) (*module, error) {
+	return newModule(modCfg, func(defaults moduleLimiters) (*wasmtime.Module, error) {
+		return compileModule(ctx, modCfg, defaults, binary)
+	}, opts...)
+}
+
+// NewModuleFromSerializedFile loads a trusted artifact produced by Serialize.
+// Deserialization accepts native code: never pass files supplied by an untrusted
+// party. The file must not be modified or truncated while any module loaded from
+// it is alive: Wasmtime retains a file-backed mapping. Unlinking or renaming the
+// file after this call returns is safe. The filesystem must allow executable
+// mappings. Producer and consumer must use compatible engine settings, Wasmtime
+// versions and target architectures.
+//
+// Source binary limits are enforced by NewModule before serialization, not by
+// this loader. Runtime limits and module validation apply to both paths.
+func NewModuleFromSerializedFile(ctx context.Context, modCfg *ModuleConfig, path string, opts ...func(*ModuleConfig)) (*module, error) {
+	return newModule(modCfg, func(_ moduleLimiters) (*wasmtime.Module, error) {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		native, err := wasmtime.NewModuleDeserializeFile(GetEngine(modCfg.Logger).Engine, path)
+		if err != nil {
+			return nil, fmt.Errorf("error deserializing wasmtime module: %w", err)
+		}
+		return native, nil
+	}, opts...)
+}
+
+func newModule(modCfg *ModuleConfig, load func(moduleLimiters) (*wasmtime.Module, error), opts ...func(*ModuleConfig)) (*module, error) {
 	var defaultLimiters moduleLimiters
 	cleanupLimiters := true
 	defer func() {
@@ -322,6 +351,25 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		defaultLimiters.maxSubscriptions = limits.NewUpperBoundLimiter(cresettings.Default.WASMPollOneoffSubscriptionLimit.DefaultValue)
 	}
 
+	metrics, err := newModuleMetrics()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create module metrics: %w", err)
+	}
+
+	native, err := load(defaultLimiters)
+	if err != nil {
+		return nil, err
+	}
+	m, err := wrapModule(modCfg, native, metrics)
+	if err != nil {
+		return nil, err
+	}
+	m.defaultLimiters = defaultLimiters
+	cleanupLimiters = false
+	return m, nil
+}
+
+func compileModule(ctx context.Context, modCfg *ModuleConfig, defaultLimiters moduleLimiters, binary []byte) (*wasmtime.Module, error) {
 	maxCompressedBinaryLimiter := limiterOrDefault(modCfg.MaxCompressedBinaryLimiter, defaultLimiters.maxCompressedBinary)
 	maxDecompressedBinaryLimiter := limiterOrDefault(modCfg.MaxDecompressedBinaryLimiter, defaultLimiters.maxDecompressedBinary)
 
@@ -357,31 +405,19 @@ func NewModule(ctx context.Context, modCfg *ModuleConfig, binary []byte, opts ..
 		return nil, fmt.Errorf("failed to check decompressed binary size limit: %w", err)
 	}
 
-	metrics, err := newModuleMetrics()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create module metrics: %w", err)
-	}
-
-	m, err := newModule(modCfg, binary, metrics)
-	if err != nil {
-		return nil, err
-	}
-	m.defaultLimiters = defaultLimiters
-	cleanupLimiters = false
-	return m, nil
-}
-
-func newModule(modCfg *ModuleConfig, binary []byte, metrics moduleMetrics) (*module, error) {
-	mod, err := wasmtime.NewModule(GetEngine(modCfg.Logger).Engine, binary)
+	native, err := wasmtime.NewModule(GetEngine(modCfg.Logger).Engine, binary)
 	if err != nil {
 		return nil, fmt.Errorf("error creating wasmtime module: %w", err)
 	}
+	return native, nil
+}
 
+func wrapModule(modCfg *ModuleConfig, mod *wasmtime.Module, metrics moduleMetrics) (*module, error) {
 	// Every host callback reaches the guest through its exported linear memory,
 	// so a module that doesn't export one under the expected name can't be run
 	// at all. Reject it here rather than letting the first callback dereference
 	// a missing or wrong-typed export.
-	if err = requireMemoryExport(mod); err != nil {
+	if err := requireMemoryExport(mod); err != nil {
 		mod.Close()
 		return nil, err
 	}
@@ -520,6 +556,12 @@ func (m *module) Close() {
 	m.module.Close()
 }
 
+// Serialize returns compiled native code for a compatible engine. Treat the
+// artifact as executable code; its integrity must be protected until loading.
+func (m *module) Serialize() ([]byte, error) {
+	return m.module.Serialize()
+}
+
 func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executor ExecutionHelper) (*sdkpb.ExecutionResult, error) {
 	if executor == nil {
 		return nil, errors.New("invalid capability executor: can't be nil")
@@ -538,7 +580,12 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	case *sdkpb.ExecuteRequest_PreHook:
 		timeout = *m.cfg.PrehookTimeout
 	}
-	return runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
+	start := time.Now()
+	result, err := runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
+	if result != nil {
+		result.ComputeDurationMs = proto.Int64(time.Since(start).Milliseconds())
+	}
+	return result, err
 }
 
 // callStart looks up and invokes the wasm module's _start function, but
@@ -634,6 +681,9 @@ func runWasm[I, O proto.Message](
 	)
 
 	deadline := maxTimeout / eng.engineTickInterval
+	if maxTimeout%eng.engineTickInterval > 0 {
+		deadline++
+	}
 	store.SetEpochDeadline(uint64(deadline))
 
 	h := fnv.New64a()
@@ -661,9 +711,7 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
 
-	startTime := time.Now()
 	_, err = callStart(m, instance, store)
-	executionDuration := time.Since(startTime)
 
 	// A guest that ran to completion exits with WASI status wasiExitSuccess
 	// after delivering its response via the send_response import.
@@ -674,11 +722,14 @@ func runWasm[I, O proto.Message](
 		return exec.response, nil
 	}
 
-	// If an error has occurred and the deadline has been reached or exceeded, return a deadline exceeded error.
-	// Note - there is no other reliable signal on the error that can be used to infer it is due to epoch deadline
-	// being reached, so if an error is returned after the deadline it is assumed it is due to that and return
-	// context.DeadlineExceeded.
-	if err != nil && ((executionDuration >= maxTimeout-engineTickInterval) || ctx.Err() != nil) { // As start could be called just before epoch update 1 tick interval is deducted to account for this
+	// Epoch interrupts can precede the wall-clock deadline because the ticker is shared.
+	var trap *wasmtime.Trap
+	epochExpired := false
+	if errors.As(err, &trap) {
+		code := trap.Code()
+		epochExpired = code != nil && *code == wasmtime.Interrupt
+	}
+	if err != nil && (epochExpired || ctxWithTimeout.Err() != nil) {
 		m.cfg.Logger.Errorw("start function returned error after deadline reached, returning deadline exceeded error", "errFromStartFunction", err)
 		return o, context.DeadlineExceeded
 	}

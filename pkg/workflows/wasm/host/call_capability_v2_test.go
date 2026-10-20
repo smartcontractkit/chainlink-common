@@ -205,6 +205,7 @@ func TestCallCapability_V2_CallCapAsyncErrorWritesToResponseBuffer(t *testing.T)
 	cancel()
 
 	exec := &execution[*sdkpb.ExecutionResult]{
+		module:              &module{metrics: &fakeModuleMetrics{}},
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: zeroLimiter,
@@ -274,6 +275,7 @@ func TestCallCapability_V2_SuccessReturnsZero(t *testing.T) {
 		Return(&sdkpb.CapabilityResponse{}, nil).Maybe()
 
 	exec := &execution[*sdkpb.ExecutionResult]{
+		module:              &module{metrics: &fakeModuleMetrics{}},
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),
@@ -320,6 +322,7 @@ func TestCallCapability_V2_ProtoUnmarshalErrorWritesToResponseBuffer(t *testing.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
 	exec := &execution[*sdkpb.ExecutionResult]{
+		module:              &module{metrics: &fakeModuleMetrics{}},
 		capabilityResponses: map[int32]<-chan *sdkpb.CapabilityResponse{},
 		usedCallbackIDs:     map[string]bool{},
 		pendingCallsLimiter: limits.GlobalResourcePoolLimiter(cresettings.Default.PerWorkflow.CapabilityConcurrencyLimit.DefaultValue),

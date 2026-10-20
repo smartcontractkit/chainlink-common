@@ -1,3 +1,3 @@
 module github.com/smartcontractkit/chainlink-common/pkg/values
 
-go 1.26.6
+go 1.26.10

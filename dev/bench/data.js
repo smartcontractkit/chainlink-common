@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792597987372,
+  "lastUpdate": 1792600008109,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64620,6 +64620,66 @@ window.BENCHMARK_DATA = {
             "value": 119046,
             "unit": "ns/op",
             "extra": "9422 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34992934+prashantkumar1982@users.noreply.github.com",
+            "name": "Prashant Yadav",
+            "username": "prashantkumar1982"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f7ad61a0211b0b5c22b22b01bfbd414a445ac1e3",
+          "message": "chore(go): bump Go to 1.27.3 for eMudhra CA distrust (CVE-2026-111943) (#2481)\n\n* chore(go): bump Go to 1.27.3 for eMudhra CA distrust (CVE-2026-111943)\n\nGo 1.27.3 rejects certificate chains containing the eight distrusted\neMudhra intermediate CA SPKIs. Bump the go directive in all modules that\nwere on 1.27.1 and the asdf .tool-versions pin.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* chore(tools): bump golangci-lint/mockery and update wasm golden values for Go 1.27.3\n\ngolangci-lint 2.13.2 and mockery 2.53.7 cannot read Go 1.27.3 standard\nlibrary export data (\"export data version 5 is greater than maximum\nsupported version 4\"), failing lint-module and the go generate check.\nBump to golangci-lint 2.15.0 and mockery 2.53.8 and regenerate mocks\n(header-only diff).\n\nThe artifacts test compares a hash and sample bytes of a wasm binary\ncompiled with the pinned Go toolchain, so the golden values change with\nthe Go version. Update them as in the previous Go bump (#2400); the hash\nmatches between CI (linux) and a local darwin build.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-21T16:08:52Z",
+          "tree_id": "893cd0155b8c757b90477bc43e1c0afc3858a64f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f7ad61a0211b0b5c22b22b01bfbd414a445ac1e3"
+        },
+        "date": 1792600003028,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 848.4,
+            "unit": "ns/op",
+            "extra": "1427641 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92222,
+            "unit": "ns/op",
+            "extra": "12750 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.4,
+            "unit": "ns/op",
+            "extra": "3024831 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 87009,
+            "unit": "ns/op",
+            "extra": "13755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25620,
+            "unit": "ns/op",
+            "extra": "46789 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 130289,
+            "unit": "ns/op",
+            "extra": "8671 times\n4 procs"
           }
         ]
       }

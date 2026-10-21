@@ -122,6 +122,50 @@ func TestDecryptSecret_SkipsBadShares(t *testing.T) {
 	assert.Equal(t, "my secret", string(plaintext))
 }
 
+func TestDecryptSecret_DuplicateShares(t *testing.T) {
+	const k, n = 2, 4
+	pk, keyShares, ctb := setup(t, k, n, "my secret")
+	r := newRecipient(t)
+
+	encryptFor := func(ks *tdh2easy.PrivateShare, to recipient) []byte {
+		share, err := GeneratePlaintextShare(pk, ks, ctb, label)
+		require.NoError(t, err)
+		enc, err := EncryptShareBinary(share, to.hex())
+		require.NoError(t, err)
+		return enc
+	}
+
+	// The same node's share encrypted twice: the sealed boxes differ, but both
+	// decrypt to a share with the same node index.
+	share0, err := GeneratePlaintextShare(pk, keyShares[0], ctb, label)
+	require.NoError(t, err)
+	share0Enc1, err := EncryptShareBinary(share0, r.hex())
+	require.NoError(t, err)
+	share0Enc2, err := EncryptShareBinary(share0, r.hex())
+	require.NoError(t, err)
+
+	// An exact-duplicate share and a distinct share still decrypt at threshold.
+	plaintext, rejected, err := DecryptSecret(ctb, pk, k, [][]byte{share0Enc1, share0Enc2, encryptFor(keyShares[1], r)}, r.decrypter())
+	require.NoError(t, err)
+	assert.Equal(t, "my secret", string(plaintext))
+	require.Len(t, rejected, 1)
+	assert.ErrorContains(t, rejected[0], "duplicate share for node index 0")
+
+	// A re-randomized share from the same node (fresh proof scalars, same u_i
+	// and index) is also dropped; byte-level dedup would miss this one.
+	plaintext, rejected, err = DecryptSecret(ctb, pk, k, [][]byte{share0Enc1, encryptFor(keyShares[0], r), encryptFor(keyShares[1], r)}, r.decrypter())
+	require.NoError(t, err)
+	assert.Equal(t, "my secret", string(plaintext))
+	require.Len(t, rejected, 1)
+	assert.ErrorContains(t, rejected[0], "duplicate share for node index 0")
+
+	// Duplicates never inflate the distinct-share count past the threshold.
+	_, rejected, err = DecryptSecret(ctb, pk, k, [][]byte{share0Enc1, share0Enc2}, r.decrypter())
+	require.ErrorContains(t, err, "not enough decryption shares")
+	require.Len(t, rejected, 1)
+	assert.ErrorContains(t, rejected[0], "duplicate share for node index 0")
+}
+
 func TestSharesForKey(t *testing.T) {
 	entries := []*vaultcommon.EncryptedShares{
 		{EncryptionKey: "a", BinaryShares: [][]byte{{1}, {2}}},

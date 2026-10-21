@@ -105,8 +105,10 @@ type DecryptFunc func(encrypted []byte) ([]byte, error)
 func (f DecryptFunc) Decrypt(encrypted []byte) ([]byte, error) { return f(encrypted) }
 
 // VerifyShares returns the valid shares, and an error for each rejected one.
+// At most one share per node index is returned
 func VerifyShares(ct *tdh2easy.Ciphertext, publicKey *tdh2easy.PublicKey, encryptedShares [][]byte, d Decrypter) ([]*tdh2easy.DecryptionShare, []error) {
 	valid := make([]*tdh2easy.DecryptionShare, 0, len(encryptedShares))
+	seenIndexes := make(map[int]struct{}, len(encryptedShares))
 	var rejected []error
 	for i, es := range encryptedShares {
 		b, err := d.Decrypt(es)
@@ -123,6 +125,11 @@ func VerifyShares(ct *tdh2easy.Ciphertext, publicKey *tdh2easy.PublicKey, encryp
 			rejected = append(rejected, fmt.Errorf("share %d: failed to verify: %w", i, err))
 			continue
 		}
+		if _, dup := seenIndexes[share.Index()]; dup {
+			rejected = append(rejected, fmt.Errorf("share %d: duplicate share for node index %d", i, share.Index()))
+			continue
+		}
+		seenIndexes[share.Index()] = struct{}{}
 		valid = append(valid, share)
 	}
 	return valid, rejected

@@ -6,7 +6,8 @@ import (
 )
 
 // batchWithInterval reads from a channel and calls processFn with batches based on size or time interval.
-// When the context is cancelled, it automatically flushes any remaining items in the batch.
+// When the context is cancelled, it flushes the current batch and every item already queued on input,
+// in batches of at most batchSize, then returns.
 func batchWithInterval[T any](
 	ctx context.Context,
 	input <-chan T,
@@ -29,7 +30,8 @@ func batchWithInterval[T any](
 	for {
 		select {
 		case <-ctx.Done():
-			flush()
+			timer.Stop()
+			drain(input, batch, batchSize, processFn)
 			return
 		case msg, ok := <-input:
 			if !ok {
@@ -54,5 +56,20 @@ func batchWithInterval[T any](
 		case <-timer.C:
 			flush()
 		}
+	}
+}
+
+// drain processes batch plus everything already buffered on input, without waiting for new items.
+// The batcher is input's only reader, so a non-zero len guarantees the receive won't block.
+func drain[T any](input <-chan T, batch []T, batchSize int, processFn func([]T)) {
+	for len(input) > 0 {
+		batch = append(batch, <-input)
+		if len(batch) >= batchSize {
+			processFn(batch)
+			batch = nil
+		}
+	}
+	if len(batch) > 0 {
+		processFn(batch)
 	}
 }

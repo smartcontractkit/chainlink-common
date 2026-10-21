@@ -123,21 +123,6 @@ func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfigurati
 		}
 	}
 
-	var oracleFactoryConfigs map[string]values.Map
-	if cconf.OracleFactoryConfigs != nil {
-		oracleFactoryConfigs = make(map[string]values.Map, len(cconf.OracleFactoryConfigs))
-		for name, pbMap := range cconf.OracleFactoryConfigs {
-			var m *values.Map
-			m, err = values.FromMapValueProto(pbMap)
-			if err != nil {
-				return capabilities.CapabilityConfiguration{}, fmt.Errorf("failed to unmarshal oracle factory config %q: %w", name, err)
-			}
-			if m != nil {
-				oracleFactoryConfigs[name] = *m
-			}
-		}
-	}
-
 	sc, err := values.FromMapValueProto(cconf.SpecConfig)
 	if err != nil {
 		return capabilities.CapabilityConfiguration{}, fmt.Errorf("failed to unmarshal capability configuration: %w", err)
@@ -150,7 +135,6 @@ func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfigurati
 		CapabilityMethodConfig: methodConfigs,
 		LocalOnly:              cconf.LocalOnly,
 		Ocr3Configs:            ocr3Configs,
-		OracleFactoryConfigs:   oracleFactoryConfigs,
 		SpecConfig:             sc,
 	}, nil
 }

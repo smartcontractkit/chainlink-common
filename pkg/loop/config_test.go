@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
@@ -109,6 +110,13 @@ func TestEnvConfig_parse(t *testing.T) {
 				envChipIngressDrainTimeout:       "10s",
 				envChipIngressMaxGRPCRequestSize: "10485760",
 
+				envChipIngressRetryEnabled:           "true",
+				envChipIngressRetryMaxAttempts:       "5",
+				envChipIngressRetryInitialBackoff:    "250ms",
+				envChipIngressRetryMaxBackoff:        "5s",
+				envChipIngressRetryBackoffMultiplier: "1.5",
+				envChipIngressRetryableStatusCodes:   "Unavailable,Internal",
+
 				envCRESettings:        `{"global":{}}`,
 				envCRESettingsDefault: `{"foo":"bar"}`,
 			},
@@ -143,6 +151,15 @@ func TestEnvConfig_parse(t *testing.T) {
 				envPromPort:                        "8080",
 				envTelemetryEnabled:                "true",
 				envTelemetryMetricCardinalityLimit: "-1",
+			},
+			expectError: true,
+		},
+		{
+			name: "CL_CHIP_INGRESS_RETRY_BACKOFF_MULTIPLIER parse error",
+			envVars: map[string]string{
+				envPromPort:                          "8080",
+				envTelemetryEnabled:                  "true",
+				envChipIngressRetryBackoffMultiplier: "abc",
 			},
 			expectError: true,
 		},
@@ -252,6 +269,13 @@ var envCfgFull = EnvConfig{
 	ChipIngressDrainTimeout:       10 * time.Second,
 	ChipIngressMaxGRPCRequestSize: 10485760,
 
+	ChipIngressRetryEnabled:           true,
+	ChipIngressRetryMaxAttempts:       5,
+	ChipIngressRetryInitialBackoff:    250 * time.Millisecond,
+	ChipIngressRetryMaxBackoff:        5 * time.Second,
+	ChipIngressRetryBackoffMultiplier: 1.5,
+	ChipIngressRetryableStatusCodes:   []string{"Unavailable", "Internal"},
+
 	CRESettings:        `{"global":{}}`,
 	CRESettingsDefault: `{"foo":"bar"}`,
 }
@@ -334,6 +358,12 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "3s", got[envChipIngressSendTimeout])
 	assert.Equal(t, "10s", got[envChipIngressDrainTimeout])
 	assert.Equal(t, "10485760", got[envChipIngressMaxGRPCRequestSize])
+	assert.Equal(t, "true", got[envChipIngressRetryEnabled])
+	assert.Equal(t, "5", got[envChipIngressRetryMaxAttempts])
+	assert.Equal(t, "250ms", got[envChipIngressRetryInitialBackoff])
+	assert.Equal(t, "5s", got[envChipIngressRetryMaxBackoff])
+	assert.Equal(t, "1.5", got[envChipIngressRetryBackoffMultiplier])
+	assert.Equal(t, "Unavailable,Internal", got[envChipIngressRetryableStatusCodes])
 
 	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
 	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])
@@ -470,5 +500,76 @@ func TestManagedGRPCClientConfig(t *testing.T) {
 		assert.Equal(t, []plugin.Protocol{plugin.ProtocolGRPC}, clientConfig.AllowedProtocols)
 		assert.Equal(t, brokerConfig.DialOpts, clientConfig.GRPCDialOptions)
 		assert.True(t, clientConfig.Managed)
+	})
+}
+
+// TestEnvConfig_ChipIngressRetry_RoundTrip verifies the chip ingress retry settings survive an
+// AsCmdEnv -> parse round trip, that an unset status-code list is not emitted (so the child
+// keeps DefaultRetryPolicy codes), and that the parsed EnvConfig resolves into the retry
+// policy the host intended (nil when disabled).
+func TestEnvConfig_ChipIngressRetry_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("enabled with overrides propagates and resolves", func(t *testing.T) {
+		cfg := envCfgFull
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.True(t, parsed.ChipIngressRetryEnabled)
+		assert.Equal(t, 5, parsed.ChipIngressRetryMaxAttempts)
+		assert.Equal(t, 250*time.Millisecond, parsed.ChipIngressRetryInitialBackoff)
+		assert.Equal(t, 5*time.Second, parsed.ChipIngressRetryMaxBackoff)
+		assert.InDelta(t, 1.5, parsed.ChipIngressRetryBackoffMultiplier, 0.0001)
+		assert.Equal(t, []string{"Unavailable", "Internal"}, parsed.ChipIngressRetryableStatusCodes)
+
+		policy, err := (beholder.ChipIngressRetryConfig{
+			Enabled:              parsed.ChipIngressRetryEnabled,
+			MaxAttempts:          parsed.ChipIngressRetryMaxAttempts,
+			InitialBackoff:       parsed.ChipIngressRetryInitialBackoff,
+			MaxBackoff:           parsed.ChipIngressRetryMaxBackoff,
+			BackoffMultiplier:    parsed.ChipIngressRetryBackoffMultiplier,
+			RetryableStatusCodes: parsed.ChipIngressRetryableStatusCodes,
+		}).RetryPolicy()
+		require.NoError(t, err)
+		require.NotNil(t, policy)
+		assert.Equal(t, 5, policy.MaxAttempts)
+		assert.Equal(t, 250*time.Millisecond, policy.InitialBackoff)
+		assert.Equal(t, 5*time.Second, policy.MaxBackoff)
+		assert.InDelta(t, 1.5, policy.BackoffMultiplier, 0.0001)
+		assert.Equal(t, []codes.Code{codes.Unavailable, codes.Internal}, policy.RetryableStatusCodes)
+	})
+
+	t.Run("disabled propagates and resolves to no policy", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.ChipIngressRetryEnabled = false
+		cfg.ChipIngressRetryMaxAttempts = 0
+		cfg.ChipIngressRetryInitialBackoff = 0
+		cfg.ChipIngressRetryMaxBackoff = 0
+		cfg.ChipIngressRetryBackoffMultiplier = 0
+		cfg.ChipIngressRetryableStatusCodes = nil
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envChipIngressRetryableStatusCodes+"=", "unset status codes must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.False(t, parsed.ChipIngressRetryEnabled)
+		assert.Nil(t, parsed.ChipIngressRetryableStatusCodes)
+
+		policy, err := (beholder.ChipIngressRetryConfig{
+			Enabled: parsed.ChipIngressRetryEnabled,
+		}).RetryPolicy()
+		require.NoError(t, err)
+		assert.Nil(t, policy)
 	})
 }

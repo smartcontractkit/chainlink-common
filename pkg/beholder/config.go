@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -67,6 +68,10 @@ type Config struct {
 	ChipIngressEmitterEnabled      bool
 	ChipIngressEmitterGRPCEndpoint string
 	ChipIngressInsecureConnection  bool // Disables TLS for Chip Ingress Emitter
+	// ChipIngressRetryPolicy enables gRPC-level retries on the chip ingress client when
+	// non-nil (see chipingress.WithRetryPolicy). Nil (the default) keeps retries off.
+	// Build it from string-based config with chipingress.RetryPolicyConfig.
+	ChipIngressRetryPolicy *chipingress.RetryPolicy
 
 	// Chip Ingress Batch Emitter
 	ChipIngressBatchEmitterEnabled bool          // When true, use batch emitter; when false (default), use legacy per-event emitter

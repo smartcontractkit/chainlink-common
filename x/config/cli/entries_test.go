@@ -136,18 +136,25 @@ func TestMapEntryHelp(t *testing.T) {
 	assert.NotNil(t, flagsOf(t, &struct{ Tree map[string]nestsItself }{}, testOptions))
 }
 
-func TestMapEntryEnvVarsMustNotClash(t *testing.T) {
+func TestFieldEnvVarsWinOverMapEntries(t *testing.T) {
 	type hasMapAndField struct {
 		Map    map[string]string
-		MapKey string
+		MapTTL string
 	}
-	require.ErrorContains(t, run(t, &hasMapAndField{}, testOptions), "map-key and map.<key> could both be TEST_MAP_KEY")
 
+	t.Setenv("TEST_MAP_TTL", "field")
+	t.Setenv("TEST_MAP_A", "entry")
+	var c hasMapAndField
+	require.NoError(t, run(t, &c, testOptions, "--config", writeConfig(t, "Map = {ttl = 'file'}\n")))
+	assert.Equal(t, hasMapAndField{Map: map[string]string{"a": "entry", "ttl": "file"}, MapTTL: "field"}, c)
+}
+
+func TestMapEntryEnvVarsMustNotClash(t *testing.T) {
 	type hasTwoMaps struct {
 		Chains    map[string]chain
 		ChainsRPC map[string]string
 	}
-	require.ErrorContains(t, run(t, &hasTwoMaps{}, testOptions), "could both be TEST_CHAINS_RPC_RPC")
+	require.ErrorContains(t, run(t, &hasTwoMaps{}, testOptions), "chains-rpc.<key> and chains.<key>.rpc could both be TEST_CHAINS_RPC_RPC")
 }
 
 func TestOwnNormalizationFuncStillApplies(t *testing.T) {

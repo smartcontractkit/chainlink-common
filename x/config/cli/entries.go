@@ -303,7 +303,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		}
 	}
 
-	envSets, err := e.envEntrySets(k)
+	envSets, err := e.envEntrySets(k, cc.fieldEnvVars)
 	if err != nil {
 		return nil, err
 	}
@@ -369,7 +369,9 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 	return layer, nil
 }
 
-func (e *typedEntry[T]) envEntrySets(k leafKey) ([]entrySet, error) {
+// An env var a field uses sets that field, even if its name also reads as a map entry: with TelemetryAuthHeaders and
+// TelemetryAuthHeadersTTL, APP_TELEMETRY_AUTH_HEADERS_TTL is the latter.
+func (e *typedEntry[T]) envEntrySets(k leafKey, fieldEnvVars map[string]string) ([]entrySet, error) {
 	var sets []entrySet
 	if k.flag != nil {
 		for rank, name := range e.envVars(k) {
@@ -389,7 +391,7 @@ func (e *typedEntry[T]) envEntrySets(k leafKey) ([]entrySet, error) {
 	slices.Sort(environ)
 	for _, kv := range environ {
 		name, s, _ := strings.Cut(kv, "=")
-		if s == "" {
+		if _, isField := fieldEnvVars[name]; s == "" || isField {
 			continue
 		}
 

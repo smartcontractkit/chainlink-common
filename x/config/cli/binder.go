@@ -3,7 +3,6 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"maps"
 	"os"
 	"reflect"
 	"slices"
@@ -203,15 +202,17 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 		}
 	}
 
-	if err := entryEnvVarsClash(cc.entries, claimed); err != nil {
+	if err := entryEnvVarsClash(cc.entries); err != nil {
 		return commandConfig{}, err
 	}
 
+	cc.fieldEnvVars = claimed
 	return cc, nil
 }
 
-// A map entry's env vars are found by matching names, so none may match a name another key uses.
-func entryEnvVarsClash(entries []targetEntry, claimed map[string]string) error {
+// A map entry's env vars are found by matching names, so two maps' may not match one name. A name a field uses is the
+// field's, so it may match one.
+func entryEnvVarsClash(entries []targetEntry) error {
 	type template struct {
 		cmd, owner, key, name string
 	}
@@ -227,15 +228,7 @@ func entryEnvVarsClash(entries []targetEntry, claimed map[string]string) error {
 		}
 	}
 
-	names := slices.Sorted(maps.Keys(claimed))
 	for _, t := range templates {
-		if i := slices.IndexFunc(names, func(name string) bool {
-			_, ok := matchKeys(t.name, envKeyPlaceholder, "_", name)
-			return ok
-		}); i >= 0 {
-			return fmt.Errorf("%s: %s and %s could both be %s", t.cmd, claimed[names[i]], t.key, names[i])
-		}
-
 		for _, other := range templates {
 			if name, ok := overlap(t.name, other.name, envKeyPlaceholder, "_"); ok && other.owner != t.owner {
 				return fmt.Errorf("%s: %s and %s could both be %s", t.cmd, other.key, t.key, name)
@@ -418,4 +411,6 @@ type commandConfig struct {
 	keys       *keyNode
 	fileValues reflect.Value
 	flags      *pflag.FlagSet
+	// fieldEnvVars maps each field's env vars to its key.
+	fieldEnvVars map[string]string
 }

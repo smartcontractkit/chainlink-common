@@ -117,6 +117,8 @@ way or not at all; `--chains.main.net.rpc` is an unknown flag. Set such a key in
 `--labels main.net=x`, or a config file. An env var name is upper case, so its key is the existing
 key, from the struct or a config file, that matches ignoring case, or else its lower case:
 `APP_LABELS_MAINNET` sets `MainNet` if the map has it, and `mainnet` if not.
+An env var a field uses sets that field: beside `LabelsTTL`, `APP_LABELS_TTL` sets it, not entry `ttl`,
+which `--labels.ttl`, `--labels ttl=x`, or a config file can still set.
 
 `--labels env=prod` and `--labels.env prod` both set entry `env`, so giving both is an error, as
 are `APP_LABELS=env=prod` and `APP_LABELS_ENV=prod`. Across sources, precedence is as for any field.

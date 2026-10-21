@@ -20,8 +20,12 @@ var ErrInvalidRecipientKey = errors.New("invalid recipient public key")
 
 type invalidRecipientKeyError struct{ msg string }
 
-func (e invalidRecipientKeyError) Error() string        { return e.msg }
-func (e invalidRecipientKeyError) Is(target error) bool { return target == ErrInvalidRecipientKey }
+func (e invalidRecipientKeyError) Error() string { return e.msg }
+
+func (e invalidRecipientKeyError) Is(target error) bool {
+	_, ok := target.(invalidRecipientKeyError)
+	return ok || target == ErrInvalidRecipientKey
+}
 
 // GeneratePlaintextShare returns this node's decryption share after checking the ciphertext's label.
 func GeneratePlaintextShare(publicKey *tdh2easy.PublicKey, privateKeyShare *tdh2easy.PrivateShare, encryptedSecret []byte, expectedLabel [32]byte) ([]byte, error) {
@@ -96,17 +100,13 @@ func SharesForKey(entries []*vaultcommon.EncryptedShares, recipientPublicKeyHex 
 	return out, nil
 }
 
-type Decrypter interface {
+type decrypter interface {
 	Decrypt(encrypted []byte) ([]byte, error)
 }
 
-type DecryptFunc func(encrypted []byte) ([]byte, error)
-
-func (f DecryptFunc) Decrypt(encrypted []byte) ([]byte, error) { return f(encrypted) }
-
 // VerifyShares returns the valid shares, and an error for each rejected one.
 // At most one share per node index is returned
-func VerifyShares(ct *tdh2easy.Ciphertext, publicKey *tdh2easy.PublicKey, encryptedShares [][]byte, d Decrypter) ([]*tdh2easy.DecryptionShare, []error) {
+func VerifyShares(ct *tdh2easy.Ciphertext, publicKey *tdh2easy.PublicKey, encryptedShares [][]byte, d decrypter) ([]*tdh2easy.DecryptionShare, []error) {
 	valid := make([]*tdh2easy.DecryptionShare, 0, len(encryptedShares))
 	seenIndexes := make(map[int]struct{}, len(encryptedShares))
 	var rejected []error
@@ -136,7 +136,7 @@ func VerifyShares(ct *tdh2easy.Ciphertext, publicKey *tdh2easy.PublicKey, encryp
 }
 
 // DecryptSecret also returns the rejected shares' errors, for logging.
-func DecryptSecret(encryptedSecret []byte, publicKey *tdh2easy.PublicKey, threshold int, encryptedShares [][]byte, d Decrypter) ([]byte, []error, error) {
+func DecryptSecret(encryptedSecret []byte, publicKey *tdh2easy.PublicKey, threshold int, encryptedShares [][]byte, d decrypter) ([]byte, []error, error) {
 	ct := &tdh2easy.Ciphertext{}
 	if err := ct.UnmarshalVerify(encryptedSecret, publicKey); err != nil {
 		return nil, nil, errors.New("failed to unmarshal encrypted secret: " + err.Error())

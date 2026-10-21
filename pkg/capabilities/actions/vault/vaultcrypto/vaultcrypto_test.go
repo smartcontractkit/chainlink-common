@@ -29,8 +29,8 @@ func newRecipient(t *testing.T) recipient {
 
 func (r recipient) hex() string { return hex.EncodeToString(r.pub[:]) }
 
-func (r recipient) decrypter() Decrypter {
-	return DecryptFunc(func(b []byte) ([]byte, error) {
+func (r recipient) decrypter() decrypter {
+	return decryptFunc(func(b []byte) ([]byte, error) {
 		out, ok := box.OpenAnonymous(nil, b, r.pub, r.priv)
 		if !ok {
 			return nil, assert.AnError
@@ -38,6 +38,10 @@ func (r recipient) decrypter() Decrypter {
 		return out, nil
 	})
 }
+
+type decryptFunc func(encrypted []byte) ([]byte, error)
+
+func (f decryptFunc) Decrypt(encrypted []byte) ([]byte, error) { return f(encrypted) }
 
 func setup(t *testing.T, k, n int, secret string) (*tdh2easy.PublicKey, []*tdh2easy.PrivateShare, []byte) {
 	_, pk, shares, err := tdh2easy.GenerateKeys(k, n)
@@ -91,6 +95,15 @@ func TestEncryptShareBinary_InvalidKey(t *testing.T) {
 
 	_, err = EncryptShareBinary([]byte("share"), "abcd")
 	require.ErrorIs(t, err, ErrInvalidRecipientKey)
+}
+
+func TestInvalidRecipientKeyError_MatchesItself(t *testing.T) {
+	_, err := EncryptShareBinary([]byte("share"), "zz")
+	require.ErrorIs(t, err, ErrInvalidRecipientKey)
+
+	other := invalidRecipientKeyError{"some other detail"}
+	assert.ErrorIs(t, err, other)
+	assert.ErrorIs(t, other, err)
 }
 
 func TestDecryptSecret_SkipsBadShares(t *testing.T) {

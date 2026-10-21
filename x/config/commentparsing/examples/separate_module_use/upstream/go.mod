@@ -1,6 +1,6 @@
 module example.com/upstream
 
-go 1.27.1
+go 1.27.3
 
 require github.com/smartcontractkit/chainlink-common/x/config v0.0.0
 

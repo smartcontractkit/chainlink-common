@@ -36,8 +36,17 @@ type execution[T any] struct {
 	nodeSeed            int64
 	donLogCount         uint32
 	nodeLogCount        uint32
+	hostCalls           int64
+	hostDuration        time.Duration
 
 	usedCallbackIDs map[string]bool
+}
+
+func (e *execution[T]) recordHostCall(name string, start time.Time) {
+	d := time.Since(start)
+	e.hostCalls++
+	e.hostDuration += d
+	e.module.metrics.RecordHostCall(e.ctx, name, d)
 }
 
 // callCapAsync async calls a capability by placing execution results onto a
@@ -187,6 +196,8 @@ func (e *execution[T]) awaitSecrets(ctx context.Context, acr *sdkpb.AwaitSecrets
 }
 
 func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
+	defer e.recordHostCall("log", time.Now())
+
 	switch e.mode {
 	case sdkpb.Mode_MODE_DON:
 		e.donLogCount++
@@ -229,6 +240,8 @@ func (e *execution[T]) log(caller *wasmtime.Caller, ptr int32, ptrlen int32) {
 }
 
 func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+	defer e.recordHostCall("emit_metric", time.Now())
+
 	if err := limiterOrDefault(e.module.cfg.EnableUserMetricsLimiter, e.module.defaultLimiters.enableUserMetrics).AllowErr(e.ctx); err != nil {
 		return -1
 	}
@@ -285,6 +298,8 @@ func (e *execution[T]) emitMetric(caller *wasmtime.Caller, ptr int32, ptrlen int
 }
 
 func (e *execution[T]) getSeed(mode int32) int64 {
+	defer e.recordHostCall("random_seed", time.Now())
+
 	switch sdkpb.Mode(mode) {
 	case sdkpb.Mode_MODE_DON:
 		return e.donSeed
@@ -296,6 +311,8 @@ func (e *execution[T]) getSeed(mode int32) int64 {
 }
 
 func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
+	defer e.recordHostCall("switch_modes", time.Now())
+
 	e.hasRun = true
 	e.mode = sdkpb.Mode(mode)
 }
@@ -303,6 +320,8 @@ func (e *execution[T]) switchModes(_ *wasmtime.Caller, mode int32) {
 // clockTimeGet is the default time.Now() which is also called by Go many times.
 // This implementation uses Node Mode to not have to wait for OCR rounds.
 func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision int64, resultTimestamp int32) int32 {
+	defer e.recordHostCall("clock_time_get", time.Now())
+
 	donTime, err := e.timeFetcher.GetTime(sdkpb.Mode_MODE_NODE)
 	if err != nil {
 		return ErrnoInval
@@ -333,6 +352,8 @@ func (e *execution[T]) clockTimeGet(caller *wasmtime.Caller, id int32, precision
 
 // now is used by rawsdk for Workflows and should be called instead of Go's time.Now().
 func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32 {
+	defer e.recordHostCall("now", time.Now())
+
 	donTime, err := e.timeFetcher.GetTime(e.mode)
 	if err != nil {
 		return ErrnoInval
@@ -353,6 +374,8 @@ func (e *execution[T]) now(caller *wasmtime.Caller, resultTimestamp int32) int32
 // This implementation only responds to clock events, not to file descriptor notifications.
 // It sleeps based on the largest timeout
 func (e *execution[T]) pollOneoff(caller *wasmtime.Caller, subscriptionptr int32, eventsptr int32, nsubscriptions int32, resultNevents int32) int32 {
+	defer e.recordHostCall("poll_oneoff", time.Now())
+
 	if nsubscriptions <= 0 || nsubscriptions > max(math.MaxInt32/subscriptionLen, math.MaxInt32/eventsLen) {
 		return ErrnoInval
 	}

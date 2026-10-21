@@ -97,6 +97,11 @@ const (
 	envMeterEnvironment                   = "CL_METER_ENVIRONMENT"
 	envMeterZone                          = "CL_METER_ZONE"
 	envMeterNodeID                        = "CL_METER_NODE_ID"
+	envMeterFaultMode                     = "CL_METER_FAULT_MODE"
+	envMeterFaultRate                     = "CL_METER_FAULT_RATE"
+	envMeterFaultSalt                     = "CL_METER_FAULT_SALT"
+	envMeterFaultDelta                    = "CL_METER_FAULT_DELTA"
+	envMeterFaultNodeRate                 = "CL_METER_FAULT_NODE_RATE"
 
 	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -230,6 +235,12 @@ type EnvConfig struct {
 	MeterEnvironment     string
 	MeterZone            string
 	MeterNodeID          string
+	// MeterFault* configure usage fault injection (resourcemanager.UsageFaultInjection).
+	MeterFaultMode     string
+	MeterFaultRate     float64
+	MeterFaultSalt     string
+	MeterFaultDelta    int64
+	MeterFaultNodeRate float64
 
 	TracingEnabled         bool
 	TracingCollectorTarget string
@@ -338,6 +349,11 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMeterEnvironment, e.MeterEnvironment)
 	add(envMeterZone, e.MeterZone)
 	add(envMeterNodeID, e.MeterNodeID)
+	add(envMeterFaultMode, e.MeterFaultMode)
+	add(envMeterFaultRate, strconv.FormatFloat(e.MeterFaultRate, 'g', -1, 64))
+	add(envMeterFaultSalt, e.MeterFaultSalt)
+	add(envMeterFaultDelta, strconv.FormatInt(e.MeterFaultDelta, 10))
+	add(envMeterFaultNodeRate, strconv.FormatFloat(e.MeterFaultNodeRate, 'g', -1, 64))
 
 	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
@@ -665,6 +681,16 @@ func (e *EnvConfig) parse() error {
 	e.MeterEnvironment = os.Getenv(envMeterEnvironment)
 	e.MeterZone = os.Getenv(envMeterZone)
 	e.MeterNodeID = os.Getenv(envMeterNodeID)
+	e.MeterFaultMode = os.Getenv(envMeterFaultMode)
+	e.MeterFaultRate = getFloat64OrZero(envMeterFaultRate)
+	e.MeterFaultSalt = os.Getenv(envMeterFaultSalt)
+	if v := os.Getenv(envMeterFaultDelta); v != "" {
+		e.MeterFaultDelta, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envMeterFaultDelta, err)
+		}
+	}
+	e.MeterFaultNodeRate = getFloat64OrZero(envMeterFaultNodeRate)
 
 	return nil
 }

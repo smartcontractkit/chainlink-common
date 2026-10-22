@@ -18,9 +18,9 @@ import (
 )
 
 func (c TelemetryConfig) tracingConfig(lggr logger.Logger, appID string) TracingConfig {
-	attrs := c.TracingAttributes
-	if attrs == nil {
-		attrs = make(map[string]string, 1)
+	attrs := make(map[string]string, len(c.TracingAttributes)+1)
+	for k, v := range c.TracingAttributes {
+		attrs[k] = v
 	}
 	attrs[string(semconv.ServiceInstanceIDKey)] = appID
 	return TracingConfig{

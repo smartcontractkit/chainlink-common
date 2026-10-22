@@ -50,6 +50,7 @@ func TestTelemetryConfig_tracingConfig(t *testing.T) {
 	cfg := TelemetryConfig{TracingEnabled: true, TracingCollectorTarget: "otel:4317", TracingAttributes: map[string]string{"foo": "bar"}}
 	tracing := cfg.tracingConfig(lggr, "app-id")
 	assert.Equal(t, beholder.OtelAttributes{"foo": "bar", string(semconv.ServiceInstanceIDKey): "app-id"}, tracing.NodeAttributes)
+	assert.Equal(t, map[string]string{"foo": "bar"}, cfg.TracingAttributes, "env config is not mutated")
 
 	// NewSpanExporter's dialer calls this unchecked; building a real exporter here would leak its
 	// connection, which Shutdown does not close.

@@ -123,12 +123,14 @@ type Telemetry struct {
 	logLevel *zapcore.Level // set when logs are streamed to the client
 }
 
-// NewTelemetry sets up tracing and beholder from cfg. appID identifies this process in traces, and
-// otelViews are added to the beholder client's metric views.
+// NewTelemetry sets up tracing, and beholder when cfg enables telemetry with an endpoint. appID
+// identifies this process in traces, and otelViews are added to the beholder client's metric views.
 func NewTelemetry(lggr logger.Logger, cfg TelemetryConfig, appID string, otelViews []sdkmetric.View) (*Telemetry, error) {
 	tracing := cfg.tracingConfig(lggr, appID)
 
-	if cfg.TelemetryEndpoint == "" {
+	// Parse leaves the endpoint blank when telemetry is disabled, but other readers of the same env,
+	// such as x/config/cli, don't.
+	if !cfg.TelemetryEnabled || cfg.TelemetryEndpoint == "" {
 		if err := SetupTracing(tracing); err != nil {
 			return nil, fmt.Errorf("failed to setup tracing: %w", err)
 		}

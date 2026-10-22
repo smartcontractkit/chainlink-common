@@ -27,6 +27,15 @@ func TestNewTelemetry_WithoutAnEndpointChangesNothing(t *testing.T) {
 	assert.Same(t, before, beholder.GetClient())
 }
 
+func TestNewTelemetry_DisabledIgnoresTheEndpoint(t *testing.T) {
+	before := beholder.GetClient()
+
+	telemetry, err := NewTelemetry(logger.Test(t), TelemetryConfig{TelemetryEndpoint: "otel:4317"}, "app-id", nil)
+	require.NoError(t, err)
+	assert.Nil(t, telemetry.Client())
+	assert.Same(t, before, beholder.GetClient())
+}
+
 func TestTelemetry_InstallsTheClientWhenStarted(t *testing.T) {
 	original := beholder.GetClient()
 	t.Cleanup(func() {

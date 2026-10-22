@@ -76,7 +76,7 @@ func TestWithNoAck(t *testing.T) {
 		msgs, cbs := noAckTestMessages("a", "b")
 		client.sendBatch(t.Context(), msgs)
 		for _, err := range collectCallbackErrs(t, cbs, 2) {
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		mockClient.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
@@ -130,7 +130,7 @@ func TestWithNoAck(t *testing.T) {
 			Return(&chipingress.PublishResponse{Results: []*chipingress.PublishResult{
 				{EventId: "ok"},
 				{EventId: "bad", Error: &chipingress.PublishError{
-					ErrorCode: chipingress.PublishErrorCode(ErrCodeValidationFailed),
+					ErrorCode: ErrCodeValidationFailed,
 					Reason:    "invalid event",
 				}},
 			}}, nil).Once()
@@ -161,7 +161,7 @@ func TestWithNoAck(t *testing.T) {
 		}
 		results := []error{byID["ok"], byID["bad"]}
 
-		assert.NoError(t, results[0])
+		require.NoError(t, results[0])
 		var pubErr *PublishError
 		require.ErrorAs(t, results[1], &pubErr)
 		assert.Equal(t, ErrCodeValidationFailed, pubErr.Code)

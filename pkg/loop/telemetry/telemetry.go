@@ -21,7 +21,9 @@ func (c TelemetryConfig) tracingConfig(lggr logger.Logger, appID string) Tracing
 	for k, v := range c.TracingAttributes {
 		attrs[k] = v
 	}
-	attrs[string(semconv.ServiceInstanceIDKey)] = appID
+	if appID != "" {
+		attrs[string(semconv.ServiceInstanceIDKey)] = appID
+	}
 	return TracingConfig{
 		Enabled:         c.TracingEnabled,
 		CollectorTarget: c.TracingCollectorTarget,

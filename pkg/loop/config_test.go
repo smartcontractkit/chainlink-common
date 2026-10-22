@@ -14,11 +14,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/pyroscope"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
 )
 
-// The telemetry env var names, repeated rather than imported so that renaming one in package
-// telemetry fails these tests instead of silently changing what a host and plugin agree on.
+// The telemetry and pyroscope env var names, repeated rather than imported so that renaming one in
+// those packages fails these tests instead of silently changing what a host and plugin agree on.
 const (
 	envTracingEnabled                     = "CL_TRACING_ENABLED"
 	envTracingCollectorTarget             = "CL_TRACING_COLLECTOR_TARGET"
@@ -54,6 +55,13 @@ const (
 	envChipIngressSendTimeout             = "CL_CHIP_INGRESS_SEND_TIMEOUT"
 	envChipIngressDrainTimeout            = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
 	envChipIngressMaxGRPCRequestSize      = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+
+	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
+	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
+	envPyroscopeEnvironment               = "CL_PYROSCOPE_ENVIRONMENT"
+	envPyroscopeLinkTracesToProfiles      = "CL_PYROSCOPE_LINK_TRACES_TO_PROFILES"
+	envPyroscopePPROFBlockProfileRate     = "CL_PYROSCOPE_PPROF_BLOCK_PROFILE_RATE"
+	envPyroscopePPROFMutexProfileFraction = "CL_PYROSCOPE_PPROF_MUTEX_PROFILE_FRACTION"
 )
 
 func TestEnvConfig_parse(t *testing.T) {
@@ -279,12 +287,14 @@ var envCfgFull = EnvConfig{
 
 	PrometheusPort: 8080,
 
-	PyroscopeAuthToken:                 "token",
-	PyroscopeServerAddress:             "http://pyroscope:4040",
-	PyroscopeEnvironment:               "pyroscope-env",
-	PyroscopeLinkTracesToProfiles:      true,
-	PyroscopePPROFBlockProfileRate:     42,
-	PyroscopePPROFMutexProfileFraction: 99,
+	PyroscopeConfig: pyroscope.PyroscopeConfig{
+		PyroscopeAuthToken:                 "token",
+		PyroscopeServerAddress:             "http://pyroscope:4040",
+		PyroscopeEnvironment:               "pyroscope-env",
+		PyroscopeLinkTracesToProfiles:      true,
+		PyroscopePPROFBlockProfileRate:     42,
+		PyroscopePPROFMutexProfileFraction: 99,
+	},
 
 	MeterRecordsEnabled:   true,
 	MeterSnapshotsEnabled: false,

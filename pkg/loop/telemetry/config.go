@@ -25,7 +25,8 @@ const (
 	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
 	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
 	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
-	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER_"
+	envTelemetryAuthHeaderLegacy          = "CL_TELEMETRY_AUTH_HEADER"
 	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
 	envTelemetryAuthHeadersTTL            = "CL_TELEMETRY_AUTH_HEADERS_TTL"
 	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
@@ -157,6 +158,8 @@ func (c *TelemetryConfig) AsCmdEnv() []string {
 
 	for k, v := range c.TelemetryAuthHeaders {
 		add(envTelemetryAuthHeader+k, v)
+		// LOOPs built before the separator was added only read this form.
+		add(envTelemetryAuthHeaderLegacy+k, v)
 	}
 	add(envTelemetryAuthPubKeyHex, c.TelemetryAuthPubKeyHex)
 	add(envTelemetryAuthHeadersTTL, c.TelemetryAuthHeadersTTL.String())
@@ -233,6 +236,10 @@ func (c *TelemetryConfig) Parse() error {
 		c.TelemetryAttributes = getMap(envTelemetryAttribute)
 		c.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
 		c.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
+		if len(c.TelemetryAuthHeaders) == 0 {
+			// Hosts built before the separator was added only write this form.
+			c.TelemetryAuthHeaders = getMap(envTelemetryAuthHeaderLegacy)
+		}
 		c.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
 		c.TelemetryAuthHeadersTTL, err = getDuration(envTelemetryAuthHeadersTTL)
 		if err != nil {

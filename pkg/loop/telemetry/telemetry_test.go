@@ -96,6 +96,33 @@ func detachedLogger() (logger.Logger, *observer.ObservedLogs) {
 	return logger.NewWithCores(core), logs
 }
 
+func TestTelemetryConfig_authHeaderEnv(t *testing.T) {
+	t.Run("written in both forms", func(t *testing.T) {
+		env := (&TelemetryConfig{TelemetryAuthHeaders: map[string]string{"authorization": "token"}}).AsCmdEnv()
+		assert.Contains(t, env, "CL_TELEMETRY_AUTH_HEADER_authorization=token")
+		assert.Contains(t, env, "CL_TELEMETRY_AUTH_HEADERauthorization=token")
+	})
+
+	t.Run("separated form wins", func(t *testing.T) {
+		t.Setenv(envTelemetryEnabled, "true")
+		t.Setenv("CL_TELEMETRY_AUTH_HEADER_authorization", "new")
+		t.Setenv("CL_TELEMETRY_AUTH_HEADERauthorization", "legacy")
+
+		var cfg TelemetryConfig
+		require.NoError(t, cfg.Parse())
+		assert.Equal(t, map[string]string{"authorization": "new"}, cfg.TelemetryAuthHeaders)
+	})
+
+	t.Run("legacy form is read when it is the only one", func(t *testing.T) {
+		t.Setenv(envTelemetryEnabled, "true")
+		t.Setenv("CL_TELEMETRY_AUTH_HEADERauthorization", "legacy")
+
+		var cfg TelemetryConfig
+		require.NoError(t, cfg.Parse())
+		assert.Equal(t, map[string]string{"authorization": "legacy"}, cfg.TelemetryAuthHeaders)
+	})
+}
+
 func TestGetMap(t *testing.T) {
 	t.Setenv("TEST_PREFIX_KEY1", "value1")
 	t.Setenv("TEST_PREFIX_KEY2", "value2")

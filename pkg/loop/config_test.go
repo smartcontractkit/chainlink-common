@@ -31,7 +31,7 @@ const (
 	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
 	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
 	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
-	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
+	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER_"
 	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
 	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
 	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"

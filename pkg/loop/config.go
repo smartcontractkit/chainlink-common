@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/pyroscope"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
@@ -44,13 +45,6 @@ const (
 	envMercuryVerboseLogging                  = "CL_MERCURY_VERBOSE_LOGGING"
 
 	envPromPort = "CL_PROMETHEUS_PORT"
-
-	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
-	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
-	envPyroscopeEnvironment               = "CL_PYROSCOPE_ENVIRONMENT"
-	envPyroscopeLinkTracesToProfiles      = "CL_PYROSCOPE_LINK_TRACES_TO_PROFILES"
-	envPyroscopePPROFBlockProfileRate     = "CL_PYROSCOPE_PPROF_BLOCK_PROFILE_RATE"
-	envPyroscopePPROFMutexProfileFraction = "CL_PYROSCOPE_PPROF_MUTEX_PROFILE_FRACTION"
 
 	envMeterRecordsEnabled   = "CL_METER_RECORDS_ENABLED"
 	envMeterSnapshotsEnabled = "CL_METER_SNAPSHOTS_ENABLED"
@@ -103,12 +97,7 @@ type EnvConfig struct {
 
 	PrometheusPort int // also serves pprof routes
 
-	PyroscopeAuthToken                 string
-	PyroscopeServerAddress             string
-	PyroscopeEnvironment               string
-	PyroscopeLinkTracesToProfiles      bool
-	PyroscopePPROFBlockProfileRate     int
-	PyroscopePPROFMutexProfileFraction int
+	pyroscope.PyroscopeConfig
 
 	MeterRecordsEnabled   bool
 	MeterSnapshotsEnabled bool
@@ -171,13 +160,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
-	add(envPyroscopeAuthToken, e.PyroscopeAuthToken)
-	add(envPyroscopeServerAddress, e.PyroscopeServerAddress)
-	add(envPyroscopeEnvironment, e.PyroscopeEnvironment)
-	add(envPyroscopeLinkTracesToProfiles, strconv.FormatBool(e.PyroscopeLinkTracesToProfiles))
-	add(envPyroscopePPROFBlockProfileRate, strconv.Itoa(e.PyroscopePPROFBlockProfileRate))
-	add(envPyroscopePPROFMutexProfileFraction, strconv.Itoa(e.PyroscopePPROFMutexProfileFraction))
-
+	env = append(env, e.PyroscopeConfig.AsCmdEnv()...)
 	env = append(env, e.TelemetryConfig.AsCmdEnv()...)
 
 	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
@@ -306,20 +289,8 @@ func (e *EnvConfig) parse() error {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
 	}
 
-	e.PyroscopeAuthToken = os.Getenv(envPyroscopeAuthToken)
-	e.PyroscopeServerAddress = os.Getenv(envPyroscopeServerAddress)
-	e.PyroscopeEnvironment = os.Getenv(envPyroscopeEnvironment)
-	e.PyroscopeLinkTracesToProfiles, err = getBool(envPyroscopeLinkTracesToProfiles)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envPyroscopeLinkTracesToProfiles, err)
-	}
-	e.PyroscopePPROFBlockProfileRate, err = getInt(envPyroscopePPROFBlockProfileRate)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFBlockProfileRate, err)
-	}
-	e.PyroscopePPROFMutexProfileFraction, err = getInt(envPyroscopePPROFMutexProfileFraction)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFMutexProfileFraction, err)
+	if err = e.PyroscopeConfig.Parse(); err != nil {
+		return err
 	}
 
 	if err = e.TelemetryConfig.Parse(); err != nil {

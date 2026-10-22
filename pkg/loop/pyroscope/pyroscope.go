@@ -16,23 +16,15 @@ import (
 
 type Profiler = pyroscope.Profiler
 
-type Config struct {
-	AuthToken                 string
-	ServerAddress             string
-	Environment               string
-	LinkTracesToProfiles      bool
-	PPROFBlockProfileRate     int
-	PPROFMutexProfileFraction int
-}
-
-// Start returns a nil Profiler if no ServerAddress is configured.
-func Start(lggr logger.Logger, cfg Config, tracingEnabled bool) (*Profiler, error) {
-	if cfg.ServerAddress == "" {
+// Start returns a nil Profiler if no PyroscopeServerAddress is configured. appName defaults to the
+// executable's base name.
+func Start(lggr logger.Logger, cfg PyroscopeConfig, appName string, tracingEnabled bool) (*Profiler, error) {
+	if cfg.PyroscopeServerAddress == "" {
 		return nil, nil
 	}
 
-	runtime.SetBlockProfileRate(cfg.PPROFBlockProfileRate)
-	runtime.SetMutexProfileFraction(cfg.PPROFMutexProfileFraction)
+	runtime.SetBlockProfileRate(cfg.PyroscopePPROFBlockProfileRate)
+	runtime.SetMutexProfileFraction(cfg.PyroscopePPROFMutexProfileFraction)
 
 	hostname, _ := os.Hostname()
 	var ver, sha, goVer, module string
@@ -46,25 +38,17 @@ func Start(lggr logger.Logger, cfg Config, tracingEnabled bool) (*Profiler, erro
 		module = bi.Main.Path
 	}
 
-	appName, err := os.Executable()
-	if err != nil {
-		lggr.Warnf("Failed to get executable name: %v", err)
-		appName = "unknown"
-	} else {
-		appName = filepath.Base(appName)
-	}
-
 	profiler, err := pyroscope.Start(pyroscope.Config{
-		ApplicationName: appName,
-		ServerAddress:   cfg.ServerAddress,
-		AuthToken:       cfg.AuthToken,
+		ApplicationName: orExecutableName(lggr, appName),
+		ServerAddress:   cfg.PyroscopeServerAddress,
+		AuthToken:       cfg.PyroscopeAuthToken,
 
 		Tags: map[string]string{
 			"module":      module,
 			"SHA":         sha,
 			"Version":     ver,
 			"go":          goVer,
-			"Environment": cfg.Environment,
+			"Environment": cfg.PyroscopeEnvironment,
 			"hostname":    hostname,
 		},
 		ProfileTypes: []pyroscope.ProfileType{
@@ -86,8 +70,20 @@ func Start(lggr logger.Logger, cfg Config, tracingEnabled bool) (*Profiler, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to start pyroscope profiler: %w", err)
 	}
-	if tracingEnabled && cfg.LinkTracesToProfiles {
+	if tracingEnabled && cfg.PyroscopeLinkTracesToProfiles {
 		otel.SetTracerProvider(otelpyroscope.NewTracerProvider(otel.GetTracerProvider()))
 	}
 	return profiler, nil
+}
+
+func orExecutableName(lggr logger.Logger, appName string) string {
+	if appName != "" {
+		return appName
+	}
+	exe, err := os.Executable()
+	if err != nil {
+		lggr.Warnf("Failed to get executable name: %v", err)
+		return "unknown"
+	}
+	return filepath.Base(exe)
 }

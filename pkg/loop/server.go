@@ -143,14 +143,7 @@ func (s *Server) start(opts ...ServerOpt) error {
 	}
 
 	var err error
-	s.profiler, err = pyroscope.Start(s.Logger, pyroscope.Config{
-		AuthToken:                 s.EnvConfig.PyroscopeAuthToken,
-		ServerAddress:             s.EnvConfig.PyroscopeServerAddress,
-		Environment:               s.EnvConfig.PyroscopeEnvironment,
-		LinkTracesToProfiles:      s.EnvConfig.PyroscopeLinkTracesToProfiles,
-		PPROFBlockProfileRate:     s.EnvConfig.PyroscopePPROFBlockProfileRate,
-		PPROFMutexProfileFraction: s.EnvConfig.PyroscopePPROFMutexProfileFraction,
-	}, s.EnvConfig.TracingEnabled)
+	s.profiler, err = pyroscope.Start(s.Logger, s.EnvConfig.PyroscopeConfig, "", s.EnvConfig.TracingEnabled)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,46 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
+)
+
+// The telemetry env var names, repeated rather than imported so that renaming one in package
+// telemetry fails these tests instead of silently changing what a host and plugin agree on.
+const (
+	envTracingEnabled                     = "CL_TRACING_ENABLED"
+	envTracingCollectorTarget             = "CL_TRACING_COLLECTOR_TARGET"
+	envTracingSamplingRatio               = "CL_TRACING_SAMPLING_RATIO"
+	envTracingAttribute                   = "CL_TRACING_ATTRIBUTE_"
+	envTracingTLSCertPath                 = "CL_TRACING_TLS_CERT_PATH"
+	envTelemetryEnabled                   = "CL_TELEMETRY_ENABLED"
+	envTelemetryEndpoint                  = "CL_TELEMETRY_ENDPOINT"
+	envTelemetryInsecureConn              = "CL_TELEMETRY_INSECURE_CONNECTION"
+	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
+	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
+	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
+	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER_"
+	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
+	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
+	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
+	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
+	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
+	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
+	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
+	envTelemetryMetricExportBatchSize     = "CL_TELEMETRY_METRIC_EXPORT_BATCH_SIZE"
+	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
+	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
+	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
+	envChipIngressEndpoint                = "CL_CHIP_INGRESS_ENDPOINT"
+	envChipIngressInsecureConnection      = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
+	envChipIngressBatchEmitterEnabled     = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
+	envChipIngressBufferSize              = "CL_CHIP_INGRESS_BUFFER_SIZE"
+	envChipIngressMaxBatchSize            = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
+	envChipIngressMaxConcurrentSends      = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
+	envChipIngressSendInterval            = "CL_CHIP_INGRESS_SEND_INTERVAL"
+	envChipIngressSendTimeout             = "CL_CHIP_INGRESS_SEND_TIMEOUT"
+	envChipIngressDrainTimeout            = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
+	envChipIngressMaxGRPCRequestSize      = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
 )
 
 func TestEnvConfig_parse(t *testing.T) {
@@ -170,6 +210,47 @@ func TestEnvConfig_parse(t *testing.T) {
 var envCfgFull = EnvConfig{
 	AppID: "app-id",
 
+	TelemetryConfig: telemetry.TelemetryConfig{
+		TracingEnabled:         true,
+		TracingAttributes:      map[string]string{"XYZ": "value"},
+		TracingCollectorTarget: "some:target",
+		TracingSamplingRatio:   1.0,
+		TracingTLSCertPath:     "internal/test/fixtures/client.pem",
+
+		TelemetryEnabled:                   true,
+		TelemetryEndpoint:                  "example.com/beholder",
+		TelemetryInsecureConnection:        true,
+		TelemetryCACertFile:                "foo/bar",
+		TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+		TelemetryTraceSampleRatio:          0.42,
+		TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+		TelemetryAuthPubKeyHex:             "pub-key-hex",
+		TelemetryEmitterBatchProcessor:     true,
+		TelemetryEmitterExportTimeout:      1 * time.Second,
+		TelemetryEmitterExportInterval:     2 * time.Second,
+		TelemetryEmitterExportMaxBatchSize: 100,
+		TelemetryEmitterMaxQueueSize:       1000,
+		TelemetryLogStreamingEnabled:       false,
+		TelemetryMetricExportBatchSize:     200,
+		TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
+		TelemetryMetricViewsDenyAttributes: []string{"event_id"},
+		TelemetryPrometheusBridgeEnabled:   true,
+		TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
+
+		ChipIngressEndpoint:              "chip-ingress.example.com:50051",
+		ChipIngressInsecureConnection:    true,
+		ChipIngressBatchEmitterEnabled:   false,
+		ChipIngressDurableEmitterEnabled: false,
+
+		ChipIngressBufferSize:         1000,
+		ChipIngressMaxBatchSize:       500,
+		ChipIngressMaxConcurrentSends: 10,
+		ChipIngressSendInterval:       100 * time.Millisecond,
+		ChipIngressSendTimeout:        3 * time.Second,
+		ChipIngressDrainTimeout:       10 * time.Second,
+		ChipIngressMaxGRPCRequestSize: 10485760,
+	},
+
 	DatabaseURL:                          config.MustSecretURL("postgres://user:password@localhost:5432/db"),
 	DatabaseIdleInTxSessionTimeout:       42 * time.Second,
 	DatabaseLockTimeout:                  8 * time.Minute,
@@ -205,52 +286,14 @@ var envCfgFull = EnvConfig{
 	PyroscopePPROFBlockProfileRate:     42,
 	PyroscopePPROFMutexProfileFraction: 99,
 
-	TracingEnabled:         true,
-	TracingAttributes:      map[string]string{"XYZ": "value"},
-	TracingCollectorTarget: "some:target",
-	TracingSamplingRatio:   1.0,
-	TracingTLSCertPath:     "internal/test/fixtures/client.pem",
-
-	TelemetryEnabled:                   true,
-	TelemetryEndpoint:                  "example.com/beholder",
-	TelemetryInsecureConnection:        true,
-	TelemetryCACertFile:                "foo/bar",
-	TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
-	TelemetryTraceSampleRatio:          0.42,
-	TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
-	TelemetryAuthPubKeyHex:             "pub-key-hex",
-	TelemetryEmitterBatchProcessor:     true,
-	TelemetryEmitterExportTimeout:      1 * time.Second,
-	TelemetryEmitterExportInterval:     2 * time.Second,
-	TelemetryEmitterExportMaxBatchSize: 100,
-	TelemetryEmitterMaxQueueSize:       1000,
-	TelemetryLogStreamingEnabled:       false,
-	TelemetryMetricExportBatchSize:     200,
-	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
-	TelemetryMetricViewsDenyAttributes: []string{"event_id"},
-	TelemetryPrometheusBridgeEnabled:   true,
-	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
-	MeterRecordsEnabled:                true,
-	MeterSnapshotsEnabled:              false,
-	MeterProduct:                       "cre-mainline",
-	MeterTenant:                        "mainline",
-	MeterNumericTenantID:               "42",
-	MeterEnvironment:                   "production",
-	MeterZone:                          "wf-zone-a",
-	MeterNodeID:                        "clp-cre-wf-zone-a-1",
-
-	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
-	ChipIngressInsecureConnection:    true,
-	ChipIngressBatchEmitterEnabled:   false,
-	ChipIngressDurableEmitterEnabled: false,
-
-	ChipIngressBufferSize:         1000,
-	ChipIngressMaxBatchSize:       500,
-	ChipIngressMaxConcurrentSends: 10,
-	ChipIngressSendInterval:       100 * time.Millisecond,
-	ChipIngressSendTimeout:        3 * time.Second,
-	ChipIngressDrainTimeout:       10 * time.Second,
-	ChipIngressMaxGRPCRequestSize: 10485760,
+	MeterRecordsEnabled:   true,
+	MeterSnapshotsEnabled: false,
+	MeterProduct:          "cre-mainline",
+	MeterTenant:           "mainline",
+	MeterNumericTenantID:  "42",
+	MeterEnvironment:      "production",
+	MeterZone:             "wf-zone-a",
+	MeterNodeID:           "clp-cre-wf-zone-a-1",
 
 	CRESettings:        `{"global":{}}`,
 	CRESettingsDefault: `{"foo":"bar"}`,
@@ -426,29 +469,6 @@ func TestEnvConfig_MetricViewsDenyAttributes_RoundTrip(t *testing.T) {
 		require.NoError(t, parsed.parse())
 		assert.Nil(t, parsed.TelemetryMetricViewsDenyAttributes)
 	})
-}
-
-func TestGetMap(t *testing.T) {
-	t.Setenv("TEST_PREFIX_KEY1", "value1")
-	t.Setenv("TEST_PREFIX_KEY2", "value2")
-	t.Setenv("OTHER_KEY", "othervalue")
-
-	result := getMap("TEST_PREFIX_")
-
-	expected := map[string]string{
-		"KEY1": "value1",
-		"KEY2": "value2",
-	}
-
-	if len(result) != len(expected) {
-		t.Errorf("Expected map length %d, got %d", len(expected), len(result))
-	}
-
-	for k, v := range expected {
-		if result[k] != v {
-			t.Errorf("Expected key %s to have value %s, but got %s", k, v, result[k])
-		}
-	}
 }
 
 func TestManagedGRPCClientConfig(t *testing.T) {

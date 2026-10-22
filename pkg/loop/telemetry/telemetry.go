@@ -31,7 +31,7 @@ func (c TelemetryConfig) tracingConfig(lggr logger.Logger, appID string) Tracing
 		// NewSpanExporter's dialer calls this unchecked, so nil would turn an unreachable collector
 		// into a nil dereference on a background goroutine.
 		OnDialError: func(err error) {
-			logger.Sugared(lggr).Errorw("Failed to dial", "err", err)
+			logger.Sugared(lggr).Errorw("Failed to dial the tracing collector", "err", err, "target", c.TracingCollectorTarget)
 		},
 	}
 }

@@ -66,7 +66,7 @@ func TestTelemetryConfig_tracingConfig(t *testing.T) {
 	// connection, which Shutdown does not close.
 	require.NotNil(t, tracing.OnDialError)
 	tracing.OnDialError(errors.New("refused"))
-	assert.Len(t, logs.FilterMessage("Failed to dial").All(), 1)
+	assert.Len(t, logs.FilterMessage("Failed to dial the tracing collector").All(), 1)
 }
 
 func TestTelemetryConfig_beholderConfig(t *testing.T) {

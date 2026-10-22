@@ -65,10 +65,10 @@ func New(opts Options) (*Binder, error) {
 // have no text form get no flag for the whole value; a map of pointers can still be set an entry at a time, below.
 //
 // A map's entries are also set like a struct's fields, with the key in the name: --chains.mainnet.rpc and
-// APP_CHAINS_MAINNET_RPC for Chains map[string]Chain where Chain has an RPC field. --help shows these as
-// --chains.<key>.rpc. A key there is one segment, holding no '.' in a flag name or '_' in an env var's; set others in
-// a whole map or a config file. An env var's key is the existing key that matches it ignoring case, or else its lower
-// case. Register sets cmd's global normalization func to add these flags as they are parsed, wrapping any set before;
+// APP_CHAINS_mainnet_RPC for Chains map[string]Chain where Chain has an RPC field. --help shows these as
+// --chains.<key>.rpc. A key is taken as written, case and all, and may hold '.' or '_'. A name reads as the setting it
+// fills with the shortest keys, so a field's env var sets the field; one that reads two ways with keys as short is an
+// error. Register sets cmd's global normalization func to add these flags as they are parsed, wrapping any set before;
 // one set after replaces it.
 //
 // A command runs with its ancestors' structs too, so they must not share a key, flag, or env var; siblings may. A clash
@@ -313,6 +313,10 @@ func (b *Binder) decode(c *cobra.Command) error {
 		return fmt.Errorf("%s: %w", c.Name(), err)
 	}
 
+	if cc.entryEnvVars, err = entryEnvVars(cc.entries, cc.fieldEnvVars); err != nil {
+		return fmt.Errorf("%s: %w", c.Name(), err)
+	}
+
 	if cc.fileValues, err = b.loadConfigFiles(c, cc.keys); err != nil {
 		return err
 	}
@@ -413,4 +417,5 @@ type commandConfig struct {
 	flags      *pflag.FlagSet
 	// fieldEnvVars maps each field's env vars to its key.
 	fieldEnvVars map[string]string
+	entryEnvVars []entryEnvVar
 }

@@ -108,20 +108,20 @@ type Chain struct {
 }
 ```
 
-`--chains.mainnet.rpc x` and `APP_CHAINS_MAINNET_RPC=x` set `RPC` in entry `mainnet`, leaving the
+`--chains.mainnet.rpc x` and `APP_CHAINS_mainnet_RPC=x` set `RPC` in entry `mainnet`, leaving the
 config file's `WS` for it alone. A map inside an entry works the same way, one more key deep.
 `--help` shows these as `--chains.<key>.rpc`.
 
-A key here is one segment: no `.` in a flag name, no `_` in an env var name. So a name reads one
-way or not at all; `--chains.main.net.rpc` is an unknown flag. Set such a key in a whole map,
-`--labels main.net=x`, or a config file. An env var name is upper case, so its key is the existing
-key, from the struct or a config file, that matches ignoring case, or else its lower case:
-`APP_LABELS_MAINNET` sets `MainNet` if the map has it, and `mainnet` if not.
-An env var a field uses sets that field: beside `LabelsTTL`, `APP_LABELS_TTL` sets it, not entry `ttl`,
-which `--labels.ttl`, `--labels ttl=x`, or a config file can still set.
+A key is set as written, case and all, and may hold `.` and `_`: `--labels.service.name x` and
+`APP_LABELS_node_id=x` set keys `service.name` and `node_id`. A name reads as the setting it can
+fill with the shortest keys, so an env var a field uses sets that field: beside `LabelsTTL`,
+`APP_LABELS_TTL` sets it, not entry `TTL`, which `--labels.TTL`, `--labels TTL=x`, or a config file
+can still set. A name that reads two ways with keys as short, such as `--maps.a.b.c` for
+`Maps map[string]map[string]string`, is an error; set such a key in a whole map,
+`--maps.a b.c=x`, or a config file.
 
 `--labels env=prod` and `--labels.env prod` both set entry `env`, so giving both is an error, as
-are `APP_LABELS=env=prod` and `APP_LABELS_ENV=prod`. Across sources, precedence is as for any field.
+are `APP_LABELS=env=prod` and `APP_LABELS_env=prod`. Across sources, precedence is as for any field.
 
 Register sets the command's global normalization func, which pflag calls on each name it parses,
 to add these flags as they appear. It wraps one set before `Register`; one set after replaces it,

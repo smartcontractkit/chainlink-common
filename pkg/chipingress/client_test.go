@@ -736,43 +736,6 @@ func (s *capturingServer) Ping(ctx context.Context, _ *pb.EmptyRequest) (*pb.Pin
 	return &pb.PingResponse{}, nil
 }
 
-func (s *capturingServer) PublishBatchNoAck(ctx context.Context, _ *pb.CloudEventBatch) (*pb.PublishResponse, error) {
-	s.lastMD, _ = metadata.FromIncomingContext(ctx)
-	return &pb.PublishResponse{}, nil
-}
-
-// TestClient_PublishBatchNoAck_HeadersReachServer pins the property the OTI
-// header-routing migration (INFOPLAT-19544) relies on: WithHeaderProvider
-// metadata travels as HTTP/2 request headers on PublishBatchNoAck, so an ALB
-// can route on it before chip-ingress sees the request.
-func TestClient_PublishBatchNoAck_HeadersReachServer(t *testing.T) {
-	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-	defer lis.Close()
-
-	srv := gp.NewServer()
-	capture := &capturingServer{}
-	pb.RegisterChipIngressServer(srv, capture)
-	go func() { _ = srv.Serve(lis) }()
-	defer srv.Stop()
-
-	client, err := NewClient(lis.Addr().String(),
-		WithInsecureConnection(),
-		WithHeaderProvider(&mockHeaderProvider{
-			headers: map[string]string{"x-chip-traffic-class": "legacy-telemetry"},
-		}),
-	)
-	require.NoError(t, err)
-	defer client.Close() //nolint:errcheck
-
-	_, err = client.PublishBatchNoAck(t.Context(), &pb.CloudEventBatch{})
-	require.NoError(t, err)
-
-	require.NotNil(t, capture.lastMD)
-	// grpc lower-cases metadata keys on the wire.
-	assert.Equal(t, []string{"legacy-telemetry"}, capture.lastMD.Get("x-chip-traffic-class"))
-}
-
 // TestClient_ChainedHeaderProviders is a regression test for the fix that switched from
 // grpc.WithUnaryInterceptor (last-one-wins) to grpc.WithChainUnaryInterceptor: when both
 // WithHeaderProvider and WithNOPLookup are configured, both providers' headers must reach

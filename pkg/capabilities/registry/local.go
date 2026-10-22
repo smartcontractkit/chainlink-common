@@ -12,23 +12,22 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
-// Registry is a capabilities registry that can also say what OCR configuration a capability runs
+// HostRegistry is a capabilities registry that can also say what OCR configuration a capability runs
 // under.
 //
 // The two travel together because one process answers both: whoever read the registry contract is
 // the only one that can compute a configuration's digest, which covers the chain and address it was
-// read from. See core.OCRConfigRegistry.
-type Registry interface {
-	core.CapabilitiesRegistry
+// read from. See OCRConfigRegistry.
+type HostRegistry interface {
+	CapabilitiesRegistry
 
 	// Also addressable: a registry with something behind it holds addresses as well as values, so a
 	// caller that knows where a capability is served can say so directly rather than through Add.
-	core.AddressableRegistryBase
+	AddressableRegistryBase
 
-	core.OCRConfigRegistry
+	OCRConfigRegistry
 
 	// Close releases whatever this registry dialled of its own accord - the capability addresses it
 	// resolved, not the connection it was handed. A registry with nothing behind it closes nothing.
@@ -48,11 +47,11 @@ func Local(lggr logger.Logger) *LocalRegistry {
 // LocalRegistry holds capability values in this process. Compose it with WithRemote to reach the
 // ones it does not hold.
 type LocalRegistry struct {
-	base core.CapabilitiesRegistryBase
+	base CapabilitiesRegistryBase
 	lggr logger.Logger
 }
 
-var _ Registry = (*LocalRegistry)(nil)
+var _ HostRegistry = (*LocalRegistry)(nil)
 
 func (r *LocalRegistry) Add(ctx context.Context, c capabilities.BaseCapability) error {
 	return r.base.Add(ctx, c)
@@ -134,7 +133,7 @@ func errLocalOnly(question string) error {
 // conn is taken already dialled rather than as an address, so that a caller reaching one process for
 // several things - its registry and its OCR configurations, say - reaches it over one connection.
 // capabilityDialOpts are for the capability addresses this registry resolves, not for conn.
-func (r *LocalRegistry) WithRemote(conn grpc.ClientConnInterface, addresses map[string]string, capabilityDialOpts ...grpc.DialOption) Registry {
+func (r *LocalRegistry) WithRemote(conn grpc.ClientConnInterface, addresses map[string]string, capabilityDialOpts ...grpc.DialOption) HostRegistry {
 	return &proxiedRegistry{
 		lggr:      logger.Named(r.lggr, "ProxiedRegistry"),
 		local:     r,
@@ -151,7 +150,7 @@ type proxiedRegistry struct {
 	addresses map[string]string
 }
 
-var _ Registry = (*proxiedRegistry)(nil)
+var _ HostRegistry = (*proxiedRegistry)(nil)
 
 // Add holds c in this process and, when something serves it, announces where.
 //

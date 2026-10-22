@@ -8,11 +8,11 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// Config is the configuration for connecting to the database. Tagged for
-// chainlink-common's pkg/config/flags, so a binary can bind it as flags, env vars and
-// config-file keys directly.
+// Config is the configuration for connecting to the database. Shaped for chainlink-common's
+// x/config/cli, so a binary can bind it as flags, env vars and config-file keys directly.
 type Config struct {
-	URL string `usage:"database url" example:"'postgresql://user:password@localhost:5432/chainlink?sslmode=disable'"`
+	// URL is the database url, such as postgresql://user:password@localhost:5432/chainlink?sslmode=disable.
+	URL string
 }
 
 // OpenDB opens the database at c.URL with the pgx driver.

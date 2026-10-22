@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/bytecodealliance/wasmtime-go/v48"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -117,13 +117,13 @@ func instantiateCallCapModule(t *testing.T, wat string, exec *execution[*sdkpb.E
 
 	hostFn := createCallCapFn(lggr, exec, m.callCapParams)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(GetEngine(mc.Logger).Engine)
 	// NewModule enables wasmtime epoch interruption (SetEpochInterruption(true))
 	// for timeout enforcement. In production, Execute sets the epoch deadline
 	// based on the configured timeout. Here we set it to MaxUint64 so the
 	// epoch never fires during the test, effectively disabling interruption.
 	store.SetEpochDeadline(math.MaxUint64)
-	linker := wasmtime.NewLinker(m.engine)
+	linker := wasmtime.NewLinker(GetEngine(mc.Logger).Engine)
 	require.NoError(t, linker.FuncWrap("env", "call_capability", hostFn))
 
 	inst, err := linker.Instantiate(store, m.module)
@@ -490,7 +490,7 @@ func TestLinkNoDAG_RegistersV2For4ParamImport(t *testing.T) {
 	// If the wrong function signature is registered, wasmtime will reject the import.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(GetEngine(mc.Logger).Engine)
 	exec := &execution[*sdkpb.ExecutionResult]{
 		module:              m,
 		ctx:                 t.Context(),
@@ -519,7 +519,7 @@ func TestLinkNoDAG_RegistersV1For2ParamImport(t *testing.T) {
 	// The module should link successfully with the V1 host function.
 	mockExecHelper := mocks.NewMockExecutionHelper(t)
 
-	store := wasmtime.NewStore(m.engine)
+	store := wasmtime.NewStore(GetEngine(mc.Logger).Engine)
 	exec := &execution[*sdkpb.ExecutionResult]{
 		module:              m,
 		ctx:                 t.Context(),

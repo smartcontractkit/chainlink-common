@@ -25,6 +25,8 @@ func MustNewDuration(d time.Duration) *Duration {
 	return &rv
 }
 
+// ParseDuration uses [time.ParseDuration] to parse the time (see its documentation for formatting)
+// and ensures the result is non-negative.
 func ParseDuration(s string) (Duration, error) {
 	d, err := time.ParseDuration(s)
 	if err != nil {

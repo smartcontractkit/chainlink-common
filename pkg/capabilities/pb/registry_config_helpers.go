@@ -35,22 +35,6 @@ func CapabilityConfigFromProto(cfg *CapabilityConfig) (capabilities.CapabilityCo
 		return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not convert restricted config valueproto to map: %w", err)
 	}
 
-	var (
-		remoteTriggerConfig    *capabilities.RemoteTriggerConfig
-		remoteTargetConfig     *capabilities.RemoteTargetConfig
-		remoteExecutableConfig *capabilities.RemoteExecutableConfig
-	)
-	switch cfg.RemoteConfig.(type) {
-	case *CapabilityConfig_RemoteTriggerConfig:
-		remoteTriggerConfig = decodeRemoteTriggerConfig(cfg.GetRemoteTriggerConfig())
-	case *CapabilityConfig_RemoteTargetConfig:
-		remoteTargetConfig = &capabilities.RemoteTargetConfig{
-			RequestHashExcludedAttributes: cfg.GetRemoteTargetConfig().RequestHashExcludedAttributes,
-		}
-	case *CapabilityConfig_RemoteExecutableConfig:
-		remoteExecutableConfig = decodeRemoteExecutableConfig(cfg.GetRemoteExecutableConfig())
-	}
-
 	var methodConfig map[string]capabilities.CapabilityMethodConfig
 	if cfg.MethodConfigs != nil {
 		methodConfig = make(map[string]capabilities.CapabilityMethodConfig, len(cfg.MethodConfigs))
@@ -110,9 +94,6 @@ func CapabilityConfigFromProto(cfg *CapabilityConfig) (capabilities.CapabilityCo
 		DefaultConfig:          defaultConfig,
 		RestrictedKeys:         cfg.RestrictedKeys,
 		RestrictedConfig:       restrictedConfig,
-		RemoteTriggerConfig:    remoteTriggerConfig,
-		RemoteTargetConfig:     remoteTargetConfig,
-		RemoteExecutableConfig: remoteExecutableConfig,
 		CapabilityMethodConfig: methodConfig,
 		LocalOnly:              cfg.LocalOnly,
 		Ocr3Configs:            ocr3Configs,
@@ -140,13 +121,12 @@ func decodeRemoteExecutableConfig(prec *RemoteExecutableConfig) *capabilities.Re
 		return nil
 	}
 	return &capabilities.RemoteExecutableConfig{
-		RequestHashExcludedAttributes: prec.RequestHashExcludedAttributes,
-		TransmissionSchedule:          capabilities.TransmissionSchedule(prec.TransmissionSchedule),
-		DeltaStage:                    prec.DeltaStage.AsDuration(),
-		RequestTimeout:                prec.RequestTimeout.AsDuration(),
-		ServerMaxParallelRequests:     prec.ServerMaxParallelRequests,
-		RequestHasherType:             capabilities.RequestHasherType(prec.RequestHasherType),
-		MinResponsesToAggregate:       prec.MinResponsesToAggregate,
+		TransmissionSchedule:      capabilities.TransmissionSchedule(prec.TransmissionSchedule),
+		DeltaStage:                prec.DeltaStage.AsDuration(),
+		RequestTimeout:            prec.RequestTimeout.AsDuration(),
+		ServerMaxParallelRequests: prec.ServerMaxParallelRequests,
+		RequestHasherType:         capabilities.RequestHasherType(prec.RequestHasherType),
+		MinResponsesToAggregate:   prec.MinResponsesToAggregate,
 	}
 }
 

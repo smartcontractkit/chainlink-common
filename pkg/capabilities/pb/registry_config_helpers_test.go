@@ -19,7 +19,7 @@ func TestCapabilityConfigFromProto_Nil(t *testing.T) {
 	assert.Equal(t, capabilities.CapabilityConfiguration{}, got)
 }
 
-func TestCapabilityConfigFromProto_RemoteTrigger(t *testing.T) {
+func TestCapabilityConfigFromProto_DefaultAndRestricted(t *testing.T) {
 	defaultCfg, err := values.NewMap(map[string]any{"a": int64(1)})
 	require.NoError(t, err)
 	restrictedCfg, err := values.NewMap(map[string]any{"b": "two"})
@@ -29,17 +29,7 @@ func TestCapabilityConfigFromProto_RemoteTrigger(t *testing.T) {
 		DefaultConfig:    values.ProtoMap(defaultCfg),
 		RestrictedConfig: values.ProtoMap(restrictedCfg),
 		RestrictedKeys:   []string{"b"},
-		RemoteConfig: &CapabilityConfig_RemoteTriggerConfig{
-			RemoteTriggerConfig: &RemoteTriggerConfig{
-				RegistrationRefresh:     durationpb.New(30 * time.Second),
-				RegistrationExpiry:      durationpb.New(2 * time.Minute),
-				MinResponsesToAggregate: 3,
-				MessageExpiry:           durationpb.New(90 * time.Second),
-				MaxBatchSize:            7,
-				BatchCollectionPeriod:   durationpb.New(time.Second),
-			},
-		},
-		LocalOnly: true,
+		LocalOnly:        true,
 	}
 
 	got, err := CapabilityConfigFromProto(in)
@@ -48,31 +38,11 @@ func TestCapabilityConfigFromProto_RemoteTrigger(t *testing.T) {
 	assert.Equal(t, defaultCfg, got.DefaultConfig)
 	assert.Equal(t, []string{"b"}, got.RestrictedKeys)
 	assert.True(t, got.LocalOnly)
-
-	require.NotNil(t, got.RemoteTriggerConfig)
-	assert.Equal(t, 30*time.Second, got.RemoteTriggerConfig.RegistrationRefresh)
-	assert.Equal(t, 2*time.Minute, got.RemoteTriggerConfig.RegistrationExpiry)
-	assert.Equal(t, uint32(3), got.RemoteTriggerConfig.MinResponsesToAggregate)
-	assert.Equal(t, 90*time.Second, got.RemoteTriggerConfig.MessageExpiry)
-	assert.Equal(t, uint32(7), got.RemoteTriggerConfig.MaxBatchSize)
-	assert.Equal(t, time.Second, got.RemoteTriggerConfig.BatchCollectionPeriod)
-
-	// Only the oneof arm that was set should be populated.
-	assert.Nil(t, got.RemoteTargetConfig)
-	assert.Nil(t, got.RemoteExecutableConfig)
+	assert.Equal(t, restrictedCfg, got.RestrictedConfig)
 }
 
-func TestCapabilityConfigFromProto_RemoteExecutableAndMethodConfigs(t *testing.T) {
+func TestCapabilityConfigFromProto_MethodConfigs(t *testing.T) {
 	in := &CapabilityConfig{
-		RemoteConfig: &CapabilityConfig_RemoteExecutableConfig{
-			RemoteExecutableConfig: &RemoteExecutableConfig{
-				RequestHashExcludedAttributes: []string{"x"},
-				DeltaStage:                    durationpb.New(5 * time.Second),
-				RequestTimeout:                durationpb.New(20 * time.Second),
-				ServerMaxParallelRequests:     4,
-				MinResponsesToAggregate:       2,
-			},
-		},
 		MethodConfigs: map[string]*CapabilityMethodConfig{
 			"vault.secrets.get": {
 				RemoteConfig: &CapabilityMethodConfig_RemoteExecutableConfig{
@@ -95,11 +65,6 @@ func TestCapabilityConfigFromProto_RemoteExecutableAndMethodConfigs(t *testing.T
 
 	got, err := CapabilityConfigFromProto(in)
 	require.NoError(t, err)
-
-	require.NotNil(t, got.RemoteExecutableConfig)
-	assert.Equal(t, []string{"x"}, got.RemoteExecutableConfig.RequestHashExcludedAttributes)
-	assert.Equal(t, 5*time.Second, got.RemoteExecutableConfig.DeltaStage)
-	assert.Equal(t, uint32(2), got.RemoteExecutableConfig.MinResponsesToAggregate)
 
 	require.Len(t, got.CapabilityMethodConfig, 2)
 

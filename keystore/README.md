@@ -103,6 +103,59 @@ func main() {
 }
 ```
 
+##### Google Cloud KMS
+```go
+package main
+
+import (
+	"context"
+	"crypto/sha256"
+
+	"github.com/smartcontractkit/chainlink-common/keystore"
+	gcpkms "github.com/smartcontractkit/chainlink-common/keystore/gcpkms"
+)
+
+func main() {
+	ctx := context.Background()
+
+	// Create a Cloud KMS backed keystore. Credentials come from Application Default
+	// Credentials (Workload Identity on GKE, GOOGLE_APPLICATION_CREDENTIALS locally).
+	client, _ := gcpkms.NewClient(ctx)
+	defer client.Close()
+	ks, _ := gcpkms.NewKeystore(client)
+
+	// Cloud KMS key names are CryptoKeyVersion resource names:
+	//   projects/<p>/locations/<l>/keyRings/<r>/cryptoKeys/<k>/cryptoKeyVersions/<n>
+	// A name always names exactly one version; rotate by configuring the new version's name.
+	versionName := "projects/my-project/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key/cryptoKeyVersions/1"
+
+	// GetKeys requires explicit key names.
+	keysResp, _ := ks.GetKeys(ctx, keystore.GetKeysRequest{
+		KeyNames: []string{versionName},
+	})
+
+	data := []byte("hello world")
+	hash := sha256.Sum256(data)
+	signResp, _ := ks.Sign(ctx, keystore.SignRequest{
+		KeyName: versionName,
+		Data:    hash[:],
+	})
+
+	verifyResp, _ := ks.Verify(ctx, keystore.VerifyRequest{
+		KeyType:   keysResp.Keys[0].KeyInfo.KeyType,
+		PublicKey: keysResp.Keys[0].KeyInfo.PublicKey,
+		Data:      hash[:],
+		Signature: signResp.Signature,
+	})
+	// verifyResp.Valid == true
+}
+```
+Note: unlike the file/DB and AWS backends, the GCP backend does **not** support listing key
+rings. `GetKeys` requires each key name to be provided explicitly (a fully-qualified
+`CryptoKeyVersion` resource name) and errors on an empty request. Callers relying
+on "list all keys when no names are provided" (e.g. `keystore.CoreKeystore.Accounts`) must be
+configured with explicit key names before wiring them to a GCP-backed keystore.
+
 
 #### Encryption
 ```go
@@ -177,6 +230,9 @@ export KEYSTORE_KMS_PROFILE="my-aws-profile"
 keys list  # Lists KMS keys
 keys sign -d '{"KeyName": "arn:aws:kms:us-west-2:123456789012:key/abc123", "Data": "<base64-hash>"}'
 ```
+Note: the CLI's KMS mode is currently **AWS-only** (`KEYSTORE_KMS_PROFILE` selects an AWS profile).
+The Google Cloud KMS backend is available programmatically via `gcpkms` (see above) but has no CLI
+selector yet.
 
 ### Design Principles
 - **Embeddable CLI** The cli package is designed to support 

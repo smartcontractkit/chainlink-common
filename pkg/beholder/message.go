@@ -135,7 +135,7 @@ func (e *Message) Copy() Message {
 func newRecord(body []byte, attrs map[string]any) otellog.Record {
 	otelRecord := otellog.Record{}
 	if body != nil {
-		otelRecord.SetBody(otellog.BytesValue(body))
+		otelRecord.SetBody(attribute.ByteSliceValue(body))
 	}
 	for k, v := range attrs {
 		otelRecord.AddAttributes(OtelAttr(k, v))
@@ -143,34 +143,32 @@ func newRecord(body []byte, attrs map[string]any) otellog.Record {
 	return otelRecord
 }
 
-func OtelAttr(key string, value any) otellog.KeyValue {
+func OtelAttr(key string, value any) attribute.KeyValue {
 	switch v := value.(type) {
 	case string:
-		return otellog.String(key, v)
+		return attribute.String(key, v)
 	case []string:
-		vals := make([]otellog.Value, 0, len(v))
+		vals := make([]attribute.Value, 0, len(v))
 		for _, s := range v {
-			vals = append(vals, otellog.StringValue(s))
+			vals = append(vals, attribute.StringValue(s))
 		}
-		return otellog.Slice(key, vals...)
+		return attribute.Slice(key, vals...)
 	case int64:
-		return otellog.Int64(key, v)
+		return attribute.Int64(key, v)
 	case int:
-		return otellog.Int(key, v)
+		return attribute.Int(key, v)
 	case float64:
-		return otellog.Float64(key, v)
+		return attribute.Float64(key, v)
 	case bool:
-		return otellog.Bool(key, v)
+		return attribute.Bool(key, v)
 	case []byte:
-		return otellog.Bytes(key, v)
+		return attribute.ByteSlice(key, v)
 	case nil:
-		return otellog.Empty(key)
-	case otellog.Value:
-		return otellog.KeyValue{Key: key, Value: v}
+		return attribute.KeyValue{Key: attribute.Key(key)}
 	case attribute.Value:
-		return OtelAttr(key, v.AsInterface())
+		return attribute.KeyValue{Key: attribute.Key(key), Value: v}
 	default:
-		return otellog.String(key, fmt.Sprintf("<unhandled beholder attribute value type: %T, value:%v>", v, v))
+		return attribute.String(key, fmt.Sprintf("<unhandled beholder attribute value type: %T, value:%v>", v, v))
 	}
 }
 

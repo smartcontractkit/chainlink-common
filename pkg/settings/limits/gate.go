@@ -17,7 +17,27 @@ import (
 
 type GateLimiter interface {
 	Limiter[bool]
+	// AllowErr returns ErrorNotAllowed if the gate is closed.
 	AllowErr(context.Context) error
+	// IsOpen reports whether the gate is open. Prefer this over Limit: Limit hands out a raw
+	// value and only records the limit gauge, whereas IsOpen goes through the enforcement path
+	// and records the usage/denied metrics. A closed gate is (false, nil), so a non-nil error
+	// means the gate could not be evaluated and callers that fail closed can tell them apart.
+	IsOpen(context.Context) (bool, error)
+}
+
+// gateIsOpen adapts an AllowErr result to (open, error): a closed gate is (false, nil) and
+// only a genuine evaluation failure returns a non-nil error.
+func gateIsOpen(ctx context.Context, allowErr func(context.Context) error) (bool, error) {
+	err := allowErr(ctx)
+	switch {
+	case err == nil:
+		return true, nil
+	case errors.Is(err, ErrorNotAllowed{}):
+		return false, nil
+	default:
+		return false, err
+	}
 }
 
 func NewGateLimiter(open bool) GateLimiter {
@@ -33,6 +53,10 @@ func (s *simpleGateLimiter) Close() error { s.closed.Store(true); return nil }
 
 func (s *simpleGateLimiter) Limit(ctx context.Context) (bool, error) {
 	return s.open, nil
+}
+
+func (s *simpleGateLimiter) IsOpen(ctx context.Context) (bool, error) {
+	return gateIsOpen(ctx, s.AllowErr)
 }
 
 func (s *simpleGateLimiter) AllowErr(ctx context.Context) error {
@@ -175,11 +199,11 @@ func (g *gateLimiter) Limit(ctx context.Context) (bool, error) {
 	defer g.wg.Done()
 
 	_, limit, err := g.get(ctx)
-	if err != nil {
-		return false, err
-	}
+	return limit, err // limit is get()'s resolved value; false if no tenant, or default on error
+}
 
-	return limit, nil
+func (g *gateLimiter) IsOpen(ctx context.Context) (bool, error) {
+	return gateIsOpen(ctx, g.AllowErr)
 }
 
 func (g *gateLimiter) AllowErr(ctx context.Context) error {
@@ -191,7 +215,11 @@ func (g *gateLimiter) AllowErr(ctx context.Context) error {
 	tenant, open, err := g.get(ctx)
 	if err != nil {
 		return err
-	} else if !open {
+	}
+	if tenant == "" && g.scope != settings.ScopeGlobal {
+		return nil // fail open
+	}
+	if !open {
 		g.recordDenied(ctx, withScope(ctx, g.scope))
 		return ErrorNotAllowed{Key: g.key, Scope: g.scope, Tenant: tenant}
 	}
@@ -208,7 +236,7 @@ func (g *gateLimiter) get(ctx context.Context) (tenant string, open bool, err er
 				g.lggr.Errorw("Unable to get scoped gate status due to missing tenant: failing open", append([]any{"scope", g.scope}, kvs...)...)
 				return
 			}
-			err = fmt.Errorf("unable to get scoped gate status due to missing tenant for scope: %s", g.scope)
+			err = fmt.Errorf("unable to get scoped gate status: %w", ErrMissingTenant{Scope: g.scope})
 			return
 		}
 

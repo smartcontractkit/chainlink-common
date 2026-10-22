@@ -6,18 +6,24 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	otellog "go.opentelemetry.io/otel/log"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/internal/mocks"
@@ -156,18 +162,17 @@ func TestClient(t *testing.T) {
 						records := args.Get(1).([]sdklog.Record)
 						assert.Len(t, records, 1, "batching is disabled, expecte 1 record")
 						record := records[0]
-						assert.Equal(t, tc.messageBody, record.Body().AsBytes(), "Record body mismatch")
+						assert.Equal(t, tc.messageBody, record.Body().AsByteSlice(), "Record body mismatch")
 						actualAttributeKeys := map[string]struct{}{}
-						record.WalkAttributes(func(kv otellog.KeyValue) bool {
-							key := kv.Key
+						record.WalkAttributes(func(kv attribute.KeyValue) bool {
+							key := string(kv.Key)
 							actualAttributeKeys[key] = struct{}{}
 							expectedValue, ok := customAttributes[key]
 							if !ok {
 								t.Fatalf("Record attribute key not found: %s", key)
 							}
 							expectedKv := beholder.OtelAttr(key, expectedValue)
-							equal := kv.Value.Equal(expectedKv.Value)
-							assert.True(t, equal, "Record attributes mismatch for key %v", key)
+							assert.Equal(t, expectedKv.Value, kv.Value, "Record attributes mismatch for key %v", key)
 							return true
 						})
 						for key := range customAttributes {
@@ -485,6 +490,93 @@ func TestNewGRPCClient_ChipIngressEmitter(t *testing.T) {
 		require.NotNil(t, client)
 		assert.NotNil(t, client.Emitter)
 	})
+}
+
+// capturingChipServer records the gRPC metadata of the last Publish it handles.
+type capturingChipServer struct {
+	pb.UnimplementedChipIngressServer
+
+	mu     sync.Mutex
+	lastMD metadata.MD
+}
+
+func (s *capturingChipServer) Publish(ctx context.Context, _ *cepb.CloudEvent) (*pb.PublishResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.lastMD = md
+	return &pb.PublishResponse{}, nil
+}
+
+func (s *capturingChipServer) metadata() metadata.MD {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.lastMD
+}
+
+// TestNewGRPCClient_AuthHeaderCoexistsWithResourceAttributes is the beholder-level counterpart to
+// chipingress' TestClient_AuthHeaderCoexistsWithResourceAttributes. Wiring resource attributes
+// added a unary header interceptor to a connection that previously carried no context metadata at
+// all, while the CSA node auth token travels separately as per-RPC credentials. This asserts on a
+// real connection that configuring both leaves the auth token intact and delivers the resource
+// attributes alongside it.
+func TestNewGRPCClient_AuthHeaderCoexistsWithResourceAttributes(t *testing.T) {
+	const authHeaderKey = "X-Beholder-Node-Auth-Token"
+	const authToken = "1:abc:2:def"
+
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	defer lis.Close()
+
+	srv := grpc.NewServer()
+	capture := &capturingChipServer{}
+	pb.RegisterChipIngressServer(srv, capture)
+	go func() { _ = srv.Serve(lis) }()
+	defer srv.Stop()
+
+	cfg := beholder.Config{
+		OtelExporterGRPCEndpoint:       "localhost:4317",
+		ChipIngressEmitterEnabled:      true,
+		ChipIngressEmitterGRPCEndpoint: lis.Addr().String(),
+		ChipIngressInsecureConnection:  true,
+		AuthHeaders:                    map[string]string{authHeaderKey: authToken},
+		ResourceAttributes: []attribute.KeyValue{
+			attribute.String("csa_public_key", "abc123"),
+			attribute.String("service.name", "chainlink"),
+		},
+	}
+
+	otlploggrpcNew := func(options ...otlploggrpc.Option) (sdklog.Exporter, error) {
+		return &mockLogExporter{}, nil
+	}
+
+	client, err := beholder.NewGRPCClient(cfg, otlploggrpcNew)
+	require.NoError(t, err)
+	require.NotNil(t, client)
+
+	require.NoError(t, client.Emitter.Emit(t.Context(), []byte("payload"),
+		beholder.AttrKeyDomain, "my-domain",
+		beholder.AttrKeyEntity, "my-entity",
+		beholder.AttrKeyDataSchema, "/schemas/ids/1001",
+	))
+
+	// ChipIngressEmitter.Emit publishes fire-and-forget in a goroutine.
+	require.Eventually(t, func() bool { return capture.metadata() != nil }, 5*time.Second, 10*time.Millisecond)
+
+	md := capture.metadata()
+	assert.Equal(t, []string{authToken}, md.Get(authHeaderKey),
+		"the CSA auth token must arrive exactly once, unmodified")
+
+	// Assert against the sanitizer rather than hardcoding key spellings: the property under test
+	// is that auth and resource attributes coexist, not how chipingress normalizes a key.
+	want := chipingress.SanitizeMetadataHeaders(map[string]string{
+		"csa_public_key": "abc123",
+		"service.name":   "chainlink",
+	})
+	require.Len(t, want, 2, "both attributes must survive sanitization for this test to mean anything")
+	for key, val := range want {
+		assert.Equal(t, []string{val}, md.Get(key), "resource attribute %q missing from metadata", key)
+	}
 }
 
 func TestNewClient_Chip(t *testing.T) {

@@ -283,63 +283,87 @@ func TestNewStaticHeaderProvider(t *testing.T) {
 	assert.False(t, tlsReq.RequireTransportSecurity())
 }
 
-func TestSanitizeMetadataValue(t *testing.T) {
-	tests := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{name: "printable ASCII is unchanged", in: "chain-1_prod.v2", want: "chain-1_prod.v2"},
-		{name: "empty", in: "", want: ""},
-		{name: "control character replaced", in: "value\nwith\tcontrol", want: "value?with?control"},
-		{name: "non-ASCII UTF-8 replaced byte-wise", in: "café", want: "caf??"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, chipingress.SanitizeMetadataValue(tt.in))
-		})
-	}
-}
-
 func TestSanitizeMetadataHeaders(t *testing.T) {
-	t.Run("standard OTel-style keys are sanitized to the same stem as CE extensions", func(t *testing.T) {
+	t.Run("every whitelisted attribute maps to its fixed header name", func(t *testing.T) {
 		in := map[string]string{
-			"service.name":  "beholder",
-			"chain_id":      "1",
-			"node-operator": "acme",
+			"deployed_by":      "ci",
+			"host.name":        "ip-10-0-0-1",
+			"internal_node_id": "42",
+			"node_id":          "7",
+			"donID":            "don-1",
+			"platformEnv":      "staging",
+			"zone":             "us-east-1a",
+			"csa_public_key":   "abc123",
+			"service.name":     "chainlink",
+			"service.sha":      "deadbeef",
 		}
 		got := chipingress.SanitizeMetadataHeaders(in)
 		assert.Equal(t, map[string]string{
-			"servicename":  "beholder",
-			"chainid":      "1",
-			"nodeoperator": "acme",
+			"chainlink-resource-deployed-by":      "ci",
+			"chainlink-resource-host-name":        "ip-10-0-0-1",
+			"chainlink-resource-internal-node-id": "42",
+			"chainlink-resource-node-id":          "7",
+			"chainlink-resource-don-id":           "don-1",
+			"chainlink-resource-platform-env":     "staging",
+			"chainlink-resource-zone":             "us-east-1a",
+			"chainlink-resource-csa-public-key":   "abc123",
+			"chainlink-resource-service-name":     "chainlink",
+			"chainlink-resource-service-sha":      "deadbeef",
+		}, got)
+		// The exact output map above pins all ten whitelisted translations — the wire contract
+		// with chip-ingress — so the two sides cannot drift apart unnoticed.
+	})
+
+	t.Run("key matching is case-insensitive", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{
+			"DonID":        "don-1",
+			"PLATFORMENV":  "prod",
+			"Service.Name": "chainlink",
+		})
+		assert.Equal(t, map[string]string{
+			"chainlink-resource-don-id":       "don-1",
+			"chainlink-resource-platform-env": "prod",
+			"chainlink-resource-service-name": "chainlink",
 		}, got)
 	})
 
-	t.Run("empty-after-sanitize keys are dropped", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"---": "value"})
+	t.Run("non-whitelisted keys are omitted", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{
+			"service.version": "1.2.3", // not whitelisted
+			"k8s.pod-name_1":  "pod",   // valid gRPC key, still not whitelisted
+			"":                "empty",
+		})
 		assert.Empty(t, got)
 	})
 
-	t.Run("reserved names are dropped", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{chipingress.IdempotencyKeyAttr: "should-not-appear", "subject": "should-not-appear"})
+	// This is the property that makes the whitelist a substitute for a deny-list. The header
+	// interceptor appends to outgoing metadata rather than replacing, so an attribute landing on an
+	// existing header name would send two values under one key — for the CSA auth token that breaks
+	// authentication. Because the emitted header names are a fixed set under chainlink-, no
+	// configured attribute can reach any reserved gRPC key.
+	t.Run("no attribute can collide with a reserved gRPC metadata key", func(t *testing.T) {
+		for _, key := range []string{
+			"X-Beholder-Node-Auth-Token", // CSA auth
+			"x-include-nop-info",         // WithNOPLookup
+			"authorization",              // WithBasicAuth
+			"te", "content-type", "cookie", "host", "user-agent",
+			"grpc-timeout", "grpc-encoding",
+		} {
+			got := chipingress.SanitizeMetadataHeaders(map[string]string{key: "forged"})
+			assert.Empty(t, got, "key %q must not be emittable as gRPC metadata", key)
+		}
+	})
+
+	t.Run("non-printable values omit the whole attribute", func(t *testing.T) {
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"csa_public_key": "abc\x01"})
 		assert.Empty(t, got)
 	})
 
-	t.Run("gRPC-reserved header 'te' is dropped", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"te": "trailers"})
-		assert.Empty(t, got)
-	})
-
-	t.Run("non-printable values are sanitized", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"chain_id": "1\n2"})
-		assert.Equal(t, "1?2", got["chainid"])
-	})
-
-	t.Run("duplicate sanitized keys resolve deterministically to sorted-first key", func(t *testing.T) {
-		got := chipingress.SanitizeMetadataHeaders(map[string]string{"service.name": "from-dotted", "service_name": "from-snake"})
-		// sorted order: "service.name" < "service_name" ('.' < '_' in ASCII), so the dotted key wins.
-		assert.Equal(t, "from-dotted", got["servicename"])
+	t.Run("case variants of one attribute resolve deterministically to sorted-first key", func(t *testing.T) {
+		// Both map to chainlink-resource-don-id; sorted order of the ORIGINAL keys is "DonID" < "donid"
+		// (upper-case sorts first in ASCII), so "DonID" wins.
+		got := chipingress.SanitizeMetadataHeaders(map[string]string{"DonID": "upper", "donid": "lower"})
+		assert.Equal(t, map[string]string{"chainlink-resource-don-id": "upper"}, got)
 	})
 }
 
@@ -367,7 +391,7 @@ func TestSanitizeMetadataHeaders_AvoidsRPCFailure(t *testing.T) {
 	go func() { _ = srv.Serve(lis) }()
 	defer srv.Stop()
 
-	dirty := map[string]string{"k8s.pod.name": "pod-\x01abc"}
+	dirty := map[string]string{"csa_public_key": "abc\x01def"}
 
 	t.Run("unsanitized headers fail the RPC", func(t *testing.T) {
 		client, err := chipingress.NewClient(lis.Addr().String(),
@@ -383,9 +407,11 @@ func TestSanitizeMetadataHeaders_AvoidsRPCFailure(t *testing.T) {
 	})
 
 	t.Run("sanitized headers succeed", func(t *testing.T) {
+		sanitized := chipingress.SanitizeMetadataHeaders(dirty)
+		assert.Empty(t, sanitized, "the non-printable value must be omitted, not rewritten")
 		client, err := chipingress.NewClient(lis.Addr().String(),
 			chipingress.WithInsecureConnection(),
-			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(chipingress.SanitizeMetadataHeaders(dirty))),
+			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(sanitized)),
 		)
 		require.NoError(t, err)
 		defer client.Close() //nolint:errcheck

@@ -219,6 +219,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
 		var opts []chipingress.Opt
+		resourceAttrs := resourceAttributesToStringMap(cfg.ResourceAttributes)
 
 		if cfg.ChipIngressInsecureConnection {
 			opts = append(opts, chipingress.WithInsecureConnection())
@@ -242,6 +243,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		// Set OpenTelemetry providers
 		opts = append(opts, chipingress.WithMeterProvider(meterProvider))
 		opts = append(opts, chipingress.WithTracerProvider(tracerProvider))
+
+		if len(resourceAttrs) > 0 {
+			opts = append(opts, chipingress.WithResourceAttributeHeaders(resourceAttrs))
+		}
 
 		chipIngressClient, err = chipingress.NewClient(cfg.ChipIngressEmitterGRPCEndpoint, opts...)
 		if err != nil {

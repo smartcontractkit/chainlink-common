@@ -32,6 +32,8 @@ CLI for managing keystore keys.
 
 If KEYSTORE_KMS_PROFILE is set, will load the keystore from KMS.
 KEYSTORE_KMS_PROFILE: is the AWS profile to use for KMS (region will be taken from the profile).
+Note: the CLI KMS mode is currently AWS-only; the Google Cloud KMS backend (keystore/gcpkms) has
+no CLI selector yet and must be used programmatically.
 
 Otherwise, will load the keystore from a file or database.
 KEYSTORE_PASSWORD: password used to encrypt the key material before storage, must be provided.
@@ -407,7 +409,8 @@ func loadKeystoreSignerReader(ctx context.Context, cmd *cobra.Command) (interfac
 	ks.Reader
 	ks.Signer
 }, error) {
-	// Check if KMS mode is enabled
+	// Check if KMS mode is enabled. AWS only: KEYSTORE_KMS_PROFILE selects an AWS profile.
+	// There is no GCP (keystore/gcpkms) selector yet; use the gcpkms package programmatically.
 	kmsProfile := os.Getenv("KEYSTORE_KMS_PROFILE")
 	if kmsProfile != "" {
 		client, err := kms.NewClient(ctx, kms.ClientOptions{

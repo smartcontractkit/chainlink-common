@@ -31,9 +31,13 @@ jobs:
             **/*.go
             **/go.mod
             **/go.sum
+          # The commentparsing examples are modules only so they can model a downstream consumer
+          # of the library, which takes the local replace directives gomoddirectives rejects.
+          # x-config.yml still builds them, regenerates them and fails on a diff.
           module-patterns: |
             **
             !**/vendor/**
+            !x/config/commentparsing/examples/**
 
   lint-module:
     # Avoid running in merge queue since we run in PR's and have an optional

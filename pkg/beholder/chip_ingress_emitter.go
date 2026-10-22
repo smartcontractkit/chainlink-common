@@ -14,6 +14,10 @@ import (
 
 // ChipIngressEmitter wraps a synchronous chipingress.Client.Publish call
 // in a fire-and-forget goroutine so callers are never blocked.
+//
+// Resource attributes are not stamped on events here. They describe the producer rather than any
+// individual event, so they travel once per request as gRPC metadata configured on the client (see
+// chipingress.WithResourceAttributeHeaders) rather than being repeated on every event.
 type ChipIngressEmitter struct {
 	client chipingress.Client
 	lggr   logger.Logger

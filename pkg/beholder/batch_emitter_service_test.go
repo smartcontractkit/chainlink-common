@@ -38,6 +38,15 @@ func newTestConfig() beholder.Config {
 	}
 }
 
+// successfulPublishResponse returns a PublishResponse with a generous tail of successful results.
+// The batch client's partial-delivery callback path dispatches per event from resp.Results, so a
+// mock returning (nil, nil) would nil-deref, and one returning no results would fail callbacks with
+// a synthetic RESULTS_MISMATCH. A real server returns one result per event; the extra entries here
+// are ignored, and a nil result entry is treated as success.
+func successfulPublishResponse() *chipingress.PublishResponse {
+	return &chipingress.PublishResponse{Results: make([]*chipingress.PublishResult, 100)}
+}
+
 func TestNewChipIngressBatchEmitterService(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)
@@ -81,7 +90,7 @@ func TestChipIngressBatchEmitterService_Emit(t *testing.T) {
 				batch := args.Get(1).(*chipingress.CloudEventBatch)
 				receivedBatches = append(receivedBatches, batch)
 			}).
-			Return(nil, nil)
+			Return(successfulPublishResponse(), nil)
 
 		cfg := newTestConfig()
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
@@ -130,7 +139,7 @@ func TestChipIngressBatchEmitterService_CloudEventFormat(t *testing.T) {
 			defer mu.Unlock()
 			receivedBatch = args.Get(1).(*chipingress.CloudEventBatch)
 		}).
-		Return(nil, nil)
+		Return(successfulPublishResponse(), nil)
 
 	cfg := newTestConfig()
 	cfg.ChipIngressSendInterval = 50 * time.Millisecond
@@ -207,7 +216,7 @@ func TestChipIngressBatchEmitterService_ContextCancellation(t *testing.T) {
 	clientMock.EXPECT().Close().Return(nil).Maybe()
 	clientMock.
 		On("PublishBatch", mock.Anything, mock.Anything).
-		Return(nil, nil).
+		Return(successfulPublishResponse(), nil).
 		Maybe()
 
 	cfg := newTestConfig()
@@ -242,7 +251,7 @@ func TestChipIngressBatchEmitterService_DefaultConfig(t *testing.T) {
 			defer mu.Unlock()
 			receivedBatch = args.Get(1).(*chipingress.CloudEventBatch)
 		}).
-		Return(nil, nil)
+		Return(successfulPublishResponse(), nil)
 
 	emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, beholder.Config{}, logger.Test(t))
 	require.NoError(t, err)
@@ -272,7 +281,7 @@ func TestChipIngressBatchEmitterService_EmitAfterClose(t *testing.T) {
 	clientMock.EXPECT().Close().Return(nil).Maybe()
 	clientMock.
 		On("PublishBatch", mock.Anything, mock.Anything).
-		Return(nil, nil).
+		Return(successfulPublishResponse(), nil).
 		Maybe()
 
 	emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, newTestConfig(), logger.Test(t))
@@ -293,7 +302,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 		clientMock.EXPECT().Close().Return(nil).Maybe()
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
-			Return(nil, nil)
+			Return(successfulPublishResponse(), nil)
 
 		cfg := newTestConfig()
 		cfg.ChipIngressSendInterval = 50 * time.Millisecond
@@ -371,7 +380,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 				}
 				<-sendBlocked
 			}).
-			Return(nil, nil).
+			Return(successfulPublishResponse(), nil).
 			Maybe()
 
 		cfg := newTestConfig()
@@ -434,7 +443,7 @@ func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 		clientMock.EXPECT().Close().Return(nil).Maybe()
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
-			Return(nil, nil).
+			Return(successfulPublishResponse(), nil).
 			Maybe()
 
 		cfg := newTestConfig()
@@ -623,7 +632,7 @@ func TestChipIngressBatchEmitterService_Metrics(t *testing.T) {
 		done := make(chan struct{})
 		clientMock.
 			On("PublishBatch", mock.Anything, mock.Anything).
-			Return(nil, nil).
+			Return(successfulPublishResponse(), nil).
 			Run(func(_ mock.Arguments) { close(done) }).
 			Once()
 

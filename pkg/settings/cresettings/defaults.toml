@@ -25,6 +25,8 @@ GatewayConfidentialRelayGlobalRate = '50rps:10'
 GatewayConfidentialRelayPerNodeRate = '10rps:10'
 GatewayHTTPActionMtlsRequestRate = 'every30s:0'
 GatewayHTTPActionMtlsConcurrencyLimit = '50'
+GatewayHTTPActionOutboundConcurrencyLimit = '875'
+GatewayHTTPActionOutboundPerNodeConcurrencyLimit = '175'
 TriggerRegistrationStatusUpdateTimeout = '0s'
 BaseTriggerRetryInterval = '30s'
 BaseTriggerMaxRetries = '20'
@@ -60,6 +62,12 @@ PublicKeyRequestTimeout = '5s'
 ConfidentialRelayHandlerTimeout = '1m0s'
 InsecureSkipTLSVerify = 'false'
 EnclaveRefreshInterval = '10s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
+
+[ConfidentialCompute.RelayResponseCache]
+TTL = '10m0s'
+CleanupInterval = '1m0s'
 
 [ConfidentialCompute.PublicKeyCache]
 Enabled = 'true'
@@ -179,6 +187,14 @@ ReportSizeLimit = '5kb'
 Default = '2000000'
 
 [PerWorkflow.ChainWrite.Aptos.GasLimit.Values]
+
+[PerWorkflow.ChainWrite.Stellar]
+ReportSizeLimit = '5kb'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee]
+Default = '1000000'
+
+[PerWorkflow.ChainWrite.Stellar.MaxResourceFee.Values]
 
 [PerWorkflow.ChainRead]
 CallLimit = '15'

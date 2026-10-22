@@ -18,6 +18,9 @@ jobs:
         **/*.go
         **/go.mod
         **/go.sum
+      # x/ is where a module lives while its API is still being settled, so a breaking change
+      # there is the point rather than a regression to gate.
       module-patterns: |
         **
+        !x/**
       enforce-compatible: ${{ !contains(github.event.pull_request.labels.*.name, 'allow-incompatible') }}

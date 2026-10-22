@@ -13,33 +13,33 @@ import (
 // Kafka headers named "ce_<name>" (e.g., ce_idempotencykey), enabling downstream deduplication.
 const IdempotencyKeyAttr = "idempotencykey"
 
-// reservedExtensionNames holds every CloudEvent extension name that NewEvent sets internally,
-// plus the CloudEvents core context attribute names (id, source, type, specversion, time,
-// subject, dataschema, datacontenttype) and the spec-forbidden "data" name. WithResourceAttributeExtensions
-// consults this set so that a resource attribute can never silently overwrite event-lifecycle
-// metadata or collide with a CloudEvents core attribute.
-var reservedExtensionNames = map[string]struct{}{
-	IdempotencyKeyAttr: {},
-	"recordedtime":     {},
-	"id":               {},
-	"source":           {},
-	"type":             {},
-	"specversion":      {},
-	"time":             {},
-	"subject":          {},
-	"dataschema":       {},
-	"datacontenttype":  {},
-	"data":             {},
-}
-
-// reservedMetadataKeys holds gRPC-reserved header names that could otherwise be reached by
-// sanitizeExtensionName's [a-z0-9] sanitization. Verified against grpc-go v1.79.1's
-// isReservedHeader: every other reserved header (pseudo-headers, "content-type", "grpc-*")
-// contains a ':' or '-' that sanitization strips, so "te" is the only one actually reachable.
-// SanitizeMetadataHeaders consults this set so that edge case is handled deterministically
-// rather than relying on grpc's own (silent) handling of a reserved header.
-var reservedMetadataKeys = map[string]struct{}{
-	"te": {},
+// resourceAttributeHeaders is the closed whitelist of producer resource attributes sent as gRPC
+// metadata, mapping each attribute key (lowercased — SanitizeMetadataHeaders matches
+// case-insensitively) to the fixed chainlink-* metadata header name it travels under. For example
+// csa_public_key is sent as chainlink-resource-csa-public-key.
+//
+// It is the wire contract with chip-ingress, which reads exactly these header names and forwards
+// them onto every Kafka record a request produces under resource_<original attribute key> (e.g.
+// chainlink-resource-service-name becomes resource_service.name). The set is
+// closed on purpose: because no operator-defined key can ever become a header name, no attribute
+// can shadow a reserved gRPC metadata key such as the CSA auth token's, and the server needs no
+// deny-list to keep resource attributes away from "ce_" or identity headers it derives from the
+// verified auth token.
+//
+// The same mapping exists in chip-ingress (chip-ingress/internal/constants). Duplicating it across
+// repositories is deliberate, matching how authHeaderKey is already spelled in both pkg/beholder
+// and pkg/chipingress; the two must stay in sync or forwarding silently stops.
+var resourceAttributeHeaders = map[string]string{
+	"csa_public_key":   "chainlink-resource-csa-public-key",
+	"deployed_by":      "chainlink-resource-deployed-by",
+	"donid":            "chainlink-resource-don-id",
+	"host.name":        "chainlink-resource-host-name",
+	"internal_node_id": "chainlink-resource-internal-node-id",
+	"node_id":          "chainlink-resource-node-id",
+	"platformenv":      "chainlink-resource-platform-env",
+	"service.name":     "chainlink-resource-service-name",
+	"service.sha":      "chainlink-resource-service-sha",
+	"zone":             "chainlink-resource-zone",
 }
 
 type (

@@ -19,6 +19,7 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 	}
 
 	m.Start()
+	defer m.Close()
 
 	rid := uuid.New().String()
 	req := &legacywasmpb.Request{
@@ -37,8 +38,6 @@ func GetWorkflowSpec(ctx context.Context, modCfg *ModuleConfig, binary []byte, c
 	if sr == nil {
 		return nil, errors.New("unexpected response from WASM binary: got nil spec response")
 	}
-
-	m.Close()
 
 	return legacywasmpb.ProtoToWorkflowSpec(sr)
 }

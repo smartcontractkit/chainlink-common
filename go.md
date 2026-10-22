@@ -23,6 +23,8 @@ flowchart LR
 	click chainlink-common/pkg/chipingress href "https://github.com/smartcontractkit/chainlink-common"
 	chainlink-common/pkg/monitoring --> chainlink-common
 	click chainlink-common/pkg/monitoring href "https://github.com/smartcontractkit/chainlink-common"
+	chainlink-common/x/config --> chainlink-common
+	click chainlink-common/x/config href "https://github.com/smartcontractkit/chainlink-common"
 	chainlink-protos/billing/go --> chainlink-protos/workflows/go
 	click chainlink-protos/billing/go href "https://github.com/smartcontractkit/chainlink-protos"
 	chainlink-protos/cre/go --> chain-selectors
@@ -58,6 +60,7 @@ flowchart LR
 		 chainlink-common/keystore
 		 chainlink-common/pkg/chipingress
 		 chainlink-common/pkg/monitoring
+		 chainlink-common/x/config
 	end
 	click chainlink-common-repo href "https://github.com/smartcontractkit/chainlink-common"
 

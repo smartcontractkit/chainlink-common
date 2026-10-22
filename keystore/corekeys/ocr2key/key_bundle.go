@@ -1,6 +1,7 @@
 package ocr2key
 
 import (
+	cryptorand "crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"io"
@@ -51,52 +52,54 @@ var _ KeyBundle = &keyBundle[*ed25519Keyring]{}
 
 var curve = secp256k1.S256()
 
+type keyBundleFactory struct {
+	new func(io.Reader, io.Reader, io.Reader) (KeyBundle, error)
+	// insecure constructs a key bundle using caller-provided key material.
+	insecure func(io.Reader) KeyBundle
+	// empty constructs an uninitialized key bundle for unmarshalling persisted key material.
+	empty func() KeyBundle
+}
+
+func newKeyBundleFactory[K keyring](chain corekeys.ChainType, newKeyring func(io.Reader) (K, error), empty func() K) keyBundleFactory {
+	return keyBundleFactory{
+		new: func(onchainSigningKeyMaterial, onchainEncryptionKeyMaterial, offchainKeyMaterial io.Reader) (KeyBundle, error) {
+			return newKeyBundleFrom(chain, newKeyring, onchainSigningKeyMaterial, onchainEncryptionKeyMaterial, offchainKeyMaterial)
+		},
+		insecure: func(reader io.Reader) KeyBundle {
+			return mustNewKeyBundleInsecure(chain, newKeyring, reader)
+		},
+		empty: func() KeyBundle {
+			return newKeyBundle(empty())
+		},
+	}
+}
+
+var keyBundleFactories = map[corekeys.ChainType]keyBundleFactory{
+	corekeys.EVM:      newKeyBundleFactory(corekeys.EVM, newEVMKeyring, func() *evmKeyring { return new(evmKeyring) }),
+	corekeys.Cosmos:   newKeyBundleFactory(corekeys.Cosmos, newCosmosKeyring, func() *cosmosKeyring { return new(cosmosKeyring) }),
+	corekeys.Solana:   newKeyBundleFactory(corekeys.Solana, newSolanaKeyring, func() *solanaKeyring { return new(solanaKeyring) }),
+	corekeys.StarkNet: newKeyBundleFactory(corekeys.StarkNet, starkkey.NewOCR2Key, func() *starkkey.OCR2Key { return new(starkkey.OCR2Key) }),
+	corekeys.Aptos:    newKeyBundleFactory(corekeys.Aptos, newEd25519Keyring, func() *ed25519Keyring { return new(ed25519Keyring) }),
+	corekeys.Tron:     newKeyBundleFactory(corekeys.Tron, newEVMKeyring, func() *evmKeyring { return new(evmKeyring) }),
+	corekeys.TON:      newKeyBundleFactory(corekeys.TON, newTONKeyring, func() *tonKeyring { return new(tonKeyring) }),
+	corekeys.Sui:      newKeyBundleFactory(corekeys.Sui, newEd25519Keyring, func() *ed25519Keyring { return new(ed25519Keyring) }),
+	corekeys.Stellar: newKeyBundleFactory(corekeys.Stellar, newKeccakEd25519Keyring, func() *keccakEd25519Keyring {
+		return &keccakEd25519Keyring{ed25519Keyring: new(ed25519Keyring)}
+	}),
+}
+
 // New returns key bundle based on the chain type
 func New(chainType corekeys.ChainType) (KeyBundle, error) {
-	switch chainType {
-	case corekeys.EVM:
-		return newKeyBundleRand(corekeys.EVM, newEVMKeyring)
-	case corekeys.Cosmos:
-		return newKeyBundleRand(corekeys.Cosmos, newCosmosKeyring)
-	case corekeys.Solana:
-		return newKeyBundleRand(corekeys.Solana, newSolanaKeyring)
-	case corekeys.StarkNet:
-		return newKeyBundleRand(corekeys.StarkNet, starkkey.NewOCR2Key)
-	case corekeys.Aptos:
-		return newKeyBundleRand(corekeys.Aptos, newEd25519Keyring)
-	case corekeys.Tron:
-		return newKeyBundleRand(corekeys.Tron, newEVMKeyring)
-	case corekeys.TON:
-		return newKeyBundleRand(corekeys.TON, newTONKeyring)
-	case corekeys.Sui:
-		return newKeyBundleRand(corekeys.Sui, newEd25519Keyring)
-	case corekeys.Stellar:
-		return newKeyBundleRand(corekeys.Stellar, newKeccakEd25519Keyring)
+	if factory, ok := keyBundleFactories[chainType]; ok {
+		return factory.new(cryptorand.Reader, cryptorand.Reader, cryptorand.Reader)
 	}
 	return nil, corekeys.NewErrInvalidChainType(chainType)
 }
 
 // MustNewInsecure returns key bundle based on the chain type or panics
 func MustNewInsecure(reader io.Reader, chainType corekeys.ChainType) KeyBundle {
-	switch chainType {
-	case corekeys.EVM:
-		return mustNewKeyBundleInsecure(corekeys.EVM, newEVMKeyring, reader)
-	case corekeys.Cosmos:
-		return mustNewKeyBundleInsecure(corekeys.Cosmos, newCosmosKeyring, reader)
-	case corekeys.Solana:
-		return mustNewKeyBundleInsecure(corekeys.Solana, newSolanaKeyring, reader)
-	case corekeys.StarkNet:
-		return mustNewKeyBundleInsecure(corekeys.StarkNet, starkkey.NewOCR2Key, reader)
-	case corekeys.Aptos:
-		return mustNewKeyBundleInsecure(corekeys.Aptos, newEd25519Keyring, reader)
-	case corekeys.Tron:
-		return mustNewKeyBundleInsecure(corekeys.Tron, newEVMKeyring, reader)
-	case corekeys.TON:
-		return mustNewKeyBundleInsecure(corekeys.TON, newTONKeyring, reader)
-	case corekeys.Sui:
-		return mustNewKeyBundleInsecure(corekeys.Sui, newEd25519Keyring, reader)
-	case corekeys.Stellar:
-		return mustNewKeyBundleInsecure(corekeys.Stellar, newKeccakEd25519Keyring, reader)
+	if factory, ok := keyBundleFactories[chainType]; ok {
+		return factory.insecure(reader)
 	}
 	panic(corekeys.NewErrInvalidChainType(chainType))
 }
@@ -122,28 +125,11 @@ func KeyFor(raw internal.Raw) (kb KeyBundle) {
 	if err != nil {
 		panic(err)
 	}
-	switch temp.ChainType {
-	case corekeys.EVM:
-		kb = newKeyBundle(new(evmKeyring))
-	case corekeys.Cosmos:
-		kb = newKeyBundle(new(cosmosKeyring))
-	case corekeys.Solana:
-		kb = newKeyBundle(new(solanaKeyring))
-	case corekeys.StarkNet:
-		kb = newKeyBundle(new(starkkey.OCR2Key))
-	case corekeys.Aptos:
-		kb = newKeyBundle(new(ed25519Keyring))
-	case corekeys.Tron:
-		kb = newKeyBundle(new(evmKeyring))
-	case corekeys.TON:
-		kb = newKeyBundle(new(tonKeyring))
-	case corekeys.Sui:
-		kb = newKeyBundle(new(ed25519Keyring))
-	case corekeys.Stellar:
-		kb = newKeyBundle(&keccakEd25519Keyring{ed25519Keyring: new(ed25519Keyring)})
-	default:
+	factory, ok := keyBundleFactories[temp.ChainType]
+	if !ok {
 		return nil
 	}
+	kb = factory.empty()
 	if err := kb.Unmarshal(internal.Bytes(raw)); err != nil {
 		panic(err)
 	}

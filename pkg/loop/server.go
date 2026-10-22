@@ -6,15 +6,9 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"runtime"
-	"runtime/debug"
 	"time"
 
-	otelpyroscope "github.com/grafana/otel-profiling-go"
-	"github.com/grafana/pyroscope-go"
 	"github.com/jmoiron/sqlx"
-	"go.opentelemetry.io/otel"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -23,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/pyroscope"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
@@ -147,65 +142,17 @@ func (s *Server) start(opts ...ServerOpt) error {
 		return err
 	}
 
-	if addr := s.EnvConfig.PyroscopeServerAddress; addr != "" {
-		runtime.SetBlockProfileRate(s.EnvConfig.PyroscopePPROFBlockProfileRate)
-		runtime.SetMutexProfileFraction(s.EnvConfig.PyroscopePPROFMutexProfileFraction)
-
-		hostname, _ := os.Hostname()
-		var ver, sha, goVer, module string
-		if bi, ok := debug.ReadBuildInfo(); ok {
-			ver = bi.Main.Version
-			sha = bi.Main.Sum
-			if len(sha) > 7 {
-				sha = sha[:7]
-			}
-			goVer = bi.GoVersion
-			module = bi.Main.Path
-		}
-
-		appName, err := os.Executable()
-		if err != nil {
-			s.Logger.Warnf("Failed to get executable name: %v", err)
-			appName = "unknown"
-		} else {
-			appName = filepath.Base(appName)
-		}
-
-		s.profiler, err = pyroscope.Start(pyroscope.Config{
-			ApplicationName: appName,
-			ServerAddress:   s.EnvConfig.PyroscopeServerAddress,
-			AuthToken:       s.EnvConfig.PyroscopeAuthToken,
-
-			Tags: map[string]string{
-				"module":      module,
-				"SHA":         sha,
-				"Version":     ver,
-				"go":          goVer,
-				"Environment": s.EnvConfig.PyroscopeEnvironment,
-				"hostname":    hostname,
-			},
-			ProfileTypes: []pyroscope.ProfileType{
-				// these profile types are enabled by default:
-				pyroscope.ProfileCPU,
-				pyroscope.ProfileAllocObjects,
-				pyroscope.ProfileAllocSpace,
-				pyroscope.ProfileInuseObjects,
-				pyroscope.ProfileInuseSpace,
-
-				// these profile types are optional:
-				pyroscope.ProfileGoroutines,
-				pyroscope.ProfileMutexCount,
-				pyroscope.ProfileMutexDuration,
-				pyroscope.ProfileBlockCount,
-				pyroscope.ProfileBlockDuration,
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("failed to start pyroscope profiler: %w", err)
-		}
-		if s.EnvConfig.TracingEnabled && s.EnvConfig.PyroscopeLinkTracesToProfiles {
-			otel.SetTracerProvider(otelpyroscope.NewTracerProvider(otel.GetTracerProvider()))
-		}
+	var err error
+	s.profiler, err = pyroscope.Start(s.Logger, pyroscope.Config{
+		AuthToken:                 s.EnvConfig.PyroscopeAuthToken,
+		ServerAddress:             s.EnvConfig.PyroscopeServerAddress,
+		Environment:               s.EnvConfig.PyroscopeEnvironment,
+		LinkTracesToProfiles:      s.EnvConfig.PyroscopeLinkTracesToProfiles,
+		PPROFBlockProfileRate:     s.EnvConfig.PyroscopePPROFBlockProfileRate,
+		PPROFMutexProfileFraction: s.EnvConfig.PyroscopePPROFMutexProfileFraction,
+	}, s.EnvConfig.TracingEnabled)
+	if err != nil {
+		return err
 	}
 
 	s.webServer = WebServerOpts{}.New(s.Logger, s.EnvConfig.PrometheusPort)

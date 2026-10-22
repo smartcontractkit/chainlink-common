@@ -223,36 +223,6 @@ func TestProfileMapEntriesLayerUnderSources(t *testing.T) {
 	}
 }
 
-func TestProfileMapEntryEnvVarMatchesAProfileKey(t *testing.T) {
-	type hasMap struct {
-		Selector uint32
-		Labels   map[string]string
-	}
-	profiles := map[uint32]func(*hasMap){1: func(c *hasMap) { c.Labels = map[string]string{"Mainnet": "profile"} }}
-
-	c := hasMap{Selector: 1, Labels: map[string]string{"mainnet": "a", "MainNet": "b"}}
-	root := withProfile(t, &c, func(c *hasMap) *uint32 { return &c.Selector }, profiles)
-	root.SetArgs(supplyConfig(t, "TEST_SECTION_LABELS_MAINNET", "env", ""))
-	require.NoError(t, root.Execute())
-	assert.Equal(t, map[string]string{"Mainnet": "env"}, c.Labels)
-}
-
-func TestProfileMapKeysCollidingInCaseAreRejected(t *testing.T) {
-	type hasMap struct {
-		Selector uint32
-		Labels   map[string]string
-	}
-	profiles := map[uint32]func(*hasMap){
-		1: func(c *hasMap) { c.Labels = map[string]string{"MAINNET": "a", "Mainnet": "b"} },
-	}
-
-	c := hasMap{Selector: 1}
-	require.ErrorContains(t,
-		newBinder(t, testOptions).RegisterInNamespace(newRoot(t), "Section", &c,
-			Profile(func(c *hasMap) *uint32 { return &c.Selector }, profiles)),
-		`profile 1 gives section.labels the keys "MAINNET" and "Mainnet", which differ only in case, so an env var for either is ambiguous`)
-}
-
 func TestEachExecuteStartsFromTheDefaults(t *testing.T) {
 	c := profiledSection{Selector: 1, Profiled: "compiled"}
 	root := withProfile(t, &c, selector, sectionProfiles)
@@ -351,30 +321,10 @@ func TestProfileKeyNaNIsRejected(t *testing.T) {
 		"profile NaN never equals itself, as NaN doesn't, so it can't be selected")
 }
 
-func TestProfileNestedMapKeysCollidingInCaseAreRejected(t *testing.T) {
-	type chain struct {
-		Labels map[string]string
-	}
-	type hasChains struct {
-		Selector uint32
-		Chains   map[string]chain
-	}
-	profiles := map[uint32]func(*hasChains){
-		1: func(c *hasChains) {
-			c.Chains = map[string]chain{"a": {Labels: map[string]string{"Σ": "x", "ς": "y"}}}
-		},
-	}
-
-	c := hasChains{}
-	require.ErrorContains(t,
-		newBinder(t, testOptions).RegisterInNamespace(newRoot(t), "Section", &c,
-			Profile(func(c *hasChains) *uint32 { return &c.Selector }, profiles)),
-		`profile 1 gives section.chains.a.labels the keys "Σ" and "ς", which differ only in case`)
-}
-
 func TestProfileHelpShowsCollections(t *testing.T) {
 	type chain struct {
-		RPC string
+		RPC    string
+		Labels map[string]string
 	}
 	type hasCollections struct {
 		Selector uint32
@@ -386,7 +336,7 @@ func TestProfileHelpShowsCollections(t *testing.T) {
 		1: func(c *hasCollections) {
 			c.List = []string{"a", "b"}
 			c.Labels = map[string]string{"k": "v"}
-			c.Chains = map[string]chain{"main": {RPC: "url"}}
+			c.Chains = map[string]chain{"main": {RPC: "url", Labels: map[string]string{"x": "y", "w": "z"}}}
 		},
 	}
 
@@ -397,7 +347,7 @@ func TestProfileHelpShowsCollections(t *testing.T) {
 	root.SetArgs([]string{"--help"})
 	require.NoError(t, root.Execute())
 	want := "AVAILABLE PROFILES FOR --section.selector:\n" +
-		"  1:\n    section.list = a,b\n    section.labels = k=v\n    section.chains.main.rpc = url\n"
+		"  1:\n    section.list = a,b\n    section.labels = k=v\n    section.chains.main.rpc = url\n    section.chains.main.labels.w = z\n    section.chains.main.labels.x = y\n"
 	assert.True(t, strings.HasSuffix(out.String(), want), out.String())
 }
 

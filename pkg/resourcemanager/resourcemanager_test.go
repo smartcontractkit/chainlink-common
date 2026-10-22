@@ -188,6 +188,35 @@ func TestEmitUsage_Action(t *testing.T) {
 	assert.Equal(t, "usage:req-1", record.GetUtilizations()[0].GetEventId())
 }
 
+func TestEmitUsageValue_Action(t *testing.T) {
+	emitter := &fakeEmitter{}
+	rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{
+		MeterRecordsEnabled: true,
+		Emitter:             emitter,
+	})
+
+	fee, ok := new(big.Int).SetString("123456789012345678901234567890", 10) // > MaxInt64
+	require.True(t, ok)
+	rm.EmitUsageValue(t.Context(), testIdentity, "0xabc", fee, UtilizationFields{
+		ResourceType: WorkflowGasResourceType(1),
+		ResourceID:   "wf-1:exec-1",
+		OrgID:        "org-1",
+	})
+	rm.EmitUsageValue(t.Context(), testIdentity, "0xdef", nil, UtilizationFields{ResourceType: WorkflowGasResourceType(1), ResourceID: "wf-1:exec-2"})
+
+	require.Len(t, emitter.calls, 2)
+	var record meteringpb.MeterRecord
+	require.NoError(t, proto.Unmarshal(emitter.calls[0].body, &record))
+	assert.Equal(t, meteringpb.MeterAction_METER_ACTION_USAGE, record.GetAction())
+	require.Len(t, record.GetUtilizations(), 1)
+	assert.Equal(t, "123456789012345678901234567890", record.GetUtilizations()[0].GetValue())
+	assert.Equal(t, "cre:workflow:gas:1", record.GetUtilizations()[0].GetResourceType())
+	assert.Equal(t, "0xabc", record.GetUtilizations()[0].GetEventId())
+
+	require.NoError(t, proto.Unmarshal(emitter.calls[1].body, &record))
+	assert.Equal(t, "0", record.GetUtilizations()[0].GetValue())
+}
+
 // TestEmitDelta_EventIDIdenticalAcrossNodes proves the core cross-node contract:
 // two nodes fielding the SAME logical delta (identical eventID) emit the
 // identical event_id, while a distinct request (distinct eventID) is distinct.

@@ -1,0 +1,7 @@
+LogLevel = "debug"
+
+[Server]
+Host = "0.0.0.0"
+
+[Metrics]
+Endpoint = "https://metrics.example.com/push"

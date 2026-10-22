@@ -470,7 +470,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	assert.Equal(t, expectedCapConfig, capConf)
 }
 
-func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfigs(t *testing.T) {
+func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3Configs(t *testing.T) {
 	stopCh := make(chan struct{})
 	logger := logger.Test(t)
 	reg := mocks.NewCapabilitiesRegistry(t)
@@ -502,9 +502,6 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 	capID := "ocr-cap@1.0.0"
 	donID := uint32(1)
 
-	oracleFactoryConfig, err := values.WrapMap(map[string]any{"maxQueryLength": 1000})
-	require.NoError(t, err)
-
 	specConfig, err := values.WrapMap(map[string]any{"contractID": "0x123"})
 	require.NoError(t, err)
 
@@ -528,9 +525,6 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3AndOracleFactoryConfig
 				OffchainConfigVersion: 1,
 				OffchainConfig:        []byte{0x50},
 			},
-		},
-		OracleFactoryConfigs: map[string]values.Map{
-			"__default__": *oracleFactoryConfig,
 		},
 		SpecConfig: specConfig,
 	}

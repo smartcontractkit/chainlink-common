@@ -275,6 +275,19 @@ func TestFeatureConsensusStricterMedianQuorumActivePeriodKeyInit(t *testing.T) {
 	}, s.DefaultValue)
 }
 
+func TestCentralTriggerEventQueueLimit(t *testing.T) {
+	s := Default.CentralTriggerEventQueueLimit
+
+	assert.Equal(t, "CentralTriggerEventQueueLimit", s.GetKey())
+	assert.Equal(t, settings.ScopeGlobal, s.Scope)
+	assert.Equal(t, "{trigger}", s.Unit)
+	assert.Equal(t, 1000, s.DefaultValue)
+
+	got, err := s.GetOrDefault(t.Context(), DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, 1000, got)
+}
+
 func TestGatewayProxyDonIDKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
 

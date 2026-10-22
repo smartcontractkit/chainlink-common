@@ -48,7 +48,7 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 	// Compare the keccak256 hash of the binary data against a value produced by
 	// the pinned Go toolchain (see GetBuildCmd in utils.go). Because Compile sets
 	// GOTOOLCHAIN from the nearest go.mod, this hash is stable across machines.
-	expKeccak256Hash, err := hex.DecodeString("fe4720b940198c3e11f7065b65b7cd6f01e1250570a282302cdd5bc1347a9355")
+	expKeccak256Hash, err := hex.DecodeString("65a873a1bdadc0421e8beddedd31a895328bd64727ef62fb91009334153e13a6")
 	s.NoError(err, "failed to decode expected keccak256 hash")
 	keccak256FromSha3Lib := sha3.NewLegacyKeccak256()
 	keccak256FromSha3Lib.Write(b64EncodedBinaryData)
@@ -59,15 +59,15 @@ func (s *ArtifactsTestSuite) TestArtifacts() {
 	s.NoError(err, "failed to prepare artifacts")
 
 	base64EncodedBinaryData := artifacts.GetBinaryData()
-	s.Len(base64EncodedBinaryData, 644880, "got %d", len(base64EncodedBinaryData))
-	s.Equal("mw2FHIsodv6BSAAAYAPnAQCgtv48pESA6QEAQK99D29XBsAE0wMAQLWfB0BVVVVVVVVVVVXVRQkB4Zht",
+	s.Len(base64EncodedBinaryData, 645440, "got %d", len(base64EncodedBinaryData))
+	s.Equal("m0qFHEtQdh+IBACAYHUCAGBX/d5DSgSYHgAA9Nr38DZFANMDAEC1nwdAVVVVVVVVVVXVJQkB4ZhtOwAA",
 		string(base64EncodedBinaryData[0:80]))
-	s.Equal("YMjb23vh3vVv++loYvrXHhrR2uiPmaORmSkUtJQN4kqd7/RlCQ/zt5j+ZDZ2hUKVsiEz+f2TddXD95RM",
+	s.Equal("ASO+vr4r+K5/229nE9O/jpDw1ka2Zs5GZqYQkBJ28Et2vtOPtTzM32L6m9HYHQJZwo7ExOY38/KH7zmR",
 		string(base64EncodedBinaryData[len(base64EncodedBinaryData)-80:]))
 
 	s.Equal("myContract: 0x44DD9D24349965E5e20E3D6118F560BCd64828E9\nchainID: 11155111", string(artifacts.GetConfigData()))
 
-	s.Equal("00d6a781f15b69c10f337ff983847e0774e9a2cd8f71c97296cb37a1867edc2b", artifacts.GetWorkflowID())
+	s.Equal("0050ddbe9e32aae6dc511652bce8c551cf46eb7819f94b906956b02276d47b90", artifacts.GetWorkflowID())
 }
 
 func (s *ArtifactsTestSuite) TestArtifactsSadPaths() {

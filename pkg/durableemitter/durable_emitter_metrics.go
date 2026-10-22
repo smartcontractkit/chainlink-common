@@ -56,6 +56,7 @@ type durableEmitterMetrics struct {
 	expiredPurged      metric.Int64Counter
 	storeOps           metric.Int64Counter
 	storeOpDuration    metric.Float64Histogram
+	insertBatchSize    metric.Int64Histogram
 	queueDepth         metric.Int64Gauge
 	queuePayloadBytes  metric.Int64Gauge
 	queueOldestAgeSec  metric.Float64Gauge
@@ -84,6 +85,10 @@ type durableEmitterMetrics struct {
 var durationBuckets = metric.WithExplicitBucketBoundaries(
 	0.0001, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05,
 	0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+)
+
+var batchSizeBuckets = metric.WithExplicitBucketBoundaries(
+	1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072,
 )
 
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
@@ -175,6 +180,14 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 		metric.WithUnit("s"),
 		metric.WithDescription("Durable store operation latency (seconds, fractional)"),
 		durationBuckets,
+	); err != nil {
+		return nil, err
+	}
+	if m.insertBatchSize, err = meter.Int64Histogram(
+		"durable_emitter.insert_batch.size",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Events per coalesced InsertBatch flush to the durable store; labels: error={true,false}"),
+		batchSizeBuckets,
 	); err != nil {
 		return nil, err
 	}
@@ -287,6 +300,13 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 	)
 	m.storeOps.Add(ctx, 1, attrs)
 	m.storeOpDuration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("operation", op)))
+}
+
+func (m *durableEmitterMetrics) recordInsertBatchSize(ctx context.Context, n int, batchErr error) {
+	if m == nil {
+		return
+	}
+	m.insertBatchSize.Record(ctx, int64(n), metric.WithAttributes(attribute.Bool("error", batchErr != nil)))
 }
 
 // recordQueueStats records the DB-derived queue statistics (payload bytes,

@@ -52,6 +52,7 @@ package resourcemanager
 
 import (
 	"context"
+	"math/big"
 	"strconv"
 	"sync"
 	"time"
@@ -94,11 +95,8 @@ const (
 	snapshotEmitFailureCounterName = "resource_manager_snapshot_emit_failure_total"
 )
 
-// utilizationGaugeName is the per-resource utilization gauge. Unlike the
-// low-cardinality emit counters, it is labeled with EVERY ResourceIdentity
-// dimension (including node_id and resource_id) so dashboards can break
-// utilization down by any dimension. That is high cardinality by construction;
-// it is the intended, requested behavior.
+// utilizationGaugeName is labeled with every ResourceIdentity dimension but never
+// resource_id, which can be per-execution.
 const utilizationGaugeName = "resource_manager_utilization"
 
 // DefaultSnapshotInterval is the recommended snapshot period. It is NOT
@@ -444,6 +442,13 @@ func (rm *ResourceManager) EmitUsage(ctx context.Context, identity ResourceIdent
 	rm.emitRecord(ctx, identity, eventID, meteringpb.MeterAction_METER_ACTION_USAGE, NewUtilizationInt(quantity, fields))
 }
 
+// EmitUsageValue is EmitUsage for quantities that do not fit an int64, such as a
+// transaction fee in wei. A nil value emits "0". Same event_id contract and
+// fail-open semantics as EmitUsage.
+func (rm *ResourceManager) EmitUsageValue(ctx context.Context, identity ResourceIdentity, eventID string, value *big.Int, fields UtilizationFields) {
+	rm.emitRecord(ctx, identity, eventID, meteringpb.MeterAction_METER_ACTION_USAGE, NewUtilizationBig(value, fields))
+}
+
 // emitRecord builds and emits a single-utilization MeterRecord for action.
 // eventID is supplied by the caller and stamped on the utilization; it is never
 // generated here. An empty eventID means the producer failed to derive a
@@ -518,8 +523,7 @@ func (rm *ResourceManager) emitRecord(ctx context.Context, identity ResourceIden
 	rm.countRecord(ctx, rm.emitSuccess, identity, action)
 }
 
-// recordUtilization records value to the per-resource utilization gauge,
-// labeled with every ResourceIdentity dimension plus utilization identity.
+// recordUtilization records value to the utilization gauge.
 func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIdentity, u *meteringpb.Utilization) {
 	if rm.utilization == nil {
 		return
@@ -551,7 +555,6 @@ func (rm *ResourceManager) recordUtilization(ctx context.Context, id ResourceIde
 		attribute.String("resource_pool", id.ResourcePool),
 		attribute.String("resource_pool_id", id.ResourcePoolID),
 		attribute.String("resource_type", u.GetResourceType()),
-		attribute.String("resource_id", u.GetResourceId()),
 		attribute.String("org_id", u.GetOrgId()),
 	))
 }

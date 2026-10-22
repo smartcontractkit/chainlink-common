@@ -61,6 +61,9 @@ var Default = Schema{
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
 	CoordinatedEngineEnabled:                    Bool(false),
+	ShardingFailoverEnabled:                     Bool(false),
+	TimeoutBasedFailover:                        Bool(false),
+	TimeoutBasedFailoverWindow:                  Duration(5 * time.Minute),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -94,6 +97,7 @@ var Default = Schema{
 	GatewayHTTPActionOutboundPerNodeConcurrencyLimit: Int(175),
 	DispatcherGlobalRate:                             Rate(rate.Limit(5000), 5000),
 	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
+	CentralTriggerEventQueueLimit:                    Int(1000),
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -238,6 +242,7 @@ var Default = Schema{
 		ExecutionResponseLimit:        Size(100 * config.KByte),
 		ExecutionTimestampsEnabled:    Bool(false),
 		WASMMemoryLimit:               Size(100 * config.MByte),
+		WASMTableElementsLimit:        Int(1_000_000),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
 		WASMConfigSizeLimit:           Size(50 * config.KByte),
@@ -385,7 +390,23 @@ type Schema struct {
 	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
 	// trigger-owning Engine for newly created workflows.
-	CoordinatedEngineEnabled        Setting[bool]
+	CoordinatedEngineEnabled Setting[bool]
+	// ShardingFailoverEnabled, when true, makes a sharded workflow DON cache
+	// trigger events for workflows owned by another shard (instead of dropping
+	// them) so it can take over execution if the owning shard fails. Only
+	// applies when sharding is enabled on the node.
+	ShardingFailoverEnabled Setting[bool]
+	// TimeoutBasedFailover, when true, makes a shard that
+	// cached a trigger event for a workflow owned by another shard execute
+	// the cached event itself if no execution outcome from the owning shard
+	// arrives within TimeoutBasedFailoverWindow. Covers an owning shard dying
+	// silently, where no execution status update is ever sent. Only applies
+	// when ShardingFailoverEnabled is true.
+	TimeoutBasedFailover Setting[bool]
+	// TimeoutBasedFailoverWindow is how long a cached trigger event waits for
+	// the owning shard's execution outcome before the caching shard may
+	// execute it itself.
+	TimeoutBasedFailoverWindow      Setting[time.Duration]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata Setting[bool]
@@ -439,7 +460,11 @@ type Schema struct {
 	// DispatcherGlobalRate bounds inbound P2P message rate across all senders.
 	DispatcherGlobalRate Setting[config.Rate]
 	// DispatcherPerSenderRate bounds inbound P2P message rate per sender.
-	DispatcherPerSenderRate                Setting[config.Rate]
+	DispatcherPerSenderRate Setting[config.Rate]
+	// CentralTriggerEventQueueLimit is the node-wide cap on trigger events buffered in the
+	// central trigger queue, across all workflows and orgs. It is re-read on every Put; when
+	// the queue is full, new events are dropped (and counted) rather than blocking.
+	CentralTriggerEventQueueLimit          Setting[int] `unit:"{trigger}"`
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
@@ -524,6 +549,7 @@ type Workflows struct {
 	ExecutionTimestampsEnabled Setting[bool]
 
 	WASMMemoryLimit               Setting[config.Size]
+	WASMTableElementsLimit        Setting[int] `unit:"{element}"`
 	WASMBinarySizeLimit           Setting[config.Size]
 	WASMCompressedBinarySizeLimit Setting[config.Size]
 	WASMConfigSizeLimit           Setting[config.Size]

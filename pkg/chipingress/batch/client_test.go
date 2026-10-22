@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -1215,6 +1217,185 @@ func TestStop(t *testing.T) {
 
 		assert.Equal(t, 0, countCounters(&client.counters))
 	})
+
+	t.Run("Stop publishes messages still queued behind in-flight sends", func(t *testing.T) {
+		const queued = 100
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+
+		firstSendStarted := make(chan struct{})
+		release := make(chan struct{})
+		var mu sync.Mutex
+		published := map[string]bool{}
+		mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
+			RunAndReturn(func(_ context.Context, batch *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+				mu.Lock()
+				first := len(published) == 0
+				results := make([]*chipingress.PublishResult, len(batch.Events))
+				for i, e := range batch.Events {
+					published[e.Id] = true
+					results[i] = &chipingress.PublishResult{EventId: e.Id}
+				}
+				mu.Unlock()
+				if first {
+					close(firstSendStarted)
+					<-release // hold the only send slot so the rest of the messages stay queued
+				}
+				return &chipingress.PublishResponse{Results: results}, nil
+			})
+
+		client, err := NewBatchClient(mockClient,
+			WithBatchSize(2),
+			WithMaxConcurrentSends(1),
+			WithMessageBuffer(queued),
+			WithBatchInterval(time.Hour),
+			WithShutdownTimeout(5*time.Second),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		callbackCount := 0
+		var callbackErrs []error
+		for i := range queued {
+			require.NoError(t, client.QueueMessage(&chipingress.CloudEventPb{
+				Id: strconv.Itoa(i), Source: "test-source", Type: "test.event.type",
+			}, func(err error) {
+				mu.Lock()
+				defer mu.Unlock()
+				callbackCount++
+				if err != nil {
+					callbackErrs = append(callbackErrs, err)
+				}
+			}))
+		}
+		<-firstSendStarted
+
+		stopped := make(chan struct{})
+		go func() {
+			client.Stop()
+			close(stopped)
+		}()
+		require.Eventually(t, func() bool {
+			select {
+			case <-client.stopCh:
+				return true
+			default:
+				return false
+			}
+		}, time.Second, time.Millisecond)
+		close(release)
+		<-stopped // Stop waits for in-flight sends and callbacks
+
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Len(t, published, queued, "every queued message must be published on Stop")
+		assert.Equal(t, queued, callbackCount, "every queued message must get its callback")
+		assert.Empty(t, callbackErrs)
+	})
+
+	t.Run("Stop returns at the shutdown timeout and late batches report errors", func(t *testing.T) {
+		const queued = 20
+		mockClient := mocks.NewClient(t)
+		var closed atomic.Bool
+		mockClient.EXPECT().Close().RunAndReturn(func() error { closed.Store(true); return nil }).Once()
+
+		firstSendStarted := make(chan struct{})
+		release := make(chan struct{})
+		var firstOnce sync.Once
+		mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
+			RunAndReturn(func(_ context.Context, batch *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+				if closed.Load() {
+					return nil, errors.New("client connection is closing")
+				}
+				firstOnce.Do(func() {
+					close(firstSendStarted)
+					<-release // outlive the shutdown timeout
+				})
+				results := make([]*chipingress.PublishResult, len(batch.Events))
+				for i, e := range batch.Events {
+					results[i] = &chipingress.PublishResult{EventId: e.Id}
+				}
+				return &chipingress.PublishResponse{Results: results}, nil
+			})
+
+		const shutdownTimeout = 100 * time.Millisecond
+		client, err := NewBatchClient(mockClient,
+			WithBatchSize(2),
+			WithMaxConcurrentSends(1),
+			WithMessageBuffer(queued),
+			WithBatchInterval(time.Hour),
+			WithShutdownTimeout(shutdownTimeout),
+		)
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		var mu sync.Mutex
+		var ok, failed int
+		for i := range queued {
+			require.NoError(t, client.QueueMessage(&chipingress.CloudEventPb{
+				Id: strconv.Itoa(i), Source: "test-source", Type: "test.event.type",
+			}, func(err error) {
+				mu.Lock()
+				defer mu.Unlock()
+				if err != nil {
+					failed++
+				} else {
+					ok++
+				}
+			}))
+		}
+		<-firstSendStarted
+
+		start := time.Now()
+		client.Stop()
+		elapsed := time.Since(start)
+		assert.GreaterOrEqual(t, elapsed, shutdownTimeout)
+		assert.Less(t, elapsed, shutdownTimeout+time.Second, "Stop must return at the shutdown timeout")
+		require.True(t, closed.Load(), "Stop must close the client after the timeout")
+
+		close(release)
+		require.EventuallyWithT(t, func(c *assert.CollectT) {
+			mu.Lock()
+			defer mu.Unlock()
+			assert.Equal(c, queued, ok+failed, "every queued message must get its callback")
+		}, 5*time.Second, 10*time.Millisecond)
+		mu.Lock()
+		defer mu.Unlock()
+		assert.Equal(t, 2, ok, "only the batch in flight before the timeout succeeds")
+		assert.Equal(t, queued-2, failed, "batches drained after the timeout report the closed-client error")
+	})
+
+	t.Run("QueueMessage that passed the fast-path check before Stop is rejected, not abandoned", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		mockClient.EXPECT().Close().Return(nil).Maybe()
+
+		client, err := NewBatchClient(mockClient, WithBatchInterval(time.Hour))
+		require.NoError(t, err)
+		client.Start(t.Context())
+
+		reachedHook := make(chan struct{})
+		resume := make(chan struct{})
+		client.afterFastPath = func() {
+			close(reachedHook)
+			<-resume // hold the producer between the fast-path check and admission
+		}
+
+		var callbackRan atomic.Bool
+		queueErr := make(chan error, 1)
+		go func() {
+			queueErr <- client.QueueMessage(&chipingress.CloudEventPb{
+				Id: "late", Source: "test-source", Type: "test.event.type",
+			}, func(error) { callbackRan.Store(true) })
+		}()
+		<-reachedHook
+
+		client.Stop() // drains an empty buffer and returns while the producer is parked
+		close(resume)
+
+		require.ErrorIs(t, <-queueErr, ErrClientShutdown,
+			"a message accepted after the drain would never be published or called back")
+		assert.False(t, callbackRan.Load())
+	})
 }
 
 func countCounters(counters *sync.Map) int {
@@ -2231,8 +2412,9 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		require.ErrorAs(t, err2, &re2)
 	})
 
-	t.Run("nil response with partial delivery enabled treats as all success", func(t *testing.T) {
-		t.Skip("Failing before CI required all modules run tests")
+	t.Run("nil response with partial delivery fails all with RESULTS_MISMATCH", func(t *testing.T) {
+		// A nil response with a nil error is a protocol violation (generated gRPC stubs never
+		// return it, but other Client implementations can). It must fail every event, not panic.
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
 		mockClient.
@@ -2249,15 +2431,21 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		}
 
 		client.sendBatch(t.Context(), messages)
-		client.callbackWg.Wait()
 
 		for range 2 {
-			assert.NoError(t, <-errs)
+			select {
+			case err := <-errs:
+				var pubErr *PublishError
+				require.ErrorAs(t, err, &pubErr)
+				assert.Equal(t, ErrCodeResultsMismatch, pubErr.Code)
+				assert.Equal(t, "server returned 0 results for 2 events", pubErr.Reason)
+			case <-time.After(time.Second):
+				t.Fatal("timeout waiting for callback")
+			}
 		}
 	})
 
-	t.Run("empty results with partial delivery enabled treats as all success", func(t *testing.T) {
-		t.Skip("Failing before CI required all modules run tests")
+	t.Run("empty results with partial delivery fails all with RESULTS_MISMATCH", func(t *testing.T) {
 		mockClient := mocks.NewClient(t)
 		mockClient.EXPECT().Close().Return(nil).Maybe()
 		mockClient.
@@ -2273,9 +2461,16 @@ func TestTransactionEnabledEdgeCases(t *testing.T) {
 		}
 
 		client.sendBatch(t.Context(), messages)
-		client.callbackWg.Wait()
 
-		assert.NoError(t, <-errs)
+		select {
+		case err := <-errs:
+			var pubErr *PublishError
+			require.ErrorAs(t, err, &pubErr)
+			assert.Equal(t, ErrCodeResultsMismatch, pubErr.Code)
+			assert.Equal(t, "server returned 0 results for 1 events", pubErr.Reason)
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for callback")
+		}
 	})
 
 	t.Run("PublishError with unknown code", func(t *testing.T) {

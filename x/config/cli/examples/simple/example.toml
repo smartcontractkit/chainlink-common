@@ -1,0 +1,4 @@
+Host = "file.example.com"
+Port = 9090
+Timeout = "30s"
+Tags = ["from-file", "toml"]

@@ -90,6 +90,11 @@ flowchart
         DispatcherPerSenderRate[\DispatcherPerSenderRate/]:::rate
     end
 
+    subgraph CentralTriggerQueue.Put
+%%      trigger coordinator reader → central trigger queue (pre-admission buffer)
+        CentralTriggerEventQueueLimit{{CentralTriggerEventQueueLimit}}:::bound
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -104,8 +109,16 @@ flowchart
 
     subgraph syncer.tryEngineCreate
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
+        ShardingFailoverEnabled[/ShardingFailoverEnabled\]:::gate
     end
-    
+
+    subgraph ShardFailoverManager.autoFailoverLoop
+%%      cached trigger events whose failover window elapsed without an
+%%      execution outcome from the owning shard
+        TimeoutBasedFailover[/TimeoutBasedFailover\]:::gate
+        TimeoutBasedFailoverWindow>TimeoutBasedFailoverWindow]:::time
+    end
+
     subgraph Engine.init
 %%        TODO move and replace with WorkflowLimit
         WorkflowLimit([WorkflowLimit]):::resource
@@ -118,10 +131,11 @@ flowchart
         TriggerRegistrationStatusUpdateTimeout([TriggerRegistrationStatusUpdateTimeout]):::time
         PerWorkflow.TriggerSubscriptionTimeout>PerWorkflow.TriggerSubscriptionTimeout]:::time
         PerWorkflow.WASMMemoryLimit{{PerWorkflow.WASMMemoryLimit}}:::bound
+        PerWorkflow.WASMTableElementsLimit{{PerWorkflow.WASMTableElementsLimit}}:::bound
         PerWorkflow.TriggerRegistrationsTimeout>PerWorkflow.TriggerRegistrationsTimeout]:::time
         PerWorkflow.TriggerSubscriptionLimit{{PerWorkflow.TriggerSubscriptionLimit}}:::bound
         
-        PerWorkflow.TriggerSubscriptionTimeout-->PerWorkflow.WASMMemoryLimit-->PerWorkflow.TriggerSubscriptionLimit-->PerWorkflow.TriggerRegistrationsTimeout
+        PerWorkflow.TriggerSubscriptionTimeout-->PerWorkflow.WASMMemoryLimit-->PerWorkflow.WASMTableElementsLimit-->PerWorkflow.TriggerSubscriptionLimit-->PerWorkflow.TriggerRegistrationsTimeout
     end
 
     subgraph triggers
@@ -364,6 +378,9 @@ flowchart
 
 %%  DON peer → DON peer is likewise its own entry point
     handleMessage
+
+%%  the trigger coordinator's reader is likewise its own entry point
+    CentralTriggerQueue.Put
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

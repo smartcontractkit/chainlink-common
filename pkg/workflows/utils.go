@@ -11,22 +11,6 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-// Deprecated: Use GenerateExecutionIDWithTriggerIndex instead.
-func EncodeExecutionID(workflowID, eventID string) (string, error) {
-	s := sha256.New()
-	_, err := s.Write([]byte(workflowID))
-	if err != nil {
-		return "", err
-	}
-
-	_, err = s.Write([]byte(eventID))
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToString(s.Sum(nil)), nil
-}
-
 func GenerateExecutionIDWithTriggerIndex(workflowID, triggerEventID string, triggerIndex int) (string, error) {
 	s := sha256.New()
 	_, err := s.Write([]byte(workflowID))

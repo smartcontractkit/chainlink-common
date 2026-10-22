@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/pb";
+
+package triggers;
+
+import "google/protobuf/timestamp.proto";
+import "capabilities.proto";
+
+message CoordinatedEvent {
+  string workflowID = 1;
+  string triggerCapID = 2;
+  int64 triggerIndex = 3;
+  google.protobuf.Timestamp observedAt = 4;
+  google.protobuf.Timestamp deadline = 5;
+  uint64 sequenceNumber = 6;
+  capabilities.TriggerResponse event = 7;
+}
+
+message ConsensusQueueObservation {
+  repeated CoordinatedEvent events = 1;
+}
+
+message ConsensusQueueReport {
+  repeated CoordinatedEvent events = 1;
+}

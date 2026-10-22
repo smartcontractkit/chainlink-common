@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792605005423,
+  "lastUpdate": 1792667334920,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64740,6 +64740,66 @@ window.BENCHMARK_DATA = {
             "value": 127915,
             "unit": "ns/op",
             "extra": "8858 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74f78e92fb70ad0298b92197e1a225715f2e14f6",
+          "message": "CRE-7117: abstract telemetry package (#2487)\n\n* Move LOOP telemetry setup into pkg/loop/telemetry\n\nTracing, beholder and chip ingress configuration moves out of EnvConfig\nand Server into a package of its own, so it can be used without\nloop.Server:\n\n- TelemetryConfig holds the Tracing*, Telemetry* and ChipIngress* fields\n  and is embedded in EnvConfig, so they're still promoted. Its env is\n  written by AsCmdEnv and read by Parse, under the same names.\n- NewTelemetry builds the tracing config and beholder client that\n  Server.start built inline. Telemetry is a service that starts the\n  client and then installs it as the global, as startBeholderClient did;\n  Server holds it in place of the bare client.\n- TracingConfig and SetupTracing move too; loop keeps an alias and a\n  forwarding func.\n\nEnv var names and parsing are unchanged.\n\n* telemetry: don't mutate TracingAttributes when adding the instance ID\n\nThe instance ID was written into the EnvConfig's own map.\n\n* telemetry: name the collector when tracing fails to dial\n\n* telemetry: omit service.instance.id when there's no app ID\n\n* telemetry: default an unset metric cardinality limit\n\nA nil TelemetryMetricCardinalityLimit was dereferenced. Parse always sets\nit when telemetry is enabled, but a TelemetryConfig built any other way\nneedn't.\n\n* telemetry: tag map fields so x/config/cli reads AsCmdEnv's names\n\nWith singular toml keys, x/config/cli reads each map entry from the env\nvar AsCmdEnv writes (CL_TRACING_ATTRIBUTE_<k>, CL_TELEMETRY_ATTRIBUTE_<k>),\nand TelemetryAuthHeaders no longer claims CL_TELEMETRY_AUTH_HEADERS_TTL.\n\n* telemetry: separate auth header keys from their env prefix\n\nAuth headers were written as CL_TELEMETRY_AUTH_HEADER<key>, which\nx/config/cli can't read. AsCmdEnv now writes CL_TELEMETRY_AUTH_HEADER_<key>\nas well, and Parse reads that form first, falling back to the old one so\nolder hosts and LOOPs keep working.\n\n* telemetry: only build a beholder client when telemetry is enabled\n\nNewTelemetry checked only for an endpoint. Parse leaves the endpoint\nblank when CL_TELEMETRY_ENABLED is false, but hosts set it either way,\nso a reader that decodes every env var, such as x/config/cli, would\nstart a beholder client a LOOP wouldn't.",
+          "timestamp": "2026-10-22T10:58:27Z",
+          "tree_id": "cc3230475f43529e9b8218eceb5073f0d2577722",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/74f78e92fb70ad0298b92197e1a225715f2e14f6"
+        },
+        "date": 1792667331503,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 339.1,
+            "unit": "ns/op",
+            "extra": "3293204 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 26523,
+            "unit": "ns/op",
+            "extra": "44899 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 232.6,
+            "unit": "ns/op",
+            "extra": "5154667 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 27361,
+            "unit": "ns/op",
+            "extra": "46564 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 14862,
+            "unit": "ns/op",
+            "extra": "80948 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 48675,
+            "unit": "ns/op",
+            "extra": "23697 times\n4 procs"
           }
         ]
       }

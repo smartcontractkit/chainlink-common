@@ -61,15 +61,24 @@ func TestTelemetryConfig_tracingConfig(t *testing.T) {
 
 func TestTelemetryConfig_beholderConfig(t *testing.T) {
 	t.Run("prometheus bridge", func(t *testing.T) {
-		off, err := TelemetryConfig{TelemetryMetricCardinalityLimit: new(0)}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		off, err := TelemetryConfig{}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
 		require.NoError(t, err)
 		assert.Empty(t, off.MetricProducers)
 
-		on, err := TelemetryConfig{TelemetryMetricCardinalityLimit: new(0), TelemetryPrometheusBridgeEnabled: true, TelemetryPrometheusBridgePrefixes: []string{"foo_"}}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		on, err := TelemetryConfig{TelemetryPrometheusBridgeEnabled: true, TelemetryPrometheusBridgePrefixes: []string{"foo_"}}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
 		require.NoError(t, err)
 		assert.Len(t, on.MetricProducers, 1)
 	})
 
+	t.Run("cardinality limit defaults when unset", func(t *testing.T) {
+		unset, err := TelemetryConfig{}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		assert.Equal(t, beholder.DefaultMetricCardinalityLimit, unset.MetricCardinalityLimit)
+
+		disabled, err := TelemetryConfig{TelemetryMetricCardinalityLimit: new(0)}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		assert.Equal(t, 0, disabled.MetricCardinalityLimit)
+	})
 }
 
 func detachedLogger() (logger.Logger, *observer.ObservedLogs) {

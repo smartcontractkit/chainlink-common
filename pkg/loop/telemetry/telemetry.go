@@ -44,6 +44,10 @@ func (c TelemetryConfig) beholderConfig(lggr logger.Logger, tracing TracingConfi
 	if tracing.Enabled {
 		attributes = tracing.Attributes()
 	}
+	cardinalityLimit := beholder.DefaultMetricCardinalityLimit
+	if c.TelemetryMetricCardinalityLimit != nil {
+		cardinalityLimit = *c.TelemetryMetricCardinalityLimit
+	}
 	cfg := beholder.Config{
 		InsecureConnection:             c.TelemetryInsecureConnection,
 		CACertFile:                     c.TelemetryCACertFile,
@@ -78,7 +82,7 @@ func (c TelemetryConfig) beholderConfig(lggr logger.Logger, tracing TracingConfi
 		ChipIngressLogger:              lggr,
 		MetricCompressor:               c.TelemetryMetricCompressor,
 		MetricExportBatchSize:          c.TelemetryMetricExportBatchSize,
-		MetricCardinalityLimit:         *c.TelemetryMetricCardinalityLimit,
+		MetricCardinalityLimit:         cardinalityLimit,
 		MetricViewsDenyAttributes:      c.TelemetryMetricViewsDenyAttributes,
 		// The client decides between rotating and static auth by whether AuthHeadersTTL is set.
 		AuthHeaders:      c.TelemetryAuthHeaders,

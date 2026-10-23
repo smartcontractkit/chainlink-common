@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792685563413,
+  "lastUpdate": 1792784629050,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -64920,6 +64920,66 @@ window.BENCHMARK_DATA = {
             "value": 47163,
             "unit": "ns/op",
             "extra": "25046 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "uriel.kelman@smartcontract.com",
+            "name": "Uriel Kelman",
+            "username": "urielkelman"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0c5255bd5311c519370a58be8024dd5baff5d02e",
+          "message": "Fix/load limits from settings at init (#2431)\n\n* fix: load limits from settings rather than using defaults when rate limiter is first instantiated\n\n* restored old comments",
+          "timestamp": "2026-10-23T19:35:41Z",
+          "tree_id": "2138bd10da82004e05da694bf7feb5d5f2451cf5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0c5255bd5311c519370a58be8024dd5baff5d02e"
+        },
+        "date": 1792784626041,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 409.1,
+            "unit": "ns/op",
+            "extra": "2538367 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 51368,
+            "unit": "ns/op",
+            "extra": "23878 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 273.4,
+            "unit": "ns/op",
+            "extra": "4787744 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57695,
+            "unit": "ns/op",
+            "extra": "20218 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 18014,
+            "unit": "ns/op",
+            "extra": "65754 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 83625,
+            "unit": "ns/op",
+            "extra": "14263 times\n4 procs"
           }
         ]
       }

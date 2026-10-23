@@ -173,7 +173,7 @@
 				"ReportSizeLimit": "5kb"
 			},
 			"Solana": {
-				"ReportSizeLimit": "265b",
+				"ReportSizeLimit": "2kb",
 				"GasLimit": {
 					"Default": "300000",
 					"Values": {}

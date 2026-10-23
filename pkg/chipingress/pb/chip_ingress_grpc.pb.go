@@ -45,11 +45,13 @@ type ChipIngressClient interface {
 	// entire batch (all-or-nothing).
 	// Results in PublishResponse are positionally ordered: results[i] corresponds to events[i].
 	PublishBatch(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error)
-	// PublishBatchNoAck behaves like PublishBatch (same validation, partial-delivery
-	// and transaction_enabled semantics, positional results) but the server produces
-	// to Kafka with acks=0: it does not wait for broker acknowledgement. A successful
-	// response means the events were validated and handed to the producer, not that
-	// they were persisted. Use only for loss-tolerant telemetry.
+	// PublishBatchNoAck has the same request/response contract as PublishBatch: same
+	// validation, partial-delivery and transaction_enabled semantics, same positional
+	// results and PublishErrorCodes. The only difference is that the server produces to
+	// Kafka with acks=0 and responds without waiting for broker acknowledgement, so a
+	// success means validated and handed to the producer, not persisted, and broker-side
+	// produce failures are not reported. Servers that predate this RPC return UNIMPLEMENTED.
+	// Use only for loss-tolerant telemetry.
 	PublishBatchNoAck(ctx context.Context, in *CloudEventBatch, opts ...grpc.CallOption) (*PublishResponse, error)
 	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*PingResponse, error)
@@ -148,11 +150,13 @@ type ChipIngressServer interface {
 	// entire batch (all-or-nothing).
 	// Results in PublishResponse are positionally ordered: results[i] corresponds to events[i].
 	PublishBatch(context.Context, *CloudEventBatch) (*PublishResponse, error)
-	// PublishBatchNoAck behaves like PublishBatch (same validation, partial-delivery
-	// and transaction_enabled semantics, positional results) but the server produces
-	// to Kafka with acks=0: it does not wait for broker acknowledgement. A successful
-	// response means the events were validated and handed to the producer, not that
-	// they were persisted. Use only for loss-tolerant telemetry.
+	// PublishBatchNoAck has the same request/response contract as PublishBatch: same
+	// validation, partial-delivery and transaction_enabled semantics, same positional
+	// results and PublishErrorCodes. The only difference is that the server produces to
+	// Kafka with acks=0 and responds without waiting for broker acknowledgement, so a
+	// success means validated and handed to the producer, not persisted, and broker-side
+	// produce failures are not reported. Servers that predate this RPC return UNIMPLEMENTED.
+	// Use only for loss-tolerant telemetry.
 	PublishBatchNoAck(context.Context, *CloudEventBatch) (*PublishResponse, error)
 	// Ping sends a request to the ChipIngress service to check if it is alive.
 	Ping(context.Context, *EmptyRequest) (*PingResponse, error)

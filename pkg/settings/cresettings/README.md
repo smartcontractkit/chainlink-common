@@ -209,6 +209,7 @@ flowchart
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
+        PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod[/PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end

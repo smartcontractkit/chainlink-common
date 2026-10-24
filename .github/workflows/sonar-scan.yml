@@ -2,46 +2,99 @@ name: SonarQube Scan
 
 on: [push]
 
-# Reading other workflows' runs and artifacts takes actions: read.
+# A newer push to a branch supersedes its scan; every commit to main is scanned.
+concurrency:
+  group: sonar-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+# Reading other workflows' runs and artifacts takes actions: read; finding a branch's pull request
+# takes pull-requests: read.
 permissions:
   contents: read
   actions: read
+  pull-requests: read
 
 jobs:
-  wait_for_workflows:
-    name: Wait for workflows
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
-
-      - name: Wait for workflows
-        uses: smartcontractkit/.github/actions/wait-for-workflows@dca9ab89d734e82738b8aa52bd25d09b205ec6ee # v0.1.1
-        with:
-          max-timeout: "1200"
-          polling-interval: "30"
-          exclude-workflow-names: "Build External Repositories, Observability Lib Checks, Run Benchmarks, LLM Action Error Reporter"
-          exclude-workflow-ids: ""
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          DEBUG: "true"
-
   sonarqube:
     name: SonarQube Scan
-    needs: [wait_for_workflows]
     runs-on: ubuntu-latest
-    if: always()
     # The steps of smartcontractkit/.github's ci-sonarqube-go, pinned to this commit's reports. That
     # action takes the newest artifact of one fixed name from any branch, and lint artifacts here
     # are named per module.
+    env:
+      # The event whose runs report on this commit. A merge queue commit reaches main as the same
+      # commit, so its finished merge_group runs, which check only the changed modules, must not
+      # stand in for main's push runs.
+      REPORT_EVENT: ${{ github.ref_name == 'main' && 'push' || startsWith(github.ref_name, 'gh-readonly-queue/') && 'merge_group' || 'pull_request' }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Wait for reports
+        id: wait
+        # A pull request's runs are created a few seconds after the push that starts this one, so
+        # waiting for whatever runs exist can finish before they do. Wait for this commit's report
+        # runs by name: briefly for them to appear, then for them to complete. A tag, or a branch
+        # with no open pull request, gets no report runs; sonar-rescan.yml reruns this scan if a
+        # pull request is opened later.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            echo "No report runs for a tag"
+            exit 0
+          fi
+          if [[ "$REPORT_EVENT" == pull_request ]]; then
+            # A failed lookup waits as if a pull request were open.
+            prs=$(gh pr list -R "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --json number --jq '.[].number') || prs=unknown
+            if [[ -z "$prs" ]]; then
+              echo "No open pull request for $GITHUB_REF_NAME"
+              exit 0
+            fi
+          fi
+          # One deadline for both workflows, so a push with neither waits once, not twice.
+          appear_by=$((SECONDS + 180))
+          finish_by=$((SECONDS + 3600))
+          failures=0
+          found=0
+          for workflow in pkg.yml golangci_lint.yml; do
+            while true; do
+              # true when every run completed, none when no run exists yet.
+              if state=$(gh run list -R "$GITHUB_REPOSITORY" --workflow "$workflow" --commit "$GITHUB_SHA" --event "$REPORT_EVENT" \
+                --json status --jq 'if length == 0 then "none" else (all(.status == "completed") | tostring) end' \
+                2> "$RUNNER_TEMP/gh-error"); then
+                failures=0
+              else
+                failures=$((failures + 1))
+                echo "::warning::Listing $workflow runs failed: $(cat "$RUNNER_TEMP/gh-error")"
+                if [[ $failures -ge 5 ]]; then
+                  echo "::warning::Giving up after $failures failures in a row"
+                  break 2
+                fi
+                state=retry
+              fi
+              if [[ "$state" == true ]]; then
+                found=$((found + 1))
+                break
+              elif [[ "$state" == none && $SECONDS -gt $appear_by ]]; then
+                echo "No $workflow run for $GITHUB_SHA"
+                break
+              elif [[ $SECONDS -gt $finish_by ]]; then
+                echo "::warning::$workflow did not complete for $GITHUB_SHA"
+                break
+              fi
+              sleep 20
+            done
+          done
+          echo "found=$([[ $found -eq 2 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: No reports found
+        # sonar-rescan.yml looks for this step to decide whether a newly opened pull request needs
+        # this scan rerun.
+        if: steps.wait.outputs.found != 'true'
+        run: echo "No completed report runs for $GITHUB_SHA"
 
       - name: Download coverage reports
         uses: dawidd6/action-download-artifact@634d83b91986fcec9be314054943fa5c976aeb0e # v25
@@ -50,6 +103,7 @@ jobs:
           name: go-test-coverage-.*
           name_is_regexp: true
           commit: ${{ github.sha }}
+          event: ${{ env.REPORT_EVENT }}
           search_artifacts: true
           workflow_conclusion: ""
           # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.
@@ -63,6 +117,7 @@ jobs:
           name: golangci-lint-report-.*
           name_is_regexp: true
           commit: ${{ github.sha }}
+          event: ${{ env.REPORT_EVENT }}
           search_artifacts: true
           workflow_conclusion: ""
           # Every push to main has its reports; a push elsewhere has them only if it is a pull request's.

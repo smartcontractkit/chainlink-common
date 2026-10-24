@@ -20,6 +20,7 @@ service ChipIngress {
     // entire batch (all-or-nothing).
     // Results in PublishResponse are positionally ordered: results[i] corresponds to events[i].
     rpc PublishBatch (CloudEventBatch) returns (PublishResponse) {}
+    rpc PublishBatchTelemetry (CloudEventBatch) returns (PublishResponse) {}
     // Ping sends a request to the ChipIngress service to check if it is alive.
     rpc Ping(EmptyRequest) returns (PingResponse);
     // StreamEvents; EXPERIMENTAL ~ allows clients to stream CloudEvents to the server.

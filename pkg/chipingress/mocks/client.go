@@ -294,6 +294,80 @@ func (_c *Client_PublishBatch_Call) RunAndReturn(run func(context.Context, *pb.C
 	return _c
 }
 
+// PublishBatchTelemetry provides a mock function with given fields: ctx, in, opts
+func (_m *Client) PublishBatchTelemetry(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption) (*pb.PublishResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PublishBatchTelemetry")
+	}
+
+	var r0 *pb.PublishResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.CloudEventBatch, ...grpc.CallOption) (*pb.PublishResponse, error)); ok {
+		return rf(ctx, in, opts...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.CloudEventBatch, ...grpc.CallOption) *pb.PublishResponse); ok {
+		r0 = rf(ctx, in, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*pb.PublishResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *pb.CloudEventBatch, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_PublishBatchTelemetry_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PublishBatchTelemetry'
+type Client_PublishBatchTelemetry_Call struct {
+	*mock.Call
+}
+
+// PublishBatchTelemetry is a helper method to define mock.On call
+//   - ctx context.Context
+//   - in *pb.CloudEventBatch
+//   - opts ...grpc.CallOption
+func (_e *Client_Expecter) PublishBatchTelemetry(ctx interface{}, in interface{}, opts ...interface{}) *Client_PublishBatchTelemetry_Call {
+	return &Client_PublishBatchTelemetry_Call{Call: _e.mock.On("PublishBatchTelemetry",
+		append([]interface{}{ctx, in}, opts...)...)}
+}
+
+func (_c *Client_PublishBatchTelemetry_Call) Run(run func(ctx context.Context, in *pb.CloudEventBatch, opts ...grpc.CallOption)) *Client_PublishBatchTelemetry_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]grpc.CallOption, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(grpc.CallOption)
+			}
+		}
+		run(args[0].(context.Context), args[1].(*pb.CloudEventBatch), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Client_PublishBatchTelemetry_Call) Return(_a0 *pb.PublishResponse, _a1 error) *Client_PublishBatchTelemetry_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_PublishBatchTelemetry_Call) RunAndReturn(run func(context.Context, *pb.CloudEventBatch, ...grpc.CallOption) (*pb.PublishResponse, error)) *Client_PublishBatchTelemetry_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RegisterSchema provides a mock function with given fields: ctx, in, opts
 func (_m *Client) RegisterSchema(ctx context.Context, in *pb.RegisterSchemaRequest, opts ...grpc.CallOption) (*pb.RegisterSchemaResponse, error) {
 	_va := make([]interface{}, len(opts))

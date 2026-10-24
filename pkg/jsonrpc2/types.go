@@ -88,17 +88,26 @@ func (r *Request[Params]) Digest() (string, error) {
 }
 
 type Response[Result any] struct {
-	Version string     `json:"jsonrpc"`
-	ID      string     `json:"id"`
-	Method  string     `json:"method"`
-	Result  *Result    `json:"result,omitempty"`
-	Error   *WireError `json:"error,omitempty"`
+	Version        string     `json:"jsonrpc"`
+	ID             string     `json:"id"`
+	Method         string     `json:"method"`
+	Result         *Result    `json:"result,omitempty"`
+	Error          *WireError `json:"error,omitempty"`
+	NodeSignatures [][]byte   `json:"nodeSignatures,omitempty"`
 }
 
 // Digest returns a digest of the response. This is used for signature verification.
 // The digest is a SHA256 hash of the canonical JSON string of the response.
+// ID and NodeSignatures are intentionally excluded: the gateway rewrites the ID
+// (owner prefix strip) before the response reaches the client, and signatures
+// are appended after the digest is computed.
 func (r *Response[Result]) Digest() (string, error) {
-	JSONBytes, err := jsonv2.Marshal(r, jsonv2.Deterministic(true))
+	JSONBytes, err := jsonv2.Marshal(Response[Result]{
+		Version: r.Version,
+		Method:  r.Method,
+		Result:  r.Result,
+		Error:   r.Error,
+	}, jsonv2.Deterministic(true))
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
 	}

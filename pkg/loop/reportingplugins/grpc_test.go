@@ -15,7 +15,7 @@ import (
 	telemetrytest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry/test"
 	nettest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net/test"
 	reportingplugintest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/reportingplugin/test"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin/plugintest"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
@@ -60,7 +60,7 @@ func TestGRPCService_MedianProvider(t *testing.T) {
 
 	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(
+	plugintest.PluginTest(
 		t,
 		ocr2test.MedianID,
 		&reportingplugins.GRPCService[types.MedianProvider]{
@@ -77,7 +77,7 @@ func TestGRPCService_PluginProvider(t *testing.T) {
 
 	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(
+	plugintest.PluginTest(
 		t,
 		reportingplugins.PluginServiceName,
 		&reportingplugins.GRPCService[types.PluginProvider]{

@@ -8,6 +8,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin/plugintest"
 	keystoretest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/keystore/test"
 	relayertest "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
@@ -19,7 +20,7 @@ func TestPluginRelayer(t *testing.T) {
 
 	lggr := logger.Test(t)
 	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginRelayerName,
+	plugintest.PluginTest(t, loop.PluginRelayerName,
 		&loop.GRPCPluginRelayer{
 			PluginServer: relayertest.NewPluginRelayer(lggr, false),
 			Logger:       logger.Test(t),

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793030387263,
+  "lastUpdate": 1793044895678,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65100,6 +65100,66 @@ window.BENCHMARK_DATA = {
             "value": 140098,
             "unit": "ns/op",
             "extra": "8265 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "thomas.kaliakos@smartcontract.com",
+            "name": "Thomas Kaliakos",
+            "username": "thomaska"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "8ed7b172ab8c0f60cc8d9d67a8a7d54f0be35454",
+          "message": "PublishBatchNoAck client side (#2478)\n\n* 1st implementation\n\n* Fix CI, reduce comments\n\n* Remove test\n\n* PR feedback\n\n* chipingress/batch: add WithNoAck option (#2491)\n\n* chipingress/batch: add WithNoAck option\n\nAdd batch.WithNoAck(), which makes the batch client send batches with\nPublishBatchNoAck instead of PublishBatch. The option only selects the RPC:\nbatching, splitting, timeouts, per-event results and error codes are\nunchanged. A nil callback error means the server validated the event and\nhanded it to its producer, not that it was persisted.\n\nServers that predate PublishBatchNoAck fail the batch with Unimplemented;\nthere is no fallback to PublishBatch.\n\nNoAck clients tag send_requests_total, request_latency_ms and\nconfig.info with no_ack=true. The attribute is omitted for acked clients\nso their existing series keep their label set.\n\n* chipingress/batch: fix lint in WithNoAck tests\n\nUse require for error assertions (testifylint) and drop a redundant\nPublishErrorCode conversion (unconvert).\n\n---------\n\nCo-authored-by: Pavel <177363085+pkcll@users.noreply.github.com>",
+          "timestamp": "2026-10-26T19:58:13Z",
+          "tree_id": "d99fe109c614b0497fa4797efca0dccb80d3438a",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/8ed7b172ab8c0f60cc8d9d67a8a7d54f0be35454"
+        },
+        "date": 1793044889655,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 378.5,
+            "unit": "ns/op",
+            "extra": "3141244 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 89817,
+            "unit": "ns/op",
+            "extra": "13322 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 418.7,
+            "unit": "ns/op",
+            "extra": "2832415 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90444,
+            "unit": "ns/op",
+            "extra": "13255 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25832,
+            "unit": "ns/op",
+            "extra": "46647 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141314,
+            "unit": "ns/op",
+            "extra": "7872 times\n4 procs"
           }
         ]
       }

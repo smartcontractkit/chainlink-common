@@ -22,7 +22,7 @@ client, err = chipingress.NewClient(addr, chipingress.WithRetryPolicy(policy))
 ## Why it is opt-in
 
 The policy applies to the whole `ChipIngress` service, so it also replays `Publish`,
-`PublishBatch` and `RegisterSchema`. An `UNAVAILABLE` can be returned after the server has already
+`PublishBatch`, `PublishBatchNoAck` and `RegisterSchema`. An `UNAVAILABLE` can be returned after the server has already
 done the work, so a retried batch can produce **duplicate events**. Before enabling retries for a
 publisher, set the `idempotencykey` CloudEvent extension (`chipingress.IdempotencyKeyAttr`) so
 downstream consumers can deduplicate.

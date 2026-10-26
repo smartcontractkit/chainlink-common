@@ -49,7 +49,7 @@ func ProfileWithSelector[T, S any, K comparable](
 
 		scope := selector.goPath[:len(selector.goPath)-1]
 		for _, other := range entry.profileSelectors {
-			if scopesOverlap(other.goPath[:len(other.goPath)-1], scope) {
+			if scopesNest(other.goPath[:len(other.goPath)-1], scope) {
 				return nil, fmt.Errorf("profiles for %s and %s overlap: each rebuilds its whole section, so one would drop the other's values", other.key, selector.key)
 			}
 		}
@@ -60,7 +60,7 @@ func ProfileWithSelector[T, S any, K comparable](
 		defaults := snapshotSection[S](entry, scope)
 		// Copied, so a change to the caller's map can't skip the checks.
 		profiles = maps.Clone(profiles)
-		if err := checkProfileKeys(entry, selector, scope, defaults, profiles); err != nil {
+		if err := checkProfileKeys(profiles); err != nil {
 			return nil, err
 		}
 
@@ -78,12 +78,7 @@ func ProfileWithSelector[T, S any, K comparable](
 	}}
 }
 
-// An env var names a map key in upper case and matches an existing key ignoring case, so two keys in one map that
-// differ only in case would make it ambiguous. A profile's own keys are checkable at Register; a config file's only
-// at runtime.
-func checkProfileKeys[T any, S any, K comparable](
-	entry *typedEntry[T], selector leafKey, scope []string, defaults S, profiles map[K]func(*S),
-) error {
+func checkProfileKeys[K comparable, S any](profiles map[K]func(*S)) error {
 	for k, build := range profiles {
 		if build == nil {
 			return fmt.Errorf("profile %v has no function", k)
@@ -93,80 +88,25 @@ func checkProfileKeys[T any, S any, K comparable](
 		if vk := reflect.ValueOf(k); !vk.Equal(vk) {
 			return fmt.Errorf("profile %v never equals itself, as NaN doesn't, so it can't be selected", k)
 		}
-
-		built := clone.Slowly(defaults).(S)
-		vBuilt := reflect.ValueOf(&built).Elem()
-		allocateField(vBuilt, selector.goPath[len(scope):]).Set(reflect.ValueOf(k))
-		build(&built)
-
-		for _, leaf := range entry.leaves {
-			if !inScope(leaf, scope) {
-				continue
-			}
-
-			m := readField(vBuilt, leaf.goPath[len(scope):])
-			for _, el := range leaf.entries {
-				err := visitEntries(el, leaf.key, m, 0, func(name string, v reflect.Value, isMap bool) error {
-					if !isMap {
-						return nil
-					}
-
-					return foldCollision(k, name, v)
-				})
-				if err != nil {
-					return err
-				}
-			}
-		}
 	}
 
 	return nil
 }
 
-// Keys are sorted first, so the pair reported is deterministic.
-func foldCollision(profile any, key string, m reflect.Value) error {
-	texts := make([]string, 0, m.Len())
-	for k := range m.Seq() {
-		texts = append(texts, textOf(k))
-	}
-
-	slices.Sort(texts)
-	for i, text := range texts {
-		for _, other := range texts[i+1:] {
-			if strings.EqualFold(text, other) {
-				return fmt.Errorf("profile %v gives %s the keys %q and %q, which differ only in case, so an env var for either is ambiguous", profile, key, text, other)
-			}
-		}
-	}
-
-	return nil
-}
-
-// visitEntries calls visit for m and each map below it on leaf's path, then for each value leaf sets, named as their
-// flags would be, such as section.chains.mainnet.labels.
-func visitEntries(leaf *entryLeaf, name string, m reflect.Value, depth int, visit func(name string, v reflect.Value, isMap bool) error) error {
-	if err := visit(name, m, true); err != nil {
-		return err
-	}
-
+// walkEntries calls visit with each value leaf sets inside m, named as its flag would be, such as
+// section.chains.mainnet.rpc. Keys are sorted, so the order is deterministic.
+func walkEntries(leaf *entryLeaf, name string, m reflect.Value, depth int, visit func(string, reflect.Value)) {
 	parts := strings.Split(leaf.key, "."+cliKeyPlaceholder)
 	byText := func(a, b reflect.Value) int { return strings.Compare(textOf(a), textOf(b)) }
 	for _, key := range slices.SortedFunc(slices.Values(m.MapKeys()), byText) {
 		inner := name + "." + textOf(key) + parts[depth+1]
 		v := readField(m.MapIndex(key), leaf.paths[depth])
-		var err error
 		if depth == len(leaf.keyTypes)-1 {
-			err = visit(inner, v, false)
+			visit(inner, v)
 		} else {
-			err = visitEntries(leaf, inner, v, depth+1, visit)
-		}
-
-		if err != nil {
-			return err
+			walkEntries(leaf, inner, v, depth+1, visit)
 		}
 	}
-
-	return nil
 }
 
 // A required field left zero is omitted from help, as a source must set it.
@@ -204,12 +144,10 @@ func describeProfiles[T any, K comparable, S any](
 					continue
 				}
 
-				_ = visitEntries(el, leaf.key, derefOrZero(v), 0, func(name string, v reflect.Value, isMap bool) error {
-					if text, ok := displayText(v); ok && !isMap {
+				walkEntries(el, leaf.key, derefOrZero(v), 0, func(name string, v reflect.Value) {
+					if text, ok := displayText(v); ok {
 						_, _ = fmt.Fprintf(&out, "    %s = %s\n", name, text)
 					}
-
-					return nil
 				})
 			}
 		}
@@ -228,27 +166,24 @@ func locateProfile[T, S any, K comparable](
 		allocateField(v, k.goPath)
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("profile selector panicked: %v", r)
-		}
-	}()
-
-	if holdsIdentityKind(reflect.TypeFor[K]()) {
-		return leafKey{}, fmt.Errorf("profile key type %s compares by identity, so no value a source sets would match a profile", reflect.TypeFor[K]())
+	sType, kType := reflect.TypeFor[S](), reflect.TypeFor[K]()
+	if holdsIdentityKind(kType) {
+		return leafKey{}, fmt.Errorf("profile key type %s compares by identity, so no value a source sets would match a profile", kType)
 	}
 
-	s := section(scratch)
-	wantKey := reflect.ValueOf(key(s)).Pointer()
-	wantSection := reflect.ValueOf(s).Pointer()
+	wantSection, wantKey, err := callSelector(scratch, section, key)
+	if err != nil {
+		return leafKey{}, err
+	}
+
 	for _, k := range entry.leaves {
 		parent := lookupField(v, k.goPath[:len(k.goPath)-1])
 		// Types are checked as a struct shares its first field's address.
-		if parent.Type() != reflect.TypeFor[S]() || parent.Addr().Pointer() != wantSection {
+		if parent.Type() != sType || parent.Addr().Pointer() != wantSection {
 			continue
 		}
 
-		if k.flag != nil && k.goType == reflect.TypeFor[K]() &&
+		if k.flag != nil && k.goType == kType &&
 			lookupField(parent, k.goPath[len(k.goPath)-1:]).Addr().Pointer() == wantKey {
 			return k, nil
 		}
@@ -257,16 +192,29 @@ func locateProfile[T, S any, K comparable](
 	return leafKey{}, errors.New("profile key must return a top-level field of its section bound as a flag, such as &c.ID")
 }
 
-func inScope(k leafKey, scope []string) bool {
-	return len(k.goPath) > len(scope) && slices.Equal(k.goPath[:len(scope)], scope)
+// The section and key functions are the caller's, and can panic on anything, such as an index out of range.
+func callSelector[T, S any, K comparable](scratch *T, section func(*T) *S, key func(*S) *K) (wantSection, wantKey uintptr, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("profile selector panicked: %v", r)
+		}
+	}()
+
+	s := section(scratch)
+	return reflect.ValueOf(s).Pointer(), reflect.ValueOf(key(s)).Pointer(), nil
 }
 
-func scopesOverlap(a, b []string) bool {
-	if len(a) > len(b) {
-		a, b = b, a
-	}
+// A scope is the Go path to a profile's section, such as [Chain] for &c.Chain.ID.
+func inScope(k leafKey, scope []string) bool {
+	return len(k.goPath) > len(scope) && hasPrefix(k.goPath, scope)
+}
 
-	return slices.Equal(a, b[:len(a)])
+func scopesNest(a, b []string) bool {
+	return hasPrefix(a, b) || hasPrefix(b, a)
+}
+
+func hasPrefix(path, prefix []string) bool {
+	return len(path) >= len(prefix) && slices.Equal(path[:len(prefix)], prefix)
 }
 
 // Decoding overwrites the section, so its defaults are copied first, deeply. Each use copies them again, so that a

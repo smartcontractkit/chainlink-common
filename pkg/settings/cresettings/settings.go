@@ -242,6 +242,7 @@ var Default = Schema{
 		ExecutionResponseLimit:        Size(100 * config.KByte),
 		ExecutionTimestampsEnabled:    Bool(false),
 		WASMMemoryLimit:               Size(100 * config.MByte),
+		WASMTableElementsLimit:        Int(1_000_000),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
 		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
 		WASMConfigSizeLimit:           Size(50 * config.KByte),
@@ -548,6 +549,7 @@ type Workflows struct {
 	ExecutionTimestampsEnabled Setting[bool]
 
 	WASMMemoryLimit               Setting[config.Size]
+	WASMTableElementsLimit        Setting[int] `unit:"{element}"`
 	WASMBinarySizeLimit           Setting[config.Size]
 	WASMCompressedBinarySizeLimit Setting[config.Size]
 	WASMConfigSizeLimit           Setting[config.Size]

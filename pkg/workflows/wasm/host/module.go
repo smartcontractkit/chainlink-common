@@ -66,6 +66,10 @@ type ModuleConfig struct {
 	MaxMemoryMBs   uint64
 	MinMemoryMBs   uint64
 	MemoryLimiter  limits.BoundLimiter[config.Size] // supersedes Max/MinMemoryMBs if set
+	// MaxTableElementsLimiter bounds the element count of the guest's table;
+	// a negative limit leaves it unbounded. Defaults to
+	// cresettings.Default.PerWorkflow.WASMTableElementsLimit.
+	MaxTableElementsLimiter limits.BoundLimiter[int]
 
 	Logger         logger.Logger
 	IsUncompressed bool
@@ -151,6 +155,7 @@ type moduleLimiters struct {
 	maxUserMetricLabelsPerMetric  limits.BoundLimiter[int]
 	maxUserMetricLabelValueLength limits.BoundLimiter[int]
 	memory                        limits.BoundLimiter[config.Size]
+	maxTableElements              limits.BoundLimiter[int]
 	maxCompressedBinary           limits.BoundLimiter[config.Size]
 	maxDecompressedBinary         limits.BoundLimiter[config.Size]
 	maxResponseSize               limits.BoundLimiter[config.Size]
@@ -166,6 +171,7 @@ func (l *moduleLimiters) close() {
 		l.maxUserMetricLabelsPerMetric,
 		l.maxUserMetricLabelValueLength,
 		l.memory,
+		l.maxTableElements,
 		l.maxCompressedBinary,
 		l.maxDecompressedBinary,
 		l.maxResponseSize,
@@ -328,6 +334,9 @@ func newModule(modCfg *ModuleConfig, load func(moduleLimiters) (*wasmtime.Module
 		// binaries may error sporadically.
 		modCfg.MaxMemoryMBs = uint64(math.Max(float64(modCfg.MinMemoryMBs), float64(modCfg.MaxMemoryMBs)))
 		defaultLimiters.memory = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxMemoryMBs) * config.MByte)
+	}
+	if modCfg.MaxTableElementsLimiter == nil {
+		defaultLimiters.maxTableElements = limits.NewUpperBoundLimiter(cresettings.Default.PerWorkflow.WASMTableElementsLimit.DefaultValue)
 	}
 	if modCfg.MaxCompressedBinaryLimiter == nil {
 		defaultLimiters.maxCompressedBinary = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxCompressedBinarySize))
@@ -659,12 +668,16 @@ func runWasm[I, O proto.Message](
 	if err != nil {
 		return o, fmt.Errorf("failed to get memory limit: %w", err)
 	}
+	maxTableElements, err := limiterOrDefault(m.cfg.MaxTableElementsLimiter, m.defaultLimiters.maxTableElements).Limit(ctx)
+	if err != nil {
+		return o, fmt.Errorf("failed to get table elements limit: %w", err)
+	}
 	store.Limiter(
 		int64(maxMemoryBytes/config.MByte)*int64(math.Pow(10, 6)),
-		-1, // tableElements, -1 == default
-		1,  // instances
-		1,  // tables
-		1,  // memories
+		int64(maxTableElements), // negative == unlimited
+		1,                       // instances
+		1,                       // tables
+		1,                       // memories
 	)
 
 	deadline := maxTimeout / eng.engineTickInterval
@@ -698,7 +711,14 @@ func runWasm[I, O proto.Message](
 		return o, fmt.Errorf("error linking wasm: %w", err)
 	}
 
+	runStartedAt := time.Now()
 	_, err = callStart(m, instance, store)
+	m.metrics.RecordExecution(ctx, executionStats{
+		memoryBytes:  guestMemorySize(instance, store),
+		hostCalls:    exec.hostCalls,
+		hostDuration: exec.hostDuration,
+		runDuration:  time.Since(runStartedAt),
+	})
 
 	// A guest that ran to completion exits with WASI status wasiExitSuccess
 	// after delivering its response via the send_response import.
@@ -739,6 +759,8 @@ func createSendResponseFn[T proto.Message](
 	newT func() T,
 ) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
+		defer exec.recordHostCall("send_response", time.Now())
+
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {
 			logger.Errorf("error calling sendResponse: %s", innerErr)
@@ -763,6 +785,14 @@ func createSendResponseFn[T proto.Message](
 // wasmMemoryAccessor is the default implementation for unsafely accessing the memory of the WASM module.
 func wasmMemoryAccessor(caller *wasmtime.Caller) []byte {
 	return caller.GetExport(memoryExportName).Memory().UnsafeData(caller)
+}
+
+func guestMemorySize(instance *wasmtime.Instance, store *wasmtime.Store) uint64 {
+	export := instance.GetExport(store, memoryExportName)
+	if export == nil || export.Memory() == nil {
+		return 0
+	}
+	return uint64(export.Memory().DataSize(store))
 }
 
 // requireMemoryExport verifies that the module exports linear memory under the
@@ -862,6 +892,8 @@ func callCapability(
 	exec *execution[*sdkpb.ExecutionResult],
 	ptr, ptrlen, responseBuffer, maxResponseLen int32,
 ) int64 {
+	defer exec.recordHostCall("call_capability", time.Now())
+
 	b, innerErr := wasmRead(caller, ptr, ptrlen)
 	if innerErr != nil {
 		errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
@@ -927,6 +959,8 @@ func createAwaitCapsFn(
 	exec *execution[*sdkpb.ExecutionResult],
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+		defer exec.recordHostCall("await_capabilities", time.Now())
+
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)
@@ -972,6 +1006,8 @@ func createGetSecretsFn(
 	exec *execution[*sdkpb.ExecutionResult],
 ) func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, req, requestLen, responseBuffer, maxResponseLen int32) int64 {
+		defer exec.recordHostCall("get_secrets", time.Now())
+
 		b, innerErr := wasmRead(caller, req, requestLen)
 		if innerErr != nil {
 			errStr := fmt.Sprintf("error calling wasmRead: %s", innerErr)
@@ -1002,6 +1038,8 @@ func createAwaitSecretsFn(
 	exec *execution[*sdkpb.ExecutionResult],
 ) func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
 	return func(caller *wasmtime.Caller, awaitRequest, awaitRequestLen, responseBuffer, maxResponseLen int32) int64 {
+		defer exec.recordHostCall("await_secrets", time.Now())
+
 		b, err := wasmRead(caller, awaitRequest, awaitRequestLen)
 		if err != nil {
 			errStr := fmt.Sprintf("error reading from wasm %s", err)

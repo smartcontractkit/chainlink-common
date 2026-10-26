@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/XSAM/otelsql v0.37.0
 	github.com/andybalholm/brotli v1.2.2
-	github.com/bytecodealliance/wasmtime-go/v47 v47.0.0
+	github.com/bytecodealliance/wasmtime-go/v50 v50.0.0
 	github.com/cloudevents/sdk-go/binding/format/protobuf/v2 v2.16.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/fxamacker/cbor/v2 v2.9.0

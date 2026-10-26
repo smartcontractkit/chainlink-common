@@ -119,6 +119,7 @@ type Client struct {
 	metrics batchClientMetrics
 
 	transactionEnabled bool
+	noAck              bool
 }
 
 type batchClientMetrics struct {
@@ -164,7 +165,7 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	}
 
 	var err error
-	c.metrics, err = newBatchClientMetrics(c.clientName)
+	c.metrics, err = newBatchClientMetrics(c.clientName, c.noAck)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +366,7 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			// this is specifically to prevent long running network calls
 			ctxTimeout, cancel := context.WithTimeout(ctx, b.maxPublishTimeout)
 			startedAt := time.Now()
-			resp, err := b.client.PublishBatch(ctxTimeout, batchReq)
+			resp, err := b.publish(ctxTimeout, batchReq)
 			cancel()
 
 			b.metrics.recordSend(ctx, len(batchMessages), batchBytes, time.Since(startedAt), err == nil)
@@ -381,6 +382,15 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 			}
 		}
 	}()
+}
+
+// publish sends a batch with the RPC selected by WithNoAck. Both RPCs share request,
+// response and error semantics, so callers of publish need not distinguish them.
+func (b *Client) publish(ctx context.Context, req *chipingress.CloudEventBatch) (*chipingress.PublishResponse, error) {
+	if b.noAck {
+		return b.client.PublishBatchNoAck(ctx, req)
+	}
+	return b.client.PublishBatch(ctx, req)
 }
 
 func (b *Client) completeBatchCallbacks(messages []*messageWithCallback, err error) {
@@ -600,6 +610,30 @@ func WithTransactionEnabled(transactionEnabled bool) Opt {
 	}
 }
 
+// WithNoAck sends batches with PublishBatchNoAck instead of PublishBatch. The server
+// produces to Kafka with acks=0, so it responds without waiting for broker
+// acknowledgement. Request and response semantics are otherwise unchanged: per-event
+// results and error codes are reported exactly as for PublishBatch.
+//
+// A nil callback error means the server validated the event and handed it to its
+// producer, not that it was persisted: events can be lost without any error. Use it
+// only for loss-tolerant telemetry. Servers that predate PublishBatchNoAck fail every
+// batch with codes.Unimplemented; there is no fallback to PublishBatch.
+func WithNoAck() Opt {
+	return func(c *Client) {
+		c.noAck = true
+	}
+}
+
+// noAckAttrs appends the no_ack attribute only for NoAck clients, so the series of
+// existing (acked) clients keep their label set.
+func noAckAttrs(noAck bool, kvs ...attribute.KeyValue) []attribute.KeyValue {
+	if noAck {
+		return append(kvs, attribute.Bool("no_ack", true))
+	}
+	return kvs
+}
+
 func batchMetricAttributeSet(clientName string, kvs ...attribute.KeyValue) attribute.Set {
 	if clientName != "" {
 		kvs = append(kvs, attribute.String("client_name", clientName))
@@ -607,11 +641,11 @@ func batchMetricAttributeSet(clientName string, kvs ...attribute.KeyValue) attri
 	return attribute.NewSet(kvs...)
 }
 
-func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
+func newBatchClientMetrics(clientName string, noAck bool) (batchClientMetrics, error) {
 	meter := otel.Meter("chipingress/batch_client")
 	sendRequestsTotal, err := meter.Int64Counter(
 		"chip_ingress.batch.send_requests_total",
-		otelmetric.WithDescription("Total PublishBatch requests sent by batch client"),
+		otelmetric.WithDescription("Total batch publish requests sent by batch client"),
 		otelmetric.WithUnit("{request}"),
 	)
 	if err != nil {
@@ -619,7 +653,7 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 	}
 	requestSizeMessages, err := meter.Int64Histogram(
 		"chip_ingress.batch.request_size_messages",
-		otelmetric.WithDescription("PublishBatch request size measured in number of events"),
+		otelmetric.WithDescription("Batch publish request size measured in number of events"),
 		otelmetric.WithUnit("{event}"),
 		otelmetric.WithExplicitBucketBoundaries(1, 2, 3, 5, 8, 13, 21, 34, 55, 100, 250, 500, 1000),
 	)
@@ -628,7 +662,7 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 	}
 	requestSizeBytes, err := meter.Int64Histogram(
 		"chip_ingress.batch.request_size_bytes",
-		otelmetric.WithDescription("PublishBatch request size measured in bytes"),
+		otelmetric.WithDescription("Batch publish request size measured in bytes"),
 		otelmetric.WithUnit("By"),
 		otelmetric.WithExplicitBucketBoundaries(
 			// Buckets from 128 B to 10 MiB (default maxGRPCRequestSize).
@@ -642,7 +676,7 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 	}
 	requestLatencyMS, err := meter.Float64Histogram(
 		"chip_ingress.batch.request_latency_ms",
-		otelmetric.WithDescription("PublishBatch end-to-end latency in milliseconds"),
+		otelmetric.WithDescription("Batch publish end-to-end latency in milliseconds"),
 		otelmetric.WithUnit("ms"),
 	)
 	if err != nil {
@@ -690,10 +724,10 @@ func newBatchClientMetrics(clientName string) (batchClientMetrics, error) {
 		resultsMismatchTotal: resultsMismatchTotal,
 		clientNameAttr:       clientNameAttr,
 		successStatusAttr: otelmetric.WithAttributeSet(batchMetricAttributeSet(clientName,
-			attribute.String("status", "success"),
+			noAckAttrs(noAck, attribute.String("status", "success"))...,
 		)),
 		failureStatusAttr: otelmetric.WithAttributeSet(batchMetricAttributeSet(clientName,
-			attribute.String("status", "failure"),
+			noAckAttrs(noAck, attribute.String("status", "failure"))...,
 		)),
 	}, nil
 }
@@ -714,15 +748,17 @@ func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
 		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
 	))
 	m.configInfo.Record(ctx, 1, otelmetric.WithAttributeSet(batchMetricAttributeSet(clientName,
-		attribute.Int("max_batch_size", c.batchSize),
-		attribute.Int("message_buffer_size", cap(c.messageBuffer)),
-		attribute.Int("max_concurrent_sends", cap(c.maxConcurrentSends)),
-		attribute.Int64("batch_interval_ms", c.batchInterval.Milliseconds()),
-		attribute.Int64("max_publish_timeout_ms", c.maxPublishTimeout.Milliseconds()),
-		attribute.Int64("shutdown_timeout_ms", c.shutdownTimeout.Milliseconds()),
-		attribute.Bool("clone_event", c.cloneEvent),
-		attribute.Bool("transaction_enabled", c.transactionEnabled),
-		attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
+		noAckAttrs(c.noAck,
+			attribute.Int("max_batch_size", c.batchSize),
+			attribute.Int("message_buffer_size", cap(c.messageBuffer)),
+			attribute.Int("max_concurrent_sends", cap(c.maxConcurrentSends)),
+			attribute.Int64("batch_interval_ms", c.batchInterval.Milliseconds()),
+			attribute.Int64("max_publish_timeout_ms", c.maxPublishTimeout.Milliseconds()),
+			attribute.Int64("shutdown_timeout_ms", c.shutdownTimeout.Milliseconds()),
+			attribute.Bool("clone_event", c.cloneEvent),
+			attribute.Bool("transaction_enabled", c.transactionEnabled),
+			attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
+		)...,
 	)))
 }
 

@@ -653,10 +653,11 @@ const file_pb_chip_ingress_proto_rawDesc = "" +
 	"$PUBLISH_ERROR_CODE_VALIDATION_FAILED\x10\x01\x12%\n" +
 	"!PUBLISH_ERROR_CODE_SCHEMA_MISSING\x10\x02\x12#\n" +
 	"\x1fPUBLISH_ERROR_CODE_ENCODE_ERROR\x10\x03\x12.\n" +
-	"*PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION\x10\x042\xb6\x03\n" +
+	"*PUBLISH_ERROR_CODE_DOMAIN_MISCONFIGURATION\x10\x042\x8f\x04\n" +
 	"\vChipIngress\x12K\n" +
 	"\aPublish\x12\x1d.io.cloudevents.v1.CloudEvent\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12R\n" +
-	"\fPublishBatch\x12\x1f.chipingress.pb.CloudEventBatch\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12B\n" +
+	"\fPublishBatch\x12\x1f.chipingress.pb.CloudEventBatch\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12W\n" +
+	"\x11PublishBatchNoAck\x12\x1f.chipingress.pb.CloudEventBatch\x1a\x1f.chipingress.pb.PublishResponse\"\x00\x12B\n" +
 	"\x04Ping\x12\x1c.chipingress.pb.EmptyRequest\x1a\x1c.chipingress.pb.PingResponse\x12_\n" +
 	"\fStreamEvents\x12#.chipingress.pb.StreamEventsRequest\x1a$.chipingress.pb.StreamEventsResponse\"\x00(\x010\x01\x12a\n" +
 	"\x0eRegisterSchema\x12%.chipingress.pb.RegisterSchemaRequest\x1a&.chipingress.pb.RegisterSchemaResponse\"\x00B\x06Z\x04./pbb\x06proto3"
@@ -703,16 +704,18 @@ var file_pb_chip_ingress_proto_depIdxs = []int32{
 	14, // 7: chipingress.pb.RegisterSchemaResponse.registered:type_name -> chip_common.RegisteredSchema
 	12, // 8: chipingress.pb.ChipIngress.Publish:input_type -> io.cloudevents.v1.CloudEvent
 	3,  // 9: chipingress.pb.ChipIngress.PublishBatch:input_type -> chipingress.pb.CloudEventBatch
-	6,  // 10: chipingress.pb.ChipIngress.Ping:input_type -> chipingress.pb.EmptyRequest
-	8,  // 11: chipingress.pb.ChipIngress.StreamEvents:input_type -> chipingress.pb.StreamEventsRequest
-	10, // 12: chipingress.pb.ChipIngress.RegisterSchema:input_type -> chipingress.pb.RegisterSchemaRequest
-	4,  // 13: chipingress.pb.ChipIngress.Publish:output_type -> chipingress.pb.PublishResponse
-	4,  // 14: chipingress.pb.ChipIngress.PublishBatch:output_type -> chipingress.pb.PublishResponse
-	7,  // 15: chipingress.pb.ChipIngress.Ping:output_type -> chipingress.pb.PingResponse
-	9,  // 16: chipingress.pb.ChipIngress.StreamEvents:output_type -> chipingress.pb.StreamEventsResponse
-	11, // 17: chipingress.pb.ChipIngress.RegisterSchema:output_type -> chipingress.pb.RegisterSchemaResponse
-	13, // [13:18] is the sub-list for method output_type
-	8,  // [8:13] is the sub-list for method input_type
+	3,  // 10: chipingress.pb.ChipIngress.PublishBatchNoAck:input_type -> chipingress.pb.CloudEventBatch
+	6,  // 11: chipingress.pb.ChipIngress.Ping:input_type -> chipingress.pb.EmptyRequest
+	8,  // 12: chipingress.pb.ChipIngress.StreamEvents:input_type -> chipingress.pb.StreamEventsRequest
+	10, // 13: chipingress.pb.ChipIngress.RegisterSchema:input_type -> chipingress.pb.RegisterSchemaRequest
+	4,  // 14: chipingress.pb.ChipIngress.Publish:output_type -> chipingress.pb.PublishResponse
+	4,  // 15: chipingress.pb.ChipIngress.PublishBatch:output_type -> chipingress.pb.PublishResponse
+	4,  // 16: chipingress.pb.ChipIngress.PublishBatchNoAck:output_type -> chipingress.pb.PublishResponse
+	7,  // 17: chipingress.pb.ChipIngress.Ping:output_type -> chipingress.pb.PingResponse
+	9,  // 18: chipingress.pb.ChipIngress.StreamEvents:output_type -> chipingress.pb.StreamEventsResponse
+	11, // 19: chipingress.pb.ChipIngress.RegisterSchema:output_type -> chipingress.pb.RegisterSchemaResponse
+	14, // [14:20] is the sub-list for method output_type
+	8,  // [8:14] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name

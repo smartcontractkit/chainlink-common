@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793044895678,
+  "lastUpdate": 1793051217430,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65160,6 +65160,66 @@ window.BENCHMARK_DATA = {
             "value": 141314,
             "unit": "ns/op",
             "extra": "7872 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "f4hrenh9it@gmail.com",
+            "name": "Sergey Kudasov",
+            "username": "skudasov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "7aa16150367a61201c1d30f1bcf08ba5f9496164",
+          "message": "In scope of https://smartcontract-it.atlassian.net/browse/DX-5526 we are sunsetting SonarQube. (#2494)\n\nRemoving the jobs that run sonarsource/sonarqube-scan-action or the shared\nsmartcontractkit/.github ci-sonarqube-go / ci-sonarqube-ts actions.\n\nThe SonarScanner CLI downloaded by these actions bundles a Java runtime that\nstill trusts the compromised eMudhra roots, and no fixed release is\navailable yet:\n- https://github.com/SonarSource/sonarqube-scan-action/pull/287\n- https://github.com/SonarSource/sonar-scanner-cli/pull/312",
+          "timestamp": "2026-10-26T21:40:26Z",
+          "tree_id": "34a0c98e1631e952166c4438c2b9294c1a362ade",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7aa16150367a61201c1d30f1bcf08ba5f9496164"
+        },
+        "date": 1793051211990,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.4,
+            "unit": "ns/op",
+            "extra": "3367227 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90590,
+            "unit": "ns/op",
+            "extra": "13216 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 396.5,
+            "unit": "ns/op",
+            "extra": "3013167 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90695,
+            "unit": "ns/op",
+            "extra": "13144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25645,
+            "unit": "ns/op",
+            "extra": "46814 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136211,
+            "unit": "ns/op",
+            "extra": "8426 times\n4 procs"
           }
         ]
       }

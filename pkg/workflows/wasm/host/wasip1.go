@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v50"
 )
 
 const (

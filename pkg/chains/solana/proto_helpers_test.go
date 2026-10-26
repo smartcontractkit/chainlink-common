@@ -332,6 +332,15 @@ func TestLPFilterAndSubkeysConverters(t *testing.T) {
 	require.Equal(t, keys, got)
 }
 
+func TestConvertDataSliceFromProto_ZeroOffset(t *testing.T) {
+	got := conv.ConvertDataSliceFromProto(&conv.DataSlice{Offset: 0, Length: 8})
+	require.NotNil(t, got)
+	require.NotNil(t, got.Offset, "a zero offset must stay 0, not nil (nil marshals as null in the RPC request)")
+	require.NotNil(t, got.Length)
+	require.EqualValues(t, 0, *got.Offset)
+	require.EqualValues(t, 8, *got.Length)
+}
+
 func TestGettersAndSmallStructs_Smoke(t *testing.T) {
 	// A few quick "does not panic / round-trips" on small structs
 

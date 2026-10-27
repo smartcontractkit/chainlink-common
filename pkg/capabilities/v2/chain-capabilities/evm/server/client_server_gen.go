@@ -44,6 +44,8 @@ type ClientCapability interface {
 
 	ChainSelector() uint64
 
+	MonitoringContext() capmon.MonitoringContext
+
 	Start(ctx context.Context) error
 	Close() error
 	HealthReport() map[string]error
@@ -56,9 +58,13 @@ type ClientCapability interface {
 func NewClientServer(capability ClientCapability) *ClientServer {
 	stopCh := make(chan struct{})
 	return &ClientServer{
-		clientCapability: clientCapability{ClientCapability: capability, stopCh: stopCh},
-		stopCh:           stopCh,
-		initMetrics:      capmon.NewInitMetrics(),
+		clientCapability: clientCapability{
+			ClientCapability: capability,
+			stopCh:           stopCh,
+			actionMetrics:    capmon.NewActionMetrics(),
+		},
+		stopCh:      stopCh,
+		initMetrics: capmon.NewInitMetrics(),
 	}
 }
 
@@ -79,9 +85,7 @@ func (c *ClientServer) Initialise(ctx context.Context, dependencies core.Standar
 
 	c.capabilityRegistry = dependencies.CapabilityRegistry
 
-	if err := dependencies.CapabilityRegistry.Add(ctx, &clientCapability{
-		ClientCapability: c.ClientCapability,
-	}); err != nil {
+	if err := dependencies.CapabilityRegistry.Add(ctx, &c.clientCapability); err != nil {
 		return fmt.Errorf("error when adding %s to the registry: %w", "evm"+":ChainSelector:"+strconv.FormatUint(c.ChainSelector(), 10)+"@1.0.0", err)
 	}
 
@@ -115,7 +119,8 @@ func (c *ClientServer) Infos(ctx context.Context) ([]capabilities.CapabilityInfo
 
 type clientCapability struct {
 	ClientCapability
-	stopCh chan struct{}
+	stopCh        chan struct{}
+	actionMetrics capmon.ActionMetrics
 }
 
 func (c *clientCapability) Info(ctx context.Context) (capabilities.CapabilityInfo, error) {
@@ -178,13 +183,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.CallContractRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.CallContractRequest, _ *emptypb.Empty) (*evm.CallContractReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "CallContract"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.CallContract(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "CallContract", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("CallContract", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method CallContract(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "CallContract", tsStart, time.Now(), capmon.ActionMetricAttributes("CallContract", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -192,13 +215,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.FilterLogsRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.FilterLogsRequest, _ *emptypb.Empty) (*evm.FilterLogsReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "FilterLogs"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.FilterLogs(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "FilterLogs", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("FilterLogs", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method FilterLogs(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "FilterLogs", tsStart, time.Now(), capmon.ActionMetricAttributes("FilterLogs", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -206,13 +247,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.BalanceAtRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.BalanceAtRequest, _ *emptypb.Empty) (*evm.BalanceAtReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "BalanceAt"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.BalanceAt(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "BalanceAt", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("BalanceAt", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method BalanceAt(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "BalanceAt", tsStart, time.Now(), capmon.ActionMetricAttributes("BalanceAt", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -220,13 +279,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.EstimateGasRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.EstimateGasRequest, _ *emptypb.Empty) (*evm.EstimateGasReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "EstimateGas"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.EstimateGas(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "EstimateGas", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("EstimateGas", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method EstimateGas(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "EstimateGas", tsStart, time.Now(), capmon.ActionMetricAttributes("EstimateGas", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -234,13 +311,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.GetTransactionByHashRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionByHashRequest, _ *emptypb.Empty) (*evm.GetTransactionByHashReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "GetTransactionByHash"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.GetTransactionByHash(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "GetTransactionByHash", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetTransactionByHash", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransactionByHash(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetTransactionByHash", tsStart, time.Now(), capmon.ActionMetricAttributes("GetTransactionByHash", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -248,13 +343,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.GetTransactionReceiptRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.GetTransactionReceiptRequest, _ *emptypb.Empty) (*evm.GetTransactionReceiptReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "GetTransactionReceipt"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.GetTransactionReceipt(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "GetTransactionReceipt", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetTransactionReceipt", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransactionReceipt(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetTransactionReceipt", tsStart, time.Now(), capmon.ActionMetricAttributes("GetTransactionReceipt", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -262,13 +375,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.HeaderByNumberRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.HeaderByNumberRequest, _ *emptypb.Empty) (*evm.HeaderByNumberReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "HeaderByNumber"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.HeaderByNumber(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "HeaderByNumber", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("HeaderByNumber", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method HeaderByNumber(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "HeaderByNumber", tsStart, time.Now(), capmon.ActionMetricAttributes("HeaderByNumber", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -276,13 +407,31 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 		input := &evm.WriteReportRequest{}
 		config := &emptypb.Empty{}
 		wrapped := func(ctx context.Context, metadata capabilities.RequestMetadata, input *evm.WriteReportRequest, _ *emptypb.Empty) (*evm.WriteReportReply, capabilities.ResponseMetadata, *capabilities.OCRAttestation, error) {
+			tsStart := time.Now()
+			mc := c.ClientCapability.MonitoringContext()
+			logKvs := append([]any{"method", "WriteReport"}, capmon.RequestLogKVs(metadata)...)
+			var metricAttrs []attribute.KeyValue
+			if labeled, ok := any(input).(capmon.MonitoringLabels); ok {
+				logKvs = append(logKvs, labeled.LogKVs()...)
+				metricAttrs = labeled.MetricKVs()
+			}
+			mc.Logger.Debugw("Capability Initiated", logKvs...)
 			output, err := c.ClientCapability.WriteReport(ctx, metadata, input)
 			if err != nil {
+				isUserError := err.Origin() == caperrors.OriginUser
+				if isUserError {
+					mc.Logger.Warnw("Capability Failed", append(logKvs, "err", err)...)
+				} else {
+					mc.Logger.Errorw("Capability Failed", append(logKvs, "err", err)...)
+				}
+				c.actionMetrics.OnError(ctx, "WriteReport", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "WriteReport", tsStart, time.Now(), capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

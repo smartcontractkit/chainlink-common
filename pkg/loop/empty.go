@@ -10,6 +10,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
@@ -22,19 +23,29 @@ func EmptyHandshakeConfig() plugin.HandshakeConfig {
 	}
 }
 
-// EmptyLoop is a LOOP with no gRPC services. The host only supervises the process. The process gets
-// what it needs from the host in other ways, for example from env vars.
+// EmptyLoop is a LOOP whose only gRPC service is the [services.Service] lifecycle of the process. The host
+// supervises the process. The process gets what it needs from the host in other ways, for example from env vars.
 type EmptyLoop struct {
 	plugin.NetRPCUnsupportedPlugin
 	BrokerConfig
+	PluginServer services.Service
+
+	pluginClient *emptyClient
 }
 
-func (*EmptyLoop) GRPCServer(*plugin.GRPCBroker, *grpc.Server) error {
+func (p *EmptyLoop) GRPCServer(_ *plugin.GRPCBroker, server *grpc.Server) error {
+	pb.RegisterServiceServer(server, &goplugin.ServiceServer{Srv: p.PluginServer})
 	return nil
 }
 
-func (p *EmptyLoop) GRPCClient(context.Context, *plugin.GRPCBroker, *grpc.ClientConn) (any, error) {
-	return &emptyClient{name: logger.Named(p.Logger, "EmptyClient").Name()}, nil
+// GRPCClient reuses one client across launches, so that the client held by the plugin service always
+// talks to the current process.
+func (p *EmptyLoop) GRPCClient(_ context.Context, broker *plugin.GRPCBroker, conn *grpc.ClientConn) (any, error) {
+	if p.pluginClient == nil {
+		p.pluginClient = newEmptyClient(p.BrokerConfig)
+	}
+	p.pluginClient.Refresh(broker, conn)
+	return p.pluginClient, nil
 }
 
 func (p *EmptyLoop) ClientConfig() *plugin.ClientConfig {
@@ -44,12 +55,12 @@ func (p *EmptyLoop) ClientConfig() *plugin.ClientConfig {
 	}, p.BrokerConfig)
 }
 
-// ServeEmpty serves an [EmptyLoop] until the host stops this process. newServer makes the gRPC server
-// that go-plugin uses for its own services, such as the health check.
-func ServeEmpty(newServer func([]grpc.ServerOption) *grpc.Server) {
+// ServeEmpty serves an [EmptyLoop] until the host stops this process. impl must already be started; the
+// host reports its health and closes it. newServer makes the gRPC server.
+func ServeEmpty(impl services.Service, newServer func([]grpc.ServerOption) *grpc.Server) {
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: EmptyHandshakeConfig(),
-		Plugins:         map[string]plugin.Plugin{PluginEmptyName: &EmptyLoop{}},
+		Plugins:         map[string]plugin.Plugin{PluginEmptyName: &EmptyLoop{PluginServer: impl}},
 		GRPCServer:      newServer,
 	})
 }
@@ -76,18 +87,15 @@ func NewEmptyService(lggr logger.Logger, grpcOpts GRPCOpts, cmd func() *exec.Cmd
 	return &es
 }
 
-// emptyClient is the host side of an [EmptyLoop]. The process has no state to report: the plugin
-// service pings the process to know that it is alive.
+// emptyClient is the host side of an [EmptyLoop]. Its health comes from the process, so it reports an
+// error while the process is down.
 type emptyClient struct {
-	name string
+	*goplugin.PluginClient
+	*goplugin.ServiceClient
 }
 
-func (c *emptyClient) Start(context.Context) error { return nil }
-
-func (c *emptyClient) Close() error { return nil }
-
-func (c *emptyClient) Ready() error { return nil }
-
-func (c *emptyClient) HealthReport() map[string]error { return map[string]error{c.name: nil} }
-
-func (c *emptyClient) Name() string { return c.name }
+func newEmptyClient(brokerCfg BrokerConfig) *emptyClient {
+	brokerCfg.Logger = logger.Named(brokerCfg.Logger, "EmptyClient")
+	pc := goplugin.NewPluginClient(brokerCfg)
+	return &emptyClient{PluginClient: pc, ServiceClient: goplugin.NewServiceClient(pc.BrokerExt, pc)}
+}

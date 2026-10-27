@@ -21,6 +21,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/reportingplugins/ocr3"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
 
@@ -83,7 +84,11 @@ func main() {
 		os.Exit(0)
 
 	case loop.PluginEmptyName:
-		loop.ServeEmpty(grpcServer)
+		srv := services.Config{Name: "EmptyServer"}.NewService(lggr)
+		if err := srv.Start(context.Background()); err != nil {
+			lggr.Fatalf("Failed to start empty server: %s", err)
+		}
+		loop.ServeEmpty(srv, grpcServer)
 
 	case loop.PluginStandardCapabilitiesName:
 		plugin.Serve(&plugin.ServeConfig{

@@ -1,39 +1,66 @@
 package loop_test
 
 import (
-	"os/exec"
-	"sync/atomic"
 	"testing"
-	"time"
 
+	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
+	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
 )
 
-func TestEmptyService(t *testing.T) {
-	var launches atomic.Int32
-	svc := loop.NewEmptyService(logger.Test(t), loop.GRPCOpts{}, func() *exec.Cmd {
-		launches.Add(1)
-		return NewHelperProcessCommand(loop.PluginEmptyName, false, 0)
-	})
-	hook := svc.XXXTestHook()
-	servicetest.Run(t, svc)
+func TestPluginEmpty(t *testing.T) {
+	t.Parallel()
 
-	require.NoError(t, svc.WaitCtx(t.Context()))
-	require.NoError(t, svc.Ready())
-	servicetest.AssertHealthReportNames(t, svc.HealthReport(), "EmptyService", "EmptyService.EmptyClient")
-	assert.Equal(t, int32(1), launches.Load())
+	srv := servicetest.Run(t, services.Config{Name: "EmptyServer"}.NewService(logger.Test(t)))
+	stopCh := newStopCh(t)
+	test.PluginTest(t, loop.PluginEmptyName,
+		&loop.EmptyLoop{
+			PluginServer: srv,
+			BrokerConfig: loop.BrokerConfig{
+				Logger: logger.Test(t),
+				StopCh: stopCh}},
+		func(t *testing.T, s services.Service) {
+			assertEmptyHealthy(t, s)
+		})
+}
 
-	t.Run("Kill", func(t *testing.T) {
-		hook.Kill()
+func TestRunningEmptyPluginOutOfProcess(t *testing.T) {
+	t.Parallel()
+	stopCh := newStopCh(t)
 
-		require.Eventually(t, func() bool { return launches.Load() == 2 }, 2*goplugin.KeepAliveTickDuration, 100*time.Millisecond,
-			"the service must launch the process again")
-		servicetest.AssertHealthReportNames(t, svc.HealthReport(), "EmptyService", "EmptyService.EmptyClient")
-	})
+	s := newOutOfProcessEmptyService(t, stopCh)
+
+	assertEmptyHealthy(t, s)
+}
+
+func assertEmptyHealthy(t *testing.T, s services.Service) {
+	t.Helper()
+	require.NoError(t, s.Ready())
+	hr := s.HealthReport()
+	servicetest.AssertHealthReportNames(t, hr, "EmptyClient", "EmptyClient.EmptyServer")
+	for name, err := range hr {
+		assert.NoError(t, err, name)
+	}
+}
+
+func newOutOfProcessEmptyService(t *testing.T, stopCh <-chan struct{}) services.Service {
+	el := loop.EmptyLoop{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
+	cc := el.ClientConfig()
+	cc.SkipHostEnv = true
+	cc.Cmd = NewHelperProcessCommand(loop.PluginEmptyName, false, 0)
+	c := plugin.NewClient(cc)
+	t.Cleanup(c.Kill)
+	client, err := c.Client()
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = client.Close() })
+	require.NoError(t, client.Ping())
+	i, err := client.Dispense(loop.PluginEmptyName)
+	require.NoError(t, err)
+	return i.(services.Service)
 }

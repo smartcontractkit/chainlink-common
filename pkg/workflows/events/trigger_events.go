@@ -28,6 +28,8 @@ const (
 	KeyWorkflowRegistryChainSelector = "workflow_registry_chain_selector"
 	KeyWorkflowRegistryAddress       = "workflow_registry_address"
 	KeyEngineVersion                 = "engine_version"
+	KeyShardIndex                    = "shard_index"
+	KeyWorkflowDonID                 = "workflow_don_id"
 )
 
 // EmitTriggerExecutionStarted emits a TriggerExecutionStarted event using the provided labeler
@@ -90,6 +92,18 @@ func EmitTriggerExecutionStarted(ctx context.Context, labeler custmsg.MessageEmi
 
 	if engineVersion, exists := labels[KeyEngineVersion]; exists {
 		creInfo().EngineVersion = engineVersion
+	}
+
+	if shardIndexStr, exists := labels[KeyShardIndex]; exists {
+		if shardIndex, err := strconv.ParseUint(shardIndexStr, 10, 32); err == nil {
+			creInfo().ShardIndex = uint32(shardIndex)
+		}
+	}
+
+	if workflowDonIDStr, exists := labels[KeyWorkflowDonID]; exists {
+		if workflowDonID, err := strconv.ParseInt(workflowDonIDStr, 10, 32); err == nil {
+			creInfo().WorkflowDonID = int32(workflowDonID)
+		}
 	}
 
 	b, err := proto.Marshal(event)

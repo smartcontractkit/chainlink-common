@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"hash/fnv"
+	"math"
 	"math/big"
 	"strings"
 
@@ -41,14 +42,10 @@ func (f UsageFaultInjection) Enabled() bool { return f.DropRate > 0 || f.Perturb
 // Validate rejects unusable settings.
 func (f UsageFaultInjection) Validate() error {
 	var errs []error
-	if f.DropRate < 0 || f.DropRate > 1 {
-		errs = append(errs, fmt.Errorf("fault injection drop rate %v: want 0..1", f.DropRate))
-	}
-	if f.PerturbRate < 0 || f.PerturbRate > 1 {
-		errs = append(errs, fmt.Errorf("fault injection perturb rate %v: want 0..1", f.PerturbRate))
-	}
-	if f.NodeRate < 0 || f.NodeRate > 1 {
-		errs = append(errs, fmt.Errorf("fault injection node rate %v: want 0..1", f.NodeRate))
+	for name, v := range map[string]float64{"drop": f.DropRate, "perturb": f.PerturbRate, "node": f.NodeRate} {
+		if math.IsNaN(v) || v < 0 || v > 1 { // NaN compares false everywhere, so test it explicitly
+			errs = append(errs, fmt.Errorf("fault injection %s rate %v: want 0..1", name, v))
+		}
 	}
 	if f.Enabled() && len(f.orgSet()) == 0 {
 		errs = append(errs, errors.New("fault injection rate set without an org allowlist"))

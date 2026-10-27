@@ -2,6 +2,7 @@ package resourcemanager
 
 import (
 	"fmt"
+	"math"
 	"testing"
 
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
@@ -41,6 +42,9 @@ func TestUsageFaultInjection_Validate(t *testing.T) {
 	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 2}.Validate())
 	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: -0.1, Delta: -1}.Validate())
 	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1, NodeRate: -1}.Validate())
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: math.NaN()}.Validate(), "NaN drop rate")
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: math.NaN(), Delta: -1}.Validate(), "NaN perturb rate")
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1, NodeRate: math.NaN()}.Validate(), "NaN node rate")
 	assert.Error(t, UsageFaultInjection{DropRate: 0.1}.Validate(), "no org allowlist")
 	assert.Error(t, UsageFaultInjection{Orgs: []string{" "}, DropRate: 0.1}.Validate(), "blank org allowlist")
 	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 0.1, Delta: 1}.Validate(), "positive delta")

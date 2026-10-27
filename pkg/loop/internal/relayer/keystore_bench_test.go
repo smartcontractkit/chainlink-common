@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin/plugintest"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayer"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -57,7 +57,7 @@ func BenchmarkKeystore_Sign(b *testing.B) {
 			b.Run("out-of-process", func(b *testing.B) {
 				stopCh := make(chan struct{})
 				defer close(stopCh)
-				test.PluginTest(b, relayer.PluginKeystoreName, &relayer.GRPCPluginKeystore{
+				plugintest.PluginTest(b, relayer.PluginKeystoreName, &relayer.GRPCPluginKeystore{
 					PluginServer: ks,
 					Logger:       logger.Nop(), StopCh: stopCh,
 				}, func(b *testing.B, ks core.Keystore) {

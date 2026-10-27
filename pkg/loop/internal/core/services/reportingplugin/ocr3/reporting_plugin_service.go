@@ -13,12 +13,12 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/capability"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/errorlog"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/validation"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
 	ocr3pb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/ocr3"

@@ -25,11 +25,11 @@ func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemana
 		Emitter:               emitter,
 		SnapshotInterval:      resourcemanager.DefaultSnapshotInterval,
 		FaultInjection: resourcemanager.UsageFaultInjection{
-			Mode:     e.MeterFaultMode,
-			Orgs:     e.MeterFaultOrgs,
-			Rate:     e.MeterFaultRate,
-			Delta:    e.MeterFaultDelta,
-			NodeRate: e.MeterFaultNodeRate,
+			Orgs:        e.MeterFaultOrgs,
+			DropRate:    e.MeterFaultDropRate,
+			PerturbRate: e.MeterFaultPerturbRate,
+			Delta:       e.MeterFaultDelta,
+			NodeRate:    e.MeterFaultNodeRate,
 		},
 		DeploymentIdentity: resourcemanager.DeploymentIdentity{
 			Product:         e.MeterProduct,

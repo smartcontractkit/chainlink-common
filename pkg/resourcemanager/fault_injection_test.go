@@ -36,16 +36,28 @@ func TestFaultSelected(t *testing.T) {
 func TestUsageFaultInjection_Validate(t *testing.T) {
 	orgs := []string{"org-canary"}
 	assert.NoError(t, UsageFaultInjection{}.Validate())
-	assert.NoError(t, UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 0.1, Delta: -1, NodeRate: 0.5}.Validate())
-	assert.NoError(t, UsageFaultInjection{Mode: FaultModeDrop, Orgs: orgs, Rate: 0.1}.Validate())
-	assert.Error(t, UsageFaultInjection{Mode: "x", Orgs: orgs, Rate: 0.1}.Validate())
-	assert.Error(t, UsageFaultInjection{Mode: FaultModeDrop, Orgs: orgs, Rate: 2}.Validate())
-	assert.Error(t, UsageFaultInjection{Rate: 0.1}.Validate())
-	assert.Error(t, UsageFaultInjection{Mode: FaultModeDrop, Orgs: orgs, Rate: 0.1, NodeRate: -1}.Validate())
-	assert.Error(t, UsageFaultInjection{Mode: FaultModeDrop, Rate: 0.1}.Validate(), "no org allowlist")
-	assert.Error(t, UsageFaultInjection{Mode: FaultModeDrop, Orgs: []string{" "}, Rate: 0.1}.Validate(), "blank org allowlist")
-	assert.Error(t, UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 0.1, Delta: 1}.Validate(), "positive delta")
-	assert.Error(t, UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 0.1, Delta: 0}.Validate(), "zero delta")
+	assert.NoError(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.01, PerturbRate: 0.1, Delta: -1, NodeRate: 0.5}.Validate())
+	assert.NoError(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1}.Validate())
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 2}.Validate())
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: -0.1, Delta: -1}.Validate())
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1, NodeRate: -1}.Validate())
+	assert.Error(t, UsageFaultInjection{DropRate: 0.1}.Validate(), "no org allowlist")
+	assert.Error(t, UsageFaultInjection{Orgs: []string{" "}, DropRate: 0.1}.Validate(), "blank org allowlist")
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 0.1, Delta: 1}.Validate(), "positive delta")
+	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 0.1, Delta: 0}.Validate(), "zero delta")
+}
+
+func TestUsageFaultInjection_Selection(t *testing.T) {
+	f := UsageFaultInjection{Orgs: []string{"org-canary"}, DropRate: 0.5, PerturbRate: 0.5, Delta: -1}
+	// Vectors shared with the reconcilers; do not change without updating them.
+	assert.False(t, f.DropSelected("a"))
+	assert.True(t, f.PerturbSelected("a"))
+	assert.True(t, f.DropSelected("exec-2"))
+	assert.False(t, f.PerturbSelected("exec-2"), "an event in both samples is dropped")
+	assert.False(t, f.DropSelected("exec-3"))
+	assert.False(t, f.PerturbSelected("exec-3"))
+	assert.True(t, f.DropSelected("0xabc123"))
+	assert.False(t, f.PerturbSelected("0xabc123"))
 }
 
 func emitUsageWithFault(t *testing.T, f UsageFaultInjection, nodeID, eventID string) *fakeEmitter {
@@ -74,26 +86,32 @@ func TestUsageFaultInjection_Apply(t *testing.T) {
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{}, "n1", "exec-1")))
 	})
 	t.Run("drop skips the selected record", func(t *testing.T) {
-		assert.Empty(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModeDrop, Orgs: orgs, Rate: 1}, "n1", "exec-1").calls)
+		assert.Empty(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, DropRate: 1}, "n1", "exec-1").calls)
 	})
 	t.Run("unlisted org is never touched", func(t *testing.T) {
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModeDrop, Orgs: []string{"org-other"}, Rate: 1}, "n1", "exec-1")))
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModeDrop, Rate: 1}, "n1", "exec-1")), "no allowlist")
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: []string{"org-other"}, DropRate: 1}, "n1", "exec-1")))
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{DropRate: 1}, "n1", "exec-1")), "no allowlist")
 	})
 	t.Run("unselected event is untouched", func(t *testing.T) {
-		f := UsageFaultInjection{Mode: FaultModeDrop, Orgs: orgs, Rate: 0.5}
-		require.False(t, f.EventSelected("a"))
+		f := UsageFaultInjection{Orgs: orgs, DropRate: 0.5}
+		require.False(t, f.DropSelected("a"))
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, f, "n1", "a")))
 	})
+	t.Run("drop and perturb run together on independent samples", func(t *testing.T) {
+		f := UsageFaultInjection{Orgs: orgs, DropRate: 0.5, PerturbRate: 0.5, Delta: -7}
+		assert.Empty(t, emitUsageWithFault(t, f, "n1", "exec-2").calls, "in the drop sample")
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, f, "n1", "a")), "in the perturb sample only")
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, f, "n1", "exec-3")), "in neither")
+	})
 	t.Run("perturb subtracts delta on every node by default", func(t *testing.T) {
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 1, Delta: -7}, "n1", "exec-1")))
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 1, Delta: -7}, "n2", "exec-1")))
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -7}, "n1", "exec-1")))
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -7}, "n2", "exec-1")))
 	})
 	t.Run("perturb clamps at zero", func(t *testing.T) {
-		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 1, Delta: -1000}, "n1", "exec-1")))
+		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -1000}, "n1", "exec-1")))
 	})
 	t.Run("perturb honours the node rate", func(t *testing.T) {
-		f := UsageFaultInjection{Mode: FaultModePerturb, Orgs: orgs, Rate: 1, Delta: -7, NodeRate: 0.5}
+		f := UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -7, NodeRate: 0.5}
 		var perturbed, untouched int
 		for i := 0; i < 20; i++ {
 			switch emittedValue(t, emitUsageWithFault(t, f, fmt.Sprintf("node-%d", i), "exec-1")) {
@@ -110,7 +128,7 @@ func TestUsageFaultInjection_Apply(t *testing.T) {
 	t.Run("durable deltas are never faulted", func(t *testing.T) {
 		emitter := &fakeEmitter{}
 		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter,
-			FaultInjection: UsageFaultInjection{Mode: FaultModeDrop, Orgs: orgs, Rate: 1}})
+			FaultInjection: UsageFaultInjection{Orgs: orgs, DropRate: 1}})
 		rm.EmitDelta(t.Context(), testIdentity, "delta-1", 1, UtilizationFields{ResourceType: "operations", ResourceID: "r"})
 		assert.Len(t, emitter.calls, 1)
 	})

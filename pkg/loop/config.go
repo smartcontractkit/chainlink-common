@@ -55,9 +55,9 @@ const (
 	envMeterEnvironment      = "CL_METER_ENVIRONMENT"
 	envMeterZone             = "CL_METER_ZONE"
 	envMeterNodeID           = "CL_METER_NODE_ID"
-	envMeterFaultMode        = "CL_METER_FAULT_MODE"
-	envMeterFaultRate        = "CL_METER_FAULT_RATE"
 	envMeterFaultOrgs        = "CL_METER_FAULT_ORGS"
+	envMeterFaultDropRate    = "CL_METER_FAULT_DROP_RATE"
+	envMeterFaultPerturbRate = "CL_METER_FAULT_PERTURB_RATE"
 	envMeterFaultDelta       = "CL_METER_FAULT_DELTA"
 	envMeterFaultNodeRate    = "CL_METER_FAULT_NODE_RATE"
 
@@ -127,11 +127,11 @@ type EnvConfig struct {
 	MeterZone            string
 	MeterNodeID          string
 	// MeterFault* configure usage fault injection (resourcemanager.UsageFaultInjection).
-	MeterFaultMode     string
-	MeterFaultRate     float64
-	MeterFaultOrgs     []string
-	MeterFaultDelta    int64
-	MeterFaultNodeRate float64
+	MeterFaultOrgs        []string
+	MeterFaultDropRate    float64
+	MeterFaultPerturbRate float64
+	MeterFaultDelta       int64
+	MeterFaultNodeRate    float64
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -183,9 +183,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMeterEnvironment, e.MeterEnvironment)
 	add(envMeterZone, e.MeterZone)
 	add(envMeterNodeID, e.MeterNodeID)
-	add(envMeterFaultMode, e.MeterFaultMode)
-	add(envMeterFaultRate, strconv.FormatFloat(e.MeterFaultRate, 'g', -1, 64))
 	add(envMeterFaultOrgs, strings.Join(e.MeterFaultOrgs, ","))
+	add(envMeterFaultDropRate, strconv.FormatFloat(e.MeterFaultDropRate, 'g', -1, 64))
+	add(envMeterFaultPerturbRate, strconv.FormatFloat(e.MeterFaultPerturbRate, 'g', -1, 64))
 	add(envMeterFaultDelta, strconv.FormatInt(e.MeterFaultDelta, 10))
 	add(envMeterFaultNodeRate, strconv.FormatFloat(e.MeterFaultNodeRate, 'g', -1, 64))
 
@@ -332,9 +332,11 @@ func (e *EnvConfig) parse() error {
 	e.MeterEnvironment = os.Getenv(envMeterEnvironment)
 	e.MeterZone = os.Getenv(envMeterZone)
 	e.MeterNodeID = os.Getenv(envMeterNodeID)
-	e.MeterFaultMode = os.Getenv(envMeterFaultMode)
-	if e.MeterFaultRate, err = getFloat64(envMeterFaultRate); err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envMeterFaultRate, err)
+	if e.MeterFaultDropRate, err = getFloat64(envMeterFaultDropRate); err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterFaultDropRate, err)
+	}
+	if e.MeterFaultPerturbRate, err = getFloat64(envMeterFaultPerturbRate); err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterFaultPerturbRate, err)
 	}
 	e.MeterFaultOrgs = nil
 	for _, o := range strings.Split(os.Getenv(envMeterFaultOrgs), ",") {

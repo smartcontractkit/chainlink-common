@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793115754907,
+  "lastUpdate": 1793127287441,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65280,6 +65280,66 @@ window.BENCHMARK_DATA = {
             "value": 133573,
             "unit": "ns/op",
             "extra": "8892 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "57732589+ilija42@users.noreply.github.com",
+            "name": "ilija42",
+            "username": "ilija42"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "cbc22b14af8cc38688bb4391423d513ab0f57bc2",
+          "message": "Onboard Stellar to --with-monitoring; fix action success ordering in template (#2502)\n\n* Onboard Stellar capability to --with-monitoring server generation\n\nRegenerate the Stellar v2 capability server with --with-monitoring so the\ngenerated wrapper emits action lifecycle logs and OTel metrics\n(capabilities_v2_action_count / capabilities_v2_action_duration) for\nevery RPC. This removes the need for each Stellar action implementation\nto emit its own initiated/success/error telemetry.\n\nAdds monitoring_kvs.go implementing monitoring.MonitoringLabels on\nWriteReportRequest and ReadContractRequest (high-cardinality fields go\nto logs only; metrics stay low-cardinality per the package guidance).\n\nMirrors the Solana onboarding in #2132.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* Fix action success ordering: emit success after nil-output guard\n\nAddress review feedback on PR #2502: the generated action wrapper called\n\"Capability Succeeded\" and OnSuccess before checking whether the output\nwas nil. If a capability method returned (nil, nil), the wrapper\nmisclassified the action as successful in logs and metrics before\nreturning an error to the caller.\n\nMoves the nil-output guard ahead of the success emission in\nserver.go.tmpl and regenerates the Solana and Stellar servers.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-10-27T18:46:24Z",
+          "tree_id": "c8e59353562b3eaf085399fe04600816107b215e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/cbc22b14af8cc38688bb4391423d513ab0f57bc2"
+        },
+        "date": 1793127284152,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 215.9,
+            "unit": "ns/op",
+            "extra": "5693614 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 26180,
+            "unit": "ns/op",
+            "extra": "45534 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 237.2,
+            "unit": "ns/op",
+            "extra": "5275129 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 24686,
+            "unit": "ns/op",
+            "extra": "48139 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 14474,
+            "unit": "ns/op",
+            "extra": "85078 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 49179,
+            "unit": "ns/op",
+            "extra": "24133 times\n4 procs"
           }
         ]
       }

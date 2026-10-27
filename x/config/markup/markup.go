@@ -26,9 +26,9 @@ type Markup interface {
 	// table instead. ok is false if the decoder never reads f.
 	Key(f reflect.StructField) (string, bool)
 
-	// RenameTag is a new struct tag that makes the decoder read a field by key,
-	// for a type built to decode into. It is built from key alone, not copied from any field.
-	RenameTag(key string) reflect.StructTag
+	// RenameTag is a new struct tag that makes the decoder read a field by key, for a type built to decode into.
+	// From tag, the tag of the field it stands in for, if any, it keeps only what changes how a value decodes.
+	RenameTag(key string, tag reflect.StructTag) reflect.StructTag
 
 	// MatchesKey reports whether the decoder reads a document's key as the field keyed name.
 	MatchesKey(key, name string) bool

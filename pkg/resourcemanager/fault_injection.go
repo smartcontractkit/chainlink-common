@@ -56,9 +56,9 @@ func (f UsageFaultInjection) Validate() error {
 }
 
 // FaultSelected reports whether key falls in the deterministic sample for
-// rate: FNV-1a 64 over key, then a 64-bit finalizer (murmur3 fmix64) so
-// near-identical keys spread out; top 53 bits as a fraction. Reconcilers
-// recompute the sample from rate alone.
+// rate. FNV-1a hashes the key; fmix64 spreads near-identical keys apart; the
+// top 53 bits become a uniform fraction in [0, 1) compared against rate.
+// Reconcilers recompute the sample from rate alone.
 func FaultSelected(rate float64, key string) bool {
 	if rate <= 0 {
 		return false
@@ -68,9 +68,11 @@ func FaultSelected(rate float64, key string) bool {
 	}
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(key))
-	return float64(fmix64(h.Sum64())>>11)/float64(uint64(1)<<53) < rate
+	return float64(fmix64(h.Sum64())>>11)/float64(uint64(1)<<53) < rate // 53 mantissa bits, no rounding bias
 }
 
+// fmix64 is the MurmurHash3 finalizer: xor-shift and multiply by its published
+// constants so every input bit affects every output bit (FNV alone clusters short keys).
 func fmix64(h uint64) uint64 {
 	h ^= h >> 33
 	h *= 0xff51afd7ed558ccd

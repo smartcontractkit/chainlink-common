@@ -1,0 +1,284 @@
+package beholder_test
+
+import (
+	"context"
+	"net"
+	"sync"
+	"testing"
+	"time"
+
+	cepb "github.com/cloudevents/sdk-go/binding/format/protobuf/v2/pb"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
+	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+)
+
+// publishCall is one batch RPC received by batchCapturingChipServer.
+type publishCall struct {
+	method string
+	md     metadata.MD
+	events []*cepb.CloudEvent
+}
+
+// batchCapturingChipServer records every PublishBatch / PublishBatchNoAck call and answers
+// with one positional success result per event, as the real server does.
+type batchCapturingChipServer struct {
+	pb.UnimplementedChipIngressServer
+
+	mu    sync.Mutex
+	calls []publishCall
+}
+
+func (s *batchCapturingChipServer) record(ctx context.Context, method string, in *pb.CloudEventBatch) (*pb.PublishResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.calls = append(s.calls, publishCall{method: method, md: md, events: in.Events})
+	return &pb.PublishResponse{Results: make([]*pb.PublishResult, len(in.Events))}, nil
+}
+
+func (s *batchCapturingChipServer) PublishBatch(ctx context.Context, in *pb.CloudEventBatch) (*pb.PublishResponse, error) {
+	return s.record(ctx, "PublishBatch", in)
+}
+
+func (s *batchCapturingChipServer) PublishBatchNoAck(ctx context.Context, in *pb.CloudEventBatch) (*pb.PublishResponse, error) {
+	return s.record(ctx, "PublishBatchNoAck", in)
+}
+
+// callsWithEventSource returns the calls that carried an event with the given CloudEvent source.
+func (s *batchCapturingChipServer) callsWithEventSource(source string) []publishCall {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var out []publishCall
+	for _, c := range s.calls {
+		for _, ev := range c.events {
+			if ev.Source == source {
+				out = append(out, c)
+				break
+			}
+		}
+	}
+	return out
+}
+
+func startBatchCapturingChipServer(t *testing.T) (*batchCapturingChipServer, string) {
+	t.Helper()
+	lis, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	srv := grpc.NewServer()
+	capture := &batchCapturingChipServer{}
+	pb.RegisterChipIngressServer(srv, capture)
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+	return capture, lis.Addr().String()
+}
+
+const (
+	testAuthHeaderKey = "X-Beholder-Node-Auth-Token"
+	testAuthToken     = "1:abc:2:def"
+)
+
+func domainTestConfig(t *testing.T, chipAddr string) beholder.Config {
+	return beholder.Config{
+		OtelExporterGRPCEndpoint:       "localhost:4317",
+		ChipIngressEmitterEnabled:      true,
+		ChipIngressEmitterGRPCEndpoint: chipAddr,
+		ChipIngressInsecureConnection:  true,
+		ChipIngressBatchEmitterEnabled: true,
+		ChipIngressLogger:              logger.Test(t),
+		ChipIngressSendInterval:        10 * time.Millisecond,
+		AuthHeaders:                    map[string]string{testAuthHeaderKey: testAuthToken},
+		ResourceAttributes: []attribute.KeyValue{
+			attribute.String("csa_public_key", "abc123"),
+		},
+		ChipIngressDomainEmittersEnabled: true,
+	}
+}
+
+func newDomainTestClient(t *testing.T, cfg beholder.Config) *beholder.Client {
+	t.Helper()
+	client, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+		return &mockLogExporter{}, nil
+	})
+	require.NoError(t, err)
+	require.NoError(t, client.Start(t.Context()))
+	t.Cleanup(func() { _ = client.Close() })
+	return client
+}
+
+// legacyStyleEvent builds an event the way the node's telemetry manager will: a normal
+// CloudEvent carrying its own extensions, which beholder's attribute-based Emit cannot express.
+func legacyStyleEvent(t *testing.T, source string) chipingress.CloudEvent {
+	t.Helper()
+	ev, err := chipingress.NewEvent(source, "pb.TelemetryWrapper", []byte("payload"), nil)
+	require.NoError(t, err)
+	ev.SetExtension("telemetrytype", "ocr2-median")
+	ev.SetExtension("partitionkey", "0xcontract-abc123")
+	return ev
+}
+
+func TestForDomain_EmitEventSendsNoAckWithDomainHeader(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+
+	const source = "data-feeds.telemetry.ocr2-median"
+	done := make(chan error, 1)
+	require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, source), func(err error) { done <- err }))
+
+	select {
+	case err := <-done:
+		require.NoError(t, err, "callback reports the per-event result")
+	case <-time.After(5 * time.Second):
+		t.Fatal("callback not invoked")
+	}
+
+	calls := capture.callsWithEventSource(source)
+	require.Len(t, calls, 1)
+	call := calls[0]
+
+	assert.Equal(t, "PublishBatchNoAck", call.method, "domain emitters are always no-ack")
+	assert.Equal(t, []string{"data-feeds"}, call.md.Get(beholder.DomainHeaderKey), "routing header carries the domain")
+	assert.Equal(t, []string{testAuthToken}, call.md.Get(testAuthHeaderKey), "inherits the client's auth")
+	for key, val := range chipingress.SanitizeMetadataHeaders(map[string]string{"csa_public_key": "abc123"}) {
+		assert.Equal(t, []string{val}, call.md.Get(key), "inherits resource attribute header %q", key)
+	}
+	assert.Equal(t, []string{"true"}, call.md.Get("x-include-nop-info"), "domain emitters request NOP info")
+
+	require.Len(t, call.events, 1)
+	attrs := call.events[0].Attributes
+	require.Contains(t, attrs, "telemetrytype", "caller-set extensions survive")
+	assert.Equal(t, "ocr2-median", attrs["telemetrytype"].GetCeString())
+	require.Contains(t, attrs, "partitionkey")
+	assert.Equal(t, "0xcontract-abc123", attrs["partitionkey"].GetCeString())
+}
+
+func TestForDomain_EachDomainUsesItsOwnHeader(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	ccip, err := client.ForDomain(beholder.DomainCCIP)
+	require.NoError(t, err)
+	require.NoError(t, ccip.EmitEvent(t.Context(), legacyStyleEvent(t, "ccip.telemetry.ocr3"), nil))
+
+	require.Eventually(t, func() bool { return len(capture.callsWithEventSource("ccip.telemetry.ocr3")) == 1 },
+		5*time.Second, 10*time.Millisecond)
+	assert.Equal(t, []string{"ccip"}, capture.callsWithEventSource("ccip.telemetry.ocr3")[0].md.Get(beholder.DomainHeaderKey))
+}
+
+func TestForDomain_DefaultEmitterIsUnaffected(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	require.NoError(t, client.Emitter.Emit(t.Context(), []byte("payload"),
+		beholder.AttrKeyDomain, "platform-custom",
+		beholder.AttrKeyEntity, "SomeEntity",
+		beholder.AttrKeyDataSchema, "/schemas/ids/1001",
+	))
+
+	require.Eventually(t, func() bool { return len(capture.callsWithEventSource("platform-custom")) == 1 },
+		5*time.Second, 10*time.Millisecond)
+	call := capture.callsWithEventSource("platform-custom")[0]
+	assert.Equal(t, "PublishBatch", call.method, "the default emitter keeps acked publishing")
+	assert.Empty(t, call.md.Get(beholder.DomainHeaderKey), "the default emitter sends no routing header")
+}
+
+func TestForDomain_BuildsEveryDomainAndRejectsUnknownOnes(t *testing.T) {
+	_, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	for _, d := range []beholder.Domain{beholder.DomainDataFeeds, beholder.DomainDataStreams, beholder.DomainCCIP} {
+		_, err := client.ForDomain(d)
+		require.NoError(t, err, "domain %q is built", d)
+	}
+
+	first, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+	second, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+	assert.Same(t, first, second, "ForDomain is a lookup, not a constructor")
+
+	_, err = client.ForDomain(beholder.Domain("not-a-domain"))
+	require.Error(t, err, "an unknown domain is an error, never a silent fallback")
+}
+
+func TestForDomain_CloseOnReturnedEmitterDoesNotStopIt(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+	require.NoError(t, em.Close(), "the client owns the emitter's lifecycle")
+
+	require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, "data-feeds.telemetry.ocr"), nil))
+	require.Eventually(t, func() bool { return len(capture.callsWithEventSource("data-feeds.telemetry.ocr")) == 1 },
+		5*time.Second, 10*time.Millisecond)
+}
+
+func TestForDomain_ClientCloseDrainsQueuedEvents(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	cfg := domainTestConfig(t, addr)
+	cfg.ChipIngressSendInterval = time.Hour // nothing flushes on its own
+
+	client, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+		return &mockLogExporter{}, nil
+	})
+	require.NoError(t, err)
+	require.NoError(t, client.Start(t.Context()))
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+	require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, "data-feeds.telemetry.drain"), nil))
+
+	// Close also shuts down the OTel providers, which fail to flush to the absent test
+	// collector; only the drain matters here.
+	_ = client.Close()
+	assert.Len(t, capture.callsWithEventSource("data-feeds.telemetry.drain"), 1, "queued events are published on close")
+}
+
+func TestForDomain_EmitEventRejectsInvalidEvent(t *testing.T) {
+	_, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+
+	called := false
+	err = em.EmitEvent(t.Context(), chipingress.CloudEvent{}, func(error) { called = true })
+	require.Error(t, err, "an event without id/source/type is rejected up front")
+	assert.False(t, called, "no callback when EmitEvent returns an error")
+}
+
+func TestNewGRPCClient_DomainEmittersRequireChipIngress(t *testing.T) {
+	cfg := beholder.Config{OtelExporterGRPCEndpoint: "localhost:4317", ChipIngressDomainEmittersEnabled: true}
+	_, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+		return &mockLogExporter{}, nil
+	})
+	require.Error(t, err)
+}
+
+func TestForDomain_DisabledByDefault(t *testing.T) {
+	_, addr := startBatchCapturingChipServer(t)
+	cfg := domainTestConfig(t, addr)
+	cfg.ChipIngressDomainEmittersEnabled = false
+	client := newDomainTestClient(t, cfg)
+
+	_, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.Error(t, err, "chip ingress alone does not build domain emitters")
+}
+
+func TestNoopClient_ForDomain(t *testing.T) {
+	_, err := beholder.NewNoopClient().ForDomain(beholder.DomainDataFeeds)
+	require.Error(t, err)
+}

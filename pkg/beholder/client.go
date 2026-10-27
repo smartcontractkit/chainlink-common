@@ -51,6 +51,9 @@ type Client struct {
 	// Chip
 	Chip chipingress.Client
 
+	// domainEmitters are built when Config.ChipIngressDomainEmittersEnabled is set and retrieved with ForDomain.
+	domainEmitters map[Domain]*domainEmitter
+
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
 	TracerProvider        oteltrace.TracerProvider
@@ -71,10 +74,16 @@ func (c *Client) initService(lggr pkglogger.Logger, batchSvc *ChipIngressBatchEm
 		Name:  "BeholderClient",
 		Close: c.close,
 		NewSubServices: func(l pkglogger.Logger) []services.Service {
-			if batchSvc == nil {
-				return nil
+			var subs []services.Service
+			if batchSvc != nil {
+				subs = append(subs, batchSvc)
 			}
-			return []services.Service{batchSvc}
+			for _, domain := range domains {
+				if em, ok := c.domainEmitters[domain]; ok {
+					subs = append(subs, em.ChipIngressBatchEmitterService)
+				}
+			}
+			return subs
 		},
 	}.NewServiceEngine(lggr)
 }
@@ -210,14 +219,19 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	// and logs will be sent via OTLP using the regular Logger instead of calling Emit
 	emitter := NewMessageEmitter(messageLogger)
 	var batchEmitterService *ChipIngressBatchEmitterService
+	var domainEmitters map[Domain]*domainEmitter
 	var chipIngressClient chipingress.Client = &chipingress.NoopClient{}
 	lggr := cfg.ChipIngressLogger
 	if lggr == nil {
 		lggr = pkglogger.Nop()
 	}
+	chipIngressEnabled := cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != ""
+	if cfg.ChipIngressDomainEmittersEnabled && !chipIngressEnabled {
+		return nil, errors.New("ChipIngressDomainEmittersEnabled requires chip ingress (ChipIngressEmitterGRPCEndpoint)")
+	}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
-	if cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != "" {
+	if chipIngressEnabled {
 		var opts []chipingress.Opt
 		resourceAttrs := resourceAttributesToStringMap(cfg.ResourceAttributes)
 
@@ -243,6 +257,21 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		// Set OpenTelemetry providers
 		opts = append(opts, chipingress.WithMeterProvider(meterProvider))
 		opts = append(opts, chipingress.WithTracerProvider(tracerProvider))
+
+		// Domain emitters share everything above and set their own header provider.
+		if cfg.ChipIngressDomainEmittersEnabled {
+			domainEmitters, err = newDomainEmitters(cfg, opts, resourceAttrs, lggr)
+			if err != nil {
+				return nil, err
+			}
+			defer func() {
+				if err != nil {
+					for _, em := range domainEmitters {
+						_ = em.ownedClient.Close()
+					}
+				}
+			}()
+		}
 
 		if len(resourceAttrs) > 0 {
 			opts = append(opts, chipingress.WithResourceAttributeHeaders(resourceAttrs))
@@ -293,6 +322,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		Meter:                 meter,
 		Emitter:               emitter,
 		Chip:                  chipIngressClient,
+		domainEmitters:        domainEmitters,
 		LoggerProvider:        loggerProvider,
 		TracerProvider:        tracerProvider,
 		MeterProvider:         meterProvider,

@@ -23,6 +23,10 @@ type ChipIngressBatchEmitterService struct {
 	eng *services.Engine
 
 	batchClient *batch.Client
+	clientName  string
+	// ownedClient, when set, is closed on stop after the batch client drains. Domain emitters
+	// own their chip ingress connection; the default emitter shares the Client's.
+	ownedClient chipingress.Client
 
 	metricAttrsCache sync.Map // map[string]otelmetric.MeasurementOption
 	metrics          batchEmitterMetrics
@@ -35,6 +39,12 @@ type batchEmitterMetrics struct {
 
 // NewChipIngressBatchEmitterService creates a batch emitter service backed by the given chipingress client.
 func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitterService, error) {
+	return newChipIngressBatchEmitterService(client, cfg, lggr, batch.ClientNameBeholder)
+}
+
+// newChipIngressBatchEmitterService is NewChipIngressBatchEmitterService with a client name and
+// extra batch options (applied last), used to build domain emitters.
+func newChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger, clientName string, extraOpts ...batch.Opt) (*ChipIngressBatchEmitterService, error) {
 	if client == nil {
 		return nil, errors.New("chip ingress client is nil")
 	}
@@ -75,7 +85,7 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		return nil, fmt.Errorf("failed to create batch emitter metrics: %w", err)
 	}
 
-	batchClient, err := batch.NewBatchClient(client,
+	opts := append([]batch.Opt{
 		batch.WithBatchSize(maxBatchSize),
 		batch.WithMessageBuffer(bufferSize),
 		batch.WithBatchInterval(sendInterval),
@@ -84,14 +94,16 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batch.WithMaxConcurrentSends(maxConcurrentSends),
 		batch.WithMaxGRPCRequestSize(maxGRPCRequestSize),
 		batch.WithEventClone(false),
-		batch.WithClientName(batch.ClientNameBeholder),
-	)
+		batch.WithClientName(clientName),
+	}, extraOpts...)
+	batchClient, err := batch.NewBatchClient(client, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create batch client: %w", err)
 	}
 
 	e := &ChipIngressBatchEmitterService{
 		batchClient: batchClient,
+		clientName:  clientName,
 		metrics:     metrics,
 	}
 
@@ -115,6 +127,9 @@ func (e *ChipIngressBatchEmitterService) start(_ context.Context) error {
 
 func (e *ChipIngressBatchEmitterService) stop() error {
 	e.batchClient.Stop()
+	if e.ownedClient != nil {
+		return e.ownedClient.Close()
+	}
 	return nil
 }
 
@@ -156,54 +171,83 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			return err
 		}
 
-		metricAttrs := e.metricAttrsFor(domain, entity)
-
-		queueErr := e.batchClient.QueueMessage(eventPb, func(sendErr error) {
-			// The callback fires asynchronously after the batch is sent,
-			// so the caller's ctx may already be cancelled. Use ctx directly
-			// for metric recording — OTel Add is non-blocking and tolerates
-			// cancelled contexts.
-			if sendErr != nil {
-				errorCode := batch.ErrorCodeFor(sendErr)
-				e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
-				// Partial delivery is not logged: it is a per-event, often persistent
-				// server-side condition (e.g. missing schema) that would otherwise log on
-				// every dropped event. chip_ingress.events_dropped (error_code) already
-				// captures that it's happening and roughly why; the full reason isn't
-				// needed at fleet-wide log volume.
-				if _, ok := errors.AsType[*batch.PublishError](sendErr); !ok {
-					e.eng.Errorw("failed to emit to chip ingress",
-						"error", sendErr,
-						"error_code", errorCode,
-						"error_reason", sendErr.Error(),
-						"domain", domain,
-						"entity", entity,
-					)
-				}
-			} else {
-				e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
-			}
-			if callback != nil {
-				callback(sendErr)
-			}
-		})
-		if queueErr != nil {
-			errorCode := batch.ErrorCodeFor(queueErr)
-			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
-			e.eng.Errorw("failed to queue message for chip ingress",
-				"error", queueErr,
-				"error_code", errorCode,
-				"error_reason", queueErr.Error(),
-				"domain", domain,
-				"entity", entity,
-			)
-			if callback != nil {
-				callback(queueErr)
-			}
-		}
-
+		e.queue(ctx, eventPb, domain, entity, callback)
 		return nil
 	})
+}
+
+// EmitEvent queues a fully built CloudEvent for batched delivery without blocking. Unlike
+// Emit, which builds the event from attributes, it keeps every extension the caller set.
+//
+// If EmitEvent returns a non-nil error, the callback will NOT be invoked.
+// If it returns nil, a non-nil callback is guaranteed to fire exactly once.
+func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event chipingress.CloudEvent, callback func(error)) error {
+	return e.eng.IfStarted(func() error {
+		if err := event.Validate(); err != nil {
+			return fmt.Errorf("invalid CloudEvent: %w", err)
+		}
+		eventPb, err := chipingress.EventToProto(event)
+		if err != nil {
+			return fmt.Errorf("failed to convert to proto: %w", err)
+		}
+
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
+		e.queue(ctx, eventPb, event.Source(), event.Type(), callback)
+		return nil
+	})
+}
+
+// queue hands eventPb to the batch client and records its fate. domain and entity are the
+// event's source and type, used for metrics and logs.
+func (e *ChipIngressBatchEmitterService) queue(ctx context.Context, eventPb *chipingress.CloudEventPb, domain, entity string, callback func(error)) {
+	metricAttrs := e.metricAttrsFor(domain, entity)
+
+	queueErr := e.batchClient.QueueMessage(eventPb, func(sendErr error) {
+		// The callback fires asynchronously after the batch is sent,
+		// so the caller's ctx may already be cancelled. Use ctx directly
+		// for metric recording — OTel Add is non-blocking and tolerates
+		// cancelled contexts.
+		if sendErr != nil {
+			errorCode := batch.ErrorCodeFor(sendErr)
+			e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
+			// Partial delivery is not logged: it is a per-event, often persistent
+			// server-side condition (e.g. missing schema) that would otherwise log on
+			// every dropped event. chip_ingress.events_dropped (error_code) already
+			// captures that it's happening and roughly why; the full reason isn't
+			// needed at fleet-wide log volume.
+			if _, ok := errors.AsType[*batch.PublishError](sendErr); !ok {
+				e.eng.Errorw("failed to emit to chip ingress",
+					"error", sendErr,
+					"error_code", errorCode,
+					"error_reason", sendErr.Error(),
+					"domain", domain,
+					"entity", entity,
+				)
+			}
+		} else {
+			e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
+		}
+		if callback != nil {
+			callback(sendErr)
+		}
+	})
+	if queueErr != nil {
+		errorCode := batch.ErrorCodeFor(queueErr)
+		e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
+		e.eng.Errorw("failed to queue message for chip ingress",
+			"error", queueErr,
+			"error_code", errorCode,
+			"error_reason", queueErr.Error(),
+			"domain", domain,
+			"entity", entity,
+		)
+		if callback != nil {
+			callback(queueErr)
+		}
+	}
 }
 
 func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) otelmetric.MeasurementOption {
@@ -214,7 +258,7 @@ func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) o
 	attrs := otelmetric.WithAttributeSet(attribute.NewSet(
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
-		attribute.String("client_name", batch.ClientNameBeholder),
+		attribute.String("client_name", e.clientName),
 	))
 	v, _ := e.metricAttrsCache.LoadOrStore(key, attrs)
 	return v.(otelmetric.MeasurementOption)
@@ -232,7 +276,7 @@ func (e *ChipIngressBatchEmitterService) dropMetricAttrsFor(domain, entity, erro
 	attrs := []attribute.KeyValue{
 		attribute.String("domain", domain),
 		attribute.String("entity", entity),
-		attribute.String("client_name", batch.ClientNameBeholder),
+		attribute.String("client_name", e.clientName),
 	}
 	if errorCode != "" {
 		attrs = append(attrs, attribute.String("error_code", errorCode))

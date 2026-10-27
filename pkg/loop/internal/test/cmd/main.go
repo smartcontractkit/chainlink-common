@@ -82,6 +82,9 @@ func main() {
 		lggr.Info("Done serving relayer")
 		os.Exit(0)
 
+	case loop.PluginEmptyName:
+		loop.ServeEmpty(grpcServer)
+
 	case loop.PluginStandardCapabilitiesName:
 		plugin.Serve(&plugin.ServeConfig{
 			HandshakeConfig: loop.StandardCapabilitiesHandshakeConfig(),

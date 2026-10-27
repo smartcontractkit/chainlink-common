@@ -166,11 +166,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetLatestLedger", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetLatestLedger", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetLatestLedger", tsStart, time.Now(), capmon.ActionMetricAttributes("GetLatestLedger", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetLatestLedger(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetLatestLedger", tsStart, time.Now(), capmon.ActionMetricAttributes("GetLatestLedger", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -198,11 +198,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "ReadContract", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("ReadContract", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "ReadContract", tsStart, time.Now(), capmon.ActionMetricAttributes("ReadContract", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method ReadContract(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "ReadContract", tsStart, time.Now(), capmon.ActionMetricAttributes("ReadContract", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -230,11 +230,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "WriteReport", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "WriteReport", tsStart, time.Now(), capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "WriteReport", tsStart, time.Now(), capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

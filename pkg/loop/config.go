@@ -5,14 +5,13 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-plugin"
-	"go.uber.org/zap/zapcore"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/pyroscope"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
 
@@ -47,74 +46,19 @@ const (
 
 	envPromPort = "CL_PROMETHEUS_PORT"
 
-	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
-	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
-	envPyroscopeEnvironment               = "CL_PYROSCOPE_ENVIRONMENT"
-	envPyroscopeLinkTracesToProfiles      = "CL_PYROSCOPE_LINK_TRACES_TO_PROFILES"
-	envPyroscopePPROFBlockProfileRate     = "CL_PYROSCOPE_PPROF_BLOCK_PROFILE_RATE"
-	envPyroscopePPROFMutexProfileFraction = "CL_PYROSCOPE_PPROF_MUTEX_PROFILE_FRACTION"
-
-	envTracingEnabled         = "CL_TRACING_ENABLED"
-	envTracingCollectorTarget = "CL_TRACING_COLLECTOR_TARGET"
-	envTracingSamplingRatio   = "CL_TRACING_SAMPLING_RATIO"
-	envTracingAttribute       = "CL_TRACING_ATTRIBUTE_"
-	envTracingTLSCertPath     = "CL_TRACING_TLS_CERT_PATH"
-
-	envTelemetryEnabled                   = "CL_TELEMETRY_ENABLED"
-	envTelemetryEndpoint                  = "CL_TELEMETRY_ENDPOINT"
-	envTelemetryInsecureConn              = "CL_TELEMETRY_INSECURE_CONNECTION"
-	envTelemetryCACertFile                = "CL_TELEMETRY_CA_CERT_FILE"
-	envTelemetryAttribute                 = "CL_TELEMETRY_ATTRIBUTE_"
-	envTelemetryTraceSampleRatio          = "CL_TELEMETRY_TRACE_SAMPLE_RATIO"
-	envTelemetryAuthHeader                = "CL_TELEMETRY_AUTH_HEADER"
-	envTelemetryAuthPubKeyHex             = "CL_TELEMETRY_AUTH_PUB_KEY_HEX"
-	envTelemetryAuthHeadersTTL            = "CL_TELEMETRY_AUTH_HEADERS_TTL"
-	envTelemetryEmitterBatchProcessor     = "CL_TELEMETRY_EMITTER_BATCH_PROCESSOR"
-	envTelemetryEmitterExportTimeout      = "CL_TELEMETRY_EMITTER_EXPORT_TIMEOUT"
-	envTelemetryEmitterExportInterval     = "CL_TELEMETRY_EMITTER_EXPORT_INTERVAL"
-	envTelemetryEmitterExportMaxBatchSize = "CL_TELEMETRY_EMITTER_EXPORT_MAX_BATCH_SIZE"
-	envTelemetryEmitterMaxQueueSize       = "CL_TELEMETRY_EMITTER_MAX_QUEUE_SIZE"
-	envTelemetryLogStreamingEnabled       = "CL_TELEMETRY_LOG_STREAMING_ENABLED"
-	envTelemetryLogLevel                  = "CL_TELEMETRY_LOG_LEVEL"
-	envTelemetryLogBatchProcessor         = "CL_TELEMETRY_LOG_BATCH_PROCESSOR"
-	envTelemetryLogExportTimeout          = "CL_TELEMETRY_LOG_EXPORT_TIMEOUT"
-	envTelemetryLogExportMaxBatchSize     = "CL_TELEMETRY_LOG_EXPORT_MAX_BATCH_SIZE"
-	envTelemetryLogExportInterval         = "CL_TELEMETRY_LOG_EXPORT_INTERVAL"
-	envTelemetryLogMaxQueueSize           = "CL_TELEMETRY_LOG_MAX_QUEUE_SIZE"
-	envTelemetryTraceCompressor           = "CL_TELEMETRY_TRACE_COMPRESSOR"
-	envTelemetryMetricCompressor          = "CL_TELEMETRY_METRIC_COMPRESSOR"
-	envTelemetryMetricExportBatchSize     = "CL_TELEMETRY_METRIC_EXPORT_BATCH_SIZE"
-	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
-	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
-	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
-	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
-	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
-	envMeterRecordsEnabled                = "CL_METER_RECORDS_ENABLED"
-	envMeterSnapshotsEnabled              = "CL_METER_SNAPSHOTS_ENABLED"
-	envMeterProduct                       = "CL_METER_PRODUCT"
-	envMeterTenant                        = "CL_METER_TENANT"
-	envMeterNumericTenantID               = "CL_METER_NUMERIC_TENANT_ID"
-	envMeterEnvironment                   = "CL_METER_ENVIRONMENT"
-	envMeterZone                          = "CL_METER_ZONE"
-	envMeterNodeID                        = "CL_METER_NODE_ID"
-	envMeterFaultMode                     = "CL_METER_FAULT_MODE"
-	envMeterFaultRate                     = "CL_METER_FAULT_RATE"
-	envMeterFaultSalt                     = "CL_METER_FAULT_SALT"
-	envMeterFaultDelta                    = "CL_METER_FAULT_DELTA"
-	envMeterFaultNodeRate                 = "CL_METER_FAULT_NODE_RATE"
-
-	envChipIngressEndpoint              = "CL_CHIP_INGRESS_ENDPOINT"
-	envChipIngressInsecureConnection    = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
-	envChipIngressBatchEmitterEnabled   = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
-	envChipIngressDurableEmitterEnabled = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
-
-	envChipIngressBufferSize         = "CL_CHIP_INGRESS_BUFFER_SIZE"
-	envChipIngressMaxBatchSize       = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
-	envChipIngressMaxConcurrentSends = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
-	envChipIngressSendInterval       = "CL_CHIP_INGRESS_SEND_INTERVAL"
-	envChipIngressSendTimeout        = "CL_CHIP_INGRESS_SEND_TIMEOUT"
-	envChipIngressDrainTimeout       = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
-	envChipIngressMaxGRPCRequestSize = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+	envMeterRecordsEnabled   = "CL_METER_RECORDS_ENABLED"
+	envMeterSnapshotsEnabled = "CL_METER_SNAPSHOTS_ENABLED"
+	envMeterProduct          = "CL_METER_PRODUCT"
+	envMeterTenant           = "CL_METER_TENANT"
+	envMeterNumericTenantID  = "CL_METER_NUMERIC_TENANT_ID"
+	envMeterEnvironment      = "CL_METER_ENVIRONMENT"
+	envMeterZone             = "CL_METER_ZONE"
+	envMeterNodeID           = "CL_METER_NODE_ID"
+	envMeterFaultMode        = "CL_METER_FAULT_MODE"
+	envMeterFaultRate        = "CL_METER_FAULT_RATE"
+	envMeterFaultSalt        = "CL_METER_FAULT_SALT"
+	envMeterFaultDelta       = "CL_METER_FAULT_DELTA"
+	envMeterFaultNodeRate    = "CL_METER_FAULT_NODE_RATE"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -125,18 +69,7 @@ const (
 type EnvConfig struct {
 	AppID string
 
-	ChipIngressEndpoint              string
-	ChipIngressInsecureConnection    bool
-	ChipIngressBatchEmitterEnabled   bool
-	ChipIngressDurableEmitterEnabled bool
-
-	ChipIngressBufferSize         uint
-	ChipIngressMaxBatchSize       uint
-	ChipIngressMaxConcurrentSends int
-	ChipIngressSendInterval       time.Duration
-	ChipIngressSendTimeout        time.Duration
-	ChipIngressDrainTimeout       time.Duration
-	ChipIngressMaxGRPCRequestSize int
+	telemetry.TelemetryConfig
 
 	CRESettings        string
 	CRESettingsDefault string
@@ -169,53 +102,10 @@ type EnvConfig struct {
 
 	PrometheusPort int // also serves pprof routes
 
-	PyroscopeAuthToken                 string
-	PyroscopeServerAddress             string
-	PyroscopeEnvironment               string
-	PyroscopeLinkTracesToProfiles      bool
-	PyroscopePPROFBlockProfileRate     int
-	PyroscopePPROFMutexProfileFraction int
+	pyroscope.PyroscopeConfig
 
-	TelemetryEnabled            bool
-	TelemetryEndpoint           string
-	TelemetryInsecureConnection bool
-	TelemetryCACertFile         string
-	TelemetryAttributes         OtelAttributes
-	TelemetryTraceSampleRatio   float64
-	TelemetryAuthHeaders        map[string]string
-	TelemetryAuthPubKeyHex      string
-	TelemetryAuthHeadersTTL     time.Duration
-	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor
-	// (batched async custom-message export vs immediate per-record export).
-	TelemetryEmitterBatchProcessor     bool
-	TelemetryEmitterExportTimeout      time.Duration
-	TelemetryEmitterExportInterval     time.Duration
-	TelemetryEmitterExportMaxBatchSize int
-	TelemetryEmitterMaxQueueSize       int
-	TelemetryLogStreamingEnabled       bool
-	TelemetryLogLevel                  zapcore.Level
-	TelemetryLogBatchProcessor         bool
-	TelemetryLogExportTimeout          time.Duration
-	TelemetryLogExportMaxBatchSize     int
-	TelemetryLogExportInterval         time.Duration
-	TelemetryLogMaxQueueSize           int
-	TelemetryTraceCompressor           string
-	TelemetryMetricCompressor          string
-	// TelemetryMetricExportBatchSize limits each exporter call to that many
-	// data points. Zero (the default) disables batching.
-	TelemetryMetricExportBatchSize int
-	// TelemetryMetricCardinalityLimit is nil when unset, so AsCmdEnv can
-	// distinguish "no opinion" (child applies its own default) from an
-	// explicit 0, which disables the limit.
-	TelemetryMetricCardinalityLimit *int
-	// TelemetryMetricViewsDenyAttributes lists attribute keys dropped by the
-	// default global deny view (e.g. event_id). Empty skips Default().
-	TelemetryMetricViewsDenyAttributes []string
-	TelemetryPrometheusBridgeEnabled   bool
-	TelemetryPrometheusBridgePrefixes  []string
-	TelemetryLogCompressor             string
-	MeterRecordsEnabled                bool
-	MeterSnapshotsEnabled              bool
+	MeterRecordsEnabled   bool
+	MeterSnapshotsEnabled bool
 
 	// MeterProduct / MeterTenant / MeterNumericTenantID / MeterEnvironment /
 	// MeterZone / MeterNodeID are
@@ -241,12 +131,6 @@ type EnvConfig struct {
 	MeterFaultSalt     string
 	MeterFaultDelta    int64
 	MeterFaultNodeRate float64
-
-	TracingEnabled         bool
-	TracingCollectorTarget string
-	TracingSamplingRatio   float64
-	TracingTLSCertPath     string
-	TracingAttributes      map[string]string
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -287,60 +171,9 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 
 	add(envPromPort, strconv.Itoa(e.PrometheusPort))
 
-	add(envPyroscopeAuthToken, e.PyroscopeAuthToken)
-	add(envPyroscopeServerAddress, e.PyroscopeServerAddress)
-	add(envPyroscopeEnvironment, e.PyroscopeEnvironment)
-	add(envPyroscopeLinkTracesToProfiles, strconv.FormatBool(e.PyroscopeLinkTracesToProfiles))
-	add(envPyroscopePPROFBlockProfileRate, strconv.Itoa(e.PyroscopePPROFBlockProfileRate))
-	add(envPyroscopePPROFMutexProfileFraction, strconv.Itoa(e.PyroscopePPROFMutexProfileFraction))
+	env = append(env, e.PyroscopeConfig.AsCmdEnv()...)
+	env = append(env, e.TelemetryConfig.AsCmdEnv()...)
 
-	add(envTracingEnabled, strconv.FormatBool(e.TracingEnabled))
-	add(envTracingCollectorTarget, e.TracingCollectorTarget)
-	add(envTracingSamplingRatio, strconv.FormatFloat(e.TracingSamplingRatio, 'f', -1, 64))
-	add(envTracingTLSCertPath, e.TracingTLSCertPath)
-
-	for k, v := range e.TracingAttributes {
-		add(envTracingAttribute+k, v)
-	}
-
-	add(envTelemetryEnabled, strconv.FormatBool(e.TelemetryEnabled))
-	add(envTelemetryEndpoint, e.TelemetryEndpoint)
-	add(envTelemetryInsecureConn, strconv.FormatBool(e.TelemetryInsecureConnection))
-	add(envTelemetryCACertFile, e.TelemetryCACertFile)
-	add(envTelemetryTraceSampleRatio, strconv.FormatFloat(e.TelemetryTraceSampleRatio, 'f', -1, 64))
-	for k, v := range e.TelemetryAttributes {
-		add(envTelemetryAttribute+k, v)
-	}
-
-	for k, v := range e.TelemetryAuthHeaders {
-		add(envTelemetryAuthHeader+k, v)
-	}
-	add(envTelemetryAuthPubKeyHex, e.TelemetryAuthPubKeyHex)
-	add(envTelemetryAuthHeadersTTL, e.TelemetryAuthHeadersTTL.String())
-	add(envTelemetryEmitterBatchProcessor, strconv.FormatBool(e.TelemetryEmitterBatchProcessor))
-	add(envTelemetryEmitterExportTimeout, e.TelemetryEmitterExportTimeout.String())
-	add(envTelemetryEmitterExportInterval, e.TelemetryEmitterExportInterval.String())
-	add(envTelemetryEmitterExportMaxBatchSize, strconv.Itoa(e.TelemetryEmitterExportMaxBatchSize))
-	add(envTelemetryEmitterMaxQueueSize, strconv.Itoa(e.TelemetryEmitterMaxQueueSize))
-	add(envTelemetryLogStreamingEnabled, strconv.FormatBool(e.TelemetryLogStreamingEnabled))
-	add(envTelemetryLogLevel, e.TelemetryLogLevel.String())
-	add(envTelemetryLogBatchProcessor, strconv.FormatBool(e.TelemetryLogBatchProcessor))
-	add(envTelemetryLogExportTimeout, e.TelemetryLogExportTimeout.String())
-	add(envTelemetryLogExportMaxBatchSize, strconv.Itoa(e.TelemetryLogExportMaxBatchSize))
-	add(envTelemetryLogExportInterval, e.TelemetryLogExportInterval.String())
-	add(envTelemetryLogMaxQueueSize, strconv.Itoa(e.TelemetryLogMaxQueueSize))
-	add(envTelemetryTraceCompressor, e.TelemetryTraceCompressor)
-	add(envTelemetryMetricCompressor, e.TelemetryMetricCompressor)
-	add(envTelemetryMetricExportBatchSize, strconv.Itoa(e.TelemetryMetricExportBatchSize))
-	if e.TelemetryMetricCardinalityLimit != nil {
-		add(envTelemetryMetricCardinalityLimit, strconv.Itoa(*e.TelemetryMetricCardinalityLimit))
-	}
-	if len(e.TelemetryMetricViewsDenyAttributes) > 0 {
-		add(envTelemetryMetricViewsDenyAttributes, strings.Join(e.TelemetryMetricViewsDenyAttributes, ","))
-	}
-	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(e.TelemetryPrometheusBridgeEnabled))
-	add(envTelemetryPrometheusBridgePrefixes, strings.Join(e.TelemetryPrometheusBridgePrefixes, ","))
-	add(envTelemetryLogCompressor, e.TelemetryLogCompressor)
 	add(envMeterRecordsEnabled, strconv.FormatBool(e.MeterRecordsEnabled))
 	add(envMeterSnapshotsEnabled, strconv.FormatBool(e.MeterSnapshotsEnabled))
 	add(envMeterProduct, e.MeterProduct)
@@ -354,18 +187,6 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMeterFaultSalt, e.MeterFaultSalt)
 	add(envMeterFaultDelta, strconv.FormatInt(e.MeterFaultDelta, 10))
 	add(envMeterFaultNodeRate, strconv.FormatFloat(e.MeterFaultNodeRate, 'g', -1, 64))
-
-	add(envChipIngressEndpoint, e.ChipIngressEndpoint)
-	add(envChipIngressInsecureConnection, strconv.FormatBool(e.ChipIngressInsecureConnection))
-	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(e.ChipIngressBatchEmitterEnabled))
-	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(e.ChipIngressDurableEmitterEnabled))
-	add(envChipIngressBufferSize, strconv.FormatUint(uint64(e.ChipIngressBufferSize), 10))
-	add(envChipIngressMaxBatchSize, strconv.FormatUint(uint64(e.ChipIngressMaxBatchSize), 10))
-	add(envChipIngressMaxConcurrentSends, strconv.Itoa(e.ChipIngressMaxConcurrentSends))
-	add(envChipIngressSendInterval, e.ChipIngressSendInterval.String())
-	add(envChipIngressSendTimeout, e.ChipIngressSendTimeout.String())
-	add(envChipIngressDrainTimeout, e.ChipIngressDrainTimeout.String())
-	add(envChipIngressMaxGRPCRequestSize, strconv.Itoa(e.ChipIngressMaxGRPCRequestSize))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -484,183 +305,12 @@ func (e *EnvConfig) parse() error {
 		return fmt.Errorf("failed to parse %s = %q: %w", envPromPort, promPortStr, err)
 	}
 
-	e.PyroscopeAuthToken = os.Getenv(envPyroscopeAuthToken)
-	e.PyroscopeServerAddress = os.Getenv(envPyroscopeServerAddress)
-	e.PyroscopeEnvironment = os.Getenv(envPyroscopeEnvironment)
-	e.PyroscopeLinkTracesToProfiles, err = getBool(envPyroscopeLinkTracesToProfiles)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envPyroscopeLinkTracesToProfiles, err)
-	}
-	e.PyroscopePPROFBlockProfileRate, err = getInt(envPyroscopePPROFBlockProfileRate)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFBlockProfileRate, err)
-	}
-	e.PyroscopePPROFMutexProfileFraction, err = getInt(envPyroscopePPROFMutexProfileFraction)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envPyroscopePPROFMutexProfileFraction, err)
+	if err = e.PyroscopeConfig.Parse(); err != nil {
+		return err
 	}
 
-	e.TracingEnabled, err = getBool(envTracingEnabled)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envTracingEnabled, err)
-	}
-
-	if e.TracingEnabled {
-		e.TracingCollectorTarget, err = getValidCollectorTarget()
-		if err != nil {
-			return err
-		}
-		e.TracingAttributes = getMap(envTracingAttribute)
-		e.TracingSamplingRatio = getFloat64OrZero(envTracingSamplingRatio)
-		e.TracingTLSCertPath = os.Getenv(envTracingTLSCertPath)
-	}
-
-	e.TelemetryEnabled, err = getBool(envTelemetryEnabled)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envTelemetryEnabled, err)
-	}
-
-	if e.TelemetryEnabled {
-		e.TelemetryEndpoint = os.Getenv(envTelemetryEndpoint)
-		e.TelemetryInsecureConnection, err = getBool(envTelemetryInsecureConn)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryEndpoint, err)
-		}
-		e.TelemetryCACertFile = os.Getenv(envTelemetryCACertFile)
-		e.TelemetryAttributes = getMap(envTelemetryAttribute)
-		e.TelemetryTraceSampleRatio = getFloat64OrZero(envTelemetryTraceSampleRatio)
-		e.TelemetryAuthHeaders = getMap(envTelemetryAuthHeader)
-		e.TelemetryAuthPubKeyHex = os.Getenv(envTelemetryAuthPubKeyHex)
-		e.TelemetryAuthHeadersTTL, err = getDuration(envTelemetryAuthHeadersTTL)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryAuthHeadersTTL, err)
-		}
-		e.TelemetryEmitterBatchProcessor, err = getBool(envTelemetryEmitterBatchProcessor)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterBatchProcessor, err)
-		}
-		e.TelemetryEmitterExportTimeout, err = getDuration(envTelemetryEmitterExportTimeout)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportTimeout, err)
-		}
-		e.TelemetryEmitterExportInterval, err = getDuration(envTelemetryEmitterExportInterval)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportInterval, err)
-		}
-		e.TelemetryEmitterExportMaxBatchSize, err = getInt(envTelemetryEmitterExportMaxBatchSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterExportMaxBatchSize, err)
-		}
-		e.TelemetryEmitterMaxQueueSize, err = getInt(envTelemetryEmitterMaxQueueSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryEmitterMaxQueueSize, err)
-		}
-		e.TelemetryLogStreamingEnabled, err = getBool(envTelemetryLogStreamingEnabled)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogStreamingEnabled, err)
-		}
-		logLevelStr := os.Getenv(envTelemetryLogLevel)
-		if logLevelStr == "" {
-			logLevelStr = "info" // Default log level
-		}
-		var logLevel zapcore.Level
-		if err := logLevel.Set(logLevelStr); err != nil {
-			logLevel = zapcore.InfoLevel // Fallback to info level on invalid input
-		}
-		e.TelemetryLogLevel = logLevel
-		e.TelemetryLogBatchProcessor, err = getBool(envTelemetryLogBatchProcessor)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogBatchProcessor, err)
-		}
-		e.TelemetryLogExportTimeout, err = getDuration(envTelemetryLogExportTimeout)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogExportTimeout, err)
-		}
-		e.TelemetryLogExportMaxBatchSize, err = getInt(envTelemetryLogExportMaxBatchSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogExportMaxBatchSize, err)
-		}
-		e.TelemetryLogExportInterval, err = getDuration(envTelemetryLogExportInterval)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogExportInterval, err)
-		}
-		e.TelemetryLogMaxQueueSize, err = getInt(envTelemetryLogMaxQueueSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryLogMaxQueueSize, err)
-		}
-		e.TelemetryTraceCompressor = os.Getenv(envTelemetryTraceCompressor)
-		e.TelemetryMetricCompressor = os.Getenv(envTelemetryMetricCompressor)
-		e.TelemetryMetricExportBatchSize, err = getInt(envTelemetryMetricExportBatchSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricExportBatchSize, err)
-		}
-		if v, ok := os.LookupEnv(envTelemetryMetricCardinalityLimit); ok {
-			limit, err := strconv.Atoi(v)
-			if err != nil {
-				return fmt.Errorf("failed to parse %s: %w", envTelemetryMetricCardinalityLimit, err)
-			}
-			if limit < 0 {
-				return fmt.Errorf("failed to parse %s: value %d must not be negative (0 disables the limit)", envTelemetryMetricCardinalityLimit, limit)
-			}
-			e.TelemetryMetricCardinalityLimit = &limit
-		} else {
-			defaultLimit := beholder.DefaultMetricCardinalityLimit
-			e.TelemetryMetricCardinalityLimit = &defaultLimit
-		}
-		if v, ok := os.LookupEnv(envTelemetryMetricViewsDenyAttributes); ok && v != "" {
-			e.TelemetryMetricViewsDenyAttributes = splitCommaTrimmed(v)
-		}
-		e.TelemetryPrometheusBridgeEnabled, err = getBool(envTelemetryPrometheusBridgeEnabled)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envTelemetryPrometheusBridgeEnabled, err)
-		}
-		e.TelemetryPrometheusBridgePrefixes = strings.Split(os.Getenv(envTelemetryPrometheusBridgePrefixes), ",")
-		e.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
-		// Optional
-		e.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
-		e.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressInsecureConnection, err)
-		}
-		e.ChipIngressBatchEmitterEnabled, err = getBool(envChipIngressBatchEmitterEnabled)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressBatchEmitterEnabled, err)
-		}
-		e.ChipIngressDurableEmitterEnabled, err = getBool(envChipIngressDurableEmitterEnabled)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
-		}
-		e.ChipIngressBufferSize, err = getUint(envChipIngressBufferSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressBufferSize, err)
-		}
-		e.ChipIngressMaxBatchSize, err = getUint(envChipIngressMaxBatchSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxBatchSize, err)
-		}
-		e.ChipIngressMaxConcurrentSends, err = getInt(envChipIngressMaxConcurrentSends)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxConcurrentSends, err)
-		}
-		e.ChipIngressSendInterval, err = getDuration(envChipIngressSendInterval)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendInterval, err)
-		}
-		e.ChipIngressSendTimeout, err = getDuration(envChipIngressSendTimeout)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressSendTimeout, err)
-		}
-		e.ChipIngressDrainTimeout, err = getDuration(envChipIngressDrainTimeout)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressDrainTimeout, err)
-		}
-		e.ChipIngressMaxGRPCRequestSize, err = getInt(envChipIngressMaxGRPCRequestSize)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxGRPCRequestSize, err)
-		}
-		if e.ChipIngressMaxGRPCRequestSize < 0 {
-			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxGRPCRequestSize, e.ChipIngressMaxGRPCRequestSize)
-		}
+	if err = e.TelemetryConfig.Parse(); err != nil {
+		return err
 	}
 
 	e.CRESettings = os.Getenv(envCRESettings)
@@ -682,7 +332,9 @@ func (e *EnvConfig) parse() error {
 	e.MeterZone = os.Getenv(envMeterZone)
 	e.MeterNodeID = os.Getenv(envMeterNodeID)
 	e.MeterFaultMode = os.Getenv(envMeterFaultMode)
-	e.MeterFaultRate = getFloat64OrZero(envMeterFaultRate)
+	if e.MeterFaultRate, err = getFloat64(envMeterFaultRate); err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterFaultRate, err)
+	}
 	e.MeterFaultSalt = os.Getenv(envMeterFaultSalt)
 	if v := os.Getenv(envMeterFaultDelta); v != "" {
 		e.MeterFaultDelta, err = strconv.ParseInt(v, 10, 64)
@@ -690,7 +342,9 @@ func (e *EnvConfig) parse() error {
 			return fmt.Errorf("failed to parse %s: %w", envMeterFaultDelta, err)
 		}
 	}
-	e.MeterFaultNodeRate = getFloat64OrZero(envMeterFaultNodeRate)
+	if e.MeterFaultNodeRate, err = getFloat64(envMeterFaultNodeRate); err != nil {
+		return fmt.Errorf("failed to parse %s: %w", envMeterFaultNodeRate, err)
+	}
 
 	return nil
 }
@@ -716,52 +370,12 @@ func getBool(envKey string) (bool, error) {
 	return strconv.ParseBool(s)
 }
 
-// getValidCollectorTarget validates TRACING_COLLECTOR_TARGET as a URL.
-func getValidCollectorTarget() (string, error) {
-	tracingCollectorTarget := os.Getenv(envTracingCollectorTarget)
-	_, err := url.ParseRequestURI(tracingCollectorTarget)
-	if err != nil {
-		return "", fmt.Errorf("invalid %s: %w", envTracingCollectorTarget, err)
-	}
-	return tracingCollectorTarget, nil
-}
-
-func splitCommaTrimmed(s string) []string {
-	parts := strings.Split(s, ",")
-	out := make([]string, 0, len(parts))
-	for _, part := range parts {
-		if trimmed := strings.TrimSpace(part); trimmed != "" {
-			out = append(out, trimmed)
-		}
-	}
-	return out
-}
-
-func getMap(envKeyPrefix string) map[string]string {
-	m := make(map[string]string)
-	for _, env := range os.Environ() {
-		if strings.HasPrefix(env, envKeyPrefix) {
-			key, value, found := strings.Cut(env, "=")
-			if found {
-				key = strings.TrimPrefix(key, envKeyPrefix)
-				m[key] = value
-			}
-		}
-	}
-	return m
-}
-
-// Any errors in parsing result in a sampling ratio of 0.0.
-func getFloat64OrZero(envKey string) float64 {
+func getFloat64(envKey string) (float64, error) {
 	s := os.Getenv(envKey)
 	if s == "" {
-		return 0.0
+		return 0, nil
 	}
-	f, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return 0.0
-	}
-	return f
+	return strconv.ParseFloat(s, 64)
 }
 
 func getUint32(envKey string) (uint32, error) {
@@ -788,18 +402,6 @@ func getEnv[T any](key string, parse func(string) (T, error)) (t T, err error) {
 		err = fmt.Errorf("failed to parse %s=%s: %w", key, v, err)
 	}
 	return
-}
-
-func getUint(envKey string) (uint, error) {
-	s := os.Getenv(envKey)
-	if s == "" {
-		return 0, nil
-	}
-	u, err := strconv.ParseUint(s, 10, strconv.IntSize)
-	if err != nil {
-		return 0, err
-	}
-	return uint(u), nil
 }
 
 func getInt(envKey string) (int, error) {

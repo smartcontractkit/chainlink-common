@@ -6,28 +6,19 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"runtime"
-	"runtime/debug"
 	"time"
 
-	otelpyroscope "github.com/grafana/otel-profiling-go"
-	"github.com/grafana/pyroscope-go"
 	"github.com/jmoiron/sqlx"
-	"github.com/prometheus/client_golang/prometheus"
-	prombridge "go.opentelemetry.io/contrib/bridges/prometheus"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/durableemitter"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/promutil"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/pyroscope"
+	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/otelhealth"
@@ -113,7 +104,7 @@ type Server struct {
 	checker         *services.HealthChecker
 	LimitsFactory   limits.Factory
 	profiler        *pyroscope.Profiler
-	beholderClient  *beholder.Client
+	telemetry       *telemetry.Telemetry
 	durableEmitter  *durableemitter.DurableEmitter
 }
 
@@ -147,169 +138,14 @@ func (s *Server) start(opts ...ServerOpt) error {
 		ServerMaxRecvMsgSize: s.EnvConfig.GRPCServerMaxRecvMsgSize,
 	}.New(s.Logger)
 
-	tracingAttrs := s.EnvConfig.TracingAttributes
-	if tracingAttrs == nil {
-		tracingAttrs = make(map[string]string, 1)
-	}
-	tracingAttrs[string(semconv.ServiceInstanceIDKey)] = s.EnvConfig.AppID
-	tracingConfig := TracingConfig{
-		Enabled:         s.EnvConfig.TracingEnabled,
-		CollectorTarget: s.EnvConfig.TracingCollectorTarget,
-		SamplingRatio:   s.EnvConfig.TracingSamplingRatio,
-		TLSCertPath:     s.EnvConfig.TracingTLSCertPath,
-		NodeAttributes:  tracingAttrs,
-		OnDialError:     func(err error) { s.Logger.Errorw("Failed to dial", "err", err) },
+	if err := s.startTelemetry(ctx); err != nil {
+		return err
 	}
 
-	if s.EnvConfig.TelemetryEndpoint == "" {
-		err := SetupTracing(tracingConfig)
-		if err != nil {
-			return fmt.Errorf("failed to setup tracing: %w", err)
-		}
-	} else {
-		var attributes []attribute.KeyValue
-		if tracingConfig.Enabled {
-			attributes = tracingConfig.Attributes()
-		}
-		beholderCfg := beholder.Config{
-			InsecureConnection:             s.EnvConfig.TelemetryInsecureConnection,
-			CACertFile:                     s.EnvConfig.TelemetryCACertFile,
-			OtelExporterGRPCEndpoint:       s.EnvConfig.TelemetryEndpoint,
-			ResourceAttributes:             append(attributes, s.EnvConfig.TelemetryAttributes.AsStringAttributes()...),
-			TraceSampleRatio:               s.EnvConfig.TelemetryTraceSampleRatio,
-			TraceCompressor:                s.EnvConfig.TelemetryTraceCompressor,
-			EmitterBatchProcessor:          s.EnvConfig.TelemetryEmitterBatchProcessor,
-			EmitterExportTimeout:           s.EnvConfig.TelemetryEmitterExportTimeout,
-			EmitterExportInterval:          s.EnvConfig.TelemetryEmitterExportInterval,
-			EmitterExportMaxBatchSize:      s.EnvConfig.TelemetryEmitterExportMaxBatchSize,
-			EmitterMaxQueueSize:            s.EnvConfig.TelemetryEmitterMaxQueueSize,
-			LogStreamingEnabled:            s.EnvConfig.TelemetryLogStreamingEnabled,
-			LogLevel:                       s.EnvConfig.TelemetryLogLevel,
-			LogBatchProcessor:              s.EnvConfig.TelemetryLogBatchProcessor,
-			LogExportTimeout:               s.EnvConfig.TelemetryLogExportTimeout,
-			LogExportMaxBatchSize:          s.EnvConfig.TelemetryLogExportMaxBatchSize,
-			LogExportInterval:              s.EnvConfig.TelemetryLogExportInterval,
-			LogMaxQueueSize:                s.EnvConfig.TelemetryLogMaxQueueSize,
-			LogCompressor:                  s.EnvConfig.TelemetryLogCompressor,
-			ChipIngressEmitterEnabled:      s.EnvConfig.ChipIngressEndpoint != "",
-			ChipIngressEmitterGRPCEndpoint: s.EnvConfig.ChipIngressEndpoint,
-			ChipIngressInsecureConnection:  s.EnvConfig.ChipIngressInsecureConnection,
-			ChipIngressBatchEmitterEnabled: s.EnvConfig.ChipIngressBatchEmitterEnabled,
-			ChipIngressBufferSize:          s.EnvConfig.ChipIngressBufferSize,
-			ChipIngressMaxBatchSize:        s.EnvConfig.ChipIngressMaxBatchSize,
-			ChipIngressMaxConcurrentSends:  s.EnvConfig.ChipIngressMaxConcurrentSends,
-			ChipIngressSendInterval:        s.EnvConfig.ChipIngressSendInterval,
-			ChipIngressSendTimeout:         s.EnvConfig.ChipIngressSendTimeout,
-			ChipIngressDrainTimeout:        s.EnvConfig.ChipIngressDrainTimeout,
-			ChipIngressMaxGRPCRequestSize:  s.EnvConfig.ChipIngressMaxGRPCRequestSize,
-			ChipIngressLogger:              s.Logger,
-			MetricCompressor:               s.EnvConfig.TelemetryMetricCompressor,
-			MetricExportBatchSize:          s.EnvConfig.TelemetryMetricExportBatchSize,
-			MetricCardinalityLimit:         *s.EnvConfig.TelemetryMetricCardinalityLimit,
-			MetricViewsDenyAttributes:      s.EnvConfig.TelemetryMetricViewsDenyAttributes,
-		}
-
-		if s.EnvConfig.TelemetryPrometheusBridgeEnabled {
-			var bridgeOpts []prombridge.Option
-			if prefixes := s.EnvConfig.TelemetryPrometheusBridgePrefixes; len(prefixes) > 0 {
-				bridgeOpts = append(bridgeOpts, prombridge.WithGatherer(promutil.NewPrefixGatherer(prometheus.DefaultGatherer, prefixes)))
-			}
-			beholderCfg.MetricProducers = append(beholderCfg.MetricProducers, prombridge.NewMetricProducer(bridgeOpts...))
-		}
-
-		// Configure beholder auth - the client will determine rotating vs static mode
-		// Rotating mode: when AuthHeadersTTL is set, client creates internal lazySigner
-		// Static mode: no TTL is provided it is assumed that the headers are static
-		if s.EnvConfig.TelemetryAuthHeadersTTL > 0 {
-			// Rotating auth mode: client will create lazySigner internally and allow keystore injection after startup
-			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
-			beholderCfg.AuthHeadersTTL = s.EnvConfig.TelemetryAuthHeadersTTL
-			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders // initial headers
-		} else {
-			// Static auth mode: headers and/or public key without rotation
-			beholderCfg.AuthHeaders = s.EnvConfig.TelemetryAuthHeaders
-			beholderCfg.AuthPublicKeyHex = s.EnvConfig.TelemetryAuthPubKeyHex
-		}
-
-		// note: due to the OTEL specification, all histogram buckets
-		// must be defined when the beholder client is created
-		beholderCfg.MetricViews = append(beholderCfg.MetricViews, s.cfg.otelViews...)
-
-		if tracingConfig.Enabled {
-			if beholderCfg.AuthHeaders != nil {
-				tracingConfig.AuthHeaders = beholderCfg.AuthHeaders
-			}
-			exporter, err := tracingConfig.NewSpanExporter()
-			if err != nil {
-				return fmt.Errorf("failed to setup tracing exporter: %w", err)
-			}
-			beholderCfg.TraceSpanExporter = exporter
-		}
-
-		if err := s.startBeholderClient(ctx, beholderCfg); err != nil {
-			return err
-		}
-	}
-
-	if addr := s.EnvConfig.PyroscopeServerAddress; addr != "" {
-		runtime.SetBlockProfileRate(s.EnvConfig.PyroscopePPROFBlockProfileRate)
-		runtime.SetMutexProfileFraction(s.EnvConfig.PyroscopePPROFMutexProfileFraction)
-
-		hostname, _ := os.Hostname()
-		var ver, sha, goVer, module string
-		if bi, ok := debug.ReadBuildInfo(); ok {
-			ver = bi.Main.Version
-			sha = bi.Main.Sum
-			if len(sha) > 7 {
-				sha = sha[:7]
-			}
-			goVer = bi.GoVersion
-			module = bi.Main.Path
-		}
-
-		appName, err := os.Executable()
-		if err != nil {
-			s.Logger.Warnf("Failed to get executable name: %v", err)
-			appName = "unknown"
-		} else {
-			appName = filepath.Base(appName)
-		}
-
-		s.profiler, err = pyroscope.Start(pyroscope.Config{
-			ApplicationName: appName,
-			ServerAddress:   s.EnvConfig.PyroscopeServerAddress,
-			AuthToken:       s.EnvConfig.PyroscopeAuthToken,
-
-			Tags: map[string]string{
-				"module":      module,
-				"SHA":         sha,
-				"Version":     ver,
-				"go":          goVer,
-				"Environment": s.EnvConfig.PyroscopeEnvironment,
-				"hostname":    hostname,
-			},
-			ProfileTypes: []pyroscope.ProfileType{
-				// these profile types are enabled by default:
-				pyroscope.ProfileCPU,
-				pyroscope.ProfileAllocObjects,
-				pyroscope.ProfileAllocSpace,
-				pyroscope.ProfileInuseObjects,
-				pyroscope.ProfileInuseSpace,
-
-				// these profile types are optional:
-				pyroscope.ProfileGoroutines,
-				pyroscope.ProfileMutexCount,
-				pyroscope.ProfileMutexDuration,
-				pyroscope.ProfileBlockCount,
-				pyroscope.ProfileBlockDuration,
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("failed to start pyroscope profiler: %w", err)
-		}
-		if tracingConfig.Enabled && s.EnvConfig.PyroscopeLinkTracesToProfiles {
-			otel.SetTracerProvider(otelpyroscope.NewTracerProvider(otel.GetTracerProvider()))
-		}
+	var err error
+	s.profiler, err = pyroscope.Start(s.Logger, s.EnvConfig.PyroscopeConfig, "", s.EnvConfig.TracingEnabled)
+	if err != nil {
+		return err
 	}
 
 	s.webServer = WebServerOpts{}.New(s.Logger, s.EnvConfig.PrometheusPort)
@@ -422,33 +258,30 @@ func (s *Server) MustRegister(c services.HealthReporter) {
 
 func (s *Server) Register(c services.HealthReporter) error { return s.checker.Register(c) }
 
-func (s *Server) startBeholderClient(ctx context.Context, beholderCfg beholder.Config) error {
-	beholderClient, err := beholder.NewClient(beholderCfg)
+func (s *Server) startTelemetry(ctx context.Context) error {
+	t, err := telemetry.NewTelemetry(s.Logger, s.EnvConfig.TelemetryConfig, s.EnvConfig.AppID, s.cfg.otelViews)
 	if err != nil {
-		return fmt.Errorf("failed to create beholder client: %w", err)
+		return err
 	}
-	if err := beholderClient.Start(ctx); err != nil {
-		return fmt.Errorf("failed to start beholder client: %w", err)
+	if err := t.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start telemetry: %w", err)
 	}
-	s.beholderClient = beholderClient
-	beholder.SetClient(beholderClient)
-	beholder.SetGlobalOtelProviders()
+	s.telemetry = t
 
-	if beholderCfg.LogStreamingEnabled {
-		otelLogger, err := NewOtelLogger(beholderClient.Logger, beholderCfg.LogLevel)
+	if level, ok := t.LogStreamingLevel(); ok {
+		otelLogger, err := NewOtelLogger(t.Client().Logger, level)
 		if err != nil {
 			return fmt.Errorf("failed to enable log streaming: %w", err)
 		}
 		s.Logger = logger.Sugared(logger.Named(otelLogger, s.Logger.Name()))
 	}
-
 	return nil
 }
 
 // Stop closes resources and flushes logs.
 func (s *Server) Stop() {
-	if s.beholderClient != nil {
-		s.Logger.ErrorIfFn(s.beholderClient.Close, "Failed to close beholder client")
+	if s.telemetry != nil {
+		s.Logger.ErrorIfFn(s.telemetry.Close, "Failed to close telemetry")
 	}
 	if s.durableEmitter != nil {
 		s.Logger.ErrorIfFn(s.durableEmitter.Close, "Failed to close durable emitter")

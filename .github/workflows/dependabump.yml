@@ -19,6 +19,5 @@ jobs:
     secrets:
       SLACK_TOKEN: ${{ secrets.DEPENDABUMP_SLACK_API_KEY }}
       SLACK_CHANNEL_ID: ${{ secrets.SLACK_TEAM_CORE_CHANNEL_ID }}
-# Uncomment to re-enable wasmtime major version bumps
-#    with:
-#      post-bump-command: ./script/wasmtime-bump.sh && make gomodtidy
+    with:
+      post-bump-command: ./script/wasmtime-bump.sh && make gomodtidy

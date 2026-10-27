@@ -13,24 +13,24 @@ import (
 )
 
 func TestFaultSelected(t *testing.T) {
-	assert.False(t, FaultSelected("s", 0, "a"))
-	assert.True(t, FaultSelected("s", 1, "a"))
-	assert.Equal(t, FaultSelected("s", 0.5, "a"), FaultSelected("s", 0.5, "a"), "deterministic")
+	assert.False(t, FaultSelected(0, "a"))
+	assert.True(t, FaultSelected(1, "a"))
+	assert.Equal(t, FaultSelected(0.5, "a"), FaultSelected(0.5, "a"), "deterministic")
 
 	hits := 0
 	for i := 0; i < 10000; i++ {
-		if FaultSelected("s", 0.1, fmt.Sprint(i)) {
+		if FaultSelected(0.1, fmt.Sprint(i)) {
 			hits++
 		}
 	}
 	assert.InDelta(t, 1000, hits, 150, "rate is honoured")
 
 	// Vectors shared with the reconcilers; do not change without updating them.
-	for key, want := range map[string]bool{"a": false, "b": true, "c": false, "exec-1": true, "0xaa": true} {
-		assert.Equal(t, want, FaultSelected("s", 0.5, key), key)
+	for key, want := range map[string]bool{"a": false, "b": true, "c": true, "exec-1": false, "exec-2": true, "0xaa": false} {
+		assert.Equal(t, want, FaultSelected(0.5, key), key)
 	}
-	assert.False(t, FaultSelected("s|n1", 0.5, "exec-1"))
-	assert.True(t, FaultSelected("s|n2", 0.5, "exec-1"))
+	assert.True(t, FaultSelected(0.5, "n2|exec-2"))
+	assert.False(t, FaultSelected(0.5, "n1|exec-2"))
 }
 
 func TestUsageFaultInjection_Validate(t *testing.T) {
@@ -70,7 +70,7 @@ func TestUsageFaultInjection_Apply(t *testing.T) {
 		assert.Empty(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModeDrop, Rate: 1}, "n1", "exec-1").calls)
 	})
 	t.Run("unselected event is untouched", func(t *testing.T) {
-		f := UsageFaultInjection{Mode: FaultModeDrop, Rate: 0.5, Salt: "s"}
+		f := UsageFaultInjection{Mode: FaultModeDrop, Rate: 0.5}
 		require.False(t, f.EventSelected("a"))
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, f, "n1", "a")))
 	})
@@ -79,7 +79,7 @@ func TestUsageFaultInjection_Apply(t *testing.T) {
 		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Mode: FaultModePerturb, Rate: 1, Delta: -7}, "n2", "exec-1")))
 	})
 	t.Run("perturb honours the node rate", func(t *testing.T) {
-		f := UsageFaultInjection{Mode: FaultModePerturb, Rate: 1, Delta: 7, Salt: "s", NodeRate: 0.5}
+		f := UsageFaultInjection{Mode: FaultModePerturb, Rate: 1, Delta: 7, NodeRate: 0.5}
 		var perturbed, untouched int
 		for i := 0; i < 20; i++ {
 			switch emittedValue(t, emitUsageWithFault(t, f, fmt.Sprintf("node-%d", i), "exec-1")) {

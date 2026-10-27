@@ -26,8 +26,6 @@ type UsageFaultInjection struct {
 	Mode string
 	// Rate is the fraction of usage events selected, keyed on the event id.
 	Rate float64
-	// Salt mixes into the selection hash; reconcilers recompute the sample with it.
-	Salt string
 	// Delta is added to the value in perturb mode (may be negative).
 	Delta int64
 	// NodeRate is the fraction of nodes that apply a perturb; 1 (or 0) means every node.
@@ -58,9 +56,10 @@ func (f UsageFaultInjection) Validate() error {
 }
 
 // FaultSelected reports whether key falls in the deterministic sample for
-// salt and rate: FNV-1a 64 over salt, NUL, key, then a 64-bit finalizer
-// (murmur3 fmix64) so near-identical keys spread out; top 53 bits as a fraction.
-func FaultSelected(salt string, rate float64, key string) bool {
+// rate: FNV-1a 64 over key, then a 64-bit finalizer (murmur3 fmix64) so
+// near-identical keys spread out; top 53 bits as a fraction. Reconcilers
+// recompute the sample from rate alone.
+func FaultSelected(rate float64, key string) bool {
 	if rate <= 0 {
 		return false
 	}
@@ -68,8 +67,6 @@ func FaultSelected(salt string, rate float64, key string) bool {
 		return true
 	}
 	h := fnv.New64a()
-	_, _ = h.Write([]byte(salt))
-	_, _ = h.Write([]byte{0})
 	_, _ = h.Write([]byte(key))
 	return float64(fmix64(h.Sum64())>>11)/float64(uint64(1)<<53) < rate
 }
@@ -85,7 +82,7 @@ func fmix64(h uint64) uint64 {
 
 // EventSelected reports whether the usage event is in the sample.
 func (f UsageFaultInjection) EventSelected(eventID string) bool {
-	return f.Enabled() && FaultSelected(f.Salt, f.Rate, eventID)
+	return f.Enabled() && FaultSelected(f.Rate, eventID)
 }
 
 // NodeSelected reports whether this node applies a perturb for the event.
@@ -93,7 +90,7 @@ func (f UsageFaultInjection) NodeSelected(eventID, nodeID string) bool {
 	if f.NodeRate <= 0 || f.NodeRate >= 1 {
 		return true
 	}
-	return FaultSelected(f.Salt+"|"+nodeID, f.NodeRate, eventID)
+	return FaultSelected(f.NodeRate, nodeID+"|"+eventID)
 }
 
 // applyFault applies the configured fault to a usage utilization. It returns

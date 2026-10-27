@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"go.opentelemetry.io/otel"
@@ -27,6 +28,9 @@ type ChipIngressBatchEmitterService struct {
 	// ownedClient, when set, is closed on stop after the batch client drains. Domain emitters
 	// own their chip ingress connection; the default emitter shares the Client's.
 	ownedClient chipingress.Client
+	// domain, when set, restricts events to this Domain or its subdomains, so an event cannot
+	// ride another domain's route. Unset for the default emitter.
+	domain Domain
 
 	metricAttrsCache sync.Map // map[string]otelmetric.MeasurementOption
 	metrics          batchEmitterMetrics
@@ -155,6 +159,9 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 		if err != nil {
 			return err
 		}
+		if err := e.checkDomain(domain); err != nil {
+			return err
+		}
 
 		attributes := newAttributes(attrKVs...)
 
@@ -186,6 +193,9 @@ func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event ch
 		if err := event.Validate(); err != nil {
 			return fmt.Errorf("invalid CloudEvent: %w", err)
 		}
+		if err := e.checkDomain(event.Source()); err != nil {
+			return err
+		}
 		eventPb, err := chipingress.EventToProto(event)
 		if err != nil {
 			return fmt.Errorf("failed to convert to proto: %w", err)
@@ -198,6 +208,15 @@ func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event ch
 		e.queue(ctx, eventPb, event.Source(), event.Type(), callback)
 		return nil
 	})
+}
+
+// checkDomain rejects a source outside e.domain: it must be the domain itself or a subdomain of
+// it (e.g. "data-feeds" or "data-feeds.telemetry.ocr2-median" for DomainDataFeeds).
+func (e *ChipIngressBatchEmitterService) checkDomain(source string) error {
+	if e.domain == "" || source == string(e.domain) || strings.HasPrefix(source, string(e.domain)+".") {
+		return nil
+	}
+	return fmt.Errorf("beholder: event source %q is not in domain %q", source, e.domain)
 }
 
 // queue hands eventPb to the batch client and records its fate. domain and entity are the

@@ -260,6 +260,51 @@ func TestForDomain_EmitEventRejectsInvalidEvent(t *testing.T) {
 	assert.False(t, called, "no callback when EmitEvent returns an error")
 }
 
+func TestForDomain_RejectsEventsFromOtherDomains(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+
+	for _, tc := range []struct {
+		source string
+		ok     bool
+	}{
+		{"data-feeds", true},                       // the top-level domain itself
+		{"data-feeds.telemetry.ocr2-median", true}, // a subdomain of it
+		{"ccip.telemetry.ocr3", false},             // another domain
+		{"data-feeds-extra.telemetry", false},      // shares a prefix, not a subdomain
+		{"telemetry.data-feeds", false},            // contains it, not under it
+	} {
+		t.Run(tc.source, func(t *testing.T) {
+			called := false
+			err := em.EmitEvent(t.Context(), legacyStyleEvent(t, tc.source), func(error) { called = true })
+			if tc.ok {
+				require.NoError(t, err)
+				require.Eventually(t, func() bool { return len(capture.callsWithEventSource(tc.source)) == 1 },
+					5*time.Second, 10*time.Millisecond)
+				return
+			}
+			require.Error(t, err, "event from another domain must not ride this domain's route")
+			assert.False(t, called, "no callback when EmitEvent returns an error")
+		})
+	}
+
+	t.Run("Emit is checked too", func(t *testing.T) {
+		err := em.Emit(t.Context(), []byte("payload"),
+			beholder.AttrKeyDomain, "ccip.telemetry.ocr3",
+			beholder.AttrKeyEntity, "SomeEntity",
+		)
+		require.Error(t, err)
+	})
+
+	// Nothing from the rejected sources reached the server.
+	for _, source := range []string{"ccip.telemetry.ocr3", "data-feeds-extra.telemetry", "telemetry.data-feeds"} {
+		assert.Empty(t, capture.callsWithEventSource(source), "source %q", source)
+	}
+}
+
 func TestNewGRPCClient_DomainEmittersRequireChipIngress(t *testing.T) {
 	cfg := beholder.Config{OtelExporterGRPCEndpoint: "localhost:4317", ChipIngressDomainEmittersEnabled: true}
 	_, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {

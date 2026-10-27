@@ -29,6 +29,10 @@ const DomainHeaderKey = "chainlink-domain"
 
 // DomainEmitter sends one domain's events to chip ingress only, with PublishBatchNoAck, on its own
 // connection and buffer. Obtain one with Client.ForDomain.
+//
+// Both methods reject an event whose source (the CloudEvent source, or the beholder_domain
+// attribute for Emit) is not the emitter's Domain or a subdomain of it: for DomainDataFeeds,
+// "data-feeds" and "data-feeds.telemetry.ocr2-median" are accepted, "ccip.telemetry.ocr3" is not.
 type DomainEmitter interface {
 	// Emitter builds the event from attributes, like the Client's Emitter. Close is a no-op: the
 	// Client starts and closes its domain emitters.
@@ -91,6 +95,7 @@ func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[str
 			return nil, fmt.Errorf("chip ingress emitter for domain %q: %w", domain, err)
 		}
 		svc.ownedClient = chipClient
+		svc.domain = domain
 		emitters[domain] = &domainEmitter{svc}
 	}
 	return emitters, nil

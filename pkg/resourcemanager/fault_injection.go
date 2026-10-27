@@ -19,14 +19,16 @@ const (
 )
 
 // UsageFaultInjection drops or perturbs a deterministic sample of usage
-// records so billing reconcilers can measure their own recall. Test
-// environments only; the zero value is off.
+// records so billing reconcilers can measure their own recall. Only records
+// of allowlisted orgs (the canaries) are touched; the zero value is off.
 type UsageFaultInjection struct {
 	// Mode is "" (off), "drop" or "perturb".
 	Mode string
+	// Orgs are the org ids whose records may be faulted; required when Mode is set.
+	Orgs []string
 	// Rate is the fraction of usage events selected, keyed on the event id.
 	Rate float64
-	// Delta is added to the value in perturb mode (may be negative).
+	// Delta is added to the value in perturb mode; negative only, so a leak can never overbill.
 	Delta int64
 	// NodeRate is the fraction of nodes that apply a perturb; 1 (or 0) means every node.
 	NodeRate float64
@@ -52,7 +54,33 @@ func (f UsageFaultInjection) Validate() error {
 	if f.Rate > 0 && f.Mode == "" {
 		errs = append(errs, errors.New("fault injection rate set without a mode"))
 	}
+	if f.Mode != "" && len(f.orgSet()) == 0 {
+		errs = append(errs, errors.New("fault injection mode set without an org allowlist"))
+	}
+	if f.Mode == FaultModePerturb && f.Delta >= 0 {
+		errs = append(errs, fmt.Errorf("fault injection delta %d: want negative", f.Delta))
+	}
 	return errors.Join(errs...)
+}
+
+func (f UsageFaultInjection) orgSet() map[string]struct{} {
+	set := make(map[string]struct{}, len(f.Orgs))
+	for _, o := range f.Orgs {
+		if o = strings.TrimSpace(o); o != "" {
+			set[o] = struct{}{}
+		}
+	}
+	return set
+}
+
+// OrgAllowed reports whether records of orgID may be faulted. An empty org
+// id (unresolved) is never allowed.
+func (f UsageFaultInjection) OrgAllowed(orgID string) bool {
+	if orgID == "" {
+		return false
+	}
+	_, ok := f.orgSet()[strings.TrimSpace(orgID)]
+	return ok
 }
 
 // FaultSelected reports whether key falls in the deterministic sample for
@@ -100,7 +128,7 @@ func (f UsageFaultInjection) NodeSelected(eventID, nodeID string) bool {
 // "Injected usage fault", a contract line consumed by the reconcilers.
 func (rm *ResourceManager) applyFault(identity ResourceIdentity, eventID string, u *meteringpb.Utilization) (drop bool) {
 	f := rm.faultInjection
-	if u == nil || !f.EventSelected(eventID) {
+	if u == nil || !f.OrgAllowed(u.GetOrgId()) || !f.EventSelected(eventID) {
 		return false
 	}
 	workflowID, executionID, _ := strings.Cut(u.GetResourceId(), ":")
@@ -127,7 +155,11 @@ func (rm *ResourceManager) applyFault(identity ResourceIdentity, eventID string,
 		if !ok {
 			return false
 		}
-		u.Value = v.Add(v, big.NewInt(f.Delta)).String()
+		v.Add(v, big.NewInt(f.Delta))
+		if v.Sign() < 0 {
+			v.SetInt64(0)
+		}
+		u.Value = v.String()
 		rm.lggr.Warnw("Injected usage fault", append(fields, "value", u.Value, "originalValue", original)...)
 	}
 	return false

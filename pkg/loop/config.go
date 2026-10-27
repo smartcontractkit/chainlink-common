@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-plugin"
@@ -56,6 +57,7 @@ const (
 	envMeterNodeID           = "CL_METER_NODE_ID"
 	envMeterFaultMode        = "CL_METER_FAULT_MODE"
 	envMeterFaultRate        = "CL_METER_FAULT_RATE"
+	envMeterFaultOrgs        = "CL_METER_FAULT_ORGS"
 	envMeterFaultDelta       = "CL_METER_FAULT_DELTA"
 	envMeterFaultNodeRate    = "CL_METER_FAULT_NODE_RATE"
 
@@ -127,6 +129,7 @@ type EnvConfig struct {
 	// MeterFault* configure usage fault injection (resourcemanager.UsageFaultInjection).
 	MeterFaultMode     string
 	MeterFaultRate     float64
+	MeterFaultOrgs     []string
 	MeterFaultDelta    int64
 	MeterFaultNodeRate float64
 }
@@ -182,6 +185,7 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMeterNodeID, e.MeterNodeID)
 	add(envMeterFaultMode, e.MeterFaultMode)
 	add(envMeterFaultRate, strconv.FormatFloat(e.MeterFaultRate, 'g', -1, 64))
+	add(envMeterFaultOrgs, strings.Join(e.MeterFaultOrgs, ","))
 	add(envMeterFaultDelta, strconv.FormatInt(e.MeterFaultDelta, 10))
 	add(envMeterFaultNodeRate, strconv.FormatFloat(e.MeterFaultNodeRate, 'g', -1, 64))
 
@@ -331,6 +335,12 @@ func (e *EnvConfig) parse() error {
 	e.MeterFaultMode = os.Getenv(envMeterFaultMode)
 	if e.MeterFaultRate, err = getFloat64(envMeterFaultRate); err != nil {
 		return fmt.Errorf("failed to parse %s: %w", envMeterFaultRate, err)
+	}
+	e.MeterFaultOrgs = nil
+	for _, o := range strings.Split(os.Getenv(envMeterFaultOrgs), ",") {
+		if o = strings.TrimSpace(o); o != "" {
+			e.MeterFaultOrgs = append(e.MeterFaultOrgs, o)
+		}
 	}
 	if v := os.Getenv(envMeterFaultDelta); v != "" {
 		e.MeterFaultDelta, err = strconv.ParseInt(v, 10, 64)

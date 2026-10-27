@@ -17,6 +17,10 @@ message CoordinatedEvent {
   capabilities.TriggerResponse event = 7;
 }
 
+message CoordinatedEventList {
+  repeated CoordinatedEvent events = 1;
+}
+
 message ConsensusQueueObservation {
   uint64 seq_nr = 1;
 
@@ -26,9 +30,4 @@ message ConsensusQueueObservation {
   // Capacity Management
   uint32 capacity = 4; // Global remaining capacity
   map<string, uint32> workflow_capacities = 5; // Workflow-specific free executions
-}
-
-// TODO remove?
-message ConsensusQueueReport {
-  repeated CoordinatedEvent events = 1;
 }

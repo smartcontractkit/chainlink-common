@@ -3,12 +3,10 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"iter"
 	"maps"
 	"reflect"
 	"slices"
 	"strings"
-	"unicode"
 
 	"github.com/huandu/go-clone"
 	"github.com/spf13/cobra"
@@ -62,7 +60,7 @@ func ProfileWithSelector[T, S any, K comparable](
 		defaults := snapshotSection[S](entry, scope)
 		// Copied, so a change to the caller's map can't skip the checks.
 		profiles = maps.Clone(profiles)
-		if err := checkProfileKeys(entry, selector, scope, defaults, profiles); err != nil {
+		if err := checkProfileKeys(profiles); err != nil {
 			return nil, err
 		}
 
@@ -80,12 +78,7 @@ func ProfileWithSelector[T, S any, K comparable](
 	}}
 }
 
-// An env var names a map key in upper case and matches an existing key ignoring case, so two keys in one map that
-// differ only in case would make it ambiguous. A profile's own keys are checkable at Register; a config file's only
-// at runtime.
-func checkProfileKeys[T any, S any, K comparable](
-	entry *typedEntry[T], selector leafKey, scope []string, defaults S, profiles map[K]func(*S),
-) error {
+func checkProfileKeys[K comparable, S any](profiles map[K]func(*S)) error {
 	for k, build := range profiles {
 		if build == nil {
 			return fmt.Errorf("profile %v has no function", k)
@@ -95,102 +88,25 @@ func checkProfileKeys[T any, S any, K comparable](
 		if vk := reflect.ValueOf(k); !vk.Equal(vk) {
 			return fmt.Errorf("profile %v never equals itself, as NaN doesn't, so it can't be selected", k)
 		}
-
-		built := clone.Slowly(defaults).(S)
-		vBuilt := reflect.ValueOf(&built).Elem()
-		allocateField(vBuilt, selector.goPath[len(scope):]).Set(reflect.ValueOf(k))
-		build(&built)
-
-		for _, leaf := range entry.leaves {
-			if !inScope(leaf, scope) {
-				continue
-			}
-
-			m := readField(vBuilt, leaf.goPath[len(scope):])
-			for _, el := range leaf.entries {
-				for name, v := range entryMaps(el, leaf.key, m) {
-					if err := foldCollision(k, name, v); err != nil {
-						return err
-					}
-				}
-			}
-		}
 	}
 
 	return nil
 }
 
-// Keys are sorted first, so the pair reported is deterministic.
-func foldCollision(profile any, key string, m reflect.Value) error {
-	texts := make([]string, 0, m.Len())
-	for k := range m.Seq() {
-		texts = append(texts, textOf(k))
-	}
-
-	slices.Sort(texts)
-	seen := map[string]string{}
-	for _, text := range texts {
-		folded := foldText(text)
-		if other, dup := seen[folded]; dup {
-			return fmt.Errorf("profile %v gives %s the keys %q and %q, which differ only in case, so an env var for either is ambiguous", profile, key, other, text)
-		}
-
-		seen[folded] = text
-	}
-
-	return nil
-}
-
-// Maps each rune to the smallest in its case orbit, so two texts fold alike exactly when strings.EqualFold, which env
-// vars match keys with, holds. Full case folding, as in golang.org/x/text/cases, would also join keys such as "ß" and
-// "ss", which strings.EqualFold keeps apart.
-func foldText(s string) string {
-	return strings.Map(func(r rune) rune {
-		least := r
-		for f := unicode.SimpleFold(r); f != r; f = unicode.SimpleFold(f) {
-			least = min(least, f)
-		}
-
-		return least
-	}, s)
-}
-
-// entryMaps yields m and each map below it on leaf's path, named as their flags would be, such as
-// section.chains.mainnet.labels.
-func entryMaps(leaf *entryLeaf, name string, m reflect.Value) iter.Seq2[string, reflect.Value] {
-	return func(yield func(string, reflect.Value) bool) {
-		walkEntries(leaf, name, m, 0, yield, func(string, reflect.Value) bool { return true })
-	}
-}
-
-// entryValues yields each value leaf sets inside m, named as entryMaps names maps.
-func entryValues(leaf *entryLeaf, name string, m reflect.Value) iter.Seq2[string, reflect.Value] {
-	return func(yield func(string, reflect.Value) bool) {
-		walkEntries(leaf, name, m, 0, func(string, reflect.Value) bool { return true }, yield)
-	}
-}
-
-// Keys are sorted, so the order is deterministic.
-func walkEntries(leaf *entryLeaf, name string, m reflect.Value, depth int, yieldMap, yieldValue func(string, reflect.Value) bool) bool {
-	if !yieldMap(name, m) {
-		return false
-	}
-
+// walkEntries calls visit with each value leaf sets inside m, named as its flag would be, such as
+// section.chains.mainnet.rpc. Keys are sorted, so the order is deterministic.
+func walkEntries(leaf *entryLeaf, name string, m reflect.Value, depth int, visit func(string, reflect.Value)) {
 	parts := strings.Split(leaf.key, "."+cliKeyPlaceholder)
 	byText := func(a, b reflect.Value) int { return strings.Compare(textOf(a), textOf(b)) }
 	for _, key := range slices.SortedFunc(slices.Values(m.MapKeys()), byText) {
 		inner := name + "." + textOf(key) + parts[depth+1]
 		v := readField(m.MapIndex(key), leaf.paths[depth])
 		if depth == len(leaf.keyTypes)-1 {
-			if !yieldValue(inner, v) {
-				return false
-			}
-		} else if !walkEntries(leaf, inner, v, depth+1, yieldMap, yieldValue) {
-			return false
+			visit(inner, v)
+		} else {
+			walkEntries(leaf, inner, v, depth+1, visit)
 		}
 	}
-
-	return true
 }
 
 // A required field left zero is omitted from help, as a source must set it.
@@ -228,11 +144,11 @@ func describeProfiles[T any, K comparable, S any](
 					continue
 				}
 
-				for name, v := range entryValues(el, leaf.key, derefOrZero(v)) {
+				walkEntries(el, leaf.key, derefOrZero(v), 0, func(name string, v reflect.Value) {
 					if text, ok := displayText(v); ok {
 						_, _ = fmt.Fprintf(&out, "    %s = %s\n", name, text)
 					}
-				}
+				})
 			}
 		}
 	}

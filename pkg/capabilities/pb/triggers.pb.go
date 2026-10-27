@@ -22,59 +22,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ExecutionStatus int32
-
-const (
-	ExecutionStatus_OBSERVED                 ExecutionStatus = 0
-	ExecutionStatus_TRANSMISSION_IN_PROGRESS ExecutionStatus = 1
-	ExecutionStatus_TRANSMISSION_FAILED      ExecutionStatus = 2
-	ExecutionStatus_TRANSMISSION_SUCCESS     ExecutionStatus = 3
-)
-
-// Enum value maps for ExecutionStatus.
-var (
-	ExecutionStatus_name = map[int32]string{
-		0: "OBSERVED",
-		1: "TRANSMISSION_IN_PROGRESS",
-		2: "TRANSMISSION_FAILED",
-		3: "TRANSMISSION_SUCCESS",
-	}
-	ExecutionStatus_value = map[string]int32{
-		"OBSERVED":                 0,
-		"TRANSMISSION_IN_PROGRESS": 1,
-		"TRANSMISSION_FAILED":      2,
-		"TRANSMISSION_SUCCESS":     3,
-	}
-)
-
-func (x ExecutionStatus) Enum() *ExecutionStatus {
-	p := new(ExecutionStatus)
-	*p = x
-	return p
-}
-
-func (x ExecutionStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ExecutionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_triggers_proto_enumTypes[0].Descriptor()
-}
-
-func (ExecutionStatus) Type() protoreflect.EnumType {
-	return &file_triggers_proto_enumTypes[0]
-}
-
-func (x ExecutionStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use ExecutionStatus.Descriptor instead.
-func (ExecutionStatus) EnumDescriptor() ([]byte, []int) {
-	return file_triggers_proto_rawDescGZIP(), []int{0}
-}
-
-// TODO ObservedTriggerEvent?
 type CoordinatedEvent struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	WorkflowID     string                 `protobuf:"bytes,1,opt,name=workflowID,proto3" json:"workflowID,omitempty"`
@@ -171,15 +118,12 @@ type ConsensusQueueObservation struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	SeqNr uint64                 `protobuf:"varint,1,opt,name=seq_nr,json=seqNr,proto3" json:"seq_nr,omitempty"`
 	// Event Data
-	Events           []*CoordinatedEvent `protobuf:"bytes,2,rep,name=events,proto3" json:"events,omitempty"`                                               //TODO ObservedTriggerEvent?
-	EventBlobHandles [][]byte            `protobuf:"bytes,3,rep,name=event_blob_handles,json=eventBlobHandles,proto3" json:"event_blob_handles,omitempty"` // Parallel to events
+	Events []*CoordinatedEvent `protobuf:"bytes,2,rep,name=events,proto3" json:"events,omitempty"`
 	// Capacity Management
 	Capacity           uint32            `protobuf:"varint,4,opt,name=capacity,proto3" json:"capacity,omitempty"`                                                                                                                         // Global remaining capacity
 	WorkflowCapacities map[string]uint32 `protobuf:"bytes,5,rep,name=workflow_capacities,json=workflowCapacities,proto3" json:"workflow_capacities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Workflow-specific free executions
-	// Previous Round
-	Transmissions map[string]ExecutionStatus `protobuf:"bytes,6,rep,name=transmissions,proto3" json:"transmissions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=triggers.ExecutionStatus"` // State of previous transmissions
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ConsensusQueueObservation) Reset() {
@@ -226,13 +170,6 @@ func (x *ConsensusQueueObservation) GetEvents() []*CoordinatedEvent {
 	return nil
 }
 
-func (x *ConsensusQueueObservation) GetEventBlobHandles() [][]byte {
-	if x != nil {
-		return x.EventBlobHandles
-	}
-	return nil
-}
-
 func (x *ConsensusQueueObservation) GetCapacity() uint32 {
 	if x != nil {
 		return x.Capacity
@@ -243,13 +180,6 @@ func (x *ConsensusQueueObservation) GetCapacity() uint32 {
 func (x *ConsensusQueueObservation) GetWorkflowCapacities() map[string]uint32 {
 	if x != nil {
 		return x.WorkflowCapacities
-	}
-	return nil
-}
-
-func (x *ConsensusQueueObservation) GetTransmissions() map[string]ExecutionStatus {
-	if x != nil {
-		return x.Transmissions
 	}
 	return nil
 }
@@ -315,27 +245,17 @@ const file_triggers_proto_rawDesc = "" +
 	"observedAt\x126\n" +
 	"\bdeadline\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x12&\n" +
 	"\x0esequenceNumber\x18\x06 \x01(\x04R\x0esequenceNumber\x123\n" +
-	"\x05event\x18\a \x01(\v2\x1d.capabilities.TriggerResponseR\x05event\"\xa0\x04\n" +
+	"\x05event\x18\a \x01(\v2\x1d.capabilities.TriggerResponseR\x05event\"\xb7\x02\n" +
 	"\x19ConsensusQueueObservation\x12\x15\n" +
 	"\x06seq_nr\x18\x01 \x01(\x04R\x05seqNr\x122\n" +
-	"\x06events\x18\x02 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events\x12,\n" +
-	"\x12event_blob_handles\x18\x03 \x03(\fR\x10eventBlobHandles\x12\x1a\n" +
+	"\x06events\x18\x02 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events\x12\x1a\n" +
 	"\bcapacity\x18\x04 \x01(\rR\bcapacity\x12l\n" +
-	"\x13workflow_capacities\x18\x05 \x03(\v2;.triggers.ConsensusQueueObservation.WorkflowCapacitiesEntryR\x12workflowCapacities\x12\\\n" +
-	"\rtransmissions\x18\x06 \x03(\v26.triggers.ConsensusQueueObservation.TransmissionsEntryR\rtransmissions\x1aE\n" +
+	"\x13workflow_capacities\x18\x05 \x03(\v2;.triggers.ConsensusQueueObservation.WorkflowCapacitiesEntryR\x12workflowCapacities\x1aE\n" +
 	"\x17WorkflowCapacitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\x1a[\n" +
-	"\x12TransmissionsEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12/\n" +
-	"\x05value\x18\x02 \x01(\x0e2\x19.triggers.ExecutionStatusR\x05value:\x028\x01\"J\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"J\n" +
 	"\x14ConsensusQueueReport\x122\n" +
-	"\x06events\x18\x01 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events*p\n" +
-	"\x0fExecutionStatus\x12\f\n" +
-	"\bOBSERVED\x10\x00\x12\x1c\n" +
-	"\x18TRANSMISSION_IN_PROGRESS\x10\x01\x12\x17\n" +
-	"\x13TRANSMISSION_FAILED\x10\x02\x12\x18\n" +
-	"\x14TRANSMISSION_SUCCESS\x10\x03BBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
+	"\x06events\x18\x01 \x03(\v2\x1a.triggers.CoordinatedEventR\x06eventsBBZ@github.com/smartcontractkit/chainlink-common/pkg/capabilities/pbb\x06proto3"
 
 var (
 	file_triggers_proto_rawDescOnce sync.Once
@@ -349,32 +269,27 @@ func file_triggers_proto_rawDescGZIP() []byte {
 	return file_triggers_proto_rawDescData
 }
 
-var file_triggers_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_triggers_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_triggers_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_triggers_proto_goTypes = []any{
-	(ExecutionStatus)(0),              // 0: triggers.ExecutionStatus
-	(*CoordinatedEvent)(nil),          // 1: triggers.CoordinatedEvent
-	(*ConsensusQueueObservation)(nil), // 2: triggers.ConsensusQueueObservation
-	(*ConsensusQueueReport)(nil),      // 3: triggers.ConsensusQueueReport
-	nil,                               // 4: triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
-	nil,                               // 5: triggers.ConsensusQueueObservation.TransmissionsEntry
-	(*timestamppb.Timestamp)(nil),     // 6: google.protobuf.Timestamp
-	(*TriggerResponse)(nil),           // 7: capabilities.TriggerResponse
+	(*CoordinatedEvent)(nil),          // 0: triggers.CoordinatedEvent
+	(*ConsensusQueueObservation)(nil), // 1: triggers.ConsensusQueueObservation
+	(*ConsensusQueueReport)(nil),      // 2: triggers.ConsensusQueueReport
+	nil,                               // 3: triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
+	(*timestamppb.Timestamp)(nil),     // 4: google.protobuf.Timestamp
+	(*TriggerResponse)(nil),           // 5: capabilities.TriggerResponse
 }
 var file_triggers_proto_depIdxs = []int32{
-	6, // 0: triggers.CoordinatedEvent.observedAt:type_name -> google.protobuf.Timestamp
-	6, // 1: triggers.CoordinatedEvent.deadline:type_name -> google.protobuf.Timestamp
-	7, // 2: triggers.CoordinatedEvent.event:type_name -> capabilities.TriggerResponse
-	1, // 3: triggers.ConsensusQueueObservation.events:type_name -> triggers.CoordinatedEvent
-	4, // 4: triggers.ConsensusQueueObservation.workflow_capacities:type_name -> triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
-	5, // 5: triggers.ConsensusQueueObservation.transmissions:type_name -> triggers.ConsensusQueueObservation.TransmissionsEntry
-	1, // 6: triggers.ConsensusQueueReport.events:type_name -> triggers.CoordinatedEvent
-	0, // 7: triggers.ConsensusQueueObservation.TransmissionsEntry.value:type_name -> triggers.ExecutionStatus
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	4, // 0: triggers.CoordinatedEvent.observedAt:type_name -> google.protobuf.Timestamp
+	4, // 1: triggers.CoordinatedEvent.deadline:type_name -> google.protobuf.Timestamp
+	5, // 2: triggers.CoordinatedEvent.event:type_name -> capabilities.TriggerResponse
+	0, // 3: triggers.ConsensusQueueObservation.events:type_name -> triggers.CoordinatedEvent
+	3, // 4: triggers.ConsensusQueueObservation.workflow_capacities:type_name -> triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
+	0, // 5: triggers.ConsensusQueueReport.events:type_name -> triggers.CoordinatedEvent
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_triggers_proto_init() }
@@ -388,14 +303,13 @@ func file_triggers_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_triggers_proto_rawDesc), len(file_triggers_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   5,
+			NumEnums:      0,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_triggers_proto_goTypes,
 		DependencyIndexes: file_triggers_proto_depIdxs,
-		EnumInfos:         file_triggers_proto_enumTypes,
 		MessageInfos:      file_triggers_proto_msgTypes,
 	}.Build()
 	File_triggers_proto = out.File

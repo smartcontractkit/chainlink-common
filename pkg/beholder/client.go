@@ -267,7 +267,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 			defer func() {
 				if err != nil {
 					for _, em := range domainEmitters {
-						_ = em.ownedClient.Close()
+						_ = em.chipClient.Close()
 					}
 				}
 			}()

@@ -241,10 +241,41 @@ func TestForDomain_ClientCloseDrainsQueuedEvents(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, "data-feeds.telemetry.drain"), nil))
 
-	// Close also shuts down the OTel providers, which fail to flush to the absent test
-	// collector; only the drain matters here.
-	_ = client.Close()
+	requireNoDomainEmitterCloseErrors(t, client.Close())
 	assert.Len(t, capture.callsWithEventSource("data-feeds.telemetry.drain"), 1, "queued events are published on close")
+}
+
+// requireNoDomainEmitterCloseErrors checks a Client.Close error for anything the domain emitters
+// caused. Close also shuts down the OTel providers, which fail to flush to the test's absent
+// collector, so those errors are expected and ignored.
+func requireNoDomainEmitterCloseErrors(t *testing.T, err error) {
+	t.Helper()
+	if err == nil {
+		return
+	}
+	assert.NotContains(t, err.Error(), "client connection is closing",
+		"domain emitter connections are closed exactly once")
+}
+
+func TestForDomain_ClientCloseClosesDomainConnectionsOnce(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	client, err := beholder.NewGRPCClient(domainTestConfig(t, addr), func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+		return &mockLogExporter{}, nil
+	})
+	require.NoError(t, err)
+	require.NoError(t, client.Start(t.Context()))
+
+	// Use every domain so each connection is actually dialed before Close.
+	for _, d := range []beholder.Domain{beholder.DomainDataFeeds, beholder.DomainDataStreams, beholder.DomainCCIP} {
+		em, err := client.ForDomain(d)
+		require.NoError(t, err)
+		source := string(d) + ".telemetry.close"
+		require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, source), nil))
+		require.Eventually(t, func() bool { return len(capture.callsWithEventSource(source)) == 1 },
+			5*time.Second, 10*time.Millisecond)
+	}
+
+	requireNoDomainEmitterCloseErrors(t, client.Close())
 }
 
 func TestForDomain_EmitEventRejectsInvalidEvent(t *testing.T) {

@@ -25,9 +25,6 @@ type ChipIngressBatchEmitterService struct {
 
 	batchClient *batch.Client
 	clientName  string
-	// ownedClient, when set, is closed on stop after the batch client drains. Domain emitters
-	// own their chip ingress connection; the default emitter shares the Client's.
-	ownedClient chipingress.Client
 	// domain, when set, restricts events to this Domain or its subdomains, so an event cannot
 	// ride another domain's route. Unset for the default emitter.
 	domain Domain
@@ -43,12 +40,13 @@ type batchEmitterMetrics struct {
 
 // NewChipIngressBatchEmitterService creates a batch emitter service backed by the given chipingress client.
 func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger) (*ChipIngressBatchEmitterService, error) {
-	return newChipIngressBatchEmitterService(client, cfg, lggr, batch.ClientNameBeholder)
+	return newChipIngressBatchEmitterService(client, cfg, lggr, batch.ClientNameBeholder, "")
 }
 
-// newChipIngressBatchEmitterService is NewChipIngressBatchEmitterService with a client name and
-// extra batch options (applied last), used to build domain emitters.
-func newChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger, clientName string, extraOpts ...batch.Opt) (*ChipIngressBatchEmitterService, error) {
+// newChipIngressBatchEmitterService is NewChipIngressBatchEmitterService with a client name, a
+// Domain to restrict events to ("" for none), and extra batch options (applied last), used to
+// build domain emitters.
+func newChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lggr logger.Logger, clientName string, domain Domain, extraOpts ...batch.Opt) (*ChipIngressBatchEmitterService, error) {
 	if client == nil {
 		return nil, errors.New("chip ingress client is nil")
 	}
@@ -108,6 +106,7 @@ func newChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 	e := &ChipIngressBatchEmitterService{
 		batchClient: batchClient,
 		clientName:  clientName,
+		domain:      domain,
 		metrics:     metrics,
 	}
 
@@ -129,11 +128,9 @@ func (e *ChipIngressBatchEmitterService) start(_ context.Context) error {
 	return nil
 }
 
+// stop drains the batch client, which then closes the chip ingress client it was built with.
 func (e *ChipIngressBatchEmitterService) stop() error {
 	e.batchClient.Stop()
-	if e.ownedClient != nil {
-		return e.ownedClient.Close()
-	}
 	return nil
 }
 

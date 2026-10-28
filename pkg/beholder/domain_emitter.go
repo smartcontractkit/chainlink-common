@@ -59,6 +59,9 @@ func (c *Client) ForDomain(domain Domain) (DomainEmitter, error) {
 // cannot stop an emitter the Client owns.
 type domainEmitter struct {
 	*ChipIngressBatchEmitterService
+	// chipClient is the emitter's own connection. Once started, the batch client closes it on
+	// Stop; it is closed here only when construction fails before the emitter ever starts.
+	chipClient chipingress.Client
 }
 
 func (*domainEmitter) Close() error { return nil }
@@ -71,7 +74,7 @@ func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[str
 	defer func() {
 		if err != nil {
 			for _, em := range emitters {
-				_ = em.ownedClient.Close()
+				_ = em.chipClient.Close()
 			}
 		}
 	}()
@@ -89,14 +92,12 @@ func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[str
 		if err != nil {
 			return nil, fmt.Errorf("chip ingress client for domain %q: %w", domain, err)
 		}
-		svc, err := newChipIngressBatchEmitterService(chipClient, cfg, pkglogger.Named(lggr, string(domain)), clientName, batch.WithNoAck())
+		svc, err := newChipIngressBatchEmitterService(chipClient, cfg, pkglogger.Named(lggr, string(domain)), clientName, domain, batch.WithNoAck())
 		if err != nil {
 			_ = chipClient.Close()
 			return nil, fmt.Errorf("chip ingress emitter for domain %q: %w", domain, err)
 		}
-		svc.ownedClient = chipClient
-		svc.domain = domain
-		emitters[domain] = &domainEmitter{svc}
+		emitters[domain] = &domainEmitter{ChipIngressBatchEmitterService: svc, chipClient: chipClient}
 	}
 	return emitters, nil
 }

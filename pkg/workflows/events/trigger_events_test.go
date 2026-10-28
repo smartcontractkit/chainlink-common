@@ -37,6 +37,8 @@ func TestEmitTriggerExecutionStarted(t *testing.T) {
 		KeyOrganizationID, expectedOrganizationID,
 		KeyDonID, expectedDonID,
 		KeyDonVersion, expectedDonVersion,
+		KeyShardIndex, "2",
+		KeyWorkflowDonID, "7",
 	)
 
 	err := EmitTriggerExecutionStarted(ctx, labeler)
@@ -72,6 +74,8 @@ func TestEmitTriggerExecutionStarted(t *testing.T) {
 	require.NotNil(t, event.CreInfo)
 	assert.Equal(t, int32(1), event.CreInfo.DonID)
 	assert.Equal(t, expectedDonVersion, event.CreInfo.DonVersion)
+	assert.Equal(t, uint32(2), event.CreInfo.ShardIndex)
+	assert.Equal(t, int32(7), event.CreInfo.WorkflowDonID)
 
 	// Verify timestamp format (RFC3339)
 	timeMatcher := regexp.MustCompile(`[0-9\-]{10}T[0-9:]{8}[Z\-\+][0-9:]*`)

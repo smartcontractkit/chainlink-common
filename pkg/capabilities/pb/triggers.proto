@@ -22,12 +22,17 @@ message CoordinatedEventList {
 }
 
 message ConsensusQueueObservation {
-  uint64 seq_nr = 1;
+  repeated CoordinatedEvent events = 1;
 
-  // Event Data
-  repeated CoordinatedEvent events = 2;
-
-  // Capacity Management
   uint32 capacity = 4; // Global remaining capacity
   map<string, uint32> workflow_capacities = 5; // Workflow-specific free executions
+}
+
+message ConsensusQueueProposals {
+  map<string, CoordinatedEvent> events = 1; // eventID -> Event
+  map<string, NodeIDList> observers = 2; // eventID -> Observers < f+1
+}
+
+message NodeIDList {
+  bytes ids = 1; // []uint8
 }

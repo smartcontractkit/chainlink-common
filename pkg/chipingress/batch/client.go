@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -471,6 +472,17 @@ const grpcFramingOverhead = 10 * 1024 // 10 KiB
 // reservation remains meaningful.
 const minMaxGRPCRequestSize = 1024 * 1024 // 1 MiB
 
+// eventsFieldNumber is the proto field number of CloudEventBatch.events, read from the
+// generated descriptor so the size arithmetic below cannot drift from the schema.
+var eventsFieldNumber = (&chipingress.CloudEventBatch{}).ProtoReflect().Descriptor().Fields().ByName("events").Number()
+
+// splitMessagesByRequestSize splits messages, in order, into batches whose serialized
+// CloudEventBatch size is at most maxRequestSize. A single event that exceeds the limit
+// is placed in a batch of its own. maxRequestSize <= 0 disables splitting.
+//
+// It runs in O(n): each event is sized once and the batch size is accumulated
+// incrementally instead of re-serializing the growing candidate batch.
+// The returned batches are sub-slices of messages, not copies.
 func splitMessagesByRequestSize(messages []*messageWithCallback, maxRequestSize int, transactionEnabled bool) [][]*messageWithCallback {
 	if len(messages) == 0 {
 		return nil
@@ -479,22 +491,27 @@ func splitMessagesByRequestSize(messages []*messageWithCallback, maxRequestSize 
 		return [][]*messageWithCallback{messages}
 	}
 
+	// A serialized batch is the Options field plus one length-delimited Events entry per
+	// event, so its size is the size of an empty batch (Options only) plus, for each event,
+	// the field tag and the length-prefixed event bytes.
+	te := transactionEnabled
+	optionsSize := proto.Size(&chipingress.CloudEventBatch{Options: &chipingress.PublishOptions{TransactionEnabled: &te}})
+	tagSize := protowire.SizeTag(eventsFieldNumber)
+
 	var batches [][]*messageWithCallback
-	current := make([]*messageWithCallback, 0, len(messages))
-	for _, msg := range messages {
-		candidate := append(current, msg)
-		_, candidateBytes := newBatchRequest(candidate, transactionEnabled)
-		if len(current) > 0 && candidateBytes > maxRequestSize {
-			batches = append(batches, current)
-			current = []*messageWithCallback{msg}
-			continue
+	start := 0
+	currentSize := optionsSize
+	for i, msg := range messages {
+		entrySize := tagSize + protowire.SizeBytes(proto.Size(msg.event))
+		if i > start && currentSize+entrySize > maxRequestSize {
+			// The capacity cap keeps an append by a caller from overwriting the next batch.
+			batches = append(batches, messages[start:i:i])
+			start = i
+			currentSize = optionsSize
 		}
-		current = candidate
+		currentSize += entrySize
 	}
-	if len(current) > 0 {
-		batches = append(batches, current)
-	}
-	return batches
+	return append(batches, messages[start:len(messages):len(messages)])
 }
 
 func newBatchRequest(messages []*messageWithCallback, transactionEnabled bool) (*chipingress.CloudEventBatch, int) {

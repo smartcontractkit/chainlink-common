@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -28,6 +29,8 @@ type ChipIngressBatchEmitterService struct {
 	// domain, when set, restricts events to this Domain or its subdomains, so an event cannot
 	// ride another domain's route. Unset for the default emitter.
 	domain Domain
+	// errorLogs limits per-event failure logs to one per error code per errorLogInterval.
+	errorLogs *errorLogLimiter
 
 	metricAttrsCache sync.Map // map[string]otelmetric.MeasurementOption
 	metrics          batchEmitterMetrics
@@ -107,6 +110,7 @@ func newChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batchClient: batchClient,
 		clientName:  clientName,
 		domain:      domain,
+		errorLogs:   newErrorLogLimiter(errorLogInterval),
 		metrics:     metrics,
 	}
 
@@ -235,13 +239,16 @@ func (e *ChipIngressBatchEmitterService) queue(ctx context.Context, eventPb *chi
 			// captures that it's happening and roughly why; the full reason isn't
 			// needed at fleet-wide log volume.
 			if _, ok := errors.AsType[*batch.PublishError](sendErr); !ok {
-				e.eng.Errorw("failed to emit to chip ingress",
-					"error", sendErr,
-					"error_code", errorCode,
-					"error_reason", sendErr.Error(),
-					"domain", domain,
-					"entity", entity,
-				)
+				if log, suppressed := e.errorLogs.allow("emit:"+errorCode, time.Now()); log {
+					e.eng.Errorw("failed to emit to chip ingress",
+						"error", sendErr,
+						"error_code", errorCode,
+						"error_reason", sendErr.Error(),
+						"domain", domain,
+						"entity", entity,
+						"suppressed_since_last_log", suppressed,
+					)
+				}
 			}
 		} else {
 			e.metrics.eventsSent.Add(ctx, 1, metricAttrs)
@@ -253,13 +260,16 @@ func (e *ChipIngressBatchEmitterService) queue(ctx context.Context, eventPb *chi
 	if queueErr != nil {
 		errorCode := batch.ErrorCodeFor(queueErr)
 		e.metrics.eventsDropped.Add(ctx, 1, e.dropMetricAttrsFor(domain, entity, errorCode))
-		e.eng.Errorw("failed to queue message for chip ingress",
-			"error", queueErr,
-			"error_code", errorCode,
-			"error_reason", queueErr.Error(),
-			"domain", domain,
-			"entity", entity,
-		)
+		if log, suppressed := e.errorLogs.allow("queue:"+errorCode, time.Now()); log {
+			e.eng.Errorw("failed to queue message for chip ingress",
+				"error", queueErr,
+				"error_code", errorCode,
+				"error_reason", queueErr.Error(),
+				"domain", domain,
+				"entity", entity,
+				"suppressed_since_last_log", suppressed,
+			)
+		}
 		if callback != nil {
 			callback(queueErr)
 		}

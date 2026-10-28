@@ -14,12 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 // hungChipServer accepts batch RPCs and never answers until the RPC is cancelled.
@@ -236,6 +238,32 @@ func TestDomainEmitter_ServerWithoutNoAck(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("callback not invoked")
 	}
+}
+
+func TestDomainEmitter_OutageLogsAreRateLimited(t *testing.T) {
+	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
+	cfg := domainTestConfig(t, startChipServer(t, &ackOnlyChipServer{}))
+	cfg.ChipIngressLogger = lggr
+	cfg.ChipIngressMaxBatchSize = 1 // one RPC, and so one failure, per event
+	client := newDomainTestClient(t, cfg)
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+
+	const n = 20
+	var pending sync.WaitGroup
+	for i := range n {
+		pending.Add(1)
+		require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, fmt.Sprintf("data-feeds.telemetry.outage-%d", i)),
+			func(err error) {
+				defer pending.Done()
+				assert.Error(t, err)
+			}))
+	}
+	pending.Wait()
+
+	assert.Equal(t, 1, logs.FilterMessage("failed to emit to chip ingress").Len(),
+		"every event failed, but only the first failure per error code is logged")
 }
 
 func TestDomainEmitter_ConcurrentEmitAndClose(t *testing.T) {

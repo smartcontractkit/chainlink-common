@@ -30,7 +30,7 @@ func TestSampled(t *testing.T) {
 	assert.InDelta(t, 1000, hits, 150, "rate is honoured")
 
 	// Vectors shared with the reconcilers; do not change without updating them.
-	for key, want := range map[string]bool{"a": false, "b": true, "c": true, "exec-1": false, "exec-2": true, "0xaa": true} {
+	for key, want := range map[string]bool{"a": true, "b": false, "c": true, "exec-1": true, "exec-2": false, "0xaa": true} {
 		assert.Equal(t, want, sampled(0.5, key), key)
 	}
 }
@@ -93,14 +93,14 @@ func TestApplyFault(t *testing.T) {
 	t.Run("drop and perturb run together on independent samples", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "0.5", "BillingFaultPerturbRate": "0.5", "BillingFaultPerturbDelta": "-7"})
 		// Vectors shared with the reconcilers; do not change without updating them.
-		require.True(t, sampled(0.5, "drop|exec-2"))
-		require.False(t, sampled(0.5, "drop|a"))
-		require.True(t, sampled(0.5, "perturb|a"))
-		require.False(t, sampled(0.5, "drop|exec-6"))
-		require.False(t, sampled(0.5, "perturb|exec-6"))
-		assert.Empty(t, emitUsageWithFault(t, g, "n1", "exec-2").calls, "in the drop sample")
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "a")), "in the perturb sample only")
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-6")), "in neither")
+		require.True(t, sampled(0.5, "drop|exec-1"))
+		require.False(t, sampled(0.5, "drop|exec-17"))
+		require.True(t, sampled(0.5, "perturb|exec-17"))
+		require.False(t, sampled(0.5, "drop|exec-9"))
+		require.False(t, sampled(0.5, "perturb|exec-9"))
+		assert.Empty(t, emitUsageWithFault(t, g, "n1", "exec-1").calls, "in the drop sample")
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")), "in the perturb sample only")
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-9")), "in neither")
 	})
 	t.Run("perturb subtracts delta on every node by default", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})

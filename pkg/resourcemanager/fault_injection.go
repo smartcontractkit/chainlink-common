@@ -20,15 +20,16 @@ const (
 	faultPerturb = "perturb"
 )
 
-// sampled reports whether key falls in the deterministic sample for rate: the
-// first 8 bytes of sha256(key), as a fraction of 2^64, are below rate. The
-// reconcilers recompute the sample from the rate alone.
+// sampled reports whether key falls in the deterministic sample for rate:
+// the first 8 bytes of sha256(key) mod 10000 are below rate in basis points.
+// Same arithmetic as the workflow-worker DropDecider, so one offline helper
+// recomputes both injectors' samples.
 func sampled(rate float64, key string) bool {
 	if !(rate > 0) { // also rejects NaN
 		return false
 	}
 	h := sha256.Sum256([]byte(key))
-	return float64(binary.BigEndian.Uint64(h[:8]))/math.MaxUint64 < rate
+	return binary.BigEndian.Uint64(h[:8])%10000 < uint64(math.Round(rate*10000))
 }
 
 // applyFault drops or perturbs usage records of orgs whose CRE settings

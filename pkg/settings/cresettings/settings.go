@@ -516,7 +516,7 @@ type Orgs struct {
 	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
-	// BillingFault* drop and perturb deterministic samples of this org's usage records so the billing reconcilers can measure recall; rates are 0..1 and 0 is off.
+	// BillingFault* drop and perturb deterministic samples of this org's usage records so the billing reconcilers can measure recall; rates are 0..1 and 0 is off. Set them per org only; the global key would fault every org.
 	BillingFaultDropRate Setting[float64]
 	// BillingFaultPerturbRate selects records to perturb; drop wins when both select.
 	BillingFaultPerturbRate Setting[float64]

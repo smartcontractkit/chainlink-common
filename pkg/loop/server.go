@@ -246,7 +246,7 @@ func (s *Server) MeteringConfig() resourcemanager.Config {
 	if s.durableEmitter != nil {
 		emitter = s.durableEmitter
 	}
-	return s.EnvConfig.MeteringConfig(emitter)
+	return s.EnvConfig.MeteringConfig(emitter, s.cfg.settingsGetter)
 }
 
 // MustRegister registers the HealthReporter with services.HealthChecker, or exits upon failure.

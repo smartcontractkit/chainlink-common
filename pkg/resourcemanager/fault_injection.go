@@ -82,6 +82,9 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 	if v.Sign() < 0 {
 		v.SetInt64(0)
 	}
+	if v.String() == original { // a zero clamps to itself: nothing to detect, so no log
+		return false
+	}
 	u.Value = v.String()
 	rm.lggr.Warnw("Injected usage fault", append(fields, "value", u.Value, "originalValue", original)...)
 	return false

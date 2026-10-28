@@ -8,6 +8,7 @@ import (
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -114,6 +115,15 @@ func TestApplyFault(t *testing.T) {
 	t.Run("perturb clamps at zero", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-1000"})
 		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
+	})
+	t.Run("perturb leaves a zero value and logs nothing", func(t *testing.T) {
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
+		emitter := &fakeEmitter{}
+		lggr, observed := logger.TestObserved(t, zapcore.WarnLevel)
+		rm := NewResourceManager(lggr, ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter, Settings: g})
+		rm.EmitUsage(t.Context(), testIdentity, "exec-1", 0, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-1", OrgID: "org-1"})
+		assert.Equal(t, "0", emittedValue(t, emitter))
+		assert.Empty(t, observed.FilterMessage("Injected usage fault").All())
 	})
 	t.Run("perturb honours the node rate", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7", "BillingFaultNodeRate": "0.5"})

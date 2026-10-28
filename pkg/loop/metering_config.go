@@ -2,7 +2,7 @@ package loop
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
-	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
 // MeteringConfig maps this resolved EnvConfig to a resourcemanager.Config, so
@@ -14,9 +14,11 @@ import (
 // emitter is injected by the caller (can be process global durableemitter.GetGlobalEmitter())
 // rather than looked up here, so this mapping stays a pure function of its
 // inputs. A nil emitter is valid: the ResourceManager treats it as a no-op —
-// fail-open, so metering never blocks startup. A nil EnvConfig yields a zero
-// Config (metering disabled).
-func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemanager.Config {
+// fail-open, so metering never blocks startup. settings is the CRE settings
+// getter the host resolved (Server passes its own, so runtime updates apply);
+// nil disables usage fault injection. A nil EnvConfig yields a zero Config
+// (metering disabled).
+func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter, settings settings.Getter) resourcemanager.Config {
 	if e == nil {
 		return resourcemanager.Config{}
 	}
@@ -25,7 +27,7 @@ func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemana
 		MeterSnapshotsEnabled: e.MeterSnapshotsEnabled,
 		Emitter:               emitter,
 		SnapshotInterval:      resourcemanager.DefaultSnapshotInterval,
-		Settings:              cresettings.DefaultGetter,
+		Settings:              settings,
 		DeploymentIdentity: resourcemanager.DeploymentIdentity{
 			Product:         e.MeterProduct,
 			Tenant:          e.MeterTenant,

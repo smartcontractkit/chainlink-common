@@ -2,6 +2,7 @@ package loop
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
 
 // MeteringConfig maps this resolved EnvConfig to a resourcemanager.Config, so
@@ -24,13 +25,7 @@ func (e *EnvConfig) MeteringConfig(emitter resourcemanager.Emitter) resourcemana
 		MeterSnapshotsEnabled: e.MeterSnapshotsEnabled,
 		Emitter:               emitter,
 		SnapshotInterval:      resourcemanager.DefaultSnapshotInterval,
-		FaultInjection: resourcemanager.UsageFaultInjection{
-			Orgs:        e.MeterFaultOrgs,
-			DropRate:    e.MeterFaultDropRate,
-			PerturbRate: e.MeterFaultPerturbRate,
-			Delta:       e.MeterFaultDelta,
-			NodeRate:    e.MeterFaultNodeRate,
-		},
+		Settings:              cresettings.DefaultGetter,
 		DeploymentIdentity: resourcemanager.DeploymentIdentity{
 			Product:         e.MeterProduct,
 			Tenant:          e.MeterTenant,

@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/hashicorp/go-plugin"
@@ -55,11 +54,6 @@ const (
 	envMeterEnvironment      = "CL_METER_ENVIRONMENT"
 	envMeterZone             = "CL_METER_ZONE"
 	envMeterNodeID           = "CL_METER_NODE_ID"
-	envMeterFaultOrgs        = "CL_METER_FAULT_ORGS"
-	envMeterFaultDropRate    = "CL_METER_FAULT_DROP_RATE"
-	envMeterFaultPerturbRate = "CL_METER_FAULT_PERTURB_RATE"
-	envMeterFaultDelta       = "CL_METER_FAULT_DELTA"
-	envMeterFaultNodeRate    = "CL_METER_FAULT_NODE_RATE"
 
 	envCRESettings        = cresettings.EnvNameSettings
 	envCRESettingsDefault = cresettings.EnvNameSettingsDefault
@@ -126,12 +120,6 @@ type EnvConfig struct {
 	MeterEnvironment     string
 	MeterZone            string
 	MeterNodeID          string
-	// MeterFault* configure usage fault injection (resourcemanager.UsageFaultInjection).
-	MeterFaultOrgs        []string
-	MeterFaultDropRate    float64
-	MeterFaultPerturbRate float64
-	MeterFaultDelta       int64
-	MeterFaultNodeRate    float64
 }
 
 // AsCmdEnv returns a slice of environment variable key/value pairs for an exec.Cmd.
@@ -183,11 +171,6 @@ func (e *EnvConfig) AsCmdEnv() (env []string) {
 	add(envMeterEnvironment, e.MeterEnvironment)
 	add(envMeterZone, e.MeterZone)
 	add(envMeterNodeID, e.MeterNodeID)
-	add(envMeterFaultOrgs, strings.Join(e.MeterFaultOrgs, ","))
-	add(envMeterFaultDropRate, strconv.FormatFloat(e.MeterFaultDropRate, 'g', -1, 64))
-	add(envMeterFaultPerturbRate, strconv.FormatFloat(e.MeterFaultPerturbRate, 'g', -1, 64))
-	add(envMeterFaultDelta, strconv.FormatInt(e.MeterFaultDelta, 10))
-	add(envMeterFaultNodeRate, strconv.FormatFloat(e.MeterFaultNodeRate, 'g', -1, 64))
 
 	if e.CRESettings != "" {
 		add(envCRESettings, e.CRESettings)
@@ -332,27 +315,6 @@ func (e *EnvConfig) parse() error {
 	e.MeterEnvironment = os.Getenv(envMeterEnvironment)
 	e.MeterZone = os.Getenv(envMeterZone)
 	e.MeterNodeID = os.Getenv(envMeterNodeID)
-	if e.MeterFaultDropRate, err = getFloat64(envMeterFaultDropRate); err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envMeterFaultDropRate, err)
-	}
-	if e.MeterFaultPerturbRate, err = getFloat64(envMeterFaultPerturbRate); err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envMeterFaultPerturbRate, err)
-	}
-	e.MeterFaultOrgs = nil
-	for _, o := range strings.Split(os.Getenv(envMeterFaultOrgs), ",") {
-		if o = strings.TrimSpace(o); o != "" {
-			e.MeterFaultOrgs = append(e.MeterFaultOrgs, o)
-		}
-	}
-	if v := os.Getenv(envMeterFaultDelta); v != "" {
-		e.MeterFaultDelta, err = strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			return fmt.Errorf("failed to parse %s: %w", envMeterFaultDelta, err)
-		}
-	}
-	if e.MeterFaultNodeRate, err = getFloat64(envMeterFaultNodeRate); err != nil {
-		return fmt.Errorf("failed to parse %s: %w", envMeterFaultNodeRate, err)
-	}
 
 	return nil
 }
@@ -376,14 +338,6 @@ func getBool(envKey string) (bool, error) {
 		return false, nil
 	}
 	return strconv.ParseBool(s)
-}
-
-func getFloat64(envKey string) (float64, error) {
-	s := os.Getenv(envKey)
-	if s == "" {
-		return 0, nil
-	}
-	return strconv.ParseFloat(s, 64)
 }
 
 func getUint32(envKey string) (uint32, error) {

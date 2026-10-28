@@ -84,6 +84,14 @@ flowchart
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
+    subgraph applyFault[resourcemanager.ResourceManager.applyFault]
+%%      usage meter records of an org, before emission
+        PerOrg.BillingFaultDropRate[(PerOrg.BillingFaultDropRate)]:::setting
+        PerOrg.BillingFaultPerturbRate[(PerOrg.BillingFaultPerturbRate)]:::setting
+        PerOrg.BillingFaultPerturbDelta[(PerOrg.BillingFaultPerturbDelta)]:::setting
+        PerOrg.BillingFaultNodeRate[(PerOrg.BillingFaultNodeRate)]:::setting
+    end
+
     subgraph handleMessage[dispatcher.handleMessage]
 %%      DON peer → DON peer P2P capability messages
         DispatcherGlobalRate[\DispatcherGlobalRate/]:::rate

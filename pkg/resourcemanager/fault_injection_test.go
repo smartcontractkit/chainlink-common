@@ -11,63 +11,46 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
-func TestFaultSelected(t *testing.T) {
-	assert.False(t, FaultSelected(0, "a"))
-	assert.True(t, FaultSelected(1, "a"))
-	assert.Equal(t, FaultSelected(0.5, "a"), FaultSelected(0.5, "a"), "deterministic")
+func TestSampled(t *testing.T) {
+	assert.False(t, sampled(0, "a"))
+	assert.False(t, sampled(math.NaN(), "a"))
+	assert.False(t, sampled(-1, "a"))
+	assert.True(t, sampled(1, "a"))
+	assert.Equal(t, sampled(0.5, "a"), sampled(0.5, "a"), "deterministic")
 
 	hits := 0
 	for i := 0; i < 10000; i++ {
-		if FaultSelected(0.1, fmt.Sprint(i)) {
+		if sampled(0.1, fmt.Sprint(i)) {
 			hits++
 		}
 	}
 	assert.InDelta(t, 1000, hits, 150, "rate is honoured")
 
 	// Vectors shared with the reconcilers; do not change without updating them.
-	for key, want := range map[string]bool{"a": false, "b": true, "c": true, "exec-1": false, "exec-2": true, "0xaa": false} {
-		assert.Equal(t, want, FaultSelected(0.5, key), key)
+	for key, want := range map[string]bool{"a": false, "b": true, "c": true, "exec-1": false, "exec-2": true, "0xaa": true} {
+		assert.Equal(t, want, sampled(0.5, key), key)
 	}
-	assert.True(t, FaultSelected(0.5, "n2|exec-2"))
-	assert.False(t, FaultSelected(0.5, "n1|exec-2"))
 }
 
-func TestUsageFaultInjection_Validate(t *testing.T) {
-	orgs := []string{"org-canary"}
-	assert.NoError(t, UsageFaultInjection{}.Validate())
-	assert.NoError(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.01, PerturbRate: 0.1, Delta: -1, NodeRate: 0.5}.Validate())
-	assert.NoError(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1}.Validate())
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 2}.Validate())
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: -0.1, Delta: -1}.Validate())
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1, NodeRate: -1}.Validate())
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: math.NaN()}.Validate(), "NaN drop rate")
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: math.NaN(), Delta: -1}.Validate(), "NaN perturb rate")
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, DropRate: 0.1, NodeRate: math.NaN()}.Validate(), "NaN node rate")
-	assert.Error(t, UsageFaultInjection{DropRate: 0.1}.Validate(), "no org allowlist")
-	assert.Error(t, UsageFaultInjection{Orgs: []string{" "}, DropRate: 0.1}.Validate(), "blank org allowlist")
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 0.1, Delta: 1}.Validate(), "positive delta")
-	assert.Error(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 0.1, Delta: 0}.Validate(), "zero delta")
+// faultSettings builds a getter with PerOrg.BillingFault* overrides for org.
+func faultSettings(t *testing.T, org string, kv map[string]string) settings.Getter {
+	t.Helper()
+	cfg := fmt.Sprintf("[org.%s.PerOrg]\n", org)
+	for k, v := range kv {
+		cfg += fmt.Sprintf("%s = %q\n", k, v)
+	}
+	g, err := settings.NewTOMLGetter([]byte(cfg))
+	require.NoError(t, err)
+	return g
 }
 
-func TestUsageFaultInjection_Selection(t *testing.T) {
-	f := UsageFaultInjection{Orgs: []string{"org-canary"}, DropRate: 0.5, PerturbRate: 0.5, Delta: -1}
-	// Vectors shared with the reconcilers; do not change without updating them.
-	assert.False(t, f.DropSelected("a"))
-	assert.True(t, f.PerturbSelected("a"))
-	assert.True(t, f.DropSelected("exec-2"))
-	assert.False(t, f.PerturbSelected("exec-2"), "an event in both samples is dropped")
-	assert.False(t, f.DropSelected("exec-3"))
-	assert.False(t, f.PerturbSelected("exec-3"))
-	assert.True(t, f.DropSelected("0xabc123"))
-	assert.False(t, f.PerturbSelected("0xabc123"))
-}
-
-func emitUsageWithFault(t *testing.T, f UsageFaultInjection, nodeID, eventID string) *fakeEmitter {
+func emitUsageWithFault(t *testing.T, g settings.Getter, nodeID, eventID string) *fakeEmitter {
 	t.Helper()
 	emitter := &fakeEmitter{}
-	rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter, FaultInjection: f})
+	rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter, Settings: g})
 	id := testIdentity
 	id.Don = &DonIdentity{DonID: "don-1", NodeID: nodeID}
 	rm.EmitUsage(t.Context(), id, eventID, 100, UtilizationFields{
@@ -84,41 +67,59 @@ func emittedValue(t *testing.T, emitter *fakeEmitter) string {
 	return record.GetUtilizations()[0].GetValue()
 }
 
-func TestUsageFaultInjection_Apply(t *testing.T) {
-	orgs := []string{"org-1"}
-	t.Run("off emits unchanged", func(t *testing.T) {
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{}, "n1", "exec-1")))
+func TestApplyFault(t *testing.T) {
+	t.Run("no settings emits unchanged", func(t *testing.T) {
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, nil, "n1", "exec-1")))
+	})
+	t.Run("defaults are off", func(t *testing.T) {
+		g := faultSettings(t, "org-1", nil)
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
 	t.Run("drop skips the selected record", func(t *testing.T) {
-		assert.Empty(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, DropRate: 1}, "n1", "exec-1").calls)
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "1"})
+		assert.Empty(t, emitUsageWithFault(t, g, "n1", "exec-1").calls)
 	})
-	t.Run("unlisted org is never touched", func(t *testing.T) {
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: []string{"org-other"}, DropRate: 1}, "n1", "exec-1")))
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{DropRate: 1}, "n1", "exec-1")), "no allowlist")
+	t.Run("another org's settings do not apply", func(t *testing.T) {
+		g := faultSettings(t, "org-other", map[string]string{"BillingFaultDropRate": "1"})
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
-	t.Run("unselected event is untouched", func(t *testing.T) {
-		f := UsageFaultInjection{Orgs: orgs, DropRate: 0.5}
-		require.False(t, f.DropSelected("a"))
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, f, "n1", "a")))
+	t.Run("record without an org is never faulted", func(t *testing.T) {
+		emitter := &fakeEmitter{}
+		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter,
+			Settings: faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "1"})})
+		rm.EmitUsage(t.Context(), testIdentity, "exec-1", 100, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-1"})
+		assert.Len(t, emitter.calls, 1)
 	})
 	t.Run("drop and perturb run together on independent samples", func(t *testing.T) {
-		f := UsageFaultInjection{Orgs: orgs, DropRate: 0.5, PerturbRate: 0.5, Delta: -7}
-		assert.Empty(t, emitUsageWithFault(t, f, "n1", "exec-2").calls, "in the drop sample")
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, f, "n1", "a")), "in the perturb sample only")
-		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, f, "n1", "exec-3")), "in neither")
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "0.5", "BillingFaultPerturbRate": "0.5", "BillingFaultPerturbDelta": "-7"})
+		// Vectors shared with the reconcilers; do not change without updating them.
+		require.True(t, sampled(0.5, "drop|exec-2"))
+		require.False(t, sampled(0.5, "drop|a"))
+		require.True(t, sampled(0.5, "perturb|a"))
+		require.False(t, sampled(0.5, "drop|exec-6"))
+		require.False(t, sampled(0.5, "perturb|exec-6"))
+		assert.Empty(t, emitUsageWithFault(t, g, "n1", "exec-2").calls, "in the drop sample")
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "a")), "in the perturb sample only")
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-6")), "in neither")
 	})
 	t.Run("perturb subtracts delta on every node by default", func(t *testing.T) {
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -7}, "n1", "exec-1")))
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -7}, "n2", "exec-1")))
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n2", "exec-1")))
+	})
+	t.Run("perturb needs a negative delta", func(t *testing.T) {
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7"})
+		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
 	t.Run("perturb clamps at zero", func(t *testing.T) {
-		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -1000}, "n1", "exec-1")))
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-1000"})
+		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
 	t.Run("perturb honours the node rate", func(t *testing.T) {
-		f := UsageFaultInjection{Orgs: orgs, PerturbRate: 1, Delta: -7, NodeRate: 0.5}
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7", "BillingFaultNodeRate": "0.5"})
 		var perturbed, untouched int
 		for i := 0; i < 20; i++ {
-			switch emittedValue(t, emitUsageWithFault(t, f, fmt.Sprintf("node-%d", i), "exec-1")) {
+			switch emittedValue(t, emitUsageWithFault(t, g, fmt.Sprintf("node-%d", i), "exec-1")) {
 			case "93":
 				perturbed++
 			case "100":
@@ -132,8 +133,8 @@ func TestUsageFaultInjection_Apply(t *testing.T) {
 	t.Run("durable deltas are never faulted", func(t *testing.T) {
 		emitter := &fakeEmitter{}
 		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter,
-			FaultInjection: UsageFaultInjection{Orgs: orgs, DropRate: 1}})
-		rm.EmitDelta(t.Context(), testIdentity, "delta-1", 1, UtilizationFields{ResourceType: "operations", ResourceID: "r"})
+			Settings: faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "1"})})
+		rm.EmitDelta(t.Context(), testIdentity, "delta-1", 1, UtilizationFields{ResourceType: "operations", ResourceID: "r", OrgID: "org-1"})
 		assert.Len(t, emitter.calls, 1)
 	})
 }

@@ -203,6 +203,10 @@ var Default = Schema{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
+		BillingFaultDropRate:              Float64(0),
+		BillingFaultPerturbRate:           Float64(0),
+		BillingFaultPerturbDelta:          Int64(0),
+		BillingFaultNodeRate:              Float64(1),
 		HTTPAction: perOrgHTTPAction{
 			MtlsRateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
@@ -512,7 +516,15 @@ type Orgs struct {
 	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
-	HTTPAction                        perOrgHTTPAction
+	// BillingFault* drop and perturb deterministic samples of this org's usage records so the billing reconcilers can measure recall; rates are 0..1 and 0 is off.
+	BillingFaultDropRate Setting[float64]
+	// BillingFaultPerturbRate selects records to perturb; drop wins when both select.
+	BillingFaultPerturbRate Setting[float64]
+	// BillingFaultPerturbDelta is added to a perturbed value; negative only, clamped at 0.
+	BillingFaultPerturbDelta Setting[int64]
+	// BillingFaultNodeRate is the fraction of nodes that apply a perturb.
+	BillingFaultNodeRate Setting[float64]
+	HTTPAction           perOrgHTTPAction
 }
 
 type Owners struct {

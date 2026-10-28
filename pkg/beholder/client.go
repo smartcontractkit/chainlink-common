@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc"
@@ -53,6 +54,9 @@ type Client struct {
 
 	// domainEmitters are built when Config.ChipIngressDomainEmittersEnabled is set and retrieved with ForDomain.
 	domainEmitters map[Domain]*domainEmitter
+	// emitterSvcs are the chip ingress batch emitter services (default and domain) the Client
+	// starts as sub-services and drains first on close; see initService.
+	emitterSvcs []services.Service
 
 	// Providers
 	LoggerProvider        otellog.LoggerProvider
@@ -69,23 +73,42 @@ type Client struct {
 
 // initService wires up the services.Service lifecycle for the Client.
 // Must be called exactly once after populating the Client fields.
+//
+// The chip ingress batch emitters are sub-services, so the service engine starts them (and rolls
+// back the started ones if a later one fails to start) and aggregates their health. They are
+// closed by Client.close, before the OTel providers shut down, so telemetry recorded while they
+// drain is still exported; closeOnceService makes the engine's later sub-service close a no-op.
 func (c *Client) initService(lggr pkglogger.Logger, batchSvc *ChipIngressBatchEmitterService) {
+	c.emitterSvcs = nil
+	if batchSvc != nil {
+		c.emitterSvcs = append(c.emitterSvcs, &closeOnceService{Service: batchSvc})
+	}
+	for _, domain := range domains {
+		if em, ok := c.domainEmitters[domain]; ok {
+			c.emitterSvcs = append(c.emitterSvcs, &closeOnceService{Service: em.ChipIngressBatchEmitterService})
+		}
+	}
 	c.Service, c.eng = services.Config{
 		Name:  "BeholderClient",
 		Close: c.close,
-		NewSubServices: func(l pkglogger.Logger) []services.Service {
-			var subs []services.Service
-			if batchSvc != nil {
-				subs = append(subs, batchSvc)
-			}
-			for _, domain := range domains {
-				if em, ok := c.domainEmitters[domain]; ok {
-					subs = append(subs, em.ChipIngressBatchEmitterService)
-				}
-			}
-			return subs
+		NewSubServices: func(pkglogger.Logger) []services.Service {
+			return c.emitterSvcs
 		},
 	}.NewServiceEngine(lggr)
+}
+
+// closeOnceService closes the wrapped service once. Only the first Close returns the wrapped
+// service's error (later calls wait for it to finish and return nil), so an error is reported by
+// whoever closed first and never twice, and a service that is already stopped does not return
+// services.ErrAlreadyStopped.
+type closeOnceService struct {
+	services.Service
+	once sync.Once
+}
+
+func (s *closeOnceService) Close() (err error) {
+	s.once.Do(func() { err = s.Service.Close() })
+	return err
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
@@ -293,8 +316,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 			}
 			// Batch emitter lifecycle is owned by Client's service-engine sub-service wiring.
 			// Wrap it with noCloseEmitter so DualSourceEmitter.Close() does not attempt to
-			// close it directly; the service engine closes batchEmitterService in sub-service
-			// teardown after parent close hook completes.
+			// close it directly; Client.close drains it before the OTel providers shut down.
 			chipIngressEmitter = noCloseEmitter{Emitter: batchEmitterService}
 		} else {
 			chipIngressEmitter, err = ChipIngressEmitterConfig{Lggr: lggr}.New(chipIngressClient)
@@ -334,8 +356,13 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	return c, nil
 }
 
-// close is the lifecycle Close hook: OTel/message shutdown and CHIP close.
+// close is the lifecycle Close hook. It drains the chip ingress batch emitters first, concurrently,
+// so the telemetry their final sends record (otelgrpc metrics and spans, beholder
+// chip_ingress.events_sent/dropped) is still exported, then closes the emitter and shuts down the
+// OTel/message providers. The service engine closes sub-services only after this hook returns;
+// by then the emitters are already closed (see closeOnceService).
 func (c *Client) close() (err error) {
+	err = errors.Join(err, services.MultiCloser(c.emitterSvcs).Close())
 	if c.Emitter != nil {
 		err = errors.Join(err, c.Emitter.Close())
 	}

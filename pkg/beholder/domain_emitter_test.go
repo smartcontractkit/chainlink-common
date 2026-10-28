@@ -307,6 +307,7 @@ func TestForDomain_RejectsEventsFromOtherDomains(t *testing.T) {
 		{"ccip.telemetry.ocr3", false},             // another domain
 		{"data-feeds-extra.telemetry", false},      // shares a prefix, not a subdomain
 		{"telemetry.data-feeds", false},            // contains it, not under it
+		{"Data-Feeds.telemetry", false},            // the match is case-sensitive
 	} {
 		t.Run(tc.source, func(t *testing.T) {
 			called := false
@@ -331,7 +332,7 @@ func TestForDomain_RejectsEventsFromOtherDomains(t *testing.T) {
 	})
 
 	// Nothing from the rejected sources reached the server.
-	for _, source := range []string{"ccip.telemetry.ocr3", "data-feeds-extra.telemetry", "telemetry.data-feeds"} {
+	for _, source := range []string{"ccip.telemetry.ocr3", "data-feeds-extra.telemetry", "telemetry.data-feeds", "Data-Feeds.telemetry"} {
 		assert.Empty(t, capture.callsWithEventSource(source), "source %q", source)
 	}
 }

@@ -78,7 +78,7 @@ func (c *Client) initService(lggr pkglogger.Logger, batchSvc *ChipIngressBatchEm
 			if batchSvc != nil {
 				subs = append(subs, batchSvc)
 			}
-			for _, domain := range domains {
+			for _, domain := range allDomains() {
 				if em, ok := c.domainEmitters[domain]; ok {
 					subs = append(subs, em.ChipIngressBatchEmitterService)
 				}

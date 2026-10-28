@@ -3,6 +3,7 @@ package beholder
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
@@ -20,8 +21,11 @@ const (
 	DomainCCIP        Domain = "ccip"
 )
 
-// domains lists every Domain; Config.ChipIngressDomainEmittersEnabled builds an emitter for each.
-var domains = []Domain{DomainDataFeeds, DomainDataStreams, DomainCCIP}
+// allDomains lists every Domain; Config.ChipIngressDomainEmittersEnabled builds an emitter for
+// each. A func, not a var, so the list cannot be modified.
+func allDomains() []Domain {
+	return []Domain{DomainDataFeeds, DomainDataStreams, DomainCCIP}
+}
 
 // DomainHeaderKey is the gRPC metadata key carrying a domain emitter's Domain. Load balancers route
 // on it to the chip ingress deployment that serves the domain; chip ingress itself ignores it.
@@ -31,8 +35,10 @@ const DomainHeaderKey = "chainlink-domain"
 // connection and buffer. Obtain one with Client.ForDomain.
 //
 // Both methods reject an event whose source (the CloudEvent source, or the beholder_domain
-// attribute for Emit) is not the emitter's Domain or a subdomain of it: for DomainDataFeeds,
-// "data-feeds" and "data-feeds.telemetry.ocr2-median" are accepted, "ccip.telemetry.ocr3" is not.
+// attribute for Emit) is not the emitter's Domain or a subdomain of it. The match is
+// case-sensitive and a subdomain must follow a "." separator: for DomainDataFeeds,
+// "data-feeds" and "data-feeds.telemetry.ocr2-median" are accepted; "ccip.telemetry.ocr3",
+// "data-feeds-extra" and "Data-Feeds" are not.
 type DomainEmitter interface {
 	// Emitter builds the event from attributes, like the Client's Emitter. Close is a no-op: the
 	// Client starts and closes its domain emitters.
@@ -70,6 +76,7 @@ func (*domainEmitter) Close() error { return nil }
 // (transport, auth, OTel providers) without its header provider, which each domain emitter
 // replaces with one carrying the resource attribute headers plus its DomainHeaderKey.
 func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[string]string, lggr pkglogger.Logger) (_ map[Domain]*domainEmitter, err error) {
+	domains := allDomains()
 	emitters := make(map[Domain]*domainEmitter, len(domains))
 	defer func() {
 		if err != nil {
@@ -83,11 +90,11 @@ func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[str
 		headers[DomainHeaderKey] = string(domain)
 		clientName := batch.ClientNameBeholder + "_" + string(domain)
 
-		domainOpts := append(append([]chipingress.Opt{}, opts...),
+		domainOpts := slices.Concat(opts, []chipingress.Opt{
 			chipingress.WithHeaderProvider(chipingress.NewStaticHeaderProvider(headers)),
 			chipingress.WithNOPLookup(),
 			chipingress.WithClientName(clientName),
-		)
+		})
 		chipClient, err := chipingress.NewClient(cfg.ChipIngressEmitterGRPCEndpoint, domainOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("chip ingress client for domain %q: %w", domain, err)

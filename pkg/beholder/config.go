@@ -83,6 +83,10 @@ type Config struct {
 	// Client.ForDomain. Each has its own connection and buffer (sized by the batch settings
 	// above), sends the DomainHeaderKey routing header, sends to chip ingress only, and publishes
 	// with PublishBatchNoAck. Requires chip ingress. Off by default.
+	//
+	// Domain emitters are always batch emitters, whatever ChipIngressBatchEmitterEnabled says.
+	// Per-node cost: one ChipIngressBufferSize buffer per Domain; a connection only for domains
+	// actually used (gRPC dials lazily).
 	ChipIngressDomainEmittersEnabled bool
 
 	// OTel Log

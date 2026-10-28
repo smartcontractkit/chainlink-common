@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793127287441,
+  "lastUpdate": 1793225770813,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65340,6 +65340,66 @@ window.BENCHMARK_DATA = {
             "value": 49179,
             "unit": "ns/op",
             "extra": "24133 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f9f63cb65fcee0ae1c8995a7d250c36f90d62708",
+          "message": "Add shard index to trigger events and standard capabilities dependencies (#2506)\n\nCo-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-28T22:03:57Z",
+          "tree_id": "043cadab795e79035b266e7eb121f11ade874914",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/f9f63cb65fcee0ae1c8995a7d250c36f90d62708"
+        },
+        "date": 1793225765747,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 840.4,
+            "unit": "ns/op",
+            "extra": "1423268 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 130050,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 1052,
+            "unit": "ns/op",
+            "extra": "1019391 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 97951,
+            "unit": "ns/op",
+            "extra": "12097 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26117,
+            "unit": "ns/op",
+            "extra": "46224 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 138246,
+            "unit": "ns/op",
+            "extra": "8169 times\n4 procs"
           }
         ]
       }

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 
@@ -27,6 +28,14 @@ func allDomains() []Domain {
 	return []Domain{DomainDataFeeds, DomainDataStreams, DomainCCIP}
 }
 
+var (
+	// ErrDomainEmittersDisabled is returned by ForDomain when the Client has no domain emitters:
+	// Config.ChipIngressDomainEmittersEnabled is off, or the Client is a noop or HTTP client.
+	ErrDomainEmittersDisabled = errors.New("beholder: chip ingress domain emitters are disabled")
+	// ErrUnknownDomain is returned by ForDomain for a Domain the Client has no emitter for.
+	ErrUnknownDomain = errors.New("beholder: unknown chip ingress domain")
+)
+
 // DomainHeaderKey is the gRPC metadata key carrying a domain emitter's Domain. Load balancers route
 // on it to the chip ingress deployment that serves the domain; chip ingress itself ignores it.
 const DomainHeaderKey = "chainlink-domain"
@@ -50,13 +59,15 @@ type DomainEmitter interface {
 }
 
 // ForDomain returns the Client's emitter for domain. It creates nothing, so repeated calls return
-// the same emitter. It is an error unless Config.ChipIngressDomainEmittersEnabled is set and domain
-// is a known Domain.
+// the same emitter. The error wraps ErrDomainEmittersDisabled if the Client has no domain emitters,
+// or ErrUnknownDomain if domain is not a known Domain.
 func (c *Client) ForDomain(domain Domain) (DomainEmitter, error) {
+	if c.domainEmitters == nil {
+		return nil, fmt.Errorf("%w: no emitter for domain %q", ErrDomainEmittersDisabled, domain)
+	}
 	em, ok := c.domainEmitters[domain]
 	if !ok {
-		return nil, fmt.Errorf("beholder: no chip ingress emitter for domain %q (ChipIngressDomainEmittersEnabled=%t)",
-			domain, c.Config.ChipIngressDomainEmittersEnabled)
+		return nil, fmt.Errorf("%w: %q", ErrUnknownDomain, domain)
 	}
 	return em, nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -315,12 +316,29 @@ func TestNewGRPCClient_DomainEmitterConstructionFailures(t *testing.T) {
 
 	t.Run("bad endpoint fails while building domain emitters", func(t *testing.T) {
 		err := newClient(domainTestConfig(t, "missing-port"))
-		require.ErrorContains(t, err, "domain")
+		require.ErrorContains(t, err, `chip ingress client for domain "data-feeds"`)
 	})
-	t.Run("failure after domain emitters are built", func(t *testing.T) {
-		// Domain emitters are built before this check, so their connections must be cleaned up.
-		cfg := domainTestConfig(t, "localhost:9999")
-		cfg.ChipIngressLogger = nil
-		require.ErrorContains(t, newClient(cfg), "ChipIngressLogger is required")
-	})
+}
+
+// A NewGRPCClient that fails after creating its chip ingress client must close it. The
+// ChipIngressLogger check fails after the default chip client exists (domain emitters off, since
+// they require the logger up front). Each leaked client keeps gRPC goroutines alive.
+func TestNewGRPCClient_ConstructionFailureClosesChipClient(t *testing.T) {
+	cfg := beholder.Config{
+		OtelExporterGRPCEndpoint:       "localhost:4317",
+		ChipIngressEmitterEnabled:      true,
+		ChipIngressEmitterGRPCEndpoint: "localhost:9999",
+		ChipIngressInsecureConnection:  true,
+		ChipIngressBatchEmitterEnabled: true, // with a nil ChipIngressLogger
+	}
+	before := runtime.NumGoroutine()
+	for range 3 {
+		_, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+			return &mockLogExporter{}, nil
+		})
+		require.ErrorContains(t, err, "ChipIngressLogger is required")
+	}
+	// Leaking the chip client costs 3 goroutines per failed call; allow some unrelated noise.
+	require.Eventually(t, func() bool { return runtime.NumGoroutine()-before < 5 }, 5*time.Second, 50*time.Millisecond,
+		"failed constructions leaked goroutines: before=%d now=%d", before, runtime.NumGoroutine())
 }

@@ -229,6 +229,10 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	if cfg.ChipIngressDomainEmittersEnabled && !chipIngressEnabled {
 		return nil, errors.New("ChipIngressDomainEmittersEnabled requires chip ingress (ChipIngressEmitterGRPCEndpoint)")
 	}
+	// Domain emitters are always batch emitters; like the batch emitter, they need a real logger.
+	if cfg.ChipIngressDomainEmittersEnabled && cfg.ChipIngressLogger == nil {
+		return nil, errors.New("ChipIngressLogger is required when ChipIngressDomainEmittersEnabled is true")
+	}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
 	if chipIngressEnabled {
@@ -281,6 +285,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		if err != nil {
 			return nil, err
 		}
+		defer func() {
+			if err != nil {
+				_ = chipIngressClient.Close()
+			}
+		}()
 
 		var chipIngressEmitter Emitter
 		if cfg.ChipIngressBatchEmitterEnabled {

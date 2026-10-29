@@ -155,7 +155,8 @@ func (e *ChipIngressBatchEmitterService) EmitWithCallback(ctx context.Context, b
 }
 
 func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body []byte, callback func(error), attrKVs ...any) error {
-	return e.eng.IfStarted(func() error {
+	var queueErr error
+	if err := e.eng.IfStarted(func() error {
 		domain, entity, err := ExtractSourceAndType(attrKVs...)
 		if err != nil {
 			return err
@@ -179,9 +180,13 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 			return err
 		}
 
-		e.queue(ctx, eventPb, domain, entity, callback)
+		queueErr = e.queue(ctx, eventPb, domain, entity, callback)
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	e.failQueued(callback, queueErr)
+	return nil
 }
 
 // EmitEvent queues a fully built CloudEvent for batched delivery without blocking. Unlike
@@ -190,7 +195,8 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 // If EmitEvent returns a non-nil error, the callback will NOT be invoked.
 // If it returns nil, a non-nil callback is guaranteed to fire exactly once.
 func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event chipingress.CloudEvent, callback func(error)) error {
-	return e.eng.IfStarted(func() error {
+	var queueErr error
+	if err := e.eng.IfStarted(func() error {
 		if err := event.Validate(); err != nil {
 			return fmt.Errorf("invalid CloudEvent: %w", err)
 		}
@@ -206,9 +212,13 @@ func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event ch
 			return err
 		}
 
-		e.queue(ctx, eventPb, event.Source(), event.Type(), callback)
+		queueErr = e.queue(ctx, eventPb, event.Source(), event.Type(), callback)
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	e.failQueued(callback, queueErr)
+	return nil
 }
 
 // checkDomain rejects a source outside e.domain: it must be the domain itself or a subdomain of
@@ -220,9 +230,19 @@ func (e *ChipIngressBatchEmitterService) checkDomain(source string) error {
 	return fmt.Errorf("beholder: event source %q is not in domain %q", source, e.domain)
 }
 
+// failQueued reports a queueing failure to the caller's callback. It runs after the service's
+// lock is released, so a callback may safely call back into the emitter (e.g. to retry) even
+// while Close is waiting to stop the service.
+func (e *ChipIngressBatchEmitterService) failQueued(callback func(error), queueErr error) {
+	if queueErr != nil && callback != nil {
+		callback(queueErr)
+	}
+}
+
 // queue hands eventPb to the batch client and records its fate. domain and entity are the
-// event's source and type, used for metrics and logs.
-func (e *ChipIngressBatchEmitterService) queue(ctx context.Context, eventPb *chipingress.CloudEventPb, domain, entity string, callback func(error)) {
+// event's source and type, used for metrics and logs. A queueing failure is recorded and
+// returned, not passed to callback: the caller does that once the service's lock is released.
+func (e *ChipIngressBatchEmitterService) queue(ctx context.Context, eventPb *chipingress.CloudEventPb, domain, entity string, callback func(error)) error {
 	metricAttrs := e.metricAttrsFor(domain, entity)
 
 	queueErr := e.batchClient.QueueMessage(eventPb, func(sendErr error) {
@@ -270,10 +290,8 @@ func (e *ChipIngressBatchEmitterService) queue(ctx context.Context, eventPb *chi
 				"suppressed_since_last_log", suppressed,
 			)
 		}
-		if callback != nil {
-			callback(queueErr)
-		}
 	}
+	return queueErr
 }
 
 func (e *ChipIngressBatchEmitterService) metricAttrsFor(domain, entity string) otelmetric.MeasurementOption {

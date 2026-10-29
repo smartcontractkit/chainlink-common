@@ -357,5 +357,39 @@ func TestForDomain_DisabledByDefault(t *testing.T) {
 
 func TestNoopClient_ForDomain(t *testing.T) {
 	_, err := beholder.NewNoopClient().ForDomain(beholder.DomainDataFeeds)
-	require.Error(t, err)
+	require.ErrorIs(t, err, beholder.ErrDomainEmittersDisabled)
+}
+
+func TestForDomain_ErrorsAreDistinguishable(t *testing.T) {
+	_, addr := startBatchCapturingChipServer(t)
+
+	enabled := newDomainTestClient(t, domainTestConfig(t, addr))
+	_, err := enabled.ForDomain(beholder.Domain("not-a-domain"))
+	require.ErrorIs(t, err, beholder.ErrUnknownDomain)
+	require.NotErrorIs(t, err, beholder.ErrDomainEmittersDisabled)
+
+	cfg := domainTestConfig(t, addr)
+	cfg.ChipIngressDomainEmittersEnabled = false
+	disabled := newDomainTestClient(t, cfg)
+	_, err = disabled.ForDomain(beholder.DomainDataFeeds)
+	require.ErrorIs(t, err, beholder.ErrDomainEmittersDisabled)
+	require.NotErrorIs(t, err, beholder.ErrUnknownDomain)
+}
+
+func TestNewGRPCClient_DomainEmittersRequireLogger(t *testing.T) {
+	cfg := domainTestConfig(t, "localhost:9999")
+	cfg.ChipIngressLogger = nil
+	cfg.ChipIngressBatchEmitterEnabled = false // the batch emitter's own logger check must not be what fails
+	_, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
+		return &mockLogExporter{}, nil
+	})
+	require.ErrorContains(t, err, "ChipIngressLogger is required when ChipIngressDomainEmittersEnabled is true")
+}
+
+func TestNewHTTPClient_RejectsDomainEmitters(t *testing.T) {
+	_, err := beholder.NewClient(beholder.Config{
+		OtelExporterHTTPEndpoint:         "localhost:4318",
+		ChipIngressDomainEmittersEnabled: true,
+	})
+	require.ErrorContains(t, err, "ChipIngressDomainEmittersEnabled is not supported by the HTTP client")
 }

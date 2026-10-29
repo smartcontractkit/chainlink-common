@@ -111,6 +111,10 @@ flowchart
         CentralTriggerQueueDrainInterval>CentralTriggerQueueDrainInterval]:::time
     end
 
+    subgraph standardcapabilities.Delegate.NewServices
+        CRONV2ActivePeriod[/CRONV2ActivePeriod\]:::gate
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -405,6 +409,9 @@ flowchart
 
 %% TODO placating test for now since this flowchart no longer renders
     DonTimeSequencedTimestampsActivePeriod 
+
+%%  standard capabilities job startup is likewise its own entry point
+    standardcapabilities.Delegate.NewServices
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

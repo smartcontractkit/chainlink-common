@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793225770813,
+  "lastUpdate": 1793285067784,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65400,6 +65400,66 @@ window.BENCHMARK_DATA = {
             "value": 138246,
             "unit": "ns/op",
             "extra": "8169 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "0354531cf32b0177e7a050ff217bdcd422e19aaa",
+          "message": "feat(settings): add shadow trigger and drain settings (#2509)\n\nAdd two settings for the central trigger queue (CRE-6071).\n\nFeatureShadowTriggerModeActivePeriod is a per-workflow time window that\ncan be overridden per org, owner or workflow. While an event's observed\ntime is inside the window, the trigger coordinator also copies it to the\ncentral trigger queue. A window makes every node switch at the same\nmoment, which a bool flag cannot guarantee. It is off by default.\n\nCentralTriggerQueueDrainInterval is the global drain interval for the\ncentral trigger queue. It defaults to 500ms, the expected OCR round\ninterval. The consumer enforces a 200ms minimum.\n\nRefs: CRE-6071",
+          "timestamp": "2026-10-29T14:34:14Z",
+          "tree_id": "75db37ac9ed8b615549687a79e53930df46434db",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/0354531cf32b0177e7a050ff217bdcd422e19aaa"
+        },
+        "date": 1793285064031,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 248.7,
+            "unit": "ns/op",
+            "extra": "4688587 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 34530,
+            "unit": "ns/op",
+            "extra": "34422 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 272.1,
+            "unit": "ns/op",
+            "extra": "4429419 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 35289,
+            "unit": "ns/op",
+            "extra": "34495 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 16911,
+            "unit": "ns/op",
+            "extra": "70752 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 59605,
+            "unit": "ns/op",
+            "extra": "19704 times\n4 procs"
           }
         ]
       }

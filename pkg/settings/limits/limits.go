@@ -65,7 +65,7 @@ func TryEvictTenant(v any, tenant string) error {
 var pollPeriod = 5 * time.Second // reduced for tests
 
 func maxVal[N Number]() (n N, err error) {
-	val := reflect.ValueOf(n)
+	val := reflect.ValueOf(&n).Elem()
 	switch val.Kind() {
 	case reflect.Float64:
 		val.SetFloat(math.MaxFloat64)

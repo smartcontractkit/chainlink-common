@@ -72,18 +72,22 @@ func TestApplyFault(t *testing.T) {
 	t.Run("no settings emits unchanged", func(t *testing.T) {
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, nil, "n1", "exec-1")))
 	})
+
 	t.Run("defaults are off", func(t *testing.T) {
 		g := faultSettings(t, "org-1", nil)
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
+
 	t.Run("drop skips the selected record", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "1"})
 		assert.Empty(t, emitUsageWithFault(t, g, "n1", "exec-1").calls)
 	})
+
 	t.Run("another org's settings do not apply", func(t *testing.T) {
 		g := faultSettings(t, "org-other", map[string]string{"BillingFaultDropRate": "1"})
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
+
 	t.Run("record without an org is never faulted", func(t *testing.T) {
 		emitter := &fakeEmitter{}
 		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter,
@@ -91,6 +95,7 @@ func TestApplyFault(t *testing.T) {
 		rm.EmitUsage(t.Context(), testIdentity, "exec-1", 100, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-1"})
 		assert.Len(t, emitter.calls, 1)
 	})
+
 	t.Run("drop and perturb run together on independent samples", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "0.5", "BillingFaultPerturbRate": "0.5", "BillingFaultPerturbDelta": "-7"})
 		// Vectors shared with the reconcilers; do not change without updating them.
@@ -105,6 +110,7 @@ func TestApplyFault(t *testing.T) {
 		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")), "in the perturb sample only")
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-9")), "in neither")
 	})
+
 	t.Run("perturb direction is per event and shared by every node", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7"})
 		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")))
@@ -112,10 +118,12 @@ func TestApplyFault(t *testing.T) {
 		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-2")))
 		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n2", "exec-2")))
 	})
+
 	t.Run("perturb uses the delta magnitude", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
 		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-2")))
 	})
+
 	t.Run("unreadable setting applies no fault and logs", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "1", "BillingFaultPerturbRate": "not-a-rate"})
 		emitter := &fakeEmitter{}
@@ -125,14 +133,17 @@ func TestApplyFault(t *testing.T) {
 		assert.Equal(t, "100", emittedValue(t, emitter), "drop rate 1 is ignored when a sibling setting fails to parse")
 		assert.Len(t, observed.FilterMessage("Billing fault settings unreadable; no fault applied").All(), 1)
 	})
+
 	t.Run("perturb needs a nonzero delta", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "0"})
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
+
 	t.Run("perturb clamps at zero", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "1000"})
 		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")))
 	})
+
 	t.Run("perturb leaves a zero value and logs nothing", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7"})
 		emitter := &fakeEmitter{}
@@ -142,6 +153,7 @@ func TestApplyFault(t *testing.T) {
 		assert.Equal(t, "0", emittedValue(t, emitter))
 		assert.Empty(t, observed.FilterMessage("Injected usage fault for billing reconciler canary").All())
 	})
+
 	t.Run("perturb honours the node rate", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7", "BillingFaultNodeRate": "0.5"})
 		var perturbed, untouched int
@@ -157,6 +169,7 @@ func TestApplyFault(t *testing.T) {
 		assert.Positive(t, untouched)
 		assert.Equal(t, 20, perturbed+untouched)
 	})
+
 	t.Run("durable deltas are never faulted", func(t *testing.T) {
 		emitter := &fakeEmitter{}
 		rm := NewResourceManager(logger.Test(t), ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter,

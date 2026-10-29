@@ -1,6 +1,7 @@
 package dontime
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -23,4 +24,20 @@ func TestStore_RequestExpiresWithoutPlugin(t *testing.T) {
 	}
 
 	require.Nil(t, store.GetRequest(executionID))
+}
+
+func (s *Store) GetDonTimes(executionID string) (map[int64]int64, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if times, ok := s.donTimes[executionID]; ok {
+		return times, nil
+	}
+	return map[int64]int64{}, fmt.Errorf("no don time for executionID %s", executionID)
+}
+
+func (s *Store) setDonTimes(executionID string, donTimes map[int64]int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.donTimes[executionID] = donTimes
 }

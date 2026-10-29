@@ -19,9 +19,9 @@ type Store struct {
 	requests       map[string]*Request // Maps workflow execution ID to request
 	requestTimeout time.Duration
 
-	// donTimes holds ordered sequence timestamps generated for consecutive workflow requests
-	// i.e. ExecutionID --> [timestamp-0, timestamp-1 , ...]
-	donTimes            map[string][]int64
+	// donTimes holds sequence timestamps generated for workflow requests
+	// executionID -> sequenceNumber -> timestamp
+	donTimes            map[string]map[int64]int64
 	lastObservedDonTime int64
 	mu                  sync.Mutex
 }
@@ -30,7 +30,7 @@ func NewStore(requestTimeout time.Duration) *Store {
 	return &Store{
 		requests:            make(map[string]*Request),
 		requestTimeout:      requestTimeout,
-		donTimes:            make(map[string][]int64),
+		donTimes:            make(map[string]map[int64]int64),
 		lastObservedDonTime: 0,
 		mu:                  sync.Mutex{},
 	}
@@ -124,30 +124,12 @@ func (s *Store) GetDonTimeForSeqNum(executionID string, seqNum int) *int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if times, ok := s.donTimes[executionID]; ok {
-		if len(times) > seqNum {
-			return &times[seqNum]
-		}
+		return new(times[int64(seqNum)])
 	}
 	return nil
 }
 
-func (s *Store) GetDonTimes(executionID string) ([]int64, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if times, ok := s.donTimes[executionID]; ok {
-		return times, nil
-	}
-	return []int64{}, fmt.Errorf("no don time for executionID %s", executionID)
-}
-
-func (s *Store) setDonTimes(executionID string, donTimes []int64) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.donTimes[executionID] = donTimes
-}
-
-func (s *Store) replaceDonTimes(donTimes map[string][]int64) {
+func (s *Store) replaceDonTimes(donTimes map[string]map[int64]int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

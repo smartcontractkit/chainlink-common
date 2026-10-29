@@ -17,14 +17,14 @@ func (fakeMeteringEmitter) Emit(context.Context, []byte, ...any) error { return 
 func TestEnvConfig_MeteringConfig(t *testing.T) {
 	t.Run("nil env yields zero config", func(t *testing.T) {
 		var e *EnvConfig
-		cfg := e.MeteringConfig(nil, nil)
+		cfg := e.MeteringConfig(nil)
 		assert.False(t, cfg.MeterRecordsEnabled)
 		assert.Nil(t, cfg.Emitter)
 	})
 
 	t.Run("nil emitter is a valid no-op", func(t *testing.T) {
 		e := &EnvConfig{MeterRecordsEnabled: true}
-		cfg := e.MeteringConfig(nil, nil)
+		cfg := e.MeteringConfig(nil)
 		assert.Nil(t, cfg.Emitter)
 	})
 
@@ -41,9 +41,7 @@ func TestEnvConfig_MeteringConfig(t *testing.T) {
 		}
 		emitter := fakeMeteringEmitter{}
 
-		getter := &AtomicSettings{}
-		cfg := e.MeteringConfig(emitter, getter)
-		assert.Same(t, getter, cfg.Settings)
+		cfg := e.MeteringConfig(emitter)
 		assert.True(t, cfg.MeterRecordsEnabled)
 		assert.True(t, cfg.MeterSnapshotsEnabled)
 		assert.Equal(t, resourcemanager.DefaultSnapshotInterval, cfg.SnapshotInterval)

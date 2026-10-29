@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"math"
 	"math/big"
 	"strings"
@@ -44,10 +45,14 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 	cre.Org = u.GetOrgId() // the billed org is the settings tenant
 	ctx = contexts.WithCRE(ctx, cre)
 	s := &cresettings.Default.PerOrg
-	dropRate, _ := s.BillingFaultDropRate.GetOrDefault(ctx, rm.settings)
-	perturbRate, _ := s.BillingFaultPerturbRate.GetOrDefault(ctx, rm.settings)
-	delta, _ := s.BillingFaultPerturbDelta.GetOrDefault(ctx, rm.settings)
-	nodeRate, _ := s.BillingFaultNodeRate.GetOrDefault(ctx, rm.settings)
+	dropRate, errDrop := s.BillingFaultDropRate.GetOrDefault(ctx, rm.settings)
+	perturbRate, errPerturb := s.BillingFaultPerturbRate.GetOrDefault(ctx, rm.settings)
+	delta, errDelta := s.BillingFaultPerturbDelta.GetOrDefault(ctx, rm.settings)
+	nodeRate, errNode := s.BillingFaultNodeRate.GetOrDefault(ctx, rm.settings)
+	if err := errors.Join(errDrop, errPerturb, errDelta, errNode); err != nil {
+		rm.lggr.Errorw("Billing fault settings unreadable; no fault applied", "orgID", u.GetOrgId(), "err", err)
+		return false
+	}
 
 	mode := ""
 	switch {

@@ -116,6 +116,15 @@ func TestApplyFault(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
 		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-2")))
 	})
+	t.Run("unreadable setting applies no fault and logs", func(t *testing.T) {
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultDropRate": "1", "BillingFaultPerturbRate": "not-a-rate"})
+		emitter := &fakeEmitter{}
+		lggr, observed := logger.TestObserved(t, zapcore.ErrorLevel)
+		rm := NewResourceManager(lggr, ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter, Settings: g})
+		rm.EmitUsage(t.Context(), testIdentity, "exec-1", 100, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-1", OrgID: "org-1"})
+		assert.Equal(t, "100", emittedValue(t, emitter), "drop rate 1 is ignored when a sibling setting fails to parse")
+		assert.Len(t, observed.FilterMessage("Billing fault settings unreadable; no fault applied").All(), 1)
+	})
 	t.Run("perturb needs a nonzero delta", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "0"})
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))

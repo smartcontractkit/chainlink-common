@@ -18,16 +18,18 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
-// ChipIngressBatchEmitterService batches events and sends them via chipingress.Client.PublishBatch.
-// It implements the Emitter interface.
+// ChipIngressBatchEmitterService batches events and sends them to chip ingress with
+// chipingress.Client.PublishBatch (or PublishBatchNoAck when built with batch.WithNoAck, as domain
+// emitters are). It implements the Emitter interface. A domain emitter also restricts events to
+// its Domain; see DomainEmitter.
 type ChipIngressBatchEmitterService struct {
 	services.Service
 	eng *services.Engine
 
 	batchClient *batch.Client
 	clientName  string
-	// domain, when set, restricts events to this Domain or its subdomains, so an event cannot
-	// ride another domain's route. Unset for the default emitter.
+	// domain, when set, restricts events to this Domain or its subdomains: a client-side guard so
+	// an event is not sent down another domain's route. Unset for the default emitter.
 	domain Domain
 	// errorLogs limits per-event failure logs to one per error code per errorLogInterval.
 	errorLogs *errorLogLimiter
@@ -189,11 +191,14 @@ func (e *ChipIngressBatchEmitterService) emitInternal(ctx context.Context, body 
 	return nil
 }
 
-// EmitEvent queues a fully built CloudEvent for batched delivery without blocking. Unlike
-// Emit, which builds the event from attributes, it keeps every extension the caller set.
+// EmitEvent queues a fully built CloudEvent for batched delivery without blocking. Unlike Emit,
+// which builds the event from attributes, it sends the event as given (see DomainEmitter.EmitEvent
+// for what that means, including the "seqnum" overwrite and not reusing the event afterwards).
 //
 // If EmitEvent returns a non-nil error, the callback will NOT be invoked.
-// If it returns nil, a non-nil callback is guaranteed to fire exactly once.
+// If it returns nil, a non-nil callback is guaranteed to fire exactly once: synchronously before
+// EmitEvent returns if the event cannot be queued, otherwise after the batch is sent (possibly
+// after Close returns).
 func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event chipingress.CloudEvent, callback func(error)) error {
 	var queueErr error
 	if err := e.eng.IfStarted(func() error {
@@ -222,7 +227,8 @@ func (e *ChipIngressBatchEmitterService) EmitEvent(ctx context.Context, event ch
 }
 
 // checkDomain rejects a source outside e.domain: it must be the domain itself or a subdomain of
-// it (e.g. "data-feeds" or "data-feeds.telemetry.ocr2-median" for DomainDataFeeds).
+// it (e.g. "data-feeds" or "data-feeds.telemetry.ocr2-median" for DomainDataFeeds). It is a
+// client-side guard against misrouting, not server-side enforcement.
 func (e *ChipIngressBatchEmitterService) checkDomain(source string) error {
 	if e.domain == "" || source == string(e.domain) || strings.HasPrefix(source, string(e.domain)+".") {
 		return nil

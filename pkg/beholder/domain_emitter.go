@@ -37,24 +37,36 @@ var (
 )
 
 // DomainHeaderKey is the gRPC metadata key carrying a domain emitter's Domain. Load balancers route
-// on it to the chip ingress deployment that serves the domain; chip ingress itself ignores it.
+// on it to the chip ingress deployment that serves the domain; chip ingress currently ignores it.
+// It is not authenticated (the CSA token does not cover it), so it selects a route, not a right.
 const DomainHeaderKey = "chainlink-domain"
 
 // DomainEmitter sends one domain's events to chip ingress only, with PublishBatchNoAck, on its own
-// connection and buffer. Obtain one with Client.ForDomain.
+// connection and buffer. Obtain one with Client.ForDomain. The Client starts and closes it, and
+// releases its connection only if the Client was started: call Start before Close.
 //
 // Both methods reject an event whose source (the CloudEvent source, or the beholder_domain
 // attribute for Emit) is not the emitter's Domain or a subdomain of it. The match is
 // case-sensitive and a subdomain must follow a "." separator: for DomainDataFeeds,
 // "data-feeds" and "data-feeds.telemetry.ocr2-median" are accepted; "ccip.telemetry.ocr3",
-// "data-feeds-extra" and "Data-Feeds" are not.
+// "data-feeds-extra" and "Data-Feeds" are not. This is a client-side guard against sending an
+// event down another domain's route, not server-side enforcement.
+//
+// An event's source and type become metric attributes (and per-pair counters), so keep both
+// low-cardinality: never put job, feed, or contract IDs in them.
+//
+// Callbacks: if a method returns a non-nil error the callback is not invoked; otherwise a non-nil
+// callback fires exactly once with the event's fate. It may fire synchronously, before the method
+// returns, when the event cannot be queued (e.g. the buffer is full), and it may fire after the
+// Client's Close returns. Publishing is no-ack: a nil error means chip ingress validated the event
+// and handed it to its producer, not that it was persisted.
 type DomainEmitter interface {
-	// Emitter builds the event from attributes, like the Client's Emitter. Close is a no-op: the
-	// Client starts and closes its domain emitters.
+	// Emitter builds the event from attributes, like the Client's Emitter. Close is a no-op.
 	Emitter
-	// EmitEvent queues a fully built CloudEvent, keeping every extension the caller set. If it
-	// returns a non-nil error the callback is not invoked; otherwise a non-nil callback fires
-	// exactly once with the event's fate.
+	// EmitEvent queues a fully built CloudEvent as given: it keeps every extension the caller set
+	// except "seqnum", which the batch client overwrites. Unlike Emit it stamps nothing (no id,
+	// time or "recordedtime"), so set what the receiver needs. Do not modify the event or its data
+	// after EmitEvent returns nil: the queued event shares them.
 	EmitEvent(ctx context.Context, event chipingress.CloudEvent, callback func(error)) error
 }
 

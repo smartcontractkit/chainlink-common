@@ -556,6 +556,7 @@ func TestMaxVal(t *testing.T) {
 	t.Run("uint16", func(t *testing.T) { requireMaxVal(t, uint16(math.MaxUint16)) })
 	t.Run("uint32", func(t *testing.T) { requireMaxVal(t, uint32(math.MaxUint32)) })
 	t.Run("uint64", func(t *testing.T) { requireMaxVal(t, uint64(math.MaxUint64)) })
+	t.Run("uintptr", func(t *testing.T) { requireMaxVal(t, ^uintptr(0)) })
 	t.Run("float32", func(t *testing.T) { requireMaxVal(t, float32(math.MaxFloat32)) })
 	t.Run("float64", func(t *testing.T) { requireMaxVal(t, float64(math.MaxFloat64)) })
 	t.Run("time.Duration", func(t *testing.T) { requireMaxVal(t, time.Duration(math.MaxInt64)) })

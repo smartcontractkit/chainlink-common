@@ -91,6 +91,8 @@ func maxVal[N Number]() (n N, err error) {
 		val.SetUint(math.MaxUint8)
 	case reflect.Uint:
 		val.SetUint(math.MaxUint)
+	case reflect.Uintptr:
+		val.SetUint(uint64(^uintptr(0)))
 	default:
 		return 0, fmt.Errorf("unsupported kind %s for type %T", val.Kind(), n)
 	}

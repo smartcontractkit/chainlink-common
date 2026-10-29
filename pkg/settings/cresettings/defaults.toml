@@ -99,6 +99,10 @@ HeaderName = 'Sticky-Session-A'
 BaseTriggerRetransmitEnabled = 'false'
 WorkflowExecutionConcurrencyLimit = '100'
 ZeroBalancePruningTimeout = '24h0m0s'
+BillingFaultDropRate = '0'
+BillingFaultPerturbRate = '0'
+BillingFaultPerturbDelta = '0'
+BillingFaultNodeRate = '1'
 
 [PerOrg.HTTPAction]
 MtlsRateLimit = 'every30s:3'

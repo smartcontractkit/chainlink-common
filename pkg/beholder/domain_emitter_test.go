@@ -100,7 +100,7 @@ func domainTestConfig(t *testing.T, chipAddr string) beholder.Config {
 		ResourceAttributes: []attribute.KeyValue{
 			attribute.String("csa_public_key", "abc123"),
 		},
-		ChipIngressDomainEmittersEnabled: true,
+		ChipDomainEmittersEnabled: true,
 	}
 }
 
@@ -375,7 +375,7 @@ func TestForDomain_RejectsEventsFromOtherDomains(t *testing.T) {
 }
 
 func TestNewGRPCClient_DomainEmittersRequireChipIngress(t *testing.T) {
-	cfg := beholder.Config{OtelExporterGRPCEndpoint: "localhost:4317", ChipIngressDomainEmittersEnabled: true}
+	cfg := beholder.Config{OtelExporterGRPCEndpoint: "localhost:4317", ChipDomainEmittersEnabled: true}
 	_, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return &mockLogExporter{}, nil
 	})
@@ -385,7 +385,7 @@ func TestNewGRPCClient_DomainEmittersRequireChipIngress(t *testing.T) {
 func TestForDomain_DisabledByDefault(t *testing.T) {
 	_, addr := startBatchCapturingChipServer(t)
 	cfg := domainTestConfig(t, addr)
-	cfg.ChipIngressDomainEmittersEnabled = false
+	cfg.ChipDomainEmittersEnabled = false
 	client := newDomainTestClient(t, cfg)
 
 	_, err := client.ForDomain(beholder.DomainDataFeeds)
@@ -406,7 +406,7 @@ func TestForDomain_ErrorsAreDistinguishable(t *testing.T) {
 	require.NotErrorIs(t, err, beholder.ErrDomainEmittersDisabled)
 
 	cfg := domainTestConfig(t, addr)
-	cfg.ChipIngressDomainEmittersEnabled = false
+	cfg.ChipDomainEmittersEnabled = false
 	disabled := newDomainTestClient(t, cfg)
 	_, err = disabled.ForDomain(beholder.DomainDataFeeds)
 	require.ErrorIs(t, err, beholder.ErrDomainEmittersDisabled)
@@ -420,13 +420,13 @@ func TestNewGRPCClient_DomainEmittersRequireLogger(t *testing.T) {
 	_, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
 		return &mockLogExporter{}, nil
 	})
-	require.ErrorContains(t, err, "ChipIngressLogger is required when ChipIngressDomainEmittersEnabled is true")
+	require.ErrorContains(t, err, "ChipIngressLogger is required when ChipDomainEmittersEnabled is true")
 }
 
 func TestNewHTTPClient_RejectsDomainEmitters(t *testing.T) {
 	_, err := beholder.NewClient(beholder.Config{
-		OtelExporterHTTPEndpoint:         "localhost:4318",
-		ChipIngressDomainEmittersEnabled: true,
+		OtelExporterHTTPEndpoint:  "localhost:4318",
+		ChipDomainEmittersEnabled: true,
 	})
-	require.ErrorContains(t, err, "ChipIngressDomainEmittersEnabled is not supported by the HTTP client")
+	require.ErrorContains(t, err, "ChipDomainEmittersEnabled is not supported by the HTTP client")
 }

@@ -22,7 +22,7 @@ const (
 	DomainCCIP        Domain = "ccip"
 )
 
-// allDomains lists every Domain; Config.ChipIngressDomainEmittersEnabled builds an emitter for
+// allDomains lists every Domain; Config.ChipDomainEmittersEnabled builds an emitter for
 // each. A func, not a var, so the list cannot be modified.
 func allDomains() []Domain {
 	return []Domain{DomainDataFeeds, DomainDataStreams, DomainCCIP}
@@ -30,7 +30,7 @@ func allDomains() []Domain {
 
 var (
 	// ErrDomainEmittersDisabled is returned by ForDomain when the Client has no domain emitters:
-	// Config.ChipIngressDomainEmittersEnabled is off, or the Client is a noop or HTTP client.
+	// Config.ChipDomainEmittersEnabled is off, or the Client is a noop or HTTP client.
 	ErrDomainEmittersDisabled = errors.New("beholder: chip ingress domain emitters are disabled")
 	// ErrUnknownDomain is returned by ForDomain for a Domain the Client has no emitter for.
 	ErrUnknownDomain = errors.New("beholder: unknown chip ingress domain")

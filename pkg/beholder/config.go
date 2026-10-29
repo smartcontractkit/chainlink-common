@@ -79,7 +79,7 @@ type Config struct {
 	ChipIngressMaxGRPCRequestSize  int           // Max serialized PublishBatch request size in bytes (default 10 MiB)
 	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
-	// ChipIngressDomainEmittersEnabled builds one chip ingress emitter per Domain, retrieved with
+	// ChipDomainEmittersEnabled builds one chip ingress emitter per Domain, retrieved with
 	// Client.ForDomain. Each has its own connection and buffer (sized by the batch settings
 	// above), sends the DomainHeaderKey routing header, sends to chip ingress only, and publishes
 	// with PublishBatchNoAck. Requires chip ingress. Off by default.
@@ -87,7 +87,7 @@ type Config struct {
 	// Domain emitters are always batch emitters, whatever ChipIngressBatchEmitterEnabled says.
 	// Per-node cost: one ChipIngressBufferSize buffer per Domain; a connection only for domains
 	// actually used (gRPC dials lazily).
-	ChipIngressDomainEmittersEnabled bool
+	ChipDomainEmittersEnabled bool
 
 	// OTel Log
 	LogExportTimeout      time.Duration

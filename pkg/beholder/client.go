@@ -51,7 +51,7 @@ type Client struct {
 	// Chip
 	Chip chipingress.Client
 
-	// domainEmitters are built when Config.ChipIngressDomainEmittersEnabled is set and retrieved with ForDomain.
+	// domainEmitters are built when Config.ChipDomainEmittersEnabled is set and retrieved with ForDomain.
 	domainEmitters map[Domain]*domainEmitter
 
 	// Providers
@@ -226,12 +226,12 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		lggr = pkglogger.Nop()
 	}
 	chipIngressEnabled := cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != ""
-	if cfg.ChipIngressDomainEmittersEnabled && !chipIngressEnabled {
-		return nil, errors.New("ChipIngressDomainEmittersEnabled requires chip ingress (ChipIngressEmitterGRPCEndpoint)")
+	if cfg.ChipDomainEmittersEnabled && !chipIngressEnabled {
+		return nil, errors.New("ChipDomainEmittersEnabled requires chip ingress (ChipIngressEmitterGRPCEndpoint)")
 	}
 	// Domain emitters are always batch emitters; like the batch emitter, they need a real logger.
-	if cfg.ChipIngressDomainEmittersEnabled && cfg.ChipIngressLogger == nil {
-		return nil, errors.New("ChipIngressLogger is required when ChipIngressDomainEmittersEnabled is true")
+	if cfg.ChipDomainEmittersEnabled && cfg.ChipIngressLogger == nil {
+		return nil, errors.New("ChipIngressLogger is required when ChipDomainEmittersEnabled is true")
 	}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress
@@ -263,7 +263,7 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		opts = append(opts, chipingress.WithTracerProvider(tracerProvider))
 
 		// Domain emitters share everything above and set their own header provider.
-		if cfg.ChipIngressDomainEmittersEnabled {
+		if cfg.ChipDomainEmittersEnabled {
 			domainEmitters, err = newDomainEmitters(cfg, opts, resourceAttrs, lggr)
 			if err != nil {
 				return nil, err

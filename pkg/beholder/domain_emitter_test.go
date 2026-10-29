@@ -155,6 +155,8 @@ func TestForDomain_EmitEventSendsNoAckWithDomainHeader(t *testing.T) {
 		assert.Equal(t, []string{val}, call.md.Get(key), "inherits resource attribute header %q", key)
 	}
 	assert.Equal(t, []string{"true"}, call.md.Get("x-include-nop-info"), "domain emitters request NOP info")
+	require.Len(t, call.md.Get("user-agent"), 1)
+	assert.Contains(t, call.md.Get("user-agent")[0], "beholder_data-feeds", "per-domain client name")
 
 	require.Len(t, call.events, 1)
 	attrs := call.events[0].Attributes
@@ -285,10 +287,45 @@ func TestForDomain_EmitEventRejectsInvalidEvent(t *testing.T) {
 	em, err := client.ForDomain(beholder.DomainDataFeeds)
 	require.NoError(t, err)
 
+	// In-domain source, so only CloudEvent validation (a missing id) can reject it.
+	ev := legacyStyleEvent(t, "data-feeds.telemetry.invalid")
+	ev.SetID("")
+
 	called := false
-	err = em.EmitEvent(t.Context(), chipingress.CloudEvent{}, func(error) { called = true })
-	require.Error(t, err, "an event without id/source/type is rejected up front")
+	err = em.EmitEvent(t.Context(), ev, func(error) { called = true })
+	require.ErrorContains(t, err, "invalid CloudEvent")
 	assert.False(t, called, "no callback when EmitEvent returns an error")
+}
+
+func TestForDomain_EmitEventRejectsCancelledContext(t *testing.T) {
+	_, addr := startBatchCapturingChipServer(t)
+	client := newDomainTestClient(t, domainTestConfig(t, addr))
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	called := false
+	err = em.EmitEvent(ctx, legacyStyleEvent(t, "data-feeds.telemetry.cancelled"), func(error) { called = true })
+	require.ErrorIs(t, err, context.Canceled)
+	assert.False(t, called, "no callback when EmitEvent returns an error")
+}
+
+// Domain emitters are always batch emitters, whatever ChipIngressBatchEmitterEnabled says.
+func TestForDomain_WorksWithBatchEmitterDisabled(t *testing.T) {
+	capture, addr := startBatchCapturingChipServer(t)
+	cfg := domainTestConfig(t, addr)
+	cfg.ChipIngressBatchEmitterEnabled = false
+	client := newDomainTestClient(t, cfg)
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+	require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, "data-feeds.telemetry.unbatched"), nil))
+
+	require.Eventually(t, func() bool { return len(capture.callsWithEventSource("data-feeds.telemetry.unbatched")) == 1 },
+		5*time.Second, 10*time.Millisecond)
+	assert.Equal(t, "PublishBatchNoAck", capture.callsWithEventSource("data-feeds.telemetry.unbatched")[0].method)
 }
 
 func TestForDomain_RejectsEventsFromOtherDomains(t *testing.T) {

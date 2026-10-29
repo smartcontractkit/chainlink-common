@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -263,8 +264,54 @@ func TestDomainEmitter_OutageLogsAreRateLimited(t *testing.T) {
 	}
 	pending.Wait()
 
-	assert.Equal(t, 1, logs.FilterMessage("failed to emit to chip ingress").Len(),
-		"every event failed, but only the first failure per error code is logged")
+	emitLogs := logs.FilterMessage("failed to emit to chip ingress")
+	if assert.Equal(t, 1, emitLogs.Len(),
+		"every event failed, but only the first failure per error code is logged") {
+		assert.Contains(t, emitLogs.All()[0].ContextMap()["domain"], "data-feeds.telemetry.outage-",
+			"the log carries the event's source")
+	}
+}
+
+func TestDomainEmitter_BufferFullLogsAreRateLimited(t *testing.T) {
+	lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
+	cfg := domainTestConfig(t, startChipServer(t, &hungChipServer{}))
+	cfg.ChipIngressLogger = lggr
+	cfg.ChipIngressBufferSize = 1
+	cfg.ChipIngressMaxBatchSize = 1
+	cfg.ChipIngressMaxConcurrentSends = 1
+	cfg.ChipIngressSendTimeout = 30 * time.Second
+	cfg.ChipIngressDrainTimeout = 200 * time.Millisecond
+	client := newStartedDomainClient(t, cfg)
+
+	em, err := client.ForDomain(beholder.DomainDataFeeds)
+	require.NoError(t, err)
+
+	var (
+		pending sync.WaitGroup
+		drops   atomic.Int64
+	)
+	for i := 0; i < 200 && drops.Load() < 3; i++ {
+		pending.Add(1)
+		require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, fmt.Sprintf("data-feeds.telemetry.fulllog-%d", i)), func(err error) {
+			defer pending.Done()
+			if errors.Is(err, batch.ErrMessageBufferFull) {
+				drops.Add(1)
+			}
+		}))
+		time.Sleep(5 * time.Millisecond)
+	}
+	require.GreaterOrEqual(t, drops.Load(), int64(3), "several events are dropped with ErrMessageBufferFull")
+	assert.Equal(t, 1, logs.FilterMessage("failed to queue message for chip ingress").Len(),
+		"only the first buffer-full drop per interval is logged")
+
+	requireNoDomainEmitterCloseErrors(t, client.Close())
+	waited := make(chan struct{})
+	go func() { pending.Wait(); close(waited) }()
+	select {
+	case <-waited:
+	case <-time.After(closeBound):
+		t.Fatal("not every accepted event's callback fired")
+	}
 }
 
 func TestDomainEmitter_ConcurrentEmitAndClose(t *testing.T) {
@@ -274,18 +321,30 @@ func TestDomainEmitter_ConcurrentEmitAndClose(t *testing.T) {
 	em, err := client.ForDomain(beholder.DomainDataFeeds)
 	require.NoError(t, err)
 
-	var wg sync.WaitGroup
+	var (
+		wg       sync.WaitGroup
+		accepted atomic.Int64
+	)
 	for g := range 8 {
 		wg.Go(func() {
 			for i := range 200 {
+				// Built without require: FailNow must not be called off the test goroutine.
+				ev, err := chipingress.NewEvent(fmt.Sprintf("data-feeds.telemetry.race-%d-%d", g, i), "pb.TelemetryWrapper", []byte("payload"), nil)
+				if err != nil {
+					continue
+				}
 				// Errors are expected once Close has stopped the emitter.
-				_ = em.EmitEvent(context.Background(), legacyStyleEvent(t, fmt.Sprintf("data-feeds.telemetry.race-%d-%d", g, i)), nil)
+				if em.EmitEvent(context.Background(), ev, nil) == nil {
+					accepted.Add(1)
+				}
 			}
 		})
 	}
-	time.Sleep(20 * time.Millisecond)
+	// Close only once emits are flowing, so the two genuinely overlap.
+	require.Eventually(t, func() bool { return accepted.Load() > 0 }, 5*time.Second, time.Millisecond)
 	requireNoDomainEmitterCloseErrors(t, client.Close())
 	wg.Wait()
+	assert.Positive(t, accepted.Load())
 }
 
 func TestDomainEmitter_EmitAttributePath(t *testing.T) {

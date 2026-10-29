@@ -98,6 +98,7 @@ var Default = Schema{
 	DispatcherGlobalRate:                             Rate(rate.Limit(5000), 5000),
 	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
 	CentralTriggerEventQueueLimit:                    Int(1000),
+	CentralTriggerQueueDrainInterval:                 Duration(500 * time.Millisecond),
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -371,6 +372,9 @@ var Default = Schema{
 		FeatureConsensusIncludeAllTimestampsActivePeriod: TimeRange(
 			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
 			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureShadowTriggerModeActivePeriod: TimeRange(
+			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
 	},
 }
 
@@ -464,7 +468,10 @@ type Schema struct {
 	// CentralTriggerEventQueueLimit is the node-wide cap on trigger events buffered in the
 	// central trigger queue, across all workflows and orgs. It is re-read on every Put; when
 	// the queue is full, new events are dropped (and counted) rather than blocking.
-	CentralTriggerEventQueueLimit          Setting[int] `unit:"{trigger}"`
+	CentralTriggerEventQueueLimit Setting[int] `unit:"{trigger}"`
+	// CentralTriggerQueueDrainInterval is how often the central trigger queue is drained. The default
+	// matches the expected OCR round interval. The drainer raises values below 200ms to 200ms.
+	CentralTriggerQueueDrainInterval       Setting[time.Duration]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
@@ -587,6 +594,10 @@ type Workflows struct {
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
+	// FeatureShadowTriggerModeActivePeriod is the window in which coordinated trigger events are also
+	// copied to the central trigger queue. Each event is checked against the time it was observed, so
+	// every node switches at the same moment.
+	FeatureShadowTriggerModeActivePeriod Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

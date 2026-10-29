@@ -18,7 +18,6 @@ import (
 const (
 	faultDrop    = "drop"
 	faultPerturb = "perturb"
-	faultSign    = "sign" // sample key prefix choosing the perturb direction
 )
 
 // sampled reports whether key falls in the deterministic sample for rate:
@@ -80,7 +79,7 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 		return false
 	}
 	d := new(big.Int).Abs(big.NewInt(delta))
-	if sampled(0.5, faultSign+"|"+eventID) { // half the events under-report, half over-report
+	if sampled(0.5, "sign|"+eventID) { // half the events under-report, half over-report
 		d.Neg(d)
 	}
 	v.Add(v, d)

@@ -99,34 +99,42 @@ func TestApplyFault(t *testing.T) {
 		require.True(t, sampled(0.5, "perturb|exec-17"))
 		require.False(t, sampled(0.5, "drop|exec-9"))
 		require.False(t, sampled(0.5, "perturb|exec-9"))
+		require.True(t, sampled(0.5, "sign|exec-17"), "subtracts")
+		require.False(t, sampled(0.5, "sign|exec-2"), "adds")
 		assert.Empty(t, emitUsageWithFault(t, g, "n1", "exec-1").calls, "in the drop sample")
 		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")), "in the perturb sample only")
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-9")), "in neither")
 	})
-	t.Run("perturb subtracts delta on every node by default", func(t *testing.T) {
-		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
-		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n2", "exec-1")))
-	})
-	t.Run("perturb needs a negative delta", func(t *testing.T) {
+	t.Run("perturb direction is per event and shared by every node", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7"})
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")))
+		assert.Equal(t, "93", emittedValue(t, emitUsageWithFault(t, g, "n2", "exec-17")))
+		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-2")))
+		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n2", "exec-2")))
+	})
+	t.Run("perturb uses the delta magnitude", func(t *testing.T) {
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
+		assert.Equal(t, "107", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-2")))
+	})
+	t.Run("perturb needs a nonzero delta", func(t *testing.T) {
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "0"})
 		assert.Equal(t, "100", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
 	})
 	t.Run("perturb clamps at zero", func(t *testing.T) {
-		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-1000"})
-		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-1")))
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "1000"})
+		assert.Equal(t, "0", emittedValue(t, emitUsageWithFault(t, g, "n1", "exec-17")))
 	})
 	t.Run("perturb leaves a zero value and logs nothing", func(t *testing.T) {
-		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7"})
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7"})
 		emitter := &fakeEmitter{}
 		lggr, observed := logger.TestObserved(t, zapcore.WarnLevel)
 		rm := NewResourceManager(lggr, ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter, Settings: g})
-		rm.EmitUsage(t.Context(), testIdentity, "exec-1", 0, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-1", OrgID: "org-1"})
+		rm.EmitUsage(t.Context(), testIdentity, "exec-17", 0, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-17", OrgID: "org-1"})
 		assert.Equal(t, "0", emittedValue(t, emitter))
 		assert.Empty(t, observed.FilterMessage("Injected usage fault").All())
 	})
 	t.Run("perturb honours the node rate", func(t *testing.T) {
-		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "-7", "BillingFaultNodeRate": "0.5"})
+		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7", "BillingFaultNodeRate": "0.5"})
 		var perturbed, untouched int
 		for i := 0; i < 20; i++ {
 			switch emittedValue(t, emitUsageWithFault(t, g, fmt.Sprintf("node-%d", i), "exec-1")) {

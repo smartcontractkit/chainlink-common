@@ -520,7 +520,7 @@ type Orgs struct {
 	BillingFaultDropRate Setting[float64]
 	// BillingFaultPerturbRate selects records to perturb; drop wins when both select.
 	BillingFaultPerturbRate Setting[float64]
-	// BillingFaultPerturbDelta is added to a perturbed value; negative only, clamped at 0.
+	// BillingFaultPerturbDelta is the perturb magnitude; each event deterministically adds or subtracts it, clamped at 0.
 	BillingFaultPerturbDelta Setting[int64]
 	// BillingFaultNodeRate is the fraction of nodes that apply a perturb.
 	BillingFaultNodeRate Setting[float64]

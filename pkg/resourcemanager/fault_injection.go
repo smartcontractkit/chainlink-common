@@ -18,6 +18,7 @@ import (
 const (
 	faultDrop    = "drop"
 	faultPerturb = "perturb"
+	faultSign    = "sign" // sample key prefix choosing the perturb direction
 )
 
 // sampled reports whether key falls in the deterministic sample for rate:
@@ -53,7 +54,7 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 	switch {
 	case sampled(dropRate, faultDrop+"|"+eventID):
 		mode = faultDrop // every node drops, so the record never reaches billing
-	case delta < 0 && sampled(perturbRate, faultPerturb+"|"+eventID) && sampled(nodeRate, identity.NodeID()+"|"+eventID):
+	case delta != 0 && sampled(perturbRate, faultPerturb+"|"+eventID) && sampled(nodeRate, identity.NodeID()+"|"+eventID):
 		mode = faultPerturb // a sample of nodes perturbs, so nodes disagree
 	default:
 		return false
@@ -78,7 +79,11 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 	if !ok {
 		return false
 	}
-	v.Add(v, big.NewInt(delta))
+	d := new(big.Int).Abs(big.NewInt(delta))
+	if sampled(0.5, faultSign+"|"+eventID) { // half the events under-report, half over-report
+		d.Neg(d)
+	}
+	v.Add(v, d)
 	if v.Sign() < 0 {
 		v.SetInt64(0)
 	}

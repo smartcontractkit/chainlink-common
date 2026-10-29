@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793285067784,
+  "lastUpdate": 1793293811653,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65460,6 +65460,66 @@ window.BENCHMARK_DATA = {
             "value": 59605,
             "unit": "ns/op",
             "extra": "19704 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "b615a8de42d9f8ed0cbd5a6a5a1bc09ef2d0b763",
+          "message": "Fault injection for billing reconciler recall (#2479)\n\n* resourcemanager: deterministic usage fault injection for reconciler recall (CRE-6809)\n\nAdds UsageFaultInjection (drop or perturb a deterministic sample of usage\nrecords keyed on event id) to ResourceManagerConfig, applied in the usage emit\npath and logged as \"Injected usage fault\". LOOP EnvConfig carries the settings\nas CL_METER_FAULT_* and MeteringConfig maps them, so capability producers get\nthe fault with no code change. Test environments only; zero value is off.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: drop the fault injection salt\n\nThe reconcilers recompute the sample from the rate alone, so the salt\nonly added a value that had to match on every node of a DON. The\nsampler now hashes the event id directly, and the node sample hashes\nnode id and event id.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: explain the sampler hash steps\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: allowlist canary orgs and only perturb downward\n\nThe injector is meant to run in production against our own canary\nworkflows, so it must never touch a real customer's records or raise\na value. Mode now requires an org allowlist, only records of those\norgs are dropped or perturbed, Delta must be negative, and a perturbed\nvalue is clamped at zero. CL_METER_FAULT_ORGS carries the list to LOOP\nplugins.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: run the drop and perturb samples together\n\nBoth billing reconcilers need faults at the same time, so a single\nMode/Rate pair becomes DropRate and PerturbRate: two deterministic\nsamples keyed apart on the event id, drop winning when both select.\nCL_METER_FAULT_MODE/RATE become CL_METER_FAULT_DROP_RATE/PERTURB_RATE.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: reject NaN fault injection rates\n\nNaN compares false against every bound, so it passed Validate and\nsilently disabled the sample. All three rates now test for it.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: drive usage fault injection from per-org CRE settings\n\nReplace the UsageFaultInjection config struct, its LOOP env transport\nand the org allowlist with four org-scoped settings:\nPerOrg.BillingFaultDropRate, BillingFaultPerturbRate,\nBillingFaultPerturbDelta and BillingFaultNodeRate. An org without an\noverride gets the defaults, which are off, so only orgs that opt in\nthrough the settings repo are ever faulted. The resource manager reads\nthem through an optional settings.Getter; LOOP producers get\ncresettings.DefaultGetter via MeteringConfig.\n\nThe sampler is now the first 8 bytes of sha256(key) over 2^64 and the\nselection helpers are inlined and private.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: sample usage faults in basis points like the DropDecider\n\nThe sampler now compares the first 8 bytes of sha256(key) mod 10000\nwith the rate in basis points, the arithmetic the workflow-worker's\nDropDecider already uses, so one offline helper recomputes both\ninjectors' samples. Vectors re-pinned.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: use the host's settings getter for faults; skip no-op perturbs\n\nServer.MeteringConfig passes its resolved settings getter, so runtime\nsettings updates reach the usage fault injector instead of the startup\nsnapshot. A perturb that leaves the value unchanged (a zero clamps to\nitself) is no longer logged, since nothing is detectable.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* Perturb in both directions\n\nBillingFaultPerturbDelta is now a magnitude; a deterministic per-event\nsample keyed sign|<eventID> picks subtract or add, so every perturbing\nnode moves the same way and both under- and over-report are exercised.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: inline the perturb sign key prefix\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: log injected faults at info as billing reconciler canary\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: apply no fault when a billing fault setting cannot be read\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* resourcemanager: blank line between fault injection subtests\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n* loop: keep EnvConfig.MeteringConfig signature; Server attaches its settings getter\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Fable 5.1 <noreply@anthropic.com>",
+          "timestamp": "2026-10-29T17:00:57Z",
+          "tree_id": "241cc4355a6f55a8ae27a44513e0664c05fab11b",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/b615a8de42d9f8ed0cbd5a6a5a1bc09ef2d0b763"
+        },
+        "date": 1793293806601,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 350.9,
+            "unit": "ns/op",
+            "extra": "3394239 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91973,
+            "unit": "ns/op",
+            "extra": "13063 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 403.4,
+            "unit": "ns/op",
+            "extra": "2956773 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92570,
+            "unit": "ns/op",
+            "extra": "12950 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 26298,
+            "unit": "ns/op",
+            "extra": "46503 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 136751,
+            "unit": "ns/op",
+            "extra": "8258 times\n4 procs"
           }
         ]
       }

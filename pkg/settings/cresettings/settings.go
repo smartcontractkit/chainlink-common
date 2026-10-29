@@ -163,6 +163,10 @@ var Default = Schema{
 	// MissingRequestRecoveryEnabled
 	MissingRequestRecoveryEnabled: Bool(false),
 
+	FeatureCRONV2ActivePeriod: TimeRange(
+		time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
@@ -500,6 +504,8 @@ type Schema struct {
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
 	MissingRequestRecoveryEnabled Setting[bool]
+
+	FeatureCRONV2ActivePeriod Setting[Range[config.Timestamp]]
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute

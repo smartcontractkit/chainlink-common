@@ -95,6 +95,10 @@ flowchart
         CentralTriggerEventQueueLimit{{CentralTriggerEventQueueLimit}}:::bound
     end
 
+    subgraph standardcapabilities.Delegate.NewServices
+        FeatureCRONV2ActivePeriod[/FeatureCRONV2ActivePeriod\]:::gate
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -381,6 +385,9 @@ flowchart
 
 %%  the trigger coordinator's reader is likewise its own entry point
     CentralTriggerQueue.Put
+
+%%  standard capabilities job startup is likewise its own entry point
+    standardcapabilities.Delegate.NewServices
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

@@ -37,6 +37,7 @@
 	"DispatcherGlobalRate": "5000rps:5000",
 	"DispatcherPerSenderRate": "500rps:1000",
 	"CentralTriggerEventQueueLimit": "1000",
+	"CentralTriggerQueueDrainInterval": "500ms",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",
@@ -98,6 +99,10 @@
 		"BaseTriggerRetransmitEnabled": "false",
 		"WorkflowExecutionConcurrencyLimit": "100",
 		"ZeroBalancePruningTimeout": "24h0m0s",
+		"BillingFaultDropRate": "0",
+		"BillingFaultPerturbRate": "0",
+		"BillingFaultPerturbDelta": "0",
+		"BillingFaultNodeRate": "1",
 		"HTTPAction": {
 			"MtlsRateLimit": "every30s:3"
 		}
@@ -237,6 +242,7 @@
 		"FeatureRequestHashIncludeWorkflowTagActivePeriod": "[0001-01-01 00:00:00 +0000 UTC,2100-01-01 00:00:00 +0000 UTC]",
 		"FeatureWorkflowTagBackfillActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureConsensusStricterMedianQuorumActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
-		"FeatureConsensusIncludeAllTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
+		"FeatureConsensusIncludeAllTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureShadowTriggerModeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

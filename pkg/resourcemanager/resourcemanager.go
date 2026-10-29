@@ -67,6 +67,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 	meteringpb "github.com/smartcontractkit/chainlink-protos/metering/go"
 )
 
@@ -134,6 +135,10 @@ type ResourceManagerConfig struct {
 	// substituted for zero — zero means off.
 	SnapshotInterval time.Duration
 
+	// Settings supplies the per-org usage fault injection rates
+	// (cresettings PerOrg.BillingFault*). Nil disables injection.
+	Settings settings.Getter
+
 	// Clock drives snapshot tick timing and record timestamps. Nil selects the
 	// real clock.
 	Clock clockwork.Clock
@@ -159,6 +164,7 @@ type ResourceManager struct {
 	emitter               Emitter
 	snapshotInterval      time.Duration
 	clock                 clockwork.Clock
+	settings              settings.Getter
 
 	mu            sync.RWMutex
 	registrations map[*registration]struct{}
@@ -207,6 +213,7 @@ func NewResourceManager(lggr logger.Logger, cfg ResourceManagerConfig) *Resource
 		emitter:               cfg.Emitter,
 		snapshotInterval:      cfg.SnapshotInterval,
 		clock:                 clock,
+		settings:              cfg.Settings,
 		registrations:         make(map[*registration]struct{}),
 		emitSuccess:           newCounter(emitSuccessCounterName),
 		emitFailure:           newCounter(emitFailureCounterName),
@@ -478,6 +485,9 @@ func (rm *ResourceManager) emitRecord(ctx context.Context, identity ResourceIden
 
 	if u != nil {
 		u.EventId = eventID
+	}
+	if action == meteringpb.MeterAction_METER_ACTION_USAGE && rm.applyFault(ctx, identity, eventID, u) {
+		return
 	}
 	utilizations := []*meteringpb.Utilization{u}
 	rm.recordUtilization(ctx, identity, u)

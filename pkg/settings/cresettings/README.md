@@ -84,6 +84,14 @@ flowchart
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
+    subgraph applyFault[resourcemanager.ResourceManager.applyFault]
+%%      usage meter records of an org, before emission
+        PerOrg.BillingFaultDropRate[(PerOrg.BillingFaultDropRate)]:::setting
+        PerOrg.BillingFaultPerturbRate[(PerOrg.BillingFaultPerturbRate)]:::setting
+        PerOrg.BillingFaultPerturbDelta[(PerOrg.BillingFaultPerturbDelta)]:::setting
+        PerOrg.BillingFaultNodeRate[(PerOrg.BillingFaultNodeRate)]:::setting
+    end
+
     subgraph handleMessage[dispatcher.handleMessage]
 %%      DON peer → DON peer P2P capability messages
         DispatcherGlobalRate[\DispatcherGlobalRate/]:::rate
@@ -92,7 +100,15 @@ flowchart
 
     subgraph CentralTriggerQueue.Put
 %%      trigger coordinator reader → central trigger queue (pre-admission buffer)
+        PerWorkflow.FeatureShadowTriggerModeActivePeriod[/PerWorkflow.FeatureShadowTriggerModeActivePeriod\]:::gate
         CentralTriggerEventQueueLimit{{CentralTriggerEventQueueLimit}}:::bound
+
+        PerWorkflow.FeatureShadowTriggerModeActivePeriod-->CentralTriggerEventQueueLimit
+    end
+
+    subgraph CentralTriggerQueue.Drain
+%%      drainer → central trigger queue
+        CentralTriggerQueueDrainInterval>CentralTriggerQueueDrainInterval]:::time
     end
 
     subgraph Store.FetchWorkflowArtifacts
@@ -381,6 +397,9 @@ flowchart
 
 %%  the trigger coordinator's reader is likewise its own entry point
     CentralTriggerQueue.Put
+
+%%  the central trigger queue's drainer is likewise its own entry point
+    CentralTriggerQueue.Drain
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

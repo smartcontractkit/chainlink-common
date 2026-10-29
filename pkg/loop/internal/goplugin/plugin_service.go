@@ -236,16 +236,14 @@ func (s *PluginService[P, S]) Close() error {
 	})
 }
 
-func (s *PluginService[P, S]) closeClient() (err error) {
-	if s.clientProtocol != nil {
-		if cerr := s.clientProtocol.Close(); !isCanceled(cerr) {
-			err = cerr
-		}
-	}
+func (s *PluginService[P, S]) closeClient() error {
 	if s.client != nil {
+		// This closes the client as well as its client protocol object.
+		// Kill() sends a shutdown request, waiting 2s for it to complete gracefully
+		// before SIGKILL'ing.
 		s.client.Kill()
 	}
-	return
+	return nil
 }
 
 // WaitCtx waits for the service to start up until `ctx.Done` is triggered

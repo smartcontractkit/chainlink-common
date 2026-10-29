@@ -1,66 +1,70 @@
 package loop_test
 
 import (
+	"os/exec"
 	"testing"
+	"time"
 
-	"github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/test"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/servicetest"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
-func TestPluginEmpty(t *testing.T) {
+func TestEmptyService(t *testing.T) {
 	t.Parallel()
 
-	srv := servicetest.Run(t, services.Config{Name: "EmptyServer"}.NewService(logger.Test(t)))
-	stopCh := newStopCh(t)
-	test.PluginTest(t, loop.PluginEmptyName,
-		&loop.EmptyLoop{
-			PluginServer: srv,
-			BrokerConfig: loop.BrokerConfig{
-				Logger: logger.Test(t),
-				StopCh: stopCh}},
-		func(t *testing.T, s services.Service) {
-			assertEmptyHealthy(t, s)
-		})
-}
-
-func TestRunningEmptyPluginOutOfProcess(t *testing.T) {
-	t.Parallel()
-	stopCh := newStopCh(t)
-
-	s := newOutOfProcessEmptyService(t, stopCh)
+	lggr, obsLogs := logger.TestObserved(t, zapcore.DebugLevel)
+	s := loop.NewEmptyService(lggr, loop.GRPCOpts{}, func() *exec.Cmd {
+		return NewHelperProcessCommand(loop.PluginEmptyName, false, 0)
+	})
+	hook := s.XXXTestHook()
+	require.NoError(t, s.Start(t.Context()))
 
 	assertEmptyHealthy(t, s)
+
+	t.Run("Kill", func(t *testing.T) {
+		hook.Kill()
+		assertPluginClosedGracefully(t, obsLogs, 1)
+
+		assertEmptyHealthy(t, s)
+	})
+
+	t.Run("Reset", func(t *testing.T) {
+		hook.Reset()
+		assertPluginClosedGracefully(t, obsLogs, 2)
+
+		assertEmptyHealthy(t, s)
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		require.NoError(t, s.Close())
+		assertPluginClosedGracefully(t, obsLogs, 3)
+	})
 }
 
 func assertEmptyHealthy(t *testing.T, s services.Service) {
 	t.Helper()
-	require.NoError(t, s.Ready())
+	require.Eventually(t, func() bool { return s.Ready() == nil }, tests.WaitTimeout(t)/2, 100*time.Millisecond)
 	hr := s.HealthReport()
-	servicetest.AssertHealthReportNames(t, hr, "EmptyClient", "EmptyClient.EmptyServer")
+	servicetest.AssertHealthReportNames(t, hr, "EmptyService", "EmptyService.EmptyClient", "EmptyService.EmptyClient.EmptyServer")
 	for name, err := range hr {
 		assert.NoError(t, err, name)
 	}
 }
 
-func newOutOfProcessEmptyService(t *testing.T, stopCh <-chan struct{}) services.Service {
-	el := loop.EmptyLoop{BrokerConfig: loop.BrokerConfig{Logger: logger.Test(t), StopCh: stopCh}}
-	cc := el.ClientConfig()
-	cc.SkipHostEnv = true
-	cc.Cmd = NewHelperProcessCommand(loop.PluginEmptyName, false, 0)
-	c := plugin.NewClient(cc)
-	t.Cleanup(c.Kill)
-	client, err := c.Client()
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = client.Close() })
-	require.NoError(t, client.Ping())
-	i, err := client.Dispense(loop.PluginEmptyName)
-	require.NoError(t, err)
-	return i.(services.Service)
+func assertPluginClosedGracefully(t *testing.T, obsLogs *observer.ObservedLogs, closes int) {
+	t.Helper()
+	serverClosed := func() int {
+		return obsLogs.FilterLoggerName("EmptyService.EmptyServer").FilterMessage("Closed").Len()
+	}
+	require.Eventually(t, func() bool { return serverClosed() == closes }, tests.WaitTimeout(t)/2, 100*time.Millisecond,
+		"plugin service closed %d times, want %d", serverClosed(), closes)
+	assert.Zero(t, obsLogs.FilterMessage("plugin failed to exit gracefully").Len())
 }

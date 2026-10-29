@@ -50,9 +50,8 @@ type AtomicClient struct {
 }
 
 func (a *AtomicClient) Close() error {
-	if v := a.cc.Swap(nil); v != nil {
-		return (*v).Close()
-	}
+	// We intentionally don't close the client connection here as this is owned and closed by go-plugin
+	// If we close the connection here it will prevent the PluginService from gracefully shutting down the plugin.
 	return nil
 }
 

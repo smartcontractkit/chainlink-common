@@ -58,6 +58,7 @@ func (p *EmptyLoop) ClientConfig() *plugin.ClientConfig {
 // ServeEmpty serves an [EmptyLoop] until the host stops this process. impl must already be started; the
 // host reports its health and closes it. newServer makes the gRPC server.
 func ServeEmpty(impl services.Service, newServer func([]grpc.ServerOption) *grpc.Server) {
+	defer impl.Close()
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: EmptyHandshakeConfig(),
 		Plugins:         map[string]plugin.Plugin{PluginEmptyName: &EmptyLoop{PluginServer: impl}},

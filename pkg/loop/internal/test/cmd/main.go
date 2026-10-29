@@ -88,6 +88,7 @@ func main() {
 		if err := srv.Start(context.Background()); err != nil {
 			lggr.Fatalf("Failed to start empty server: %s", err)
 		}
+		defer srv.Close()
 		loop.ServeEmpty(srv, grpcServer)
 
 	case loop.PluginStandardCapabilitiesName:

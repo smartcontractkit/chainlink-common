@@ -9,7 +9,9 @@ import (
 
 	"github.com/jpillora/backoff"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/status"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb"
@@ -52,21 +54,34 @@ type AtomicClient struct {
 func (a *AtomicClient) Close() error {
 	// We intentionally don't close the client connection here as this is owned and closed by go-plugin
 	// If we close the connection here it will prevent the PluginService from gracefully shutting down the plugin.
+	a.cc.Swap(nil)
 	return nil
 }
 
 func (a *AtomicClient) GetState() connectivity.State {
-	return a.cc.Load().GetState()
+	cc := a.cc.Load()
+	if cc == nil {
+		return connectivity.Shutdown
+	}
+	return cc.GetState()
 }
 
 func (a *AtomicClient) Store(cc *grpc.ClientConn) { a.cc.Store(cc) }
 
 func (a *AtomicClient) Invoke(ctx context.Context, method string, args any, reply any, opts ...grpc.CallOption) error {
-	return a.cc.Load().Invoke(ctx, method, args, reply, opts...)
+	cc := a.cc.Load()
+	if cc == nil {
+		return status.Error(codes.Unavailable, "client closed")
+	}
+	return cc.Invoke(ctx, method, args, reply, opts...)
 }
 
 func (a *AtomicClient) NewStream(ctx context.Context, desc *grpc.StreamDesc, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	return a.cc.Load().NewStream(ctx, desc, method, opts...)
+	cc := a.cc.Load()
+	if cc == nil {
+		return nil, status.Error(codes.Unavailable, "client closed")
+	}
+	return cc.NewStream(ctx, desc, method, opts...)
 }
 
 var _ ClientConnInterface = (*clientConn)(nil)

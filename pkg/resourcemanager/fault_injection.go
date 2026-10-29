@@ -14,7 +14,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 )
 
-// Usage fault kinds, as logged on the "Injected usage fault" line.
+// Usage fault kinds, as logged on the "Injected usage fault for billing reconciler canary" line.
 const (
 	faultDrop    = "drop"
 	faultPerturb = "perturb"
@@ -35,7 +35,7 @@ func sampled(rate float64, key string) bool {
 // applyFault drops or perturbs usage records of orgs whose CRE settings
 // (PerOrg.BillingFault*) enable it, so the billing reconcilers can measure
 // their recall. It returns true when the record must not be emitted. Faults
-// are logged as "Injected usage fault", a contract line the reconcilers read.
+// are logged as "Injected usage fault for billing reconciler canary", a contract line the reconcilers read.
 func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIdentity, eventID string, u *meteringpb.Utilization) (drop bool) {
 	if rm.settings == nil || u == nil || u.GetOrgId() == "" {
 		return false
@@ -70,7 +70,7 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 		"nodeID", identity.NodeID(),
 	}
 	if mode == faultDrop {
-		rm.lggr.Warnw("Injected usage fault", append(fields, "value", u.GetValue())...)
+		rm.lggr.Infow("Injected usage fault for billing reconciler canary", append(fields, "value", u.GetValue())...)
 		return true
 	}
 	original := u.GetValue()
@@ -90,6 +90,6 @@ func (rm *ResourceManager) applyFault(ctx context.Context, identity ResourceIden
 		return false
 	}
 	u.Value = v.String()
-	rm.lggr.Warnw("Injected usage fault", append(fields, "value", u.Value, "originalValue", original)...)
+	rm.lggr.Infow("Injected usage fault for billing reconciler canary", append(fields, "value", u.Value, "originalValue", original)...)
 	return false
 }

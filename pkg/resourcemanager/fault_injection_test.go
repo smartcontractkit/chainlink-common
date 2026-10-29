@@ -127,11 +127,11 @@ func TestApplyFault(t *testing.T) {
 	t.Run("perturb leaves a zero value and logs nothing", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7"})
 		emitter := &fakeEmitter{}
-		lggr, observed := logger.TestObserved(t, zapcore.WarnLevel)
+		lggr, observed := logger.TestObserved(t, zapcore.InfoLevel)
 		rm := NewResourceManager(lggr, ResourceManagerConfig{MeterRecordsEnabled: true, Emitter: emitter, Settings: g})
 		rm.EmitUsage(t.Context(), testIdentity, "exec-17", 0, UtilizationFields{ResourceType: ResourceTypeWorkflowCompute, ResourceID: "wf-1:exec-17", OrgID: "org-1"})
 		assert.Equal(t, "0", emittedValue(t, emitter))
-		assert.Empty(t, observed.FilterMessage("Injected usage fault").All())
+		assert.Empty(t, observed.FilterMessage("Injected usage fault for billing reconciler canary").All())
 	})
 	t.Run("perturb honours the node rate", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7", "BillingFaultNodeRate": "0.5"})

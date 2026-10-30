@@ -54,3 +54,14 @@ func (r Rate) String() string {
 	}
 	return fmt.Sprintf("%grps:%d", r.Limit, r.Burst)
 }
+
+func (r Rate) MarshalText() ([]byte, error) { return []byte(r.String()), nil }
+
+func (r *Rate) UnmarshalText(b []byte) error {
+	parsed, err := ParseRate(string(b))
+	if err != nil {
+		return err
+	}
+	*r = parsed
+	return nil
+}

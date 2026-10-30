@@ -125,6 +125,7 @@ flowchart
 
     subgraph syncer.tryEngineCreate
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
+        PerWorkflow.CoordinatedEngineEnabled[/PerWorkflow.CoordinatedEngineEnabled\]:::gate
         ShardingFailoverEnabled[/ShardingFailoverEnabled\]:::gate
     end
 

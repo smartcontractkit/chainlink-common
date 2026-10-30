@@ -60,7 +60,7 @@ var Default = Schema{
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
-	CoordinatedEngineEnabled:                    Bool(false),
+	CoordinatedEngineEnabled:                    Bool(false), // Deprecated: use PerWorkflow.CoordinatedEngineEnabled.
 	ShardingFailoverEnabled:                     Bool(false),
 	TimeoutBasedFailover:                        Bool(false),
 	TimeoutBasedFailoverWindow:                  Duration(5 * time.Minute),
@@ -246,6 +246,7 @@ var Default = Schema{
 		ExecutionTimeout:              Duration(5 * time.Minute),
 		ExecutionResponseLimit:        Size(100 * config.KByte),
 		ExecutionTimestampsEnabled:    Bool(false),
+		CoordinatedEngineEnabled:      Bool(false),
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMTableElementsLimit:        Int(1_000_000),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
@@ -397,7 +398,12 @@ type Schema struct {
 	// sender DON so it cannot be spoofed by a colluding calling DON.
 	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
-	// trigger-owning Engine for newly created workflows.
+	// trigger-owning Engine for newly created workflows, on every workflow of the node.
+	//
+	// Deprecated: use global.PerWorkflow.CoordinatedEngineEnabled (node default), or
+	// org.<id>/owner.<addr>/workflow.<id>.PerWorkflow.CoordinatedEngineEnabled (one
+	// tenant) instead. While this one is still read, true here enables every workflow
+	// whatever the per-workflow setting says.
 	CoordinatedEngineEnabled Setting[bool]
 	// ShardingFailoverEnabled, when true, makes a sharded workflow DON cache
 	// trigger events for workflows owned by another shard (instead of dropping
@@ -566,6 +572,11 @@ type Workflows struct {
 	ExecutionTimeout           Setting[time.Duration]
 	ExecutionResponseLimit     Setting[config.Size]
 	ExecutionTimestampsEnabled Setting[bool]
+
+	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
+	// trigger-owning Engine. It is read only when an engine is created, so a change
+	// applies to a workflow the next time its engine is created.
+	CoordinatedEngineEnabled Setting[bool]
 
 	WASMMemoryLimit               Setting[config.Size]
 	WASMTableElementsLimit        Setting[int] `unit:"{element}"`

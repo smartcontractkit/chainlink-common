@@ -17,10 +17,22 @@ message CoordinatedEvent {
   capabilities.TriggerResponse event = 7;
 }
 
-message ConsensusQueueObservation {
+message CoordinatedEventList {
   repeated CoordinatedEvent events = 1;
 }
 
-message ConsensusQueueReport {
+message ConsensusQueueObservation {
   repeated CoordinatedEvent events = 1;
+
+  uint32 capacity = 4; // Global remaining capacity
+  map<string, uint32> workflow_capacities = 5; // Workflow-specific free executions
+}
+
+message ConsensusQueueProposals {
+  map<string, CoordinatedEvent> events = 1; // eventID -> Event
+  map<string, NodeIDList> observers = 2; // eventID -> Observers < f+1
+}
+
+message NodeIDList {
+  bytes ids = 1; // []uint8
 }

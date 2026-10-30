@@ -49,6 +49,7 @@
   "ChipIngressMaxConcurrentSends": 0,
   "ChipIngressMaxGRPCRequestSize": 0,
   "ChipIngressLogger": null,
+  "ChipDomainEmittersEnabled": false,
   "LogExportTimeout": 1000000000,
   "LogExportInterval": 1000000000,
   "LogExportMaxBatchSize": 512,

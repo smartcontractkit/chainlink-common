@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793366260669,
+  "lastUpdate": 1793374614112,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65640,6 +65640,66 @@ window.BENCHMARK_DATA = {
             "value": 135978,
             "unit": "ns/op",
             "extra": "8290 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "4a48bfdcc8de699c9ad0aec8e04fe94d1e1d1d9e",
+          "message": "CRE-7147: Add empty loop implementation (#2501)\n\n* CRE-7147: Add empty loop implementation\n\nThis represents a loopp process that is supervised by the core node, but for which communication otherwise\nhappens outside of the loopp framework.\n\n* Some fixes\n\n* Ensure we close the service when plugin.Serve returns\n\n* Ensure we close the service when plugin.Serve returns",
+          "timestamp": "2026-10-30T15:27:56Z",
+          "tree_id": "53d4ecce3df121aec13cb7754c7ceaa6e61a5067",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/4a48bfdcc8de699c9ad0aec8e04fe94d1e1d1d9e"
+        },
+        "date": 1793374609327,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353,
+            "unit": "ns/op",
+            "extra": "3365583 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 92459,
+            "unit": "ns/op",
+            "extra": "12955 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 401.8,
+            "unit": "ns/op",
+            "extra": "2985112 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 92064,
+            "unit": "ns/op",
+            "extra": "12997 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25726,
+            "unit": "ns/op",
+            "extra": "46281 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 148146,
+            "unit": "ns/op",
+            "extra": "8263 times\n4 procs"
           }
         ]
       }

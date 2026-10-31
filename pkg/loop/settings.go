@@ -60,12 +60,15 @@ func (a *AtomicSettings) Subscribe(ctx context.Context) (<-chan core.SettingsUpd
 			}
 		}
 	}()
-	if a.current != nil {
-		from <- *a.current // seed current value
-	}
+	// Register and seed under the same lock that Store holds while fanning out, so
+	// every update is either the seed or a later fan-out. Reading current before
+	// registering would drop a Store that lands in between.
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.subs = append(a.subs, from)
+	if a.current != nil {
+		from <- *a.current // seed current value; non-blocking due to helper goroutine
+	}
 	return to, nil
 }
 

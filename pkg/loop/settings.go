@@ -3,7 +3,6 @@ package loop
 import (
 	"context"
 	"fmt"
-	"slices"
 	"sync"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -21,7 +20,7 @@ type AtomicSettings struct {
 	mu      sync.RWMutex
 	current *core.SettingsUpdate
 	getter  settings.Getter
-	subs    []chan core.SettingsUpdate
+	subs    map[<-chan core.SettingsUpdate]chan core.SettingsUpdate // channel returned by Subscribe -> channel fed by Store
 }
 
 // Deprecated: instantiate AtomicSettings directly, then use AtomicSettings.SetGetter.
@@ -65,20 +64,21 @@ func (a *AtomicSettings) Subscribe(ctx context.Context) (<-chan core.SettingsUpd
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	a.subs = append(a.subs, from)
+	if a.subs == nil {
+		a.subs = make(map[<-chan core.SettingsUpdate]chan core.SettingsUpdate)
+	}
+	a.subs[to] = from
 	return to, nil
 }
 
 func (a *AtomicSettings) Unsubscribe(ch <-chan core.SettingsUpdate) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	if i := slices.IndexFunc(a.subs, func(e chan core.SettingsUpdate) bool { return e == ch }); i >= 0 {
-		close(a.subs[i])
-		l := len(a.subs)
-		if l > 1 { // replace with last
-			a.subs[i] = a.subs[l-1]
-		}
-		a.subs = a.subs[:l-1] // remove last
+	// Callers hold the channel returned by Subscribe, so look up the channel Store
+	// feeds. Closing it stops the helper goroutine, which then closes ch.
+	if from, ok := a.subs[ch]; ok {
+		close(from)
+		delete(a.subs, ch)
 	}
 }
 

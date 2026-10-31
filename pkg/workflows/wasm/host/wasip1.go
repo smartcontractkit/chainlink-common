@@ -38,6 +38,8 @@ func newWasiLinker[T any](exec *execution[T]) (*wasmtime.Linker, error) {
 		return nil, err
 	}
 
+	// Do not override wasi_snapshot_preview1.random_get. Wasmtime's default reads
+	// the host OS CSPRNG, which guests rely on via crypto/rand.
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"poll_oneoff",
@@ -50,6 +52,8 @@ func newWasiLinker[T any](exec *execution[T]) (*wasmtime.Linker, error) {
 	exec.timeFetcher = newTimeFetcher(exec.ctx, exec.executor)
 	exec.timeFetcher.Start()
 
+	// Do not override wasi_snapshot_preview1.random_get. Wasmtime's default reads
+	// the host OS CSPRNG, which guests rely on via crypto/rand.
 	err = linker.FuncWrap(
 		"wasi_snapshot_preview1",
 		"clock_time_get",

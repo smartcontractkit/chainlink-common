@@ -190,7 +190,7 @@ Default = '5000000'
 3379446385462418246 = '10000000'
 
 [PerWorkflow.ChainWrite.Solana]
-ReportSizeLimit = '265b'
+ReportSizeLimit = '2kb'
 
 [PerWorkflow.ChainWrite.Solana.GasLimit]
 Default = '300000'

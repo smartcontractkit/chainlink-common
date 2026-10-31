@@ -296,7 +296,9 @@ var Default = Schema{
 				ReportSizeLimit: Size(5 * config.KByte),
 			},
 			Solana: solanaChainWrite{
-				ReportSizeLimit: Size(265 * config.Byte),
+				// Reports are sent as v1 (SIMD-0385) transactions capped at 4096 bytes. 2kb leaves room for
+				// the forwarder payload with the max 16 signatures plus up to ~15 receiver accounts.
+				ReportSizeLimit: Size(2 * config.KByte),
 				GasLimit:        PerChainSelector(Uint32(300_000), map[string]uint32{}),
 			},
 			Aptos: aptosChainWrite{

@@ -54,17 +54,12 @@ func (t *Transmitter) Transmit(_ context.Context, _ types.ConfigDigest, _ uint64
 	t.lggr.Debugw("Storing current timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimes", currentDonTimes)
 	t.store.replaceDonTimes(currentDonTimes)
 	t.store.setLastObservedDonTime(outcome.Timestamp)
-	t.store.mu.Lock() //TODO remove
-	t.lggr.Debugw("Stored current timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimes", t.store.donTimes)
-	t.store.mu.Unlock()
 
 	t.lggr.Infow("Transmitting timestamps", "lastObservedDonTime", outcome.Timestamp, "donTimeEntries", len(currentDonTimes), "donTimeTotal", totalCount)
 
 	for executionID, donTimes := range currentDonTimes {
 		request := t.store.GetRequest(executionID)
 		if request == nil {
-			//TODO remove
-			t.lggr.Debugw("No request found for execution ID", "executionID", executionID)
 			continue
 		}
 

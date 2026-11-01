@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v50"
 	"github.com/stretchr/testify/require"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"

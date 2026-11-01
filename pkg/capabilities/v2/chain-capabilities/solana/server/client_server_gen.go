@@ -207,11 +207,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetAccountInfoWithOpts", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetAccountInfoWithOpts", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetAccountInfoWithOpts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetAccountInfoWithOpts", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetAccountInfoWithOpts(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetAccountInfoWithOpts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetAccountInfoWithOpts", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -239,11 +239,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetBalance", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetBalance", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetBalance", tsStart, time.Now(), capmon.ActionMetricAttributes("GetBalance", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetBalance(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetBalance", tsStart, time.Now(), capmon.ActionMetricAttributes("GetBalance", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -271,11 +271,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetBlock", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetBlock", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetBlock", tsStart, time.Now(), capmon.ActionMetricAttributes("GetBlock", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetBlock(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetBlock", tsStart, time.Now(), capmon.ActionMetricAttributes("GetBlock", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -303,11 +303,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetFeeForMessage", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetFeeForMessage", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetFeeForMessage", tsStart, time.Now(), capmon.ActionMetricAttributes("GetFeeForMessage", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetFeeForMessage(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetFeeForMessage", tsStart, time.Now(), capmon.ActionMetricAttributes("GetFeeForMessage", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -335,11 +335,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetMultipleAccountsWithOpts", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetMultipleAccountsWithOpts", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetMultipleAccountsWithOpts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetMultipleAccountsWithOpts", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetMultipleAccountsWithOpts(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetMultipleAccountsWithOpts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetMultipleAccountsWithOpts", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -367,11 +367,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetProgramAccounts", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetProgramAccounts", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetProgramAccounts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetProgramAccounts", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetProgramAccounts(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetProgramAccounts", tsStart, time.Now(), capmon.ActionMetricAttributes("GetProgramAccounts", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -399,11 +399,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetSignatureStatuses", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetSignatureStatuses", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetSignatureStatuses", tsStart, time.Now(), capmon.ActionMetricAttributes("GetSignatureStatuses", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetSignatureStatuses(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetSignatureStatuses", tsStart, time.Now(), capmon.ActionMetricAttributes("GetSignatureStatuses", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -431,11 +431,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetSlotHeight", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetSlotHeight", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetSlotHeight", tsStart, time.Now(), capmon.ActionMetricAttributes("GetSlotHeight", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetSlotHeight(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetSlotHeight", tsStart, time.Now(), capmon.ActionMetricAttributes("GetSlotHeight", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -463,11 +463,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "GetTransaction", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("GetTransaction", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "GetTransaction", tsStart, time.Now(), capmon.ActionMetricAttributes("GetTransaction", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method GetTransaction(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "GetTransaction", tsStart, time.Now(), capmon.ActionMetricAttributes("GetTransaction", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -495,11 +495,11 @@ func (c *clientCapability) Execute(ctx context.Context, request capabilities.Cap
 				c.actionMetrics.OnError(ctx, "WriteReport", tsStart, time.Now(), isUserError, capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 				return nil, capabilities.ResponseMetadata{}, nil, err
 			}
-			mc.Logger.Infow("Capability Succeeded", logKvs...)
-			c.actionMetrics.OnSuccess(ctx, "WriteReport", tsStart, time.Now(), capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 			if output == nil {
 				return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method WriteReport(..) (if output is nil error must be present)")
 			}
+			mc.Logger.Infow("Capability Succeeded", logKvs...)
+			c.actionMetrics.OnSuccess(ctx, "WriteReport", tsStart, time.Now(), capmon.ActionMetricAttributes("WriteReport", metadata, mc.MetricsAttributes, metricAttrs)...)
 			return output.Response, output.ResponseMetadata, output.OCRAttestation, err
 		}
 		return capabilities.Execute(ctx, request, input, config, wrapped)

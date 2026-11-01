@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v50"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )

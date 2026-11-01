@@ -2,6 +2,7 @@ package chipingress
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -906,6 +907,52 @@ func TestClient_RegisterSchemas(t *testing.T) {
 		result, err := client.RegisterSchemas(ctx, schemas...)
 		assert.Nil(t, result)
 		assert.EqualError(t, err, "failed to register schema: registration failed")
+	})
+}
+
+func TestClient_PublishBatchNoAck(t *testing.T) {
+	batch := &pb.CloudEventBatch{
+		Events: []*cepb.CloudEvent{{Id: "e1", Source: "src", SpecVersion: "1.0", Type: "t"}},
+	}
+
+	t.Run("passes through to the underlying client", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		ctx := t.Context()
+		wantResp := &pb.PublishResponse{}
+		mockClient.EXPECT().PublishBatchNoAck(ctx, batch).Return(wantResp, nil)
+
+		client := &client{
+			client: mockClient,
+			conn:   nil,
+		}
+
+		gotResp, err := client.PublishBatchNoAck(ctx, batch)
+		require.NoError(t, err)
+		assert.Same(t, wantResp, gotResp)
+	})
+
+	t.Run("returns the underlying error", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		ctx := t.Context()
+		mockClient.EXPECT().PublishBatchNoAck(ctx, batch).Return(nil, errors.New("unavailable"))
+
+		client := &client{
+			client: mockClient,
+			conn:   nil,
+		}
+
+		resp, err := client.PublishBatchNoAck(ctx, batch)
+		assert.Nil(t, resp)
+		assert.EqualError(t, err, "unavailable")
+	})
+
+	t.Run("NoopClient returns an empty response", func(t *testing.T) {
+		noop := NoopClient{}
+
+		resp, err := noop.PublishBatchNoAck(t.Context(), batch)
+		require.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Empty(t, resp.Results)
 	})
 }
 

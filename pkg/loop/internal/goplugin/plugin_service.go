@@ -143,9 +143,7 @@ func (s *PluginService[P, S]) launch() (*plugin.Client, plugin.ClientProtocol, e
 		return nil, nil, fmt.Errorf("failed to create ClientProtocol: %w", err)
 	}
 	abort := func() {
-		if cerr := cp.Close(); cerr != nil {
-			s.lggr.Errorw("Error closing ClientProtocol", "err", cerr)
-		}
+		// calling client.Kill() will close the clientProtocol instance too, so we omit that here.
 		client.Kill()
 	}
 	i, err := cp.Dispense(s.pluginName)
@@ -236,16 +234,14 @@ func (s *PluginService[P, S]) Close() error {
 	})
 }
 
-func (s *PluginService[P, S]) closeClient() (err error) {
-	if s.clientProtocol != nil {
-		if cerr := s.clientProtocol.Close(); !isCanceled(cerr) {
-			err = cerr
-		}
-	}
+func (s *PluginService[P, S]) closeClient() error {
+	// clientProtocol.Close() is intentionally omitted from this function.
+	// In practice, the client and clientProtocol are always instantiated together,
+	// and calling client.Kill() will close the clientProtocol.
 	if s.client != nil {
 		s.client.Kill()
 	}
-	return
+	return nil
 }
 
 // WaitCtx waits for the service to start up until `ctx.Done` is triggered

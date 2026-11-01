@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/x/config
 
-go 1.27.1
+go 1.27.3
 
 require (
 	github.com/go-playground/validator/v10 v10.26.0

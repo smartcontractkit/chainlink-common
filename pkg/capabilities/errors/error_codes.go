@@ -133,6 +133,9 @@ const (
 
 	// InsufficientObservations indicates that there are not enough observations to enable the operation to complete.
 	InsufficientObservations ErrorCode = 102
+
+	// ObservationErrors indicates that consensus failed because f+1 or more nodes reported an error observation.
+	ObservationErrors ErrorCode = 103
 )
 
 // AllErrorCodes lists every defined capability error code in ascending order.
@@ -156,6 +159,7 @@ var AllErrorCodes = []ErrorCode{
 	ConsensusFailed,
 	LimitExceeded,
 	InsufficientObservations,
+	ObservationErrors,
 }
 
 // String returns the string representation of the ErrorCode.
@@ -186,6 +190,7 @@ var errorCodeToString = map[ErrorCode]string{
 	ConsensusFailed:          "ConsensusFailed",
 	LimitExceeded:            "LimitExceeded",
 	InsufficientObservations: "InsufficientObservations",
+	ObservationErrors:        "ObservationErrors",
 }
 
 var stringToErrorCode = map[string]ErrorCode{
@@ -208,6 +213,7 @@ var stringToErrorCode = map[string]ErrorCode{
 	"ConsensusFailed":          ConsensusFailed,
 	"LimitExceeded":            LimitExceeded,
 	"InsufficientObservations": InsufficientObservations,
+	"ObservationErrors":        ObservationErrors,
 }
 
 func FromErrorCodeString(str string) ErrorCode {

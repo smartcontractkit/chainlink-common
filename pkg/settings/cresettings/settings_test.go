@@ -288,6 +288,32 @@ func TestCentralTriggerEventQueueLimit(t *testing.T) {
 	assert.Equal(t, 1000, got)
 }
 
+// TestCentralTriggerQueueDrainInterval asserts the drain interval is global and defaults to 500ms.
+func TestCentralTriggerQueueDrainInterval(t *testing.T) {
+	s := Default.CentralTriggerQueueDrainInterval
+
+	assert.Equal(t, "CentralTriggerQueueDrainInterval", s.GetKey())
+	assert.Equal(t, settings.ScopeGlobal, s.Scope)
+	assert.Equal(t, 500*time.Millisecond, s.DefaultValue)
+
+	got, err := s.GetOrDefault(t.Context(), DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, 500*time.Millisecond, got)
+}
+
+// TestFeatureShadowTriggerModeActivePeriodKeyInit asserts the shadow window is per workflow and off by default.
+func TestFeatureShadowTriggerModeActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureShadowTriggerModeActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureShadowTriggerModeActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
+}
+
 func TestGatewayProxyDonIDKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
 

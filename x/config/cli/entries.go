@@ -150,22 +150,27 @@ func (b *Binder) addsEntryFlags(existing func(*pflag.FlagSet, string) pflag.Norm
 // A key that doesn't parse still gets a flag, which fails when set. For Chains map[uint32]string, --chains.x fails with
 // key "x": strconv.ParseUint: parsing "x": invalid syntax, rather than unknown flag: --chains.x.
 func (b *Binder) entryFlag(f *pflag.FlagSet, name string) *pflag.Flag {
-	var leaf *entryLeaf
-	var usage string
-	var texts []string
+	var templates []*pflag.Flag
+	var names []string
 	f.VisitAll(func(template *pflag.Flag) {
-		if l, ok := b.entryTemplates[template]; ok && leaf == nil {
-			if keys, ok := matchKeys(template.Name, cliKeyPlaceholder, ".", name); ok {
-				leaf, usage, texts = l, template.Usage, keys
-			}
+		if _, ok := b.entryTemplates[template]; ok {
+			templates = append(templates, template)
+			names = append(names, template.Name)
 		}
 	})
 
-	if leaf == nil {
+	i, texts, err := readName(names, cliKeyPlaceholder, ".", name)
+	if i < 0 {
 		return nil
 	}
 
-	flag, get := newFlag(name, leaf.goType, reflect.Zero(commentparsing.DerefType(leaf.goType)), usage)
+	leaf := b.entryTemplates[templates[i]]
+	flag, get := newFlag(name, leaf.goType, reflect.Zero(commentparsing.DerefType(leaf.goType)), templates[i].Usage)
+	if err != nil {
+		flag.Value = errValue{flag.Value, err}
+		return flag
+	}
+
 	keys := make([]reflect.Value, len(texts))
 	for i, text := range texts {
 		key, err := mapKey(leaf.keyTypes[i], text, map[any]string{})
@@ -199,7 +204,7 @@ func (b *Binder) shadowedEntries(flags *pflag.FlagSet) error {
 		}
 
 		for _, template := range templates {
-			if _, ok := matchKeys(template.Name, cliKeyPlaceholder, ".", f.Name); ok {
+			if len(readKeys(template.Name, cliKeyPlaceholder, ".", f.Name)) > 0 {
 				err = fmt.Errorf("flag --%s would set --%s; rename it", f.Name, template.Name)
 				return
 			}
@@ -209,25 +214,85 @@ func (b *Binder) shadowedEntries(flags *pflag.FlagSet) error {
 	return err
 }
 
-// matchKeys returns the keys name puts in template's placeholders, such as [mainnet] for chains.mainnet.rpc and
-// chains.<key>.rpc. A key is one segment, so a name fills a template one way or not at all.
-func matchKeys(template, placeholder, sep, name string) ([]string, bool) {
-	want, got := strings.Split(template, sep), strings.Split(name, sep)
-	if len(want) != len(got) {
-		return nil, false
+// readName returns the index of the template name fills and the keys it fills it with, or -1 if it fills none. A key
+// holds as few segments as it can, so name reads as the templates with the most segments that it fills, and filling
+// those more than one way is an error. With chains.<key>.rpc and chains.<key>.labels.<key>, chains.a.labels.rpc sets
+// entry rpc in a's labels, not rpc in entry a.labels. On error, the index is still one name fills.
+func readName(templates []string, placeholder, sep, name string) (int, []string, error) {
+	type reading struct {
+		i    int
+		keys []string
 	}
 
-	var keys []string
-	for i, segment := range want {
-		switch {
-		case segment == placeholder && got[i] != "":
-			keys = append(keys, got[i])
-		case segment != got[i]:
-			return nil, false
+	var found []reading
+	most := 0
+	for i, template := range templates {
+		segments := strings.Count(template, sep) + 1
+		if segments < most {
+			continue
+		}
+
+		readings := readKeys(template, placeholder, sep, name)
+		if len(readings) == 0 {
+			continue
+		}
+
+		if segments > most {
+			found, most = nil, segments
+		}
+
+		for _, keys := range readings {
+			found = append(found, reading{i, keys})
 		}
 	}
 
-	return keys, len(keys) > 0
+	switch len(found) {
+	case 0:
+		return -1, nil, nil
+	case 1:
+		return found[0].i, found[0].keys, nil
+	default:
+		a := found[0]
+		b := found[1]
+		return a.i, nil, fmt.Errorf("%s could be %s with keys %q or %s with keys %q",
+			name, templates[a.i], a.keys, templates[b.i], b.keys)
+	}
+}
+
+// readKeys returns each way name fills template's placeholders, such as [[mainnet]] for chains.mainnet.rpc and
+// chains.<key>.rpc. A key may span segments: chains.main.net.rpc fills it with main.net.
+func readKeys(template, placeholder, sep, name string) [][]string {
+	return fill(strings.Split(template, sep), strings.Split(name, sep), placeholder, sep)
+}
+
+func fill(want, got []string, placeholder, sep string) [][]string {
+	switch {
+	case len(want) == 0 && len(got) == 0:
+		return [][]string{nil}
+	case len(want) == 0 || len(got) == 0:
+		return nil
+	case want[0] != placeholder:
+		if want[0] != got[0] {
+			return nil
+		}
+
+		return fill(want[1:], got[1:], placeholder, sep)
+	}
+
+	var readings [][]string
+	// Each segment left in want needs one of got.
+	for n := 1; n <= len(got)-len(want)+1; n++ {
+		key := strings.Join(got[:n], sep)
+		if key == "" {
+			continue
+		}
+
+		for _, rest := range fill(want[1:], got[n:], placeholder, sep) {
+			readings = append(readings, append([]string{key}, rest...))
+		}
+	}
+
+	return readings
 }
 
 // overlap returns a name both templates match, if there is one: a placeholder matches any segment.
@@ -256,38 +321,12 @@ func overlap(a, b, placeholder, sep string) (string, bool) {
 
 // entrySet is one value a source sets inside a map, such as rpc in entry mainnet.
 type entrySet struct {
-	leaf *entryLeaf
-	keys []reflect.Value
-	// texts holds the leading keys still to resolve, named by env vars; keys holds the rest, already parsed.
-	texts  []string
+	leaf   *entryLeaf
+	keys   []reflect.Value
 	value  reflect.Value
 	source string
 	// rank is the env var prefix's index, as the first prefix set wins.
 	rank int
-}
-
-// Keys named by an env var resolve against the map the entry layers over, which holds every source below env vars.
-func (s entrySet) resolve(m reflect.Value) ([]reflect.Value, error) {
-	if s.texts == nil {
-		return s.keys, nil
-	}
-
-	keys := make([]reflect.Value, 0, len(s.texts)+len(s.keys))
-	for i, text := range s.texts {
-		keyText, err := envKeyText(entryMap(m, s.leaf, keys), text)
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", s.source, err)
-		}
-
-		key, err := mapKey(s.leaf.keyTypes[i], keyText, map[any]string{})
-		if err != nil {
-			return nil, fmt.Errorf("%s: %w", s.source, err)
-		}
-
-		keys = append(keys, key)
-	}
-
-	return append(keys, s.keys...), nil
 }
 
 // decodeEntries layers a map's sources lowest first, each setting whole entries or values inside them, so
@@ -303,7 +342,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		}
 	}
 
-	envSets, err := e.envEntrySets(k)
+	envSets, err := e.envEntrySets(k, cc.entryEnvVars)
 	if err != nil {
 		return nil, err
 	}
@@ -320,19 +359,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		}
 
 		for _, sets := range layers {
-			// Resolved against m, before any set entry can add a key another set's name would then match.
-			resolved := make([]entrySet, 0, len(sets))
-			for _, s := range sets {
-				keys, kerr := s.resolve(m)
-				if kerr != nil {
-					return reflect.Value{}, kerr
-				}
-
-				s.keys, s.texts = keys, nil
-				resolved = append(resolved, s)
-			}
-
-			unique, uerr := oneValueEach(resolved)
+			unique, uerr := oneValueEach(sets)
 			if uerr != nil {
 				return reflect.Value{}, uerr
 			}
@@ -354,8 +381,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		f = f.Elem()
 	}
 
-	// A profile replaces its section's maps, so the keys an env var names are resolved against the profile's map
-	// when it applies this layer, not the one here.
+	// A profile replaces its section's maps, so the sources layer over the profile's map when it applies this layer.
 	if slices.ContainsFunc(e.profileSelectors, func(s leafKey) bool { return inScope(k, s.goPath[:len(s.goPath)-1]) }) {
 		return layer, nil
 	}
@@ -369,7 +395,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 	return layer, nil
 }
 
-func (e *typedEntry[T]) envEntrySets(k leafKey) ([]entrySet, error) {
+func (e *typedEntry[T]) envEntrySets(k leafKey, envVars []entryEnvVar) ([]entrySet, error) {
 	var sets []entrySet
 	if k.flag != nil {
 		for rank, name := range e.envVars(k) {
@@ -379,96 +405,100 @@ func (e *typedEntry[T]) envEntrySets(k leafKey) ([]entrySet, error) {
 					return nil, fmt.Errorf("invalid value %q for %s: %w", s, name, err)
 				}
 
-				sets = splitEntries(k.each, nil, nil, val, name, rank)
+				sets = splitEntries(k.each, nil, val, name, rank)
 				break
+			}
+		}
+	}
+
+	for _, ev := range envVars {
+		if !slices.Contains(k.entries, ev.leaf) {
+			continue
+		}
+
+		keys := make([]reflect.Value, len(ev.keys))
+		for i, text := range ev.keys {
+			key, err := mapKey(ev.leaf.keyTypes[i], text, map[any]string{})
+			if err != nil {
+				return nil, fmt.Errorf("%s: %w", ev.name, err)
+			}
+
+			keys[i] = key
+		}
+
+		val, err := parseText(ev.leaf.goType, ev.value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value %q for %s: %w", ev.value, ev.name, err)
+		}
+
+		sets = append(sets, entrySets(ev.leaf, keys, val, ev.name, ev.rank)...)
+	}
+
+	return sets, nil
+}
+
+// entryEnvVar is an env var that sets a value inside a map, its keys as written.
+type entryEnvVar struct {
+	name, value string
+	leaf        *entryLeaf
+	rank        int
+	keys        []string
+}
+
+// entryEnvVars reads every env var as the map entry it names, if any, choosing among all the maps of a command at once,
+// as readName does for flags. An env var a field uses sets that field, even if its name also reads as a map entry:
+// with TelemetryAuthHeaders and TelemetryAuthHeadersTTL, APP_TELEMETRY_AUTH_HEADERS_TTL is the latter.
+func entryEnvVars(entries []targetEntry, fieldEnvVars map[string]string) ([]entryEnvVar, error) {
+	var templates []string
+	var leaves []*entryLeaf
+	var ranks []int
+	for _, e := range entries {
+		for _, k := range e.keys() {
+			for _, leaf := range k.entries {
+				for rank, template := range e.envVars(leafKey{key: leaf.key}) {
+					templates = append(templates, template)
+					leaves = append(leaves, leaf)
+					ranks = append(ranks, rank)
+				}
 			}
 		}
 	}
 
 	environ := os.Environ()
 	slices.Sort(environ)
+	var out []entryEnvVar
 	for _, kv := range environ {
 		name, s, _ := strings.Cut(kv, "=")
-		if s == "" {
+		if _, isField := fieldEnvVars[name]; s == "" || isField {
 			continue
 		}
 
-		leaf, rank, texts := e.envEntry(k, name)
-		if leaf == nil {
-			continue
-		}
-
-		val, err := parseText(leaf.goType, s)
+		i, keys, err := readName(templates, envKeyPlaceholder, "_", name)
 		if err != nil {
-			return nil, fmt.Errorf("invalid value %q for %s: %w", s, name, err)
+			return nil, err
 		}
 
-		sets = append(sets, entrySets(leaf, nil, texts, val, name, rank)...)
-	}
-
-	return sets, nil
-}
-
-func (e *typedEntry[T]) envEntry(k leafKey, name string) (*entryLeaf, int, []string) {
-	for _, leaf := range k.entries {
-		for rank, template := range e.envVars(leafKey{key: leaf.key}) {
-			if keys, ok := matchKeys(template, envKeyPlaceholder, "_", name); ok {
-				return leaf, rank, keys
-			}
+		if i >= 0 {
+			out = append(out, entryEnvVar{name, s, leaves[i], ranks[i], keys})
 		}
 	}
 
-	return nil, 0, nil
+	return out, nil
 }
 
 func (e *typedEntry[T]) flagEntrySets(k leafKey, flags *pflag.FlagSet) []entrySet {
 	var sets []entrySet
 	if k.flag != nil && k.flag.Changed {
-		sets = splitEntries(k.each, nil, nil, k.value(), "--"+k.flagName, 0)
+		sets = splitEntries(k.each, nil, k.value(), "--"+k.flagName, 0)
 	}
 
 	flags.Visit(func(f *pflag.Flag) {
 		if ef, ok := e.b.entryFlags[f]; ok && slices.Contains(k.entries, ef.leaf) {
-			sets = append(sets, entrySets(ef.leaf, ef.keys, nil, ef.value(), "--"+f.Name, 0)...)
+			sets = append(sets, entrySets(ef.leaf, ef.keys, ef.value(), "--"+f.Name, 0)...)
 		}
 	})
 
 	return sets
-}
-
-// An env var name is upper case, so its key is the existing key that matches ignoring case, or else lower case.
-func envKeyText(existing reflect.Value, text string) (string, error) {
-	var found []string
-	if existing.IsValid() {
-		for key := range existing.Seq() {
-			if keyText := textOf(key); strings.EqualFold(keyText, text) {
-				found = append(found, keyText)
-			}
-		}
-	}
-
-	switch len(found) {
-	case 0:
-		return strings.ToLower(text), nil
-	case 1:
-		return found[0], nil
-	default:
-		slices.Sort(found)
-		return "", fmt.Errorf("%s could be any of the keys %q", text, found)
-	}
-}
-
-// The map that keys[len(keys)] would index, read without allocating.
-func entryMap(m reflect.Value, leaf *entryLeaf, keys []reflect.Value) reflect.Value {
-	for i, key := range keys {
-		if m = m.MapIndex(key); !m.IsValid() {
-			return m
-		}
-
-		m = readField(m, leaf.paths[i])
-	}
-
-	return m
 }
 
 // Reads without allocating, so an optional section left out stays nil.
@@ -482,22 +512,22 @@ func readField(v reflect.Value, path []string) reflect.Value {
 
 // Splits a whole map into its entries: --labels a=1,b=2 becomes the same as --labels.a 1 --labels.b 2, so giving
 // --labels a=1 --labels.a 3 is caught as setting it twice.
-func splitEntries(each *entryLeaf, keys []reflect.Value, texts []string, m reflect.Value, source string, rank int) []entrySet {
+func splitEntries(each *entryLeaf, keys []reflect.Value, m reflect.Value, source string, rank int) []entrySet {
 	var sets []entrySet
 	for key, val := range m.Seq2() {
 		entrySource := fmt.Sprintf("%s (key %q)", source, textOf(key))
-		sets = append(sets, entrySets(each, append(slices.Clone(keys), key), texts, val, entrySource, rank)...)
+		sets = append(sets, entrySets(each, append(slices.Clone(keys), key), val, entrySource, rank)...)
 	}
 
 	return sets
 }
 
-func entrySets(leaf *entryLeaf, keys []reflect.Value, texts []string, val reflect.Value, source string, rank int) []entrySet {
+func entrySets(leaf *entryLeaf, keys []reflect.Value, val reflect.Value, source string, rank int) []entrySet {
 	if leaf.each != nil && val.Kind() == reflect.Map {
-		return splitEntries(leaf.each, keys, texts, val, source, rank)
+		return splitEntries(leaf.each, keys, val, source, rank)
 	}
 
-	return []entrySet{{leaf: leaf, keys: keys, texts: texts, value: val, source: source, rank: rank}}
+	return []entrySet{{leaf: leaf, keys: keys, value: val, source: source, rank: rank}}
 }
 
 // Within one source, two values for one entry are an error, as two keys for one are. Across env var prefixes the

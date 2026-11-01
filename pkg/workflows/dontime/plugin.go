@@ -285,9 +285,9 @@ func (p *Plugin) unsequencedOutcome(aos []types.AttributedObservation, prevOutco
 		if mapLen := len(observedTimes.TimestampsBySequence); mapLen > 0 {
 			observedTimes.Timestamps = make([]int64, mapLen)
 			for seqNum, ts := range observedTimes.TimestampsBySequence {
-				if sliceLen := len(observedTimes.Timestamps); seqNum > int64(sliceLen) {
-					// There must have been a gap in the sequence so grow the slice
-					observedTimes.Timestamps = slices.Grow(observedTimes.Timestamps, int(seqNum)-sliceLen)
+				if l := len(observedTimes.Timestamps); seqNum >= int64(l) {
+					// There must have been a gap in the sequence, so grow the slice
+					observedTimes.Timestamps = slices.Grow(observedTimes.Timestamps, int(seqNum)-l)
 				}
 				observedTimes.Timestamps[seqNum] = ts
 			}
@@ -357,6 +357,9 @@ func (p *Plugin) sequencedOutcome(aos []types.AttributedObservation, prevOutcome
 	// At the transition point, we need to convert from the old slice format to maps
 	for _, observedTimes := range prevOutcome.ObservedDonTimes {
 		if len(observedTimes.Timestamps) > 0 {
+			if observedTimes.TimestampsBySequence == nil {
+				observedTimes.TimestampsBySequence = make(map[int64]int64, len(observedTimes.Timestamps))
+			}
 			for seqNum, ts := range observedTimes.Timestamps {
 				observedTimes.TimestampsBySequence[int64(seqNum)] = ts
 			}

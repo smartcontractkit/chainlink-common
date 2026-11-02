@@ -1248,6 +1248,7 @@ type InitialiseRequest struct {
 	CreSettingsId       uint32                 `protobuf:"varint,12,opt,name=cre_settings_id,json=creSettingsId,proto3" json:"cre_settings_id,omitempty"`
 	TriggerEventStoreId uint32                 `protobuf:"varint,13,opt,name=trigger_event_store_id,json=triggerEventStoreId,proto3" json:"trigger_event_store_id,omitempty"`
 	CapabilityDonId     uint32                 `protobuf:"varint,14,opt,name=capability_don_id,json=capabilityDonId,proto3" json:"capability_don_id,omitempty"`
+	ShardIndex          uint32                 `protobuf:"varint,15,opt,name=shard_index,json=shardIndex,proto3" json:"shard_index,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -1376,6 +1377,13 @@ func (x *InitialiseRequest) GetTriggerEventStoreId() uint32 {
 func (x *InitialiseRequest) GetCapabilityDonId() uint32 {
 	if x != nil {
 		return x.CapabilityDonId
+	}
+	return 0
+}
+
+func (x *InitialiseRequest) GetShardIndex() uint32 {
+	if x != nil {
+		return x.ShardIndex
 	}
 	return 0
 }
@@ -1572,7 +1580,7 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\x87\x01\n" +
 	"\x1dUnregisterFromWorkflowRequest\x12>\n" +
 	"\bmetadata\x18\x01 \x01(\v2\".capabilities.RegistrationMetadataR\bmetadata\x12&\n" +
-	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xc6\x04\n" +
+	"\x06config\x18\x02 \x01(\v2\x0e.values.v1.MapR\x06config\"\xe7\x04\n" +
 	"\x11InitialiseRequest\x12\x16\n" +
 	"\x06config\x18\x01 \x01(\tR\x06config\x12 \n" +
 	"\ferror_log_id\x18\x02 \x01(\rR\n" +
@@ -1590,7 +1598,9 @@ const file_capabilities_proto_rawDesc = "" +
 	"\x0forg_resolver_id\x18\v \x01(\rR\rorgResolverId\x12&\n" +
 	"\x0fcre_settings_id\x18\f \x01(\rR\rcreSettingsId\x123\n" +
 	"\x16trigger_event_store_id\x18\r \x01(\rR\x13triggerEventStoreId\x12*\n" +
-	"\x11capability_don_id\x18\x0e \x01(\rR\x0fcapabilityDonId\"O\n" +
+	"\x11capability_don_id\x18\x0e \x01(\rR\x0fcapabilityDonId\x12\x1f\n" +
+	"\vshard_index\x18\x0f \x01(\rR\n" +
+	"shardIndex\"O\n" +
 	"\x14CapabilityInfosReply\x127\n" +
 	"\x05infos\x18\x01 \x03(\v2!.capabilities.CapabilityInfoReplyR\x05infos\"@\n" +
 	"\x0eSettingsUpdate\x12\x1a\n" +

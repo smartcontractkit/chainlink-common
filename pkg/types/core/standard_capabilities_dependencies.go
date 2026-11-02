@@ -34,4 +34,7 @@ type StandardCapabilitiesDependencies struct {
 	// registry in that case, but the fallback path cannot disambiguate when
 	// the local node belongs to multiple DONs running the same capability.
 	CapabilityDonID uint32
+	// ShardIndex is the shard of the node hosting this plugin, from the node's
+	// [Sharding] config. Zero for unsharded nodes and hosts that don't set it.
+	ShardIndex uint32
 }

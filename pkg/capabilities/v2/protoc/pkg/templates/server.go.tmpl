@@ -262,13 +262,13 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
                     {{- end }}
                     return nil, capabilities.ResponseMetadata{}, nil, err
                 }
-                {{- if $.WithMonitoring }}
-                mc.Logger.Infow("Capability Succeeded", logKvs...)
-                c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
-                {{- end }}
-                if output == nil {
-                    return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
-                }
+               if output == nil {
+                   return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
+               }
+               {{- if $.WithMonitoring }}
+               mc.Logger.Infow("Capability Succeeded", logKvs...)
+               c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
+               {{- end }}
                 return output.Response, output.ResponseMetadata, output.OCRAttestation, err
             }
             return capabilities.Execute(ctx, request, input, config, wrapped)
@@ -305,13 +305,13 @@ func (c *{{.GoName|LowerFirst}}Capability) Execute(ctx context.Context, request 
                     {{- end }}
                     return nil, capabilities.ResponseMetadata{}, nil, err
                  }
+                 if output == nil {
+                     return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
+                 }
                  {{- if $.WithMonitoring }}
                  mc.Logger.Infow("capability succeeded", logKvs...)
                  c.actionMetrics.OnSuccess(ctx, "{{.GoName}}", tsStart, time.Now(), capmon.ActionMetricAttributes("{{.GoName}}", metadata, mc.MetricsAttributes, metricAttrs)...)
                  {{- end }}
-                 if output == nil {
-                     return nil, capabilities.ResponseMetadata{}, nil, fmt.Errorf("output and error is nil for method {{.GoName}}(..) (if output is nil error must be present)")
-                 }
                  return output.Response, output.ResponseMetadata, output.OCRAttestation, err
              }
              return capabilities.Execute(ctx, request, input, config, wrapped)

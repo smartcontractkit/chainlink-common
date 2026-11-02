@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793648365516,
+  "lastUpdate": 1793651049629,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65820,6 +65820,66 @@ window.BENCHMARK_DATA = {
             "value": 132543,
             "unit": "ns/op",
             "extra": "9057 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "russell.stern@smartcontract.com",
+            "name": "Russell Stern",
+            "username": "russell-stern"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1c6d22d0a5ad2f5aafddc5f9099a4af65a3133d9",
+          "message": "Vault latency feature flag and proto changes (#2452)\n\n* Added vault get secrets directly and feature flag\n\n* Added tdh2\n\n* Dedup shares before aggregating\n\n* Updated with comments\n\n* Removed vaultcrypto package\n\n* Fixed package issue",
+          "timestamp": "2026-11-02T20:14:35Z",
+          "tree_id": "25ec117ac78ea3db41c317af77fe7162e00c312f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1c6d22d0a5ad2f5aafddc5f9099a4af65a3133d9"
+        },
+        "date": 1793651045628,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 278,
+            "unit": "ns/op",
+            "extra": "4381658 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 56749,
+            "unit": "ns/op",
+            "extra": "20871 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 297.3,
+            "unit": "ns/op",
+            "extra": "3985774 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57509,
+            "unit": "ns/op",
+            "extra": "20734 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21875,
+            "unit": "ns/op",
+            "extra": "55053 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 95947,
+            "unit": "ns/op",
+            "extra": "12504 times\n4 procs"
           }
         ]
       }

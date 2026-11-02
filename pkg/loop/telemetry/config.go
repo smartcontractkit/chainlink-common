@@ -72,7 +72,7 @@ type TelemetryConfig struct {
 
 	// The `toml` tag is singular here to match what AsCmdEnv emits.
 	// This is for compatibility with x/config/cli
-	TracingAttributes map[string]string `toml:"TracingAttribute" json:"TracingAttributes"`
+	TracingAttributes map[string]string `toml:"TracingAttribute" json:"TracingAttribute"`
 
 	TelemetryEnabled            bool
 	TelemetryEndpoint           string

@@ -6,7 +6,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/markuptests"
 )
+
+func TestMarkup(t *testing.T) {
+	markuptests.Run(t, New())
+}
 
 func TestExtension(t *testing.T) {
 	assert.Equal(t, "toml", New().Extension())
@@ -51,8 +57,8 @@ func TestKey(t *testing.T) {
 }
 
 func TestRenameTag(t *testing.T) {
-	assert.Equal(t, reflect.StructTag(`toml:"k"`), New().RenameTag("k"))
-	assert.Equal(t, reflect.StructTag(`toml:"-,"`), New().RenameTag("-"))
+	assert.Equal(t, reflect.StructTag(`toml:"k"`), New().RenameTag("k", `toml:"x,multiline"`))
+	assert.Equal(t, reflect.StructTag(`toml:"-,"`), New().RenameTag("-", ""))
 }
 
 func TestIsLeaf(t *testing.T) {

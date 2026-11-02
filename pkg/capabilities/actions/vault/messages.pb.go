@@ -496,8 +496,10 @@ type GetSecretsRequest struct {
 	OrgId string `protobuf:"bytes,2,opt,name=org_id,json=orgId,proto3" json:"org_id,omitempty"`
 	// Deprecated: Marked as deprecated in capabilities/actions/vault/messages.proto.
 	WorkflowOwner string `protobuf:"bytes,3,opt,name=workflow_owner,json=workflowOwner,proto3" json:"workflow_owner,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	// Serve from each Vault node's local state instead of through OCR.
+	GetSecretsDirectly bool `protobuf:"varint,4,opt,name=get_secrets_directly,json=getSecretsDirectly,proto3" json:"get_secrets_directly,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetSecretsRequest) Reset() {
@@ -551,6 +553,13 @@ func (x *GetSecretsRequest) GetWorkflowOwner() string {
 		return x.WorkflowOwner
 	}
 	return ""
+}
+
+func (x *GetSecretsRequest) GetGetSecretsDirectly() bool {
+	if x != nil {
+		return x.GetSecretsDirectly
+	}
+	return false
 }
 
 type GetSecretsResponse struct {
@@ -2532,11 +2541,12 @@ const file_capabilities_actions_vault_messages_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\v2\x17.vault.SecretIdentifierR\x02id\x12'\n" +
 	"\x04data\x18\x02 \x01(\v2\x11.vault.SecretDataH\x00R\x04data\x12\x16\n" +
 	"\x05error\x18\x03 \x01(\tH\x00R\x05errorB\b\n" +
-	"\x06result\"\x8b\x01\n" +
+	"\x06result\"\xbd\x01\n" +
 	"\x11GetSecretsRequest\x120\n" +
 	"\brequests\x18\x01 \x03(\v2\x14.vault.SecretRequestR\brequests\x12\x19\n" +
 	"\x06org_id\x18\x02 \x01(\tB\x02\x18\x01R\x05orgId\x12)\n" +
-	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\"z\n" +
+	"\x0eworkflow_owner\x18\x03 \x01(\tB\x02\x18\x01R\rworkflowOwner\x120\n" +
+	"\x14get_secrets_directly\x18\x04 \x01(\bR\x12getSecretsDirectly\"z\n" +
 	"\x12GetSecretsResponse\x123\n" +
 	"\tresponses\x18\x01 \x03(\v2\x15.vault.SecretResponseR\tresponses\x12/\n" +
 	"\x14raw_vault_public_key\x18\x02 \x01(\tR\x11rawVaultPublicKey\"c\n" +

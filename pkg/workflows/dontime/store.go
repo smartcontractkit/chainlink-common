@@ -124,7 +124,9 @@ func (s *Store) GetDonTimeForSeqNum(executionID string, seqNum int) *int64 {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if times, ok := s.donTimes[executionID]; ok {
-		return new(times[int64(seqNum)])
+		if ts, ok2 := times[int64(seqNum)]; ok2 {
+			return new(ts)
+		}
 	}
 	return nil
 }

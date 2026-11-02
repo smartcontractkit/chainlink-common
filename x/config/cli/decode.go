@@ -14,13 +14,14 @@ import (
 // keyNode is the key tree Binder.commandConfig builds; see there for an example.
 type keyNode struct {
 	leaf     reflect.Type
+	tag      reflect.StructTag
 	children map[string]*keyNode
 	index    int
 }
 
 // A key the markup can't tell from another, such as Value and VALUE when it matches case-insensitively, would set both
 // fields, so it is rejected too.
-func (n *keyNode) add(path []string, leaf reflect.Type, lang markup.Markup) error {
+func (n *keyNode) add(path []string, leaf reflect.Type, tag reflect.StructTag, lang markup.Markup) error {
 	node := n
 	for i, segment := range path {
 		at := strings.Join(path[:i+1], ".")
@@ -38,6 +39,7 @@ func (n *keyNode) add(path []string, leaf reflect.Type, lang markup.Markup) erro
 			child = &keyNode{children: map[string]*keyNode{}}
 			if isLeaf {
 				child.leaf = leaf
+				child.tag = tag
 			}
 
 			node.children[segment] = child
@@ -67,7 +69,7 @@ func (n *keyNode) fileValuesType(lang markup.Markup) reflect.Type {
 		fields[i] = reflect.StructField{
 			Name: fmt.Sprintf("F%d", i),
 			Type: reflect.PointerTo(t),
-			Tag:  lang.RenameTag(name),
+			Tag:  lang.RenameTag(name, child.tag),
 		}
 	}
 

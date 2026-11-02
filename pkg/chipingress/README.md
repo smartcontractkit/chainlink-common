@@ -138,7 +138,7 @@ The client uses `otelgrpc.NewClientHandler()` to automatically create spans for 
 
 gRPC-level retries are disabled by default and can be enabled with `WithRetryPolicy`. See
 [docs/retry-policy.md](docs/retry-policy.md) for the default policy, timing, throttling, and the
-duplicate-delivery caveat for `Publish`/`PublishBatch`.
+duplicate-delivery caveat for `Publish`/`PublishBatch`/`PublishBatchNoAck`.
 
 ## Dependencies
 

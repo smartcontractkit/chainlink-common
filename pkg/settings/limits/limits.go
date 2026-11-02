@@ -65,7 +65,7 @@ func TryEvictTenant(v any, tenant string) error {
 var pollPeriod = 5 * time.Second // reduced for tests
 
 func maxVal[N Number]() (n N, err error) {
-	val := reflect.ValueOf(n)
+	val := reflect.ValueOf(&n).Elem()
 	switch val.Kind() {
 	case reflect.Float64:
 		val.SetFloat(math.MaxFloat64)
@@ -91,6 +91,8 @@ func maxVal[N Number]() (n N, err error) {
 		val.SetUint(math.MaxUint8)
 	case reflect.Uint:
 		val.SetUint(math.MaxUint)
+	case reflect.Uintptr:
+		val.SetUint(uint64(^uintptr(0)))
 	default:
 		return 0, fmt.Errorf("unsupported kind %s for type %T", val.Kind(), n)
 	}

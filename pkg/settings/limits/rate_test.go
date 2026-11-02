@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/contexts"
+	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
@@ -290,4 +292,127 @@ func TestMultiRateLimiter(t *testing.T) {
 	}
 	require.NoError(t, ml.Wait(ctxB))
 	require.NoError(t, ml.WaitN(ctxB, 2))
+}
+
+// TestRateLimiter_ColdStartBurst covers the first burst against a newly created bucket, which must be sized by the
+// resolved setting rather than the default.
+func TestRateLimiter_ColdStartBurst(t *testing.T) {
+	t.Parallel()
+
+	const (
+		key      = "PerWorkflow.HTTPTrigger.RateLimit"
+		org      = "org_u89K7cnwJzCek5m1"
+		owner    = "0x6a4b771f7a439b38c7165bbf148542934247174c"
+		workflow = "0x00aa"
+		attempts = 40
+	)
+
+	for _, tt := range []struct {
+		name  string
+		scope settings.Scope
+		toml  string
+		cre   contexts.CRE
+		want  int
+	}{
+		{
+			name:  "org override above default",
+			scope: settings.ScopeWorkflow,
+			toml: `[org.org_u89K7cnwJzCek5m1.PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:30'`,
+			cre:  contexts.CRE{Org: org, Owner: owner, Workflow: workflow},
+			want: 30,
+		},
+		{
+			name:  "org override below default",
+			scope: settings.ScopeWorkflow,
+			toml: `[org.org_u89K7cnwJzCek5m1.PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:2'`,
+			cre:  contexts.CRE{Org: org, Owner: owner, Workflow: workflow},
+			want: 2,
+		},
+		{
+			name:  "no override",
+			scope: settings.ScopeWorkflow,
+			toml:  ``,
+			cre:   contexts.CRE{Org: org, Owner: owner, Workflow: workflow},
+			want:  3,
+		},
+		{
+			name:  "org missing from context falls back to global",
+			scope: settings.ScopeWorkflow,
+			toml: `[global.PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:1'
+[org.org_u89K7cnwJzCek5m1.PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:30'`,
+			cre:  contexts.CRE{Owner: owner, Workflow: workflow},
+			want: 1,
+		},
+		{
+			name:  "global scope override above default",
+			scope: settings.ScopeGlobal,
+			toml: `[global.PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:30'`,
+			want: 30,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			getter, err := settings.NewTOMLGetter([]byte(tt.toml))
+			require.NoError(t, err)
+
+			s := settings.Rate(rate.Every(30*time.Second), 3)
+			s.Key = key
+			s.Scope = tt.scope
+
+			rl, err := Factory{Settings: getter, Logger: logger.Test(t)}.MakeRateLimiter(s)
+			require.NoError(t, err)
+			t.Cleanup(func() { assert.NoError(t, rl.Close()) })
+
+			ctx := contexts.WithCRE(t.Context(), tt.cre)
+			allowed := 0
+			for range attempts {
+				if rl.Allow(ctx) {
+					allowed++
+				}
+			}
+			assert.Equal(t, tt.want, allowed)
+		})
+	}
+}
+
+// TestScopedRateLimiter_ConcurrentFirstUse checks that racing creators of one tenant's bucket end up sharing the
+// stored bucket.
+func TestScopedRateLimiter_ConcurrentFirstUse(t *testing.T) {
+	t.Parallel()
+
+	getter, err := settings.NewTOMLGetter([]byte(`[org.org_a.PerWorkflow.HTTPTrigger]
+RateLimit = 'every30s:30'`))
+	require.NoError(t, err)
+
+	s := settings.Rate(rate.Every(30*time.Second), 3)
+	s.Key = "PerWorkflow.HTTPTrigger.RateLimit"
+	s.Scope = settings.ScopeWorkflow
+
+	rl, err := Factory{Settings: getter, Logger: logger.Test(t)}.MakeRateLimiter(s)
+	require.NoError(t, err)
+
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Org: "org_a", Owner: "0x01", Workflow: "0x02"})
+	var allowed atomic.Int32
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for range 60 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			if rl.Allow(ctx) {
+				allowed.Add(1)
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+
+	assert.Equal(t, int32(30), allowed.Load())
+	assert.NoError(t, rl.Close())
 }

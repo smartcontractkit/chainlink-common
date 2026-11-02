@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -538,4 +539,60 @@ func (u *resourcePoolUsage[N]) setOnEnqueue(fn func()) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 	u.onEnqueue = fn
+}
+
+// TestMaxVal asserts that maxVal returns the largest value of every kind Number allows,
+// including a named type such as time.Duration.
+func TestMaxVal(t *testing.T) {
+	t.Parallel()
+
+	t.Run("int", func(t *testing.T) { requireMaxVal(t, int(math.MaxInt)) })
+	t.Run("int8", func(t *testing.T) { requireMaxVal(t, int8(math.MaxInt8)) })
+	t.Run("int16", func(t *testing.T) { requireMaxVal(t, int16(math.MaxInt16)) })
+	t.Run("int32", func(t *testing.T) { requireMaxVal(t, int32(math.MaxInt32)) })
+	t.Run("int64", func(t *testing.T) { requireMaxVal(t, int64(math.MaxInt64)) })
+	t.Run("uint", func(t *testing.T) { requireMaxVal(t, uint(math.MaxUint)) })
+	t.Run("uint8", func(t *testing.T) { requireMaxVal(t, uint8(math.MaxUint8)) })
+	t.Run("uint16", func(t *testing.T) { requireMaxVal(t, uint16(math.MaxUint16)) })
+	t.Run("uint32", func(t *testing.T) { requireMaxVal(t, uint32(math.MaxUint32)) })
+	t.Run("uint64", func(t *testing.T) { requireMaxVal(t, uint64(math.MaxUint64)) })
+	t.Run("uintptr", func(t *testing.T) { requireMaxVal(t, ^uintptr(0)) })
+	t.Run("float32", func(t *testing.T) { requireMaxVal(t, float32(math.MaxFloat32)) })
+	t.Run("float64", func(t *testing.T) { requireMaxVal(t, float64(math.MaxFloat64)) })
+	t.Run("time.Duration", func(t *testing.T) { requireMaxVal(t, time.Duration(math.MaxInt64)) })
+}
+
+func requireMaxVal[N Number](t *testing.T, want N) {
+	t.Helper()
+	got, err := maxVal[N]()
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+// TestResourcePoolLimiter_OptionalScopeMissingTenant asserts that a pool whose scope does not
+// require a tenant fails open when the tenant is missing. A workflow with no org has no org
+// tenant, so its org pool must report unlimited capacity and let every use through.
+func TestResourcePoolLimiter_OptionalScopeMissingTenant(t *testing.T) {
+	t.Parallel()
+	require.False(t, settings.ScopeOrg.IsTenantRequired(), "precondition: org scope is optional")
+
+	limit := settings.Int(1)
+	limit.Scope = settings.ScopeOrg
+	l, err := newScopedResourcePoolLimiterFromFactory(Factory{}, limit)
+	require.NoError(t, err)
+	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Owner: "foo", Workflow: "bar"}) // no org
+
+	available, err := l.Available(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, math.MaxInt, available)
+
+	got, err := l.Limit(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, math.MaxInt, got)
+
+	require.NoError(t, l.Use(ctx, 2), "an unlimited pool lets a use over the limit through")
+	require.NoError(t, l.Free(ctx, 2))
+	free, err := l.Wait(ctx, 2)
+	require.NoError(t, err)
+	free()
 }

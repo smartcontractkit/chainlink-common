@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
-	"github.com/bytecodealliance/wasmtime-go/v47"
+	"github.com/bytecodealliance/wasmtime-go/v50"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
@@ -592,7 +592,7 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 // recovers any panic. It's sufficient to just recover here, wasmtime-go
 // recovers panics that originated from guest calls to the host, and
 // re-panics them in Go.
-// See https://pkg.go.dev/github.com/bytecodealliance/wasmtime-go/v47#Func.Call.
+// See https://pkg.go.dev/github.com/bytecodealliance/wasmtime-go/v50#Func.Call.
 func callStart(m *module, instance *wasmtime.Instance, store *wasmtime.Store) (result any, err error) {
 	defer func() {
 		if r := recover(); r != nil {

@@ -58,6 +58,9 @@ type leafKey struct {
 	// one key, such as 16 and 0x10. Flags and env vars are already text, so they don't use it.
 	fileType reflect.Type
 
+	// tag is the field's own, so the type a config file is decoded into reads the value as the field does.
+	tag reflect.StructTag
+
 	// entries set values inside a map's entries, such as chains.<key>.rpc; each is the one that sets a whole entry.
 	entries []*entryLeaf
 	each    *entryLeaf

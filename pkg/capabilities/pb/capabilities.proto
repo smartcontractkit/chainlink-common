@@ -199,6 +199,7 @@ message InitialiseRequest {
   uint32 cre_settings_id = 12;
   uint32 trigger_event_store_id = 13;
   uint32 capability_don_id = 14;
+  uint32 shard_index = 15;
 }
 
 message CapabilityInfosReply {

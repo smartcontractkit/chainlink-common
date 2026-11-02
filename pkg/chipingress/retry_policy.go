@@ -179,7 +179,7 @@ func buildRetryServiceConfigJSON(policy RetryPolicy, throttling *RetryThrottling
 
 // WithRetryPolicy enables gRPC-level retries for the ChipIngress service using policy (see
 // DefaultRetryPolicy for recommended values). Retries are disabled by default because the policy
-// is service-wide and so also replays Publish, PublishBatch and RegisterSchema: an UNAVAILABLE can
+// is service-wide and so also replays Publish, PublishBatch, PublishBatchNoAck and RegisterSchema: an UNAVAILABLE can
 // be returned after the server has already done the work, which can duplicate events unless the
 // caller sets IdempotencyKeyAttr. Retry throttling (see RetryThrottlingPolicy) is applied
 // alongside the policy so a struggling server isn't amplified by retries.

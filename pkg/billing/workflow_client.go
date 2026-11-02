@@ -178,7 +178,7 @@ func (wc *workflowClient) ReserveCredits(ctx context.Context, req *pb.ReserveCre
 	}
 	resp, err := wc.client.ReserveCredits(ctx, req)
 	if err != nil {
-		wc.logger.Errorw("ReserveCredits failed", "error", err)
+		wc.logger.Debugw("ReserveCredits failed", "error", err)
 		return nil, err
 	}
 	return resp, nil

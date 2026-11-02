@@ -72,7 +72,7 @@ type TelemetryConfig struct {
 
 	// The `toml` tag is singular here to match what AsCmdEnv emits.
 	// This is for compatibility with x/config/cli
-	TracingAttributes map[string]string `toml:"TracingAttribute"`
+	TracingAttributes map[string]string `toml:"TracingAttribute" json:"TracingAttribute"`
 
 	TelemetryEnabled            bool
 	TelemetryEndpoint           string
@@ -80,11 +80,11 @@ type TelemetryConfig struct {
 	TelemetryCACertFile         string
 	// The `toml` tag is singular here to match what AsCmdEnv emits.
 	// This is for compatibility with x/config/cli
-	TelemetryAttributes       beholder.OtelAttributes `toml:"TelemetryAttribute"`
+	TelemetryAttributes       beholder.OtelAttributes `toml:"TelemetryAttribute" json:"TelemetryAttribute"`
 	TelemetryTraceSampleRatio float64
 	// The `toml` tag is singular here to match what AsCmdEnv emits.
 	// This is for compatibility with x/config/cli
-	TelemetryAuthHeaders    map[string]string `toml:"TelemetryAuthHeader"`
+	TelemetryAuthHeaders    map[string]string `toml:"TelemetryAuthHeader" json:"TelemetryAuthHeader"`
 	TelemetryAuthPubKeyHex  string
 	TelemetryAuthHeadersTTL time.Duration
 	// TelemetryEmitterBatchProcessor maps to beholder Config.EmitterBatchProcessor

@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793636419773,
+  "lastUpdate": 1793648365516,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -65760,6 +65760,66 @@ window.BENCHMARK_DATA = {
             "value": 108039,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "tinianov@live.com",
+            "name": "Ryan Tinianov",
+            "username": "nolag"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "7c70dfab9728d4a842129ce17a309391f89d41ba",
+          "message": "Allow pkg/loop/telemetry config to have json naming match TOML. (#2519)\n\n* Allow pkg/loop/telemetry config to have json naming match TOML. CRE's capabilites use YAML for thier markup, and with x/config/cli parsing env variables it'll need the same name\n\n* Fix JSON tag for TracingAttributes field\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot Autofix powered by AI <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-11-02T19:30:37Z",
+          "tree_id": "5ac09a75cd3ee4bbc63aa821d792ddb6c5314af8",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/7c70dfab9728d4a842129ce17a309391f89d41ba"
+        },
+        "date": 1793648360737,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 355,
+            "unit": "ns/op",
+            "extra": "3390404 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 88213,
+            "unit": "ns/op",
+            "extra": "13510 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.7,
+            "unit": "ns/op",
+            "extra": "2981379 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 88051,
+            "unit": "ns/op",
+            "extra": "13755 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25863,
+            "unit": "ns/op",
+            "extra": "46376 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 132543,
+            "unit": "ns/op",
+            "extra": "9057 times\n4 procs"
           }
         ]
       }

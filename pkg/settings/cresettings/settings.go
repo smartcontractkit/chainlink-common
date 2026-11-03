@@ -370,6 +370,7 @@ var Default = Schema{
 		FeatureWorkflowTagBackfillActivePeriod:           disabledFeatureTimeRange,
 		FeatureConsensusStricterMedianQuorumActivePeriod: disabledFeatureTimeRange,
 		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
+		FeatureVaultGetSecretsDirectlyActivePeriod:       disabledFeatureTimeRange,
 		FeatureShadowTriggerModeActivePeriod:             disabledFeatureTimeRange,
 	},
 }
@@ -610,6 +611,7 @@ type Workflows struct {
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureVaultGetSecretsDirectlyActivePeriod        Setting[Range[config.Timestamp]]
 	// FeatureShadowTriggerModeActivePeriod is the window in which coordinated trigger events are also
 	// copied to the central trigger queue. Each event is checked against the time it was observed, so
 	// every node switches at the same moment.

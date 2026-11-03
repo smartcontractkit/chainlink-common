@@ -80,7 +80,7 @@ func (c *Client) initService(lggr pkglogger.Logger, batchSvc *ChipIngressBatchEm
 			}
 			for _, domain := range allDomains() {
 				if em, ok := c.domainEmitters[domain]; ok {
-					subs = append(subs, em.ChipIngressBatchEmitterService)
+					subs = append(subs, em.closer)
 				}
 			}
 			return subs
@@ -345,6 +345,16 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 
 // close is the lifecycle Close hook: OTel/message shutdown and CHIP close.
 func (c *Client) close() (err error) {
+	// Drain the domain emitters (concurrently) before the OTel providers shut down below, so
+	// outcomes recorded during the drain are still exported. The engine closes them again as
+	// sub-services after this hook; closeOnce makes that a no-op.
+	var domainClosers []*closeOnce
+	for _, domain := range allDomains() {
+		if em, ok := c.domainEmitters[domain]; ok {
+			domainClosers = append(domainClosers, em.closer)
+		}
+	}
+	err = errors.Join(err, services.MultiCloser(domainClosers).Close())
 	if c.Emitter != nil {
 		err = errors.Join(err, c.Emitter.Close())
 	}

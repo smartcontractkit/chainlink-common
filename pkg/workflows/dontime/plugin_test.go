@@ -17,6 +17,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
@@ -663,4 +664,53 @@ func TestPlugin_ExpiredRequest(t *testing.T) {
 	case <-ctx.Done():
 		t.Fatal("failed to retrieve donTime from request channel")
 	}
+}
+
+func TestPlugin_Outcome_DisableSequencedWithGap(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	cfg, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	ctx := t.Context()
+
+	plugin, err := NewPlugin(store, cfg, offchainCfg, lggr)
+	require.NoError(t, err)
+	plugin.setSequencedTSEnabled(limits.NewRangeLimiter(settings.Range[config.Timestamp]{
+		Lower: config.NewTimestamp(time.Now().Add(-time.Hour)),
+		Upper: config.NewTimestamp(time.Now().Add(time.Hour)),
+	}))
+
+	const executionID = "workflow-123"
+	makeObservations := func(timestamp, seqNum int64) []types.AttributedObservation {
+		aos := make([]types.AttributedObservation, 4)
+		for i := range aos {
+			rawObs, err := proto.Marshal(&pb.Observation{
+				Timestamp: timestamp,
+				Requests:  map[string]int64{executionID: seqNum},
+			})
+			require.NoError(t, err)
+			aos[i] = types.AttributedObservation{Observation: rawObs, Observer: commontypes.OracleID(i)}
+		}
+		return aos
+	}
+
+	// Sequenced mode: seqNum 0, then seqNum 2, leaving a gap at 1.
+	ts := time.Now().UnixMilli()
+	outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{}, nil, makeObservations(ts, 0))
+	require.NoError(t, err)
+	outcome, err = plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: outcome}, nil, makeObservations(ts+1000, 2))
+	require.NoError(t, err)
+
+	gapped := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(outcome, gapped))
+	require.Equal(t, map[int64]int64{0: ts, 2: ts + 1000}, gapped.ObservedDonTimes[executionID].TimestampsBySequence)
+
+	// Disable the feature flag: conversion back to the slice format must handle the gap.
+	plugin.setSequencedTSEnabled(limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsActivePeriod.DefaultValue))
+	outcome, err = plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: outcome}, nil, makeObservations(ts+2000, 3))
+	require.NoError(t, err)
+
+	unsequenced := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(outcome, unsequenced))
+	require.Equal(t, []int64{ts, 0, ts + 1000, ts + 2000}, unsequenced.ObservedDonTimes[executionID].Timestamps)
+	require.Empty(t, unsequenced.ObservedDonTimes[executionID].TimestampsBySequence)
 }

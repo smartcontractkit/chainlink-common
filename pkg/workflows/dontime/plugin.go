@@ -286,8 +286,9 @@ func (p *Plugin) unsequencedOutcome(aos []types.AttributedObservation, prevOutco
 			observedTimes.Timestamps = make([]int64, mapLen)
 			for seqNum, ts := range observedTimes.TimestampsBySequence {
 				if l := len(observedTimes.Timestamps); seqNum >= int64(l) {
-					// There must have been a gap in the sequence, so grow the slice
-					observedTimes.Timestamps = slices.Grow(observedTimes.Timestamps, int(seqNum)-l)
+					// There must have been a gap in the sequence, so extend the slice
+					observedTimes.Timestamps = slices.Grow(observedTimes.Timestamps, int(seqNum)+1-l)
+					observedTimes.Timestamps = observedTimes.Timestamps[:seqNum+1]
 				}
 				observedTimes.Timestamps[seqNum] = ts
 			}

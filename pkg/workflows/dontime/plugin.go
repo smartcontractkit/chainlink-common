@@ -313,7 +313,14 @@ func (p *Plugin) Outcome(ctx context.Context, outctx ocr3types.OutcomeContext, _
 		for id := range outcome.ObservedDonTimes {
 			ids = append(ids, id)
 		}
-		slices.Sort(ids)
+		// Evict least recently active executions first; ties broken by ID for determinism.
+		lastTS := func(id string) int64 {
+			ts := outcome.ObservedDonTimes[id].Timestamps
+			return ts[len(ts)-1]
+		}
+		slices.SortFunc(ids, func(a, b string) int {
+			return cmp.Or(cmp.Compare(lastTS(b), lastTS(a)), cmp.Compare(a, b))
+		})
 		outcomeBatchOverflowCount = int64(len(ids) - p.batchSize)
 		for _, id := range ids[p.batchSize:] {
 			delete(outcome.ObservedDonTimes, id)

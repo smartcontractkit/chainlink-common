@@ -634,3 +634,64 @@ func TestPlugin_ExpiredRequest(t *testing.T) {
 		t.Fatal("failed to retrieve donTime from request channel")
 	}
 }
+
+// With the outcome at capacity, a new execution whose ID sorts past the batch cut
+// must still get its first DON time; idle executions are evicted instead.
+func TestPlugin_Outcome_TrimDoesNotStarveNewExecutions(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	offchainCfg.MaxBatchSize = 2
+	ctx := t.Context()
+
+	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+	require.NoError(t, err)
+	transmitter := NewTransmitter(lggr, store, "")
+
+	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
+	require.NoError(t, err)
+
+	// Outcome already holds batchSize idle executions whose IDs sort below the new one.
+	oldTS := time.Now().Add(-time.Minute).UnixMilli()
+	prevOutcome := &pb.Outcome{
+		Timestamp: oldTS,
+		ObservedDonTimes: map[string]*pb.ObservedDonTimes{
+			"0-exec": {Timestamps: []int64{oldTS}},
+			"1-exec": {Timestamps: []int64{oldTS}},
+		},
+	}
+	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
+	require.NoError(t, err)
+
+	const newID = "f-exec" // sorts after every existing entry
+	respCh := store.RequestDonTime(newID, 0)
+
+	// Several rounds in which every node observes the pending seq 0 request.
+	for round := range 3 {
+		obs, err := plugin.Observation(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query)
+		require.NoError(t, err)
+		aos := make([]types.AttributedObservation, 4)
+		for i := range aos {
+			aos[i] = types.AttributedObservation{Observation: obs, Observer: commontypes.OracleID(i)}
+		}
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, aos)
+		require.NoError(t, err)
+		err = transmitter.Transmit(ctx, types.ConfigDigest{}, uint64(round), ocr3types.ReportWithInfo[[]byte]{Report: types.Report(outcome)}, nil)
+		require.NoError(t, err)
+		prevOutcomeBytes = outcome
+	}
+
+	outcomeProto := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(prevOutcomeBytes, outcomeProto))
+	require.Len(t, outcomeProto.ObservedDonTimes, 2)
+	require.Contains(t, outcomeProto.ObservedDonTimes, newID, "new execution was trimmed every round")
+	require.Len(t, outcomeProto.ObservedDonTimes[newID].Timestamps, 1)
+
+	select {
+	case resp := <-respCh:
+		require.NoError(t, resp.Err)
+		require.Equal(t, outcomeProto.ObservedDonTimes[newID].Timestamps[0], resp.Timestamp)
+	default:
+		t.Fatal("seq 0 request was never answered")
+	}
+}

@@ -301,6 +301,19 @@ func TestCentralTriggerQueueDrainInterval(t *testing.T) {
 	assert.Equal(t, 500*time.Millisecond, got)
 }
 
+// TestShardOwnershipCheckTimeout asserts the shard ownership lookup timeout is global and defaults to 30s.
+func TestShardOwnershipCheckTimeout(t *testing.T) {
+	s := Default.ShardOwnershipCheckTimeout
+
+	assert.Equal(t, "ShardOwnershipCheckTimeout", s.GetKey())
+	assert.Equal(t, settings.ScopeGlobal, s.Scope)
+	assert.Equal(t, 30*time.Second, s.DefaultValue)
+
+	got, err := s.GetOrDefault(t.Context(), DefaultGetter)
+	require.NoError(t, err)
+	assert.Equal(t, 30*time.Second, got)
+}
+
 // TestFeatureShadowTriggerModeActivePeriodKeyInit asserts the shadow window is per workflow and off by default.
 func TestFeatureShadowTriggerModeActivePeriodKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.FeatureShadowTriggerModeActivePeriod

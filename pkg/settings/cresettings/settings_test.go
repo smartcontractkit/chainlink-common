@@ -314,6 +314,18 @@ func TestFeatureShadowTriggerModeActivePeriodKeyInit(t *testing.T) {
 	}, s.DefaultValue)
 }
 
+func TestFeatureVaultGetSecretsDirectlyActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
+}
+
 func TestGatewayProxyDonIDKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
 

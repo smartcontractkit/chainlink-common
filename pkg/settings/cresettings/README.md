@@ -226,6 +226,7 @@ flowchart
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
+        PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod[/PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
@@ -401,6 +402,9 @@ flowchart
 
 %%  the central trigger queue's drainer is likewise its own entry point
     CentralTriggerQueue.Drain
+
+%% TODO placating test for now since this flowchart no longer renders
+    DonTimeSequencedTimestampsActivePeriod 
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

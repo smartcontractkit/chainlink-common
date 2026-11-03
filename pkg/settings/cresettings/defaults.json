@@ -63,6 +63,7 @@
 	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
 	"MissingRequestRecoveryEnabled": "false",
+	"DonTimeSequencedTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 	"ConfidentialCompute": {
 		"GlobalRate": "1000rps:1000",
 		"MaxRetries": "3",
@@ -244,6 +245,7 @@
 		"FeatureWorkflowTagBackfillActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureConsensusStricterMedianQuorumActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureConsensusIncludeAllTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureVaultGetSecretsDirectlyActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureShadowTriggerModeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

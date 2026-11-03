@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793723438166,
+  "lastUpdate": 1793724722035,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66000,6 +66000,66 @@ window.BENCHMARK_DATA = {
             "value": 134248,
             "unit": "ns/op",
             "extra": "8041 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jmank88@gmail.com",
+            "name": "Jordan Krage",
+            "username": "jmank88"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "1d522142e5f2536f7c0a1318f6ad0f2e51978c37",
+          "message": "pkg/workflows/dontime: introduce feature flagged fix for sequence number inconsistency (#2361)\n\n* pkg/workflows/dontime: introduce feature flagged fix for sequence number inconsistency\n\n* use donTime for feature flag\n\n* adapt transmitter\n\n* adjust donTime before usage; rm limitByBatchSizeFlag\n\n* cleanup; drop error cases\n\n* document map keys\n\n* restore unsequencedOutcome\n\n* cleanup and error handling\n\n* remove irrelevant test\n\n* cleanup\n\n* don't assume current sequence number\n\n* dedupe\n\n* simplify Observation\n\n* fix test\n\n* remove todo\n\n* sorted map iteration\n\n* tests and fixes\n\n* handle flag reversion; fix store & transmitter\n\n* feedback\n\n* fix error handling; log metadata\n\n* fix feature flag name\n\n* fix EarliestTS\n\n* simplifications and naming\n\n* debugging\n\n* debugging\n\n* updates\n\n* cleanup\n\n* fix GetDonTimeForSeqNum\n\n* pkg/workflows/dontime: add TestPlugin_Outcome_DisableSequencedWithGap and fix slice extension",
+          "timestamp": "2026-11-03T16:41:15Z",
+          "tree_id": "ec66fcc3244383dabe1248aab4296bdadf166a65",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1d522142e5f2536f7c0a1318f6ad0f2e51978c37"
+        },
+        "date": 1793724714385,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 368.6,
+            "unit": "ns/op",
+            "extra": "3253329 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 91363,
+            "unit": "ns/op",
+            "extra": "13089 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 424.2,
+            "unit": "ns/op",
+            "extra": "2882144 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90268,
+            "unit": "ns/op",
+            "extra": "13288 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25687,
+            "unit": "ns/op",
+            "extra": "46714 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135347,
+            "unit": "ns/op",
+            "extra": "8811 times\n4 procs"
           }
         ]
       }

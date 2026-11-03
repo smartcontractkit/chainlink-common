@@ -49,6 +49,7 @@ const (
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
+	envTelemetryLoopID                    = "CL_TELEMETRY_LOOP_ID"
 	envChipIngressEndpoint                = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection      = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
 	envChipIngressBatchEmitterEnabled     = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
@@ -116,6 +117,10 @@ type TelemetryConfig struct {
 	TelemetryPrometheusBridgeEnabled   bool
 	TelemetryPrometheusBridgePrefixes  []string
 	TelemetryLogCompressor             string
+	// TelemetryLoopID identifies this LOOP process to telemetry only (see NewLoopID). The host
+	// sets it; it is exported as the AttrLoopID resource attribute so series from different
+	// LOOPs on the same node stay distinct. Empty means the host did not send one.
+	TelemetryLoopID string
 
 	ChipIngressEndpoint              string
 	ChipIngressInsecureConnection    bool
@@ -187,6 +192,9 @@ func (c *TelemetryConfig) AsCmdEnv() []string {
 	add(envTelemetryPrometheusBridgeEnabled, strconv.FormatBool(c.TelemetryPrometheusBridgeEnabled))
 	add(envTelemetryPrometheusBridgePrefixes, strings.Join(c.TelemetryPrometheusBridgePrefixes, ","))
 	add(envTelemetryLogCompressor, c.TelemetryLogCompressor)
+	if c.TelemetryLoopID != "" {
+		add(envTelemetryLoopID, c.TelemetryLoopID)
+	}
 
 	add(envChipIngressEndpoint, c.ChipIngressEndpoint)
 	add(envChipIngressInsecureConnection, strconv.FormatBool(c.ChipIngressInsecureConnection))
@@ -326,6 +334,7 @@ func (c *TelemetryConfig) Parse() error {
 		}
 		c.TelemetryPrometheusBridgePrefixes = strings.Split(os.Getenv(envTelemetryPrometheusBridgePrefixes), ",")
 		c.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
+		c.TelemetryLoopID = os.Getenv(envTelemetryLoopID)
 		// Optional
 		c.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 		c.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)

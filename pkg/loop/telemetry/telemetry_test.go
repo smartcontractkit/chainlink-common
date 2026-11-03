@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -88,6 +89,59 @@ func TestTelemetryConfig_beholderConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 0, disabled.MetricCardinalityLimit)
 	})
+
+	t.Run("loop ID resource attribute", func(t *testing.T) {
+		unset, err := TelemetryConfig{TelemetryAttributes: beholder.OtelAttributes{"foo": "bar"}}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		_, ok := resourceAttr(unset, AttrLoopID)
+		assert.False(t, ok, "no attribute when the host sent no loop ID")
+
+		set, err := TelemetryConfig{
+			TelemetryAttributes: beholder.OtelAttributes{"foo": "bar", AttrLoopID: "host-wide"},
+			TelemetryLoopID:     "Median.0xabc.42",
+		}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		got, ok := resourceAttr(set, AttrLoopID)
+		require.True(t, ok)
+		assert.Equal(t, "Median.0xabc.42", got, "per-LOOP identity wins over a host-wide attribute")
+		foo, _ := resourceAttr(set, "foo")
+		assert.Equal(t, "bar", foo)
+	})
+}
+
+// resourceAttr returns the last value for key, matching how the resource merge resolves duplicates.
+func resourceAttr(cfg beholder.Config, key string) (string, bool) {
+	var v string
+	var ok bool
+	for _, kv := range cfg.ResourceAttributes {
+		if string(kv.Key) == key {
+			v, ok = kv.Value.AsString(), true
+		}
+	}
+	return v, ok
+}
+
+func TestNewLoopID(t *testing.T) {
+	long := strings.Repeat("a", 200)
+	for _, tt := range []struct {
+		name  string
+		kind  string
+		parts []string
+		want  string
+	}{
+		{"relayer", "Relayer", []string{"evm", "1"}, "Relayer.evm.1"},
+		{"median", "Median", []string{"0xAbC123", "42"}, "Median.0xAbC123.42"},
+		{"ocr2 plugin", "ccip-commit", []string{"0xabc", "7"}, "ccip-commit.0xabc.7"},
+		{"std caps job name sanitized", "StandardCapabilities", []string{"12", "cron trigger v1.2/x"}, "StandardCapabilities.12.cron_trigger_v1_2_x"},
+		{"dots in a segment never add separators", "Relayer", []string{"cosmos", "chain.v1"}, "Relayer.cosmos.chain_v1"},
+		{"unicode", "StandardCapabilities", []string{"3", "héllo"}, "StandardCapabilities.3.h_llo"},
+		{"empty segment", "Median", []string{"", "5"}, "Median._.5"},
+		{"truncated", "StandardCapabilities", []string{"9", long}, "StandardCapabilities.9." + long[:128]},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, NewLoopID(tt.kind, tt.parts...))
+		})
+	}
 }
 
 func detachedLogger() (logger.Logger, *observer.ObservedLogs) {

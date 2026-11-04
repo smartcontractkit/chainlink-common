@@ -122,3 +122,50 @@ func TestInitConfig(t *testing.T) {
 	assert.Equal(t, ScopeWorkflow, c.PerWorkflow.WorkflowField.Scope)
 	assert.NotNil(t, c.PerWorkflow.WorkflowField.Parse)
 }
+
+func TestSetting_GetOrDefaultWithFallback(t *testing.T) {
+	var s struct {
+		Shared   Setting[int]
+		Specific Setting[int]
+	}
+	s.Shared = Int(1)
+	s.Specific = Int(2)
+	require.NoError(t, InitConfig(&s))
+
+	getter := func(t *testing.T, json string) Getter {
+		g, err := NewJSONGetter([]byte(json))
+		require.NoError(t, err)
+		return g
+	}
+
+	t.Run("specific unset falls back to the shared value", func(t *testing.T) {
+		got, err := s.Specific.GetOrDefaultWithFallback(t.Context(), getter(t, `{"global":{"Shared":"3"}}`), s.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 3, got)
+	})
+
+	t.Run("specific set wins over the shared value", func(t *testing.T) {
+		got, err := s.Specific.GetOrDefaultWithFallback(t.Context(), getter(t, `{"global":{"Shared":"3","Specific":"7"}}`), s.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 7, got)
+	})
+
+	t.Run("neither set returns the shared default", func(t *testing.T) {
+		got, err := s.Specific.GetOrDefaultWithFallback(t.Context(), getter(t, `{}`), s.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 1, got)
+	})
+
+	t.Run("nil getter returns the shared default", func(t *testing.T) {
+		got, err := s.Specific.GetOrDefaultWithFallback(t.Context(), nil, s.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 1, got)
+	})
+
+	t.Run("zero setting is unset", func(t *testing.T) {
+		var zero Setting[int]
+		got, err := zero.GetOrDefaultWithFallback(t.Context(), getter(t, `{"global":{"Shared":"3","Specific":"7"}}`), s.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 3, got)
+	})
+}

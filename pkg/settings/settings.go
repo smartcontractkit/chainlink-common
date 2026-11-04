@@ -229,6 +229,30 @@ func (s *Setting[T]) GetOrDefault(ctx context.Context, g Getter) (value T, err e
 	return value, nil
 }
 
+// GetOrDefaultWithFallback gets s from the Getter, or fallback when s is not
+// explicitly set. It lets a specific setting override a more general one while
+// the general one's configured value stays the default, so an operator override
+// of the general setting keeps applying everywhere the specific one is unset.
+//
+// A zero Setting (no Key) counts as unset, so a caller can hold a zero-valued
+// struct of settings to mean "fall back for everything".
+func (s *Setting[T]) GetOrDefaultWithFallback(ctx context.Context, g Getter, fallback Setting[T]) (value T, err error) {
+	if g != nil && s.Key != "" {
+		str, err := g.GetScoped(ctx, s.Scope, s.Key)
+		if err != nil {
+			return s.DefaultValue, err
+		}
+		if str != "" {
+			value, err := s.Parse(str)
+			if err != nil {
+				return s.DefaultValue, err
+			}
+			return value, nil
+		}
+	}
+	return fallback.GetOrDefault(ctx, g)
+}
+
 type Update[T any] struct {
 	Value T
 	Err   error

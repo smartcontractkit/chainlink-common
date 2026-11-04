@@ -98,6 +98,58 @@ RefreshTimeout = '5s'
 PersistenceEnabled = 'true'
 HeaderName = 'Sticky-Session-A'
 
+[ConfidentialCompute.HTTP]
+GlobalRate = '1000rps:1000'
+MaxRetries = '3'
+RetryBackoff = '2s'
+SecretsCacheEnabled = 'false'
+EnclaveRequestTimeout = '30s'
+PublicKeyRequestTimeout = '5s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
+EnclaveRefreshInterval = '10s'
+
+[ConfidentialCompute.HTTP.PublicKeyCache]
+Enabled = 'true'
+TTL = '5m0s'
+MaxTTL = '30m0s'
+CleanupInterval = '10m0s'
+TTLBufferPercent = '0.1'
+ProactiveRefreshEnabled = 'true'
+RefreshIntervalPercent = '0'
+MinRefreshInterval = '10s'
+RefreshTimeout = '5s'
+
+[ConfidentialCompute.HTTP.Session]
+PersistenceEnabled = 'true'
+HeaderName = 'Sticky-Session-A'
+
+[ConfidentialCompute.Workflows]
+GlobalRate = '1000rps:1000'
+MaxRetries = '3'
+RetryBackoff = '2s'
+SecretsCacheEnabled = 'false'
+EnclaveRequestTimeout = '30s'
+PublicKeyRequestTimeout = '5s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
+EnclaveRefreshInterval = '10s'
+
+[ConfidentialCompute.Workflows.PublicKeyCache]
+Enabled = 'true'
+TTL = '5m0s'
+MaxTTL = '30m0s'
+CleanupInterval = '10m0s'
+TTLBufferPercent = '0.1'
+ProactiveRefreshEnabled = 'true'
+RefreshIntervalPercent = '0'
+MinRefreshInterval = '10s'
+RefreshTimeout = '5s'
+
+[ConfidentialCompute.Workflows.Session]
+PersistenceEnabled = 'true'
+HeaderName = 'Sticky-Session-A'
+
 [PerOrg]
 BaseTriggerRetransmitEnabled = 'false'
 WorkflowExecutionConcurrencyLimit = '100'
@@ -118,6 +170,12 @@ VaultSecretsLimit = '100'
 VaultZoneBGetSecretsAllowed = 'false'
 
 [PerOwner.ConfidentialCompute]
+Rate = '1000rps:1000'
+
+[PerOwner.ConfidentialCompute.HTTP]
+Rate = '1000rps:1000'
+
+[PerOwner.ConfidentialCompute.Workflows]
 Rate = '1000rps:1000'
 
 [PerWorkflow]

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"go.opentelemetry.io/otel"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -261,6 +262,9 @@ func (s *Server) MustRegister(c services.HealthReporter) {
 func (s *Server) Register(c services.HealthReporter) error { return s.checker.Register(c) }
 
 func (s *Server) startTelemetry(ctx context.Context) error {
+	// Registered before log streaming replaces s.Logger, so export failures never loop back through the OTel exporter.
+	otel.SetErrorHandler(otelErrorHandler(s.Logger))
+
 	t, err := telemetry.NewTelemetry(s.Logger, s.EnvConfig.TelemetryConfig, s.EnvConfig.AppID, s.cfg.otelViews)
 	if err != nil {
 		return err
@@ -302,4 +306,12 @@ func (s *Server) Stop() {
 	if err := s.Logger.Sync(); err != nil {
 		fmt.Println("Failed to sync logger:", err)
 	}
+}
+
+// otelErrorHandler logs OpenTelemetry SDK errors, such as failed metric exports, at error level. Without it the SDK
+// falls back to log.Print on stderr, which the host process re-logs at debug level.
+func otelErrorHandler(lggr logger.Logger) otel.ErrorHandler {
+	return otel.ErrorHandlerFunc(func(err error) {
+		lggr.Errorw("Telemetry error", "err", err)
+	})
 }

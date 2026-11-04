@@ -136,6 +136,11 @@ flowchart
         TimeoutBasedFailoverWindow>TimeoutBasedFailoverWindow]:::time
     end
 
+    subgraph ShardFailoverManager.checkShardOwnership
+%%      trigger admission on a sharded node, before the event is queued
+        ShardOwnershipCheckTimeout>ShardOwnershipCheckTimeout]:::time
+    end
+
     subgraph Engine.init
 %%        TODO move and replace with WorkflowLimit
         WorkflowLimit([WorkflowLimit]):::resource

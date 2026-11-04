@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793802364355,
+  "lastUpdate": 1793810666243,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66240,6 +66240,66 @@ window.BENCHMARK_DATA = {
             "value": 95026,
             "unit": "ns/op",
             "extra": "12639 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "48d362ff02e2513324e36e75fbc30fca4b611b64",
+          "message": "refactor(beholder): export otel error handler (#2526)\n\nThe LOOP server and the chainlink node each define their own OTel error\nhandler. Both must log the same message at the same level so a single\nquery and alert covers plugin and node export failures, and two copies\ncan drift apart.\n\nExport NewOtelErrorHandler from pkg/beholder and use it in the LOOP\nserver. It takes the logger as an argument and does not touch the\nglobal beholder client. The node can switch to it after bumping\nchainlink-common.\n\nAlso note why the LOOP wiring test cannot run in parallel: the OTel SDK\nreports errors only through the process-wide otel.Handle.\n\nRefs: CRE-6235",
+          "timestamp": "2026-11-04T16:32:13Z",
+          "tree_id": "6591704c1f1bc9aed51af03ecb01f34ee272d6f7",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/48d362ff02e2513324e36e75fbc30fca4b611b64"
+        },
+        "date": 1793810661732,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 277.9,
+            "unit": "ns/op",
+            "extra": "4284168 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 57515,
+            "unit": "ns/op",
+            "extra": "20778 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 297.5,
+            "unit": "ns/op",
+            "extra": "4016983 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57658,
+            "unit": "ns/op",
+            "extra": "20582 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21748,
+            "unit": "ns/op",
+            "extra": "55219 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 95716,
+            "unit": "ns/op",
+            "extra": "12483 times\n4 procs"
           }
         ]
       }

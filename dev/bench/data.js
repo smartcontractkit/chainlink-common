@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793793052806,
+  "lastUpdate": 1793801928757,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66120,6 +66120,66 @@ window.BENCHMARK_DATA = {
             "value": 142125,
             "unit": "ns/op",
             "extra": "7761 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "5597260+MStreet3@users.noreply.github.com",
+            "name": "Street",
+            "username": "MStreet3"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "1c63e7911ad996352ad9ac9907eb47431bbb7269",
+          "message": "fix(loop): log otel sdk errors at error level (#2525)\n\nLOOP plugins never set an OpenTelemetry error handler, so SDK errors\nsuch as \"failed to upload metrics\" fell back to log.Print on stderr.\nThe host captured that unstructured output and re-logged it at debug\nlevel, hiding metric export failures during INCIDENT-2632.\n\nRegister a handler in startTelemetry that logs \"Telemetry error\" at\nerror level, matching the host node. It uses the stderr-only logger,\nbefore log streaming wraps it, so export failures are not fed back\ninto the OTel pipeline.\n\nRefs: CRE-6235",
+          "timestamp": "2026-11-04T14:08:54Z",
+          "tree_id": "1fd14d8d6b5b139b38723299bf3b8358df2ad3b3",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/1c63e7911ad996352ad9ac9907eb47431bbb7269"
+        },
+        "date": 1793801923310,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 361.3,
+            "unit": "ns/op",
+            "extra": "3231171 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 93932,
+            "unit": "ns/op",
+            "extra": "12816 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 419.1,
+            "unit": "ns/op",
+            "extra": "2909798 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 91910,
+            "unit": "ns/op",
+            "extra": "13016 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25691,
+            "unit": "ns/op",
+            "extra": "46515 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 141258,
+            "unit": "ns/op",
+            "extra": "8149 times\n4 procs"
           }
         ]
       }

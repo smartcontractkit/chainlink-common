@@ -162,6 +162,42 @@ func TestSetting_GetOrDefaultWithFallback(t *testing.T) {
 		assert.Equal(t, 1, got)
 	})
 
+	t.Run("configured specific default wins over the shared default", func(t *testing.T) {
+		var c struct {
+			Shared   Setting[int]
+			Specific Setting[int]
+		}
+		c.Shared = Int(1)
+		c.Specific = Int(2)
+		require.NoError(t, c.Specific.UnmarshalText([]byte("9")))
+		require.NoError(t, InitConfig(&c))
+
+		// No Getter: the configured default must not be shadowed by the shared one.
+		got, err := c.Specific.GetOrDefaultWithFallback(t.Context(), nil, c.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 9, got)
+
+		// A Getter value still takes precedence over the configured default.
+		got, err = c.Specific.GetOrDefaultWithFallback(t.Context(), getter(t, `{"global":{"Specific":"7"}}`), c.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 7, got)
+	})
+
+	t.Run("configured shared default applies when the specific one is untouched", func(t *testing.T) {
+		var c struct {
+			Shared   Setting[int]
+			Specific Setting[int]
+		}
+		c.Shared = Int(1)
+		c.Specific = Int(2)
+		require.NoError(t, c.Shared.UnmarshalText([]byte("9")))
+		require.NoError(t, InitConfig(&c))
+
+		got, err := c.Specific.GetOrDefaultWithFallback(t.Context(), nil, c.Shared)
+		require.NoError(t, err)
+		assert.Equal(t, 9, got)
+	})
+
 	t.Run("zero setting is unset", func(t *testing.T) {
 		var zero Setting[int]
 		got, err := zero.GetOrDefaultWithFallback(t.Context(), getter(t, `{"global":{"Shared":"3","Specific":"7"}}`), s.Shared)

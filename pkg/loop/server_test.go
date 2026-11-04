@@ -2,7 +2,6 @@ package loop
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -41,33 +40,8 @@ func TestServer_MeteringConfig(t *testing.T) {
 	})
 }
 
-func TestOtelErrorHandler(t *testing.T) {
-	tests := []struct {
-		name string
-		err  error
-	}{
-		{name: "plain error", err: errors.New("boom")},
-		{
-			name: "wrapped export failure",
-			err:  fmt.Errorf("failed to upload metrics: %w", errors.New("rpc error: code = Unavailable desc = data refused due to high memory usage")),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			lggr, logs := logger.TestObserved(t, zapcore.DebugLevel)
-
-			otelErrorHandler(lggr).Handle(tt.err)
-
-			entries := logs.TakeAll()
-			require.Len(t, entries, 1)
-			assert.Equal(t, zapcore.ErrorLevel, entries[0].Level)
-			assert.Equal(t, "Telemetry error", entries[0].Message)
-			assert.Equal(t, tt.err.Error(), entries[0].ContextMap()["err"])
-		})
-	}
-}
-
 // Asserts that once telemetry starts, OTel SDK errors reach the server logger instead of the default stderr printer.
+// Not parallel: the SDK reports errors only through the process-wide otel.Handle, so this test swaps the global handler.
 func TestServer_startTelemetryRegistersOtelErrorHandler(t *testing.T) {
 	prev := otel.GetErrorHandler()
 	t.Cleanup(func() { otel.SetErrorHandler(prev) })

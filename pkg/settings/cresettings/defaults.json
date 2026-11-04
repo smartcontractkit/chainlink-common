@@ -65,6 +65,7 @@
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
 	"MissingRequestRecoveryEnabled": "false",
 	"DonTimeSequencedTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+	"CRONV2ActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 	"ConfidentialCompute": {
 		"GlobalRate": "1000rps:1000",
 		"MaxRetries": "3",

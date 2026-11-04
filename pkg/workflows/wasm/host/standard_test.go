@@ -649,6 +649,54 @@ func TestStandardRestrictions(t *testing.T) {
 	}
 }
 
+const (
+	metadataWorkflowIDFixture  = "0020350fb4f89856a031268826d6e9b9340996637aa27859baa7b07db58bb020"
+	metadataExecutionIDFixture = "9f38bdece8892b3452c401a7a2d5a170f078ab9b2c98c591e24028ce94b33ed2"
+	metadataOwnerFixture       = "5366890c26e8737b89d9084b4c632f7de73d1674"
+)
+
+func TestStandardExecutionMetadata(t *testing.T) {
+	module := makeTestModule(t)
+	type executionMetadata struct {
+		WorkflowID    string
+		ExecutionID   string
+		WorkflowOwner string
+		DonID         uint32
+		DonF          uint32
+	}
+	for _, tc := range []struct {
+		name     string
+		metadata *sdk.WorkflowExecutionMetadata
+		want     executionMetadata
+	}{
+		{name: "old host"},
+		{name: "empty message", metadata: &sdk.WorkflowExecutionMetadata{}},
+		{
+			name:     "present",
+			metadata: &sdk.WorkflowExecutionMetadata{WorkflowId: metadataWorkflowIDFixture, ExecutionId: metadataExecutionIDFixture, WorkflowOwner: metadataOwnerFixture, DonId: 17, DonF: 3},
+			want:     executionMetadata{WorkflowID: metadataWorkflowIDFixture, ExecutionID: metadataExecutionIDFixture, WorkflowOwner: metadataOwnerFixture, DonID: 17, DonF: 3},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			helper := mocks.NewMockExecutionHelper(t)
+			helper.EXPECT().GetWorkflowExecutionID().Return(metadataExecutionIDFixture)
+			helper.EXPECT().GetNodeTime().Return(time.Now()).Maybe()
+			request := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+			request.ExecutionMetadata = tc.metadata
+
+			result, err := module.Execute(t.Context(), request, helper)
+
+			require.NoError(t, err)
+			require.Empty(t, result.GetError())
+			value, err := values.FromProto(result.GetValue())
+			require.NoError(t, err)
+			var got executionMetadata
+			require.NoError(t, value.UnwrapTo(&got))
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
 func triggerExecuteRequest(t *testing.T, id uint64, trigger proto.Message) *sdk.ExecuteRequest {
 	wrappedTrigger, err := anypb.New(trigger)
 	require.NoError(t, err)

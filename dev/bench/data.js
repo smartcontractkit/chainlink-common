@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793801928757,
+  "lastUpdate": 1793802364355,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66180,6 +66180,66 @@ window.BENCHMARK_DATA = {
             "value": 141258,
             "unit": "ns/op",
             "extra": "8149 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "964bd5f54af6ee2940b1b0da0982f6b4fc462f11",
+          "message": "Add CronV2 feature flag (#2515)\n\n* Also fix listener default connect to include insecure.NewCredentials()",
+          "timestamp": "2026-11-04T14:16:19Z",
+          "tree_id": "636d5de3372d80bbe7cfb8e091bb8b33b5b55f4f",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/964bd5f54af6ee2940b1b0da0982f6b4fc462f11"
+        },
+        "date": 1793802360199,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 272.3,
+            "unit": "ns/op",
+            "extra": "4401648 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 57491,
+            "unit": "ns/op",
+            "extra": "20649 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 292.2,
+            "unit": "ns/op",
+            "extra": "4096063 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 57525,
+            "unit": "ns/op",
+            "extra": "20680 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21911,
+            "unit": "ns/op",
+            "extra": "53762 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 95026,
+            "unit": "ns/op",
+            "extra": "12639 times\n4 procs"
           }
         ]
       }

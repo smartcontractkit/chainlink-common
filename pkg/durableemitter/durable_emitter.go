@@ -127,8 +127,15 @@ type Hooks struct {
 	OnBatchDelete func(elapsed time.Duration, count int)
 }
 
-// DefaultMaxEventBytes is the batch client's default 10 MiB request limit less its 10 KiB framing headroom.
-const DefaultMaxEventBytes = 10*1024*1024 - 10*1024
+const (
+	// chipIngressMaxRequestBytes is the batch client's default max gRPC request size.
+	chipIngressMaxRequestBytes = 10 * 1024 * 1024 // 10 MiB
+	// batchFramingHeadroomBytes is what the batch client reserves for the batch wrapper and gRPC framing.
+	batchFramingHeadroomBytes = 10 * 1024 // 10 KiB
+)
+
+// DefaultMaxEventBytes is the largest event that still fits in one request once wrapped (10,475,520 bytes).
+const DefaultMaxEventBytes = chipIngressMaxRequestBytes - batchFramingHeadroomBytes
 
 // ErrEventTooLarge is returned by Emit for an event too large to ever deliver.
 var ErrEventTooLarge = errors.New("durable emitter: event exceeds max size")

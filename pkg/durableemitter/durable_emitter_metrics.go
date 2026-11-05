@@ -70,6 +70,9 @@ type durableEmitterMetrics struct {
 	// batch emitter because its internal queue was full and must be picked up
 	// by the retransmit loop instead. Labels: phase={batch,retransmit}.
 	batchEnqueueBufferFull metric.Int64Counter
+	// retransmitSkippedInFlight counts pending rows a retransmit tick skipped
+	// because an earlier enqueue of the same row has not completed.
+	retransmitSkippedInFlight metric.Int64Counter
 	// insertCoalescerFill reports the write-coalescer channel fill ratio
 	// (len/cap). Only meaningful when InsertBatchSize > 0; otherwise 0.
 	insertCoalescerFill metric.Float64Gauge
@@ -258,6 +261,13 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 		"durable_emitter.batch_enqueue.buffer_full",
 		metric.WithUnit("{event}"),
 		metric.WithDescription("Events that could not be handed to the batch emitter (buffer full); event remains in DB for retransmit. Labels: phase={batch,retransmit}."),
+	); err != nil {
+		return nil, err
+	}
+	if m.retransmitSkippedInFlight, err = meter.Int64Counter(
+		"durable_emitter.retransmit.skipped_in_flight",
+		metric.WithUnit("{event}"),
+		metric.WithDescription("Pending rows a retransmit tick skipped because they are still queued or being sent by the batch emitter"),
 	); err != nil {
 		return nil, err
 	}

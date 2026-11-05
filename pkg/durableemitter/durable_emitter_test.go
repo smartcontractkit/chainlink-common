@@ -756,7 +756,7 @@ func TestDurableEmitter_RetransmitCursorSkipsPoison(t *testing.T) {
 	assert.GreaterOrEqual(t, be.poisonFails.Load(), int64(numPoison), "poison events should be attempted and fail")
 
 	// The survivors must be exactly the poison rows.
-	remaining, err := store.ListPending(ctx, time.Now().Add(time.Hour), time.Time{}, 0, 100)
+	remaining, err := store.ListPending(ctx, time.Now().Add(time.Hour), time.Time{}, 0, 100, 0)
 	require.NoError(t, err)
 	require.Len(t, remaining, numPoison)
 	for _, e := range remaining {
@@ -794,7 +794,7 @@ func TestListPendingCursorPaging(t *testing.T) {
 		seen     []int64
 	)
 	for range n + 2 { // bounded: at most ceil(n/limit)+1 pages
-		page, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit)
+		page, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit, 0)
 		require.NoError(t, err)
 		require.LessOrEqual(t, len(page), limit)
 		for _, e := range page {
@@ -815,7 +815,7 @@ func TestListPendingCursorPaging(t *testing.T) {
 	}
 
 	// A cursor at the last row yields an empty page (nothing left).
-	tail, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit)
+	tail, err := store.ListPending(ctx, createdBefore, cursorTs, cursorID, limit, 0)
 	require.NoError(t, err)
 	assert.Empty(t, tail, "cursor past the last row must return no rows")
 }
@@ -1652,7 +1652,7 @@ func (m *MemDurableEventStore) BatchDelete(_ context.Context, ids []int64) (int6
 	return n, nil
 }
 
-func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit, maxBytes int) ([]DurableEvent, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -1676,6 +1676,16 @@ func (m *MemDurableEventStore) ListPending(_ context.Context, createdBefore, aft
 	})
 	if len(result) > limit {
 		result = result[:limit]
+	}
+	if maxBytes > 0 {
+		total := 0
+		for i, e := range result {
+			total += len(e.Payload)
+			if i > 0 && total > maxBytes {
+				result = result[:i]
+				break
+			}
+		}
 	}
 	return result, nil
 }

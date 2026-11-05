@@ -62,6 +62,9 @@ type Config struct {
 	RetransmitAfter time.Duration
 	// RetransmitBatchSize caps how many pending rows are listed per retransmit tick.
 	RetransmitBatchSize int
+	// RetransmitMaxPageBytes caps the payload bytes listed per retransmit tick; a
+	// page always holds at least one row. Zero uses DefaultRetransmitMaxPageBytes.
+	RetransmitMaxPageBytes int
 	// ExpiryInterval controls how often the expiry loop ticks.
 	ExpiryInterval time.Duration
 	// EventTTL is the maximum age of an event before it is expired.
@@ -138,6 +141,7 @@ func DefaultConfig() Config {
 		RetransmitInterval:       5 * time.Second,
 		RetransmitAfter:          10 * time.Second,
 		RetransmitBatchSize:      100,
+		RetransmitMaxPageBytes:   DefaultRetransmitMaxPageBytes,
 		ExpiryInterval:           1 * time.Minute,
 		ExpiryBatchSize:          defaultExpiryBatchSize,
 		EventTTL:                 1 * time.Hour,
@@ -228,6 +232,11 @@ type DurableEmitter struct {
 	// Accessed only from the single retransmit-loop goroutine — no locking.
 	retransmitCursorTs time.Time
 	retransmitCursorID int64
+
+	// inFlight holds ids accepted by the batch emitter whose delivery (and, once
+	// delivered, delete) has not finished, so retransmit does not queue a row twice.
+	inFlightMu sync.Mutex
+	inFlight   map[int64]struct{}
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -289,6 +298,7 @@ func NewDurableEmitter(
 		cfg:               cfg,
 		metrics:           m,
 		stopCh:            make(chan struct{}),
+		inFlight:          make(map[int64]struct{}),
 	}
 	d.Service, d.eng = services.Config{
 		Name:  "DurableEmitter",
@@ -510,8 +520,10 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure).
 		t0Publish := time.Now()
+		d.claimInFlight(id)
 		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch, span.SpanContext())); qErr != nil {
-			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
+			d.releaseInFlight(id)
+			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id, "err", qErr)
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
 					metric.WithAttributes(attribute.String("phase", publishPhaseBatch.String())))
@@ -526,6 +538,13 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 // in the DB for the retransmit loop.
 func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase, origin trace.SpanContext) func(error) {
 	return func(sendErr error) {
+		// The delete coalescer releases ids it accepts once the row is deleted.
+		handedOff := false
+		defer func() {
+			if !handedOff {
+				d.releaseInFlight(id)
+			}
+		}()
 		publishElapsed := time.Since(t0Publish)
 
 		// Delivery runs on the batcher goroutine, so it does not inherit the
@@ -560,6 +579,7 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		// When delete coalescing is enabled the id is handed to the batch-delete
 		// workers (one DELETE for many ids); otherwise delete it inline.
 		if d.enqueueDelete(id) {
+			handedOff = true
 			return
 		}
 
@@ -582,6 +602,26 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 			d.metrics.deliverComplete.Add(delCtx, deleted)
 		}
 	}
+}
+
+// claimInFlight marks id as handed to the batch emitter. It returns false when
+// id is already in flight.
+func (d *DurableEmitter) claimInFlight(id int64) bool {
+	d.inFlightMu.Lock()
+	defer d.inFlightMu.Unlock()
+	if _, ok := d.inFlight[id]; ok {
+		return false
+	}
+	d.inFlight[id] = struct{}{}
+	return true
+}
+
+func (d *DurableEmitter) releaseInFlight(ids ...int64) {
+	d.inFlightMu.Lock()
+	for _, id := range ids {
+		delete(d.inFlight, id)
+	}
+	d.inFlightMu.Unlock()
 }
 
 // deleteContext bounds an inline delivery delete by PublishTimeout.
@@ -609,6 +649,10 @@ func (d *DurableEmitter) stop() error {
 	// Stop the batch emitter: flushes remaining queued events, waits for all
 	// in-flight PublishBatch RPCs, and waits for all delivery callbacks.
 	d.batchEmitter.Stop()
+	// Drop entries whose callbacks did not run before the shutdown timeout.
+	d.inFlightMu.Lock()
+	clear(d.inFlight)
+	d.inFlightMu.Unlock()
 	// Delivery callbacks are deleteCh's only producers. Most have finished once
 	// batchEmitter.Stop returns, but it can return at its shutdown timeout with some
 	// still running; closing under deleteMu waits for in-progress sends (the workers
@@ -688,6 +732,7 @@ func (d *DurableEmitter) enqueueDelete(id int64) bool {
 	d.deleteMu.RLock()
 	defer d.deleteMu.RUnlock()
 	if d.deleteClosed {
+		d.releaseInFlight(id)
 		d.eng.Debugw("DurableEmitter: delivery confirmed after shutdown; event left for retransmit", "id", id)
 		return true
 	}
@@ -740,6 +785,7 @@ func (d *DurableEmitter) flushDeletes(ids []int64) {
 	if len(ids) == 0 {
 		return
 	}
+	defer d.releaseInFlight(ids...)
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 	defer cancel()
 
@@ -778,7 +824,7 @@ func (d *DurableEmitter) retransmitPending() {
 	defer cancel()
 
 	cutoff := time.Now().Add(-d.cfg.RetransmitAfter)
-	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, d.cfg.RetransmitBatchSize)
+	pending, err := d.listRetransmitPage(ctx, cutoff)
 	if err != nil {
 		d.eng.Errorw("failed to list pending events", "error", err)
 		_, span := d.tracer.Start(ctx, spanRetransmitTick)
@@ -788,15 +834,12 @@ func (d *DurableEmitter) retransmitPending() {
 		return
 	}
 
-	// Advance the paging cursor. A full page means there may be more rows ahead,
-	// so continue after the last one next tick; a short page means we reached the
-	// end of the currently-eligible set, so wrap back to the oldest. This lets the
-	// loop page through (and past) poison rows instead of re-listing the same head
+	// Advance the paging cursor past the last listed row. A short page may have
+	// been cut by RetransmitMaxPageBytes, so only an empty page (handled in
+	// listRetransmitPage) marks the end of the eligible set. This lets the loop
+	// page through (and past) poison rows instead of re-listing the same head
 	// every tick — a poison row is revisited only once per full sweep.
-	if len(pending) < d.cfg.RetransmitBatchSize {
-		d.retransmitCursorTs = time.Time{}
-		d.retransmitCursorID = 0
-	} else {
+	if len(pending) > 0 {
 		last := pending[len(pending)-1]
 		d.retransmitCursorTs = last.CreatedAt
 		d.retransmitCursorID = last.ID
@@ -806,6 +849,7 @@ func (d *DurableEmitter) retransmitPending() {
 		"retransmit_list_batch", len(pending),
 		"retransmit_after", d.cfg.RetransmitAfter.String(),
 		"list_limit", d.cfg.RetransmitBatchSize,
+		"list_max_bytes", d.retransmitMaxPageBytes(),
 		"cursor_ts", d.retransmitCursorTs,
 		"cursor_id", d.retransmitCursorID,
 	)
@@ -820,10 +864,30 @@ func (d *DurableEmitter) retransmitPending() {
 	d.retransmit(ctx, pending)
 }
 
+// listRetransmitPage lists the page after the cursor. An empty page past a
+// non-zero cursor is the end of the eligible set, so it wraps to the oldest row.
+func (d *DurableEmitter) listRetransmitPage(ctx context.Context, cutoff time.Time) ([]DurableEvent, error) {
+	limit, maxBytes := d.cfg.RetransmitBatchSize, d.retransmitMaxPageBytes()
+	pending, err := d.store.ListPending(ctx, cutoff, d.retransmitCursorTs, d.retransmitCursorID, limit, maxBytes)
+	if err != nil || len(pending) > 0 || (d.retransmitCursorTs.IsZero() && d.retransmitCursorID == 0) {
+		return pending, err
+	}
+	d.retransmitCursorTs, d.retransmitCursorID = time.Time{}, 0
+	return d.store.ListPending(ctx, cutoff, time.Time{}, 0, limit, maxBytes)
+}
+
+func (d *DurableEmitter) retransmitMaxPageBytes() int {
+	if d.cfg.RetransmitMaxPageBytes > 0 {
+		return d.cfg.RetransmitMaxPageBytes
+	}
+	return DefaultRetransmitMaxPageBytes
+}
+
 // retransmit re-enqueues pending DB rows through the batch emitter. Each row
-// gets its own delivery callback that deletes it on success.
+// gets its own delivery callback that deletes it on success. Rows still in
+// flight from an earlier enqueue are skipped.
 func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent) {
-	var enqueued, skipped int
+	var enqueued, skipped, inFlight int
 
 	for _, pe := range pending {
 		select {
@@ -832,8 +896,15 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		default:
 		}
 
+		id := pe.ID
+		if !d.claimInFlight(id) {
+			inFlight++
+			continue
+		}
+
 		eventPb := new(chipingress.CloudEventPb)
 		if err := proto.Unmarshal(pe.Payload, eventPb); err != nil {
+			d.releaseInFlight(id)
 			d.eng.Errorw("DurableEmitter: failed to unmarshal event for retransmit", "id", pe.ID, "error", err)
 			span := trace.SpanFromContext(ctx)
 			span.RecordError(err)
@@ -841,8 +912,8 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 			continue
 		}
 
-		id := pe.ID
 		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit, trace.SpanContextFromContext(ctx))); err != nil {
+			d.releaseInFlight(id)
 			skipped++
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
@@ -853,9 +924,13 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		}
 	}
 
+	if inFlight > 0 && d.metrics != nil {
+		d.metrics.retransmitSkippedInFlight.Add(ctx, int64(inFlight))
+	}
 	d.eng.Infow("DurableEmitter: retransmit queued to batch emitter",
 		"enqueued", enqueued,
 		"skipped_buffer_full", skipped,
+		"skipped_in_flight", inFlight,
 		"total_pending", len(pending),
 	)
 }
@@ -869,6 +944,9 @@ const (
 )
 
 const defaultExpiryBatchSize = 5000
+
+// DefaultRetransmitMaxPageBytes bounds the payload bytes one retransmit tick loads.
+const DefaultRetransmitMaxPageBytes = 64 * 1024 * 1024 // 64 MiB
 
 // purgeUnknown is the domain/subject recorded for expired events whose payload
 // could not be decoded, and for stores that cannot return payloads at all.

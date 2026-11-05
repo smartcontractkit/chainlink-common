@@ -351,12 +351,14 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	}
 }
 
-// reserveBytes claims n bytes of the buffered-bytes budget. An empty buffer
-// always admits one message so an event larger than the budget is not stuck.
+// reserveBytes claims n bytes of the buffered-bytes budget, or reports false if they do not fit.
 func (b *Client) reserveBytes(n int64) bool {
+	if n > b.maxBufferedBytes {
+		return false
+	}
 	for {
 		cur := b.bufferedBytes.Load()
-		if cur > 0 && cur+n > b.maxBufferedBytes {
+		if cur+n > b.maxBufferedBytes {
 			return false
 		}
 		if b.bufferedBytes.CompareAndSwap(cur, cur+n) {

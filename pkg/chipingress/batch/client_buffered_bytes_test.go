@@ -3,6 +3,7 @@ package batch
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -104,11 +105,31 @@ func TestClient_MaxBufferedBytes(t *testing.T) {
 		require.Eventually(t, func() bool { return client.BufferedBytes() == 0 }, time.Second, 5*time.Millisecond)
 	})
 
-	t.Run("admits one oversized message into an empty buffer", func(t *testing.T) {
+	t.Run("rejects a message larger than the whole budget", func(t *testing.T) {
 		client, err := NewBatchClient(mocks.NewClient(t), WithMaxBufferedBytes(1024))
 		require.NoError(t, err)
-		require.NoError(t, client.QueueMessage(bufferedBytesEvent("big", 4096), nil))
-		assert.ErrorIs(t, client.QueueMessage(bufferedBytesEvent("next", 1), nil), ErrBufferedBytesExceeded)
+		assert.ErrorIs(t, client.QueueMessage(bufferedBytesEvent("big", 4096), nil), ErrBufferedBytesExceeded)
+		assert.Zero(t, client.BufferedBytes())
+		require.NoError(t, client.QueueMessage(bufferedBytesEvent("small", 1), nil))
+	})
+
+	t.Run("concurrent reserve and release stay within budget and return to zero", func(t *testing.T) {
+		const budget = 1000
+		client, err := NewBatchClient(mocks.NewClient(t), WithMaxBufferedBytes(budget))
+		require.NoError(t, err)
+		var wg sync.WaitGroup
+		for range 64 {
+			wg.Go(func() {
+				for range 1000 {
+					if client.reserveBytes(100) {
+						assert.LessOrEqual(t, client.BufferedBytes(), int64(budget))
+						client.releaseBytes(100)
+					}
+				}
+			})
+		}
+		wg.Wait()
+		assert.Zero(t, client.BufferedBytes())
 	})
 
 	t.Run("releases when the channel is full", func(t *testing.T) {

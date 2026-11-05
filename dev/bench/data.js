@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793891385683,
+  "lastUpdate": 1793898599743,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66360,6 +66360,66 @@ window.BENCHMARK_DATA = {
             "value": 97952,
             "unit": "ns/op",
             "extra": "12195 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "17e770562b4286bcb3f26699c2d032314de001d5",
+          "message": "Durable emitter: reject events too large to deliver (#2529)\n\n* fix: reject durable emitter events too large to deliver\n\n* refactor: name the parts of the durable emitter max event size\n\n* fix: lower durable emitter default max event size to 1 MiB",
+          "timestamp": "2026-11-05T17:00:16Z",
+          "tree_id": "936e2b6e1ffe1c14709fd5c0786af3b39d040483",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/17e770562b4286bcb3f26699c2d032314de001d5"
+        },
+        "date": 1793898596713,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 353.4,
+            "unit": "ns/op",
+            "extra": "3349154 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 90633,
+            "unit": "ns/op",
+            "extra": "13206 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 391.5,
+            "unit": "ns/op",
+            "extra": "3059857 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 90946,
+            "unit": "ns/op",
+            "extra": "13153 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25592,
+            "unit": "ns/op",
+            "extra": "46969 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 135464,
+            "unit": "ns/op",
+            "extra": "8616 times\n4 procs"
           }
         ]
       }

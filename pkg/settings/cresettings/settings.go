@@ -721,10 +721,8 @@ type confidentialCompute struct {
 	Session                 CCSession
 
 	// HTTP and Workflows hold the per-capability overrides of the fields above.
-	// A capability resolves its own group first and falls back to the
-	// corresponding shared field when the key is unset (see
-	// SettingWithFallback), so a change aimed at one capability never moves the
-	// other.
+	// A capability is expected to read its own group first and fall back to the
+	// corresponding shared field when the key is unset.
 	HTTP      ConfidentialComputePerCapability
 	Workflows ConfidentialComputePerCapability
 }

@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -83,6 +84,8 @@ type ModuleConfig struct {
 	MaxDecompressedBinaryLimiter limits.BoundLimiter[config.Size] // supersedes MaxDecompressedBinarySize if set
 	MaxResponseSizeBytes         uint64
 	MaxResponseSizeLimiter       limits.BoundLimiter[config.Size] // supersedes MaxResponseSizeBytes if set
+	// EnforceResponseSizeLimiter gates rejecting guest responses over the max response size; defaults to closed.
+	EnforceResponseSizeLimiter limits.GateLimiter
 
 	// MaxSubscriptionsLimiter bounds nsubscriptions in the WASI poll_oneoff host
 	// call. It uses the default value of cresettings.Default.WASMPollOneoffSubscriptionLimit;
@@ -141,6 +144,9 @@ type module struct {
 	// implementation (e.g. one that panics) without going through a real
 	// compiled wasm binary.
 	linkV2 linkFn[*sdkpb.ExecutionResult]
+
+	// enforceResponseSizeErrLogged ensures an unreadable enforcement setting is logged once.
+	enforceResponseSizeErrLogged atomic.Bool
 }
 
 var _ ModuleV2 = (*module)(nil)
@@ -159,6 +165,7 @@ type moduleLimiters struct {
 	maxCompressedBinary           limits.BoundLimiter[config.Size]
 	maxDecompressedBinary         limits.BoundLimiter[config.Size]
 	maxResponseSize               limits.BoundLimiter[config.Size]
+	enforceResponseSize           limits.GateLimiter
 	maxSubscriptions              limits.BoundLimiter[int]
 }
 
@@ -175,6 +182,7 @@ func (l *moduleLimiters) close() {
 		l.maxCompressedBinary,
 		l.maxDecompressedBinary,
 		l.maxResponseSize,
+		l.enforceResponseSize,
 		l.maxSubscriptions,
 	}
 	for i := len(closers) - 1; i >= 0; i-- {
@@ -346,6 +354,9 @@ func newModule(modCfg *ModuleConfig, load func(moduleLimiters) (*wasmtime.Module
 	}
 	if modCfg.MaxResponseSizeLimiter == nil {
 		defaultLimiters.maxResponseSize = limits.NewUpperBoundLimiter(config.Size(modCfg.MaxResponseSizeBytes))
+	}
+	if modCfg.EnforceResponseSizeLimiter == nil {
+		defaultLimiters.enforceResponseSize = limits.NewGateLimiter(false)
 	}
 	if modCfg.MaxSubscriptionsLimiter == nil {
 		defaultLimiters.maxSubscriptions = limits.NewUpperBoundLimiter(cresettings.Default.WASMPollOneoffSubscriptionLimit.DefaultValue)
@@ -704,6 +715,7 @@ func runWasm[I, O proto.Message](
 		executor:            helper,
 		donSeed:             donSeed,
 		nodeSeed:            int64(rand.Uint64()),
+		maxResponseSize:     maxResponseSizeBytes,
 	}
 
 	instance, err := linkWasm(ctxWithTimeout, m, store, exec)
@@ -719,6 +731,10 @@ func runWasm[I, O proto.Message](
 		hostDuration: exec.hostDuration,
 		runDuration:  time.Since(runStartedAt),
 	})
+
+	if exec.responseErr != nil {
+		return o, exec.responseErr
+	}
 
 	// A guest that ran to completion exits with WASI status wasiExitSuccess
 	// after delivering its response via the send_response import.
@@ -760,6 +776,13 @@ func createSendResponseFn[T proto.Message](
 ) func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 	return func(caller *wasmtime.Caller, ptr int32, ptrlen int32) int32 {
 		defer exec.recordHostCall("send_response", time.Now())
+
+		if innerErr := exec.checkResponseSize(ptrlen); innerErr != nil {
+			exec.lock.Lock()
+			exec.responseErr = innerErr
+			exec.lock.Unlock()
+			return ErrnoFault
+		}
 
 		b, innerErr := wasmRead(caller, ptr, ptrlen)
 		if innerErr != nil {

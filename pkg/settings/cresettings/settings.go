@@ -51,6 +51,12 @@ var DefaultGetter Getter
 // Deprecated: use Default
 var Config Schema
 
+var (
+	year2100                 = time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)
+	year2101                 = time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)
+	disabledFeatureTimeRange = TimeRange(year2100, year2101)
+)
+
 var Default = Schema{
 	WorkflowLimit:                     Int(1000),
 	WorkflowExecutionConcurrencyLimit: Int(1000),
@@ -60,10 +66,11 @@ var Default = Schema{
 	VaultJWTAuthEnabled:                         Bool(false),
 	CentralizedWorkflowOwnerVerificationEnabled: Bool(false),
 	RemoteExecutableWorkflowDONBindingEnabled:   Bool(false),
-	CoordinatedEngineEnabled:                    Bool(false),
+	CoordinatedEngineEnabled:                    Bool(false), // Deprecated: use PerWorkflow.CoordinatedEngineEnabled.
 	ShardingFailoverEnabled:                     Bool(false),
 	TimeoutBasedFailover:                        Bool(false),
 	TimeoutBasedFailoverWindow:                  Duration(5 * time.Minute),
+	ShardOwnershipCheckTimeout:                  Duration(30 * time.Second),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -98,6 +105,7 @@ var Default = Schema{
 	DispatcherGlobalRate:                             Rate(rate.Limit(5000), 5000),
 	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
 	CentralTriggerEventQueueLimit:                    Int(1000),
+	CentralTriggerQueueDrainInterval:                 Duration(500 * time.Millisecond),
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -163,6 +171,9 @@ var Default = Schema{
 	// MissingRequestRecoveryEnabled
 	MissingRequestRecoveryEnabled: Bool(false),
 
+	DonTimeSequencedTimestampsActivePeriod: disabledFeatureTimeRange,
+	CRONV2ActivePeriod:                     disabledFeatureTimeRange,
+
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
 	// until explicitly overridden.
@@ -203,6 +214,10 @@ var Default = Schema{
 		BaseTriggerRetransmitEnabled:      Bool(false),
 		WorkflowExecutionConcurrencyLimit: Int(100),
 		ZeroBalancePruningTimeout:         Duration(24 * time.Hour),
+		BillingFaultDropRate:              Float64(0),
+		BillingFaultPerturbRate:           Float64(0),
+		BillingFaultPerturbDelta:          Int64(0),
+		BillingFaultNodeRate:              Float64(1),
 		HTTPAction: perOrgHTTPAction{
 			MtlsRateLimit: Rate(rate.Every(30*time.Second), 3),
 		},
@@ -241,6 +256,7 @@ var Default = Schema{
 		ExecutionTimeout:              Duration(5 * time.Minute),
 		ExecutionResponseLimit:        Size(100 * config.KByte),
 		ExecutionTimestampsEnabled:    Bool(false),
+		CoordinatedEngineEnabled:      Bool(false),
 		WASMMemoryLimit:               Size(100 * config.MByte),
 		WASMTableElementsLimit:        Int(1_000_000),
 		WASMBinarySizeLimit:           Size(100 * config.MByte),
@@ -339,38 +355,25 @@ var Default = Schema{
 			RequestTimeout: Duration(30 * time.Second),
 		},
 
-		FeatureHTTPTriggerNewExecutionIDsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureChainCapabilityHashBasedOCRActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureEVMWriteReportL1FeeActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureAptosWriteReportBlockTimestampActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureHTTPTriggerNewExecutionIDsActivePeriod:     disabledFeatureTimeRange,
+		FeatureChainCapabilityHashBasedOCRActivePeriod:    disabledFeatureTimeRange,
+		FeatureEVMWriteReportL1FeeActivePeriod:            disabledFeatureTimeRange,
+		FeatureAptosWriteReportBlockTimestampActivePeriod: disabledFeatureTimeRange,
 		// ON by default: covers all possible timestamps including zero time.Time{},
 		// so WorkflowTag is included in the hash matching current prod behavior.
 		// After rollout, set to far-future window to exclude WorkflowTag.
 		FeatureRequestHashIncludeWorkflowTagActivePeriod: TimeRange(
-			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC)),
+			time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC), year2100),
 		// OFF by default: the workflow_specs_v2.workflow_tag reconcile backfill
 		// is intentionally disabled on a fresh deploy. Ops narrows the range to
 		// cover "now" only after FeatureRequestHashIncludeWorkflowTag is muted
 		// on every DON member, so DBs can heal without producing tag-driven
 		// hash divergence during the fill window.
-		FeatureWorkflowTagBackfillActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureConsensusStricterMedianQuorumActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
-		FeatureConsensusIncludeAllTimestampsActivePeriod: TimeRange(
-			time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC),
-			time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC)),
+		FeatureWorkflowTagBackfillActivePeriod:           disabledFeatureTimeRange,
+		FeatureConsensusStricterMedianQuorumActivePeriod: disabledFeatureTimeRange,
+		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
+		FeatureVaultGetSecretsDirectlyActivePeriod:       disabledFeatureTimeRange,
+		FeatureShadowTriggerModeActivePeriod:             disabledFeatureTimeRange,
 	},
 }
 
@@ -389,7 +392,12 @@ type Schema struct {
 	// sender DON so it cannot be spoofed by a colluding calling DON.
 	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
-	// trigger-owning Engine for newly created workflows.
+	// trigger-owning Engine for newly created workflows, on every workflow of the node.
+	//
+	// Deprecated: use global.PerWorkflow.CoordinatedEngineEnabled (node default), or
+	// org.<id>/owner.<addr>/workflow.<id>.PerWorkflow.CoordinatedEngineEnabled (one
+	// tenant) instead. While this one is still read, true here enables every workflow
+	// whatever the per-workflow setting says.
 	CoordinatedEngineEnabled Setting[bool]
 	// ShardingFailoverEnabled, when true, makes a sharded workflow DON cache
 	// trigger events for workflows owned by another shard (instead of dropping
@@ -406,7 +414,13 @@ type Schema struct {
 	// TimeoutBasedFailoverWindow is how long a cached trigger event waits for
 	// the owning shard's execution outcome before the caching shard may
 	// execute it itself.
-	TimeoutBasedFailoverWindow      Setting[time.Duration]
+	TimeoutBasedFailoverWindow Setting[time.Duration]
+	// ShardOwnershipCheckTimeout bounds one shard ownership lookup, made when a
+	// trigger event is admitted on a sharded node. A lookup that runs out is
+	// treated as an orchestrator error, so the event is denied. The default
+	// matches the manual resolver's 30s wait for the first registry snapshot at
+	// boot, so it only stops lookups that would otherwise hang.
+	ShardOwnershipCheckTimeout      Setting[time.Duration]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
 	PropagateOrgIDInRequestMetadata Setting[bool]
@@ -464,7 +478,10 @@ type Schema struct {
 	// CentralTriggerEventQueueLimit is the node-wide cap on trigger events buffered in the
 	// central trigger queue, across all workflows and orgs. It is re-read on every Put; when
 	// the queue is full, new events are dropped (and counted) rather than blocking.
-	CentralTriggerEventQueueLimit          Setting[int] `unit:"{trigger}"`
+	CentralTriggerEventQueueLimit Setting[int] `unit:"{trigger}"`
+	// CentralTriggerQueueDrainInterval is how often the central trigger queue is drained. The default
+	// matches the expected OCR round interval. The drainer raises values below 200ms to 200ms.
+	CentralTriggerQueueDrainInterval       Setting[time.Duration]
 	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
@@ -501,6 +518,9 @@ type Schema struct {
 
 	MissingRequestRecoveryEnabled Setting[bool]
 
+	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]]
+	CRONV2ActivePeriod                     Setting[Range[config.Timestamp]]
+
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute
 
@@ -512,7 +532,15 @@ type Orgs struct {
 	BaseTriggerRetransmitEnabled      Setting[bool]
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	ZeroBalancePruningTimeout         Setting[time.Duration]
-	HTTPAction                        perOrgHTTPAction
+	// BillingFault* drop and perturb deterministic samples of this org's usage records so the billing reconcilers can measure recall; rates are 0..1 and 0 is off. Set them per org only; the global key would fault every org.
+	BillingFaultDropRate Setting[float64]
+	// BillingFaultPerturbRate selects records to perturb; drop wins when both select.
+	BillingFaultPerturbRate Setting[float64]
+	// BillingFaultPerturbDelta is the perturb magnitude; each event deterministically adds or subtracts it, clamped at 0.
+	BillingFaultPerturbDelta Setting[int64]
+	// BillingFaultNodeRate is the fraction of nodes that apply a perturb.
+	BillingFaultNodeRate Setting[float64]
+	HTTPAction           perOrgHTTPAction
 }
 
 type Owners struct {
@@ -547,6 +575,11 @@ type Workflows struct {
 	ExecutionTimeout           Setting[time.Duration]
 	ExecutionResponseLimit     Setting[config.Size]
 	ExecutionTimestampsEnabled Setting[bool]
+
+	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
+	// trigger-owning Engine. It is read only when an engine is created, so a change
+	// applies to a workflow the next time its engine is created.
+	CoordinatedEngineEnabled Setting[bool]
 
 	WASMMemoryLimit               Setting[config.Size]
 	WASMTableElementsLimit        Setting[int] `unit:"{element}"`
@@ -587,6 +620,11 @@ type Workflows struct {
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
+	FeatureVaultGetSecretsDirectlyActivePeriod        Setting[Range[config.Timestamp]]
+	// FeatureShadowTriggerModeActivePeriod is the window in which coordinated trigger events are also
+	// copied to the central trigger queue. Each event is checked against the time it was observed, so
+	// every node switches at the same moment.
+	FeatureShadowTriggerModeActivePeriod Setting[Range[config.Timestamp]]
 }
 
 type cronTrigger struct {

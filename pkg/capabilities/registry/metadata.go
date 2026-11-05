@@ -245,7 +245,6 @@ func (l *RegistryMetadata) NodeByPeerID(ctx context.Context, peerID types.PeerID
 					// greater than 0, so if the ID is 0, it means we've not set `workflowDON` initialized above yet.
 					if workflowDON.ID == 0 {
 						workflowDON = d.DON
-						l.Logger.Debugw("Workflow DON identified", "workflowDONID", workflowDON.ID)
 					} else {
 						l.Logger.Errorw("Configuration error: node belongs to more than one workflowDON", "peerID", peerID)
 					}

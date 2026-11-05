@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
@@ -56,7 +57,7 @@ func NewListenerTransport(p ListenerTransportParams) (*ListenerTransport, error)
 
 	if p.Connect == nil {
 		p.Connect = func(target string) (*grpc.ClientConn, error) {
-			return grpc.NewClient(target)
+			return grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		}
 	}
 

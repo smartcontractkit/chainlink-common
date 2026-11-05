@@ -84,6 +84,14 @@ flowchart
 %%    TODO unused
 %%    PerOrg.ZeroBalancePruningTimeout
 
+    subgraph applyFault[resourcemanager.ResourceManager.applyFault]
+%%      usage meter records of an org, before emission
+        PerOrg.BillingFaultDropRate[(PerOrg.BillingFaultDropRate)]:::setting
+        PerOrg.BillingFaultPerturbRate[(PerOrg.BillingFaultPerturbRate)]:::setting
+        PerOrg.BillingFaultPerturbDelta[(PerOrg.BillingFaultPerturbDelta)]:::setting
+        PerOrg.BillingFaultNodeRate[(PerOrg.BillingFaultNodeRate)]:::setting
+    end
+
     subgraph handleMessage[dispatcher.handleMessage]
 %%      DON peer → DON peer P2P capability messages
         DispatcherGlobalRate[\DispatcherGlobalRate/]:::rate
@@ -92,7 +100,19 @@ flowchart
 
     subgraph CentralTriggerQueue.Put
 %%      trigger coordinator reader → central trigger queue (pre-admission buffer)
+        PerWorkflow.FeatureShadowTriggerModeActivePeriod[/PerWorkflow.FeatureShadowTriggerModeActivePeriod\]:::gate
         CentralTriggerEventQueueLimit{{CentralTriggerEventQueueLimit}}:::bound
+
+        PerWorkflow.FeatureShadowTriggerModeActivePeriod-->CentralTriggerEventQueueLimit
+    end
+
+    subgraph CentralTriggerQueue.Drain
+%%      drainer → central trigger queue
+        CentralTriggerQueueDrainInterval>CentralTriggerQueueDrainInterval]:::time
+    end
+
+    subgraph standardcapabilities.Delegate.NewServices
+        CRONV2ActivePeriod[/CRONV2ActivePeriod\]:::gate
     end
 
     subgraph Store.FetchWorkflowArtifacts
@@ -109,6 +129,7 @@ flowchart
 
     subgraph syncer.tryEngineCreate
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
+        PerWorkflow.CoordinatedEngineEnabled[/PerWorkflow.CoordinatedEngineEnabled\]:::gate
         ShardingFailoverEnabled[/ShardingFailoverEnabled\]:::gate
     end
 
@@ -117,6 +138,11 @@ flowchart
 %%      execution outcome from the owning shard
         TimeoutBasedFailover[/TimeoutBasedFailover\]:::gate
         TimeoutBasedFailoverWindow>TimeoutBasedFailoverWindow]:::time
+    end
+
+    subgraph ShardFailoverManager.checkShardOwnership
+%%      trigger admission on a sharded node, before the event is queued
+        ShardOwnershipCheckTimeout>ShardOwnershipCheckTimeout]:::time
     end
 
     subgraph Engine.init
@@ -209,6 +235,7 @@ flowchart
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
+        PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod[/PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
     end
@@ -381,6 +408,15 @@ flowchart
 
 %%  the trigger coordinator's reader is likewise its own entry point
     CentralTriggerQueue.Put
+
+%%  the central trigger queue's drainer is likewise its own entry point
+    CentralTriggerQueue.Drain
+
+%% TODO placating test for now since this flowchart no longer renders
+    DonTimeSequencedTimestampsActivePeriod 
+
+%%  standard capabilities job startup is likewise its own entry point
+    standardcapabilities.Delegate.NewServices
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

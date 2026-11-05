@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/durationpb"
@@ -13,7 +14,11 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2/types"
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/cresettings"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings/limits"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/dontime/pb"
 )
 
@@ -146,7 +151,7 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	t.Run("Invalid sequence number", func(t *testing.T) {
+	t.Run("Valid skipped sequence number", func(t *testing.T) {
 		store := NewStore(DefaultRequestTimeout)
 		plugin, err := NewPlugin(store, config, offchainCfg, lggr)
 		require.NoError(t, err)
@@ -160,24 +165,42 @@ func TestPlugin_ValidateObservation(t *testing.T) {
 
 		// Add single request to queue
 		executionID := "workflow-123"
-		requestCh := store.RequestDonTime(executionID, 1)
+		_ = store.RequestDonTime(executionID, 1)
 
-		_, err = plugin.Observation(ctx, outcomeCtx, query)
+		observation, err := plugin.Observation(ctx, outcomeCtx, query)
 		require.NoError(t, err)
 
-		response := <-requestCh
-		require.ErrorContains(t, response.Err, "requested seqNum 1 for executionID workflow-123 is greater than the number of observed don times 0")
+		ao := types.AttributedObservation{
+			Observation: observation,
+			Observer:    commontypes.OracleID(1),
+		}
+
+		err = plugin.ValidateObservation(ctx, outcomeCtx, query, ao)
+		require.NoError(t, err)
 	})
 }
 
 func TestPlugin_Outcome(t *testing.T) {
+	t.Run("sequenced", func(t *testing.T) { testPlugin_Outcome(t, true) })
+	t.Run("unsequenced", func(t *testing.T) { testPlugin_Outcome(t, false) })
+}
+
+func testPlugin_Outcome(t *testing.T, sequenced bool) {
 	lggr := logger.Test(t)
 	store := NewStore(DefaultRequestTimeout)
-	config, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	cfg, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
 	ctx := t.Context()
 
-	plugin, err := NewPlugin(store, config, offchainCfg, lggr)
+	plugin, err := NewPlugin(store, cfg, offchainCfg, lggr)
 	require.NoError(t, err)
+	if sequenced {
+		plugin.setSequencedTSEnabled(limits.NewRangeLimiter(
+			settings.Range[config.Timestamp]{
+				Lower: config.NewTimestamp(time.Now()),
+				Upper: config.NewTimestamp(time.Now().Add(time.Hour)),
+			},
+		))
+	}
 
 	query, err := plugin.Query(ctx, ocr3types.OutcomeContext{PreviousOutcome: []byte("")})
 	require.NoError(t, err)
@@ -233,7 +256,15 @@ func TestPlugin_Outcome(t *testing.T) {
 	err = proto.Unmarshal(outcome, outcomeProto)
 	require.NoError(t, err)
 	require.Equal(t, timestamp, outcomeProto.Timestamp)
-	require.Equal(t, []int64{timestamp}, outcomeProto.ObservedDonTimes[executionID].Timestamps)
+	if observed, ok := outcomeProto.ObservedDonTimes[executionID]; assert.True(t, ok) {
+		if sequenced {
+			require.Equal(t, map[int64]int64{0: timestamp}, observed.TimestampsBySequence)
+			require.Empty(t, observed.Timestamps)
+		} else {
+			require.Equal(t, []int64{timestamp}, observed.Timestamps)
+			require.Empty(t, observed.TimestampsBySequence)
+		}
+	}
 }
 
 func TestPlugin_Outcome_SequenceNumberHandling(t *testing.T) {
@@ -534,7 +565,7 @@ func TestPlugin_FinishedExecutions(t *testing.T) {
 	})
 
 	t.Run("Transmit: delete removed executionIDs", func(t *testing.T) {
-		store.setDonTimes("workflow-123", []int64{time.Now().UnixMilli()})
+		store.setDonTimes("workflow-123", map[int64]int64{0: time.Now().UnixMilli()})
 
 		r := ocr3types.ReportWithInfo[[]byte]{}
 		r.Report, err = proto.Marshal(outcomeProto)
@@ -590,7 +621,7 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 	prevOutcomeBytes, err := proto.Marshal(prevOutcome)
 	require.NoError(t, err)
 
-	t.Run("trims when all observations set batch size flag", func(t *testing.T) {
+	t.Run("batch size enforced", func(t *testing.T) {
 		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(true))
 		require.NoError(t, err)
 
@@ -633,4 +664,53 @@ func TestPlugin_ExpiredRequest(t *testing.T) {
 	case <-ctx.Done():
 		t.Fatal("failed to retrieve donTime from request channel")
 	}
+}
+
+func TestPlugin_Outcome_DisableSequencedWithGap(t *testing.T) {
+	lggr := logger.Test(t)
+	store := NewStore(DefaultRequestTimeout)
+	cfg, offchainCfg := newTestPluginConfig(t), newTestPluginOffchainConfig(t)
+	ctx := t.Context()
+
+	plugin, err := NewPlugin(store, cfg, offchainCfg, lggr)
+	require.NoError(t, err)
+	plugin.setSequencedTSEnabled(limits.NewRangeLimiter(settings.Range[config.Timestamp]{
+		Lower: config.NewTimestamp(time.Now().Add(-time.Hour)),
+		Upper: config.NewTimestamp(time.Now().Add(time.Hour)),
+	}))
+
+	const executionID = "workflow-123"
+	makeObservations := func(timestamp, seqNum int64) []types.AttributedObservation {
+		aos := make([]types.AttributedObservation, 4)
+		for i := range aos {
+			rawObs, err := proto.Marshal(&pb.Observation{
+				Timestamp: timestamp,
+				Requests:  map[string]int64{executionID: seqNum},
+			})
+			require.NoError(t, err)
+			aos[i] = types.AttributedObservation{Observation: rawObs, Observer: commontypes.OracleID(i)}
+		}
+		return aos
+	}
+
+	// Sequenced mode: seqNum 0, then seqNum 2, leaving a gap at 1.
+	ts := time.Now().UnixMilli()
+	outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{}, nil, makeObservations(ts, 0))
+	require.NoError(t, err)
+	outcome, err = plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: outcome}, nil, makeObservations(ts+1000, 2))
+	require.NoError(t, err)
+
+	gapped := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(outcome, gapped))
+	require.Equal(t, map[int64]int64{0: ts, 2: ts + 1000}, gapped.ObservedDonTimes[executionID].TimestampsBySequence)
+
+	// Disable the feature flag: conversion back to the slice format must handle the gap.
+	plugin.setSequencedTSEnabled(limits.NewRangeLimiter(cresettings.Default.DonTimeSequencedTimestampsActivePeriod.DefaultValue))
+	outcome, err = plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: outcome}, nil, makeObservations(ts+2000, 3))
+	require.NoError(t, err)
+
+	unsequenced := &pb.Outcome{}
+	require.NoError(t, proto.Unmarshal(outcome, unsequenced))
+	require.Equal(t, []int64{ts, 0, ts + 1000, ts + 2000}, unsequenced.ObservedDonTimes[executionID].Timestamps)
+	require.Empty(t, unsequenced.ObservedDonTimes[executionID].TimestampsBySequence)
 }

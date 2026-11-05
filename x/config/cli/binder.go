@@ -184,7 +184,7 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 	claimed := map[string]string{}
 	for _, e := range cc.entries {
 		for _, k := range e.keys() {
-			if err := cc.keys.add(k.fileKey, k.fileType, lang); err != nil {
+			if err := cc.keys.add(k.fileKey, k.fileType, k.tag, lang); err != nil {
 				return commandConfig{}, fmt.Errorf("%s: %w", e.command().Name(), err)
 			}
 

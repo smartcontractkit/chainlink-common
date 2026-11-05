@@ -20,6 +20,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup/tomlmarkup"
+	"github.com/smartcontractkit/chainlink-common/x/config/markup/yamlmarkup"
 )
 
 func TestSubcommandFlagsArePersistent(t *testing.T) {
@@ -213,6 +214,15 @@ func TestIgnoredFieldsMatchTheMarkup(t *testing.T) {
 		}
 		require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &hasDashName{}), `Dash is named "-"`)
 	})
+}
+
+func TestConfigFileReadsAValueAsItsFieldDoes(t *testing.T) {
+	var got struct {
+		Port int `json:"port,string"`
+	}
+	opts := Options{Markup: yamlmarkup.New()}
+	require.NoError(t, run(t, &got, opts, "--config", writeConfig(t, "port: '1234'\n")))
+	assert.Equal(t, 1234, got.Port)
 }
 
 func TestDefaultConfigPath(t *testing.T) {

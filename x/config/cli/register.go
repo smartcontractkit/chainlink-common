@@ -30,6 +30,7 @@ func bindLeafFlag(entry targetEntry, m fieldMeta, doc string) (leafKey, error) {
 		goPath:   m.goPath,
 		goType:   m.field.Type,
 		fileType: fileType,
+		tag:      m.field.Tag,
 		required: isRequired(m.field),
 	}
 	// pflag panics on a redefinition.

@@ -10,6 +10,7 @@
 	"ShardingFailoverEnabled": "false",
 	"TimeoutBasedFailover": "false",
 	"TimeoutBasedFailoverWindow": "5m0s",
+	"ShardOwnershipCheckTimeout": "30s",
 	"TenantID": "0",
 	"VaultOrgIdAsSecretOwnerEnabled": "false",
 	"PropagateOrgIDInRequestMetadata": "false",
@@ -37,6 +38,7 @@
 	"DispatcherGlobalRate": "5000rps:5000",
 	"DispatcherPerSenderRate": "500rps:1000",
 	"CentralTriggerEventQueueLimit": "1000",
+	"CentralTriggerQueueDrainInterval": "500ms",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",
@@ -62,6 +64,8 @@
 	"VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit": "31.45728mb",
 	"VaultMaxPerOracleUnexpiredBlobCount": "1000",
 	"MissingRequestRecoveryEnabled": "false",
+	"DonTimeSequencedTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+	"CRONV2ActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 	"ConfidentialCompute": {
 		"GlobalRate": "1000rps:1000",
 		"MaxRetries": "3",
@@ -98,6 +102,10 @@
 		"BaseTriggerRetransmitEnabled": "false",
 		"WorkflowExecutionConcurrencyLimit": "100",
 		"ZeroBalancePruningTimeout": "24h0m0s",
+		"BillingFaultDropRate": "0",
+		"BillingFaultPerturbRate": "0",
+		"BillingFaultPerturbDelta": "0",
+		"BillingFaultNodeRate": "1",
 		"HTTPAction": {
 			"MtlsRateLimit": "every30s:3"
 		}
@@ -125,6 +133,7 @@
 		"ExecutionTimeout": "5m0s",
 		"ExecutionResponseLimit": "100kb",
 		"ExecutionTimestampsEnabled": "false",
+		"CoordinatedEngineEnabled": "false",
 		"WASMMemoryLimit": "100mb",
 		"WASMTableElementsLimit": "1000000",
 		"WASMBinarySizeLimit": "100mb",
@@ -237,6 +246,8 @@
 		"FeatureRequestHashIncludeWorkflowTagActivePeriod": "[0001-01-01 00:00:00 +0000 UTC,2100-01-01 00:00:00 +0000 UTC]",
 		"FeatureWorkflowTagBackfillActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"FeatureConsensusStricterMedianQuorumActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
-		"FeatureConsensusIncludeAllTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
+		"FeatureConsensusIncludeAllTimestampsActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureVaultGetSecretsDirectlyActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
+		"FeatureShadowTriggerModeActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]"
 	}
 }

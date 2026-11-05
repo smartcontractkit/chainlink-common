@@ -77,7 +77,8 @@ func (tomlMarkup) Key(f reflect.StructField) (string, bool) {
 }
 
 // RenameTag implements [markup.Markup.RenameTag].
-func (tomlMarkup) RenameTag(key string) reflect.StructTag {
+func (tomlMarkup) RenameTag(key string, _ reflect.StructTag) reflect.StructTag {
+	// go-toml's tag options only change how it encodes.
 	// A bare "-" tag drops the field.
 	if key == "-" {
 		key = "-,"

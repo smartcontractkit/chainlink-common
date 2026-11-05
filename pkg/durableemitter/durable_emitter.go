@@ -648,9 +648,6 @@ func (d *DurableEmitter) insertBatchLoop() {
 		ids, batchErr := d.batchInserter.InsertBatch(ctx, payloads)
 		d.metrics.recordInsertBatchSize(ctx, len(payloads), batchErr)
 		cancel()
-		if batchErr == nil {
-			d.eng.Debugw("DurableEmitter: coalesced insert flushed", "count", len(payloads))
-		}
 		for i, r := range batch {
 			if batchErr != nil {
 				r.result <- insertResult{err: batchErr}
@@ -739,7 +736,6 @@ func (d *DurableEmitter) flushDeletes(ids []int64) {
 		d.eng.Errorw("failed to batch delete delivered events", "count", len(ids), "error", err)
 		return
 	}
-	d.eng.Debugw("DurableEmitter: coalesced delete flushed", "submitted", len(ids), "deleted", deleted)
 	if d.metrics != nil {
 		d.metrics.deliverComplete.Add(ctx, deleted)
 	}

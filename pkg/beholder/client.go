@@ -119,6 +119,15 @@ type otlploggrpcFactory func(options ...otlploggrpc.Option) (sdklog.Exporter, er
 // NewGRPCClient creates a GRPC based beholder Client. Use NewClient to create a client from a Config which will pick
 // the best client type from the Config.
 func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, err error) {
+	chipIngressEnabled := cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != ""
+	if cfg.ChipDomainEmittersEnabled && !chipIngressEnabled {
+		return nil, errors.New("ChipDomainEmittersEnabled requires chip ingress (ChipIngressEmitterGRPCEndpoint)")
+	}
+	// Domain emitters are always batch emitters; like the batch emitter, they need a real logger.
+	if cfg.ChipDomainEmittersEnabled && cfg.ChipIngressLogger == nil {
+		return nil, errors.New("ChipIngressLogger is required when ChipDomainEmittersEnabled is true")
+	}
+
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err
@@ -204,6 +213,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		}
 		loggerProvider = sdklog.NewLoggerProvider(loggerOpts...)
 	}
+	defer func() {
+		if err != nil {
+			_ = loggerProvider.Shutdown(context.Background())
+		}
+	}()
 	logger := loggerProvider.Logger(defaultPackageName)
 
 	// Message emitter
@@ -212,6 +226,11 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 		return nil, err
 	}
 	messageLoggerProvider := sdklog.NewLoggerProvider(messageLoggerOpts...)
+	defer func() {
+		if err != nil {
+			_ = messageLoggerProvider.Shutdown(context.Background())
+		}
+	}()
 	messageLogger := messageLoggerProvider.Logger(defaultPackageName)
 
 	// Use the messageEmitter by default
@@ -224,14 +243,6 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 	lggr := cfg.ChipIngressLogger
 	if lggr == nil {
 		lggr = pkglogger.Nop()
-	}
-	chipIngressEnabled := cfg.ChipIngressEmitterEnabled || cfg.ChipIngressEmitterGRPCEndpoint != ""
-	if cfg.ChipDomainEmittersEnabled && !chipIngressEnabled {
-		return nil, errors.New("ChipDomainEmittersEnabled requires chip ingress (ChipIngressEmitterGRPCEndpoint)")
-	}
-	// Domain emitters are always batch emitters; like the batch emitter, they need a real logger.
-	if cfg.ChipDomainEmittersEnabled && cfg.ChipIngressLogger == nil {
-		return nil, errors.New("ChipIngressLogger is required when ChipDomainEmittersEnabled is true")
 	}
 	// if chip ingress is enabled, create dual source emitter that sends to both otel collector and chip ingress
 	// eventually we will remove the dual source emitter and just use chip ingress

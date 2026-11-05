@@ -70,7 +70,7 @@ var Default = Schema{
 	ShardingFailoverEnabled:                     Bool(false),
 	TimeoutBasedFailover:                        Bool(false),
 	TimeoutBasedFailoverWindow:                  Duration(5 * time.Minute),
-	ShardOwnershipCheckTimeout:                  Duration(30 * time.Second),
+	ShardOwnershipCheckTimeout:                  Duration(15 * time.Second),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -413,8 +413,7 @@ type Schema struct {
 	// ShardOwnershipCheckTimeout bounds one shard ownership lookup, made when a
 	// trigger event is admitted on a sharded node. A lookup that runs out is
 	// treated as an orchestrator error, so the event is denied. The default
-	// matches the manual resolver's 30s wait for the first registry snapshot at
-	// boot, so it only stops lookups that would otherwise hang.
+	// is the same 15s the orchestrator client used before this setting existed.
 	ShardOwnershipCheckTimeout      Setting[time.Duration]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated

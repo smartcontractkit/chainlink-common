@@ -29,20 +29,26 @@ const (
 	responseLen     = 9
 )
 
-// watSendResponse sends the bytes in data via send_response and exits successfully.
-func watSendResponse(data string, n int) string {
+// sendResponseGuestWAT returns a minimal guest, in WebAssembly text format, that sends length bytes of data via send_response and exits.
+func sendResponseGuestWAT(data string, length int) string {
 	return fmt.Sprintf(`
 	(module
+	  ;; host functions the guest calls
 	  (import "env" "version_v2" (func $version_v2))
 	  (import "env" "send_response" (func $send_response (param i32 i32) (result i32)))
 	  (import "wasi_snapshot_preview1" "proc_exit" (func $proc_exit (param i32)))
+	  ;; one 64 KiB memory page, exported so the host can read it
 	  (memory (export "memory") 1)
+	  ;; the response bytes, placed at address 0
 	  (data (i32.const 0) "%s")
 	  (func (export "_start")
+	    ;; declare the v2 ABI, as the SDK does at startup
 	    call $version_v2
+	    ;; send_response(ptr=0, len=length), ignoring its return code
 	    (drop (call $send_response (i32.const 0) (i32.const %d)))
+	    ;; exit cleanly
 	    (call $proc_exit (i32.const 0)))
-	)`, data, n)
+	)`, data, length)
 }
 
 type errGateLimiter struct{}
@@ -54,7 +60,7 @@ func (errGateLimiter) AllowErr(context.Context) error       { return errors.New(
 
 func newResponseSizeModule(t *testing.T, data string, cfg *ModuleConfig) (*module, *fakeModuleMetrics) {
 	t.Helper()
-	binary, err := wasmtime.Wat2Wasm(watSendResponse(data, responseLen))
+	binary, err := wasmtime.Wat2Wasm(sendResponseGuestWAT(data, responseLen))
 	require.NoError(t, err)
 	m, err := NewModule(t.Context(), cfg, binary)
 	require.NoError(t, err)

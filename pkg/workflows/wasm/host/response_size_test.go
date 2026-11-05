@@ -23,8 +23,10 @@ import (
 
 const (
 	// validResponse is three unknown varint fields (field 1000), a valid 9 byte ExecutionResult.
+	// Tests without enforcement use it to show the response is still read as before.
 	validResponse = `\c0\3e\01\c0\3e\01\c0\3e\01`
 	// invalidResponse is 9 bytes that fail proto.Unmarshal.
+	// The enforced test uses it to prove the response is rejected before it is read.
 	invalidResponse = `\ff\ff\ff\ff\ff\ff\ff\ff\ff`
 	responseLen     = 9
 )

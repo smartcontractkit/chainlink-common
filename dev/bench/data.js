@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793898599743,
+  "lastUpdate": 1793902738286,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66420,6 +66420,66 @@ window.BENCHMARK_DATA = {
             "value": 135464,
             "unit": "ns/op",
             "extra": "8616 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "104409744+vreff@users.noreply.github.com",
+            "name": "vreff",
+            "username": "vreff"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "079dfdd5c1f33e4dcc6e9095410a1d189b2a085a",
+          "message": "cresettings: add per-capability Confidential Compute overrides (PRIV-743) (#2528)\n\n* cresettings: add per-capability Confidential Compute overrides (PRIV-743)\n\nEvery node-local Confidential Compute setting now has an HTTP/Workflows override group that takes precedence over the shared value when set, resolved through a new Setting.GetOrDefaultWithFallback. Existing shared overrides keep applying as the fallback, so rollout is behavior-neutral.\n\nInsecureSkipTLSVerify stays shared: it is a node-wide enclave trust posture, not a per-capability limit.\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\n\n* settings: honor configured defaults in GetOrDefaultWithFallback\n\nCL_CRE_SETTINGS_DEFAULT and defaults files set a setting's DefaultValue rather than populating the Getter, so an explicitly configured per-capability default was shadowed by the shared default. Record that a default was configured and resolve the specific setting on its own in that case.\n\nCo-Authored-By: Claude Code <noreply@anthropic.com>\n\n* Revert \"settings: honor configured defaults in GetOrDefaultWithFallback\"\n\nThis reverts commit 55c14031fd51f8a57fc765f3cc3e53231f18f83e. CL_CRE_SETTINGS_DEFAULT is a dev/test path, and tracking whether a default was configured leaks an implementation detail of Setting into fallback resolution.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* settings: add SettingWithFallback to resolve through multiple settings\n\nReplace Setting.GetOrDefaultWithFallback with SettingWithFallback[T], an ordered list of Settings, most specific first. The first one set in the Getter wins and the default is that of the most general one. It implements IsSetting, so it works with the limiters, and a getter error now returns the shared default.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* settings: drop SettingWithFallback, keep per-capability groups only\n\nResolve the per-capability fallback in the consumer instead of adding a helper to the settings package. Leaves only the cresettings override groups and their generated defaults.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Code <noreply@anthropic.com>",
+          "timestamp": "2026-11-05T18:08:29Z",
+          "tree_id": "df7a3d4cc582274b04b6ae1e619fa6be602fb444",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/079dfdd5c1f33e4dcc6e9095410a1d189b2a085a"
+        },
+        "date": 1793902735181,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 349.6,
+            "unit": "ns/op",
+            "extra": "3424113 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 78617,
+            "unit": "ns/op",
+            "extra": "15246 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 425,
+            "unit": "ns/op",
+            "extra": "3145232 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 79298,
+            "unit": "ns/op",
+            "extra": "15073 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 28068,
+            "unit": "ns/op",
+            "extra": "42681 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 127189,
+            "unit": "ns/op",
+            "extra": "9244 times\n4 procs"
           }
         ]
       }

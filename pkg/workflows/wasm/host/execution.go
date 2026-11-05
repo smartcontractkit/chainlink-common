@@ -63,9 +63,7 @@ func (e *execution[T]) checkResponseSize(size int32) error {
 
 	enforced, err := limiterOrDefault(e.module.cfg.EnforceResponseSizeLimiter, e.module.defaultLimiters.enforceResponseSize).IsOpen(e.ctx)
 	if err != nil {
-		if e.module.enforceResponseSizeErrLogged.CompareAndSwap(false, true) {
-			e.module.cfg.Logger.Errorw("failed to read response size enforcement setting, not enforcing", "err", err)
-		}
+		e.module.cfg.Logger.Errorw("failed to read response size enforcement setting, not enforcing", "err", err)
 		enforced = false
 	}
 	e.module.metrics.IncResponseOverLimit(e.ctx, enforced)

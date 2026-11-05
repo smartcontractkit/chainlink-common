@@ -12,7 +12,6 @@ import (
 	"math/rand"
 	"os"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -144,9 +143,6 @@ type module struct {
 	// implementation (e.g. one that panics) without going through a real
 	// compiled wasm binary.
 	linkV2 linkFn[*sdkpb.ExecutionResult]
-
-	// enforceResponseSizeErrLogged ensures an unreadable enforcement setting is logged once.
-	enforceResponseSizeErrLogged atomic.Bool
 }
 
 var _ ModuleV2 = (*module)(nil)

@@ -131,7 +131,7 @@ func TestSendResponse_ResponseSize(t *testing.T) {
 		}
 	})
 
-	t.Run("unreadable setting is not enforced and logged once", func(t *testing.T) {
+	t.Run("unreadable setting is not enforced and logged each time", func(t *testing.T) {
 		lggr, logs := logger.TestObserved(t, zapcore.ErrorLevel)
 		m, metrics := newResponseSizeModule(t, validResponse, responseSizeCfg(t, lggr, 4, errGateLimiter{}))
 
@@ -141,6 +141,6 @@ func TestSendResponse_ResponseSize(t *testing.T) {
 			require.NotNil(t, result)
 		}
 		assert.Equal(t, map[bool]int{false: 2}, metrics.responsesOverLimit)
-		assert.Equal(t, 1, logs.FilterMessageSnippet("response size enforcement setting").Len())
+		assert.Equal(t, 2, logs.FilterMessageSnippet("response size enforcement setting").Len())
 	})
 }

@@ -108,7 +108,7 @@ func TestClient_MaxBufferedBytes(t *testing.T) {
 	t.Run("rejects a message larger than the whole budget", func(t *testing.T) {
 		client, err := NewBatchClient(mocks.NewClient(t), WithMaxBufferedBytes(1024))
 		require.NoError(t, err)
-		assert.ErrorIs(t, client.QueueMessage(bufferedBytesEvent("big", 4096), nil), ErrBufferedBytesExceeded)
+		require.ErrorIs(t, client.QueueMessage(bufferedBytesEvent("big", 4096), nil), ErrBufferedBytesExceeded)
 		assert.Zero(t, client.BufferedBytes())
 		require.NoError(t, client.QueueMessage(bufferedBytesEvent("small", 1), nil))
 	})

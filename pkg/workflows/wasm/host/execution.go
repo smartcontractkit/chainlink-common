@@ -67,6 +67,7 @@ func (e *execution[T]) checkResponseSize(size int32) error {
 		enforced = false
 	}
 	e.module.metrics.IncResponseOverLimit(e.ctx, enforced)
+	e.module.cfg.Logger.Warnw("workflow response exceeds limit", "responseBytes", size, "limitBytes", uint64(e.maxResponseSize), "enforced", enforced)
 	if !enforced {
 		return nil
 	}

@@ -54,12 +54,6 @@ type Setting[T any] struct {
 	Scope        Scope
 	Parse        func(string) (T, error) `json:"-" toml:"-"`
 	Unit         string
-
-	// explicit records that DefaultValue was configured (e.g. via
-	// CL_CRE_SETTINGS_DEFAULT or a defaults file) rather than compiled in.
-	// GetOrDefaultWithFallback honors it so an explicitly configured default for
-	// a specific setting is not shadowed by the more general setting's default.
-	explicit bool
 }
 
 func (s Setting[T]) GetSpec() SettingSpec[T] { return &s }
@@ -84,9 +78,7 @@ func (s *Setting[T]) UnmarshalText(b []byte) (err error) {
 	s.DefaultValue, err = s.Parse(string(b))
 	if err != nil {
 		err = fmt.Errorf("%s: failed to parse %s: %w", s.Key, string(b), err)
-		return
 	}
-	s.explicit = true
 	return
 }
 
@@ -242,16 +234,9 @@ func (s *Setting[T]) GetOrDefault(ctx context.Context, g Getter) (value T, err e
 // the general one's configured value stays the default, so an operator override
 // of the general setting keeps applying everywhere the specific one is unset.
 //
-// A specific setting whose default was configured (see UnmarshalText) counts as
-// explicit and resolves on its own, so a per-capability default supplied through
-// CL_CRE_SETTINGS_DEFAULT is not shadowed by the shared default.
-//
 // A zero Setting (no Key) counts as unset, so a caller can hold a zero-valued
 // struct of settings to mean "fall back for everything".
 func (s *Setting[T]) GetOrDefaultWithFallback(ctx context.Context, g Getter, fallback Setting[T]) (value T, err error) {
-	if s.explicit {
-		return s.GetOrDefault(ctx, g)
-	}
 	if g != nil && s.Key != "" {
 		str, err := g.GetScoped(ctx, s.Scope, s.Key)
 		if err != nil {

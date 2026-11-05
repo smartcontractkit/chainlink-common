@@ -178,32 +178,6 @@ func TestSchema_Unmarshal(t *testing.T) {
 	}, cfg.PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod.DefaultValue)
 }
 
-// TestDefault_PerCapabilityDefaults guards the CL_CRE_SETTINGS_DEFAULT path:
-// unmarshalling sets a setting's DefaultValue instead of populating the Getter,
-// so fallback resolution must honor a configured per-capability default rather
-// than shadowing it with the shared default.
-func TestDefault_PerCapabilityDefaults(t *testing.T) {
-	cfg := Default
-	require.NoError(t, json.Unmarshal([]byte(`{
-		"ConfidentialCompute": {"HTTP": {"MaxRetries": "9"}}
-	}`), &cfg))
-
-	got, err := cfg.ConfidentialCompute.HTTP.MaxRetries.GetOrDefaultWithFallback(t.Context(), nil, cfg.ConfidentialCompute.MaxRetries)
-	require.NoError(t, err)
-	assert.Equal(t, 9, got)
-
-	got, err = cfg.ConfidentialCompute.Workflows.MaxRetries.GetOrDefaultWithFallback(t.Context(), nil, cfg.ConfidentialCompute.MaxRetries)
-	require.NoError(t, err)
-	assert.Equal(t, 3, got)
-
-	// A shared default configured the same way still reaches the untouched capability.
-	require.NoError(t, json.Unmarshal([]byte(`{"ConfidentialCompute": {"MaxRetries": "5"}}`), &cfg))
-
-	got, err = cfg.ConfidentialCompute.Workflows.MaxRetries.GetOrDefaultWithFallback(t.Context(), nil, cfg.ConfidentialCompute.MaxRetries)
-	require.NoError(t, err)
-	assert.Equal(t, 5, got)
-}
-
 func TestDONTimeRequestTimeoutKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.DONTime.RequestTimeout
 

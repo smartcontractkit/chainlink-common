@@ -53,8 +53,7 @@ type BatchEmitter interface {
 
 // Config configures the DurableEmitter behaviour.
 type Config struct {
-	// MaxEventBytes rejects larger serialized events at Emit, since the batch
-	// client can never deliver them. Zero uses DefaultMaxEventBytes.
+	// MaxEventBytes rejects larger serialized events at Emit, before they are stored. Zero uses DefaultMaxEventBytes.
 	MaxEventBytes int
 	// RetransmitInterval controls how often the retransmit loop ticks.
 	RetransmitInterval time.Duration
@@ -127,17 +126,10 @@ type Hooks struct {
 	OnBatchDelete func(elapsed time.Duration, count int)
 }
 
-const (
-	// chipIngressMaxRequestBytes is the batch client's default max gRPC request size.
-	chipIngressMaxRequestBytes = 10 * 1024 * 1024 // 10 MiB
-	// batchFramingHeadroomBytes is what the batch client reserves for the batch wrapper and gRPC framing.
-	batchFramingHeadroomBytes = 10 * 1024 // 10 KiB
-)
+// DefaultMaxEventBytes is 1 MiB, well under the batch client's 10 MiB request limit, to bound memory per event.
+const DefaultMaxEventBytes = 1024 * 1024
 
-// DefaultMaxEventBytes is the largest event that still fits in one request once wrapped (10,475,520 bytes).
-const DefaultMaxEventBytes = chipIngressMaxRequestBytes - batchFramingHeadroomBytes
-
-// ErrEventTooLarge is returned by Emit for an event too large to ever deliver.
+// ErrEventTooLarge is returned by Emit for an event larger than MaxEventBytes.
 var ErrEventTooLarge = errors.New("durable emitter: event exceeds max size")
 
 func DefaultConfig() Config {

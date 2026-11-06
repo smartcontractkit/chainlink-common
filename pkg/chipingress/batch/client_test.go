@@ -3,6 +3,7 @@ package batch
 import (
 	"context"
 	"errors"
+	"math/rand/v2"
 	"slices"
 	"strconv"
 	"strings"
@@ -1984,6 +1985,293 @@ func TestSplitMessagesByRequestSize(t *testing.T) {
 			assert.Len(t, batch, 1)
 		}
 	})
+}
+
+// splitMessagesByRequestSizeReference is the original quadratic implementation of
+// splitMessagesByRequestSize. It is kept as the oracle for the equivalence tests below.
+func splitMessagesByRequestSizeReference(messages []*messageWithCallback, maxRequestSize int, transactionEnabled bool) [][]*messageWithCallback {
+	if len(messages) == 0 {
+		return nil
+	}
+	if maxRequestSize <= 0 {
+		return [][]*messageWithCallback{messages}
+	}
+
+	var batches [][]*messageWithCallback
+	current := make([]*messageWithCallback, 0, len(messages))
+	for _, msg := range messages {
+		candidate := append(current, msg)
+		_, candidateBytes := newBatchRequest(candidate, transactionEnabled)
+		if len(current) > 0 && candidateBytes > maxRequestSize {
+			batches = append(batches, current)
+			current = []*messageWithCallback{msg}
+			continue
+		}
+		current = candidate
+	}
+	if len(current) > 0 {
+		batches = append(batches, current)
+	}
+	return batches
+}
+
+// splitBoundaries returns the length of each batch and asserts that the batches, concatenated,
+// are exactly the input messages in order (same pointers, nothing lost or duplicated).
+func splitBoundaries(t *testing.T, input []*messageWithCallback, batches [][]*messageWithCallback) []int {
+	t.Helper()
+	lens := make([]int, 0, len(batches))
+	var flat []*messageWithCallback
+	for _, batch := range batches {
+		lens = append(lens, len(batch))
+		flat = append(flat, batch...)
+	}
+	require.Len(t, flat, len(input))
+	for i := range input {
+		require.Same(t, input[i], flat[i], "message %d out of order or replaced", i)
+	}
+	return lens
+}
+
+func requireSplitMatchesReference(t *testing.T, msgs []*messageWithCallback, maxRequestSize int, transactionEnabled bool) {
+	t.Helper()
+	want := splitMessagesByRequestSizeReference(msgs, maxRequestSize, transactionEnabled)
+	got := splitMessagesByRequestSize(msgs, maxRequestSize, transactionEnabled)
+	require.Equal(t, splitBoundaries(t, msgs, want), splitBoundaries(t, msgs, got),
+		"batch boundaries differ (events=%d, maxRequestSize=%d, transactionEnabled=%t)", len(msgs), maxRequestSize, transactionEnabled)
+	assert.Equal(t, want == nil, got == nil, "nil-ness differs")
+}
+
+func eventWithPayload(id string, payloadSize int) *messageWithCallback {
+	return &messageWithCallback{event: &chipingress.CloudEventPb{
+		Id:          id,
+		Source:      "test-source",
+		Type:        "test.event.type",
+		SpecVersion: "1.0",
+		Data:        &cepb.CloudEvent_BinaryData{BinaryData: make([]byte, payloadSize)},
+	}}
+}
+
+func eventWithAttributes(id string, payloadSize int, extraAttrs int) *messageWithCallback {
+	msg := eventWithPayload(id, payloadSize)
+	msg.event.Attributes = map[string]*cepb.CloudEventAttributeValue{
+		"datacontenttype": {Attr: &cepb.CloudEventAttributeValue_CeString{CeString: "application/protobuf"}},
+		"recordedtime":    {Attr: &cepb.CloudEventAttributeValue_CeBoolean{CeBoolean: true}},
+		"seqnum":          {Attr: &cepb.CloudEventAttributeValue_CeInteger{CeInteger: int32(extraAttrs)}},
+	}
+	for i := range extraAttrs {
+		msg.event.Attributes["ext"+strconv.Itoa(i)] = &cepb.CloudEventAttributeValue{
+			Attr: &cepb.CloudEventAttributeValue_CeString{CeString: strings.Repeat("x", i*7)},
+		}
+	}
+	return msg
+}
+
+// batchRequestSize is the serialized size of a request holding msgs, via the real request builder.
+func batchRequestSize(msgs []*messageWithCallback, transactionEnabled bool) int {
+	_, size := newBatchRequest(msgs, transactionEnabled)
+	return size
+}
+
+// prefixBoundaryLimits returns, for every prefix of msgs, limits one below, at and one above
+// the exact serialized size of that prefix.
+func prefixBoundaryLimits(msgs []*messageWithCallback, te bool) []int {
+	var limits []int
+	for k := 1; k <= len(msgs); k++ {
+		size := batchRequestSize(msgs[:k], te)
+		limits = append(limits, size-1, size, size+1)
+	}
+	return limits
+}
+
+func TestSplitMessagesByRequestSizeMatchesReference(t *testing.T) {
+	mixed := func() []*messageWithCallback {
+		return []*messageWithCallback{
+			eventWithPayload("a", 10),
+			eventWithAttributes("b", 300, 5),
+			eventWithPayload("c", 70000), // length prefix needs a 3-byte varint
+			eventWithAttributes("d", 0, 40),
+			eventWithPayload("e", 130), // crosses the 1 -> 2 byte varint boundary
+			eventWithPayload("f", 16384),
+			{event: &chipingress.CloudEventPb{}}, // zero-value event
+		}
+	}
+	tiny := func(n int) []*messageWithCallback {
+		msgs := make([]*messageWithCallback, n)
+		for i := range msgs {
+			msgs[i] = &messageWithCallback{event: &chipingress.CloudEventPb{Id: strconv.Itoa(i)}}
+		}
+		return msgs
+	}
+
+	cases := []struct {
+		name string
+		msgs func() []*messageWithCallback
+		// limits returns the maxRequestSize values to check for the given transaction mode.
+		limits func(msgs []*messageWithCallback, te bool) []int
+	}{
+		{
+			name:   "nil input",
+			msgs:   func() []*messageWithCallback { return nil },
+			limits: func([]*messageWithCallback, bool) []int { return []int{-1, 0, 1, 1024} },
+		},
+		{
+			name:   "empty input",
+			msgs:   func() []*messageWithCallback { return []*messageWithCallback{} },
+			limits: func([]*messageWithCallback, bool) []int { return []int{-1, 0, 1, 1024} },
+		},
+		{
+			name:   "non-positive max request size",
+			msgs:   mixed,
+			limits: func([]*messageWithCallback, bool) []int { return []int{0, -1, -1 << 30} },
+		},
+		{
+			name:   "single event larger than the limit",
+			msgs:   func() []*messageWithCallback { return []*messageWithCallback{eventWithPayload("big", 5000)} },
+			limits: func([]*messageWithCallback, bool) []int { return []int{1, 100, 4999} },
+		},
+		{
+			name: "oversized event between small events",
+			msgs: func() []*messageWithCallback {
+				return []*messageWithCallback{eventWithPayload("a", 10), eventWithPayload("big", 5000), eventWithPayload("b", 10)}
+			},
+			limits: func([]*messageWithCallback, bool) []int { return []int{1, 200, 1000} },
+		},
+		{
+			name:   "exact boundary of every prefix",
+			msgs:   mixed,
+			limits: prefixBoundaryLimits,
+		},
+		{
+			name: "exact boundary of equal events",
+			msgs: func() []*messageWithCallback {
+				return []*messageWithCallback{
+					{event: largeTestEvent("a")}, {event: largeTestEvent("b")},
+					{event: largeTestEvent("c")}, {event: largeTestEvent("d")},
+				}
+			},
+			limits: prefixBoundaryLimits,
+		},
+		{
+			name: "attributes and extensions with a range of limits",
+			msgs: mixed,
+			limits: func(msgs []*messageWithCallback, te bool) []int {
+				total := batchRequestSize(msgs, te)
+				return []int{1, 50, 100, 500, 1000, 5000, 20000, 70000, 80000, total - 1, total, total + 1, 1 << 30}
+			},
+		},
+		{
+			name: "many tiny events",
+			msgs: func() []*messageWithCallback { return tiny(1000) },
+			limits: func(msgs []*messageWithCallback, te bool) []int {
+				total := batchRequestSize(msgs, te)
+				return []int{1, 20, 64, 100, 1024, 4096, total - 1, total}
+			},
+		},
+		{
+			name: "same event shared by several messages",
+			msgs: func() []*messageWithCallback {
+				shared := eventWithPayload("shared", 100)
+				return []*messageWithCallback{shared, shared, shared, shared}
+			},
+			limits: func(msgs []*messageWithCallback, te bool) []int {
+				return []int{1, batchRequestSize(msgs[:2], te), batchRequestSize(msgs[:3], te) - 1, 1 << 20}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		for _, te := range []bool{false, true} {
+			t.Run(tc.name+"/transaction="+strconv.FormatBool(te), func(t *testing.T) {
+				msgs := tc.msgs()
+				for _, limit := range tc.limits(msgs, te) {
+					requireSplitMatchesReference(t, msgs, limit, te)
+				}
+			})
+		}
+	}
+}
+
+func TestSplitMessagesByRequestSizeRandomizedMatchesReference(t *testing.T) {
+	rng := rand.New(rand.NewPCG(0xC0FFEE, 0xBA7C4))
+
+	randomEvent := func(i int) *messageWithCallback {
+		var payload int
+		switch rng.IntN(10) {
+		case 0:
+			payload = 0
+		case 1:
+			payload = 120 + rng.IntN(20) // around the 127/128 varint boundary
+		case 2:
+			payload = 16300 + rng.IntN(200) // around the 16383/16384 varint boundary
+		case 3:
+			payload = rng.IntN(70000)
+		default:
+			payload = rng.IntN(1500)
+		}
+		if rng.IntN(2) == 0 {
+			return eventWithAttributes("id-"+strconv.Itoa(i), payload, rng.IntN(30))
+		}
+		return eventWithPayload("id-"+strconv.Itoa(i), payload)
+	}
+
+	const cases = 3000
+	for c := range cases {
+		n := rng.IntN(60)
+		if c%100 == 0 {
+			n = 200 + rng.IntN(300)
+		}
+		msgs := make([]*messageWithCallback, n)
+		for i := range msgs {
+			msgs[i] = randomEvent(i)
+		}
+		te := rng.IntN(2) == 0
+
+		var limit int
+		switch rng.IntN(4) {
+		case 0:
+			// near the exact size of a random prefix
+			if n > 0 {
+				limit = batchRequestSize(msgs[:1+rng.IntN(n)], te) + rng.IntN(3) - 1
+			}
+		case 1:
+			limit = 1 + rng.IntN(2000)
+		case 2:
+			if n > 0 {
+				limit = 1 + rng.IntN(batchRequestSize(msgs, te))
+			}
+		default:
+			limit = rng.IntN(200000) - 1000 // includes non-positive values
+		}
+
+		requireSplitMatchesReference(t, msgs, limit, te)
+		if t.Failed() {
+			t.Fatalf("case %d failed (fixed seed; n=%d limit=%d transactionEnabled=%t)", c, n, limit, te)
+		}
+	}
+}
+
+func BenchmarkSplitMessagesByRequestSize(b *testing.B) {
+	limits := []struct {
+		name string
+		size int
+	}{
+		{"max=10MiB", 10 * 1024 * 1024}, // realistic default: no split at these event counts
+		{"max=16KiB", 16 * 1024},        // forces many splits
+	}
+	for _, limit := range limits {
+		for _, n := range []int{10, 100, 1000} {
+			b.Run(limit.name+"/events="+strconv.Itoa(n), func(b *testing.B) {
+				msgs := make([]*messageWithCallback, n)
+				for i := range msgs {
+					msgs[i] = eventWithPayload(strconv.Itoa(i), 512)
+				}
+				b.ReportAllocs()
+				for b.Loop() {
+					splitMessagesByRequestSize(msgs, limit.size, false)
+				}
+			})
+		}
+	}
 }
 
 func BenchmarkSendBatch(b *testing.B) {

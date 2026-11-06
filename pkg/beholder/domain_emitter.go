@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"sync"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
@@ -93,23 +92,20 @@ type domainEmitter struct {
 	// chipClient is the emitter's own connection. Once started, the batch client closes it on
 	// Stop; it is closed here only when construction fails before the emitter ever starts.
 	chipClient chipingress.Client
-	// closer is the emitter's service as registered with the Client: the Client's Close hook
-	// drains it before the OTel providers shut down, then the engine's sub-service Close is a no-op.
-	closer *closeOnce
+	// closer is the emitter's service as registered with the Client's engine. Close is
+	// suppressed: the engine starts it and reports its health, but Client.close is the
+	// sole closer, so the drain happens before the OTel providers shut down.
+	closer noopCloser
 }
 
 func (*domainEmitter) Close() error { return nil }
 
-// closeOnce wraps a service so that only its first Close does anything; later calls return nil.
-type closeOnce struct {
-	services.Service
-	once sync.Once
-}
+// noopCloser wraps a service that something other than the engine closes.
+// shortcut: the engine's start-rollback closes subs through this wrapper, so emitter
+// start() must stay infallible or that rollback can no longer clean up.
+type noopCloser struct{ services.Service }
 
-func (c *closeOnce) Close() (err error) {
-	c.once.Do(func() { err = c.Service.Close() })
-	return err
-}
+func (noopCloser) Close() error { return nil }
 
 // newDomainEmitters builds one emitter per Domain. opts are the Client's chip ingress options
 // (transport, auth, OTel providers) without its header provider, which each domain emitter
@@ -143,7 +139,7 @@ func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[str
 			_ = chipClient.Close()
 			return nil, fmt.Errorf("chip ingress emitter for domain %q: %w", domain, err)
 		}
-		emitters[domain] = &domainEmitter{ChipIngressBatchEmitterService: svc, chipClient: chipClient, closer: &closeOnce{Service: svc}}
+		emitters[domain] = &domainEmitter{ChipIngressBatchEmitterService: svc, chipClient: chipClient, closer: noopCloser{Service: svc}}
 	}
 	return emitters, nil
 }

@@ -9,6 +9,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/protoc/pkg/test_capabilities/basictrigger"
+	whost "github.com/smartcontractkit/chainlink-common/pkg/workflows/host"
 	"github.com/smartcontractkit/chainlink-common/pkg/workflows/host/mocks"
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
@@ -60,6 +61,43 @@ func TestRegressionMemoryExportInWasmModule(t *testing.T) {
 			require.NotContains(t, err.Error(), "invalid memory address or nil pointer dereference")
 		})
 	}
+}
+
+func TestRegressionPreHookNilResult(t *testing.T) {
+	t.Parallel()
+	m := makeRegressionTestModuleWithConfig(t)
+
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id").Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	sm := whost.NewRequirementSelectingModule(whost.ModuleAndHandler{Module: m}, nil)
+
+	subscribe := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_Subscribe{Subscribe: &emptypb.Empty{}}}
+	_, err := sm.Execute(t.Context(), subscribe, mockExecutionHelper)
+	require.NoError(t, err)
+
+	trigger := triggerExecuteRequest(t, 0, &basictrigger.Outputs{CoolOutput: anyTestTriggerValue})
+	_, err = sm.Execute(t.Context(), trigger, mockExecutionHelper)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "pre-hook")
+}
+
+func TestRegressionNoResponseIsError(t *testing.T) {
+	t.Parallel()
+	m := makeTestModuleByName(t, "./regression_tests", "pre_hook_nil_result", nil, true)
+
+	mockExecutionHelper := mocks.NewMockExecutionHelper(t)
+	mockExecutionHelper.EXPECT().GetWorkflowExecutionID().Return("id").Maybe()
+	mockExecutionHelper.EXPECT().GetNodeTime().RunAndReturn(func() time.Time {
+		return time.Now()
+	}).Maybe()
+
+	prehook := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_PreHook{PreHook: &sdk.Trigger{}}}
+	_, err := m.Execute(t.Context(), prehook, mockExecutionHelper)
+	require.ErrorContains(t, err, "could not find response for execution")
 }
 
 func makeRegressionTestModuleWithConfig(t *testing.T) *module {

@@ -226,6 +226,7 @@ flowchart
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
+        PerWorkflow.ExecutionResponseLimitEnforced[/PerWorkflow.ExecutionResponseLimitEnforced\]:::gate
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod[/PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
@@ -237,7 +238,7 @@ flowchart
         PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
         PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod[/PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod\]:::gate
 
-        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
+        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit-->PerWorkflow.ExecutionResponseLimitEnforced
     end
         
     subgraph ExecutionHelper.GetSecrets

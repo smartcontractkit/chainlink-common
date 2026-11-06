@@ -239,32 +239,33 @@ var Default = Schema{
 		},
 	},
 	PerWorkflow: Workflows{
-		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
-		TriggerEventQueueLimit:        Int(50),
-		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
-		TriggerSubscriptionTimeout:    Duration(15 * time.Second),
-		TriggerSubscriptionLimit:      Int(10),
-		CapabilityConcurrencyLimit:    Int(30), // we should rely on per-capability execution limits instead of concurrency limit
-		CapabilityCallTimeout:         Duration(3 * time.Minute),
-		SecretsConcurrencyLimit:       Int(5),
-		ExecutionConcurrencyLimit:     Int(5),
-		ExecutionTimeout:              Duration(5 * time.Minute),
-		ExecutionResponseLimit:        Size(100 * config.KByte),
-		ExecutionTimestampsEnabled:    Bool(false),
-		CoordinatedEngineEnabled:      Bool(false),
-		WASMMemoryLimit:               Size(100 * config.MByte),
-		WASMTableElementsLimit:        Int(1_000_000),
-		WASMBinarySizeLimit:           Size(100 * config.MByte),
-		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
-		WASMConfigSizeLimit:           Size(50 * config.KByte),
-		WASMSecretsSizeLimit:          Size(27 * config.KByte),
-		LogLineLimit:                  Size(config.KByte),
-		LogEventLimit:                 Int(1_000),
-		UserMetricEnabled:             Bool(false),
-		UserMetricPayloadLimit:        Size(4 * config.KByte),
-		UserMetricNameLengthLimit:     Int(128),
-		UserMetricLabelsPerMetric:     Int(20),
-		UserMetricLabelValueLength:    Int(256),
+		TriggerRegistrationsTimeout:    Duration(10 * time.Second),
+		TriggerEventQueueLimit:         Int(50),
+		TriggerEventQueueTimeout:       Duration(10 * time.Minute),
+		TriggerSubscriptionTimeout:     Duration(15 * time.Second),
+		TriggerSubscriptionLimit:       Int(10),
+		CapabilityConcurrencyLimit:     Int(30), // we should rely on per-capability execution limits instead of concurrency limit
+		CapabilityCallTimeout:          Duration(3 * time.Minute),
+		SecretsConcurrencyLimit:        Int(5),
+		ExecutionConcurrencyLimit:      Int(5),
+		ExecutionTimeout:               Duration(5 * time.Minute),
+		ExecutionResponseLimit:         Size(100 * config.KByte),
+		ExecutionResponseLimitEnforced: Bool(false),
+		ExecutionTimestampsEnabled:     Bool(false),
+		CoordinatedEngineEnabled:       Bool(false),
+		WASMMemoryLimit:                Size(100 * config.MByte),
+		WASMTableElementsLimit:         Int(1_000_000),
+		WASMBinarySizeLimit:            Size(100 * config.MByte),
+		WASMCompressedBinarySizeLimit:  Size(20 * config.MByte),
+		WASMConfigSizeLimit:            Size(50 * config.KByte),
+		WASMSecretsSizeLimit:           Size(27 * config.KByte),
+		LogLineLimit:                   Size(config.KByte),
+		LogEventLimit:                  Int(1_000),
+		UserMetricEnabled:              Bool(false),
+		UserMetricPayloadLimit:         Size(4 * config.KByte),
+		UserMetricNameLengthLimit:      Int(128),
+		UserMetricLabelsPerMetric:      Int(20),
+		UserMetricLabelValueLength:     Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
@@ -565,10 +566,12 @@ type Workflows struct {
 
 	SecretsConcurrencyLimit Setting[int] `unit:"{secret}"`
 
-	ExecutionConcurrencyLimit  Setting[int] `unit:"{workflow}"`
-	ExecutionTimeout           Setting[time.Duration]
-	ExecutionResponseLimit     Setting[config.Size]
-	ExecutionTimestampsEnabled Setting[bool]
+	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	ExecutionTimeout          Setting[time.Duration]
+	ExecutionResponseLimit    Setting[config.Size]
+	// ExecutionResponseLimitEnforced makes the host reject guest responses over ExecutionResponseLimit.
+	ExecutionResponseLimitEnforced Setting[bool]
+	ExecutionTimestampsEnabled     Setting[bool]
 
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
 	// trigger-owning Engine. It is read only when an engine is created, so a change

@@ -38,6 +38,8 @@ type execution[T any] struct {
 	nodeLogCount        uint32
 	hostCalls           int64
 	hostDuration        time.Duration
+	maxResponseSize     config.Size
+	responseErr         error
 
 	usedCallbackIDs map[string]bool
 }
@@ -47,6 +49,29 @@ func (e *execution[T]) recordHostCall(name string, start time.Time) {
 	e.hostCalls++
 	e.hostDuration += d
 	e.module.metrics.RecordHostCall(e.ctx, name, d)
+}
+
+// checkResponseSize records the guest response size and, when enforcement is on, rejects responses over the limit.
+func (e *execution[T]) checkResponseSize(size int32) error {
+	if size < 0 {
+		return nil
+	}
+	e.module.metrics.RecordResponseSize(e.ctx, int64(size))
+	if config.Size(size) <= e.maxResponseSize {
+		return nil
+	}
+
+	enforced, err := limiterOrDefault(e.module.cfg.EnforceResponseSizeLimiter, e.module.defaultLimiters.enforceResponseSize).IsOpen(e.ctx)
+	if err != nil {
+		e.module.cfg.Logger.Errorw("failed to read response size enforcement setting, not enforcing", "err", err)
+		enforced = false
+	}
+	e.module.metrics.IncResponseOverLimit(e.ctx, enforced)
+	if !enforced {
+		return nil
+	}
+	e.module.cfg.Logger.Warnw("workflow response exceeds limit", "responseBytes", size, "limitBytes", uint64(e.maxResponseSize))
+	return fmt.Errorf("workflow response of %d bytes exceeds limit of %d bytes", size, uint64(e.maxResponseSize))
 }
 
 // callCapAsync async calls a capability by placing execution results onto a

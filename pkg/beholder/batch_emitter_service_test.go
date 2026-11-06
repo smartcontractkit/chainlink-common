@@ -296,6 +296,27 @@ func TestChipIngressBatchEmitterService_EmitAfterClose(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestChipIngressBatchEmitterService_MaxBufferedBytes(t *testing.T) {
+	clientMock := mocks.NewClient(t)
+	clientMock.EXPECT().Close().Return(nil).Maybe()
+
+	cfg := newTestConfig()
+	cfg.ChipIngressMaxBufferedBytes = 1 // smaller than any event, so every Emit is rejected
+	emitter, err := beholder.NewChipIngressBatchEmitterService(clientMock, cfg, logger.Test(t))
+	require.NoError(t, err)
+	require.NoError(t, emitter.Start(t.Context()))
+	t.Cleanup(func() { _ = emitter.Close() })
+
+	// Queue rejections are reported synchronously through the callback, not as Emit's error.
+	var queueErr error
+	err = emitter.EmitWithCallback(t.Context(), []byte("body"), func(err error) { queueErr = err },
+		beholder.AttrKeyDomain, "platform",
+		beholder.AttrKeyEntity, "TestEvent",
+	)
+	require.NoError(t, err)
+	require.ErrorIs(t, queueErr, batch.ErrBufferedBytesExceeded)
+}
+
 func TestChipIngressBatchEmitterService_EmitWithCallback(t *testing.T) {
 	t.Run("callback receives nil on success", func(t *testing.T) {
 		clientMock := mocks.NewClient(t)

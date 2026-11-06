@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793908620461,
+  "lastUpdate": 1793979941407,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66540,6 +66540,66 @@ window.BENCHMARK_DATA = {
             "value": 140417,
             "unit": "ns/op",
             "extra": "8162 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "9426766b30a9703c06bbc714e8a73962de0bd40e",
+          "message": "ChIP BatchClient: Buffered Bytes Limit Opt (#2533)\n\n* feat: add opt-in buffered bytes limit to chip ingress batch client\n\n* fix: reject messages larger than the buffered bytes budget\n\n* test: use require for oversized message error assertion",
+          "timestamp": "2026-11-06T15:41:52Z",
+          "tree_id": "3841c6703dbf65f07e45dcd73db6b680c5473059",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/9426766b30a9703c06bbc714e8a73962de0bd40e"
+        },
+        "date": 1793979937672,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 453.5,
+            "unit": "ns/op",
+            "extra": "2499543 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 74159,
+            "unit": "ns/op",
+            "extra": "16203 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 402.6,
+            "unit": "ns/op",
+            "extra": "2975944 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 78620,
+            "unit": "ns/op",
+            "extra": "15180 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25237,
+            "unit": "ns/op",
+            "extra": "47482 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 125323,
+            "unit": "ns/op",
+            "extra": "9512 times\n4 procs"
           }
         ]
       }

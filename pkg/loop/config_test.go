@@ -44,6 +44,7 @@ const (
 	envTelemetryMetricCardinalityLimit    = "CL_TELEMETRY_METRIC_CARDINALITY_LIMIT"
 	envTelemetryMetricViewsDenyAttributes = "CL_TELEMETRY_METRIC_VIEWS_DENY_ATTRIBUTES"
 	envTelemetryPrometheusBridgeEnabled   = "CL_TELEMETRY_PROMETHEUS_BRIDGE_ENABLED"
+	envTelemetryLoopID                    = "CL_TELEMETRY_LOOP_ID"
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envChipIngressEndpoint                = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection      = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
@@ -478,6 +479,43 @@ func TestEnvConfig_MetricViewsDenyAttributes_RoundTrip(t *testing.T) {
 		var parsed EnvConfig
 		require.NoError(t, parsed.parse())
 		assert.Nil(t, parsed.TelemetryMetricViewsDenyAttributes)
+	})
+}
+
+// TestEnvConfig_TelemetryLoopID_RoundTrip verifies the telemetry LOOP ID survives an
+// AsCmdEnv -> parse round trip and is not emitted when the host did not set one.
+func TestEnvConfig_TelemetryLoopID_RoundTrip(t *testing.T) {
+	setEnvFromCmdEnv := func(t *testing.T, env []string) {
+		t.Helper()
+		for _, kv := range env {
+			pair := strings.SplitN(kv, "=", 2)
+			require.Len(t, pair, 2)
+			t.Setenv(pair[0], pair[1])
+		}
+	}
+
+	t.Run("set propagates", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryLoopID = "Relayer.evm.1"
+		setEnvFromCmdEnv(t, cfg.AsCmdEnv())
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Equal(t, "Relayer.evm.1", parsed.TelemetryLoopID)
+	})
+
+	t.Run("unset is not emitted", func(t *testing.T) {
+		cfg := envCfgFull
+		cfg.TelemetryLoopID = ""
+		env := cfg.AsCmdEnv()
+		for _, kv := range env {
+			require.NotContains(t, kv, envTelemetryLoopID+"=", "unset loop ID must not be emitted")
+		}
+		setEnvFromCmdEnv(t, env)
+
+		var parsed EnvConfig
+		require.NoError(t, parsed.parse())
+		assert.Empty(t, parsed.TelemetryLoopID)
 	})
 }
 

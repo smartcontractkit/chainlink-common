@@ -44,6 +44,11 @@ func (c TelemetryConfig) beholderConfig(lggr logger.Logger, tracing TracingConfi
 	if tracing.Enabled {
 		attributes = tracing.Attributes()
 	}
+	attributes = append(attributes, c.TelemetryAttributes.AsStringAttributes()...)
+	// Last, so a host-wide attribute with the same key cannot override the per-LOOP identity.
+	if c.TelemetryLoopID != "" {
+		attributes = append(attributes, attribute.String(AttrLoopID, c.TelemetryLoopID))
+	}
 	cardinalityLimit := beholder.DefaultMetricCardinalityLimit
 	if c.TelemetryMetricCardinalityLimit != nil {
 		cardinalityLimit = *c.TelemetryMetricCardinalityLimit
@@ -52,7 +57,7 @@ func (c TelemetryConfig) beholderConfig(lggr logger.Logger, tracing TracingConfi
 		InsecureConnection:             c.TelemetryInsecureConnection,
 		CACertFile:                     c.TelemetryCACertFile,
 		OtelExporterGRPCEndpoint:       c.TelemetryEndpoint,
-		ResourceAttributes:             append(attributes, c.TelemetryAttributes.AsStringAttributes()...),
+		ResourceAttributes:             attributes,
 		TraceSampleRatio:               c.TelemetryTraceSampleRatio,
 		TraceCompressor:                c.TelemetryTraceCompressor,
 		EmitterBatchProcessor:          c.TelemetryEmitterBatchProcessor,

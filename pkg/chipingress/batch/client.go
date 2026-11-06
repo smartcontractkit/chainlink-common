@@ -96,7 +96,7 @@ type Client struct {
 	client                  chipingress.Client
 	batchSize               int
 	maxGRPCRequestSize      int // configured max, used for metrics/error reporting
-	effectiveMaxRequestSize int // maxGRPCRequestSize minus grpcFramingOverhead, used for splitting
+	effectiveMaxRequestSize int // maxGRPCRequestSize minus grpcFramingOverhead, used for splitting and the oversize check
 	cloneEvent              bool
 	maxConcurrentSends      chan struct{}
 	batchInterval           time.Duration
@@ -355,8 +355,11 @@ func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback)
 		}
 		for _, batchMessages := range splitBatches {
 			batchReq, batchBytes := newBatchRequest(batchMessages, b.transactionEnabled)
-			if b.maxGRPCRequestSize > 0 && batchBytes > b.maxGRPCRequestSize {
-				err := fmt.Errorf("publish batch serialized size %d exceeds max gRPC request size %d", batchBytes, b.maxGRPCRequestSize)
+			// Check against the same limit the split used: a single event between the effective
+			// limit and maxGRPCRequestSize would not fit once gRPC framing and metadata are added.
+			if b.effectiveMaxRequestSize > 0 && batchBytes > b.effectiveMaxRequestSize {
+				err := fmt.Errorf("publish batch serialized size %d exceeds max gRPC request size %d (minus %d framing reserve)",
+					batchBytes, b.maxGRPCRequestSize, b.maxGRPCRequestSize-b.effectiveMaxRequestSize)
 				b.metrics.recordSend(ctx, len(batchMessages), batchBytes, 0, false)
 				b.log.Errorw("failed to publish batch", "error", err)
 				b.completeBatchCallbacks(batchMessages, err)

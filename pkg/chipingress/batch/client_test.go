@@ -487,6 +487,42 @@ func TestSendBatch(t *testing.T) {
 
 		mockClient.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
 	})
+
+	t.Run("doesn't publish a single event that only fits without the framing reserve", func(t *testing.T) {
+		mockClient := mocks.NewClient(t)
+		callbackDone := make(chan error, 1)
+
+		// Size the request between the effective limit (max - framing reserve) and the configured max.
+		target := minMaxGRPCRequestSize - grpcFramingOverhead/2
+		event := largeTestEvent("framing-reserve-id")
+		_, base := newBatchRequest([]*messageWithCallback{{event: event}}, false)
+		event.Data = &cepb.CloudEvent_BinaryData{BinaryData: make([]byte, target-base)}
+		_, size := newBatchRequest([]*messageWithCallback{{event: event}}, false)
+		require.Greater(t, size, minMaxGRPCRequestSize-grpcFramingOverhead)
+		require.LessOrEqual(t, size, minMaxGRPCRequestSize)
+
+		client, err := NewBatchClient(mockClient, WithMaxGRPCRequestSize(minMaxGRPCRequestSize))
+		require.NoError(t, err)
+
+		client.sendBatch(t.Context(), []*messageWithCallback{
+			{
+				event: event,
+				callback: func(err error) {
+					callbackDone <- err
+				},
+			},
+		})
+
+		select {
+		case err := <-callbackDone:
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "exceeds max gRPC request size")
+		case <-time.After(time.Second):
+			t.Fatal("timeout waiting for oversized batch callback")
+		}
+
+		mockClient.AssertNotCalled(t, "PublishBatch", mock.Anything, mock.Anything)
+	})
 }
 
 func TestStart(t *testing.T) {

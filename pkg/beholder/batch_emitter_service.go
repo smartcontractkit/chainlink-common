@@ -126,6 +126,8 @@ func newChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 }
 
 func (e *ChipIngressBatchEmitterService) start(_ context.Context) error {
+	// Must not fail: emitters registered with the engine as noopClosers cannot be closed
+	// by the engine's start rollback once started (see noopCloser in domain_emitter.go).
 	// Do not pass the startup ctx — the services contract forbids retaining it
 	// after Start returns. Use the engine's lifecycle context so the batcher
 	// is cancelled when the service shuts down (StopChan closes before stop() runs).

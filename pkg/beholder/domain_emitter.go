@@ -101,8 +101,6 @@ type domainEmitter struct {
 func (*domainEmitter) Close() error { return nil }
 
 // noopCloser wraps a service that something other than the engine closes.
-// shortcut: the engine's start-rollback closes subs through this wrapper, so emitter
-// start() must stay infallible or that rollback can no longer clean up.
 type noopCloser struct{ services.Service }
 
 func (noopCloser) Close() error { return nil }

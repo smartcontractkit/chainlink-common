@@ -133,6 +133,11 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
 			}
 
+			// A pre-hook exists to restrict execution, so a missing result fails closed.
+			if preHookResult == nil {
+				return nil, errors.New("pre-hook returned no result")
+			}
+
 			switch preHookResult.Result.(type) {
 			case *sdk.ExecutionResult_Error:
 				return preHookResult, nil

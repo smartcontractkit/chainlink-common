@@ -84,6 +84,10 @@ type SetupConfig struct {
 	// channel. QueueMessage drops events (non-blocking send) when this is full,
 	// which happens when emit throughput outpaces the batcher.
 	MessageBufferSize int // default: 10000
+	// MaxBufferedBytes caps the total proto size of messages the batch client
+	// has accepted but not yet sent; over-budget emits are rejected with
+	// chipingressbatch.ErrBufferedBytesExceeded.
+	MaxBufferedBytes int64 // default: 1GB
 
 	// EmitterConfig overrides DefaultConfig when non-nil.
 	EmitterConfig *Config
@@ -129,6 +133,7 @@ func Setup(
 		chipingressbatch.WithBatchInterval(defaultDuration(cfg.BatchInterval, 50*time.Millisecond)),
 		chipingressbatch.WithMaxConcurrentSends(defaultInt(cfg.MaxConcurrentSends, 4)),
 		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
+		chipingressbatch.WithMaxBufferedBytes(defaultInt64(cfg.MaxBufferedBytes, 1<<30)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
 		chipingressbatch.WithClientName(chipingressbatch.ClientNameDurableEmitter),
@@ -178,6 +183,13 @@ func buildChipOpts(cfg SetupConfig, auth chipingress.HeaderProvider) []chipingre
 }
 
 func defaultInt(v, def int) int {
+	if v <= 0 {
+		return def
+	}
+	return v
+}
+
+func defaultInt64(v, def int64) int64 {
 	if v <= 0 {
 		return def
 	}

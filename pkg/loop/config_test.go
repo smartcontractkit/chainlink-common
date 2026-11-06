@@ -55,6 +55,7 @@ const (
 	envChipIngressSendTimeout             = "CL_CHIP_INGRESS_SEND_TIMEOUT"
 	envChipIngressDrainTimeout            = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
 	envChipIngressMaxGRPCRequestSize      = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+	envChipIngressMaxBufferedBytes        = "CL_CHIP_INGRESS_MAX_BUFFERED_BYTES"
 
 	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
 	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
@@ -156,6 +157,7 @@ func TestEnvConfig_parse(t *testing.T) {
 				envChipIngressSendTimeout:        "3s",
 				envChipIngressDrainTimeout:       "10s",
 				envChipIngressMaxGRPCRequestSize: "10485760",
+				envChipIngressMaxBufferedBytes:   "268435456",
 
 				envCRESettings:        `{"global":{}}`,
 				envCRESettingsDefault: `{"foo":"bar"}`,
@@ -257,6 +259,7 @@ var envCfgFull = EnvConfig{
 		ChipIngressSendTimeout:        3 * time.Second,
 		ChipIngressDrainTimeout:       10 * time.Second,
 		ChipIngressMaxGRPCRequestSize: 10485760,
+		ChipIngressMaxBufferedBytes:   268435456,
 	},
 
 	DatabaseURL:                          config.MustSecretURL("postgres://user:password@localhost:5432/db"),
@@ -387,6 +390,7 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "3s", got[envChipIngressSendTimeout])
 	assert.Equal(t, "10s", got[envChipIngressDrainTimeout])
 	assert.Equal(t, "10485760", got[envChipIngressMaxGRPCRequestSize])
+	assert.Equal(t, "268435456", got[envChipIngressMaxBufferedBytes])
 
 	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
 	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])

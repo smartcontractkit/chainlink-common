@@ -83,6 +83,7 @@ func NewChipIngressBatchEmitterService(client chipingress.Client, cfg Config, lg
 		batch.WithShutdownTimeout(drainTimeout),
 		batch.WithMaxConcurrentSends(maxConcurrentSends),
 		batch.WithMaxGRPCRequestSize(maxGRPCRequestSize),
+		batch.WithMaxBufferedBytes(cfg.ChipIngressMaxBufferedBytes),
 		batch.WithEventClone(false),
 		batch.WithClientName(batch.ClientNameBeholder),
 	)

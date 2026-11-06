@@ -48,6 +48,7 @@
   "ChipIngressDrainTimeout": 0,
   "ChipIngressMaxConcurrentSends": 0,
   "ChipIngressMaxGRPCRequestSize": 0,
+  "ChipIngressMaxBufferedBytes": 0,
   "ChipIngressLogger": null,
   "LogExportTimeout": 1000000000,
   "LogExportInterval": 1000000000,

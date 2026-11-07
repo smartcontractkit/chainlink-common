@@ -176,7 +176,7 @@ type failingStore struct {
 	expireErr error
 }
 
-func (s *failingStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+func (s *failingStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit, maxBytes int) ([]DurableEvent, error) {
 	return nil, s.listErr
 }
 

@@ -103,19 +103,36 @@ DELETE FROM ` + chipDurableEventsTable + ` WHERE id IN (
 	return deleted, nil
 }
 
-func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+func (s *PgDurableEventStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit, maxBytes int) ([]DurableEvent, error) {
 	// The (created_at, id) > ($2, $3) row-value comparison is the paging cursor:
 	// the retransmit loop advances it forward through the backlog and wraps to a
 	// zero cursor at the end, so a persistently-failing ("poison") event can't
 	// monopolise the head of the list and block everything behind it.
+	//
+	// The byte budget ($5) is applied over a running payload total computed from
+	// octet_length, which reads the stored size without detoasting, so payloads
+	// past the budget are never loaded. The first row is always kept.
 	const q = `
-SELECT id, payload, created_at
-FROM ` + chipDurableEventsTable + `
-WHERE delivered_at IS NULL
-  AND created_at < $1
-  AND (created_at, id) > ($2, $3)
-ORDER BY created_at ASC, id ASC
-LIMIT $4`
+WITH page AS (
+    SELECT id, created_at,
+        row_number() OVER w AS rn,
+        sum(octet_length(payload)) OVER w AS running_bytes
+    FROM (
+        SELECT id, created_at, payload
+        FROM ` + chipDurableEventsTable + `
+        WHERE delivered_at IS NULL
+          AND created_at < $1
+          AND (created_at, id) > ($2, $3)
+        ORDER BY created_at ASC, id ASC
+        LIMIT $4
+    ) candidates
+    WINDOW w AS (ORDER BY created_at ASC, id ASC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
+)
+SELECT e.id, e.payload, e.created_at
+FROM page p
+JOIN ` + chipDurableEventsTable + ` e ON e.id = p.id
+WHERE p.rn = 1 OR $5 <= 0 OR p.running_bytes <= $5
+ORDER BY p.created_at ASC, p.id ASC`
 
 	type row struct {
 		ID        int64     `db:"id"`
@@ -124,7 +141,7 @@ LIMIT $4`
 	}
 
 	var rows []row
-	if err := s.ds.SelectContext(ctx, &rows, q, createdBefore, afterCreatedAt, afterID, limit); err != nil {
+	if err := s.ds.SelectContext(ctx, &rows, q, createdBefore, afterCreatedAt, afterID, limit, int64(maxBytes)); err != nil {
 		return nil, fmt.Errorf("failed to list pending chip durable events: %w", err)
 	}
 

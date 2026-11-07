@@ -75,13 +75,15 @@ type DurableEventStore interface {
 	BatchDelete(ctx context.Context, ids []int64) (int64, error)
 	// ListPending returns undelivered events created before createdBefore,
 	// ordered by (created_at, id) ascending and strictly after the
-	// (afterCreatedAt, afterID) cursor, up to limit rows. Pass a zero cursor
-	// (time.Time{}, 0) to start from the oldest. The retransmit loop pages
-	// through the backlog with this cursor — advancing it each tick and wrapping
-	// to a zero cursor at the end — so a persistently-failing event can't
-	// monopolise the head of the list. Under delete-on-delivery every row still
-	// present is undelivered, so this is the pending backlog.
-	ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error)
+	// (afterCreatedAt, afterID) cursor, up to limit rows. When maxBytes > 0 it
+	// stops before the row that would push the page's total payload size past
+	// maxBytes, but always returns at least one row if any is eligible. Pass a
+	// zero cursor (time.Time{}, 0) to start from the oldest. The retransmit loop
+	// pages through the backlog with this cursor — advancing it each tick and
+	// wrapping to a zero cursor at the end — so a persistently-failing event
+	// can't monopolise the head of the list. Under delete-on-delivery every row
+	// still present is undelivered, so this is the pending backlog.
+	ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit, maxBytes int) ([]DurableEvent, error)
 	// DeleteExpired removes any events older than ttl and returns the count
 	// deleted — a time-based garbage collector that also reclaims rows which
 	// failed to delete on delivery (e.g. a DB error in the delivery callback), so
@@ -129,9 +131,9 @@ func (s *metricsInstrumentedStore) BatchDelete(ctx context.Context, ids []int64)
 	return n, err
 }
 
-func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit int) ([]DurableEvent, error) {
+func (s *metricsInstrumentedStore) ListPending(ctx context.Context, createdBefore, afterCreatedAt time.Time, afterID int64, limit, maxBytes int) ([]DurableEvent, error) {
 	t0 := time.Now()
-	evs, err := s.inner.ListPending(ctx, createdBefore, afterCreatedAt, afterID, limit)
+	evs, err := s.inner.ListPending(ctx, createdBefore, afterCreatedAt, afterID, limit, maxBytes)
 	s.m.recordStoreOp(ctx, "list_pending", time.Since(t0), err)
 	return evs, err
 }

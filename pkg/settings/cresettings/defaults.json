@@ -3,6 +3,7 @@
 	"WorkflowExecutionConcurrencyLimit": "1000",
 	"GatewayIncomingPayloadSizeLimit": "1mb",
 	"GatewayVaultManagementEnabled": "true",
+	"GatewayVaultNodeSignaturesEnabled": "false",
 	"VaultJWTAuthEnabled": "false",
 	"CentralizedWorkflowOwnerVerificationEnabled": "false",
 	"RemoteExecutableWorkflowDONBindingEnabled": "false",

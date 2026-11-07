@@ -106,13 +106,11 @@ func TestRecorder_ConcurrentEmit(t *testing.T) {
 	const goroutines, perG = 8, 50
 	var wg sync.WaitGroup
 	for range goroutines {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range perG {
 				assert.NoError(t, rec.Emit(context.Background(), []byte("m")))
 			}
-		}()
+		})
 	}
 	wg.Wait()
 

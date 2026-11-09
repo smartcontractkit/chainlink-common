@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794247525348,
+  "lastUpdate": 1794253173012,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66900,6 +66900,66 @@ window.BENCHMARK_DATA = {
             "value": 97308,
             "unit": "ns/op",
             "extra": "12318 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "419bd72008ad9dd2f77d750a92ab4aa3d2988001",
+          "message": "Wire batch buffer limit (1GB) into durable emitter (#2538)\n\n* feat: cap durable emitter batch client at 1GB buffered bytes\n\n* refactor: name 1GB buffered-bytes default as defaultMaxBufferedBytes",
+          "timestamp": "2026-11-09T19:16:36Z",
+          "tree_id": "813ba9bbc7903dd355a9be3b61ece0edca07031e",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/419bd72008ad9dd2f77d750a92ab4aa3d2988001"
+        },
+        "date": 1794253169636,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 823.2,
+            "unit": "ns/op",
+            "extra": "1443295 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 121488,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 841,
+            "unit": "ns/op",
+            "extra": "1270351 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 95391,
+            "unit": "ns/op",
+            "extra": "12354 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 25687,
+            "unit": "ns/op",
+            "extra": "46628 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 131497,
+            "unit": "ns/op",
+            "extra": "8660 times\n4 procs"
           }
         ]
       }

@@ -96,6 +96,58 @@
 		"Session": {
 			"PersistenceEnabled": "true",
 			"HeaderName": "Sticky-Session-A"
+		},
+		"HTTP": {
+			"GlobalRate": "1000rps:1000",
+			"MaxRetries": "3",
+			"RetryBackoff": "2s",
+			"SecretsCacheEnabled": "false",
+			"EnclaveRequestTimeout": "30s",
+			"PublicKeyRequestTimeout": "5s",
+			"PublicKeyRetriesMax": "2",
+			"PublicKeyRetriesBackoff": "5s",
+			"EnclaveRefreshInterval": "10s",
+			"PublicKeyCache": {
+				"Enabled": "true",
+				"TTL": "5m0s",
+				"MaxTTL": "30m0s",
+				"CleanupInterval": "10m0s",
+				"TTLBufferPercent": "0.1",
+				"ProactiveRefreshEnabled": "true",
+				"RefreshIntervalPercent": "0",
+				"MinRefreshInterval": "10s",
+				"RefreshTimeout": "5s"
+			},
+			"Session": {
+				"PersistenceEnabled": "true",
+				"HeaderName": "Sticky-Session-A"
+			}
+		},
+		"Workflows": {
+			"GlobalRate": "1000rps:1000",
+			"MaxRetries": "3",
+			"RetryBackoff": "2s",
+			"SecretsCacheEnabled": "false",
+			"EnclaveRequestTimeout": "30s",
+			"PublicKeyRequestTimeout": "5s",
+			"PublicKeyRetriesMax": "2",
+			"PublicKeyRetriesBackoff": "5s",
+			"EnclaveRefreshInterval": "10s",
+			"PublicKeyCache": {
+				"Enabled": "true",
+				"TTL": "5m0s",
+				"MaxTTL": "30m0s",
+				"CleanupInterval": "10m0s",
+				"TTLBufferPercent": "0.1",
+				"ProactiveRefreshEnabled": "true",
+				"RefreshIntervalPercent": "0",
+				"MinRefreshInterval": "10s",
+				"RefreshTimeout": "5s"
+			},
+			"Session": {
+				"PersistenceEnabled": "true",
+				"HeaderName": "Sticky-Session-A"
+			}
 		}
 	},
 	"PerOrg": {
@@ -117,7 +169,13 @@
 		"VaultSecretsLimit": "100",
 		"VaultZoneBGetSecretsAllowed": "false",
 		"ConfidentialCompute": {
-			"Rate": "1000rps:1000"
+			"Rate": "1000rps:1000",
+			"HTTP": {
+				"Rate": "1000rps:1000"
+			},
+			"Workflows": {
+				"Rate": "1000rps:1000"
+			}
 		}
 	},
 	"PerWorkflow": {

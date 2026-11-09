@@ -24,11 +24,14 @@ import (
 var (
 	ErrMessageBufferFull = errors.New("message buffer is full")
 	ErrClientShutdown    = errors.New("client is shutdown")
+	// ErrBufferedBytesExceeded wraps ErrMessageBufferFull: the WithMaxBufferedBytes budget is used up.
+	ErrBufferedBytesExceeded = fmt.Errorf("%w: buffered bytes limit reached", ErrMessageBufferFull)
 )
 
 type messageWithCallback struct {
 	event    *chipingress.CloudEventPb
 	callback func(error)
+	size     int64 // bytes reserved against maxBufferedBytes; 0 when unlimited
 }
 
 type seqnumKey struct {
@@ -102,6 +105,8 @@ type Client struct {
 	batchInterval           time.Duration
 	maxPublishTimeout       time.Duration
 	messageBuffer           chan *messageWithCallback
+	maxBufferedBytes        int64        // 0 = unlimited
+	bufferedBytes           atomic.Int64 // bytes of accepted messages whose callbacks have not run
 	stopCh                  stopCh
 	// admission makes "check stopCh, then enqueue" atomic with respect to Stop closing stopCh,
 	// so every message QueueMessage accepted is on messageBuffer before the batcher drains it.
@@ -322,11 +327,18 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 		event:    eventToQueue,
 		callback: callback,
 	}
+	if b.maxBufferedBytes > 0 {
+		msg.size = int64(proto.Size(eventToQueue))
+		if !b.reserveBytes(msg.size) {
+			return ErrBufferedBytesExceeded
+		}
+	}
 
 	b.admission.RLock()
 	defer b.admission.RUnlock()
 	select {
 	case <-b.stopCh:
+		b.releaseBytes(msg.size)
 		return ErrClientShutdown
 	default:
 	}
@@ -334,8 +346,46 @@ func (b *Client) QueueMessage(event *chipingress.CloudEventPb, callback func(err
 	case b.messageBuffer <- msg:
 		return nil
 	default:
+		b.releaseBytes(msg.size)
 		return ErrMessageBufferFull
 	}
+}
+
+// reserveBytes claims n bytes of the buffered-bytes budget, or reports false if they do not fit.
+func (b *Client) reserveBytes(n int64) bool {
+	if n > b.maxBufferedBytes {
+		return false
+	}
+	for {
+		cur := b.bufferedBytes.Load()
+		if cur+n > b.maxBufferedBytes {
+			return false
+		}
+		if b.bufferedBytes.CompareAndSwap(cur, cur+n) {
+			return true
+		}
+	}
+}
+
+func (b *Client) releaseBytes(n int64) {
+	if n != 0 {
+		b.bufferedBytes.Add(-n)
+	}
+}
+
+// releaseMessages returns the reserved bytes of messages whose callbacks have run.
+func (b *Client) releaseMessages(messages []*messageWithCallback) {
+	var n int64
+	for _, msg := range messages {
+		n += msg.size
+	}
+	b.releaseBytes(n)
+}
+
+// BufferedBytes reports the bytes reserved by accepted messages whose callbacks
+// have not yet run. Always 0 unless WithMaxBufferedBytes is set.
+func (b *Client) BufferedBytes() int64 {
+	return b.bufferedBytes.Load()
 }
 
 func (b *Client) sendBatch(ctx context.Context, messages []*messageWithCallback) {
@@ -398,6 +448,7 @@ func (b *Client) completeBatchCallbacks(messages []*messageWithCallback, err err
 	// the callbacks are placed in their own goroutine to not block releasing the semaphore
 	// we use a wait group, to ensure all callbacks are completed if  .Stop() is called.
 	b.callbackWg.Go(func() {
+		defer b.releaseMessages(callbackMessages)
 		for _, msg := range callbackMessages {
 			if msg.callback != nil {
 				msg.callback(callbackErr)
@@ -425,6 +476,7 @@ func (b *Client) completeBatchCallbacksFromResults(messages []*messageWithCallba
 	}
 
 	b.callbackWg.Go(func() {
+		defer b.releaseMessages(messages)
 		for i, msg := range messages {
 			if msg.callback == nil {
 				continue
@@ -565,6 +617,15 @@ func WithShutdownTimeout(shutdownTimeout time.Duration) Opt {
 func WithMessageBuffer(messageBufferSize int) Opt {
 	return func(c *Client) {
 		c.messageBuffer = make(chan *messageWithCallback, messageBufferSize)
+	}
+}
+
+// WithMaxBufferedBytes caps the total proto size of messages accepted by
+// QueueMessage whose batch send and callbacks have not yet completed. Over-budget
+// messages are rejected with ErrBufferedBytesExceeded. Zero (the default) is unlimited.
+func WithMaxBufferedBytes(maxBytes int64) Opt {
+	return func(c *Client) {
+		c.maxBufferedBytes = max(maxBytes, 0)
 	}
 }
 

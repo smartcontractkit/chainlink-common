@@ -21,6 +21,7 @@ import (
 
 type execution[T any] struct {
 	response            T
+	gotResponse         bool
 	ctx                 context.Context //nolint:containedctx // scoped to a single guest execution
 	capabilityResponses map[int32]<-chan *sdkpb.CapabilityResponse
 	secretsResponses    map[int32]<-chan *secretsResponse

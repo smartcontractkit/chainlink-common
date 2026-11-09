@@ -735,7 +735,11 @@ func runWasm[I, O proto.Message](
 	// A guest that ran to completion exits with WASI status wasiExitSuccess
 	// after delivering its response via the send_response import.
 	if containsCode(err, wasiExitSuccess) {
-		if any(exec.response) == nil {
+		exec.lock.RLock()
+		defer exec.lock.RUnlock()
+		// exec.response is a typed nil when the guest never called
+		// send_response, so a nil check on the value itself is useless.
+		if !exec.gotResponse {
 			return o, errors.New("could not find response for execution")
 		}
 		return exec.response, nil
@@ -795,6 +799,7 @@ func createSendResponseFn[T proto.Message](
 
 		exec.lock.Lock()
 		exec.response = resp
+		exec.gotResponse = true
 		exec.lock.Unlock()
 
 		return ErrnoSuccess

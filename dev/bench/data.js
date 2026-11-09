@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794239358335,
+  "lastUpdate": 1794244640945,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66780,6 +66780,66 @@ window.BENCHMARK_DATA = {
             "value": 137175,
             "unit": "ns/op",
             "extra": "8456 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "dylan.tinianov@smartcontract.com",
+            "name": "Dylan Tinianov",
+            "username": "DylanTinianov"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "94968c86df48d7bb28fc73c8389723796e7a473b",
+          "message": "WASM host: response size metric and enforcement gate (#2531)\n\n* feat: record wasm response size and gate response limit enforcement\n\n* test: name and comment the send_response WAT test guest\n\n* refactor: log every unreadable response enforcement setting\n\n* test: explain valid and invalid response inputs in size tests\n\n* test: simplify the valid response input comment\n\n* feat: warn on over-limit workflow responses\n\n* refactor: warn only when an over-limit response is rejected\n\n---------\n\nCo-authored-by: Ryan Tinianov <tinianov@live.com>",
+          "timestamp": "2026-11-09T17:05:49Z",
+          "tree_id": "71a3e50d2d5ba4b75dd9e7221c59d98619b443cd",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/94968c86df48d7bb28fc73c8389723796e7a473b"
+        },
+        "date": 1794244637756,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 323.3,
+            "unit": "ns/op",
+            "extra": "3633008 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 66426,
+            "unit": "ns/op",
+            "extra": "17950 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 355.4,
+            "unit": "ns/op",
+            "extra": "3380926 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 68988,
+            "unit": "ns/op",
+            "extra": "17347 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 22064,
+            "unit": "ns/op",
+            "extra": "52285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 112212,
+            "unit": "ns/op",
+            "extra": "10000 times\n4 procs"
           }
         ]
       }

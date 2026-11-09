@@ -23,6 +23,8 @@ var (
 	ErrEmitFailed     = errors.New("durable emitter emit failed")
 )
 
+const defaultMaxBufferedBytes = 1024 * 1024 * 1024 // 1 GiB
+
 // SetGlobalEmitter sets the global DurableEmitter.
 func SetGlobalEmitter(d *DurableEmitter) {
 	globalEmitter.Store(d)
@@ -133,7 +135,7 @@ func Setup(
 		chipingressbatch.WithBatchInterval(defaultDuration(cfg.BatchInterval, 50*time.Millisecond)),
 		chipingressbatch.WithMaxConcurrentSends(defaultInt(cfg.MaxConcurrentSends, 4)),
 		chipingressbatch.WithMessageBuffer(defaultInt(cfg.MessageBufferSize, 10_000)),
-		chipingressbatch.WithMaxBufferedBytes(defaultInt64(cfg.MaxBufferedBytes, 1<<30)),
+		chipingressbatch.WithMaxBufferedBytes(defaultInt64(cfg.MaxBufferedBytes, defaultMaxBufferedBytes)),
 		chipingressbatch.WithMaxPublishTimeout(defaultDuration(cfg.MaxPublishTimeout, 5*time.Second)),
 		chipingressbatch.WithShutdownTimeout(defaultDuration(cfg.ShutdownTimeout, 30*time.Second)),
 		chipingressbatch.WithClientName(chipingressbatch.ClientNameDurableEmitter),

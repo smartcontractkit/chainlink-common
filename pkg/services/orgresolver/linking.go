@@ -33,11 +33,9 @@ type OrgResolver interface {
 }
 
 type Config struct {
-	URL                           string
-	TLSEnabled                    bool
-	WorkflowRegistryAddress       string
-	WorkflowRegistryChainSelector uint64
-	JWTGenerator                  JWTGenerator
+	URL          string
+	TLSEnabled   bool
+	JWTGenerator JWTGenerator
 
 	RequestTimeout time.Duration // bounds each Get() call; zero means defaultRequestTimeout
 
@@ -48,9 +46,6 @@ type Config struct {
 // orgResolver makes direct calls to the linking service to resolve organization IDs from workflow owners.
 // This simplified implementation makes a network call for each Get() request, bounded by requestTimeout.
 type orgResolver struct {
-	workflowRegistryAddress       string
-	workflowRegistryChainSelector uint64
-
 	client         linkingclient.LinkingServiceClient
 	conn           *grpc.ClientConn // nil if client was injected
 	logger         log.SugaredLogger
@@ -85,11 +80,9 @@ func (cfg *Config) New(logger log.Logger) (*orgResolver, error) {
 	}
 
 	resolver := &orgResolver{
-		workflowRegistryAddress:       cfg.WorkflowRegistryAddress,
-		workflowRegistryChainSelector: cfg.WorkflowRegistryChainSelector,
-		logger:                        log.Sugared(logger).Named("OrgResolver"),
-		jwtGenerator:                  cfg.JWTGenerator,
-		requestTimeout:                requestTimeout,
+		logger:         log.Sugared(logger).Named("OrgResolver"),
+		jwtGenerator:   cfg.JWTGenerator,
+		requestTimeout: requestTimeout,
 	}
 
 	if cfg.Client != nil {
@@ -152,9 +145,7 @@ func (o *orgResolver) Get(ctx context.Context, owner string) (string, error) {
 	defer cancel()
 
 	req := &linkingclient.GetOrganizationFromWorkflowOwnerRequest{
-		WorkflowOwner:           owner,
-		WorkflowRegistryAddress: o.workflowRegistryAddress,
-		ChainSelector:           o.workflowRegistryChainSelector,
+		WorkflowOwner: owner,
 	}
 
 	ctx, err := o.addJWTAuth(ctx, req)

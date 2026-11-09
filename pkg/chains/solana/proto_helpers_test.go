@@ -681,3 +681,47 @@ func TestConvertCPIFilterConfigToProto(t *testing.T) {
 		require.Empty(t, got.MethodName)
 	})
 }
+
+func TestTransactionConfigConverters(t *testing.T) {
+	t.Run("nil proto is zero value", func(t *testing.T) {
+		got := conv.ConvertTransactionConfigFromProto(nil)
+		require.Equal(t, typesolana.TransactionConfig{}, got)
+		require.Nil(t, conv.ConvertTransactionConfigToProto(got))
+	})
+
+	t.Run("roundtrip", func(t *testing.T) {
+		limit := uint32(150_000)
+		fee := uint64(42)
+		dataSize := uint32(64 * 1024 * 1024)
+		heap := uint32(32 * 1024)
+		in := typesolana.TransactionConfig{
+			PriorityFee:                 &fee,
+			ComputeUnitLimit:            &limit,
+			LoadedAccountsDataSizeLimit: &dataSize,
+			HeapSize:                    &heap,
+		}
+		p := conv.ConvertTransactionConfigToProto(in)
+		require.NotNil(t, p)
+		got := conv.ConvertTransactionConfigFromProto(p)
+		require.Equal(t, in, got)
+	})
+}
+
+func TestParsedMessageTransactionConfigRoundtrip(t *testing.T) {
+	limit := uint32(200_000)
+	msg := typesolana.Message{
+		AccountKeys:     []typesolana.PublicKey{typesolana.PublicKey(mkBytes(typesolana.PublicKeyLength, 0x11))},
+		RecentBlockhash: typesolana.Hash(mkBytes(typesolana.HashLength, 0x22)),
+		TransactionConfig: typesolana.TransactionConfig{
+			ComputeUnitLimit: &limit,
+		},
+	}
+	p := conv.ConvertParsedMessageToProto(msg)
+	require.NotNil(t, p.TransactionConfig)
+	require.Equal(t, limit, p.TransactionConfig.GetComputeUnitLimit())
+
+	got, err := conv.ConvertParsedMessageFromProto(p)
+	require.NoError(t, err)
+	require.NotNil(t, got.TransactionConfig.ComputeUnitLimit)
+	require.Equal(t, limit, *got.TransactionConfig.ComputeUnitLimit)
+}

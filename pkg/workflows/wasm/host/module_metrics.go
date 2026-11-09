@@ -16,6 +16,8 @@ type moduleMetrics interface {
 	IncHostFnPanicRecovered()
 	RecordHostCall(ctx context.Context, function string, d time.Duration)
 	RecordExecution(ctx context.Context, stats executionStats)
+	RecordResponseSize(ctx context.Context, sizeBytes int64)
+	IncResponseOverLimit(ctx context.Context, enforced bool)
 }
 
 type executionStats struct {
@@ -35,6 +37,8 @@ type moduleMetricsImpl struct {
 	executionHostCalls        metric.Int64Histogram
 	executionMemory           metric.Int64Histogram
 	runDuration               metric.Int64Histogram
+	responseSize              metric.Int64Histogram
+	responseOverLimit         metric.Int64Counter
 }
 
 var _ moduleMetrics = &moduleMetricsImpl{}
@@ -95,12 +99,31 @@ func newModuleMetrics() (moduleMetrics, error) {
 		return nil, err
 	}
 
+	responseSize, err := meter.Int64Histogram("platform_wasm_execution_response_bytes",
+		metric.WithDescription("size of the response a wasm guest sends to the host via send_response"),
+		metric.WithUnit("By"),
+		// 1KiB, 2KiB, 4KiB, ..., 8MiB, 16MiB
+		metric.WithExplicitBucketBoundaries(prometheus.ExponentialBuckets(1<<10, 2, 15)...),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	responseOverLimit, err := meter.Int64Counter("platform_wasm_execution_response_over_limit_total",
+		metric.WithDescription("number of wasm guest responses larger than the max response size, by whether the limit was enforced"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &moduleMetricsImpl{
 		hostFnPanicRecoveredCount: hostFnPanicRecoveredTotal,
 		hostCallDuration:          hostCallDuration,
 		executionHostCalls:        executionHostCalls,
 		executionMemory:           executionMemory,
 		runDuration:               runDuration,
+		responseSize:              responseSize,
+		responseOverLimit:         responseOverLimit,
 	}, nil
 }
 
@@ -121,4 +144,12 @@ func (m *moduleMetricsImpl) RecordExecution(ctx context.Context, stats execution
 	m.runDuration.Record(ctx, stats.runDuration.Microseconds(), phaseTotal)
 	m.runDuration.Record(ctx, stats.guestDuration().Microseconds(), phaseGuest)
 	m.runDuration.Record(ctx, stats.hostDuration.Microseconds(), phaseHost)
+}
+
+func (m *moduleMetricsImpl) RecordResponseSize(ctx context.Context, sizeBytes int64) {
+	m.responseSize.Record(ctx, sizeBytes)
+}
+
+func (m *moduleMetricsImpl) IncResponseOverLimit(ctx context.Context, enforced bool) {
+	m.responseOverLimit.Add(ctx, 1, metric.WithAttributes(attribute.Bool("enforced", enforced)))
 }

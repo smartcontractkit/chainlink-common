@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/settings/remote/pb";
+
+// The package stays "capabilities" so the gRPC method name (/capabilities.Settings/Subscribe)
+// is unchanged and LOOPs built against older versions keep working.
+package capabilities;
+
+import "google/protobuf/empty.proto";
+
+service Settings {
+  rpc Subscribe (google.protobuf.Empty) returns (stream SettingsUpdate) {}
+}
+
+message SettingsUpdate {
+  string settings = 1; // default format TOML
+  string hash = 2; // default sha256
+}

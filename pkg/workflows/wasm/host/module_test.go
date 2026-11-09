@@ -359,6 +359,19 @@ type fakeModuleMetrics struct {
 	hostFnPanicRecoveredCount int
 	hostCalls                 map[string]int
 	executions                []executionStats
+	responseSizes             []int64
+	responsesOverLimit        map[bool]int
+}
+
+func (f *fakeModuleMetrics) RecordResponseSize(_ context.Context, sizeBytes int64) {
+	f.responseSizes = append(f.responseSizes, sizeBytes)
+}
+
+func (f *fakeModuleMetrics) IncResponseOverLimit(_ context.Context, enforced bool) {
+	if f.responsesOverLimit == nil {
+		f.responsesOverLimit = map[bool]int{}
+	}
+	f.responsesOverLimit[enforced]++
 }
 
 func (f *fakeModuleMetrics) IncHostFnPanicRecovered() {

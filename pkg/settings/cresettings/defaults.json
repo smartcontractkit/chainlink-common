@@ -190,6 +190,7 @@
 		"ExecutionConcurrencyLimit": "5",
 		"ExecutionTimeout": "5m0s",
 		"ExecutionResponseLimit": "100kb",
+		"ExecutionResponseLimitEnforced": "false",
 		"ExecutionTimestampsEnabled": "false",
 		"CoordinatedEngineEnabled": "false",
 		"WASMMemoryLimit": "100mb",

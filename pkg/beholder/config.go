@@ -77,6 +77,7 @@ type Config struct {
 	ChipIngressDrainTimeout        time.Duration // Max time to flush remaining events on shutdown (default 30s)
 	ChipIngressMaxConcurrentSends  int           // Max concurrent PublishBatch calls (default 10)
 	ChipIngressMaxGRPCRequestSize  int           // Max serialized PublishBatch request size in bytes (default 10 MiB)
+	ChipIngressMaxBufferedBytes    int64         // Max proto bytes of accepted events whose send and callbacks have not completed (default 0 = unlimited)
 	ChipIngressLogger              logger.Logger // Required when ChipIngressBatchEmitterEnabled is true
 
 	// OTel Log
@@ -183,6 +184,7 @@ func DefaultConfig() Config {
 		ChipIngressDrainTimeout:        30 * time.Second,
 		ChipIngressMaxConcurrentSends:  defaultMaxConcurrentSends,
 		ChipIngressMaxGRPCRequestSize:  10 * 1024 * 1024, // 10 MiB
+		ChipIngressMaxBufferedBytes:    0,                // unlimited
 		// Auth (defaults to static auth mode with TTL=0)
 		AuthHeadersTTL: 0,
 	}

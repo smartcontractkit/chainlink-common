@@ -79,6 +79,7 @@ func (c TelemetryConfig) beholderConfig(lggr logger.Logger, tracing TracingConfi
 		ChipIngressSendTimeout:         c.ChipIngressSendTimeout,
 		ChipIngressDrainTimeout:        c.ChipIngressDrainTimeout,
 		ChipIngressMaxGRPCRequestSize:  c.ChipIngressMaxGRPCRequestSize,
+		ChipIngressMaxBufferedBytes:    c.ChipIngressMaxBufferedBytes,
 		ChipIngressLogger:              lggr,
 		MetricCompressor:               c.TelemetryMetricCompressor,
 		MetricExportBatchSize:          c.TelemetryMetricExportBatchSize,

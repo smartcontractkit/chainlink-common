@@ -60,6 +60,7 @@ const (
 	envChipIngressSendTimeout             = "CL_CHIP_INGRESS_SEND_TIMEOUT"
 	envChipIngressDrainTimeout            = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
 	envChipIngressMaxGRPCRequestSize      = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+	envChipIngressMaxBufferedBytes        = "CL_CHIP_INGRESS_MAX_BUFFERED_BYTES"
 )
 
 // TelemetryConfig is the tracing, beholder and chip ingress part of loop.EnvConfig. Beholder is only
@@ -129,6 +130,7 @@ type TelemetryConfig struct {
 	ChipIngressSendTimeout        time.Duration
 	ChipIngressDrainTimeout       time.Duration
 	ChipIngressMaxGRPCRequestSize int
+	ChipIngressMaxBufferedBytes   int64
 }
 
 // AsCmdEnv returns c as environment variable key/value pairs for an exec.Cmd.
@@ -199,6 +201,7 @@ func (c *TelemetryConfig) AsCmdEnv() []string {
 	add(envChipIngressSendTimeout, c.ChipIngressSendTimeout.String())
 	add(envChipIngressDrainTimeout, c.ChipIngressDrainTimeout.String())
 	add(envChipIngressMaxGRPCRequestSize, strconv.Itoa(c.ChipIngressMaxGRPCRequestSize))
+	add(envChipIngressMaxBufferedBytes, strconv.FormatInt(c.ChipIngressMaxBufferedBytes, 10))
 
 	return env
 }
@@ -371,6 +374,13 @@ func (c *TelemetryConfig) Parse() error {
 		if c.ChipIngressMaxGRPCRequestSize < 0 {
 			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxGRPCRequestSize, c.ChipIngressMaxGRPCRequestSize)
 		}
+		c.ChipIngressMaxBufferedBytes, err = getInt64(envChipIngressMaxBufferedBytes)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envChipIngressMaxBufferedBytes, err)
+		}
+		if c.ChipIngressMaxBufferedBytes < 0 {
+			return fmt.Errorf("failed to parse %s: value %d must not be negative", envChipIngressMaxBufferedBytes, c.ChipIngressMaxBufferedBytes)
+		}
 	}
 
 	return nil
@@ -462,4 +472,12 @@ func getInt(envKey string) (int, error) {
 		return 0, err
 	}
 	return i, nil
+}
+
+func getInt64(envKey string) (int64, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	return strconv.ParseInt(s, 10, 64)
 }

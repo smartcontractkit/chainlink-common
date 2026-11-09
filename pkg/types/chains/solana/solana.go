@@ -455,6 +455,16 @@ type MessageAddressTableLookup struct {
 	ReadonlyIndexes []uint8
 }
 
+// TransactionConfig is the SIMD-0385 v1 inline compute budget.
+// Nil fields are unset. For v1, an unset compute unit limit or loaded-accounts
+// data-size limit is 0, not the legacy runtime default.
+type TransactionConfig struct {
+	PriorityFee                 *uint64
+	ComputeUnitLimit            *uint32
+	LoadedAccountsDataSizeLimit *uint32
+	HeapSize                    *uint32
+}
+
 type Message struct {
 	// List of base-58 encoded public keys used by the transaction,
 	// including by the instructions and for signatures.
@@ -474,6 +484,9 @@ type Message struct {
 
 	// List of address table lookups used to load additional accounts for this transaction.
 	AddressTableLookups MessageAddressTableLookupSlice
+
+	// Inline compute budget for v1 (SIMD-0385) messages. Zero value for legacy/v0.
+	TransactionConfig TransactionConfig
 }
 
 type Transaction struct {

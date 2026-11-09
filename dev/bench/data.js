@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794244640945,
+  "lastUpdate": 1794247525348,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -66840,6 +66840,66 @@ window.BENCHMARK_DATA = {
             "value": 112212,
             "unit": "ns/op",
             "extra": "10000 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.cordenier@smartcontract.com",
+            "name": "Cedric",
+            "username": "cedric-cordenier"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "6cfabeb021f5e927d43e30ad34a52fead6ee043a",
+          "message": "CRE-7306: Create standalone settings/remote and settings/pb package (#2542)\n\n* CRE-7306: Create standalone settings/remote and settings/pb package\n\n- Create the settings client + server in settings/remote\n- Move the protos from capabilities/pb to settings/remote/pb\n- Types moved from types/core to settings\n\n* Add settings.Follow\n\n* Two versions of this existed in capabilities. This creates a common helper that\ncallers can use without needing to duplicate the logic.\n* It differs from the existing loops by:\n- it backs off after a stream ends, and only resets the backoff once a\n  stream has delivered an update, so a host that ends streams straight\n  away is not resubscribed to in a tight loop\n- it returns when its context is done even if the stream is still open\n- it unsubscribes from local broadcasters",
+          "timestamp": "2026-11-09T17:54:29Z",
+          "tree_id": "27c6ac750ef1805f564f585c2b4cac5a9d426777",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/6cfabeb021f5e927d43e30ad34a52fead6ee043a"
+        },
+        "date": 1794247522775,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 275.6,
+            "unit": "ns/op",
+            "extra": "4284285 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 59019,
+            "unit": "ns/op",
+            "extra": "20102 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 294.6,
+            "unit": "ns/op",
+            "extra": "4044484 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58737,
+            "unit": "ns/op",
+            "extra": "20306 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21791,
+            "unit": "ns/op",
+            "extra": "55196 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 97308,
+            "unit": "ns/op",
+            "extra": "12318 times\n4 procs"
           }
         ]
       }

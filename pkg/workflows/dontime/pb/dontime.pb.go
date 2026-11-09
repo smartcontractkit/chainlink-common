@@ -22,10 +22,11 @@ const (
 )
 
 type Observation struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	Timestamp            int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Requests             map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	LimitByBatchSizeFlag bool                   `protobuf:"varint,4,opt,name=limit_by_batch_size_flag,json=limitByBatchSizeFlag,proto3" json:"limit_by_batch_size_flag,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp int64                  `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Requests  map[string]int64       `protobuf:"bytes,2,rep,name=requests,proto3" json:"requests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	// Deprecated: Marked as deprecated in dontime.proto.
+	LimitByBatchSizeFlag bool `protobuf:"varint,4,opt,name=limit_by_batch_size_flag,json=limitByBatchSizeFlag,proto3" json:"limit_by_batch_size_flag,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -74,6 +75,7 @@ func (x *Observation) GetRequests() map[string]int64 {
 	return nil
 }
 
+// Deprecated: Marked as deprecated in dontime.proto.
 func (x *Observation) GetLimitByBatchSizeFlag() bool {
 	if x != nil {
 		return x.LimitByBatchSizeFlag
@@ -191,11 +193,11 @@ var File_dontime_proto protoreflect.FileDescriptor
 
 const file_dontime_proto_rawDesc = "" +
 	"\n" +
-	"\rdontime.proto\"\xde\x01\n" +
+	"\rdontime.proto\"\xe2\x01\n" +
 	"\vObservation\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\x03R\ttimestamp\x126\n" +
-	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x126\n" +
-	"\x18limit_by_batch_size_flag\x18\x04 \x01(\bR\x14limitByBatchSizeFlag\x1a;\n" +
+	"\brequests\x18\x02 \x03(\v2\x1a.Observation.RequestsEntryR\brequests\x12:\n" +
+	"\x18limit_by_batch_size_flag\x18\x04 \x01(\bB\x02\x18\x01R\x14limitByBatchSizeFlag\x1a;\n" +
 	"\rRequestsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01J\x04\b\x03\x10\x04\"\xe0\x01\n" +

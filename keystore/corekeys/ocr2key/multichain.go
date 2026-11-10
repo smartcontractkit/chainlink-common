@@ -86,3 +86,32 @@ func (mpk *MultichainPublicKey) UnmarshalBinary(d []byte) error {
 	*mpk = keys
 	return nil
 }
+
+// VerifyOCR3 checks a peer's signature on an OCR3 report signed with its family key. publicKey is the peer's multichain
+// entry as the configuration carries it. Verifying needs no key of its own, so none is made: making one needs cgo for
+// some families.
+func VerifyOCR3(family string, publicKey ocrtypes.OnchainPublicKey, digest ocrtypes.ConfigDigest, seqNr uint64,
+	report ocrtypes.Report, signature []byte) bool {
+	factory, ok := keyBundleFactories[corekeys.ChainType(family)]
+	if !ok {
+		return false
+	}
+
+	var keys MultichainPublicKey
+	if err := keys.UnmarshalBinary(publicKey); err != nil {
+		return false
+	}
+	key, ok := keys[family]
+	if !ok {
+		return false
+	}
+
+	return factory.empty().Verify(key, ocrtypes.ReportContext{
+		ReportTimestamp: ocrtypes.ReportTimestamp{
+			ConfigDigest: digest,
+			Epoch:        uint32(seqNr), //nolint:gosec // seqNr maps to the uint32 epoch field
+			Round:        0,
+		},
+		ExtraHash: [32]byte(make([]byte, 32)),
+	}, report, signature)
+}

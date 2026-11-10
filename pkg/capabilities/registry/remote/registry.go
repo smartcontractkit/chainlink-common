@@ -3,6 +3,7 @@ package remote
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"sync"
@@ -402,9 +403,61 @@ type capabilitiesRegistryServer struct {
 	lggr      logger.Logger
 	transport Transport
 	impl      registry.CapabilitiesRegistry
+
+	mu        sync.Mutex
+	published map[string][]io.Closer
+	// removals counts Remove calls, and removedAt records the count at each ID's latest
+	// removal, so a lookup that raced a Remove can tell its capability is gone.
+	removals  uint64
+	removedAt map[string]uint64
+}
+
+var errRemovedDuringLookup = errors.New("capability was removed during lookup")
+
+func (c *capabilitiesRegistryServer) removalCount() uint64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.removals
+}
+
+// publish serves capability afresh on every call: a locator may only be dialed once
+// (a go-plugin broker ID, for one), so lookups cannot share one.
+func (c *capabilitiesRegistryServer) publish(id string, capability capabilities.BaseCapability, typ capabilities.CapabilityType) (Locator, io.Closer, error) {
+	return c.transport.Publish(id, func(s *grpc.Server) {
+		RegisterCapabilityServer(s, c.lggr, capability, typ)
+	})
+}
+
+// track records res under id so Remove can close it. since is the removal count read
+// before impl was consulted; if id has been removed after that, res is closed instead.
+func (c *capabilitiesRegistryServer) track(since uint64, id string, res io.Closer) bool {
+	c.mu.Lock()
+	removed := c.removedAt[id] > since
+	if !removed {
+		c.published[id] = append(c.published[id], res)
+	}
+	c.mu.Unlock()
+
+	if removed {
+		closeAll(c.lggr, res)
+	}
+	return !removed
+}
+
+func (c *capabilitiesRegistryServer) publishTracked(since uint64, id string, capability capabilities.BaseCapability, typ capabilities.CapabilityType) (Locator, error) {
+	loc, res, err := c.publish(id, capability, typ)
+	if err != nil {
+		return Locator{}, err
+	}
+	if !c.track(since, id, res) {
+		return Locator{}, fmt.Errorf("%s: %w", id, errRemovedDuringLookup)
+	}
+	return loc, nil
 }
 
 func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registrypb.GetRequest) (*registrypb.GetReply, error) {
+	since := c.removalCount()
+
 	capability, err := c.impl.Get(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -415,9 +468,7 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registryp
 		return nil, err
 	}
 
-	loc, _, err := c.transport.Publish("Get", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
-	})
+	loc, err := c.publishTracked(since, info.ID, capability, info.CapabilityType)
 	if err != nil {
 		return nil, err
 	}
@@ -601,6 +652,8 @@ func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *
 }
 
 func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *registrypb.GetTriggerRequest) (*registrypb.GetTriggerReply, error) {
+	since := c.removalCount()
+
 	capability, err := c.impl.GetTrigger(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -617,9 +670,7 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *re
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	loc, _, err := c.transport.Publish("GetTrigger", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, capabilities.CapabilityTypeTrigger)
-	})
+	loc, err := c.publishTracked(since, info.ID, capability, capabilities.CapabilityTypeTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -631,6 +682,8 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *re
 }
 
 func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request *registrypb.GetExecutableRequest) (*registrypb.GetExecutableReply, error) {
+	since := c.removalCount()
+
 	capability, err := c.impl.GetExecutable(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -647,9 +700,7 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	loc, _, err := c.transport.Publish("GetExecutable", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
-	})
+	loc, err := c.publishTracked(since, info.ID, capability, info.CapabilityType)
 	if err != nil {
 		return nil, err
 	}
@@ -661,31 +712,45 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 }
 
 func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty) (*registrypb.ListReply, error) {
+	since := c.removalCount()
+
 	capabilities, err := c.impl.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		locs      []Locator
-		resources []io.Closer
-	)
+	type publication struct {
+		id  string
+		loc Locator
+		res io.Closer
+	}
+	var pubs []publication
+	closePubs := func() {
+		for _, p := range pubs {
+			closeAll(c.lggr, p.res)
+		}
+	}
 	for _, cap := range capabilities {
 		info, err := cap.Info(ctx)
 		if err != nil {
-			closeAll(c.lggr, resources...)
+			closePubs()
 			return nil, err
 		}
 
-		loc, res, err := c.transport.Publish("List", func(s *grpc.Server) {
-			RegisterCapabilityServer(s, c.lggr, cap, info.CapabilityType)
-		})
+		loc, res, err := c.publish(info.ID, cap, info.CapabilityType)
 		if err != nil {
-			closeAll(c.lggr, resources...)
+			closePubs()
 			return nil, err
 		}
-		resources = append(resources, res)
-		locs = append(locs, loc)
+		pubs = append(pubs, publication{id: info.ID, loc: loc, res: res})
+	}
+
+	// A capability removed while listing is left out rather than failing the list.
+	var locs []Locator
+	for _, p := range pubs {
+		if c.track(since, p.id, p.res) {
+			locs = append(locs, p.loc)
+		}
 	}
 
 	return listReplyFor(locs), nil
@@ -722,10 +787,19 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registryp
 }
 
 func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *registrypb.RemoveRequest) (*emptypb.Empty, error) {
-	err := c.impl.Remove(ctx, request.Id)
-	if err != nil {
+	id := request.Id
+	if err := c.impl.Remove(ctx, id); err != nil {
 		return &emptypb.Empty{}, err
 	}
+
+	c.mu.Lock()
+	c.removals++
+	c.removedAt[id] = c.removals
+	closers := c.published[id]
+	delete(c.published, id)
+	c.mu.Unlock()
+
+	closeAll(c.lggr, closers...)
 	return &emptypb.Empty{}, nil
 }
 
@@ -741,6 +815,8 @@ func NewCapabilitiesRegistryServer(lggr logger.Logger, i registry.CapabilitiesRe
 		lggr:      logger.Named(lggr, "CapabilitiesRegistryServer"),
 		transport: t,
 		impl:      i,
+		published: map[string][]io.Closer{},
+		removedAt: map[string]uint64{},
 	}
 }
 

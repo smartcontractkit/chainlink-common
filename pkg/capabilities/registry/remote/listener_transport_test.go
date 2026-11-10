@@ -392,6 +392,30 @@ func TestListenerTransport_rejectedAddStopsServingDuplicate(t *testing.T) {
 	assert.Equal(t, 1, st.servingCount(id), "only the rejected duplicate is closed")
 }
 
+func TestListenerTransport_serverRemoveClosesEveryPublication(t *testing.T) {
+	client, local, st := newRegistryWithServingTransport(t)
+	ctx := t.Context()
+
+	id := "action-local@1.0.0"
+	require.NoError(t, local.Add(ctx, &testAction{info: capabilities.CapabilityInfo{
+		ID:             id,
+		CapabilityType: capabilities.CapabilityTypeAction,
+	}}))
+
+	for range 2 {
+		_, err := client.Get(ctx, id)
+		require.NoError(t, err)
+		_, err = client.GetExecutable(ctx, id)
+		require.NoError(t, err)
+		_, err = client.List(ctx)
+		require.NoError(t, err)
+	}
+	assert.Equal(t, 6, st.servingCount(id), "every lookup is served on its own")
+
+	require.NoError(t, client.Remove(ctx, id))
+	assert.Equal(t, 0, st.servingCount(id))
+}
+
 func TestListenerTransport_clientRemoveStopsServingWhenRemoteFails(t *testing.T) {
 	client, _, st := newRegistryWithServingTransport(t)
 

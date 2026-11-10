@@ -541,10 +541,11 @@ func ConvertParsedMessageFromProto(p *ParsedMessage) (solana.Message, error) {
 		return solana.Message{}, fmt.Errorf("account keys: %w", err)
 	}
 	msg := solana.Message{
-		AccountKeys:     keys,
-		Header:          ConvertMessageHeaderFromProto(p.Header),
-		RecentBlockhash: rb,
-		Instructions:    make([]solana.CompiledInstruction, 0, len(p.Instructions)),
+		AccountKeys:       keys,
+		Header:            ConvertMessageHeaderFromProto(p.Header),
+		RecentBlockhash:   rb,
+		Instructions:      make([]solana.CompiledInstruction, 0, len(p.Instructions)),
+		TransactionConfig: ConvertTransactionConfigFromProto(p.TransactionConfig),
 	}
 	for _, ins := range p.Instructions {
 		msg.Instructions = append(msg.Instructions, ConvertCompiledInstructionFromProto(ins))
@@ -554,15 +555,40 @@ func ConvertParsedMessageFromProto(p *ParsedMessage) (solana.Message, error) {
 
 func ConvertParsedMessageToProto(m solana.Message) *ParsedMessage {
 	out := &ParsedMessage{
-		RecentBlockhash: m.RecentBlockhash[:],
-		AccountKeys:     ConvertPublicKeysToProto(m.AccountKeys),
-		Header:          ConvertMessageHeaderToProto(m.Header),
-		Instructions:    make([]*CompiledInstruction, 0, len(m.Instructions)),
+		RecentBlockhash:   m.RecentBlockhash[:],
+		AccountKeys:       ConvertPublicKeysToProto(m.AccountKeys),
+		Header:            ConvertMessageHeaderToProto(m.Header),
+		Instructions:      make([]*CompiledInstruction, 0, len(m.Instructions)),
+		TransactionConfig: ConvertTransactionConfigToProto(m.TransactionConfig),
 	}
 	for _, ins := range m.Instructions {
 		out.Instructions = append(out.Instructions, ConvertCompiledInstructionToProto(ins))
 	}
 	return out
+}
+
+func ConvertTransactionConfigFromProto(p *TransactionConfig) solana.TransactionConfig {
+	if p == nil {
+		return solana.TransactionConfig{}
+	}
+	return solana.TransactionConfig{
+		PriorityFee:                 p.PriorityFee,
+		ComputeUnitLimit:            p.ComputeUnitLimit,
+		LoadedAccountsDataSizeLimit: p.LoadedAccountsDataSizeLimit,
+		HeapSize:                    p.HeapSize,
+	}
+}
+
+func ConvertTransactionConfigToProto(c solana.TransactionConfig) *TransactionConfig {
+	if c.PriorityFee == nil && c.ComputeUnitLimit == nil && c.LoadedAccountsDataSizeLimit == nil && c.HeapSize == nil {
+		return nil
+	}
+	return &TransactionConfig{
+		PriorityFee:                 c.PriorityFee,
+		ComputeUnitLimit:            c.ComputeUnitLimit,
+		LoadedAccountsDataSizeLimit: c.LoadedAccountsDataSizeLimit,
+		HeapSize:                    c.HeapSize,
+	}
 }
 
 func ConvertParsedTransactionFromProto(p *ParsedTransaction) (solana.Transaction, error) {

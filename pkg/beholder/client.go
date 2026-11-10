@@ -80,7 +80,7 @@ func (c *Client) initService(lggr pkglogger.Logger, batchSvc *ChipIngressBatchEm
 }
 
 // NewClient creates a new Client with initialized OpenTelemetry components
-// To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler)
+// To handle OpenTelemetry errors use [otel.SetErrorHandler](https://pkg.go.dev/go.opentelemetry.io/otel#SetErrorHandler) with [NewOtelErrorHandler]
 func NewClient(cfg Config) (*Client, error) {
 	if cfg.OtelExporterGRPCEndpoint != "" && cfg.OtelExporterHTTPEndpoint != "" {
 		return nil, errors.New("only one exporter endpoint should be set")

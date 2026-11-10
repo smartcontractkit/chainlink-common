@@ -82,10 +82,8 @@ func TestOrgResolver_Get(t *testing.T) {
 	client := &mockLinkingClient{}
 
 	cfg := Config{
-		URL:                           "test-url",
-		TLSEnabled:                    false,
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
+		URL:        "test-url",
+		TLSEnabled: false,
 	}
 
 	resolver, err := NewOrgResolverWithClient(cfg, client, logger.Test(t))
@@ -100,10 +98,8 @@ func TestOrgResolver_Get(t *testing.T) {
 
 func TestOrgResolver_Get_TimesOutWhenServiceHangs(t *testing.T) {
 	cfg := Config{
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
-		RequestTimeout:                50 * time.Millisecond,
-		Client:                        &mockHangingLinkingClient{},
+		RequestTimeout: 50 * time.Millisecond,
+		Client:         &mockHangingLinkingClient{},
 	}
 
 	resolver, err := cfg.New(logger.Test(t))
@@ -117,9 +113,7 @@ func TestOrgResolver_Get_TimesOutWhenServiceHangs(t *testing.T) {
 
 func TestOrgResolver_Get_DefaultTimeoutApplied(t *testing.T) {
 	cfg := Config{
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
-		Client:                        &mockLinkingClient{},
+		Client: &mockLinkingClient{},
 	}
 
 	resolver, err := cfg.New(logger.Test(t))
@@ -133,10 +127,8 @@ func TestOrgResolver_Get_DefaultTimeoutApplied(t *testing.T) {
 
 func TestOrgResolver_NewOrgResolver_RequiresClientOrURL(t *testing.T) {
 	cfg := Config{
-		URL:                           "", // Empty URL should cause error
-		TLSEnabled:                    false,
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
+		URL:        "", // Empty URL should cause error
+		TLSEnabled: false,
 	}
 
 	_, err := NewOrgResolverWithClient(cfg, nil, logger.Test(t))
@@ -171,10 +163,8 @@ func TestOrgResolver_NewOrgResolver_WithMockServer(t *testing.T) {
 
 	// Create OrgResolver using the client (simulating what NewOrgResolver would do)
 	cfg := Config{
-		URL:                           "bufnet", // Not used since client is injected
-		TLSEnabled:                    false,
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
+		URL:        "bufnet", // Not used since client is injected
+		TLSEnabled: false,
 	}
 
 	resolver, err := NewOrgResolverWithClient(cfg, client, logger.Test(t))
@@ -201,11 +191,9 @@ func TestOrgResolver_Get_WithJWTGenerator(t *testing.T) {
 	}
 
 	cfg := Config{
-		URL:                           "test-url",
-		TLSEnabled:                    false,
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
-		JWTGenerator:                  jwtGenerator,
+		URL:          "test-url",
+		TLSEnabled:   false,
+		JWTGenerator: jwtGenerator,
 	}
 
 	resolver, err := NewOrgResolverWithClient(cfg, client, logger.Test(t))
@@ -232,11 +220,9 @@ func TestOrgResolver_Get_WithJWTGeneratorError(t *testing.T) {
 	}
 
 	cfg := Config{
-		URL:                           "test-url",
-		TLSEnabled:                    false,
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
-		JWTGenerator:                  jwtGenerator,
+		URL:          "test-url",
+		TLSEnabled:   false,
+		JWTGenerator: jwtGenerator,
 	}
 
 	resolver, err := NewOrgResolverWithClient(cfg, client, logger.Test(t))
@@ -256,11 +242,9 @@ func TestOrgResolver_Get_WithoutJWTGenerator(t *testing.T) {
 
 	// Test without JWT generator (should not set authorization header)
 	cfg := Config{
-		URL:                           "test-url",
-		TLSEnabled:                    false,
-		WorkflowRegistryAddress:       "0x1234567890abcdef",
-		WorkflowRegistryChainSelector: 1,
-		JWTGenerator:                  nil, // No JWT generator
+		URL:          "test-url",
+		TLSEnabled:   false,
+		JWTGenerator: nil, // No JWT generator
 	}
 
 	resolver, err := NewOrgResolverWithClient(cfg, client, logger.Test(t))

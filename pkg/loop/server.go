@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"go.opentelemetry.io/otel"
 	otelmetric "go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	oteltrace "go.opentelemetry.io/otel/trace"
@@ -261,6 +262,10 @@ func (s *Server) MustRegister(c services.HealthReporter) {
 func (s *Server) Register(c services.HealthReporter) error { return s.checker.Register(c) }
 
 func (s *Server) startTelemetry(ctx context.Context) error {
+	// Without a handler, the SDK prints to stderr and the host re-logs it at debug level. Registered before log
+	// streaming replaces s.Logger, so export failures never loop back through the OTel exporter.
+	otel.SetErrorHandler(beholder.NewOtelErrorHandler(s.Logger))
+
 	t, err := telemetry.NewTelemetry(s.Logger, s.EnvConfig.TelemetryConfig, s.EnvConfig.AppID, s.cfg.otelViews)
 	if err != nil {
 		return err

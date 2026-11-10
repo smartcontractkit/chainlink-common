@@ -1,6 +1,7 @@
 package durableemitter
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/binary"
@@ -1859,5 +1860,40 @@ func TestGlobalEmit_BlockingBehavior(t *testing.T) {
 			return be.callCount.Load() == int64(numEmissions)
 		}, 5*time.Second, 50*time.Millisecond,
 			"all %d events must eventually be published by the batch emitter", numEmissions)
+	})
+}
+
+func TestDurableEmitter_EmitRejectsOversizedEvent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("configured limit", func(t *testing.T) {
+		t.Parallel()
+		store := NewMemDurableEventStore()
+		be := newTestBatchEmitter()
+		cfg := DefaultConfig()
+		cfg.MaxEventBytes = 1024
+		em := newTestDurableEmitter(t, store, be, &cfg)
+		servicetest.Run(t, em)
+		ctx := t.Context()
+
+		err := em.Emit(ctx, bytes.Repeat([]byte("a"), 2048), testEmitAttrs()...)
+		require.ErrorIs(t, err, ErrEventTooLarge)
+		require.Zero(t, store.Len(), "oversized event must not be persisted")
+		require.Zero(t, be.callCount.Load(), "oversized event must not be queued")
+
+		require.NoError(t, em.Emit(ctx, []byte("small"), testEmitAttrs()...))
+	})
+
+	t.Run("zero uses default limit", func(t *testing.T) {
+		t.Parallel()
+		store := NewMemDurableEventStore()
+		cfg := DefaultConfig()
+		cfg.MaxEventBytes = 0
+		em := newTestDurableEmitter(t, store, newTestBatchEmitter(), &cfg)
+		servicetest.Run(t, em)
+
+		err := em.Emit(t.Context(), bytes.Repeat([]byte("a"), DefaultMaxEventBytes+1), testEmitAttrs()...)
+		require.ErrorIs(t, err, ErrEventTooLarge)
+		require.Zero(t, store.Len())
 	})
 }

@@ -111,6 +111,10 @@ flowchart
         CentralTriggerQueueDrainInterval>CentralTriggerQueueDrainInterval]:::time
     end
 
+    subgraph standardcapabilities.Delegate.NewServices
+        CRONV2ActivePeriod[/CRONV2ActivePeriod\]:::gate
+    end
+
     subgraph Store.FetchWorkflowArtifacts
         CentralizedWorkflowOwnerVerificationEnabled[/CentralizedWorkflowOwnerVerificationEnabled\]:::gate
         PerWorkflow.WASMConfigSizeLimit{{PerWorkflow.WASMConfigSizeLimit}}:::bound
@@ -134,6 +138,11 @@ flowchart
 %%      execution outcome from the owning shard
         TimeoutBasedFailover[/TimeoutBasedFailover\]:::gate
         TimeoutBasedFailoverWindow>TimeoutBasedFailoverWindow]:::time
+    end
+
+    subgraph ShardFailoverManager.checkShardOwnership
+%%      trigger admission on a sharded node, before the event is queued
+        ShardOwnershipCheckTimeout>ShardOwnershipCheckTimeout]:::time
     end
 
     subgraph Engine.init
@@ -217,6 +226,7 @@ flowchart
         
         PerWorkflow.ExecutionTimeout>PerWorkflow.ExecutionTimeout]:::time
         PerWorkflow.ExecutionResponseLimit{{PerWorkflow.ExecutionResponseLimit}}:::bound
+        PerWorkflow.ExecutionResponseLimitEnforced[/PerWorkflow.ExecutionResponseLimitEnforced\]:::gate
         PerWorkflow.ExecutionTimestampsEnabled[/PerWorkflow.ExecutionTimestampsEnabled\]:::gate
         PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod[/PerWorkflow.FeatureHTTPTriggerNewExecutionIDsActivePeriod\]:::gate
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
@@ -228,7 +238,7 @@ flowchart
         PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
         PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod[/PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod\]:::gate
 
-        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit
+        PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit-->PerWorkflow.ExecutionResponseLimitEnforced
     end
         
     subgraph ExecutionHelper.GetSecrets
@@ -354,6 +364,54 @@ flowchart
         ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
         ConfidentialCompute.PublicKeyRetriesMax{{ConfidentialCompute.PublicKeyRetriesMax}}:::bound
         ConfidentialCompute.PublicKeyRetriesBackoff>ConfidentialCompute.PublicKeyRetriesBackoff:::time
+%%      Per-capability overrides: each capability resolves its own group first and
+%%      falls back to the shared field above when unset.
+        subgraph ConfidentialCompute.HTTP
+            ConfidentialCompute.HTTP.GlobalRate[\GlobalRate/]:::rate
+            PerOwner.ConfidentialCompute.HTTP.Rate[\PerOwner.ConfidentialCompute.HTTP.Rate/]:::rate
+            ConfidentialCompute.HTTP.MaxRetries{{ConfidentialCompute.HTTP.MaxRetries}}:::bound
+            ConfidentialCompute.HTTP.RetryBackoff>ConfidentialCompute.HTTP.RetryBackoff]:::time
+            ConfidentialCompute.HTTP.SecretsCacheEnabled[/ConfidentialCompute.HTTP.SecretsCacheEnabled\]:::gate
+            ConfidentialCompute.HTTP.EnclaveRequestTimeout>ConfidentialCompute.HTTP.EnclaveRequestTimeout]:::time
+            ConfidentialCompute.HTTP.PublicKeyRequestTimeout>ConfidentialCompute.HTTP.PublicKeyRequestTimeout]:::time
+            ConfidentialCompute.HTTP.PublicKeyRetriesMax{{ConfidentialCompute.HTTP.PublicKeyRetriesMax}}:::bound
+            ConfidentialCompute.HTTP.PublicKeyRetriesBackoff>ConfidentialCompute.HTTP.PublicKeyRetriesBackoff]:::time
+            ConfidentialCompute.HTTP.EnclaveRefreshInterval>ConfidentialCompute.HTTP.EnclaveRefreshInterval]:::time
+            ConfidentialCompute.HTTP.PublicKeyCache.Enabled[/Enabled\]:::gate
+            ConfidentialCompute.HTTP.PublicKeyCache.TTL>TTL]:::time
+            ConfidentialCompute.HTTP.PublicKeyCache.MaxTTL>MaxTTL]:::time
+            ConfidentialCompute.HTTP.PublicKeyCache.CleanupInterval>CleanupInterval]:::time
+            ConfidentialCompute.HTTP.PublicKeyCache.TTLBufferPercent{{TTLBufferPercent}}:::bound
+            ConfidentialCompute.HTTP.PublicKeyCache.ProactiveRefreshEnabled[/ProactiveRefreshEnabled\]:::gate
+            ConfidentialCompute.HTTP.PublicKeyCache.RefreshIntervalPercent{{RefreshIntervalPercent}}:::bound
+            ConfidentialCompute.HTTP.PublicKeyCache.MinRefreshInterval>MinRefreshInterval]:::time
+            ConfidentialCompute.HTTP.PublicKeyCache.RefreshTimeout>RefreshTimeout]:::time
+            ConfidentialCompute.HTTP.Session.PersistenceEnabled[/PersistenceEnabled\]:::gate
+            ConfidentialCompute.HTTP.Session.HeaderName{{HeaderName}}:::bound
+        end
+        subgraph ConfidentialCompute.Workflows
+            ConfidentialCompute.Workflows.GlobalRate[\GlobalRate/]:::rate
+            PerOwner.ConfidentialCompute.Workflows.Rate[\PerOwner.ConfidentialCompute.Workflows.Rate/]:::rate
+            ConfidentialCompute.Workflows.MaxRetries{{ConfidentialCompute.Workflows.MaxRetries}}:::bound
+            ConfidentialCompute.Workflows.RetryBackoff>ConfidentialCompute.Workflows.RetryBackoff]:::time
+            ConfidentialCompute.Workflows.SecretsCacheEnabled[/ConfidentialCompute.Workflows.SecretsCacheEnabled\]:::gate
+            ConfidentialCompute.Workflows.EnclaveRequestTimeout>ConfidentialCompute.Workflows.EnclaveRequestTimeout]:::time
+            ConfidentialCompute.Workflows.PublicKeyRequestTimeout>ConfidentialCompute.Workflows.PublicKeyRequestTimeout]:::time
+            ConfidentialCompute.Workflows.PublicKeyRetriesMax{{ConfidentialCompute.Workflows.PublicKeyRetriesMax}}:::bound
+            ConfidentialCompute.Workflows.PublicKeyRetriesBackoff>ConfidentialCompute.Workflows.PublicKeyRetriesBackoff]:::time
+            ConfidentialCompute.Workflows.EnclaveRefreshInterval>ConfidentialCompute.Workflows.EnclaveRefreshInterval]:::time
+            ConfidentialCompute.Workflows.PublicKeyCache.Enabled[/Enabled\]:::gate
+            ConfidentialCompute.Workflows.PublicKeyCache.TTL>TTL]:::time
+            ConfidentialCompute.Workflows.PublicKeyCache.MaxTTL>MaxTTL]:::time
+            ConfidentialCompute.Workflows.PublicKeyCache.CleanupInterval>CleanupInterval]:::time
+            ConfidentialCompute.Workflows.PublicKeyCache.TTLBufferPercent{{TTLBufferPercent}}:::bound
+            ConfidentialCompute.Workflows.PublicKeyCache.ProactiveRefreshEnabled[/ProactiveRefreshEnabled\]:::gate
+            ConfidentialCompute.Workflows.PublicKeyCache.RefreshIntervalPercent{{RefreshIntervalPercent}}:::bound
+            ConfidentialCompute.Workflows.PublicKeyCache.MinRefreshInterval>MinRefreshInterval]:::time
+            ConfidentialCompute.Workflows.PublicKeyCache.RefreshTimeout>RefreshTimeout]:::time
+            ConfidentialCompute.Workflows.Session.PersistenceEnabled[/PersistenceEnabled\]:::gate
+            ConfidentialCompute.Workflows.Session.HeaderName{{HeaderName}}:::bound
+        end
         subgraph ConfidentialCompute.PublicKeyCache
             ConfidentialCompute.PublicKeyCache.Enabled[/Enabled\]:::gate
             ConfidentialCompute.PublicKeyCache.TTL>TTL]:::time
@@ -405,6 +463,9 @@ flowchart
 
 %% TODO placating test for now since this flowchart no longer renders
     DonTimeSequencedTimestampsActivePeriod 
+
+%%  standard capabilities job startup is likewise its own entry point
+    standardcapabilities.Delegate.NewServices
 
     classDef bound stroke:#f00
     classDef gate stroke:#0f0

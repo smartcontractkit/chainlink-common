@@ -250,11 +250,7 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 		return nil, err
 	}
 
-	client := NewBaseCapabilityClient(cr.lggr, conn)
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
-	return client, err
+	return ensureReachable(ctx, conn, NewBaseCapabilityClient(cr.lggr, conn))
 }
 
 func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error) {
@@ -273,11 +269,7 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 		return nil, err
 	}
 
-	client := NewTriggerCapabilityClient(cr.lggr, conn)
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
-	return client, err
+	return ensureReachable(ctx, conn, NewTriggerCapabilityClient(cr.lggr, conn))
 }
 
 func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
@@ -296,11 +288,20 @@ func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID stri
 		return nil, err
 	}
 
-	client := NewExecutableCapabilityClient(cr.lggr, conn)
+	return ensureReachable(ctx, conn, NewExecutableCapabilityClient(cr.lggr, conn))
+}
+
+// ensureReachable checks the capability answers within a reduced timeout, closing its
+// connection when it does not.
+func ensureReachable[T capabilities.BaseCapability](ctx context.Context, conn ClientConn, client T) (T, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
-	return client, err
+	if _, err := client.Info(ctx); err != nil {
+		_ = conn.Close()
+		var zero T
+		return zero, err
+	}
+	return client, nil
 }
 
 func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
@@ -309,14 +310,19 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 		return nil, err
 	}
 
-	var clients []capabilities.BaseCapability
+	var (
+		clients []capabilities.BaseCapability
+		conns   []io.Closer
+	)
 	for i, loc := range locatorsFromListReply(res) {
 		conn, err := cr.transport.Dial(ctx, fmt.Sprintf("List[%d]", i), func(context.Context) (Locator, error) {
 			return loc, nil
 		})
 		if err != nil {
+			closeAll(cr.lggr, conns...)
 			return nil, err
 		}
+		conns = append(conns, conn)
 		clients = append(clients, NewBaseCapabilityClient(cr.lggr, conn))
 	}
 
@@ -650,7 +656,7 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 	for _, cap := range capabilities {
 		info, err := cap.Info(ctx)
 		if err != nil {
-			c.closeAll(resources...)
+			closeAll(c.lggr, resources...)
 			return nil, err
 		}
 
@@ -658,7 +664,7 @@ func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty)
 			RegisterCapabilityServer(s, c.lggr, cap, info.CapabilityType)
 		})
 		if err != nil {
-			c.closeAll(resources...)
+			closeAll(c.lggr, resources...)
 			return nil, err
 		}
 		resources = append(resources, res)
@@ -687,10 +693,12 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registryp
 	case registrypb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED:
 		client = NewCombinedCapabilityClient(c.lggr, conn)
 	default:
+		closeAll(c.lggr, conn)
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
 
 	if err := c.impl.Add(ctx, client); err != nil {
+		closeAll(c.lggr, conn)
 		return &emptypb.Empty{}, err
 	}
 	return &emptypb.Empty{}, nil
@@ -719,10 +727,10 @@ func NewCapabilitiesRegistryServer(lggr logger.Logger, i registry.CapabilitiesRe
 	}
 }
 
-func (c *capabilitiesRegistryServer) closeAll(closers ...io.Closer) {
+func closeAll(lggr logger.Logger, closers ...io.Closer) {
 	for _, cl := range closers {
 		if err := cl.Close(); err != nil {
-			c.lggr.Errorw("Error closing served capability", "err", err)
+			lggr.Errorw("Error closing capability resource", "err", err)
 		}
 	}
 }

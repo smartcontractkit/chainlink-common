@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794255583992,
+  "lastUpdate": 1794324729787,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -67020,6 +67020,66 @@ window.BENCHMARK_DATA = {
             "value": 51398,
             "unit": "ns/op",
             "extra": "23437 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "1416262+bolekk@users.noreply.github.com",
+            "name": "Bolek",
+            "username": "bolekk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97d5c48a8a3c2e8a0dc73af7486283b3ed15fd67",
+          "message": "orgresolver: drop deprecated workflow registry fields (#2543)\n\nThe linking service ignores the registry address and falls back to its\nconfigured registry when the chain selector is zero.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-10T15:22:25Z",
+          "tree_id": "ca98a805dc4a05af1a9453708a9f613f5244dfd5",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/97d5c48a8a3c2e8a0dc73af7486283b3ed15fd67"
+        },
+        "date": 1794324724415,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 270,
+            "unit": "ns/op",
+            "extra": "4350001 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 58213,
+            "unit": "ns/op",
+            "extra": "20114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 290.4,
+            "unit": "ns/op",
+            "extra": "4103300 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 58069,
+            "unit": "ns/op",
+            "extra": "20552 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 21848,
+            "unit": "ns/op",
+            "extra": "55120 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 96750,
+            "unit": "ns/op",
+            "extra": "12373 times\n4 procs"
           }
         ]
       }

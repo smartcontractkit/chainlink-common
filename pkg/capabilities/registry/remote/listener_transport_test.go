@@ -101,18 +101,25 @@ func (c *testTrigger) AckEvent(_ context.Context, _, eventID, _ string) error {
 	return nil
 }
 
+func newBufnetTransport(t *testing.T, bn *bufnet) *ListenerTransport {
+	t.Helper()
+	lt, err := NewListenerTransport(ListenerTransportParams{
+		Lggr:    logger.Test(t),
+		Listen:  bn.listen,
+		Connect: bn.connect,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = lt.Close() })
+	return lt
+}
+
 // newRegistryOverBufnet serves a local registry over plain gRPC and returns a client
 // for it. No broker is involved on either side.
 func newRegistryOverBufnet(t *testing.T) (registry.CapabilitiesRegistry, *registry.Registry) {
 	t.Helper()
 	lggr := logger.Test(t)
 	bn := newBufnet()
-	transport, err := NewListenerTransport(ListenerTransportParams{
-		Lggr:    lggr,
-		Listen:  bn.listen,
-		Connect: bn.connect,
-	})
-	require.NoError(t, err)
+	transport := newBufnetTransport(t, bn)
 
 	local := registry.NewRegistry(lggr)
 	lis, err := bn.listen()
@@ -311,4 +318,30 @@ func TestListenerTransport_getBaseCapability(t *testing.T) {
 	info, err := got.Info(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, "action-two@1.0.0", info.ID)
+}
+
+func TestListenerTransport_closeStopsEverythingPublished(t *testing.T) {
+	bn := newBufnet()
+	lt := newBufnetTransport(t, bn)
+	ctx := t.Context()
+
+	action := &testAction{info: capabilities.CapabilityInfo{ID: "action-five@1.0.0", CapabilityType: capabilities.CapabilityTypeAction}}
+	loc, _, err := lt.Publish("action", func(s *grpc.Server) {
+		RegisterCapabilityServer(s, logger.Test(t), action, capabilities.CapabilityTypeAction)
+	})
+	require.NoError(t, err)
+
+	conn, err := lt.Dial(ctx, "action", func(context.Context) (Locator, error) { return loc, nil })
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+	c := NewBaseCapabilityClient(logger.Test(t), conn)
+	_, err = c.Info(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, lt.Close())
+
+	_, err = c.Info(ctx)
+	require.Error(t, err, "capability still served after the transport closed")
+	_, _, err = lt.Publish("late", func(*grpc.Server) {})
+	require.ErrorIs(t, err, ErrTransportClosed)
 }

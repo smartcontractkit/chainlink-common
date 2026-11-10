@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794324729787,
+  "lastUpdate": 1794342051980,
   "repoUrl": "https://github.com/smartcontractkit/chainlink-common",
   "entries": {
     "Benchmark": [
@@ -67080,6 +67080,66 @@ window.BENCHMARK_DATA = {
             "value": 96750,
             "unit": "ns/op",
             "extra": "12373 times\n4 procs"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "adam.hamrick@smartcontract.com",
+            "name": "Adam Hamrick",
+            "username": "kalverra"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": false,
+          "id": "e4a310297ed9246593cce3f24225068b9f410fa8",
+          "message": "Deprecate beholder global accessors (#2514)\n\nMark GetClient, GetLogger, GetTracer, GetMeter, GetEmitter and\nGlobalEmitter as deprecated so callers pass a *Client (or the field\nthey need) in from the caller instead.\n\nSetClient stays supported and is documented as entrypoint-only:\nlibraries and LOOP plugins still read the global, so the node still\ninstalls its client there.\n\nDX-5066",
+          "timestamp": "2026-11-10T20:12:13Z",
+          "tree_id": "0b382026337fa714103805e6e14a5483e8f7ea40",
+          "url": "https://github.com/smartcontractkit/chainlink-common/commit/e4a310297ed9246593cce3f24225068b9f410fa8"
+        },
+        "date": 1794342049494,
+        "tool": "go",
+        "benches": [
+          {
+            "name": "BenchmarkKeystore_Sign/nop/in-process",
+            "value": 223.4,
+            "unit": "ns/op",
+            "extra": "5273413 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/nop/out-of-process",
+            "value": 28006,
+            "unit": "ns/op",
+            "extra": "42691 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/in-process",
+            "value": 242.3,
+            "unit": "ns/op",
+            "extra": "4844652 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/hex/out-of-process",
+            "value": 27471,
+            "unit": "ns/op",
+            "extra": "44072 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/in-process",
+            "value": 14761,
+            "unit": "ns/op",
+            "extra": "81114 times\n4 procs"
+          },
+          {
+            "name": "BenchmarkKeystore_Sign/ed25519/out-of-process",
+            "value": 49833,
+            "unit": "ns/op",
+            "extra": "24187 times\n4 procs"
           }
         ]
       }

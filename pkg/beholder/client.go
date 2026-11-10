@@ -358,7 +358,8 @@ func NewGRPCClient(cfg Config, otlploggrpcNew otlploggrpcFactory) (_ *Client, er
 func (c *Client) close() (err error) {
 	// Drain the domain emitters (concurrently) before the OTel providers shut down below, so
 	// outcomes recorded during the drain are still exported. They are registered with the
-	// engine as noopClosers, so the engine's later sub-service Close does not close them again.
+	// engine as idempotentClosers, so the engine's later sub-service Close of the
+	// already-drained emitters is a success, not a second close.
 	var emitters []*ChipIngressBatchEmitterService
 	for _, domain := range allDomains() {
 		if em, ok := c.domainEmitters[domain]; ok {

@@ -173,6 +173,7 @@ var Default = Schema{
 
 	DonTimeSequencedTimestampsActivePeriod: disabledFeatureTimeRange,
 	CRONV2ActivePeriod:                     disabledFeatureTimeRange,
+	ConsensusV2ActivePeriod:                disabledFeatureTimeRange,
 
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
@@ -515,6 +516,7 @@ type Schema struct {
 
 	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]]
 	CRONV2ActivePeriod                     Setting[Range[config.Timestamp]]
+	ConsensusV2ActivePeriod                Setting[Range[config.Timestamp]]
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute

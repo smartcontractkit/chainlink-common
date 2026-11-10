@@ -592,13 +592,12 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 	require.NoError(t, err)
 
 	timestamp := time.Now().UnixMilli()
-	makeObservations := func(limitByBatchSize bool) []types.AttributedObservation {
+	makeObservations := func() []types.AttributedObservation {
 		aos := make([]types.AttributedObservation, 4)
 		for i := range 4 {
 			obs := &pb.Observation{
-				Timestamp:            timestamp + int64(i),
-				Requests:             map[string]int64{},
-				LimitByBatchSizeFlag: limitByBatchSize,
+				Timestamp: timestamp + int64(i),
+				Requests:  map[string]int64{},
 			}
 			rawObs, err := proto.Marshal(obs)
 			require.NoError(t, err)
@@ -622,7 +621,7 @@ func TestPlugin_Outcome_TrimByBatchSize(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("batch size enforced", func(t *testing.T) {
-		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations(true))
+		outcome, err := plugin.Outcome(ctx, ocr3types.OutcomeContext{PreviousOutcome: prevOutcomeBytes}, query, makeObservations())
 		require.NoError(t, err)
 
 		outcomeProto := &pb.Outcome{}

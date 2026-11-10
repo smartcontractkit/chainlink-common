@@ -70,7 +70,7 @@ var Default = Schema{
 	ShardingFailoverEnabled:                     Bool(false),
 	TimeoutBasedFailover:                        Bool(false),
 	TimeoutBasedFailoverWindow:                  Duration(5 * time.Minute),
-	ShardOwnershipCheckTimeout:                  Duration(30 * time.Second),
+	ShardOwnershipCheckTimeout:                  Duration(15 * time.Second),
 	TenantID:                                    Uint64(0),
 	// Deprecated: retained for backwards compatibility; workflow owner identifies secret ownership.
 	VaultOrgIdAsSecretOwnerEnabled:  Bool(false),
@@ -193,21 +193,14 @@ var Default = Schema{
 		EnclaveRefreshInterval:  Duration(10 * time.Second),
 		PublicKeyRetriesMax:     Int(2),
 		PublicKeyRetriesBackoff: Duration(5 * time.Second),
-		PublicKeyCache: ccPublicKeyCache{
-			Enabled:                 Bool(true),
-			TTL:                     Duration(5 * time.Minute),
-			MaxTTL:                  Duration(30 * time.Minute),
-			CleanupInterval:         Duration(10 * time.Minute),
-			TTLBufferPercent:        Float64(0.1),
-			ProactiveRefreshEnabled: Bool(true),
-			RefreshIntervalPercent:  Float64(0),
-			MinRefreshInterval:      Duration(10 * time.Second),
-			RefreshTimeout:          Duration(5 * time.Second),
-		},
-		Session: ccSession{
-			PersistenceEnabled: Bool(true),
-			HeaderName:         String("Sticky-Session-A"),
-		},
+		PublicKeyCache:          defaultCCPublicKeyCache,
+		Session:                 defaultCCSession,
+		// Per-capability overrides. Each capability resolves its own group first
+		// and falls back to the shared field above when the key is unset, so
+		// tuning one capability never moves the other while existing shared
+		// overrides keep applying.
+		HTTP:      defaultConfidentialComputePerCapability,
+		Workflows: defaultConfidentialComputePerCapability,
 	},
 
 	PerOrg: Orgs{
@@ -240,36 +233,39 @@ var Default = Schema{
 		// Confidential Compute per-workflow-owner request rate. Mirrors the
 		// previous hardcoded WorkflowOwner RPS/burst executor defaults.
 		ConfidentialCompute: ownerConfidentialCompute{
-			Rate: Rate(rate.Limit(1000), 1000),
+			Rate:      Rate(rate.Limit(1000), 1000),
+			HTTP:      defaultOwnerConfidentialComputePerCapability,
+			Workflows: defaultOwnerConfidentialComputePerCapability,
 		},
 	},
 	PerWorkflow: Workflows{
-		TriggerRegistrationsTimeout:   Duration(10 * time.Second),
-		TriggerEventQueueLimit:        Int(50),
-		TriggerEventQueueTimeout:      Duration(10 * time.Minute),
-		TriggerSubscriptionTimeout:    Duration(15 * time.Second),
-		TriggerSubscriptionLimit:      Int(10),
-		CapabilityConcurrencyLimit:    Int(30), // we should rely on per-capability execution limits instead of concurrency limit
-		CapabilityCallTimeout:         Duration(3 * time.Minute),
-		SecretsConcurrencyLimit:       Int(5),
-		ExecutionConcurrencyLimit:     Int(5),
-		ExecutionTimeout:              Duration(5 * time.Minute),
-		ExecutionResponseLimit:        Size(100 * config.KByte),
-		ExecutionTimestampsEnabled:    Bool(false),
-		CoordinatedEngineEnabled:      Bool(false),
-		WASMMemoryLimit:               Size(100 * config.MByte),
-		WASMTableElementsLimit:        Int(1_000_000),
-		WASMBinarySizeLimit:           Size(100 * config.MByte),
-		WASMCompressedBinarySizeLimit: Size(20 * config.MByte),
-		WASMConfigSizeLimit:           Size(50 * config.KByte),
-		WASMSecretsSizeLimit:          Size(27 * config.KByte),
-		LogLineLimit:                  Size(config.KByte),
-		LogEventLimit:                 Int(1_000),
-		UserMetricEnabled:             Bool(false),
-		UserMetricPayloadLimit:        Size(4 * config.KByte),
-		UserMetricNameLengthLimit:     Int(128),
-		UserMetricLabelsPerMetric:     Int(20),
-		UserMetricLabelValueLength:    Int(256),
+		TriggerRegistrationsTimeout:    Duration(10 * time.Second),
+		TriggerEventQueueLimit:         Int(50),
+		TriggerEventQueueTimeout:       Duration(10 * time.Minute),
+		TriggerSubscriptionTimeout:     Duration(15 * time.Second),
+		TriggerSubscriptionLimit:       Int(10),
+		CapabilityConcurrencyLimit:     Int(30), // we should rely on per-capability execution limits instead of concurrency limit
+		CapabilityCallTimeout:          Duration(3 * time.Minute),
+		SecretsConcurrencyLimit:        Int(5),
+		ExecutionConcurrencyLimit:      Int(5),
+		ExecutionTimeout:               Duration(5 * time.Minute),
+		ExecutionResponseLimit:         Size(100 * config.KByte),
+		ExecutionResponseLimitEnforced: Bool(false),
+		ExecutionTimestampsEnabled:     Bool(false),
+		CoordinatedEngineEnabled:       Bool(false),
+		WASMMemoryLimit:                Size(100 * config.MByte),
+		WASMTableElementsLimit:         Int(1_000_000),
+		WASMBinarySizeLimit:            Size(100 * config.MByte),
+		WASMCompressedBinarySizeLimit:  Size(20 * config.MByte),
+		WASMConfigSizeLimit:            Size(50 * config.KByte),
+		WASMSecretsSizeLimit:           Size(27 * config.KByte),
+		LogLineLimit:                   Size(config.KByte),
+		LogEventLimit:                  Int(1_000),
+		UserMetricEnabled:              Bool(false),
+		UserMetricPayloadLimit:         Size(4 * config.KByte),
+		UserMetricNameLengthLimit:      Int(128),
+		UserMetricLabelsPerMetric:      Int(20),
+		UserMetricLabelValueLength:     Int(256),
 		ChainAllowed: PerChainSelector(Bool(false), map[string]bool{
 			// geth-devnet2
 			"12922642891491394802": true,
@@ -418,8 +414,7 @@ type Schema struct {
 	// ShardOwnershipCheckTimeout bounds one shard ownership lookup, made when a
 	// trigger event is admitted on a sharded node. A lookup that runs out is
 	// treated as an orchestrator error, so the event is denied. The default
-	// matches the manual resolver's 30s wait for the first registry snapshot at
-	// boot, so it only stops lookups that would otherwise hang.
+	// is the same 15s the orchestrator client used before this setting existed.
 	ShardOwnershipCheckTimeout      Setting[time.Duration]
 	TenantID                        Setting[uint64]
 	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
@@ -571,10 +566,12 @@ type Workflows struct {
 
 	SecretsConcurrencyLimit Setting[int] `unit:"{secret}"`
 
-	ExecutionConcurrencyLimit  Setting[int] `unit:"{workflow}"`
-	ExecutionTimeout           Setting[time.Duration]
-	ExecutionResponseLimit     Setting[config.Size]
-	ExecutionTimestampsEnabled Setting[bool]
+	ExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
+	ExecutionTimeout          Setting[time.Duration]
+	ExecutionResponseLimit    Setting[config.Size]
+	// ExecutionResponseLimitEnforced makes the host reject guest responses over ExecutionResponseLimit.
+	ExecutionResponseLimitEnforced Setting[bool]
+	ExecutionTimestampsEnabled     Setting[bool]
 
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
 	// trigger-owning Engine. It is read only when an engine is created, so a change
@@ -722,8 +719,72 @@ type confidentialCompute struct {
 	EnclaveRefreshInterval  Setting[time.Duration]
 	PublicKeyRetriesMax     Setting[int] `unit:"{attempt}"`
 	PublicKeyRetriesBackoff Setting[time.Duration]
-	PublicKeyCache          ccPublicKeyCache
-	Session                 ccSession
+	PublicKeyCache          CCPublicKeyCache
+	Session                 CCSession
+
+	// HTTP and Workflows hold the per-capability overrides of the fields above.
+	// A capability is expected to read its own group first and fall back to the
+	// corresponding shared field when the key is unset.
+	HTTP      ConfidentialComputePerCapability
+	Workflows ConfidentialComputePerCapability
+}
+
+// ConfidentialComputePerCapability holds the node-local Confidential Compute
+// settings one capability can tune independently of the other. Each capability
+// runs its own enclave pool, built from that capability's on-chain config, so
+// its client-side cache and session settings are independent too.
+type ConfidentialComputePerCapability struct {
+	GlobalRate              Setting[config.Rate]
+	MaxRetries              Setting[int] `unit:"{attempt}"`
+	RetryBackoff            Setting[time.Duration]
+	SecretsCacheEnabled     Setting[bool]
+	EnclaveRequestTimeout   Setting[time.Duration]
+	PublicKeyRequestTimeout Setting[time.Duration]
+	PublicKeyRetriesMax     Setting[int] `unit:"{attempt}"`
+	PublicKeyRetriesBackoff Setting[time.Duration]
+	EnclaveRefreshInterval  Setting[time.Duration]
+	PublicKeyCache          CCPublicKeyCache
+	Session                 CCSession
+}
+
+// Keeping a single value for both capability groups means the two start out
+// identical, which is what makes an unset group behave exactly like the shared
+// settings it falls back to.
+var defaultConfidentialComputePerCapability = ConfidentialComputePerCapability{
+	GlobalRate:              Rate(rate.Limit(1000), 1000),
+	MaxRetries:              Int(3),
+	RetryBackoff:            Duration(2 * time.Second),
+	SecretsCacheEnabled:     Bool(false),
+	EnclaveRequestTimeout:   Duration(30 * time.Second),
+	PublicKeyRequestTimeout: Duration(5 * time.Second),
+	PublicKeyRetriesMax:     Int(2),
+	PublicKeyRetriesBackoff: Duration(5 * time.Second),
+	EnclaveRefreshInterval:  Duration(10 * time.Second),
+	PublicKeyCache:          defaultCCPublicKeyCache,
+	Session:                 defaultCCSession,
+}
+
+// Shared by the node-level settings and every per-capability group, so an
+// unset group resolves to exactly the same defaults as the shared settings.
+var defaultCCPublicKeyCache = CCPublicKeyCache{
+	Enabled:                 Bool(true),
+	TTL:                     Duration(5 * time.Minute),
+	MaxTTL:                  Duration(30 * time.Minute),
+	CleanupInterval:         Duration(10 * time.Minute),
+	TTLBufferPercent:        Float64(0.1),
+	ProactiveRefreshEnabled: Bool(true),
+	RefreshIntervalPercent:  Float64(0),
+	MinRefreshInterval:      Duration(10 * time.Second),
+	RefreshTimeout:          Duration(5 * time.Second),
+}
+
+var defaultCCSession = CCSession{
+	PersistenceEnabled: Bool(true),
+	HeaderName:         String("Sticky-Session-A"),
+}
+
+var defaultOwnerConfidentialComputePerCapability = OwnerConfidentialComputePerCapability{
+	Rate: Rate(rate.Limit(1000), 1000),
 }
 
 // ccRelayResponseCache holds the relay-DON node's completed-response memo
@@ -741,8 +802,8 @@ type ccRelayResponseCache struct {
 	CleanupInterval Setting[time.Duration]
 }
 
-// ccPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.
-type ccPublicKeyCache struct {
+// CCPublicKeyCache holds executor-side enclave ephemeral public-key cache settings.
+type CCPublicKeyCache struct {
 	Enabled                 Setting[bool]
 	TTL                     Setting[time.Duration]
 	MaxTTL                  Setting[time.Duration]
@@ -754,14 +815,26 @@ type ccPublicKeyCache struct {
 	RefreshTimeout          Setting[time.Duration]
 }
 
-// ccSession holds executor-side sticky-session settings for enclave routing.
-type ccSession struct {
+// CCSession holds executor-side sticky-session settings for enclave routing.
+type CCSession struct {
 	PersistenceEnabled Setting[bool]
 	HeaderName         Setting[string]
 }
 
 // ownerConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
 type ownerConfidentialCompute struct {
+	Rate Setting[config.Rate]
+
+	// HTTP and Workflows hold the per-capability overrides of Rate, resolved the
+	// same way as the node-level groups: the capability's own value first, then
+	// the shared Rate above.
+	HTTP      OwnerConfidentialComputePerCapability
+	Workflows OwnerConfidentialComputePerCapability
+}
+
+// OwnerConfidentialComputePerCapability holds the per-owner Confidential Compute
+// settings one capability can tune independently of the other.
+type OwnerConfidentialComputePerCapability struct {
 	Rate Setting[config.Rate]
 }
 

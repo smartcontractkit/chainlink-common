@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sync"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 )
 
@@ -128,9 +130,18 @@ func (r *requirementSelectingModule) trigger(ctx context.Context, request *sdk.E
 		m := r.modules[info.moduleIdx]
 		if info.preHook {
 			prehook := &sdk.ExecuteRequest{Request: &sdk.ExecuteRequest_PreHook{PreHook: trigger}}
+			// Copy workflow execution metadata (available in runtime) to the pre-hook request if available before running a workflow.
+			if request.ExecutionMetadata != nil {
+				prehook.ExecutionMetadata = proto.Clone(request.ExecutionMetadata).(*sdk.WorkflowExecutionMetadata)
+			}
 			preHookResult, err := r.modules[0].Execute(ctx, prehook, handler)
 			if err != nil {
 				return nil, fmt.Errorf("pre-hook execution failed: %w", err)
+			}
+
+			// A pre-hook exists to restrict execution, so a missing result fails closed.
+			if preHookResult == nil {
+				return nil, errors.New("pre-hook returned no result")
 			}
 
 			switch preHookResult.Result.(type) {

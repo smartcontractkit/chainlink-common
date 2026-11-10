@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -28,6 +29,9 @@ type capabilitiesRegistryClient struct {
 	lggr      logger.Logger
 	transport Transport
 	grpc      registrypb.CapabilitiesRegistryClient
+
+	mu        sync.Mutex
+	published map[string]io.Closer
 }
 
 func toDON(don *registrypb.DON) capabilities.DON {
@@ -335,7 +339,7 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		return err
 	}
 
-	loc, cRes, err := cr.transport.Publish(info.ID, func(s *grpc.Server) {
+	loc, res, err := cr.transport.Publish(info.ID, func(s *grpc.Server) {
 		RegisterCapabilityServer(s, cr.lggr, c, info.CapabilityType)
 	})
 	if err != nil {
@@ -348,23 +352,35 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		Type:         ExecuteAPITypeFor(info.CapabilityType),
 	})
 	if err != nil {
-		cRes.Close()
+		closeAll(cr.lggr, res)
 		return err
+	}
+
+	cr.mu.Lock()
+	prev, replaced := cr.published[info.ID]
+	cr.published[info.ID] = res
+	cr.mu.Unlock()
+
+	if replaced {
+		closeAll(cr.lggr, prev)
 	}
 	return nil
 }
 
+// Remove stops serving ID locally even if the remote removal fails: the caller has
+// asked for it to stop, and the peer may already have dropped it.
 func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) error {
-	req := &registrypb.RemoveRequest{
-		Id: ID,
-	}
+	_, err := cr.grpc.Remove(ctx, &registrypb.RemoveRequest{Id: ID})
 
-	_, err := cr.grpc.Remove(ctx, req)
-	if err != nil {
-		return err
-	}
+	cr.mu.Lock()
+	res, ok := cr.published[ID]
+	delete(cr.published, ID)
+	cr.mu.Unlock()
 
-	return nil
+	if ok {
+		closeAll(cr.lggr, res)
+	}
+	return err
 }
 
 // NewCapabilitiesRegistryClient returns a CapabilitiesRegistry backed by the service
@@ -375,6 +391,7 @@ func NewCapabilitiesRegistryClient(lggr logger.Logger, cc grpc.ClientConnInterfa
 		lggr:      logger.Named(lggr, "CapabilitiesRegistryClient"),
 		transport: t,
 		grpc:      registrypb.NewCapabilitiesRegistryClient(cc),
+		published: map[string]io.Closer{},
 	}
 }
 

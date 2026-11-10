@@ -44,6 +44,12 @@ func (c TelemetryConfig) beholderConfig(lggr logger.Logger, tracing TracingConfi
 	if tracing.Enabled {
 		attributes = tracing.Attributes()
 	}
+	processAttrs, unknown := ProcessResourceAttributes(c.TelemetryOTelResourceAttributes)
+	if len(unknown) > 0 {
+		logger.Sugared(lggr).Warnw("Ignoring unsupported OTel resource attributes", "keys", unknown, "supported", SupportedOTelResourceAttributes)
+	}
+	attributes = append(attributes, processAttrs...)
+	// Host-wide attributes after the process ones, so the host's service.name/service.version win.
 	attributes = append(attributes, c.TelemetryAttributes.AsStringAttributes()...)
 	// Last, so a host-wide attribute with the same key cannot override the per-LOOP identity.
 	if c.TelemetryLoopID != "" {

@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -12,6 +13,7 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -107,6 +109,35 @@ func TestTelemetryConfig_beholderConfig(t *testing.T) {
 		foo, _ := resourceAttr(set, "foo")
 		assert.Equal(t, "bar", foo)
 	})
+
+	t.Run("process resource attributes", func(t *testing.T) {
+		none, err := TelemetryConfig{}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		_, ok := resourceAttr(none, AttrProcessExecutableName)
+		assert.False(t, ok, "nothing added when the host sent no list")
+
+		cfg, err := TelemetryConfig{
+			TelemetryOTelResourceAttributes: []string{AttrProcessExecutableName, AttrServiceVersion, "bogus"},
+			TelemetryAttributes:             beholder.OtelAttributes{AttrServiceVersion: "host-version"},
+		}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		exe, ok := resourceAttr(cfg, AttrProcessExecutableName)
+		require.True(t, ok, "added without tracing enabled")
+		assert.Equal(t, build.Program, exe)
+		ver, _ := resourceAttr(cfg, AttrServiceVersion)
+		assert.Equal(t, "host-version", ver, "host-wide attribute wins")
+		_, ok = resourceAttr(cfg, AttrProcessPID)
+		assert.False(t, ok, "pid only when listed")
+	})
+}
+
+func TestProcessResourceAttributes(t *testing.T) {
+	attrs, unknown := ProcessResourceAttributes([]string{AttrProcessPID, AttrProcessExecutableName, AttrProcessPID, "nope"})
+	require.Len(t, attrs, 2, "duplicates added once")
+	assert.Equal(t, AttrProcessPID, string(attrs[0].Key))
+	assert.Equal(t, int64(os.Getpid()), attrs[0].Value.AsInt64())
+	assert.Equal(t, build.Program, attrs[1].Value.AsString())
+	assert.Equal(t, []string{"nope"}, unknown)
 }
 
 // resourceAttr returns the last value for key, matching how the resource merge resolves duplicates.

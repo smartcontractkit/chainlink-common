@@ -50,6 +50,7 @@ const (
 	envTelemetryPrometheusBridgePrefixes  = "CL_TELEMETRY_PROMETHEUS_BRIDGE_PREFIXES"
 	envTelemetryLogCompressor             = "CL_TELEMETRY_LOG_COMPRESSOR"
 	envTelemetryLoopID                    = "CL_TELEMETRY_LOOP_ID"
+	envTelemetryOTelResourceAttributes    = "CL_TELEMETRY_OTEL_RESOURCE_ATTRIBUTES"
 	envChipIngressEndpoint                = "CL_CHIP_INGRESS_ENDPOINT"
 	envChipIngressInsecureConnection      = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
 	envChipIngressBatchEmitterEnabled     = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
@@ -121,6 +122,10 @@ type TelemetryConfig struct {
 	// sets it; it is exported as the AttrLoopID resource attribute so series from different
 	// LOOPs on the same node stay distinct. Empty means the host did not send one.
 	TelemetryLoopID string
+	// TelemetryOTelResourceAttributes lists process attributes (see SupportedOTelResourceAttributes) this
+	// LOOP adds to its beholder resource, whether or not tracing is enabled. Host-wide TelemetryAttributes
+	// with the same key win. Nil (host did not send the setting) adds none; an empty list adds none either.
+	TelemetryOTelResourceAttributes []string
 
 	ChipIngressEndpoint              string
 	ChipIngressInsecureConnection    bool
@@ -194,6 +199,9 @@ func (c *TelemetryConfig) AsCmdEnv() []string {
 	add(envTelemetryLogCompressor, c.TelemetryLogCompressor)
 	if c.TelemetryLoopID != "" {
 		add(envTelemetryLoopID, c.TelemetryLoopID)
+	}
+	if c.TelemetryOTelResourceAttributes != nil {
+		add(envTelemetryOTelResourceAttributes, strings.Join(c.TelemetryOTelResourceAttributes, ","))
 	}
 
 	add(envChipIngressEndpoint, c.ChipIngressEndpoint)
@@ -335,6 +343,9 @@ func (c *TelemetryConfig) Parse() error {
 		c.TelemetryPrometheusBridgePrefixes = strings.Split(os.Getenv(envTelemetryPrometheusBridgePrefixes), ",")
 		c.TelemetryLogCompressor = os.Getenv(envTelemetryLogCompressor)
 		c.TelemetryLoopID = os.Getenv(envTelemetryLoopID)
+		if v, ok := os.LookupEnv(envTelemetryOTelResourceAttributes); ok {
+			c.TelemetryOTelResourceAttributes = splitCommaTrimmed(v)
+		}
 		// Optional
 		c.ChipIngressEndpoint = os.Getenv(envChipIngressEndpoint)
 		c.ChipIngressInsecureConnection, err = getBool(envChipIngressInsecureConnection)

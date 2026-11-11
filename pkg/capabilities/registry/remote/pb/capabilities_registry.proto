@@ -131,6 +131,9 @@ message ConfigForCapabilityRequest {
 
 message ConfigForCapabilityReply {
   loop.CapabilityConfig capability_config = 1;
+  // Config digests keyed like capability_config.ocr3_configs. Kept out of
+  // OCR3Config because that message is also the onchain format.
+  map<string, bytes> ocr3_config_digests = 2;
 }
 
 message DONForCapabilityRequest {

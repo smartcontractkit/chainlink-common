@@ -871,8 +871,11 @@ func (x *ConfigForCapabilityRequest) GetDonID() uint32 {
 type ConfigForCapabilityReply struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	CapabilityConfig *pb.CapabilityConfig   `protobuf:"bytes,1,opt,name=capability_config,json=capabilityConfig,proto3" json:"capability_config,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Config digests keyed like capability_config.ocr3_configs. Kept out of
+	// OCR3Config because that message is also the onchain format.
+	Ocr3ConfigDigests map[string][]byte `protobuf:"bytes,2,rep,name=ocr3_config_digests,json=ocr3ConfigDigests,proto3" json:"ocr3_config_digests,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ConfigForCapabilityReply) Reset() {
@@ -908,6 +911,13 @@ func (*ConfigForCapabilityReply) Descriptor() ([]byte, []int) {
 func (x *ConfigForCapabilityReply) GetCapabilityConfig() *pb.CapabilityConfig {
 	if x != nil {
 		return x.CapabilityConfig
+	}
+	return nil
+}
+
+func (x *ConfigForCapabilityReply) GetOcr3ConfigDigests() map[string][]byte {
+	if x != nil {
+		return x.Ocr3ConfigDigests
 	}
 	return nil
 }
@@ -1193,9 +1203,13 @@ const file_capabilities_registry_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"V\n" +
 	"\x1aConfigForCapabilityRequest\x12\"\n" +
 	"\fcapabilityID\x18\x01 \x01(\tR\fcapabilityID\x12\x14\n" +
-	"\x05donID\x18\x02 \x01(\rR\x05donID\"_\n" +
+	"\x05donID\x18\x02 \x01(\rR\x05donID\"\x8c\x02\n" +
 	"\x18ConfigForCapabilityReply\x12C\n" +
-	"\x11capability_config\x18\x01 \x01(\v2\x16.loop.CapabilityConfigR\x10capabilityConfig\"=\n" +
+	"\x11capability_config\x18\x01 \x01(\v2\x16.loop.CapabilityConfigR\x10capabilityConfig\x12e\n" +
+	"\x13ocr3_config_digests\x18\x02 \x03(\v25.loop.ConfigForCapabilityReply.Ocr3ConfigDigestsEntryR\x11ocr3ConfigDigests\x1aD\n" +
+	"\x16Ocr3ConfigDigestsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01\"=\n" +
 	"\x17DONForCapabilityRequest\x12\"\n" +
 	"\fcapabilityID\x18\x01 \x01(\tR\fcapabilityID\"R\n" +
 	"\fDONWithNodes\x12\x1b\n" +
@@ -1239,7 +1253,7 @@ func file_capabilities_registry_proto_rawDescGZIP() []byte {
 }
 
 var file_capabilities_registry_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_capabilities_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_capabilities_registry_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_capabilities_registry_proto_goTypes = []any{
 	(ExecuteAPIType)(0),                // 0: loop.ExecuteAPIType
 	(*DON)(nil),                        // 1: loop.DON
@@ -1262,46 +1276,48 @@ var file_capabilities_registry_proto_goTypes = []any{
 	(*DONForCapabilityReply)(nil),      // 18: loop.DONForCapabilityReply
 	(*DONByIDRequest)(nil),             // 19: loop.DONByIDRequest
 	(*DONByIDReply)(nil),               // 20: loop.DONByIDReply
-	(*pb.CapabilityConfig)(nil),        // 21: loop.CapabilityConfig
-	(*emptypb.Empty)(nil),              // 22: google.protobuf.Empty
+	nil,                                // 21: loop.ConfigForCapabilityReply.Ocr3ConfigDigestsEntry
+	(*pb.CapabilityConfig)(nil),        // 22: loop.CapabilityConfig
+	(*emptypb.Empty)(nil),              // 23: google.protobuf.Empty
 }
 var file_capabilities_registry_proto_depIdxs = []int32{
 	1,  // 0: loop.NodeReply.workflowDON:type_name -> loop.DON
 	1,  // 1: loop.NodeReply.CapabilityDONs:type_name -> loop.DON
 	0,  // 2: loop.GetReply.type:type_name -> loop.ExecuteAPIType
 	0,  // 3: loop.AddRequest.type:type_name -> loop.ExecuteAPIType
-	21, // 4: loop.ConfigForCapabilityReply.capability_config:type_name -> loop.CapabilityConfig
-	1,  // 5: loop.DONWithNodes.don:type_name -> loop.DON
-	3,  // 6: loop.DONWithNodes.nodes:type_name -> loop.NodeReply
-	17, // 7: loop.DONForCapabilityReply.dons:type_name -> loop.DONWithNodes
-	1,  // 8: loop.DONByIDReply.don:type_name -> loop.DON
-	22, // 9: loop.CapabilitiesRegistry.LocalNode:input_type -> google.protobuf.Empty
-	2,  // 10: loop.CapabilitiesRegistry.NodeByPeerID:input_type -> loop.NodeRequest
-	14, // 11: loop.CapabilitiesRegistry.ConfigForCapability:input_type -> loop.ConfigForCapabilityRequest
-	16, // 12: loop.CapabilitiesRegistry.DONsForCapability:input_type -> loop.DONForCapabilityRequest
-	19, // 13: loop.CapabilitiesRegistry.DONByID:input_type -> loop.DONByIDRequest
-	4,  // 14: loop.CapabilitiesRegistry.Get:input_type -> loop.GetRequest
-	6,  // 15: loop.CapabilitiesRegistry.GetTrigger:input_type -> loop.GetTriggerRequest
-	8,  // 16: loop.CapabilitiesRegistry.GetExecutable:input_type -> loop.GetExecutableRequest
-	22, // 17: loop.CapabilitiesRegistry.List:input_type -> google.protobuf.Empty
-	12, // 18: loop.CapabilitiesRegistry.Add:input_type -> loop.AddRequest
-	13, // 19: loop.CapabilitiesRegistry.Remove:input_type -> loop.RemoveRequest
-	3,  // 20: loop.CapabilitiesRegistry.LocalNode:output_type -> loop.NodeReply
-	3,  // 21: loop.CapabilitiesRegistry.NodeByPeerID:output_type -> loop.NodeReply
-	15, // 22: loop.CapabilitiesRegistry.ConfigForCapability:output_type -> loop.ConfigForCapabilityReply
-	18, // 23: loop.CapabilitiesRegistry.DONsForCapability:output_type -> loop.DONForCapabilityReply
-	20, // 24: loop.CapabilitiesRegistry.DONByID:output_type -> loop.DONByIDReply
-	5,  // 25: loop.CapabilitiesRegistry.Get:output_type -> loop.GetReply
-	7,  // 26: loop.CapabilitiesRegistry.GetTrigger:output_type -> loop.GetTriggerReply
-	9,  // 27: loop.CapabilitiesRegistry.GetExecutable:output_type -> loop.GetExecutableReply
-	10, // 28: loop.CapabilitiesRegistry.List:output_type -> loop.ListReply
-	22, // 29: loop.CapabilitiesRegistry.Add:output_type -> google.protobuf.Empty
-	22, // 30: loop.CapabilitiesRegistry.Remove:output_type -> google.protobuf.Empty
-	20, // [20:31] is the sub-list for method output_type
-	9,  // [9:20] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	22, // 4: loop.ConfigForCapabilityReply.capability_config:type_name -> loop.CapabilityConfig
+	21, // 5: loop.ConfigForCapabilityReply.ocr3_config_digests:type_name -> loop.ConfigForCapabilityReply.Ocr3ConfigDigestsEntry
+	1,  // 6: loop.DONWithNodes.don:type_name -> loop.DON
+	3,  // 7: loop.DONWithNodes.nodes:type_name -> loop.NodeReply
+	17, // 8: loop.DONForCapabilityReply.dons:type_name -> loop.DONWithNodes
+	1,  // 9: loop.DONByIDReply.don:type_name -> loop.DON
+	23, // 10: loop.CapabilitiesRegistry.LocalNode:input_type -> google.protobuf.Empty
+	2,  // 11: loop.CapabilitiesRegistry.NodeByPeerID:input_type -> loop.NodeRequest
+	14, // 12: loop.CapabilitiesRegistry.ConfigForCapability:input_type -> loop.ConfigForCapabilityRequest
+	16, // 13: loop.CapabilitiesRegistry.DONsForCapability:input_type -> loop.DONForCapabilityRequest
+	19, // 14: loop.CapabilitiesRegistry.DONByID:input_type -> loop.DONByIDRequest
+	4,  // 15: loop.CapabilitiesRegistry.Get:input_type -> loop.GetRequest
+	6,  // 16: loop.CapabilitiesRegistry.GetTrigger:input_type -> loop.GetTriggerRequest
+	8,  // 17: loop.CapabilitiesRegistry.GetExecutable:input_type -> loop.GetExecutableRequest
+	23, // 18: loop.CapabilitiesRegistry.List:input_type -> google.protobuf.Empty
+	12, // 19: loop.CapabilitiesRegistry.Add:input_type -> loop.AddRequest
+	13, // 20: loop.CapabilitiesRegistry.Remove:input_type -> loop.RemoveRequest
+	3,  // 21: loop.CapabilitiesRegistry.LocalNode:output_type -> loop.NodeReply
+	3,  // 22: loop.CapabilitiesRegistry.NodeByPeerID:output_type -> loop.NodeReply
+	15, // 23: loop.CapabilitiesRegistry.ConfigForCapability:output_type -> loop.ConfigForCapabilityReply
+	18, // 24: loop.CapabilitiesRegistry.DONsForCapability:output_type -> loop.DONForCapabilityReply
+	20, // 25: loop.CapabilitiesRegistry.DONByID:output_type -> loop.DONByIDReply
+	5,  // 26: loop.CapabilitiesRegistry.Get:output_type -> loop.GetReply
+	7,  // 27: loop.CapabilitiesRegistry.GetTrigger:output_type -> loop.GetTriggerReply
+	9,  // 28: loop.CapabilitiesRegistry.GetExecutable:output_type -> loop.GetExecutableReply
+	10, // 29: loop.CapabilitiesRegistry.List:output_type -> loop.ListReply
+	23, // 30: loop.CapabilitiesRegistry.Add:output_type -> google.protobuf.Empty
+	23, // 31: loop.CapabilitiesRegistry.Remove:output_type -> google.protobuf.Empty
+	21, // [21:32] is the sub-list for method output_type
+	10, // [10:21] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_registry_proto_init() }
@@ -1315,7 +1331,7 @@ func file_capabilities_registry_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_registry_proto_rawDesc), len(file_capabilities_registry_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   20,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

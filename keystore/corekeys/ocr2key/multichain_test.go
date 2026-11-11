@@ -1,34 +1,32 @@
 package ocr2key
 
 import (
-	"encoding/binary"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
-
-	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 )
 
-func TestUnmarshalMultichainPublicKey(t *testing.T) {
-	var encoded []byte
-	for _, entry := range []struct {
-		family corekeys.ChainType
-		key    []byte
-	}{{corekeys.EVM, []byte{1, 2}}, {corekeys.Aptos, []byte{3}}} {
-		typ, err := entry.family.Type()
-		require.NoError(t, err)
-		encoded = append(encoded, typ)
-		encoded = binary.LittleEndian.AppendUint16(encoded, uint16(len(entry.key))) //nolint:gosec // test keys are small
-		encoded = append(encoded, entry.key...)
-	}
+func TestMultichainPublicKey(t *testing.T) {
+	want := MultichainPublicKey{"evm": {1, 2}, "aptos": {3}}
 
-	keys, err := UnmarshalMultichainPublicKey(encoded)
+	encoded, err := want.MarshalBinary()
 	require.NoError(t, err)
-	assert.Equal(t, map[string]ocrtypes.OnchainPublicKey{"evm": {1, 2}, "aptos": {3}}, keys)
 
-	_, err = UnmarshalMultichainPublicKey(encoded[:len(encoded)-1])
-	require.Error(t, err)
+	var got MultichainPublicKey
+	require.NoError(t, got.UnmarshalBinary(encoded))
+	assert.Equal(t, want, got)
+
+	again, err := got.MarshalBinary()
+	require.NoError(t, err)
+	assert.Equal(t, encoded, again, "the encoding is deterministic")
+
+	require.Error(t, got.UnmarshalBinary(encoded[:len(encoded)-1]))
+
+	unknown, err := MultichainPublicKey{"evm": {1}, "not-a-chain": {2}}.MarshalBinary()
+	require.NoError(t, err)
+	require.NoError(t, got.UnmarshalBinary(unknown))
+	assert.Equal(t, MultichainPublicKey{"evm": ocrtypes.OnchainPublicKey{1}}, got, "unknown chain types are skipped")
 }

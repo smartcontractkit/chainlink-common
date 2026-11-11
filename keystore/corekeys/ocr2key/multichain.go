@@ -2,38 +2,73 @@ package ocr2key
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/binary"
+	"errors"
 	"io"
+	"math"
+	"slices"
 
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 )
 
-func UnmarshalMultichainPublicKey(d []byte) (map[string]ocrtypes.OnchainPublicKey, error) {
-	m := map[string]ocrtypes.OnchainPublicKey{}
+// MultichainPublicKey is an oracle's onchain public keys, keyed by chain type, as an OCR config lists a signer: for
+// each chain type, its type, the key's length, then the key.
+type MultichainPublicKey map[string]ocrtypes.OnchainPublicKey
+
+func (ost MultichainPublicKey) MarshalBinary() ([]byte, error) {
+	var pubKeys [][]byte
+	for k, pubKey := range ost {
+		typ, err := corekeys.ChainType(k).Type()
+		if err != nil {
+			// skipping unknown key type
+			continue
+		}
+		buf := new(bytes.Buffer)
+		if err = binary.Write(buf, binary.LittleEndian, typ); err != nil {
+			return nil, err
+		}
+		length := len(pubKey)
+		if length < 0 || length > math.MaxUint16 {
+			return nil, errors.New("pubKey doesn't fit into uint16")
+		}
+		if err = binary.Write(buf, binary.LittleEndian, uint16(length)); err != nil {
+			return nil, err
+		}
+		_, _ = buf.Write(pubKey)
+		pubKeys = append(pubKeys, buf.Bytes())
+	}
+	// sort keys based on encoded type to make encoding deterministic
+	slices.SortFunc(pubKeys, func(a, b []byte) int { return cmp.Compare(a[0], b[0]) })
+	return bytes.Join(pubKeys, nil), nil
+}
+
+func (m *MultichainPublicKey) UnmarshalBinary(d []byte) error {
+	keys := MultichainPublicKey{}
 	buf := bytes.NewReader(d)
 
 	for {
 		// type
 		typ, err := buf.ReadByte()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// length
 		var length uint16
 		err = binary.Read(buf, binary.LittleEndian, &length)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// value
 		pubKey := make([]byte, length)
 		n, err := buf.Read(pubKey)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if n != int(length) {
-			return nil, io.EOF
+			return io.EOF
 		}
 
 		k, err := corekeys.NewChainType(typ)
@@ -41,12 +76,13 @@ func UnmarshalMultichainPublicKey(d []byte) (map[string]ocrtypes.OnchainPublicKe
 			// skipping unknown key type
 			continue
 		}
-		m[string(k)] = pubKey
+		keys[string(k)] = pubKey
 
 		if buf.Len() == 0 {
 			break
 		}
 	}
 
-	return m, nil
+	*m = keys
+	return nil
 }

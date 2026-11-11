@@ -8,6 +8,7 @@ import (
 
 	"github.com/hashicorp/go-plugin"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop"
 	"github.com/smartcontractkit/chainlink-common/pkg/sqlutil"
@@ -58,7 +59,7 @@ func (p *pluginRelayer) HealthReport() map[string]error { return map[string]erro
 
 func (p *pluginRelayer) Name() string { return p.lggr.Name() }
 
-func (p *pluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, cr core.CapabilitiesRegistry) (loop.Relayer, error) {
+func (p *pluginRelayer) NewRelayer(ctx context.Context, config string, keystore, csaKeystore core.Keystore, cr registry.CapabilitiesRegistry) (loop.Relayer, error) {
 	return &relayer{lggr: logger.Named(p.lggr, "Relayer"), ds: p.ds}, nil
 }
 

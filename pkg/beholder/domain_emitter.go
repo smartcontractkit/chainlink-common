@@ -9,7 +9,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress/batch"
 	pkglogger "github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/services"
 )
 
 // Domain is a top-level product domain with its own chip ingress deployment.
@@ -92,24 +91,9 @@ type domainEmitter struct {
 	// chipClient is the emitter's own connection. Once started, the batch client closes it on
 	// Stop; it is closed here only when construction fails before the emitter ever starts.
 	chipClient chipingress.Client
-	closer     idempotentCloser
 }
 
 func (*domainEmitter) Close() error { return nil }
-
-// idempotentCloser is how a domain emitter is registered with the Client's engine. Close is
-// always delegated, so the engine's start rollback can close a started emitter; a re-request
-// on an already-stopped one (the engine's teardown after Client.close, the emitter's sole
-// closer, has drained it) reports success instead of ErrAlreadyStopped.
-type idempotentCloser struct{ services.Service }
-
-func (c idempotentCloser) Close() error {
-	if err := c.Service.Close(); errors.Is(err, services.ErrAlreadyStopped) {
-		return nil
-	} else {
-		return err
-	}
-}
 
 // newDomainEmitters builds one emitter per Domain. opts are the Client's chip ingress options
 // (transport, auth, OTel providers) without its header provider, which each domain emitter
@@ -143,7 +127,7 @@ func newDomainEmitters(cfg Config, opts []chipingress.Opt, resourceAttrs map[str
 			_ = chipClient.Close()
 			return nil, fmt.Errorf("chip ingress emitter for domain %q: %w", domain, err)
 		}
-		emitters[domain] = &domainEmitter{ChipIngressBatchEmitterService: svc, chipClient: chipClient, closer: idempotentCloser{Service: svc}}
+		emitters[domain] = &domainEmitter{ChipIngressBatchEmitterService: svc, chipClient: chipClient}
 	}
 	return emitters, nil
 }

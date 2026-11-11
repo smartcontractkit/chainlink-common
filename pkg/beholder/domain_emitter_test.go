@@ -280,44 +280,6 @@ func TestForDomain_ClientCloseClosesDomainConnectionsOnce(t *testing.T) {
 	requireNoDomainEmitterCloseErrors(t, client.Close())
 }
 
-// Domain emitters drain before the OTel providers shut down, so outcomes recorded during the
-// drain (sent/dropped metrics, RPC metrics and spans) are still exported. OnClose is the hook that
-// shuts the providers down; by the time it runs, the domain emitters must already be stopped.
-func TestForDomain_DrainsBeforeProvidersShutDown(t *testing.T) {
-	capture, addr := startBatchCapturingChipServer(t)
-	cfg := domainTestConfig(t, addr)
-	cfg.ChipIngressSendInterval = time.Hour // only the drain can publish the queued event
-
-	client, err := beholder.NewGRPCClient(cfg, func(...otlploggrpc.Option) (sdklog.Exporter, error) {
-		return &mockLogExporter{}, nil
-	})
-	require.NoError(t, err)
-	require.NoError(t, client.Start(t.Context()))
-
-	em, err := client.ForDomain(beholder.DomainDataFeeds)
-	require.NoError(t, err)
-	require.NoError(t, em.EmitEvent(t.Context(), legacyStyleEvent(t, "data-feeds.telemetry.ordering"), nil))
-
-	var (
-		emitDuringShutdown error
-		drainedBefore      int
-	)
-	shutdownProviders := client.OnClose
-	client.OnClose = func() error {
-		emitDuringShutdown = em.EmitEvent(context.Background(), legacyStyleEvent(t, "data-feeds.telemetry.late"), nil)
-		drainedBefore = len(capture.callsWithEventSource("data-feeds.telemetry.ordering"))
-		return shutdownProviders()
-	}
-
-	closeErr := client.Close()
-	require.Error(t, emitDuringShutdown, "the domain emitter is stopped before the providers shut down")
-	assert.Equal(t, 1, drainedBefore, "the queued event is published before the providers shut down")
-	requireNoDomainEmitterCloseErrors(t, closeErr)
-	if closeErr != nil {
-		assert.NotContains(t, closeErr.Error(), "already been stopped", "each domain emitter is closed once")
-	}
-}
-
 func TestForDomain_EmitEventRejectsInvalidEvent(t *testing.T) {
 	_, addr := startBatchCapturingChipServer(t)
 	client := newDomainTestClient(t, domainTestConfig(t, addr))

@@ -18,9 +18,9 @@ import (
 // each chain type, its type, the key's length, then the key.
 type MultichainPublicKey map[string]ocrtypes.OnchainPublicKey
 
-func (ost MultichainPublicKey) MarshalBinary() ([]byte, error) {
+func (mpk MultichainPublicKey) MarshalBinary() ([]byte, error) {
 	var pubKeys [][]byte
-	for k, pubKey := range ost {
+	for k, pubKey := range mpk {
 		typ, err := corekeys.ChainType(k).Type()
 		if err != nil {
 			// skipping unknown key type
@@ -45,7 +45,7 @@ func (ost MultichainPublicKey) MarshalBinary() ([]byte, error) {
 	return bytes.Join(pubKeys, nil), nil
 }
 
-func (m *MultichainPublicKey) UnmarshalBinary(d []byte) error {
+func (mpk *MultichainPublicKey) UnmarshalBinary(d []byte) error {
 	keys := MultichainPublicKey{}
 	buf := bytes.NewReader(d)
 
@@ -83,6 +83,6 @@ func (m *MultichainPublicKey) UnmarshalBinary(d []byte) error {
 		}
 	}
 
-	*m = keys
+	*mpk = keys
 	return nil
 }

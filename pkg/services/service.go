@@ -258,8 +258,8 @@ func (s *service) Start(ctx context.Context) error {
 		defer span.End()
 
 		s.eng.Info("Starting")
+		var ms MultiStart
 		if len(s.subs) > 0 {
-			var ms MultiStart
 			s.eng.Infof("Starting %d sub-services", len(s.subs))
 			for _, sub := range s.subs {
 				if err := ms.Start(ctx, sub); err != nil {
@@ -270,7 +270,9 @@ func (s *service) Start(ctx context.Context) error {
 		}
 		if s.cfg.Start != nil {
 			if err := s.cfg.Start(ctx); err != nil {
-				return fmt.Errorf("failed to start service %s: %w", s.cfg.Name, err)
+				// The hook failed after the subs started: roll them back, since Close()
+				// refuses from StartFailed and nothing else would ever close them.
+				return ms.CloseBecause(fmt.Errorf("failed to start service %s: %w", s.cfg.Name, err))
 			}
 		}
 		s.eng.Info("Started")

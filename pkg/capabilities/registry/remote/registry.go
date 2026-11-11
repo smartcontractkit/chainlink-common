@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"math"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -175,6 +177,19 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 		for key, pbCfg := range res.CapabilityConfig.Ocr3Configs {
 			ocr3Configs[key] = decodeOcr3Config(pbCfg)
 		}
+	}
+
+	for key, pbCfg := range res.Ocr3ContractConfigs {
+		cfg, err := decodeContractConfig(pbCfg)
+		if err != nil {
+			return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode OCR3 config %s: %w", key, err)
+		}
+
+		if ocr3Configs == nil {
+			ocr3Configs = map[string]ocrtypes.ContractConfig{}
+		}
+
+		ocr3Configs[key] = cfg
 	}
 
 	specConfig, err := values.FromMapValueProto(res.CapabilityConfig.SpecConfig)
@@ -475,7 +490,7 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 			}
 			transmitters := make([][]byte, len(cfg.Transmitters))
 			for i, t := range cfg.Transmitters {
-				transmitters[i], err = hex.DecodeString(string(t))
+				transmitters[i], err = hex.DecodeString(strings.TrimPrefix(string(t), "0x"))
 				if err != nil {
 					return nil, fmt.Errorf("failed to decode transmitter: %w", err)
 				}
@@ -498,8 +513,69 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		ccp.SpecConfig = values.Proto(cc.SpecConfig).GetMapValue()
 	}
 
-	return &registrypb.ConfigForCapabilityReply{
-		CapabilityConfig: ccp,
+	reply := &registrypb.ConfigForCapabilityReply{CapabilityConfig: ccp}
+	if cc.Ocr3Configs != nil {
+		reply.Ocr3ContractConfigs = make(map[string]*registrypb.OCR3ContractConfig, len(cc.Ocr3Configs))
+		for key, cfg := range cc.Ocr3Configs {
+			reply.Ocr3ContractConfigs[key] = encodeContractConfig(cfg)
+		}
+	}
+
+	return reply, nil
+}
+
+func encodeContractConfig(cc ocrtypes.ContractConfig) *registrypb.OCR3ContractConfig {
+	signers := make([][]byte, len(cc.Signers))
+	for i, s := range cc.Signers {
+		signers[i] = s
+	}
+
+	transmitters := make([]string, len(cc.Transmitters))
+	for i, t := range cc.Transmitters {
+		transmitters[i] = string(t)
+	}
+
+	return &registrypb.OCR3ContractConfig{
+		ConfigDigest:          cc.ConfigDigest[:],
+		ConfigCount:           cc.ConfigCount,
+		Signers:               signers,
+		Transmitters:          transmitters,
+		F:                     uint32(cc.F),
+		OnchainConfig:         cc.OnchainConfig,
+		OffchainConfigVersion: cc.OffchainConfigVersion,
+		OffchainConfig:        cc.OffchainConfig,
+	}
+}
+
+func decodeContractConfig(cc *registrypb.OCR3ContractConfig) (ocrtypes.ContractConfig, error) {
+	digest, err := ocrtypes.BytesToConfigDigest(cc.ConfigDigest)
+	if err != nil {
+		return ocrtypes.ContractConfig{}, fmt.Errorf("invalid config digest: %w", err)
+	}
+
+	if cc.F > math.MaxUint8 {
+		return ocrtypes.ContractConfig{}, fmt.Errorf("f value %d exceeds uint8 max", cc.F)
+	}
+
+	signers := make([]ocrtypes.OnchainPublicKey, len(cc.Signers))
+	for i, s := range cc.Signers {
+		signers[i] = s
+	}
+
+	transmitters := make([]ocrtypes.Account, len(cc.Transmitters))
+	for i, t := range cc.Transmitters {
+		transmitters[i] = ocrtypes.Account(t)
+	}
+
+	return ocrtypes.ContractConfig{
+		ConfigDigest:          digest,
+		ConfigCount:           cc.ConfigCount,
+		Signers:               signers,
+		Transmitters:          transmitters,
+		F:                     uint8(cc.F),
+		OnchainConfig:         cc.OnchainConfig,
+		OffchainConfigVersion: cc.OffchainConfigVersion,
+		OffchainConfig:        cc.OffchainConfig,
 	}, nil
 }
 

@@ -56,23 +56,21 @@ func TestServer_RemoveDuringGetDoesNotLeakPublishedCapability(t *testing.T) {
 	st := &servingTransport{Transport: newBufnetTransport(t, newBufnet()), serving: map[string]int{}}
 	srv := NewCapabilitiesRegistryServer(logger.Test(t), impl, st)
 
+	var getErr error
 	getDone := make(chan struct{})
 	go func() {
 		defer close(getDone)
-		_, _ = srv.Get(ctx, &registrypb.GetRequest{Id: id})
+		_, getErr = srv.Get(ctx, &registrypb.GetRequest{Id: id})
 	}()
 	<-impl.looked
 
-	removeDone := make(chan struct{})
-	go func() {
-		defer close(removeDone)
-		_, err := srv.Remove(ctx, &registrypb.RemoveRequest{Id: id})
-		assert.NoError(t, err)
-	}()
+	_, err := srv.Remove(ctx, &registrypb.RemoveRequest{Id: id})
+	require.NoError(t, err)
 
 	close(impl.resumeGet)
 	<-getDone
-	<-removeDone
+
+	assert.ErrorIs(t, getErr, errRemovedDuringLookup)
 
 	require.Equal(t, 0, st.servingCount(id), "removed capability is still published")
 }

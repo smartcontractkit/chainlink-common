@@ -31,6 +31,8 @@ type capabilitiesRegistryClient struct {
 	transport Transport
 	grpc      registrypb.CapabilitiesRegistryClient
 
+	// mu is held across the remote Add/Remove so local serving follows the order the
+	// peer applied them.
 	mu        sync.Mutex
 	published map[string]io.Closer
 }
@@ -347,17 +349,17 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		return err
 	}
 
+	cr.mu.Lock()
 	_, err = cr.grpc.Add(ctx, &registrypb.AddRequest{
 		CapabilityID: loc.LegacyHandle,
 		Target:       loc.Target,
 		Type:         ExecuteAPITypeFor(info.CapabilityType),
 	})
 	if err != nil {
+		cr.mu.Unlock()
 		closeAll(cr.lggr, res)
 		return err
 	}
-
-	cr.mu.Lock()
 	prev, replaced := cr.published[info.ID]
 	cr.published[info.ID] = res
 	cr.mu.Unlock()
@@ -371,9 +373,8 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 // Remove stops serving ID locally even if the remote removal fails: the caller has
 // asked for it to stop, and the peer may already have dropped it.
 func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) error {
-	_, err := cr.grpc.Remove(ctx, &registrypb.RemoveRequest{Id: ID})
-
 	cr.mu.Lock()
+	_, err := cr.grpc.Remove(ctx, &registrypb.RemoveRequest{Id: ID})
 	res, ok := cr.published[ID]
 	delete(cr.published, ID)
 	cr.mu.Unlock()
@@ -404,6 +405,8 @@ type capabilitiesRegistryServer struct {
 	transport Transport
 	impl      registry.CapabilitiesRegistry
 
+	// mu is held across impl.Add and impl.Remove so a Remove only closes publications
+	// of the capability it removed, never those of one added in its place.
 	mu        sync.Mutex
 	published map[string][]io.Closer
 	// removals counts Remove calls, and removedAt records the count at each ID's latest
@@ -779,7 +782,10 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registryp
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
 
-	if err := c.impl.Add(ctx, client); err != nil {
+	c.mu.Lock()
+	err = c.impl.Add(ctx, client)
+	c.mu.Unlock()
+	if err != nil {
 		closeAll(c.lggr, conn)
 		return &emptypb.Empty{}, err
 	}
@@ -788,11 +794,11 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registryp
 
 func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *registrypb.RemoveRequest) (*emptypb.Empty, error) {
 	id := request.Id
+	c.mu.Lock()
 	if err := c.impl.Remove(ctx, id); err != nil {
+		c.mu.Unlock()
 		return &emptypb.Empty{}, err
 	}
-
-	c.mu.Lock()
 	c.removals++
 	c.removedAt[id] = c.removals
 	closers := c.published[id]

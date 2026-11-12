@@ -20,14 +20,15 @@ message CoordinatedEventList {
   repeated CoordinatedEvent events = 1;
 }
 
-// ConsensusQueueEvent holds minimal event metadata for queueing within the plugin, and one or more blob references
-// pointing to the rest.
+// ConsensusQueueEvent holds minimal event metadata for queueing and medianization within the plugin, and one or more
+// blob reference pointing to the rest.
 message ConsensusQueueEvent {
   string workflowID = 1;
   string triggerEventID = 2;
-
-  google.protobuf.Timestamp deadline = 3;
-  repeated CoordinatedEventBlobHandle blobs = 4;
+  google.protobuf.Timestamp observedAt = 3;
+  google.protobuf.Timestamp deadline = 4;
+  bytes blobHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
+  repeated CoordinatedEventBlobHandle blobs = 6;
 }
 
 // ConsensusQueueEventsBlobHandle refers to a CoordinatedEvent by blob handle and index within an CoordinatedEventList.
@@ -45,8 +46,9 @@ message ConsensusQueueEventList {
 message ConsensusQueueObservation {
   repeated ConsensusQueueEvent events = 1;
 
-  uint32 capacity = 4; // Global remaining capacity
-  map<string, uint32> workflow_capacities = 5; // Workflow-specific free executions
+  google.protobuf.Timestamp expiration = 2; //
+  uint32 capacity = 3; // Global remaining capacity
+  map<string, uint32> workflowCapacities = 4; // Workflow-specific free executions
 }
 
 // ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
@@ -56,7 +58,11 @@ message ConsensusQueueObservedEvents {
 
 // ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.
 message ConsensusQueueObservedEvent {
-  bytes nodeIds = 1; // []OracleID
-  repeated google.protobuf.Timestamp deadlines = 2;
-  repeated CoordinatedEventBlobHandle blobs = 3;
+  string workflowID = 1;
+  string triggerEventID = 2;
+
+  bytes nodeIds = 3; // []OracleID
+  repeated google.protobuf.Timestamp observedAts = 4;
+  repeated google.protobuf.Timestamp deadlines = 5;
+  repeated CoordinatedEventBlobHandle blobs = 6;
 }

@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
 	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
@@ -13,7 +14,7 @@ type StandardCapabilitiesDependencies struct {
 	Config             string
 	TelemetryService   TelemetryService
 	Store              KeyValueStore
-	CapabilityRegistry CapabilitiesRegistry
+	CapabilityRegistry registry.CapabilitiesRegistry
 	ErrorLog           ErrorLog
 	PipelineRunner     PipelineRunnerService
 	RelayerSet         RelayerSet

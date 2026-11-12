@@ -31,7 +31,7 @@ var ActionLatencyBucketBoundariesMs = []float64{
 	0, 5, 10, 25, 50, 75, 100,
 	250, 500, 750, 1000,
 	2500, 5000, 7500, 10000,
-	15000, 30000,
+	15000, 30000, 45000, 60000, 90000,
 }
 
 type actionInstrumentInfo struct {

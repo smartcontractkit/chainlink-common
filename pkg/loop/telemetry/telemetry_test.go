@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"errors"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,6 +13,7 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
+	"github.com/smartcontractkit/chainlink-common/pkg/config/build"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
@@ -88,6 +91,88 @@ func TestTelemetryConfig_beholderConfig(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, 0, disabled.MetricCardinalityLimit)
 	})
+
+	t.Run("loop ID resource attribute", func(t *testing.T) {
+		unset, err := TelemetryConfig{TelemetryAttributes: beholder.OtelAttributes{"foo": "bar"}}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		_, ok := resourceAttr(unset, AttrLoopID)
+		assert.False(t, ok, "no attribute when the host sent no loop ID")
+
+		set, err := TelemetryConfig{
+			TelemetryAttributes: beholder.OtelAttributes{"foo": "bar", AttrLoopID: "host-wide"},
+			TelemetryLoopID:     "Median.0xabc.42",
+		}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		got, ok := resourceAttr(set, AttrLoopID)
+		require.True(t, ok)
+		assert.Equal(t, "Median.0xabc.42", got, "per-LOOP identity wins over a host-wide attribute")
+		foo, _ := resourceAttr(set, "foo")
+		assert.Equal(t, "bar", foo)
+	})
+
+	t.Run("process resource attributes", func(t *testing.T) {
+		none, err := TelemetryConfig{}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		_, ok := resourceAttr(none, AttrProcessExecutableName)
+		assert.False(t, ok, "nothing added when the host sent no list")
+
+		cfg, err := TelemetryConfig{
+			TelemetryOTelResourceAttributes: []string{AttrProcessExecutableName, AttrServiceVersion, "bogus"},
+			TelemetryAttributes:             beholder.OtelAttributes{AttrServiceVersion: "host-version"},
+		}.beholderConfig(logger.Test(t), TracingConfig{}, nil)
+		require.NoError(t, err)
+		exe, ok := resourceAttr(cfg, AttrProcessExecutableName)
+		require.True(t, ok, "added without tracing enabled")
+		assert.Equal(t, build.Program, exe)
+		ver, _ := resourceAttr(cfg, AttrServiceVersion)
+		assert.Equal(t, "host-version", ver, "host-wide attribute wins")
+		_, ok = resourceAttr(cfg, AttrProcessPID)
+		assert.False(t, ok, "pid only when listed")
+	})
+}
+
+func TestProcessResourceAttributes(t *testing.T) {
+	attrs, unknown := ProcessResourceAttributes([]string{AttrProcessPID, AttrProcessExecutableName, AttrProcessPID, "nope"})
+	require.Len(t, attrs, 2, "duplicates added once")
+	assert.Equal(t, AttrProcessPID, string(attrs[0].Key))
+	assert.Equal(t, int64(os.Getpid()), attrs[0].Value.AsInt64())
+	assert.Equal(t, build.Program, attrs[1].Value.AsString())
+	assert.Equal(t, []string{"nope"}, unknown)
+}
+
+// resourceAttr returns the last value for key, matching how the resource merge resolves duplicates.
+func resourceAttr(cfg beholder.Config, key string) (string, bool) {
+	var v string
+	var ok bool
+	for _, kv := range cfg.ResourceAttributes {
+		if string(kv.Key) == key {
+			v, ok = kv.Value.AsString(), true
+		}
+	}
+	return v, ok
+}
+
+func TestNewLoopID(t *testing.T) {
+	long := strings.Repeat("a", 200)
+	for _, tt := range []struct {
+		name  string
+		kind  string
+		parts []string
+		want  string
+	}{
+		{"relayer", "Relayer", []string{"evm", "1"}, "Relayer.evm.1"},
+		{"median", "Median", []string{"0xAbC123", "42"}, "Median.0xAbC123.42"},
+		{"ocr2 plugin", "ccip-commit", []string{"0xabc", "7"}, "ccip-commit.0xabc.7"},
+		{"std caps job name sanitized", "StandardCapabilities", []string{"12", "cron trigger v1.2/x"}, "StandardCapabilities.12.cron_trigger_v1_2_x"},
+		{"dots in a segment never add separators", "Relayer", []string{"cosmos", "chain.v1"}, "Relayer.cosmos.chain_v1"},
+		{"unicode", "StandardCapabilities", []string{"3", "héllo"}, "StandardCapabilities.3.h_llo"},
+		{"empty segment", "Median", []string{"", "5"}, "Median._.5"},
+		{"truncated", "StandardCapabilities", []string{"9", long}, "StandardCapabilities.9." + long[:128]},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, NewLoopID(tt.kind, tt.parts...))
+		})
+	}
 }
 
 func detachedLogger() (logger.Logger, *observer.ObservedLogs) {

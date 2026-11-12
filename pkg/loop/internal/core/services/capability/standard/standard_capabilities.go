@@ -22,7 +22,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/oraclefactory"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/orgresolver"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/pipeline"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/settings"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/core/services/telemetry"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/goplugin"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
@@ -32,6 +31,8 @@ import (
 	relayersetpb "github.com/smartcontractkit/chainlink-common/pkg/loop/internal/pb/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/relayerset"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
+	settingsremote "github.com/smartcontractkit/chainlink-common/pkg/settings/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
@@ -190,7 +191,7 @@ func (c *StandardCapabilitiesClient) Initialise(ctx context.Context, dependencie
 	if creSettings != nil {
 		var creSettingsRes net.Resource
 		creSettingsID, creSettingsRes, err = c.ServeNew("CRESettings", func(s *grpc.Server) {
-			capabilitiespb.RegisterSettingsServer(s, settings.NewServer(creSettings))
+			settingsremote.RegisterSettingsServer(s, c.Logger, creSettings)
 		})
 		if err != nil {
 			c.CloseAll(resources...)
@@ -385,7 +386,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 	resources = append(resources, net.Resource{Closer: orgResolverConn, Name: "OrgResolver"})
 	orgResolver := orgresolver.NewClient(s.Logger, orgResolverConn)
 
-	var creSettings core.SettingsBroadcaster
+	var creSettings settings.Broadcaster
 	if request.CreSettingsId > 0 {
 		creSettingsConn, err := s.Dial(request.CreSettingsId)
 		if err != nil {
@@ -393,7 +394,7 @@ func (s *standardCapabilitiesServer) Initialise(ctx context.Context, request *ca
 			return nil, net.ErrConnDial{Name: "CRESettings", ID: request.CreSettingsId, Err: err}
 		}
 		resources = append(resources, net.Resource{Closer: creSettingsConn, Name: "CRESettings"})
-		creSettings = settings.NewClient(s.Logger, creSettingsConn)
+		creSettings = settingsremote.NewSettingsClient(s.Logger, creSettingsConn)
 	}
 
 	var triggerEventStoreClient capabilities.EventStore

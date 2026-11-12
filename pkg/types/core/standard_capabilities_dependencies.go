@@ -3,6 +3,7 @@ package core
 import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/services/orgresolver"
+	"github.com/smartcontractkit/chainlink-common/pkg/settings"
 )
 
 // StandardCapabilitiesDependencies contains all the dependencies injected for capability initialization.
@@ -20,7 +21,7 @@ type StandardCapabilitiesDependencies struct {
 	GatewayConnector   GatewayConnector
 	P2PKeystore        Keystore
 	OrgResolver        orgresolver.OrgResolver
-	CRESettings        SettingsBroadcaster
+	CRESettings        settings.Broadcaster
 	TriggerEventStore  capabilities.EventStore
 	// CapabilityDonID is the on-chain DON ID of the capability DON this plugin
 	// process was spawned for, resolved authoritatively by the host before

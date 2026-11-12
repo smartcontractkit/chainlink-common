@@ -1,20 +1,12 @@
 package core
 
-import "context"
+import "github.com/smartcontractkit/chainlink-common/pkg/settings"
 
-// SettingsBroadcaster provides a means of subscribing to a channel of [SettingsUpdate]s.
-// If an instance also implements SettingsBroacasterLocal, then Unsubscribe should be called before abandoning a channel.
-type SettingsBroadcaster interface {
-	Subscribe(context.Context) (<-chan SettingsUpdate, error)
-}
+// Deprecated: use [settings.Broadcaster].
+type SettingsBroadcaster = settings.Broadcaster
 
-// SettingsBroadcasterLocal is implemented by SettingsBroadcaster instances which are local and need an explicit signal
-// to unsubscribe from updates. Non-local instances automatically unsubscribe when the client/server pair are closed.
-type SettingsBroadcasterLocal interface {
-	Unsubscribe(<-chan SettingsUpdate)
-}
+// Deprecated: use [settings.LocalBroadcaster].
+type SettingsBroadcasterLocal = settings.LocalBroadcaster
 
-type SettingsUpdate struct {
-	Settings string // default format TOML
-	Hash     string // default sha256
-}
+// Deprecated: use [settings.Snapshot].
+type SettingsUpdate = settings.Snapshot

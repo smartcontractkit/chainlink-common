@@ -131,21 +131,9 @@ message ConfigForCapabilityRequest {
 
 message ConfigForCapabilityReply {
   loop.CapabilityConfig capability_config = 1;
-  // ocr3_contract_configs are the OCR3 configs as the node's oracles run them, with their digests, keyed like
-  // capability_config's ocr3_configs.
-  map<string, OCR3ContractConfig> ocr3_contract_configs = 2;
-}
-
-// OCR3ContractConfig is a libocr ContractConfig.
-message OCR3ContractConfig {
-  bytes config_digest = 1;
-  uint64 config_count = 2;
-  repeated bytes signers = 3;
-  repeated string transmitters = 4;
-  uint32 f = 5;
-  bytes onchain_config = 6;
-  uint64 offchain_config_version = 7;
-  bytes offchain_config = 8;
+  // Config digests keyed like capability_config.ocr3_configs. Kept out of
+  // OCR3Config because that message is also the onchain format.
+  map<string, bytes> ocr3_config_digests = 2;
 }
 
 message DONForCapabilityRequest {

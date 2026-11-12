@@ -1,6 +1,8 @@
 package remote
 
 import (
+	"io"
+
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
@@ -15,6 +17,7 @@ import (
 type ClientConn interface {
 	grpc.ClientConnInterface
 	registry.StateGetter
+	io.Closer
 }
 
 var _ ClientConn = (*grpc.ClientConn)(nil)

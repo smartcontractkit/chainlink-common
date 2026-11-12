@@ -37,6 +37,9 @@ func newCertFromFile(certFile string) (*x509.CertPool, error) {
 // NewHTTPClient creates a HTTP based beholder Client. Use NewClient to create a client from a Config which will pick
 // the best client type from the Config.
 func NewHTTPClient(cfg Config, otlploghttpNew otlploghttpFactory) (*Client, error) {
+	if cfg.ChipDomainEmittersEnabled {
+		return nil, errors.New("ChipDomainEmittersEnabled is not supported by the HTTP client")
+	}
 	baseResource, err := newOtelResource(cfg)
 	if err != nil {
 		return nil, err

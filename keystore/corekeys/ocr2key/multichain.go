@@ -5,7 +5,6 @@ import (
 	"cmp"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"slices"
@@ -15,86 +14,61 @@ import (
 	"github.com/smartcontractkit/chainlink-common/keystore/corekeys"
 )
 
-// A multichain onchain public key is the identity of an oracle that may sign for
-// more than one chain family: one length-prefixed entry per family, ordered by
-// family, rather than the bare key of whichever chain it happens to sign for.
-//
-// It lives here rather than beside any one consumer because it is a wire format
-// with several: whoever writes an OCR configuration encodes it, every oracle
-// joining that configuration reports its own in the same form, and libocr
-// compares the two byte for byte to decide membership. Two implementations of it
-// are two chances for an oracle to be silently unrecognised.
-//
-// The entry layout is: family (1 byte, corekeys.ChainType.Type), length (uint16,
-// little endian), key.
+// MultichainPublicKey is an oracle's onchain public keys, keyed by chain type, as an OCR config lists a signer: for
+// each chain type, its type, the key's length, then the key.
+type MultichainPublicKey map[string]ocrtypes.OnchainPublicKey
 
-// MarshalMultichainKeyBundle encodes the public keys of the bundles an oracle
-// signs with, keyed by chain family.
-func MarshalMultichainKeyBundle(bundles map[string]KeyBundle) (ocrtypes.OnchainPublicKey, error) {
-	pubKeys := make(map[string]ocrtypes.OnchainPublicKey, len(bundles))
-	for family, bundle := range bundles {
-		pubKeys[family] = ocrtypes.OnchainPublicKey(bundle.PublicKey())
-	}
-	return MarshalMultichainPublicKey(pubKeys)
-}
-
-// MarshalMultichainPublicKey encodes one entry per family.
-//
-// An unknown family is skipped rather than rejected, so a caller holding a key
-// for something this build does not know about still produces the entries it
-// does know - which is what the configurations already in use were written with.
-func MarshalMultichainPublicKey(keys map[string]ocrtypes.OnchainPublicKey) (ocrtypes.OnchainPublicKey, error) {
-	var entries [][]byte
-	for family, pubKey := range keys {
-		typ, err := corekeys.ChainType(family).Type()
+func (mpk MultichainPublicKey) MarshalBinary() ([]byte, error) {
+	var pubKeys [][]byte
+	for k, pubKey := range mpk {
+		typ, err := corekeys.ChainType(k).Type()
 		if err != nil {
 			// skipping unknown key type
 			continue
 		}
-		if len(pubKey) > math.MaxUint16 {
+		buf := new(bytes.Buffer)
+		if err = binary.Write(buf, binary.LittleEndian, typ); err != nil {
+			return nil, err
+		}
+		length := len(pubKey)
+		if length < 0 || length > math.MaxUint16 {
 			return nil, errors.New("pubKey doesn't fit into uint16")
 		}
-
-		entry := make([]byte, 0, 3+len(pubKey))
-		entry = append(entry, typ)
-		entry = binary.LittleEndian.AppendUint16(entry, uint16(len(pubKey)))
-		entry = append(entry, pubKey...)
-		entries = append(entries, entry)
+		if err = binary.Write(buf, binary.LittleEndian, uint16(length)); err != nil {
+			return nil, err
+		}
+		_, _ = buf.Write(pubKey)
+		pubKeys = append(pubKeys, buf.Bytes())
 	}
 	// sort keys based on encoded type to make encoding deterministic
-	slices.SortFunc(entries, func(a, b []byte) int { return cmp.Compare(a[0], b[0]) })
-	return bytes.Join(entries, nil), nil
+	slices.SortFunc(pubKeys, func(a, b []byte) int { return cmp.Compare(a[0], b[0]) })
+	return bytes.Join(pubKeys, nil), nil
 }
 
-// UnmarshalMultichainPublicKey reads the entries back, keyed by chain family.
-//
-// An unknown family is skipped for the same reason Marshal skips it: the rest of
-// the key is still this oracle's identity, and a family this build cannot verify
-// signatures for is one it has no use for anyway.
-func UnmarshalMultichainPublicKey(d []byte) (map[string]ocrtypes.OnchainPublicKey, error) {
-	m := map[string]ocrtypes.OnchainPublicKey{}
+func (mpk *MultichainPublicKey) UnmarshalBinary(d []byte) error {
+	keys := MultichainPublicKey{}
 	buf := bytes.NewReader(d)
 
 	for {
 		// type
 		typ, err := buf.ReadByte()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// length
 		var length uint16
 		err = binary.Read(buf, binary.LittleEndian, &length)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// value
 		pubKey := make([]byte, length)
 		n, err := buf.Read(pubKey)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if n != int(length) {
-			return nil, io.EOF
+			return io.EOF
 		}
 
 		k, err := corekeys.NewChainType(typ)
@@ -102,50 +76,13 @@ func UnmarshalMultichainPublicKey(d []byte) (map[string]ocrtypes.OnchainPublicKe
 			// skipping unknown key type
 			continue
 		}
-		m[string(k)] = pubKey
+		keys[string(k)] = pubKey
 
 		if buf.Len() == 0 {
 			break
 		}
 	}
 
-	return m, nil
-}
-
-// OnchainPublicKeyFor returns one family's entry from a multichain-encoded public
-// key.
-//
-// A key with no entry for the family is an error rather than an empty result: it
-// is a peer whose signatures cannot be checked, which is not the same as a peer
-// whose signature is wrong.
-func OnchainPublicKeyFor(family string, encoded ocrtypes.OnchainPublicKey) (ocrtypes.OnchainPublicKey, error) {
-	keys, err := UnmarshalMultichainPublicKey(encoded)
-	if err != nil {
-		return nil, err
-	}
-
-	key, ok := keys[family]
-	if !ok {
-		return nil, fmt.Errorf("onchain public key has no %s entry", family)
-	}
-
-	return key, nil
-}
-
-// VerifyOCR3 checks a peer's signature on an OCR3 report signed with its family key. publicKey is the peer's multichain
-// entry as the configuration carries it. Verifying needs no key of its own, so none is made: making one needs cgo for
-// some families.
-func VerifyOCR3(family string, publicKey ocrtypes.OnchainPublicKey, digest ocrtypes.ConfigDigest, seqNr uint64,
-	report ocrtypes.Report, signature []byte) bool {
-	factory, ok := keyBundleFactories[corekeys.ChainType(family)]
-	if !ok {
-		return false
-	}
-
-	key, err := OnchainPublicKeyFor(family, publicKey)
-	if err != nil {
-		return false
-	}
-
-	return factory.empty().Verify(key, OCR3ReportContext(digest, seqNr), report, signature)
+	*mpk = keys
+	return nil
 }

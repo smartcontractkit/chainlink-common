@@ -315,6 +315,36 @@ func TestCapabilityConfiguration_Unmarshal(t *testing.T) {
 		assert.Equal(t, uint64(5), cfg.OffchainConfigVersion)
 		assert.Equal(t, []byte("offchain"), cfg.OffchainConfig)
 		assert.Equal(t, uint64(3), cfg.ConfigCount)
+		assert.Equal(t, ocrtypes.ConfigDigest{}, cfg.ConfigDigest)
+	})
+
+	t.Run("Ocr3Configs digest computed when inputs are complete", func(t *testing.T) {
+		raw := mustMarshalProto(t, &capabilitiespb.CapabilityConfig{
+			Ocr3Configs: map[string]*capabilitiespb.OCR3Config{
+				"__default__": goldenOCR3Config(),
+				"secondary":   goldenOCR3Config(),
+			},
+		})
+		cc := CapabilityConfiguration{Config: raw, OCR3DigestInputs: goldenDigestInputs()}
+
+		got, err := cc.Unmarshal()
+		require.NoError(t, err)
+
+		assert.Equal(t, "000ea04ca28fc10c13978a86621f9482af243786610f399190c5c08a45c6a5ef", got.Ocr3Configs["__default__"].ConfigDigest.Hex())
+		assert.Equal(t, "000eb2866a27a4b97be0f290ce16e5c0c2e146126683eef561df40aec311303a", got.Ocr3Configs["secondary"].ConfigDigest.Hex())
+	})
+
+	t.Run("Ocr3Configs digest left zero when inputs are incomplete", func(t *testing.T) {
+		raw := mustMarshalProto(t, &capabilitiespb.CapabilityConfig{
+			Ocr3Configs: map[string]*capabilitiespb.OCR3Config{"__default__": goldenOCR3Config()},
+		})
+		in := goldenDigestInputs()
+		in.DonID = 0
+		cc := CapabilityConfiguration{Config: raw, OCR3DigestInputs: in}
+
+		got, err := cc.Unmarshal()
+		require.NoError(t, err)
+		assert.Equal(t, ocrtypes.ConfigDigest{}, got.Ocr3Configs["__default__"].ConfigDigest)
 	})
 
 	t.Run("Ocr3Configs normalizes transmitters to hex text", func(t *testing.T) {

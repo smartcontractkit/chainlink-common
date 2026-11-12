@@ -15,9 +15,9 @@ import (
 	registrypb "github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote/pb"
 )
 
-// TestConfigForCapability_OCR3ConfigsCrossAsTheNodeHasThem checks a process gets the node's OCR3 configs as they are,
-// digest and transmitter format included, so its oracles agree with the node's.
-func TestConfigForCapability_OCR3ConfigsCrossAsTheNodeHasThem(t *testing.T) {
+// TestConfigForCapability_OCR3ConfigDigestCrosses checks the node's OCR3 config digest reaches the caller, so its
+// oracles agree with the node's.
+func TestConfigForCapability_OCR3ConfigDigestCrosses(t *testing.T) {
 	want := ocrtypes.ContractConfig{
 		ConfigDigest:          ocrtypes.ConfigDigest{0, 14, 1},
 		ConfigCount:           2,
@@ -34,7 +34,7 @@ func TestConfigForCapability_OCR3ConfigsCrossAsTheNodeHasThem(t *testing.T) {
 
 	got, err := client.ConfigForCapability(t.Context(), "consensus@1.0.0-alpha", 1)
 	require.NoError(t, err)
-	assert.Equal(t, want, got.Ocr3Configs["__default__"])
+	assert.Equal(t, want.ConfigDigest, got.Ocr3Configs["__default__"].ConfigDigest)
 }
 
 type ocr3Registry struct {

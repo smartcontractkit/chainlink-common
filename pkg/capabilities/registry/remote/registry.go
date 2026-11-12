@@ -1,12 +1,14 @@
 package remote
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
-	"math"
 	"strings"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
@@ -30,6 +32,11 @@ type capabilitiesRegistryClient struct {
 	lggr      logger.Logger
 	transport Transport
 	grpc      registrypb.CapabilitiesRegistryClient
+
+	// mu is held across the remote Add/Remove so local serving follows the order the
+	// peer applied them.
+	mu        sync.Mutex
+	published map[string]io.Closer
 }
 
 func toDON(don *registrypb.DON) capabilities.DON {
@@ -175,21 +182,12 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	if res.CapabilityConfig.Ocr3Configs != nil {
 		ocr3Configs = make(map[string]ocrtypes.ContractConfig, len(res.CapabilityConfig.Ocr3Configs))
 		for key, pbCfg := range res.CapabilityConfig.Ocr3Configs {
-			ocr3Configs[key] = decodeOcr3Config(pbCfg)
+			cfg := decodeOcr3Config(pbCfg)
+			if d := res.Ocr3ConfigDigests[key]; len(d) == len(cfg.ConfigDigest) {
+				copy(cfg.ConfigDigest[:], d)
+			}
+			ocr3Configs[key] = cfg
 		}
-	}
-
-	for key, pbCfg := range res.Ocr3ContractConfigs {
-		cfg, err := decodeContractConfig(pbCfg)
-		if err != nil {
-			return capabilities.CapabilityConfiguration{}, fmt.Errorf("could not decode OCR3 config %s: %w", key, err)
-		}
-
-		if ocr3Configs == nil {
-			ocr3Configs = map[string]ocrtypes.ContractConfig{}
-		}
-
-		ocr3Configs[key] = cfg
 	}
 
 	specConfig, err := values.FromMapValueProto(res.CapabilityConfig.SpecConfig)
@@ -245,7 +243,6 @@ func decodeOcr3Config(pbCfg *pb.OCR3Config) ocrtypes.ContractConfig {
 		OnchainConfig:         pbCfg.OnchainConfig,
 		OffchainConfigVersion: pbCfg.OffchainConfigVersion,
 		OffchainConfig:        pbCfg.OffchainConfig,
-		// NOTE: ConfigDigest will be appended later by ContractConfigTracker.
 	}
 }
 
@@ -265,11 +262,7 @@ func (cr *capabilitiesRegistryClient) Get(ctx context.Context, ID string) (capab
 		return nil, err
 	}
 
-	client := NewBaseCapabilityClient(cr.lggr, conn)
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
-	return client, err
+	return ensureReachable(ctx, conn, NewBaseCapabilityClient(cr.lggr, conn))
 }
 
 func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string) (capabilities.TriggerCapability, error) {
@@ -288,11 +281,7 @@ func (cr *capabilitiesRegistryClient) GetTrigger(ctx context.Context, ID string)
 		return nil, err
 	}
 
-	client := NewTriggerCapabilityClient(cr.lggr, conn)
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
-	return client, err
+	return ensureReachable(ctx, conn, NewTriggerCapabilityClient(cr.lggr, conn))
 }
 
 func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID string) (capabilities.ExecutableCapability, error) {
@@ -311,11 +300,20 @@ func (cr *capabilitiesRegistryClient) GetExecutable(ctx context.Context, ID stri
 		return nil, err
 	}
 
-	client := NewExecutableCapabilityClient(cr.lggr, conn)
+	return ensureReachable(ctx, conn, NewExecutableCapabilityClient(cr.lggr, conn))
+}
+
+// ensureReachable checks the capability answers within a reduced timeout, closing its
+// connection when it does not.
+func ensureReachable[T capabilities.BaseCapability](ctx context.Context, conn ClientConn, client T) (T, error) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
-	_, err = client.Info(ctx) // ensure the capability is reachable, with a reduced timeout
-	return client, err
+	if _, err := client.Info(ctx); err != nil {
+		_ = conn.Close()
+		var zero T
+		return zero, err
+	}
+	return client, nil
 }
 
 func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.BaseCapability, error) {
@@ -324,14 +322,19 @@ func (cr *capabilitiesRegistryClient) List(ctx context.Context) ([]capabilities.
 		return nil, err
 	}
 
-	var clients []capabilities.BaseCapability
+	var (
+		clients []capabilities.BaseCapability
+		conns   []io.Closer
+	)
 	for i, loc := range locatorsFromListReply(res) {
 		conn, err := cr.transport.Dial(ctx, fmt.Sprintf("List[%d]", i), func(context.Context) (Locator, error) {
 			return loc, nil
 		})
 		if err != nil {
+			closeAll(cr.lggr, conns...)
 			return nil, err
 		}
+		conns = append(conns, conn)
 		clients = append(clients, NewBaseCapabilityClient(cr.lggr, conn))
 	}
 
@@ -344,36 +347,47 @@ func (cr *capabilitiesRegistryClient) Add(ctx context.Context, c capabilities.Ba
 		return err
 	}
 
-	loc, cRes, err := cr.transport.Publish(info.ID, func(s *grpc.Server) {
+	loc, res, err := cr.transport.Publish(info.ID, func(s *grpc.Server) {
 		RegisterCapabilityServer(s, cr.lggr, c, info.CapabilityType)
 	})
 	if err != nil {
 		return err
 	}
 
+	cr.mu.Lock()
 	_, err = cr.grpc.Add(ctx, &registrypb.AddRequest{
 		CapabilityID: loc.LegacyHandle,
 		Target:       loc.Target,
 		Type:         ExecuteAPITypeFor(info.CapabilityType),
 	})
 	if err != nil {
-		cRes.Close()
+		cr.mu.Unlock()
+		closeAll(cr.lggr, res)
 		return err
+	}
+	prev, replaced := cr.published[info.ID]
+	cr.published[info.ID] = res
+	cr.mu.Unlock()
+
+	if replaced {
+		closeAll(cr.lggr, prev)
 	}
 	return nil
 }
 
+// Remove stops serving ID locally even if the remote removal fails: the caller has
+// asked for it to stop, and the peer may already have dropped it.
 func (cr *capabilitiesRegistryClient) Remove(ctx context.Context, ID string) error {
-	req := &registrypb.RemoveRequest{
-		Id: ID,
-	}
+	cr.mu.Lock()
+	_, err := cr.grpc.Remove(ctx, &registrypb.RemoveRequest{Id: ID})
+	res, ok := cr.published[ID]
+	delete(cr.published, ID)
+	cr.mu.Unlock()
 
-	_, err := cr.grpc.Remove(ctx, req)
-	if err != nil {
-		return err
+	if ok {
+		closeAll(cr.lggr, res)
 	}
-
-	return nil
+	return err
 }
 
 // NewCapabilitiesRegistryClient returns a CapabilitiesRegistry backed by the service
@@ -384,6 +398,7 @@ func NewCapabilitiesRegistryClient(lggr logger.Logger, cc grpc.ClientConnInterfa
 		lggr:      logger.Named(lggr, "CapabilitiesRegistryClient"),
 		transport: t,
 		grpc:      registrypb.NewCapabilitiesRegistryClient(cc),
+		published: map[string]io.Closer{},
 	}
 }
 
@@ -394,9 +409,63 @@ type capabilitiesRegistryServer struct {
 	lggr      logger.Logger
 	transport Transport
 	impl      registry.CapabilitiesRegistry
+
+	// mu is held across impl.Add and impl.Remove so a Remove only closes publications
+	// of the capability it removed, never those of one added in its place.
+	mu        sync.Mutex
+	published map[string][]io.Closer
+	// removals counts Remove calls, and removedAt records the count at each ID's latest
+	// removal, so a lookup that raced a Remove can tell its capability is gone.
+	removals  uint64
+	removedAt map[string]uint64
+}
+
+var errRemovedDuringLookup = errors.New("capability was removed during lookup")
+
+func (c *capabilitiesRegistryServer) removalCount() uint64 {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.removals
+}
+
+// publish serves capability afresh on every call: a locator may only be dialed once
+// (a go-plugin broker ID, for one), so lookups cannot share one.
+func (c *capabilitiesRegistryServer) publish(id string, capability capabilities.BaseCapability, typ capabilities.CapabilityType) (Locator, io.Closer, error) {
+	return c.transport.Publish(id, func(s *grpc.Server) {
+		RegisterCapabilityServer(s, c.lggr, capability, typ)
+	})
+}
+
+// track records res under id so Remove can close it. since is the removal count read
+// before impl was consulted; if id has been removed after that, res is closed instead.
+func (c *capabilitiesRegistryServer) track(since uint64, id string, res io.Closer) bool {
+	c.mu.Lock()
+	removed := c.removedAt[id] > since
+	if !removed {
+		c.published[id] = append(c.published[id], res)
+	}
+	c.mu.Unlock()
+
+	if removed {
+		closeAll(c.lggr, res)
+	}
+	return !removed
+}
+
+func (c *capabilitiesRegistryServer) publishTracked(since uint64, id string, capability capabilities.BaseCapability, typ capabilities.CapabilityType) (Locator, error) {
+	loc, res, err := c.publish(id, capability, typ)
+	if err != nil {
+		return Locator{}, err
+	}
+	if !c.track(since, id, res) {
+		return Locator{}, fmt.Errorf("%s: %w", id, errRemovedDuringLookup)
+	}
+	return loc, nil
 }
 
 func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registrypb.GetRequest) (*registrypb.GetReply, error) {
+	since := c.removalCount()
+
 	capability, err := c.impl.Get(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -407,9 +476,7 @@ func (c *capabilitiesRegistryServer) Get(ctx context.Context, request *registryp
 		return nil, err
 	}
 
-	loc, _, err := c.transport.Publish("Get", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
-	})
+	loc, err := c.publishTracked(since, info.ID, capability, info.CapabilityType)
 	if err != nil {
 		return nil, err
 	}
@@ -481,9 +548,16 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	ccp.LocalOnly = cc.LocalOnly
 
 	// Handle OCR3 configs
+	var ocr3Digests map[string][]byte
 	if cc.Ocr3Configs != nil {
 		ccp.Ocr3Configs = make(map[string]*pb.OCR3Config, len(cc.Ocr3Configs))
 		for key, cfg := range cc.Ocr3Configs {
+			if cfg.ConfigDigest != (ocrtypes.ConfigDigest{}) {
+				if ocr3Digests == nil {
+					ocr3Digests = make(map[string][]byte, len(cc.Ocr3Configs))
+				}
+				ocr3Digests[key] = bytes.Clone(cfg.ConfigDigest[:])
+			}
 			signers := make([][]byte, len(cfg.Signers))
 			for i, s := range cfg.Signers {
 				signers[i] = []byte(s)
@@ -503,7 +577,6 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				OnchainConfig:         cfg.OnchainConfig,
 				OffchainConfigVersion: cfg.OffchainConfigVersion,
 				OffchainConfig:        cfg.OffchainConfig,
-				// NOTE: ConfigDigest is not passed in the proto, nor stored directly onchain.
 			}
 		}
 	}
@@ -513,69 +586,9 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 		ccp.SpecConfig = values.Proto(cc.SpecConfig).GetMapValue()
 	}
 
-	reply := &registrypb.ConfigForCapabilityReply{CapabilityConfig: ccp}
-	if cc.Ocr3Configs != nil {
-		reply.Ocr3ContractConfigs = make(map[string]*registrypb.OCR3ContractConfig, len(cc.Ocr3Configs))
-		for key, cfg := range cc.Ocr3Configs {
-			reply.Ocr3ContractConfigs[key] = encodeContractConfig(cfg)
-		}
-	}
-
-	return reply, nil
-}
-
-func encodeContractConfig(cc ocrtypes.ContractConfig) *registrypb.OCR3ContractConfig {
-	signers := make([][]byte, len(cc.Signers))
-	for i, s := range cc.Signers {
-		signers[i] = s
-	}
-
-	transmitters := make([]string, len(cc.Transmitters))
-	for i, t := range cc.Transmitters {
-		transmitters[i] = string(t)
-	}
-
-	return &registrypb.OCR3ContractConfig{
-		ConfigDigest:          cc.ConfigDigest[:],
-		ConfigCount:           cc.ConfigCount,
-		Signers:               signers,
-		Transmitters:          transmitters,
-		F:                     uint32(cc.F),
-		OnchainConfig:         cc.OnchainConfig,
-		OffchainConfigVersion: cc.OffchainConfigVersion,
-		OffchainConfig:        cc.OffchainConfig,
-	}
-}
-
-func decodeContractConfig(cc *registrypb.OCR3ContractConfig) (ocrtypes.ContractConfig, error) {
-	digest, err := ocrtypes.BytesToConfigDigest(cc.ConfigDigest)
-	if err != nil {
-		return ocrtypes.ContractConfig{}, fmt.Errorf("invalid config digest: %w", err)
-	}
-
-	if cc.F > math.MaxUint8 {
-		return ocrtypes.ContractConfig{}, fmt.Errorf("f value %d exceeds uint8 max", cc.F)
-	}
-
-	signers := make([]ocrtypes.OnchainPublicKey, len(cc.Signers))
-	for i, s := range cc.Signers {
-		signers[i] = s
-	}
-
-	transmitters := make([]ocrtypes.Account, len(cc.Transmitters))
-	for i, t := range cc.Transmitters {
-		transmitters[i] = ocrtypes.Account(t)
-	}
-
-	return ocrtypes.ContractConfig{
-		ConfigDigest:          digest,
-		ConfigCount:           cc.ConfigCount,
-		Signers:               signers,
-		Transmitters:          transmitters,
-		F:                     uint8(cc.F),
-		OnchainConfig:         cc.OnchainConfig,
-		OffchainConfigVersion: cc.OffchainConfigVersion,
-		OffchainConfig:        cc.OffchainConfig,
+	return &registrypb.ConfigForCapabilityReply{
+		CapabilityConfig:  ccp,
+		Ocr3ConfigDigests: ocr3Digests,
 	}, nil
 }
 
@@ -654,6 +667,8 @@ func (c *capabilitiesRegistryServer) nodeReplyFromNode(node capabilities.Node) *
 }
 
 func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *registrypb.GetTriggerRequest) (*registrypb.GetTriggerReply, error) {
+	since := c.removalCount()
+
 	capability, err := c.impl.GetTrigger(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -670,9 +685,7 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *re
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	loc, _, err := c.transport.Publish("GetTrigger", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, capabilities.CapabilityTypeTrigger)
-	})
+	loc, err := c.publishTracked(since, info.ID, capability, capabilities.CapabilityTypeTrigger)
 	if err != nil {
 		return nil, err
 	}
@@ -684,6 +697,8 @@ func (c *capabilitiesRegistryServer) GetTrigger(ctx context.Context, request *re
 }
 
 func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request *registrypb.GetExecutableRequest) (*registrypb.GetExecutableReply, error) {
+	since := c.removalCount()
+
 	capability, err := c.impl.GetExecutable(ctx, request.Id)
 	if err != nil {
 		return nil, err
@@ -700,9 +715,7 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 		return nil, fmt.Errorf("capability with id: %s does not satisfy the capability interface", request.Id)
 	}
 
-	loc, _, err := c.transport.Publish("GetExecutable", func(s *grpc.Server) {
-		RegisterCapabilityServer(s, c.lggr, capability, info.CapabilityType)
-	})
+	loc, err := c.publishTracked(since, info.ID, capability, info.CapabilityType)
 	if err != nil {
 		return nil, err
 	}
@@ -714,31 +727,45 @@ func (c *capabilitiesRegistryServer) GetExecutable(ctx context.Context, request 
 }
 
 func (c *capabilitiesRegistryServer) List(ctx context.Context, _ *emptypb.Empty) (*registrypb.ListReply, error) {
+	since := c.removalCount()
+
 	capabilities, err := c.impl.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		locs      []Locator
-		resources []io.Closer
-	)
+	type publication struct {
+		id  string
+		loc Locator
+		res io.Closer
+	}
+	var pubs []publication
+	closePubs := func() {
+		for _, p := range pubs {
+			closeAll(c.lggr, p.res)
+		}
+	}
 	for _, cap := range capabilities {
 		info, err := cap.Info(ctx)
 		if err != nil {
-			c.closeAll(resources...)
+			closePubs()
 			return nil, err
 		}
 
-		loc, res, err := c.transport.Publish("List", func(s *grpc.Server) {
-			RegisterCapabilityServer(s, c.lggr, cap, info.CapabilityType)
-		})
+		loc, res, err := c.publish(info.ID, cap, info.CapabilityType)
 		if err != nil {
-			c.closeAll(resources...)
+			closePubs()
 			return nil, err
 		}
-		resources = append(resources, res)
-		locs = append(locs, loc)
+		pubs = append(pubs, publication{id: info.ID, loc: loc, res: res})
+	}
+
+	// A capability removed while listing is left out rather than failing the list.
+	var locs []Locator
+	for _, p := range pubs {
+		if c.track(since, p.id, p.res) {
+			locs = append(locs, p.loc)
+		}
 	}
 
 	return listReplyFor(locs), nil
@@ -763,20 +790,34 @@ func (c *capabilitiesRegistryServer) Add(ctx context.Context, request *registryp
 	case registrypb.ExecuteAPIType_EXECUTE_API_TYPE_COMBINED:
 		client = NewCombinedCapabilityClient(c.lggr, conn)
 	default:
+		closeAll(c.lggr, conn)
 		return nil, fmt.Errorf("unknown execute type %d", request.Type)
 	}
 
-	if err := c.impl.Add(ctx, client); err != nil {
+	c.mu.Lock()
+	err = c.impl.Add(ctx, client)
+	c.mu.Unlock()
+	if err != nil {
+		closeAll(c.lggr, conn)
 		return &emptypb.Empty{}, err
 	}
 	return &emptypb.Empty{}, nil
 }
 
 func (c *capabilitiesRegistryServer) Remove(ctx context.Context, request *registrypb.RemoveRequest) (*emptypb.Empty, error) {
-	err := c.impl.Remove(ctx, request.Id)
-	if err != nil {
+	id := request.Id
+	c.mu.Lock()
+	if err := c.impl.Remove(ctx, id); err != nil {
+		c.mu.Unlock()
 		return &emptypb.Empty{}, err
 	}
+	c.removals++
+	c.removedAt[id] = c.removals
+	closers := c.published[id]
+	delete(c.published, id)
+	c.mu.Unlock()
+
+	closeAll(c.lggr, closers...)
 	return &emptypb.Empty{}, nil
 }
 
@@ -792,13 +833,15 @@ func NewCapabilitiesRegistryServer(lggr logger.Logger, i registry.CapabilitiesRe
 		lggr:      logger.Named(lggr, "CapabilitiesRegistryServer"),
 		transport: t,
 		impl:      i,
+		published: map[string][]io.Closer{},
+		removedAt: map[string]uint64{},
 	}
 }
 
-func (c *capabilitiesRegistryServer) closeAll(closers ...io.Closer) {
+func closeAll(lggr logger.Logger, closers ...io.Closer) {
 	for _, cl := range closers {
 		if err := cl.Close(); err != nil {
-			c.lggr.Errorw("Error closing served capability", "err", err)
+			lggr.Errorw("Error closing capability resource", "err", err)
 		}
 	}
 }

@@ -32,6 +32,9 @@ type DON struct {
 
 type CapabilityConfiguration struct {
 	Config []byte
+	// When complete, Unmarshal populates the ConfigDigest of each OCR3 config;
+	// otherwise digests are left zero.
+	OCR3DigestInputs
 }
 
 func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfiguration, error) {
@@ -111,7 +114,15 @@ func (c CapabilityConfiguration) Unmarshal() (capabilities.CapabilityConfigurati
 			if pbCfg.F > math.MaxUint8 {
 				return capabilities.CapabilityConfiguration{}, fmt.Errorf("OCR3Config %q: F value %d exceeds uint8 max", name, pbCfg.F)
 			}
+			var digest ocrtypes.ConfigDigest
+			if c.OCR3DigestInputs.complete() {
+				digest, err = OCR3ConfigDigest(c.OCR3DigestInputs, name, pbCfg)
+				if err != nil {
+					return capabilities.CapabilityConfiguration{}, fmt.Errorf("OCR3Config %q: failed to compute config digest: %w", name, err)
+				}
+			}
 			ocr3Configs[name] = ocrtypes.ContractConfig{
+				ConfigDigest:          digest,
 				ConfigCount:           pbCfg.ConfigCount,
 				Signers:               signers,
 				Transmitters:          transmitters,
@@ -466,7 +477,8 @@ func DeepCopyRegistryMetadata(lr *RegistryMetadata) RegistryMetadata {
 		capCfgs := make(map[string]CapabilityConfiguration, len(don.CapabilityConfigurations))
 		for capID, capCfg := range don.CapabilityConfigurations {
 			capCfgs[capID] = CapabilityConfiguration{
-				Config: bytes.Clone(capCfg.Config),
+				Config:           bytes.Clone(capCfg.Config),
+				OCR3DigestInputs: capCfg.OCR3DigestInputs,
 			}
 		}
 		lrCopy.IDsToDONs[id] = DON{

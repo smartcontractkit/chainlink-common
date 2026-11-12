@@ -96,10 +96,10 @@ type SecretsRequestParams struct {
 	// Attestation, it is authorization input and is excluded from the response hash.
 	SignedComputeRequests []SignedComputeRequest `json:"signed_compute_requests,omitempty"`
 
-	// ShardIndex selects which gateway DON shard relays this request. It is gateway
-	// routing metadata: the relay DON does not read it and it is excluded from
-	// the response hash. A request that omits it defaults to shard 0.
-	ShardIndex int `json:"shard_index,omitempty"`
+	// Name and shard index of the workflow DON that started current execution.
+	// Need to match the name and index configured on Gateway nodes.
+	WorkflowDonName       string `json:"workflow_don_name,omitempty"`
+	WorkflowDONShardIndex int    `json:"workflow_don_shard_index,omitempty"`
 }
 
 // SecretEntry is a single secret in the relay DON's response.
@@ -234,8 +234,10 @@ type CapabilityRequestParams struct {
 	EnclaveConfig *EnclaveConfig `json:"enclave_config,omitempty"`
 	Attestation   string         `json:"attestation,omitempty"`
 
-	// ShardIndex selects which gateway DON shard relays this request.
-	ShardIndex int `json:"shard_index,omitempty"`
+	// Name and shard index of the workflow DON that started current execution.
+	// Need to match the name and index configured on Gateway nodes.
+	WorkflowDonName       string `json:"workflow_don_name,omitempty"`
+	WorkflowDONShardIndex int    `json:"workflow_don_shard_index,omitempty"`
 }
 
 // CapabilityResponseResult is the JSON-RPC result for "confidential.capability.execute".

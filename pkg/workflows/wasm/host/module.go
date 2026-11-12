@@ -590,7 +590,7 @@ func (m *module) Execute(ctx context.Context, req *sdkpb.ExecuteRequest, executo
 	start := time.Now()
 	result, err := runWasm(ctx, m, req, setMaxResponseSize, m.linkV2, executor, timeout)
 	if result != nil {
-		result.ComputeDurationMs = proto.Int64(time.Since(start).Milliseconds())
+		result.ComputeDurationMs = new(time.Since(start).Milliseconds())
 	}
 	return result, err
 }
@@ -746,9 +746,8 @@ func runWasm[I, O proto.Message](
 	}
 
 	// Epoch interrupts can precede the wall-clock deadline because the ticker is shared.
-	var trap *wasmtime.Trap
 	epochExpired := false
-	if errors.As(err, &trap) {
+	if trap, ok := errors.AsType[*wasmtime.Trap](err); ok {
 		code := trap.Code()
 		epochExpired = code != nil && *code == wasmtime.Interrupt
 	}

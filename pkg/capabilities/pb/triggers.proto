@@ -13,14 +13,56 @@ message CoordinatedEvent {
   int64 triggerIndex = 3;
   google.protobuf.Timestamp observedAt = 4;
   google.protobuf.Timestamp deadline = 5;
-  uint64 sequenceNumber = 6;
-  capabilities.TriggerResponse event = 7;
+  capabilities.TriggerResponse event = 6;
 }
 
+message CoordinatedEventList {
+  repeated CoordinatedEvent events = 1;
+}
+
+// ConsensusQueueEvent holds minimal event metadata for queueing and medianization within the plugin, and one or more
+// blob reference pointing to the rest.
+message ConsensusQueueEvent {
+  string workflowID = 1;
+  string triggerEventID = 2;
+  google.protobuf.Timestamp observedAt = 3;
+  google.protobuf.Timestamp deadline = 4;
+  bytes blobHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
+  repeated CoordinatedEventBlobHandle blobs = 6;
+}
+
+// ConsensusQueueEventsBlobHandle refers to a CoordinatedEvent by blob handle and index within an CoordinatedEventList.
+message CoordinatedEventBlobHandle {
+  bytes handle = 1;
+  uint32 index = 2;
+}
+
+// ConsensusQueueEvents holds a list of events.
+message ConsensusQueueEventList {
+  repeated ConsensusQueueEvent events = 1;
+}
+
+// ConsensusQueueObservation is a ReportingPlugin observation of events and capacity meta-data.
 message ConsensusQueueObservation {
-  repeated CoordinatedEvent events = 1;
+  repeated ConsensusQueueEvent events = 1;
+
+  google.protobuf.Timestamp expiration = 2; //
+  uint32 capacity = 3; // Global remaining capacity
+  map<string, uint32> workflowCapacities = 4; // Workflow-specific free executions
 }
 
-message ConsensusQueueReport {
-  repeated CoordinatedEvent events = 1;
+// ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
+message ConsensusQueueObservedEvents {
+  map<string, ConsensusQueueObservedEvent> observations = 1;
+}
+
+// ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.
+message ConsensusQueueObservedEvent {
+  string workflowID = 1;
+  string triggerEventID = 2;
+
+  bytes nodeIds = 3; // []OracleID
+  repeated google.protobuf.Timestamp observedAts = 4;
+  repeated google.protobuf.Timestamp deadlines = 5;
+  repeated CoordinatedEventBlobHandle blobs = 6;
 }

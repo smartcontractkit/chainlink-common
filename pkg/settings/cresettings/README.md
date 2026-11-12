@@ -462,7 +462,8 @@ flowchart
     CentralTriggerQueue.Drain
 
 %% TODO placating test for now since this flowchart no longer renders
-    DonTimeSequencedTimestampsActivePeriod 
+    DonTimeSequencedTimestampsActivePeriod
+    ConsensusQueueExpirationInterval
 
 %%  standard capabilities job startup is likewise its own entry point
     standardcapabilities.Delegate.NewServices

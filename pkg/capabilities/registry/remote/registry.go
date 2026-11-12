@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -180,7 +181,11 @@ func (cr *capabilitiesRegistryClient) ConfigForCapability(ctx context.Context, c
 	if res.CapabilityConfig.Ocr3Configs != nil {
 		ocr3Configs = make(map[string]ocrtypes.ContractConfig, len(res.CapabilityConfig.Ocr3Configs))
 		for key, pbCfg := range res.CapabilityConfig.Ocr3Configs {
-			ocr3Configs[key] = decodeOcr3Config(pbCfg)
+			cfg := decodeOcr3Config(pbCfg)
+			if d := res.Ocr3ConfigDigests[key]; len(d) == len(cfg.ConfigDigest) {
+				copy(cfg.ConfigDigest[:], d)
+			}
+			ocr3Configs[key] = cfg
 		}
 	}
 
@@ -237,7 +242,6 @@ func decodeOcr3Config(pbCfg *pb.OCR3Config) ocrtypes.ContractConfig {
 		OnchainConfig:         pbCfg.OnchainConfig,
 		OffchainConfigVersion: pbCfg.OffchainConfigVersion,
 		OffchainConfig:        pbCfg.OffchainConfig,
-		// NOTE: ConfigDigest will be appended later by ContractConfigTracker.
 	}
 }
 
@@ -543,9 +547,16 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	ccp.LocalOnly = cc.LocalOnly
 
 	// Handle OCR3 configs
+	var ocr3Digests map[string][]byte
 	if cc.Ocr3Configs != nil {
 		ccp.Ocr3Configs = make(map[string]*pb.OCR3Config, len(cc.Ocr3Configs))
 		for key, cfg := range cc.Ocr3Configs {
+			if cfg.ConfigDigest != (ocrtypes.ConfigDigest{}) {
+				if ocr3Digests == nil {
+					ocr3Digests = make(map[string][]byte, len(cc.Ocr3Configs))
+				}
+				ocr3Digests[key] = bytes.Clone(cfg.ConfigDigest[:])
+			}
 			signers := make([][]byte, len(cfg.Signers))
 			for i, s := range cfg.Signers {
 				signers[i] = []byte(s)
@@ -565,7 +576,6 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 				OnchainConfig:         cfg.OnchainConfig,
 				OffchainConfigVersion: cfg.OffchainConfigVersion,
 				OffchainConfig:        cfg.OffchainConfig,
-				// NOTE: ConfigDigest is not passed in the proto, nor stored directly onchain.
 			}
 		}
 	}
@@ -576,7 +586,8 @@ func (c *capabilitiesRegistryServer) ConfigForCapability(ctx context.Context, re
 	}
 
 	return &registrypb.ConfigForCapabilityReply{
-		CapabilityConfig: ccp,
+		CapabilityConfig:  ccp,
+		Ocr3ConfigDigests: ocr3Digests,
 	}, nil
 }
 

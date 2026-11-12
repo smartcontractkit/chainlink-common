@@ -508,6 +508,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3Configs(t *testing.T) 
 	expectedCapConfig := capabilities.CapabilityConfiguration{
 		Ocr3Configs: map[string]ocrtypes.ContractConfig{
 			"__default__": {
+				ConfigDigest:          ocrtypes.ConfigDigest{0x00, 0x0e, 0xaa, 0xbb},
 				ConfigCount:           5,
 				Signers:               []ocrtypes.OnchainPublicKey{{0x01, 0x02}, {0x03, 0x04}},
 				Transmitters:          []ocrtypes.Account{"abcd", "def0"},

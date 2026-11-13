@@ -1,4 +1,4 @@
-package ocr
+package network
 
 import (
 	"context"
@@ -16,74 +16,32 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/smartcontractkit/libocr/commontypes"
-	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/network/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
 
 func TestConnect(t *testing.T) {
 	t.Parallel()
-	host := newFakeHost()
-	node := connect(t, serve(t, host))
-
-	assert.Equal(t, "12D3KooWPeer", node.BinaryNetworkEndpointFactory.PeerID())
-	assert.Equal(t, host.offchainPublicKey, node.OffchainKeyring.OffchainPublicKey())
-	assert.Equal(t, host.configPublicKey, node.OffchainKeyring.ConfigEncryptionPublicKey())
-	assert.Equal(t, host.onchainPublicKey, node.OnchainKeyring.PublicKey())
-	assert.Equal(t, host.maxSignatureLength, node.OnchainKeyring.MaxSignatureLength())
-}
-
-func TestConnect_Version(t *testing.T) {
-	t.Parallel()
 	conn := serve(t, newFakeHost())
 
-	_, err := Connect(t.Context(), logger.Test(t), conn, "12D3KooWPeer", Config{Version: VersionLatest}, noVerify)
+	factory, err := Connect(logger.Test(t), conn, "12D3KooWPeer", Config{Version: VersionLatest})
 	require.NoError(t, err)
+	assert.Equal(t, "12D3KooWPeer", factory.PeerID())
 
-	_, err = Connect(t.Context(), logger.Test(t), conn, "12D3KooWPeer", Config{Version: latestVersion + 1}, noVerify)
-	require.ErrorContains(t, err, "unknown OCR version")
-}
-
-func TestKeyring(t *testing.T) {
-	t.Parallel()
-	var verified ocr3types.ReportWithInfo[string]
-	verify := func(_ ocrtypes.OnchainPublicKey, _ ocrtypes.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[string], _ []byte) bool {
-		verified = r
-		return true
-	}
-
-	node, err := Connect(t.Context(), logger.Test(t), serve(t, newFakeHost()), "12D3KooWPeer", Config{}, verify)
-	require.NoError(t, err)
-
-	digest := ocrtypes.ConfigDigest{1}
-	report := ocr3types.ReportWithInfo[string]{Report: []byte("report"), Info: "evm"}
-
-	sig, err := node.OnchainKeyring.Sign(digest, 7, report)
-	require.NoError(t, err)
-	assert.Equal(t, []byte("onchain:report:evm"), sig)
-
-	assert.True(t, node.OnchainKeyring.Verify(nil, digest, 7, report, sig))
-	assert.Equal(t, report, verified, "signatures are verified in the process")
-
-	sig, err = node.OffchainKeyring.OffchainSign([]byte("msg"))
-	require.NoError(t, err)
-	assert.Equal(t, []byte("offchain:msg"), sig)
-
-	secret, err := node.OffchainKeyring.ConfigDiffieHellman([32]byte{9})
-	require.NoError(t, err)
-	assert.Equal(t, [32]byte{10}, secret)
+	_, err = Connect(logger.Test(t), conn, "12D3KooWPeer", Config{Version: latestVersion + 1})
+	require.ErrorContains(t, err, "unknown OCR network version")
 }
 
 func TestEndpoint(t *testing.T) {
 	t.Parallel()
 	host := newFakeHost()
-	node := connect(t, serve(t, host))
+	factory := connect(t, serve(t, host))
 
 	digest := ocrtypes.ConfigDigest{2}
 	limits := ocrtypes.BinaryNetworkEndpointLimits{MaxMessageLength: 10, MessagesRatePerOracle: 1.5}
-	endpoint, err := node.BinaryNetworkEndpointFactory.NewEndpoint(digest, []string{"a", "b"}, nil, 1, limits)
+	endpoint, err := factory.NewEndpoint(digest, []string{"a", "b"}, nil, 1, limits)
 	require.NoError(t, err)
 	require.NoError(t, endpoint.Start())
 
@@ -108,10 +66,10 @@ func TestEndpoint(t *testing.T) {
 func TestEndpoint_LargeMessages(t *testing.T) {
 	t.Parallel()
 	host := newFakeHost()
-	node := connect(t, serve(t, host))
+	factory := connect(t, serve(t, host))
 
 	digest := ocrtypes.ConfigDigest{6}
-	endpoint, err := node.BinaryNetworkEndpointFactory.NewEndpoint(digest, nil, nil, 1, ocrtypes.BinaryNetworkEndpointLimits{})
+	endpoint, err := factory.NewEndpoint(digest, nil, nil, 1, ocrtypes.BinaryNetworkEndpointLimits{})
 	require.NoError(t, err)
 	require.NoError(t, endpoint.Start())
 	t.Cleanup(func() { _ = endpoint.Close() })
@@ -129,9 +87,9 @@ func TestEndpoint_HostErrorsAreReturnedByNewEndpoint(t *testing.T) {
 	t.Parallel()
 	host := newFakeHost()
 	host.newEndpointErr = errors.New("already open")
-	node := connect(t, serve(t, host))
+	factory := connect(t, serve(t, host))
 
-	_, err := node.BinaryNetworkEndpointFactory.NewEndpoint(ocrtypes.ConfigDigest{3}, nil, nil, 1, ocrtypes.BinaryNetworkEndpointLimits{})
+	_, err := factory.NewEndpoint(ocrtypes.ConfigDigest{3}, nil, nil, 1, ocrtypes.BinaryNetworkEndpointLimits{})
 	require.ErrorContains(t, err, "already open")
 }
 
@@ -139,10 +97,10 @@ func TestEndpoint_HostClosesEndpointWhenStreamBreaks(t *testing.T) {
 	t.Parallel()
 	host := newFakeHost()
 	conn := serve(t, host)
-	node := connect(t, conn)
+	factory := connect(t, conn)
 
 	digest := ocrtypes.ConfigDigest{4}
-	_, err := node.BinaryNetworkEndpointFactory.NewEndpoint(digest, nil, nil, 1, ocrtypes.BinaryNetworkEndpointLimits{})
+	_, err := factory.NewEndpoint(digest, nil, nil, 1, ocrtypes.BinaryNetworkEndpointLimits{})
 	require.NoError(t, err)
 	hosted := host.endpoint(t, digest)
 
@@ -162,23 +120,19 @@ func TestEndpoint_SendDropsOldestWhenFull(t *testing.T) {
 	assert.Equal(t, []byte("3"), (<-e.outbound).GetBroadcast())
 }
 
-func connect(t *testing.T, conn *grpc.ClientConn) Node {
+func connect(t *testing.T, conn *grpc.ClientConn) ocrtypes.BinaryNetworkEndpointFactory {
 	t.Helper()
-	node, err := Connect(t.Context(), logger.Test(t), conn, "12D3KooWPeer", Config{}, noVerify)
+	factory, err := Connect(logger.Test(t), conn, "12D3KooWPeer", Config{})
 	require.NoError(t, err)
-	return node
-}
-
-func noVerify(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool {
-	return false
+	return factory
 }
 
 func serve(t *testing.T, host *fakeHost) *grpc.ClientConn {
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
-	s := grpc.NewServer(ServerOptions()...)
-	RegisterServer(s, logger.Test(t), func(context.Context) (Node, error) {
-		return Node{BinaryNetworkEndpointFactory: host, OffchainKeyring: host, OnchainKeyring: host}, nil
+	s := grpc.NewServer(grpc.MaxRecvMsgSize(MaxMessageSize))
+	RegisterServer(s, logger.Test(t), func(context.Context) (ocrtypes.BinaryNetworkEndpointFactory, error) {
+		return host, nil
 	})
 	go func() { _ = s.Serve(lis) }()
 	t.Cleanup(s.Stop)
@@ -204,14 +158,10 @@ func receiveWithin[T any](t *testing.T, ch <-chan T) T {
 	}
 }
 
-// fakeHost is a host whose keys sign by labelling what they sign, and whose endpoints record what they are given.
+// fakeHost is a host whose endpoints record what they are given.
 type fakeHost struct {
-	peerID             string
-	offchainPublicKey  ocrtypes.OffchainPublicKey
-	configPublicKey    ocrtypes.ConfigEncryptionPublicKey
-	onchainPublicKey   ocrtypes.OnchainPublicKey
-	maxSignatureLength int
-	newEndpointErr     error
+	peerID         string
+	newEndpointErr error
 
 	mu        sync.Mutex
 	endpoints map[ocrtypes.ConfigDigest]*fakeEndpoint
@@ -220,13 +170,9 @@ type fakeHost struct {
 
 func newFakeHost() *fakeHost {
 	return &fakeHost{
-		peerID:             "12D3KooWPeer",
-		offchainPublicKey:  ocrtypes.OffchainPublicKey{1},
-		configPublicKey:    ocrtypes.ConfigEncryptionPublicKey{2},
-		onchainPublicKey:   ocrtypes.OnchainPublicKey("onchain-key"),
-		maxSignatureLength: 65,
-		endpoints:          map[ocrtypes.ConfigDigest]*fakeEndpoint{},
-		opened:             make(chan ocrtypes.ConfigDigest, 10),
+		peerID:    "12D3KooWPeer",
+		endpoints: map[ocrtypes.ConfigDigest]*fakeEndpoint{},
+		opened:    make(chan ocrtypes.ConfigDigest, 10),
 	}
 }
 
@@ -259,33 +205,6 @@ func (h *fakeHost) NewEndpoint(digest ocrtypes.ConfigDigest, peerIDs []string, _
 	h.opened <- digest
 	return e, nil
 }
-
-func (h *fakeHost) OffchainSign(msg []byte) ([]byte, error) {
-	return append([]byte("offchain:"), msg...), nil
-}
-
-func (h *fakeHost) ConfigDiffieHellman(point [32]byte) ([32]byte, error) {
-	point[0]++
-	return point, nil
-}
-
-func (h *fakeHost) OffchainPublicKey() ocrtypes.OffchainPublicKey { return h.offchainPublicKey }
-
-func (h *fakeHost) ConfigEncryptionPublicKey() ocrtypes.ConfigEncryptionPublicKey {
-	return h.configPublicKey
-}
-
-func (h *fakeHost) PublicKey() ocrtypes.OnchainPublicKey { return h.onchainPublicKey }
-
-func (h *fakeHost) Sign(_ ocrtypes.ConfigDigest, _ uint64, r ocr3types.ReportWithInfo[string]) ([]byte, error) {
-	return []byte("onchain:" + string(r.Report) + ":" + r.Info), nil
-}
-
-func (h *fakeHost) Verify(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool {
-	return false
-}
-
-func (h *fakeHost) MaxSignatureLength() int { return h.maxSignatureLength }
 
 type sent struct {
 	payload   string

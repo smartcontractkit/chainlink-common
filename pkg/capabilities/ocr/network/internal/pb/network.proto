@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/network/internal/pb";
+
+package capabilities.ocr.network.internal.pb;
+
+// Network lends a process that runs an OCR oracle rage networking over the node's peer.
+service Network {
+  // Connect is the life of one BinaryNetworkEndpoint. The first request must be open. The node answers with opened
+  // once the endpoint is started, then with each message the endpoint receives. The endpoint is closed when the
+  // stream ends.
+  rpc Connect(stream EndpointRequest) returns (stream EndpointReply);
+}
+
+message BootstrapperLocator {
+  string peer_id = 1;
+  repeated string addrs = 2;
+}
+
+message EndpointRequest {
+  oneof request {
+    OpenRequest open = 1;
+    SendToRequest send_to = 2;
+    bytes broadcast = 3;
+  }
+}
+
+message OpenRequest {
+  bytes config_digest = 1;
+  repeated string peer_ids = 2;
+  repeated BootstrapperLocator bootstrappers = 3;
+  int64 f = 4;
+  EndpointLimits limits = 5;
+}
+
+message EndpointLimits {
+  int64 max_message_length = 1;
+  double messages_rate_per_oracle = 2;
+  int64 messages_capacity_per_oracle = 3;
+  double bytes_rate_per_oracle = 4;
+  int64 bytes_capacity_per_oracle = 5;
+}
+
+message SendToRequest {
+  bytes payload = 1;
+  uint32 to = 2;
+}
+
+message EndpointReply {
+  oneof reply {
+    Opened opened = 1;
+    Message message = 2;
+  }
+}
+
+message Opened {}
+
+message Message {
+  bytes payload = 1;
+  uint32 sender = 2;
+}

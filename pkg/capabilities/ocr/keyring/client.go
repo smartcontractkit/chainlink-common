@@ -1,4 +1,4 @@
-package ocr
+package keyring
 
 import (
 	"context"
@@ -10,44 +10,31 @@ import (
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/internal/pb"
-	"github.com/smartcontractkit/chainlink-common/pkg/logger"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/keyring/internal/pb"
 )
 
-// Connect returns the Node served by [RegisterServer] on conn, for the node whose peer is peerID. Its onchain keyring
-// signs on the node, but checks signatures with verify: verifying needs no secret, so the process does it itself.
-func Connect(ctx context.Context, lggr logger.Logger, conn grpc.ClientConnInterface, peerID string, cfg Config,
-	verify func(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool) (Node, error) {
+// Connect returns the Keyrings served by [RegisterServer] on conn. Its onchain keyring signs on the node, but checks
+// signatures with verify: verifying needs no secret, so the process does it itself.
+func Connect(ctx context.Context, conn grpc.ClientConnInterface, cfg Config,
+	verify func(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool) (Keyrings, error) {
 	version, err := resolveVersion(cfg.Version)
 	if err != nil {
-		return Node{}, err
+		return Keyrings{}, err
 	}
 
 	switch version {
 	case VersionV1:
-		return connectV1(ctx, logger.Named(lggr, "OCRClient"), pb.NewOCRClient(conn), peerID, verify)
+		return connectV1(ctx, pb.NewKeyringClient(conn), verify)
 	default:
-		return Node{}, fmt.Errorf("unknown OCR version %d", version)
+		return Keyrings{}, fmt.Errorf("unknown OCR keyring version %d", version)
 	}
 }
 
-func resolveVersion(v Version) (Version, error) {
-	if v == VersionLatest {
-		return latestVersion, nil
-	}
-
-	if v < VersionLatest || v > latestVersion {
-		return 0, fmt.Errorf("unknown OCR version %d", v)
-	}
-
-	return v, nil
-}
-
-func connectV1(ctx context.Context, lggr logger.Logger, client pb.OCRClient, peerID string,
-	verify func(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool) (Node, error) {
+func connectV1(ctx context.Context, client pb.KeyringClient,
+	verify func(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool) (Keyrings, error) {
 	keys, err := client.PublicKeys(ctx, &emptypb.Empty{})
 	if err != nil {
-		return Node{}, fmt.Errorf("failed to read the node's OCR public keys: %w", err)
+		return Keyrings{}, fmt.Errorf("failed to read the node's OCR public keys: %w", err)
 	}
 
 	k := &keyring{
@@ -59,11 +46,7 @@ func connectV1(ctx context.Context, lggr logger.Logger, client pb.OCRClient, pee
 	copy(k.offchainPublicKey[:], keys.OffchainPublicKey)
 	copy(k.configEncryptionPublicKey[:], keys.ConfigEncryptionPublicKey)
 
-	return Node{
-		BinaryNetworkEndpointFactory: &endpointFactory{lggr: lggr, client: client, peerID: peerID},
-		OffchainKeyring:              k,
-		OnchainKeyring:               k,
-	}, nil
+	return Keyrings{OffchainKeyring: k, OnchainKeyring: k}, nil
 }
 
 var (
@@ -73,7 +56,7 @@ var (
 
 // keyring signs with the node's keys. Its public keys cannot change, so they are read once.
 type keyring struct {
-	client                    pb.OCRClient
+	client                    pb.KeyringClient
 	verify                    func(ocrtypes.OnchainPublicKey, ocrtypes.ConfigDigest, uint64, ocr3types.ReportWithInfo[string], []byte) bool
 	offchainPublicKey         ocrtypes.OffchainPublicKey
 	configEncryptionPublicKey ocrtypes.ConfigEncryptionPublicKey

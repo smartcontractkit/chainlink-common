@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+option go_package = "github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/keyring/internal/pb";
+
+package capabilities.ocr.keyring.internal.pb;
+
+import "google/protobuf/empty.proto";
+
+// Keyring lends a process that runs an OCR oracle signing with the node's OCR keys.
+service Keyring {
+  // PublicKeys returns the public halves of the node's OCR keys.
+  rpc PublicKeys(google.protobuf.Empty) returns (PublicKeysReply);
+
+  rpc OffchainSign(OffchainSignRequest) returns (SignatureReply);
+  rpc ConfigDiffieHellman(ConfigDiffieHellmanRequest) returns (ConfigDiffieHellmanReply);
+  rpc Sign(SignRequest) returns (SignatureReply);
+}
+
+message PublicKeysReply {
+  bytes offchain_public_key = 1;
+  bytes config_encryption_public_key = 2;
+  bytes onchain_public_key = 3;
+  uint32 max_signature_length = 4;
+}
+
+message OffchainSignRequest {
+  bytes message = 1;
+}
+
+message ConfigDiffieHellmanRequest {
+  bytes point = 1;
+}
+
+message ConfigDiffieHellmanReply {
+  bytes shared_secret = 1;
+}
+
+// Report is a report and the name of the key bundle that signs it, such as evm.
+message Report {
+  bytes report = 1;
+  string key_bundle = 2;
+}
+
+message SignRequest {
+  bytes config_digest = 1;
+  uint64 seq_nr = 2;
+  Report report = 3;
+}
+
+message SignatureReply {
+  bytes signature = 1;
+}

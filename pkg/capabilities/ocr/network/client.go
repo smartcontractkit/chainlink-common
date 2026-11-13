@@ -1,4 +1,4 @@
-package ocr
+package network
 
 import (
 	"context"
@@ -13,9 +13,24 @@ import (
 	"github.com/smartcontractkit/libocr/commontypes"
 	ocrtypes "github.com/smartcontractkit/libocr/offchainreporting2plus/types"
 
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/internal/pb"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/ocr/network/internal/pb"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 )
+
+// Connect returns the BinaryNetworkEndpointFactory served by [RegisterServer] on conn, for the node whose peer is peerID.
+func Connect(lggr logger.Logger, conn grpc.ClientConnInterface, peerID string, cfg Config) (ocrtypes.BinaryNetworkEndpointFactory, error) {
+	version, err := resolveVersion(cfg.Version)
+	if err != nil {
+		return nil, err
+	}
+
+	switch version {
+	case VersionV1:
+		return &endpointFactory{lggr: logger.Named(lggr, "OCRNetworkClient"), client: pb.NewNetworkClient(conn), peerID: peerID}, nil
+	default:
+		return nil, fmt.Errorf("unknown OCR network version %d", version)
+	}
+}
 
 // outboundBufferSize is how many messages an endpoint holds for the host before dropping the oldest.
 const outboundBufferSize = 1024
@@ -24,7 +39,7 @@ var _ ocrtypes.BinaryNetworkEndpointFactory = (*endpointFactory)(nil)
 
 type endpointFactory struct {
 	lggr   logger.Logger
-	client pb.OCRClient
+	client pb.NetworkClient
 	peerID string
 }
 
@@ -82,7 +97,7 @@ type endpoint struct {
 	lggr     logger.Logger
 	ctx      context.Context
 	cancel   context.CancelFunc
-	stream   pb.OCR_ConnectClient
+	stream   pb.Network_ConnectClient
 	outbound chan *pb.EndpointRequest
 	received chan commontypes.BinaryMessageWithSender
 

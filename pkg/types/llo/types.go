@@ -61,6 +61,11 @@ const (
 	// ReportFormatHistoryBackfill is a meta-format: the channel carries pre-aggregated
 	// historical observations in opts; reports are encoded with the target channel's codec.
 	ReportFormatHistoryBackfill = 8
+	// ReportFormatEVMMerkle is the bundle of EVM channel reports whose Merkle
+	// root is signed once per round. It is the format of the bundle report and
+	// of the per channel deliveries expanded from it, never of a channel. A
+	// channel joins it through SigningSchemeMerkle.
+	ReportFormatEVMMerkle ReportFormat = 9
 
 	_ ReportFormat = math.MaxUint32 // reserved
 )
@@ -74,6 +79,7 @@ var ReportFormats = []ReportFormat{
 	ReportFormatEVMStreamlined,
 	ReportFormatEVMABIEncodeUnpackedExpr,
 	ReportFormatHistoryBackfill,
+	ReportFormatEVMMerkle,
 }
 
 func (rf ReportFormat) String() string {
@@ -94,6 +100,8 @@ func (rf ReportFormat) String() string {
 		return "evm_abi_encode_unpacked_expr"
 	case ReportFormatHistoryBackfill:
 		return "history_backfill"
+	case ReportFormatEVMMerkle:
+		return "evm_merkle"
 	default:
 		return fmt.Sprintf("unknown(%d)", rf)
 	}
@@ -117,6 +125,8 @@ func ReportFormatFromString(s string) (ReportFormat, error) {
 		return ReportFormatEVMABIEncodeUnpackedExpr, nil
 	case "history_backfill":
 		return ReportFormatHistoryBackfill, nil
+	case "evm_merkle":
+		return ReportFormatEVMMerkle, nil
 	default:
 		return 0, fmt.Errorf("unknown report format: %q", s)
 	}
@@ -261,6 +271,17 @@ type Stream struct {
 	Aggregator Aggregator `json:"aggregator"`
 }
 
+// SigningScheme selects how a channel's reports are signed.
+type SigningScheme string
+
+const (
+	// SigningSchemeDefault signs every report on its own.
+	SigningSchemeDefault SigningScheme = ""
+	// SigningSchemeMerkle signs the report as a leaf of its signing family's
+	// bundle, whose Merkle root is signed once per round.
+	SigningSchemeMerkle SigningScheme = "merkle"
+)
+
 type ChannelDefinition struct {
 	// ReportFormat controls the output format of the report. It might be a
 	// different chain target, different report format etc. Custom logic can be
@@ -290,6 +311,9 @@ type ChannelDefinition struct {
 	// Tombstone indicates if the channel definition is an owner tombstone that
 	// should be removed from the current channel definitions cache.
 	Tombstone bool `json:"tombstone"`
+	// SigningScheme selects how the channel's reports are signed. Empty signs
+	// every report on its own.
+	SigningScheme SigningScheme `json:"signingScheme,omitempty"`
 }
 
 func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
@@ -306,6 +330,10 @@ func (a ChannelDefinition) Equals(b ChannelDefinition) bool {
 	}
 
 	if a.DisableNilStreamValues != b.DisableNilStreamValues {
+		return false
+	}
+
+	if a.SigningScheme != b.SigningScheme {
 		return false
 	}
 

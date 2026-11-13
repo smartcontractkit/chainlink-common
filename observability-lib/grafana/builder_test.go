@@ -557,6 +557,56 @@ func TestNewAlertRule_ConditionExpressionModels(t *testing.T) {
 	})
 }
 
+func TestNewAlertRule_QueryStep(t *testing.T) {
+	// Grafana resolves the step as max(TimeRange/MaxDataPoints, IntervalMs). Left unset,
+	// it fills in intervalMs 1000, so a 600s rule fetches ~601 points per series even
+	// when the metric behind it is written once a minute.
+	buildModel := func(t *testing.T, query grafana.RuleQuery) string {
+		t.Helper()
+		rule, err := grafana.NewAlertRule(&grafana.AlertOptions{
+			Title: "Step Alert",
+			Query: []grafana.RuleQuery{query},
+		}).Build()
+		require.NoError(t, err)
+		require.NotEmpty(t, rule.Data)
+		raw, err := json.Marshal(rule.Data[0].Model)
+		require.NoError(t, err)
+		return string(raw)
+	}
+
+	base := grafana.RuleQuery{Expr: `my_metric`, RefID: "A", Datasource: "datasource-uid"}
+
+	t.Run("absent by default, so Grafana keeps deciding", func(t *testing.T) {
+		model := buildModel(t, base)
+		require.NotContains(t, model, `"intervalMs"`)
+		require.NotContains(t, model, `"maxDataPoints"`)
+	})
+
+	t.Run("IntervalMs sets the step", func(t *testing.T) {
+		interval := float64(60 * 1000)
+		query := base
+		query.IntervalMs = &interval
+		require.Contains(t, buildModel(t, query), `"intervalMs":60000`)
+	})
+
+	t.Run("MaxDataPoints is carried too", func(t *testing.T) {
+		maxPoints := int64(11)
+		query := base
+		query.MaxDataPoints = &maxPoints
+		require.Contains(t, buildModel(t, query), `"maxDataPoints":11`)
+	})
+
+	t.Run("neither disturbs the rest of the query", func(t *testing.T) {
+		interval := float64(60 * 1000)
+		query := base
+		query.IntervalMs = &interval
+		query.TimeRange = 600
+		model := buildModel(t, query)
+		require.Contains(t, model, `"expr":"my_metric"`)
+		require.Contains(t, model, `"refId":"A"`)
+	})
+}
+
 func TestBuilder_AddTimeSeriesPanelWithAlert(t *testing.T) {
 	t.Run("AddPanel adds a panel to the dashboard", func(t *testing.T) {
 		builder := grafana.NewBuilder(&grafana.BuilderOptions{

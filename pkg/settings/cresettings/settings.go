@@ -185,6 +185,7 @@ var Default = Schema{
 		EnclaveRequestTimeout:           Duration(30 * time.Second),
 		PublicKeyRequestTimeout:         Duration(5 * time.Second),
 		ConfidentialRelayHandlerTimeout: Duration(60 * time.Second),
+		ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod: disabledFeatureTimeRange,
 		RelayResponseCache: ccRelayResponseCache{
 			TTL:             Duration(10 * time.Minute),
 			CleanupInterval: Duration(1 * time.Minute),
@@ -700,6 +701,13 @@ type confidentialCompute struct {
 	SecretsCacheEnabled     Setting[bool]
 	EnclaveRequestTimeout   Setting[time.Duration]
 	PublicKeyRequestTimeout Setting[time.Duration]
+
+	// ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod gates the confidential
+	// compute pre-fetch Vault GetSecrets path. It is ANDed with the per-workflow
+	// PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod and evaluated against
+	// the execution timestamp so every capability DON node switches together.
+	// Currently only the Confidential HTTP capability uses the pre-fetch path.
+	ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod Setting[Range[config.Timestamp]]
 
 	// ConfidentialRelayHandlerTimeout bounds how long a relay-DON node may spend
 	// serving one confidential relay request from the gateway: attestation

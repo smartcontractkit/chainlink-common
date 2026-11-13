@@ -360,6 +360,7 @@ flowchart
         ConfidentialCompute.SecretsCacheEnabled[/ConfidentialCompute.SecretsCacheEnabled\]:::gate
         ConfidentialCompute.EnclaveRequestTimeout>ConfidentialCompute.EnclaveRequestTimeout]:::time
         ConfidentialCompute.PublicKeyRequestTimeout>ConfidentialCompute.PublicKeyRequestTimeout]:::time
+        ConfidentialCompute.ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod[/ConfidentialCompute.ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod\]:::gate
         ConfidentialCompute.InsecureSkipTLSVerify[/ConfidentialCompute.InsecureSkipTLSVerify\]:::gate
         ConfidentialCompute.EnclaveRefreshInterval>ConfidentialCompute.EnclaveRefreshInterval]:::time
         ConfidentialCompute.PublicKeyRetriesMax{{ConfidentialCompute.PublicKeyRetriesMax}}:::bound

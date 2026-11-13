@@ -53,6 +53,8 @@ type BatchEmitter interface {
 
 // Config configures the DurableEmitter behaviour.
 type Config struct {
+	// MaxEventBytes rejects larger serialized events at Emit, before they are stored. Zero uses DefaultMaxEventBytes.
+	MaxEventBytes int
 	// RetransmitInterval controls how often the retransmit loop ticks.
 	RetransmitInterval time.Duration
 	// RetransmitAfter is the minimum age of an event before the retransmit
@@ -124,8 +126,15 @@ type Hooks struct {
 	OnBatchDelete func(elapsed time.Duration, count int)
 }
 
+// DefaultMaxEventBytes is 1 MiB, well under the batch client's 10 MiB request limit, to bound memory per event.
+const DefaultMaxEventBytes = 1024 * 1024
+
+// ErrEventTooLarge is returned by Emit for an event larger than MaxEventBytes.
+var ErrEventTooLarge = errors.New("durable emitter: event exceeds max size")
+
 func DefaultConfig() Config {
 	return Config{
+		MaxEventBytes:            DefaultMaxEventBytes,
 		RetransmitInterval:       5 * time.Second,
 		RetransmitAfter:          10 * time.Second,
 		RetransmitBatchSize:      100,
@@ -417,6 +426,15 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		if err != nil {
 			emitFail()
 			return fmt.Errorf("failed to marshal event proto: %w", err)
+		}
+
+		maxEventBytes := d.cfg.MaxEventBytes
+		if maxEventBytes <= 0 {
+			maxEventBytes = DefaultMaxEventBytes
+		}
+		if len(payload) > maxEventBytes {
+			emitFail()
+			return fmt.Errorf("%w: %d bytes, max %d", ErrEventTooLarge, len(payload), maxEventBytes)
 		}
 
 		var id int64

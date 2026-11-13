@@ -508,6 +508,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3Configs(t *testing.T) 
 	expectedCapConfig := capabilities.CapabilityConfiguration{
 		Ocr3Configs: map[string]ocrtypes.ContractConfig{
 			"__default__": {
+				ConfigDigest:          ocrtypes.ConfigDigest{0x00, 0x0e, 0xaa, 0xbb},
 				ConfigCount:           5,
 				Signers:               []ocrtypes.OnchainPublicKey{{0x01, 0x02}, {0x03, 0x04}},
 				Transmitters:          []ocrtypes.Account{"abcd", "def0"},
@@ -718,4 +719,43 @@ func TestCapabilitiesRegistry_ConfigForCapability_NilDefaultConfig(t *testing.T)
 	capConf, err := rc.ConfigForCapability(t.Context(), capID, donID)
 	require.NoError(t, err)
 	assert.Nil(t, capConf.DefaultConfig)
+}
+
+// Production runs the go-plugin broker without multiplexing, where each broker ID can
+// only be dialed once, so every lookup must be handed a freshly published capability.
+func TestCapabilitiesRegistry_RepeatedLookupsWithoutMultiplexing(t *testing.T) {
+	reg := mocks.NewCapabilitiesRegistry(t)
+	pluginName := "registry-test"
+	client, server := plugin.TestPluginGRPCConn(t, false, map[string]plugin.Plugin{
+		pluginName: &testRegistryPlugin{
+			impl:      reg,
+			brokerExt: &net.BrokerExt{StopCh: make(chan struct{}), Logger: logger.Test(t)},
+		},
+	})
+	defer client.Close()
+	defer server.Stop()
+
+	regClient, err := client.Dispense(pluginName)
+	require.NoError(t, err)
+	rc, ok := regClient.(core.CapabilitiesRegistry)
+	require.True(t, ok)
+
+	id := "action-1@1.0.0"
+	action := mockNonTriggerCapability{
+		mockBaseCapability:       &mockBaseCapability{info: capabilities.CapabilityInfo{ID: id, CapabilityType: capabilities.CapabilityTypeAction}},
+		mockExecutableCapability: &mockExecutableCapability{},
+	}
+	reg.On("GetExecutable", mock.Anything, id).Return(action, nil)
+	reg.On("List", mock.Anything).Return([]capabilities.BaseCapability{action}, nil)
+
+	for range 2 {
+		_, err := rc.GetExecutable(t.Context(), id)
+		require.NoError(t, err)
+	}
+
+	listed, err := rc.List(t.Context())
+	require.NoError(t, err)
+	require.Len(t, listed, 1)
+	_, err = listed[0].Info(t.Context())
+	require.NoError(t, err)
 }

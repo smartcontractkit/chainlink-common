@@ -9,7 +9,7 @@ CoordinatedEngineEnabled = 'false'
 ShardingFailoverEnabled = 'false'
 TimeoutBasedFailover = 'false'
 TimeoutBasedFailoverWindow = '5m0s'
-ShardOwnershipCheckTimeout = '30s'
+ShardOwnershipCheckTimeout = '15s'
 TenantID = '0'
 VaultOrgIdAsSecretOwnerEnabled = 'false'
 PropagateOrgIDInRequestMetadata = 'false'
@@ -99,6 +99,58 @@ RefreshTimeout = '5s'
 PersistenceEnabled = 'true'
 HeaderName = 'Sticky-Session-A'
 
+[ConfidentialCompute.HTTP]
+GlobalRate = '1000rps:1000'
+MaxRetries = '3'
+RetryBackoff = '2s'
+SecretsCacheEnabled = 'false'
+EnclaveRequestTimeout = '30s'
+PublicKeyRequestTimeout = '5s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
+EnclaveRefreshInterval = '10s'
+
+[ConfidentialCompute.HTTP.PublicKeyCache]
+Enabled = 'true'
+TTL = '5m0s'
+MaxTTL = '30m0s'
+CleanupInterval = '10m0s'
+TTLBufferPercent = '0.1'
+ProactiveRefreshEnabled = 'true'
+RefreshIntervalPercent = '0'
+MinRefreshInterval = '10s'
+RefreshTimeout = '5s'
+
+[ConfidentialCompute.HTTP.Session]
+PersistenceEnabled = 'true'
+HeaderName = 'Sticky-Session-A'
+
+[ConfidentialCompute.Workflows]
+GlobalRate = '1000rps:1000'
+MaxRetries = '3'
+RetryBackoff = '2s'
+SecretsCacheEnabled = 'false'
+EnclaveRequestTimeout = '30s'
+PublicKeyRequestTimeout = '5s'
+PublicKeyRetriesMax = '2'
+PublicKeyRetriesBackoff = '5s'
+EnclaveRefreshInterval = '10s'
+
+[ConfidentialCompute.Workflows.PublicKeyCache]
+Enabled = 'true'
+TTL = '5m0s'
+MaxTTL = '30m0s'
+CleanupInterval = '10m0s'
+TTLBufferPercent = '0.1'
+ProactiveRefreshEnabled = 'true'
+RefreshIntervalPercent = '0'
+MinRefreshInterval = '10s'
+RefreshTimeout = '5s'
+
+[ConfidentialCompute.Workflows.Session]
+PersistenceEnabled = 'true'
+HeaderName = 'Sticky-Session-A'
+
 [PerOrg]
 BaseTriggerRetransmitEnabled = 'false'
 WorkflowExecutionConcurrencyLimit = '100'
@@ -121,6 +173,12 @@ VaultZoneBGetSecretsAllowed = 'false'
 [PerOwner.ConfidentialCompute]
 Rate = '1000rps:1000'
 
+[PerOwner.ConfidentialCompute.HTTP]
+Rate = '1000rps:1000'
+
+[PerOwner.ConfidentialCompute.Workflows]
+Rate = '1000rps:1000'
+
 [PerWorkflow]
 TriggerRegistrationsTimeout = '10s'
 TriggerSubscriptionTimeout = '15s'
@@ -133,6 +191,7 @@ SecretsConcurrencyLimit = '5'
 ExecutionConcurrencyLimit = '5'
 ExecutionTimeout = '5m0s'
 ExecutionResponseLimit = '100kb'
+ExecutionResponseLimitEnforced = 'false'
 ExecutionTimestampsEnabled = 'false'
 CoordinatedEngineEnabled = 'false'
 WASMMemoryLimit = '100mb'

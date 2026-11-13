@@ -32,7 +32,15 @@ type ListenerTransport struct {
 	listen        func() (net.Listener, error)
 	lggr          logger.Logger
 	target        func(lis net.Listener) string
+
+	mu      sync.Mutex
+	closed  bool
+	serving map[*grpc.Server]struct{}
+	wg      sync.WaitGroup
 }
+
+// ErrTransportClosed is returned by Publish once the transport has been closed.
+var ErrTransportClosed = errors.New("transport closed")
 
 type ListenerTransportParams struct {
 	Lggr          logger.Logger
@@ -73,6 +81,7 @@ func NewListenerTransport(p ListenerTransportParams) (*ListenerTransport, error)
 		lggr:          p.Lggr,
 		connect:       p.Connect,
 		target:        p.Target,
+		serving:       map[*grpc.Server]struct{}{},
 	}, nil
 
 }
@@ -80,6 +89,12 @@ func NewListenerTransport(p ListenerTransportParams) (*ListenerTransport, error)
 var _ Transport = (*ListenerTransport)(nil)
 
 func (t *ListenerTransport) Publish(name string, register func(*grpc.Server)) (Locator, io.Closer, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.closed {
+		return Locator{}, nil, fmt.Errorf("cannot publish %s: %w", name, ErrTransportClosed)
+	}
+
 	lis, err := t.listen()
 	if err != nil {
 		return Locator{}, nil, fmt.Errorf("failed to listen for %s: %w", name, err)
@@ -87,9 +102,11 @@ func (t *ListenerTransport) Publish(name string, register func(*grpc.Server)) (L
 
 	server := t.serverFactory()
 	register(server)
+	t.serving[server] = struct{}{}
 
-	var wg sync.WaitGroup
-	wg.Go(func() {
+	done := make(chan struct{})
+	t.wg.Go(func() {
+		defer close(done)
 		// Serve returns ErrServerStopped on a deliberate Stop, which is not a fault.
 		if err := server.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 			t.lggr.Errorw("Failed to serve capability", "name", name, "err", err)
@@ -97,10 +114,29 @@ func (t *ListenerTransport) Publish(name string, register func(*grpc.Server)) (L
 	})
 
 	return Locator{Target: t.target(lis)}, closeFunc(func() error {
+		t.mu.Lock()
+		delete(t.serving, server)
+		t.mu.Unlock()
 		server.Stop()
-		wg.Wait()
+		<-done
 		return nil
 	}), nil
+}
+
+// Close stops every capability still published over the transport, so nothing it
+// served outlives it. Publish fails afterwards.
+func (t *ListenerTransport) Close() error {
+	t.mu.Lock()
+	t.closed = true
+	serving := t.serving
+	t.serving = nil
+	t.mu.Unlock()
+
+	for server := range serving {
+		server.Stop()
+	}
+	t.wg.Wait()
+	return nil
 }
 
 func (t *ListenerTransport) Dial(ctx context.Context, name string, resolve func(context.Context) (Locator, error)) (ClientConn, error) {

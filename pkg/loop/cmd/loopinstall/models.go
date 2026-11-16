@@ -21,6 +21,12 @@ type PluginDef struct {
 	Libs        []string `yaml:"libs"`
 	Flags       string   `yaml:"flags,omitempty"`
 	EnvVars     []string `yaml:"envvars,omitempty"`
+	// BinaryName overrides the name of the installed binary. By default the
+	// name is the base of installPath (or of moduleURI when installPath is the
+	// module root), which breaks when the package that builds the binary is
+	// not named after the binary itself (e.g. "./legacy" building the binary
+	// a node looks up as "cron").
+	BinaryName string `yaml:"binaryName,omitempty"`
 }
 
 // ModDownloadResult represents the JSON directory (dir) output from 'go mod download -json'
@@ -55,4 +61,5 @@ type PluginManifest struct {
 	GitRef      string   `json:"gitRef"`
 	InstallPath string   `json:"installPath"`
 	Libs        []string `json:"libs,omitempty"`
+	BinaryName  string   `json:"binaryName,omitempty"`
 }

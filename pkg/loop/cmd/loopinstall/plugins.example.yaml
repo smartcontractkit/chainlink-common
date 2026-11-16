@@ -25,3 +25,12 @@ plugins:
       gitRef: "9a780650af4708e4bd9b75495feff2c5b4054e46"
       installPath: "github.com/smartcontractkit/chainlink-starknet/relayer/pkg/chainlink/cmd/chainlink-starknet"
       libs: []
+
+  legacy-cron:
+    # Example of a binary name override: the package that builds the binary is
+    # not named after it, so the installed name is set explicitly.
+    - moduleURI: "github.com/smartcontractkit/capabilities/scheduler/cron"
+      gitRef: "9777ffcac0b966d2488cb1e63e155da8b98bd8d6"
+      installPath: "./legacy"
+      binaryName: "cron"
+      flags: "-tags timetzdata"

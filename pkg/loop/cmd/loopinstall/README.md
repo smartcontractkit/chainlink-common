@@ -51,6 +51,8 @@ plugins:
 
 The `installPath` is relative to the root of the downloaded module but it can also be an absolute path like: `github.com/smartcontractkit/chainlink-cosmos/pkg/cosmos/cmd/chainlink-cosmos`. The absolute path will be stripped to the relative path (it is supported for backwards compatibility).
 
+By default the installed binary is named after the base of `installPath` (or of `moduleURI` when `installPath` is the module root). When the package that builds the binary is not named after the binary itself, set `binaryName` to override the installed name; the build target stays whatever `installPath` points at.
+
 The `libs` field is an array of strings representing directory paths, which can include glob patterns for library files that need to be included with the plugin. Docker build will use these paths to copy the libraries into the final container image.
 
 ## Private Repository Access

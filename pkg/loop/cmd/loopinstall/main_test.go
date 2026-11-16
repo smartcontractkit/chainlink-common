@@ -500,6 +500,23 @@ func TestValidationFunctions(t *testing.T) {
 				"github.com/example/module\nls",
 			},
 		},
+		{
+			name:      "validateBinaryName",
+			validator: validateBinaryName,
+			valid: []string{
+				"cron",
+				"cronv2",
+				"chainlink-evm",
+				"tool.v2",
+			},
+			invalid: []string{
+				"cron/../../etc",
+				"../escape",
+				"cron;rm -rf /",
+				"cron\nls",
+				"",
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -722,6 +739,48 @@ func TestDownloadAndInstallPlugin(t *testing.T) {
 				expectedPackage := "." // Expected when InstallPath is the same as ModuleURI
 				if packageArg != expectedPackage {
 					return fmt.Errorf("expected install package %q, got %q", expectedPackage, packageArg)
+				}
+				return nil
+			},
+			expectError: false,
+		},
+		{
+			name: "binary name override",
+			plugin: PluginDef{
+				ModuleURI:   "github.com/example/capabilities/scheduler/cron",
+				GitRef:      "v1.0.0",
+				InstallPath: "./legacy", // Package dir is not named after the binary
+				BinaryName:  "cron",
+			},
+			defaults: DefaultsConfig{},
+			mockDownload: func(cmd *exec.Cmd) error {
+				if stdout, ok := cmd.Stdout.(*bytes.Buffer); ok {
+					parts := strings.Split("github.com/example/capabilities/scheduler/cron", "/")
+					moduleDir := filepath.Join(append([]string{tempDir, "modules"}, parts...)...)
+					fmt.Fprintf(stdout, `{"Dir":"%s"}`, moduleDir)
+				}
+				return nil
+			},
+			mockBuild: func(cmd *exec.Cmd) error {
+				if len(cmd.Args) < 2 {
+					return fmt.Errorf("install command has too few arguments: %v", cmd.Args)
+				}
+				// args: build -o <outputPath> [flags...] <installArg>
+				outIdx := -1
+				for i, a := range cmd.Args {
+					if a == "-o" {
+						outIdx = i
+						break
+					}
+				}
+				if outIdx == -1 || outIdx+1 >= len(cmd.Args) {
+					return fmt.Errorf("expected -o <path> in install command: %v", cmd.Args)
+				}
+				if base := filepath.Base(cmd.Args[outIdx+1]); base != "cron" {
+					return fmt.Errorf("expected output binary %q, got %q", "cron", base)
+				}
+				if packageArg := cmd.Args[len(cmd.Args)-1]; packageArg != "./legacy" {
+					return fmt.Errorf("expected install package %q, got %q", "./legacy", packageArg)
 				}
 				return nil
 			},

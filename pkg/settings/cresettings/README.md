@@ -113,6 +113,7 @@ flowchart
 
     subgraph standardcapabilities.Delegate.NewServices
         CRONV2ActivePeriod[/CRONV2ActivePeriod\]:::gate
+        ConsensusV2ActivePeriod[/ConsensusV2ActivePeriod\]:::gate
     end
 
     subgraph Store.FetchWorkflowArtifacts

@@ -73,6 +73,7 @@
 		"SecretsCacheEnabled": "false",
 		"EnclaveRequestTimeout": "30s",
 		"PublicKeyRequestTimeout": "5s",
+		"ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 		"ConfidentialRelayHandlerTimeout": "1m0s",
 		"RelayResponseCache": {
 			"TTL": "10m0s",

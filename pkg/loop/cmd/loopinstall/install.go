@@ -268,6 +268,12 @@ func downloadAndInstallPlugin(pluginType string, pluginIdx int, plugin PluginDef
 		binaryName = filepath.Base(filepath.Clean(moduleURI))
 	}
 
+	// An explicit binaryName decouples the package that builds the binary from
+	// the name it is installed under.
+	if plugin.BinaryName != "" {
+		binaryName = plugin.BinaryName
+	}
+
 	// Determine output directory (GOBIN, or GOPATH/bin, or $HOME/go/bin).
 	outputDir := os.Getenv("GOBIN")
 	if outputDir == "" {
@@ -337,6 +343,7 @@ func writeBuildManifest(tasks []PluginInstallTask, outputFile string) error {
 			ModuleURI:   task.Plugin.ModuleURI,
 			GitRef:      task.Plugin.GitRef,
 			InstallPath: task.Plugin.InstallPath,
+			BinaryName:  task.Plugin.BinaryName,
 		}
 
 		if len(task.Plugin.Libs) > 0 {

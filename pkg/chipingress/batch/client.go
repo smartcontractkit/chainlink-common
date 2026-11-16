@@ -122,6 +122,8 @@ type Client struct {
 	clientName      string
 
 	metrics batchClientMetrics
+	// bufferGaugeReg reports buffer pressure through the observable gauges; unregistered on Stop.
+	bufferGaugeReg otelmetric.Registration
 
 	transactionEnabled bool
 	noAck              bool
@@ -135,6 +137,9 @@ type batchClientMetrics struct {
 	configInfo           otelmetric.Int64Gauge
 	batchSplitsTotal     otelmetric.Int64Counter
 	resultsMismatchTotal otelmetric.Int64Counter
+	bufferedMessages     otelmetric.Int64ObservableGauge
+	bufferedBytes        otelmetric.Int64ObservableGauge
+	meter                otelmetric.Meter
 	batchSizeAttr        otelmetric.MeasurementOption
 	maxGRPCReqSizeAttr   otelmetric.MeasurementOption
 	successStatusAttr    otelmetric.MeasurementOption
@@ -173,6 +178,10 @@ func NewBatchClient(client chipingress.Client, opts ...Opt) (*Client, error) {
 	c.metrics, err = newBatchClientMetrics(c.clientName, c.noAck)
 	if err != nil {
 		return nil, err
+	}
+	c.bufferGaugeReg, err = c.metrics.registerBufferGauges(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to register buffer gauges: %w", err)
 	}
 
 	return c, nil
@@ -255,6 +264,12 @@ func (b *Client) Stop() {
 
 		// Release per-stream seqnum state to avoid unbounded growth from high-cardinality source/type values.
 		b.clearCounters()
+
+		if b.bufferGaugeReg != nil {
+			if err := b.bufferGaugeReg.Unregister(); err != nil {
+				b.log.Warnw("failed to unregister buffer gauges", "error", err)
+			}
+		}
 
 		if err := b.client.Close(); err != nil {
 			b.log.Warnw("failed to close chip ingress client", "error", err)
@@ -767,6 +782,22 @@ func newBatchClientMetrics(clientName string, noAck bool) (batchClientMetrics, e
 	if err != nil {
 		return batchClientMetrics{}, err
 	}
+	bufferedMessages, err := meter.Int64ObservableGauge(
+		"chip_ingress.batch.buffered_messages",
+		otelmetric.WithDescription("Messages currently buffered in the batch client's in-memory queue"),
+		otelmetric.WithUnit("{message}"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
+	bufferedBytes, err := meter.Int64ObservableGauge(
+		"chip_ingress.batch.buffered_bytes",
+		otelmetric.WithDescription("Bytes reserved by accepted messages whose callbacks have not yet run; 0 unless a byte budget is set"),
+		otelmetric.WithUnit("By"),
+	)
+	if err != nil {
+		return batchClientMetrics{}, err
+	}
 
 	var clientNameAttr otelmetric.MeasurementOption
 	if clientName != "" {
@@ -783,6 +814,9 @@ func newBatchClientMetrics(clientName string, noAck bool) (batchClientMetrics, e
 		configInfo:           configInfo,
 		batchSplitsTotal:     batchSplitsTotal,
 		resultsMismatchTotal: resultsMismatchTotal,
+		bufferedMessages:     bufferedMessages,
+		bufferedBytes:        bufferedBytes,
+		meter:                meter,
 		clientNameAttr:       clientNameAttr,
 		successStatusAttr: otelmetric.WithAttributeSet(batchMetricAttributeSet(clientName,
 			noAckAttrs(noAck, attribute.String("status", "success"))...,
@@ -819,8 +853,20 @@ func (m *batchClientMetrics) recordConfig(ctx context.Context, c *Client) {
 			attribute.Bool("clone_event", c.cloneEvent),
 			attribute.Bool("transaction_enabled", c.transactionEnabled),
 			attribute.Int("max_grpc_request_size_bytes", c.maxGRPCRequestSize),
+			attribute.Int64("max_buffered_bytes", c.maxBufferedBytes),
 		)...,
 	)))
+}
+
+// registerBufferGauges starts reporting the client's buffer pressure through the observable
+// gauges. The returned registration stops the reporting; Stop unregisters it.
+func (m *batchClientMetrics) registerBufferGauges(c *Client) (otelmetric.Registration, error) {
+	attrs := otelmetric.WithAttributeSet(batchMetricAttributeSet(c.clientName, noAckAttrs(c.noAck)...))
+	return m.meter.RegisterCallback(func(_ context.Context, o otelmetric.Observer) error {
+		o.ObserveInt64(m.bufferedMessages, int64(len(c.messageBuffer)), attrs)
+		o.ObserveInt64(m.bufferedBytes, c.bufferedBytes.Load(), attrs)
+		return nil
+	}, m.bufferedMessages, m.bufferedBytes)
 }
 
 func (m *batchClientMetrics) recordSend(ctx context.Context, messageCount int, requestBytes int, latency time.Duration, success bool) {

@@ -123,7 +123,8 @@ func TestSchema_Unmarshal(t *testing.T) {
 		"FeatureHTTPTriggerNewExecutionIDsActivePeriod": "[2025-06-20 00:00:00 +0000 UTC,2025-07-20 00:00:00 +0000 UTC]",
 		"FeatureChainCapabilityHashBasedOCRActivePeriod": "[2025-07-15 00:00:00 +0000 UTC,2025-08-15 00:00:00 +0000 UTC]",
 		"FeatureEVMWriteReportL1FeeActivePeriod": "[2025-09-15 00:00:00 +0000 UTC,2025-10-15 00:00:00 +0000 UTC]",
-		"FeatureAptosWriteReportBlockTimestampActivePeriod": "[2025-11-15 00:00:00 +0000 UTC,2025-12-15 00:00:00 +0000 UTC]"
+		"FeatureAptosWriteReportBlockTimestampActivePeriod": "[2025-11-15 00:00:00 +0000 UTC,2025-12-15 00:00:00 +0000 UTC]",
+		"FeatureEVMWriteReportBlockTimestampActivePeriod": "[2026-01-15 00:00:00 +0000 UTC,2026-02-15 00:00:00 +0000 UTC]"
 	}
 }`), &cfg))
 
@@ -176,6 +177,10 @@ func TestSchema_Unmarshal(t *testing.T) {
 		Lower: config.Timestamp(time.Date(2025, 11, 15, 0, 0, 0, 0, time.UTC).Unix()),
 		Upper: config.Timestamp(time.Date(2025, 12, 15, 0, 0, 0, 0, time.UTC).Unix()),
 	}, cfg.PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod.DefaultValue)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2026, 2, 15, 0, 0, 0, 0, time.UTC).Unix()),
+	}, cfg.PerWorkflow.FeatureEVMWriteReportBlockTimestampActivePeriod.DefaultValue)
 }
 
 func TestDONTimeRequestTimeoutKeyInit(t *testing.T) {

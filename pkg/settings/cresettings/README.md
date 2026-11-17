@@ -232,6 +232,7 @@ flowchart
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
         PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod\]:::gate
+        PerWorkflow.FeatureEVMWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureEVMWriteReportBlockTimestampActivePeriod\]:::gate
         PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod[/PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod\]:::gate
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate

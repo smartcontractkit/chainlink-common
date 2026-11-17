@@ -158,7 +158,7 @@ type ConsensusQueueEvent struct {
 	TriggerEventID string                        `protobuf:"bytes,2,opt,name=triggerEventID,proto3" json:"triggerEventID,omitempty"`
 	ObservedAt     *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=observedAt,proto3" json:"observedAt,omitempty"`
 	Deadline       *timestamppb.Timestamp        `protobuf:"bytes,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
-	BlobHash       []byte                        `protobuf:"bytes,5,opt,name=blobHash,proto3" json:"blobHash,omitempty"` // hash of the blob data, timestamp fields we have extracted for medianization set to nil
+	TimelessHash   []byte                        `protobuf:"bytes,5,opt,name=timelessHash,proto3" json:"timelessHash,omitempty"` // hash of the blob data, timestamp fields we have extracted for medianization set to nil
 	Blobs          []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
@@ -222,9 +222,9 @@ func (x *ConsensusQueueEvent) GetDeadline() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *ConsensusQueueEvent) GetBlobHash() []byte {
+func (x *ConsensusQueueEvent) GetTimelessHash() []byte {
 	if x != nil {
-		return x.BlobHash
+		return x.TimelessHash
 	}
 	return nil
 }
@@ -239,8 +239,8 @@ func (x *ConsensusQueueEvent) GetBlobs() []*CoordinatedEventBlobHandle {
 // ConsensusQueueEventsBlobHandle refers to a CoordinatedEvent by blob handle and index within an CoordinatedEventList.
 type CoordinatedEventBlobHandle struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Handle        []byte                 `protobuf:"bytes,1,opt,name=handle,proto3" json:"handle,omitempty"`
-	Index         uint32                 `protobuf:"varint,2,opt,name=index,proto3" json:"index,omitempty"`
+	Blob          uint32                 `protobuf:"varint,1,opt,name=blob,proto3" json:"blob,omitempty"`
+	Element       uint32                 `protobuf:"varint,2,opt,name=element,proto3" json:"element,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -275,16 +275,16 @@ func (*CoordinatedEventBlobHandle) Descriptor() ([]byte, []int) {
 	return file_triggers_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *CoordinatedEventBlobHandle) GetHandle() []byte {
+func (x *CoordinatedEventBlobHandle) GetBlob() uint32 {
 	if x != nil {
-		return x.Handle
+		return x.Blob
 	}
-	return nil
+	return 0
 }
 
-func (x *CoordinatedEventBlobHandle) GetIndex() uint32 {
+func (x *CoordinatedEventBlobHandle) GetElement() uint32 {
 	if x != nil {
-		return x.Index
+		return x.Element
 	}
 	return 0
 }
@@ -334,20 +334,66 @@ func (x *ConsensusQueueEventList) GetEvents() []*ConsensusQueueEvent {
 	return nil
 }
 
+// ConsensusQueueBlobHandleList holds a list of blob handles referenced from ConsensusQueueEventList events.
+type ConsensusQueueBlobHandleList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BlobHandles   [][]byte               `protobuf:"bytes,1,rep,name=blobHandles,proto3" json:"blobHandles,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsensusQueueBlobHandleList) Reset() {
+	*x = ConsensusQueueBlobHandleList{}
+	mi := &file_triggers_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsensusQueueBlobHandleList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsensusQueueBlobHandleList) ProtoMessage() {}
+
+func (x *ConsensusQueueBlobHandleList) ProtoReflect() protoreflect.Message {
+	mi := &file_triggers_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsensusQueueBlobHandleList.ProtoReflect.Descriptor instead.
+func (*ConsensusQueueBlobHandleList) Descriptor() ([]byte, []int) {
+	return file_triggers_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ConsensusQueueBlobHandleList) GetBlobHandles() [][]byte {
+	if x != nil {
+		return x.BlobHandles
+	}
+	return nil
+}
+
 // ConsensusQueueObservation is a ReportingPlugin observation of events and capacity meta-data.
 type ConsensusQueueObservation struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	Events             []*ConsensusQueueEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`
-	Expiration         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expiration,proto3" json:"expiration,omitempty"`                                                                                            //
-	Capacity           uint32                 `protobuf:"varint,3,opt,name=capacity,proto3" json:"capacity,omitempty"`                                                                                               // Global remaining capacity
-	WorkflowCapacities map[string]uint32      `protobuf:"bytes,4,rep,name=workflowCapacities,proto3" json:"workflowCapacities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Workflow-specific free executions
+	Events             []*ConsensusQueueEvent `protobuf:"bytes,1,rep,name=events,proto3" json:"events,omitempty"`                                                                                                    // sorted
+	BlobHandles        [][]byte               `protobuf:"bytes,2,rep,name=blobHandles,proto3" json:"blobHandles,omitempty"`                                                                                          // referenced from events by index
+	Expiration         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expiration,proto3" json:"expiration,omitempty"`                                                                                            // observation time - grace period
+	Capacity           uint32                 `protobuf:"varint,4,opt,name=capacity,proto3" json:"capacity,omitempty"`                                                                                               // Global remaining capacity
+	WorkflowCapacities map[string]uint32      `protobuf:"bytes,5,rep,name=workflowCapacities,proto3" json:"workflowCapacities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Workflow-specific free executions
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ConsensusQueueObservation) Reset() {
 	*x = ConsensusQueueObservation{}
-	mi := &file_triggers_proto_msgTypes[5]
+	mi := &file_triggers_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -359,7 +405,7 @@ func (x *ConsensusQueueObservation) String() string {
 func (*ConsensusQueueObservation) ProtoMessage() {}
 
 func (x *ConsensusQueueObservation) ProtoReflect() protoreflect.Message {
-	mi := &file_triggers_proto_msgTypes[5]
+	mi := &file_triggers_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -372,12 +418,19 @@ func (x *ConsensusQueueObservation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsensusQueueObservation.ProtoReflect.Descriptor instead.
 func (*ConsensusQueueObservation) Descriptor() ([]byte, []int) {
-	return file_triggers_proto_rawDescGZIP(), []int{5}
+	return file_triggers_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ConsensusQueueObservation) GetEvents() []*ConsensusQueueEvent {
 	if x != nil {
 		return x.Events
+	}
+	return nil
+}
+
+func (x *ConsensusQueueObservation) GetBlobHandles() [][]byte {
+	if x != nil {
+		return x.BlobHandles
 	}
 	return nil
 }
@@ -406,14 +459,15 @@ func (x *ConsensusQueueObservation) GetWorkflowCapacities() map[string]uint32 {
 // ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
 type ConsensusQueueObservedEvents struct {
 	state         protoimpl.MessageState                  `protogen:"open.v1"`
-	Observations  map[string]*ConsensusQueueObservedEvent `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Observations  map[string]*ConsensusQueueObservedEvent `protobuf:"bytes,1,rep,name=observations,proto3" json:"observations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // key: eventHash
+	BlobHandles   [][]byte                                `protobuf:"bytes,2,rep,name=blobHandles,proto3" json:"blobHandles,omitempty"`                                                                             // referenced from observations events by index
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConsensusQueueObservedEvents) Reset() {
 	*x = ConsensusQueueObservedEvents{}
-	mi := &file_triggers_proto_msgTypes[6]
+	mi := &file_triggers_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -425,7 +479,7 @@ func (x *ConsensusQueueObservedEvents) String() string {
 func (*ConsensusQueueObservedEvents) ProtoMessage() {}
 
 func (x *ConsensusQueueObservedEvents) ProtoReflect() protoreflect.Message {
-	mi := &file_triggers_proto_msgTypes[6]
+	mi := &file_triggers_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -438,12 +492,19 @@ func (x *ConsensusQueueObservedEvents) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsensusQueueObservedEvents.ProtoReflect.Descriptor instead.
 func (*ConsensusQueueObservedEvents) Descriptor() ([]byte, []int) {
-	return file_triggers_proto_rawDescGZIP(), []int{6}
+	return file_triggers_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ConsensusQueueObservedEvents) GetObservations() map[string]*ConsensusQueueObservedEvent {
 	if x != nil {
 		return x.Observations
+	}
+	return nil
+}
+
+func (x *ConsensusQueueObservedEvents) GetBlobHandles() [][]byte {
+	if x != nil {
+		return x.BlobHandles
 	}
 	return nil
 }
@@ -463,7 +524,7 @@ type ConsensusQueueObservedEvent struct {
 
 func (x *ConsensusQueueObservedEvent) Reset() {
 	*x = ConsensusQueueObservedEvent{}
-	mi := &file_triggers_proto_msgTypes[7]
+	mi := &file_triggers_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -475,7 +536,7 @@ func (x *ConsensusQueueObservedEvent) String() string {
 func (*ConsensusQueueObservedEvent) ProtoMessage() {}
 
 func (x *ConsensusQueueObservedEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_triggers_proto_msgTypes[7]
+	mi := &file_triggers_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -488,7 +549,7 @@ func (x *ConsensusQueueObservedEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConsensusQueueObservedEvent.ProtoReflect.Descriptor instead.
 func (*ConsensusQueueObservedEvent) Descriptor() ([]byte, []int) {
-	return file_triggers_proto_rawDescGZIP(), []int{7}
+	return file_triggers_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ConsensusQueueObservedEvent) GetWorkflowID() string {
@@ -550,7 +611,7 @@ const file_triggers_proto_rawDesc = "" +
 	"\bdeadline\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x123\n" +
 	"\x05event\x18\x06 \x01(\v2\x1d.capabilities.TriggerResponseR\x05event\"J\n" +
 	"\x14CoordinatedEventList\x122\n" +
-	"\x06events\x18\x01 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events\"\xa9\x02\n" +
+	"\x06events\x18\x01 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events\"\xb1\x02\n" +
 	"\x13ConsensusQueueEvent\x12\x1e\n" +
 	"\n" +
 	"workflowID\x18\x01 \x01(\tR\n" +
@@ -559,26 +620,30 @@ const file_triggers_proto_rawDesc = "" +
 	"\n" +
 	"observedAt\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"observedAt\x126\n" +
-	"\bdeadline\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x12\x1a\n" +
-	"\bblobHash\x18\x05 \x01(\fR\bblobHash\x12:\n" +
+	"\bdeadline\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x12\"\n" +
+	"\ftimelessHash\x18\x05 \x01(\fR\ftimelessHash\x12:\n" +
 	"\x05blobs\x18\x06 \x03(\v2$.triggers.CoordinatedEventBlobHandleR\x05blobs\"J\n" +
-	"\x1aCoordinatedEventBlobHandle\x12\x16\n" +
-	"\x06handle\x18\x01 \x01(\fR\x06handle\x12\x14\n" +
-	"\x05index\x18\x02 \x01(\rR\x05index\"P\n" +
+	"\x1aCoordinatedEventBlobHandle\x12\x12\n" +
+	"\x04blob\x18\x01 \x01(\rR\x04blob\x12\x18\n" +
+	"\aelement\x18\x02 \x01(\rR\aelement\"P\n" +
 	"\x17ConsensusQueueEventList\x125\n" +
-	"\x06events\x18\x01 \x03(\v2\x1d.triggers.ConsensusQueueEventR\x06events\"\xde\x02\n" +
+	"\x06events\x18\x01 \x03(\v2\x1d.triggers.ConsensusQueueEventR\x06events\"@\n" +
+	"\x1cConsensusQueueBlobHandleList\x12 \n" +
+	"\vblobHandles\x18\x01 \x03(\fR\vblobHandles\"\x80\x03\n" +
 	"\x19ConsensusQueueObservation\x125\n" +
-	"\x06events\x18\x01 \x03(\v2\x1d.triggers.ConsensusQueueEventR\x06events\x12:\n" +
+	"\x06events\x18\x01 \x03(\v2\x1d.triggers.ConsensusQueueEventR\x06events\x12 \n" +
+	"\vblobHandles\x18\x02 \x03(\fR\vblobHandles\x12:\n" +
 	"\n" +
-	"expiration\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expiration\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"expiration\x12\x1a\n" +
-	"\bcapacity\x18\x03 \x01(\rR\bcapacity\x12k\n" +
-	"\x12workflowCapacities\x18\x04 \x03(\v2;.triggers.ConsensusQueueObservation.WorkflowCapacitiesEntryR\x12workflowCapacities\x1aE\n" +
+	"\bcapacity\x18\x04 \x01(\rR\bcapacity\x12k\n" +
+	"\x12workflowCapacities\x18\x05 \x03(\v2;.triggers.ConsensusQueueObservation.WorkflowCapacitiesEntryR\x12workflowCapacities\x1aE\n" +
 	"\x17WorkflowCapacitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\xe4\x01\n" +
+	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\x86\x02\n" +
 	"\x1cConsensusQueueObservedEvents\x12\\\n" +
-	"\fobservations\x18\x01 \x03(\v28.triggers.ConsensusQueueObservedEvents.ObservationsEntryR\fobservations\x1af\n" +
+	"\fobservations\x18\x01 \x03(\v28.triggers.ConsensusQueueObservedEvents.ObservationsEntryR\fobservations\x12 \n" +
+	"\vblobHandles\x18\x02 \x03(\fR\vblobHandles\x1af\n" +
 	"\x11ObservationsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12;\n" +
 	"\x05value\x18\x02 \x01(\v2%.triggers.ConsensusQueueObservedEventR\x05value:\x028\x01\"\xb3\x02\n" +
@@ -604,38 +669,39 @@ func file_triggers_proto_rawDescGZIP() []byte {
 	return file_triggers_proto_rawDescData
 }
 
-var file_triggers_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_triggers_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_triggers_proto_goTypes = []any{
 	(*CoordinatedEvent)(nil),             // 0: triggers.CoordinatedEvent
 	(*CoordinatedEventList)(nil),         // 1: triggers.CoordinatedEventList
 	(*ConsensusQueueEvent)(nil),          // 2: triggers.ConsensusQueueEvent
 	(*CoordinatedEventBlobHandle)(nil),   // 3: triggers.CoordinatedEventBlobHandle
 	(*ConsensusQueueEventList)(nil),      // 4: triggers.ConsensusQueueEventList
-	(*ConsensusQueueObservation)(nil),    // 5: triggers.ConsensusQueueObservation
-	(*ConsensusQueueObservedEvents)(nil), // 6: triggers.ConsensusQueueObservedEvents
-	(*ConsensusQueueObservedEvent)(nil),  // 7: triggers.ConsensusQueueObservedEvent
-	nil,                                  // 8: triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
-	nil,                                  // 9: triggers.ConsensusQueueObservedEvents.ObservationsEntry
-	(*timestamppb.Timestamp)(nil),        // 10: google.protobuf.Timestamp
-	(*TriggerResponse)(nil),              // 11: capabilities.TriggerResponse
+	(*ConsensusQueueBlobHandleList)(nil), // 5: triggers.ConsensusQueueBlobHandleList
+	(*ConsensusQueueObservation)(nil),    // 6: triggers.ConsensusQueueObservation
+	(*ConsensusQueueObservedEvents)(nil), // 7: triggers.ConsensusQueueObservedEvents
+	(*ConsensusQueueObservedEvent)(nil),  // 8: triggers.ConsensusQueueObservedEvent
+	nil,                                  // 9: triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
+	nil,                                  // 10: triggers.ConsensusQueueObservedEvents.ObservationsEntry
+	(*timestamppb.Timestamp)(nil),        // 11: google.protobuf.Timestamp
+	(*TriggerResponse)(nil),              // 12: capabilities.TriggerResponse
 }
 var file_triggers_proto_depIdxs = []int32{
-	10, // 0: triggers.CoordinatedEvent.observedAt:type_name -> google.protobuf.Timestamp
-	10, // 1: triggers.CoordinatedEvent.deadline:type_name -> google.protobuf.Timestamp
-	11, // 2: triggers.CoordinatedEvent.event:type_name -> capabilities.TriggerResponse
+	11, // 0: triggers.CoordinatedEvent.observedAt:type_name -> google.protobuf.Timestamp
+	11, // 1: triggers.CoordinatedEvent.deadline:type_name -> google.protobuf.Timestamp
+	12, // 2: triggers.CoordinatedEvent.event:type_name -> capabilities.TriggerResponse
 	0,  // 3: triggers.CoordinatedEventList.events:type_name -> triggers.CoordinatedEvent
-	10, // 4: triggers.ConsensusQueueEvent.observedAt:type_name -> google.protobuf.Timestamp
-	10, // 5: triggers.ConsensusQueueEvent.deadline:type_name -> google.protobuf.Timestamp
+	11, // 4: triggers.ConsensusQueueEvent.observedAt:type_name -> google.protobuf.Timestamp
+	11, // 5: triggers.ConsensusQueueEvent.deadline:type_name -> google.protobuf.Timestamp
 	3,  // 6: triggers.ConsensusQueueEvent.blobs:type_name -> triggers.CoordinatedEventBlobHandle
 	2,  // 7: triggers.ConsensusQueueEventList.events:type_name -> triggers.ConsensusQueueEvent
 	2,  // 8: triggers.ConsensusQueueObservation.events:type_name -> triggers.ConsensusQueueEvent
-	10, // 9: triggers.ConsensusQueueObservation.expiration:type_name -> google.protobuf.Timestamp
-	8,  // 10: triggers.ConsensusQueueObservation.workflowCapacities:type_name -> triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
-	9,  // 11: triggers.ConsensusQueueObservedEvents.observations:type_name -> triggers.ConsensusQueueObservedEvents.ObservationsEntry
-	10, // 12: triggers.ConsensusQueueObservedEvent.observedAts:type_name -> google.protobuf.Timestamp
-	10, // 13: triggers.ConsensusQueueObservedEvent.deadlines:type_name -> google.protobuf.Timestamp
+	11, // 9: triggers.ConsensusQueueObservation.expiration:type_name -> google.protobuf.Timestamp
+	9,  // 10: triggers.ConsensusQueueObservation.workflowCapacities:type_name -> triggers.ConsensusQueueObservation.WorkflowCapacitiesEntry
+	10, // 11: triggers.ConsensusQueueObservedEvents.observations:type_name -> triggers.ConsensusQueueObservedEvents.ObservationsEntry
+	11, // 12: triggers.ConsensusQueueObservedEvent.observedAts:type_name -> google.protobuf.Timestamp
+	11, // 13: triggers.ConsensusQueueObservedEvent.deadlines:type_name -> google.protobuf.Timestamp
 	3,  // 14: triggers.ConsensusQueueObservedEvent.blobs:type_name -> triggers.CoordinatedEventBlobHandle
-	7,  // 15: triggers.ConsensusQueueObservedEvents.ObservationsEntry.value:type_name -> triggers.ConsensusQueueObservedEvent
+	8,  // 15: triggers.ConsensusQueueObservedEvents.ObservationsEntry.value:type_name -> triggers.ConsensusQueueObservedEvent
 	16, // [16:16] is the sub-list for method output_type
 	16, // [16:16] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
@@ -655,7 +721,7 @@ func file_triggers_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_triggers_proto_rawDesc), len(file_triggers_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -27,14 +27,14 @@ message ConsensusQueueEvent {
   string triggerEventID = 2;
   google.protobuf.Timestamp observedAt = 3;
   google.protobuf.Timestamp deadline = 4;
-  bytes blobHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
+  bytes timelessHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
   repeated CoordinatedEventBlobHandle blobs = 6;
 }
 
 // ConsensusQueueEventsBlobHandle refers to a CoordinatedEvent by blob handle and index within an CoordinatedEventList.
 message CoordinatedEventBlobHandle {
-  bytes handle = 1;
-  uint32 index = 2;
+  uint32 blob = 1;
+  uint32 element = 2;
 }
 
 // ConsensusQueueEvents holds a list of events.
@@ -42,18 +42,25 @@ message ConsensusQueueEventList {
   repeated ConsensusQueueEvent events = 1;
 }
 
+// ConsensusQueueBlobHandleList holds a list of blob handles referenced from ConsensusQueueEventList events.
+message ConsensusQueueBlobHandleList {
+  repeated bytes blobHandles = 1;
+}
+
 // ConsensusQueueObservation is a ReportingPlugin observation of events and capacity meta-data.
 message ConsensusQueueObservation {
-  repeated ConsensusQueueEvent events = 1;
+  repeated ConsensusQueueEvent events = 1; // sorted
+  repeated bytes blobHandles = 2;  // referenced from events by index
 
-  google.protobuf.Timestamp expiration = 2; //
-  uint32 capacity = 3; // Global remaining capacity
-  map<string, uint32> workflowCapacities = 4; // Workflow-specific free executions
+  google.protobuf.Timestamp expiration = 3; // observation time - grace period
+  uint32 capacity = 4; // Global remaining capacity
+  map<string, uint32> workflowCapacities = 5; // Workflow-specific free executions
 }
 
 // ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
 message ConsensusQueueObservedEvents {
-  map<string, ConsensusQueueObservedEvent> observations = 1;
+  map<string, ConsensusQueueObservedEvent> observations = 1; // key: eventHash
+  repeated bytes blobHandles = 2; // referenced from observations events by index
 }
 
 // ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.

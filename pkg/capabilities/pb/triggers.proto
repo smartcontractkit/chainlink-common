@@ -59,8 +59,13 @@ message ConsensusQueueObservation {
 
 // ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
 message ConsensusQueueObservedEvents {
-  map<string, ConsensusQueueObservedEvent> observations = 1; // key: eventHash
+  repeated ConsensusQueueObservedEventEntry observations = 1; // map entries since we have []byte keys
   repeated bytes blobHandles = 2; // referenced from observations events by index
+}
+
+message ConsensusQueueObservedEventEntry {
+  bytes timelessHash = 1; // key
+  ConsensusQueueObservedEvent event = 2; // val
 }
 
 // ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.

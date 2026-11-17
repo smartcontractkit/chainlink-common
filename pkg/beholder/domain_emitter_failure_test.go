@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net"
 	"runtime"
 	"sync"
@@ -108,12 +109,8 @@ func (c *callbackCounter) snapshot() (map[int]int, map[int]error) {
 	defer c.mu.Unlock()
 	counts := make(map[int]int, len(c.counts))
 	errs := make(map[int]error, len(c.errs))
-	for k, v := range c.counts {
-		counts[k] = v
-	}
-	for k, v := range c.errs {
-		errs[k] = v
-	}
+	maps.Copy(counts, c.counts)
+	maps.Copy(errs, c.errs)
 	return counts, errs
 }
 

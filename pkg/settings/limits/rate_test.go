@@ -401,14 +401,12 @@ RateLimit = 'every30s:30'`))
 	start := make(chan struct{})
 	var wg sync.WaitGroup
 	for range 60 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			<-start
 			if rl.Allow(ctx) {
 				allowed.Add(1)
 			}
-		}()
+		})
 	}
 	close(start)
 	wg.Wait()

@@ -1,6 +1,6 @@
 module example.com/consumer
 
-go 1.27.3
+go 1.27.4
 
 require (
 	example.com/upstream v0.0.0

@@ -14,8 +14,6 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder"
 	"github.com/smartcontractkit/chainlink-common/pkg/config"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/pyroscope"
-	"github.com/smartcontractkit/chainlink-common/pkg/loop/telemetry"
 )
 
 // The telemetry and pyroscope env var names, repeated rather than imported so that renaming one in
@@ -218,46 +216,44 @@ func TestEnvConfig_parse(t *testing.T) {
 var envCfgFull = EnvConfig{
 	AppID: "app-id",
 
-	TelemetryConfig: telemetry.TelemetryConfig{
-		TracingEnabled:         true,
-		TracingAttributes:      map[string]string{"XYZ": "value"},
-		TracingCollectorTarget: "some:target",
-		TracingSamplingRatio:   1.0,
-		TracingTLSCertPath:     "internal/test/fixtures/client.pem",
+	TracingEnabled:         true,
+	TracingAttributes:      map[string]string{"XYZ": "value"},
+	TracingCollectorTarget: "some:target",
+	TracingSamplingRatio:   1.0,
+	TracingTLSCertPath:     "internal/test/fixtures/client.pem",
 
-		TelemetryEnabled:                   true,
-		TelemetryEndpoint:                  "example.com/beholder",
-		TelemetryInsecureConnection:        true,
-		TelemetryCACertFile:                "foo/bar",
-		TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
-		TelemetryTraceSampleRatio:          0.42,
-		TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
-		TelemetryAuthPubKeyHex:             "pub-key-hex",
-		TelemetryEmitterBatchProcessor:     true,
-		TelemetryEmitterExportTimeout:      1 * time.Second,
-		TelemetryEmitterExportInterval:     2 * time.Second,
-		TelemetryEmitterExportMaxBatchSize: 100,
-		TelemetryEmitterMaxQueueSize:       1000,
-		TelemetryLogStreamingEnabled:       false,
-		TelemetryMetricExportBatchSize:     200,
-		TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
-		TelemetryMetricViewsDenyAttributes: []string{"event_id"},
-		TelemetryPrometheusBridgeEnabled:   true,
-		TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
+	TelemetryEnabled:                   true,
+	TelemetryEndpoint:                  "example.com/beholder",
+	TelemetryInsecureConnection:        true,
+	TelemetryCACertFile:                "foo/bar",
+	TelemetryAttributes:                OtelAttributes{"foo": "bar", "baz": "42"},
+	TelemetryTraceSampleRatio:          0.42,
+	TelemetryAuthHeaders:               map[string]string{"header-key": "header-value"},
+	TelemetryAuthPubKeyHex:             "pub-key-hex",
+	TelemetryEmitterBatchProcessor:     true,
+	TelemetryEmitterExportTimeout:      1 * time.Second,
+	TelemetryEmitterExportInterval:     2 * time.Second,
+	TelemetryEmitterExportMaxBatchSize: 100,
+	TelemetryEmitterMaxQueueSize:       1000,
+	TelemetryLogStreamingEnabled:       false,
+	TelemetryMetricExportBatchSize:     200,
+	TelemetryMetricCardinalityLimit:    new(beholder.DefaultMetricCardinalityLimit),
+	TelemetryMetricViewsDenyAttributes: []string{"event_id"},
+	TelemetryPrometheusBridgeEnabled:   true,
+	TelemetryPrometheusBridgePrefixes:  []string{"foo", "bar"},
 
-		ChipIngressEndpoint:              "chip-ingress.example.com:50051",
-		ChipIngressInsecureConnection:    true,
-		ChipIngressBatchEmitterEnabled:   false,
-		ChipIngressDurableEmitterEnabled: false,
+	ChipIngressEndpoint:              "chip-ingress.example.com:50051",
+	ChipIngressInsecureConnection:    true,
+	ChipIngressBatchEmitterEnabled:   false,
+	ChipIngressDurableEmitterEnabled: false,
 
-		ChipIngressBufferSize:         1000,
-		ChipIngressMaxBatchSize:       500,
-		ChipIngressMaxConcurrentSends: 10,
-		ChipIngressSendInterval:       100 * time.Millisecond,
-		ChipIngressSendTimeout:        3 * time.Second,
-		ChipIngressDrainTimeout:       10 * time.Second,
-		ChipIngressMaxGRPCRequestSize: 10485760,
-	},
+	ChipIngressBufferSize:         1000,
+	ChipIngressMaxBatchSize:       500,
+	ChipIngressMaxConcurrentSends: 10,
+	ChipIngressSendInterval:       100 * time.Millisecond,
+	ChipIngressSendTimeout:        3 * time.Second,
+	ChipIngressDrainTimeout:       10 * time.Second,
+	ChipIngressMaxGRPCRequestSize: 10485760,
 
 	DatabaseURL:                          config.MustSecretURL("postgres://user:password@localhost:5432/db"),
 	DatabaseIdleInTxSessionTimeout:       42 * time.Second,
@@ -287,14 +283,12 @@ var envCfgFull = EnvConfig{
 
 	PrometheusPort: 8080,
 
-	PyroscopeConfig: pyroscope.PyroscopeConfig{
-		PyroscopeAuthToken:                 "token",
-		PyroscopeServerAddress:             "http://pyroscope:4040",
-		PyroscopeEnvironment:               "pyroscope-env",
-		PyroscopeLinkTracesToProfiles:      true,
-		PyroscopePPROFBlockProfileRate:     42,
-		PyroscopePPROFMutexProfileFraction: 99,
-	},
+	PyroscopeAuthToken:                 "token",
+	PyroscopeServerAddress:             "http://pyroscope:4040",
+	PyroscopeEnvironment:               "pyroscope-env",
+	PyroscopeLinkTracesToProfiles:      true,
+	PyroscopePPROFBlockProfileRate:     42,
+	PyroscopePPROFMutexProfileFraction: 99,
 
 	MeterRecordsEnabled:   true,
 	MeterSnapshotsEnabled: false,

@@ -1,6 +1,6 @@
 module github.com/smartcontractkit/chainlink-common/keystore
 
-go 1.27.3
+go 1.27.4
 
 require (
 	cloud.google.com/go/kms v1.33.0

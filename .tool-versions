@@ -1,4 +1,4 @@
-golang 1.27.3
+golang 1.27.4
 protoc 29.3
 protoc-gen-go-grpc 1.5.1
 golangci-lint 2.15.0

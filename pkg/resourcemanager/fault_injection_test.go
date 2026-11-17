@@ -23,7 +23,7 @@ func TestSampled(t *testing.T) {
 	assert.Equal(t, sampled(0.5, "a"), sampled(0.5, "a"), "deterministic")
 
 	hits := 0
-	for i := 0; i < 10000; i++ {
+	for i := range 10000 {
 		if sampled(0.1, fmt.Sprint(i)) {
 			hits++
 		}
@@ -157,7 +157,7 @@ func TestApplyFault(t *testing.T) {
 	t.Run("perturb honours the node rate", func(t *testing.T) {
 		g := faultSettings(t, "org-1", map[string]string{"BillingFaultPerturbRate": "1", "BillingFaultPerturbDelta": "7", "BillingFaultNodeRate": "0.5"})
 		var perturbed, untouched int
-		for i := 0; i < 20; i++ {
+		for i := range 20 {
 			switch emittedValue(t, emitUsageWithFault(t, g, fmt.Sprintf("node-%d", i), "exec-1")) {
 			case "93":
 				perturbed++

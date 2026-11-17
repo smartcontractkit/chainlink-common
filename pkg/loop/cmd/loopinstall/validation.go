@@ -18,6 +18,11 @@ func (plugin PluginDef) Validate() error {
 	if err := validateInstallPath(plugin.InstallPath); err != nil {
 		return err
 	}
+	if plugin.BinaryName != "" {
+		if err := validateBinaryName(plugin.BinaryName); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -45,6 +50,15 @@ func validateInstallPath(path string) error {
 	// Validate as Go import path
 	if !regexp.MustCompile(`^[.\w/-]+(/[\w./-]+)*$`).MatchString(path) {
 		return fmt.Errorf("invalid install path: %s", path)
+	}
+	return nil
+}
+
+// validateBinaryName ensures an overridden binary name is a plain file name,
+// so it cannot escape the output directory or smuggle path separators.
+func validateBinaryName(name string) error {
+	if !regexp.MustCompile(`^[\w.-]+$`).MatchString(name) {
+		return fmt.Errorf("invalid binary name: %s", name)
 	}
 	return nil
 }

@@ -18,7 +18,7 @@ import (
 var durationType = reflect.TypeFor[time.Duration]()
 
 func bindLeafFlag(entry targetEntry, m fieldMeta, doc string) (leafKey, error) {
-	fileType, err := decode.FileValueType(commentparsing.DerefType(m.field.Type), entry.binder().opts.Markup, map[reflect.Type]bool{})
+	fileType, err := decode.FileValueType(commentparsing.DerefType(m.field.Type), entry.binder().opts.Markup)
 	if err != nil {
 		return leafKey{}, fmt.Errorf("%s: %s: %w", m.owner, m.field.Name, err)
 	}

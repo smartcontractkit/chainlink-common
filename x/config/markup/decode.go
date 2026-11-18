@@ -33,20 +33,19 @@ func Decode(lang Markup, data []byte, v any) error {
 		return errors.New("target must be a non-nil pointer to struct")
 	}
 
-	keys := &decode.KeyNode{}
-	var leaves []fileLeaf
-	if err := walkKeys(rv.Type(), lang, nil, nil, []reflect.Type{rv.Type()}, keys, &leaves); err != nil {
+	w := keyWalker{lang: lang, keys: &decode.KeyNode{}}
+	if err := w.walk(rv.Type(), nil, nil, []reflect.Type{rv.Type()}); err != nil {
 		return err
 	}
 
 	// Pointers tell a key the document left out from one set to the zero value.
-	fileValues := reflect.New(keys.FileValuesType(lang))
+	fileValues := reflect.New(w.keys.FileValuesType(lang))
 	if err := lang.Unmarshal(data, fileValues.Interface()); err != nil {
 		return err
 	}
 
-	for _, leaf := range leaves {
-		raw, ok := keys.Lookup(fileValues.Elem(), leaf.fileKey)
+	for _, leaf := range w.leaves {
+		raw, ok := w.keys.Lookup(fileValues.Elem(), leaf.fileKey)
 		if !ok {
 			continue
 		}
@@ -93,12 +92,18 @@ type fileLeaf struct {
 	goType  reflect.Type
 }
 
-// walkKeys builds t's key tree in keys and its leaves in leaves, as the cli builds one for a command's structs: a field
-// the markup flattens adds no key segment, a field it never reads is left out, and two fields one document key would
-// set are an error.
-func walkKeys(t reflect.Type, lang Markup, fileKey, goPath []string, ancestors []reflect.Type, keys *decode.KeyNode, leaves *[]fileLeaf) error {
+// keyWalker builds a struct's key tree in keys and its leaves in leaves, as the cli builds one for a command's structs.
+type keyWalker struct {
+	lang   Markup
+	keys   *decode.KeyNode
+	leaves []fileLeaf
+}
+
+// A field the markup flattens adds no key segment, a field it never reads is left out, and two fields one document key
+// would set are an error.
+func (w *keyWalker) walk(t reflect.Type, fileKey, goPath []string, ancestors []reflect.Type) error {
 	for f := range t.Fields() {
-		key, read := lang.Key(f)
+		key, read := w.lang.Key(f)
 		// The markup's decoder never reads it, so nothing else may either.
 		if !read || (!f.IsExported() && key != "") {
 			continue
@@ -112,18 +117,18 @@ func walkKeys(t reflect.Type, lang Markup, fileKey, goPath []string, ancestors [
 		}
 
 		// A struct already being walked is a leaf, so a recursive type can't walk forever.
-		if elem.Kind() != reflect.Struct || lang.IsLeaf(f.Type) || lang.IsLeaf(elem) ||
+		if elem.Kind() != reflect.Struct || w.lang.IsLeaf(f.Type) || w.lang.IsLeaf(elem) ||
 			slices.Contains(ancestors, elem) {
-			fileType, err := decode.FileValueType(elem, lang, map[reflect.Type]bool{})
+			fileType, err := decode.FileValueType(elem, w.lang)
 			if err != nil {
 				return fmt.Errorf("%s: %w", f.Name, err)
 			}
 
-			if err = keys.Add(childKey, fileType, f.Tag, lang); err != nil {
+			if err = w.keys.Add(childKey, fileType, f.Tag, w.lang); err != nil {
 				return err
 			}
 
-			*leaves = append(*leaves, fileLeaf{childKey, fieldPath, elem})
+			w.leaves = append(w.leaves, fileLeaf{childKey, fieldPath, elem})
 			continue
 		}
 
@@ -133,7 +138,7 @@ func walkKeys(t reflect.Type, lang Markup, fileKey, goPath []string, ancestors [
 				"export the type or embed it by value", elem.Name())
 		}
 
-		if err := walkKeys(elem, lang, childKey, fieldPath, append(slices.Clone(ancestors), elem), keys, leaves); err != nil {
+		if err := w.walk(elem, childKey, fieldPath, append(slices.Clone(ancestors), elem)); err != nil {
 			return err
 		}
 	}

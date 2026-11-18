@@ -117,10 +117,19 @@ var stringType = reflect.TypeFor[string]()
 // one the markup could read itself, so two texts for one key are always caught.
 //
 // A recursive type that needs converting, such as type M map[uint32]*M, is an error: the inner M can't be converted.
-// visiting holds the types being converted, false until one is reached again inside itself.
-func FileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
-	if _, ok := visiting[t]; ok {
-		visiting[t] = true
+func FileValueType(t reflect.Type, lang Markup) (reflect.Type, error) {
+	return fileTyper{lang: lang, visiting: map[reflect.Type]bool{}}.valueType(t)
+}
+
+type fileTyper struct {
+	lang Markup
+	// visiting holds the types being converted, false until one is reached again inside itself.
+	visiting map[reflect.Type]bool
+}
+
+func (ft fileTyper) valueType(t reflect.Type) (reflect.Type, error) {
+	if _, ok := ft.visiting[t]; ok {
+		ft.visiting[t] = true
 		// Recursion itself is not an error, for example, nothing should stop the type below from being used.
 		// type Endpoint struct {
 		// 	 URL      string
@@ -139,18 +148,18 @@ func FileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) 
 		return t, nil
 	}
 
-	if lang.IsLeaf(t) {
+	if ft.lang.IsLeaf(t) {
 		return t, nil
 	}
 
-	visiting[t] = false
-	defer delete(visiting, t)
-	out, err := convertFileValueType(t, lang, visiting)
+	ft.visiting[t] = false
+	defer delete(ft.visiting, t)
+	out, err := ft.convert(t)
 	if err != nil {
 		return nil, err
 	}
 
-	if visiting[t] && out != t {
+	if ft.visiting[t] && out != t {
 		return nil, fmt.Errorf("%s holds itself and a map with non-string keys, which a config file can't set; "+
 			"key the map by string", t)
 	}
@@ -158,7 +167,7 @@ func FileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) 
 	return out, nil
 }
 
-func convertFileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
+func (ft fileTyper) convert(t reflect.Type) (reflect.Type, error) {
 	var wrap func(reflect.Type) reflect.Type
 	switch t.Kind() {
 	case reflect.Map:
@@ -175,12 +184,12 @@ func convertFileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type
 	case reflect.Pointer:
 		wrap = reflect.PointerTo
 	case reflect.Struct:
-		return fileStructType(t, lang, visiting)
+		return ft.structType(t)
 	default:
 		return t, nil
 	}
 
-	elem, err := FileValueType(t.Elem(), lang, visiting)
+	elem, err := ft.valueType(t.Elem())
 	if err != nil {
 		return nil, err
 	}
@@ -198,22 +207,22 @@ func convertFileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type
 // Unexported fields, which reflect.StructOf can't make, and fields the markup ignores are never set from a file, so
 // they're left out. StructOf doesn't promote an embedded field's methods either, so a struct that embeds one can't be
 // rebuilt.
-func fileStructType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
+func (ft fileTyper) structType(t reflect.Type) (reflect.Type, error) {
 	var fields []reflect.StructField
 	changed, embeds := false, false
 	for f := range t.Fields() {
-		if _, read := lang.Key(f); !read || (!f.IsExported() && !f.Anonymous) {
+		if _, read := ft.lang.Key(f); !read || (!f.IsExported() && !f.Anonymous) {
 			continue
 		}
 
-		ft, err := FileValueType(f.Type, lang, visiting)
+		fieldType, err := ft.valueType(f.Type)
 		if err != nil {
 			return nil, err
 		}
 
-		changed = changed || ft != f.Type
+		changed = changed || fieldType != f.Type
 		embeds = embeds || f.Anonymous
-		fields = append(fields, reflect.StructField{Name: f.Name, Type: ft, Tag: f.Tag})
+		fields = append(fields, reflect.StructField{Name: f.Name, Type: fieldType, Tag: f.Tag})
 	}
 
 	switch {

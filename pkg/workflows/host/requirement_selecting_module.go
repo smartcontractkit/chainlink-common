@@ -16,15 +16,11 @@ import (
 type ModuleAndHandler struct {
 	Module
 	RequirementsHandler
-	// UsageIdentity is the identity usage meter records of this runner's
-	// executions carry: the workflow's ordinary compute identity by default,
-	// or the confidential compute identity for the confidential runner.
+	// UsageIdentity is used to meter compute vs confidential compute.
 	UsageIdentity *resourcemanager.ResourceIdentity
 }
 
-// UsageRouter is implemented by modules that route triggers between runners
-// (each a ModuleAndHandler); it reports the usage identity the runner a
-// trigger routed to declared — nil when the runner declares none.
+// UsageRouter reports the usage identity declared by the runner a trigger routed to.
 type UsageRouter interface {
 	UsageIdentityForTrigger(triggerIndex uint64) (*resourcemanager.ResourceIdentity, bool)
 }

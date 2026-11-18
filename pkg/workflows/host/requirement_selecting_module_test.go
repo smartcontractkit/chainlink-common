@@ -14,8 +14,6 @@ import (
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 )
 
 type stubModule struct {
@@ -920,23 +918,19 @@ func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUser
 	return nil
 }
 
-func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
-	// The identity the wiring layer builds for the confidential runner.
-	confidentialID := &resourcemanager.ResourceIdentity{
-		ResourcePoolID: resourcemanager.ResourceTypeWorkflowConfidentialCompute,
-	}
-
-	t.Run("reports the routed runner and its usage identity", func(t *testing.T) {
-		main := ModuleAndHandler{Module: &stubModule{}}
+func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
+	t.Run("reports the module a trigger routed to", func(t *testing.T) {
+		mainModule := &stubModule{}
+		confModule := &stubModule{}
+		main := ModuleAndHandler{Module: mainModule}
 		add := ModuleAndHandler{
-			Module:        &stubModule{},
-			Tee:           func(context.Context, *sdk.Tee) bool { return true },
-			UsageIdentity: confidentialID,
+			Module: confModule,
+			Tee:    func(context.Context, *sdk.Tee) bool { return true },
 		}
 
-		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add}).(UsageRouter)
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add}).(TriggerRouter)
 
-		_, found := m.UsageIdentityForTrigger(0)
+		_, found := m.RoutedModule(0)
 		assert.False(t, found, "no trigger routed before Subscribe")
 
 		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
@@ -944,25 +938,11 @@ func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
 			[]*sdk.TriggerSubscription{subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}})},
 		))
 
-		identity, found := m.UsageIdentityForTrigger(0)
+		module, found := m.RoutedModule(0)
 		require.True(t, found)
-		assert.Same(t, confidentialID, identity)
+		assert.Same(t, confModule, module)
 
-		_, found = m.UsageIdentityForTrigger(7)
+		_, found = m.RoutedModule(7)
 		assert.False(t, found, "unknown trigger index")
-	})
-
-	t.Run("a runner without a usage identity is reported with none", func(t *testing.T) {
-		main := ModuleAndHandler{Module: &stubModule{}}
-
-		m := NewRequirementSelectingModule(main, nil).(UsageRouter)
-		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
-			t.Context(),
-			[]*sdk.TriggerSubscription{subWithReqs(nil)},
-		))
-
-		identity, found := m.UsageIdentityForTrigger(0)
-		require.True(t, found)
-		assert.Nil(t, identity)
 	})
 }

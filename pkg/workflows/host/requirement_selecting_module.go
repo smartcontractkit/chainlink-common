@@ -9,20 +9,17 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
-
-	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 )
 
 type ModuleAndHandler struct {
 	Module
 	RequirementsHandler
-	// UsageIdentity is used to meter compute vs confidential compute.
-	UsageIdentity *resourcemanager.ResourceIdentity
 }
 
-// UsageRouter reports the usage identity declared by the runner a trigger routed to.
-type UsageRouter interface {
-	UsageIdentityForTrigger(triggerIndex uint64) (*resourcemanager.ResourceIdentity, bool)
+// TriggerRouter is implemented by modules that route triggers between runners;
+// it reports which module a trigger subscription was routed to.
+type TriggerRouter interface {
+	RoutedModule(triggerIndex uint64) (Module, bool)
 }
 
 // lazyModule wraps a ModuleAndHandler so that Start is called at most once
@@ -82,14 +79,14 @@ type requirementSelectingModule struct {
 	cache sync.Map
 }
 
-// UsageIdentityForTrigger reports the usage identity of the runner the trigger
-// routed to; false when the trigger is unknown (before Subscribe).
-func (r *requirementSelectingModule) UsageIdentityForTrigger(triggerIndex uint64) (*resourcemanager.ResourceIdentity, bool) {
+// RoutedModule reports the module the trigger routed to; false when the
+// trigger is unknown (before Subscribe).
+func (r *requirementSelectingModule) RoutedModule(triggerIndex uint64) (Module, bool) {
 	info, ok := r.cache.Load(triggerIndex)
 	if !ok {
 		return nil, false
 	}
-	return r.modules[info.(triggerInfo).moduleIdx].UsageIdentity, true
+	return r.modules[info.(triggerInfo).moduleIdx].Module, true
 }
 
 func (r *requirementSelectingModule) Start() {

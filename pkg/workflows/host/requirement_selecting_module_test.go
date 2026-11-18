@@ -921,9 +921,11 @@ func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUser
 func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 	// Trigger subscriptions are identified by their index in the subscribe
 	// result; each test routes one trigger per index.
+	// Trigger indexes are positions in the workflow's subscription list.
 	var (
 		confidentialTrigger = uint64(0) // requires a TEE
 		plainTrigger        = uint64(1) // no requirements
+		onlyTrigger         = uint64(0) // a workflow's single, plain trigger
 		unknownTrigger      = uint64(7) // no such subscription
 	)
 
@@ -961,12 +963,12 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 		m := NewRequirementSelectingModule(main, nil).(TriggerRouter)
 		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
 			t.Context(),
-			[]*sdk.TriggerSubscription{subWithReqs(nil)}, // the plain trigger is subscription 0 here
+			[]*sdk.TriggerSubscription{subWithReqs(nil)}, // onlyTrigger is this workflow's subscription 0
 		))
 
 		_, found := m.RoutedModule(plainTrigger)
 		require.False(t, found, "this workflow has no subscription at index 1")
-		module, found := m.RoutedModule(0)
+		module, found := m.RoutedModule(onlyTrigger)
 		require.True(t, found)
 		assert.Same(t, mainModule, module)
 	})

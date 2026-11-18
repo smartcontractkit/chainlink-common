@@ -921,7 +921,10 @@ func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUser
 }
 
 func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
-	confidentialID := &resourcemanager.ResourceIdentity{}
+	// The identity the wiring layer builds for the confidential runner.
+	confidentialID := &resourcemanager.ResourceIdentity{
+		ResourcePoolID: resourcemanager.ResourceTypeWorkflowConfidentialCompute,
+	}
 
 	t.Run("reports the routed runner and its usage identity", func(t *testing.T) {
 		main := ModuleAndHandler{Module: &stubModule{}}

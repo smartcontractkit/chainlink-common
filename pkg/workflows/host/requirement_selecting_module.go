@@ -17,7 +17,8 @@ type ModuleAndHandler struct {
 	Module
 	RequirementsHandler
 	// UsageIdentity is the identity usage meter records of this runner's
-	// executions carry; nil means the caller's default compute identity.
+	// executions carry: the workflow's ordinary compute identity by default,
+	// or the confidential compute identity for the confidential runner.
 	UsageIdentity *resourcemanager.ResourceIdentity
 }
 

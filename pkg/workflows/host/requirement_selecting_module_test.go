@@ -14,6 +14,8 @@ import (
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	wfpb "github.com/smartcontractkit/chainlink-protos/workflows/go/v2"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 )
 
 type stubModule struct {
@@ -916,4 +918,48 @@ func (s *stubExecutionHelper) GetDONTime() (time.Time, error) { return time.Time
 func (s *stubExecutionHelper) EmitUserLog(string) error       { return nil }
 func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUserMetric) error {
 	return nil
+}
+
+func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
+	confidentialID := &resourcemanager.ResourceIdentity{}
+
+	t.Run("reports the routed runner and its usage identity", func(t *testing.T) {
+		main := ModuleAndHandler{Module: &stubModule{}}
+		add := ModuleAndHandler{
+			Module:        &stubModule{},
+			Tee:           func(context.Context, *sdk.Tee) bool { return true },
+			UsageIdentity: confidentialID,
+		}
+
+		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add}).(UsageRouter)
+
+		_, found := m.UsageRunnerForTrigger(0)
+		assert.False(t, found, "no trigger routed before Subscribe")
+
+		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
+			t.Context(),
+			[]*sdk.TriggerSubscription{subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}})},
+		))
+
+		runner, found := m.UsageRunnerForTrigger(0)
+		require.True(t, found)
+		assert.Same(t, confidentialID, runner.UsageIdentity)
+
+		_, found = m.UsageRunnerForTrigger(7)
+		assert.False(t, found, "unknown trigger index")
+	})
+
+	t.Run("a runner without a usage identity is reported with none", func(t *testing.T) {
+		main := ModuleAndHandler{Module: &stubModule{}}
+
+		m := NewRequirementSelectingModule(main, nil).(UsageRouter)
+		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
+			t.Context(),
+			[]*sdk.TriggerSubscription{subWithReqs(nil)},
+		))
+
+		runner, found := m.UsageRunnerForTrigger(0)
+		require.True(t, found)
+		assert.Nil(t, runner.UsageIdentity)
+	})
 }

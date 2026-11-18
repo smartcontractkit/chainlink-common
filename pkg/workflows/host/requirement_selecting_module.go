@@ -9,11 +9,23 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+
+	"github.com/smartcontractkit/chainlink-common/pkg/resourcemanager"
 )
 
 type ModuleAndHandler struct {
 	Module
 	RequirementsHandler
+	// UsageIdentity is the identity usage meter records of this runner's
+	// executions carry; nil means the caller's default compute identity.
+	UsageIdentity *resourcemanager.ResourceIdentity
+}
+
+// UsageRouter is implemented by modules that route triggers between runners
+// (each a ModuleAndHandler); it reports which runner a trigger routed to, so
+// usage records can carry that runner's identity.
+type UsageRouter interface {
+	UsageRunnerForTrigger(triggerIndex uint64) (ModuleAndHandler, bool)
 }
 
 // lazyModule wraps a ModuleAndHandler so that Start is called at most once
@@ -71,6 +83,16 @@ type requirementSelectingModule struct {
 	modules []*lazyModule
 	// triggerID → triggerInfo
 	cache sync.Map
+}
+
+// UsageRunnerForTrigger reports the runner the trigger routed to; false when
+// the trigger is unknown (before Subscribe).
+func (r *requirementSelectingModule) UsageRunnerForTrigger(triggerIndex uint64) (ModuleAndHandler, bool) {
+	info, ok := r.cache.Load(triggerIndex)
+	if !ok {
+		return ModuleAndHandler{}, false
+	}
+	return r.modules[info.(triggerInfo).moduleIdx].ModuleAndHandler, true
 }
 
 func (r *requirementSelectingModule) Start() {

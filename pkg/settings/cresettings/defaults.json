@@ -45,6 +45,7 @@
 	"BaseTriggerPruneAge": "24h0m0s",
 	"BaseTriggerMaxSendsPerTick": "20",
 	"WASMPollOneoffSubscriptionLimit": "128",
+	"WorkflowRegistryMaxResultsPerQuery": "300",
 	"VaultCiphertextSizeLimit": "2kb",
 	"VaultShareSizeLimit": "600b",
 	"VaultIdentifierKeySizeLimit": "64b",

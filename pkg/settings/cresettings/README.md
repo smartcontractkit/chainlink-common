@@ -127,6 +127,10 @@ flowchart
         WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
     end
 
+    subgraph syncer.ContractWorkflowSource.ListWorkflowMetadata
+        WorkflowRegistryMaxResultsPerQuery{{WorkflowRegistryMaxResultsPerQuery}}:::bound
+    end
+
     subgraph syncer.tryEngineCreate
         CoordinatedEngineEnabled[/CoordinatedEngineEnabled\]:::gate
         PerWorkflow.CoordinatedEngineEnabled[/PerWorkflow.CoordinatedEngineEnabled\]:::gate

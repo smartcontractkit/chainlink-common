@@ -945,4 +945,44 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 		_, found = m.RoutedModule(7)
 		assert.False(t, found, "unknown trigger index")
 	})
+
+	t.Run("a trigger without requirements routes to the main module", func(t *testing.T) {
+		mainModule := &stubModule{}
+		main := ModuleAndHandler{Module: mainModule}
+
+		m := NewRequirementSelectingModule(main, nil).(TriggerRouter)
+		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
+			t.Context(),
+			[]*sdk.TriggerSubscription{subWithReqs(nil)},
+		))
+
+		module, found := m.RoutedModule(0)
+		require.True(t, found)
+		assert.Same(t, mainModule, module)
+	})
+
+	t.Run("routes among multiple runners by requirements", func(t *testing.T) {
+		mainModule := &stubModule{}
+		firstAdditional := &stubModule{}
+		teeAdditional := &stubModule{}
+		main := ModuleAndHandler{Module: mainModule}
+		adds := []ModuleAndHandler{
+			{Module: firstAdditional},
+			{Module: teeAdditional, Tee: func(context.Context, *sdk.Tee) bool { return true }},
+		}
+
+		m := NewRequirementSelectingModule(main, adds).(TriggerRouter)
+		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{
+			subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}}), // only the second additional can take it
+			subWithReqs(nil), // the main runner takes it
+		}))
+
+		module, found := m.RoutedModule(0)
+		require.True(t, found)
+		assert.Same(t, teeAdditional, module)
+
+		module, found = m.RoutedModule(1)
+		require.True(t, found)
+		assert.Same(t, mainModule, module)
+	})
 }

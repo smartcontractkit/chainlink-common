@@ -919,7 +919,15 @@ func (s *stubExecutionHelper) EmitUserMetric(context.Context, *wfpb.WorkflowUser
 }
 
 func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
-	t.Run("reports the module a trigger routed to", func(t *testing.T) {
+	// Trigger subscriptions are identified by their index in the subscribe
+	// result; each test routes one trigger per index.
+	var (
+		confidentialTrigger = uint64(0) // requires a TEE
+		plainTrigger        = uint64(1) // no requirements
+		unknownTrigger      = uint64(7) // no such subscription
+	)
+
+	t.Run("the confidential runner's trigger routes to it, others have none", func(t *testing.T) {
 		mainModule := &stubModule{}
 		confModule := &stubModule{}
 		main := ModuleAndHandler{Module: mainModule}
@@ -930,7 +938,7 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add}).(TriggerRouter)
 
-		_, found := m.RoutedModule(0)
+		_, found := m.RoutedModule(confidentialTrigger)
 		assert.False(t, found, "no trigger routed before Subscribe")
 
 		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
@@ -938,11 +946,11 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 			[]*sdk.TriggerSubscription{subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}})},
 		))
 
-		module, found := m.RoutedModule(0)
+		module, found := m.RoutedModule(confidentialTrigger)
 		require.True(t, found)
 		assert.Same(t, confModule, module)
 
-		_, found = m.RoutedModule(7)
+		_, found = m.RoutedModule(unknownTrigger)
 		assert.False(t, found, "unknown trigger index")
 	})
 
@@ -953,9 +961,11 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 		m := NewRequirementSelectingModule(main, nil).(TriggerRouter)
 		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
 			t.Context(),
-			[]*sdk.TriggerSubscription{subWithReqs(nil)},
+			[]*sdk.TriggerSubscription{subWithReqs(nil)}, // the plain trigger is subscription 0 here
 		))
 
+		_, found := m.RoutedModule(plainTrigger)
+		require.False(t, found, "this workflow has no subscription at index 1")
 		module, found := m.RoutedModule(0)
 		require.True(t, found)
 		assert.Same(t, mainModule, module)
@@ -963,8 +973,8 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 
 	t.Run("routes among multiple runners by requirements", func(t *testing.T) {
 		mainModule := &stubModule{}
-		firstAdditional := &stubModule{}
-		teeAdditional := &stubModule{}
+		firstAdditional := &stubModule{} // cannot take TEE triggers
+		teeAdditional := &stubModule{}   // the confidential runner
 		main := ModuleAndHandler{Module: mainModule}
 		adds := []ModuleAndHandler{
 			{Module: firstAdditional},
@@ -973,15 +983,15 @@ func TestRequirementSelectingModule_RoutedModule(t *testing.T) {
 
 		m := NewRequirementSelectingModule(main, adds).(TriggerRouter)
 		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(t.Context(), []*sdk.TriggerSubscription{
-			subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}}), // only the second additional can take it
-			subWithReqs(nil), // the main runner takes it
+			subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}}), // trigger 0: only the second additional can take it
+			subWithReqs(nil), // trigger 1: the main runner takes it
 		}))
 
-		module, found := m.RoutedModule(0)
+		module, found := m.RoutedModule(confidentialTrigger)
 		require.True(t, found)
 		assert.Same(t, teeAdditional, module)
 
-		module, found = m.RoutedModule(1)
+		module, found = m.RoutedModule(plainTrigger)
 		require.True(t, found)
 		assert.Same(t, mainModule, module)
 	})

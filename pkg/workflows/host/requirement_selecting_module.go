@@ -23,10 +23,10 @@ type ModuleAndHandler struct {
 }
 
 // UsageRouter is implemented by modules that route triggers between runners
-// (each a ModuleAndHandler); it reports which runner a trigger routed to, so
-// usage records can carry that runner's identity.
+// (each a ModuleAndHandler); it reports the usage identity the runner a
+// trigger routed to declared — nil when the runner declares none.
 type UsageRouter interface {
-	UsageRunnerForTrigger(triggerIndex uint64) (ModuleAndHandler, bool)
+	UsageIdentityForTrigger(triggerIndex uint64) (*resourcemanager.ResourceIdentity, bool)
 }
 
 // lazyModule wraps a ModuleAndHandler so that Start is called at most once
@@ -86,14 +86,14 @@ type requirementSelectingModule struct {
 	cache sync.Map
 }
 
-// UsageRunnerForTrigger reports the runner the trigger routed to; false when
-// the trigger is unknown (before Subscribe).
-func (r *requirementSelectingModule) UsageRunnerForTrigger(triggerIndex uint64) (ModuleAndHandler, bool) {
+// UsageIdentityForTrigger reports the usage identity of the runner the trigger
+// routed to; false when the trigger is unknown (before Subscribe).
+func (r *requirementSelectingModule) UsageIdentityForTrigger(triggerIndex uint64) (*resourcemanager.ResourceIdentity, bool) {
 	info, ok := r.cache.Load(triggerIndex)
 	if !ok {
-		return ModuleAndHandler{}, false
+		return nil, false
 	}
-	return r.modules[info.(triggerInfo).moduleIdx].ModuleAndHandler, true
+	return r.modules[info.(triggerInfo).moduleIdx].UsageIdentity, true
 }
 
 func (r *requirementSelectingModule) Start() {

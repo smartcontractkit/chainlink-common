@@ -936,7 +936,7 @@ func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
 
 		m := NewRequirementSelectingModule(main, []ModuleAndHandler{add}).(UsageRouter)
 
-		_, found := m.UsageRunnerForTrigger(0)
+		_, found := m.UsageIdentityForTrigger(0)
 		assert.False(t, found, "no trigger routed before Subscribe")
 
 		require.NoError(t, m.(TriggerCachePrimer).PrimeTriggerCache(
@@ -944,11 +944,11 @@ func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
 			[]*sdk.TriggerSubscription{subWithReqs(&sdk.Requirements{Tee: &sdk.Tee{}})},
 		))
 
-		runner, found := m.UsageRunnerForTrigger(0)
+		identity, found := m.UsageIdentityForTrigger(0)
 		require.True(t, found)
-		assert.Same(t, confidentialID, runner.UsageIdentity)
+		assert.Same(t, confidentialID, identity)
 
-		_, found = m.UsageRunnerForTrigger(7)
+		_, found = m.UsageIdentityForTrigger(7)
 		assert.False(t, found, "unknown trigger index")
 	})
 
@@ -961,8 +961,8 @@ func TestRequirementSelectingModule_UsageRunnerForTrigger(t *testing.T) {
 			[]*sdk.TriggerSubscription{subWithReqs(nil)},
 		))
 
-		runner, found := m.UsageRunnerForTrigger(0)
+		identity, found := m.UsageIdentityForTrigger(0)
 		require.True(t, found)
-		assert.Nil(t, runner.UsageIdentity)
+		assert.Nil(t, identity)
 	})
 }

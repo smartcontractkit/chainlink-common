@@ -11,13 +11,14 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 )
 
 // durationType tells time.Duration apart from int64, which shares its Kind.
 var durationType = reflect.TypeFor[time.Duration]()
 
 func bindLeafFlag(entry targetEntry, m fieldMeta, doc string) (leafKey, error) {
-	fileType, err := fileValueType(commentparsing.DerefType(m.field.Type), entry.binder().opts.Markup, map[reflect.Type]bool{})
+	fileType, err := decode.FileValueType(commentparsing.DerefType(m.field.Type), entry.binder().opts.Markup, map[reflect.Type]bool{})
 	if err != nil {
 		return leafKey{}, fmt.Errorf("%s: %s: %w", m.owner, m.field.Name, err)
 	}
@@ -106,7 +107,7 @@ func newFlag(name string, t reflect.Type, def reflect.Value, usage string) (*pfl
 
 	f := &pflag.Flag{Name: name, Usage: usage, Value: value, DefValue: value.String()}
 	// So --flag alone sets it, as with pflag's own bool flags.
-	if t.Kind() == reflect.Bool && !readsText(t) {
+	if t.Kind() == reflect.Bool && !decode.ReadsText(t) {
 		f.NoOptDefVal = "true"
 	}
 
@@ -118,7 +119,7 @@ type textValue struct{ value reflect.Value }
 
 func (v *textValue) Set(s string) error {
 	p := reflect.New(v.value.Type())
-	if err := setText(p.Elem(), s); err != nil {
+	if err := decode.SetText(p.Elem(), s); err != nil {
 		return err
 	}
 
@@ -141,7 +142,7 @@ func (v *textValue) Type() string {
 	switch t := v.value.Type(); {
 	// []byte is set as raw text, such as JSON or PEM, rather than pflag's hex or base64, so the user types a string.
 	// Non-byte arrays should already be filtered before this struct is created; the check is for defence in depth.
-	case readsText(t) || (t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8):
+	case decode.ReadsText(t) || (t.Kind() == reflect.Slice && t.Elem().Kind() == reflect.Uint8):
 		return "string"
 	case t == durationType:
 		// pflag's own duration flag reports duration. Without this case it would show int64
@@ -151,49 +152,7 @@ func (v *textValue) Type() string {
 	}
 }
 
-// Parsed as pflag would: any Go literal base, and sized, so 256 overflows a uint8. []byte is text (JSON, PEM), not a
-// list of numbers.
-func setText(dst reflect.Value, s string) error {
-	t := dst.Type()
-	switch {
-	case readsText(t):
-		return dst.Addr().Interface().(encoding.TextUnmarshaler).UnmarshalText([]byte(s))
-	case t == durationType:
-		d, err := time.ParseDuration(s)
-		dst.SetInt(int64(d))
-		return err
-	}
-
-	var err error
-	switch t.Kind() {
-	case reflect.String:
-		dst.SetString(s)
-	case reflect.Slice:
-		dst.SetBytes([]byte(s))
-	case reflect.Bool:
-		var b bool
-		b, err = strconv.ParseBool(s)
-		dst.SetBool(b)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		var n int64
-		n, err = strconv.ParseInt(s, 0, t.Bits())
-		dst.SetInt(n)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		var n uint64
-		n, err = strconv.ParseUint(s, 0, t.Bits())
-		dst.SetUint(n)
-	case reflect.Float32, reflect.Float64:
-		var n float64
-		n, err = strconv.ParseFloat(s, t.Bits())
-		dst.SetFloat(n)
-	default:
-		err = fmt.Errorf("%s has no text form", t)
-	}
-
-	return err
-}
-
-// Parsed through a flag, so env vars and config file map keys accept exactly what the flag does.
+// Parsed through a flag, so env vars accept exactly what the flag does.
 func parseText(t reflect.Type, s string) (reflect.Value, error) {
 	f, get := newFlag("value", t, reflect.Zero(commentparsing.DerefType(t)), "")
 	if f == nil {
@@ -219,7 +178,7 @@ func textOf(v reflect.Value) string {
 	// By kind, as the flag parses it, rather than through fmt, which would use a String method the flag can't read back.
 	switch {
 	// Reads text but can't write it, and its kind's form may not parse back.
-	case readsText(v.Type()):
+	case decode.ReadsText(v.Type()):
 	case v.Type() == durationType:
 		return time.Duration(v.Int()).String()
 	case v.CanInt():

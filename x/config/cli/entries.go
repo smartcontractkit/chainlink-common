@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 )
 
 // Stand for a map key in an entry's flag name, such as chains.<key>.rpc, and its env vars'.
@@ -42,7 +43,7 @@ type entryScope struct {
 func (e *typedEntry[T]) bindEntries(owner *leafKey, t reflect.Type, scope walkScope, doc string) (*entryLeaf, error) {
 	t = commentparsing.DerefType(t)
 	lang := e.b.opts.Markup
-	if !mergesByKey(t, lang) || !canText(t.Key()) || holdsIdentityKind(t.Key()) || slices.Contains(scope.ancestors, t) {
+	if !decode.MergesByKey(t, lang) || !canText(t.Key()) || decode.HoldsIdentityKind(t.Key()) || slices.Contains(scope.ancestors, t) {
 		return nil, nil
 	}
 
@@ -173,7 +174,7 @@ func (b *Binder) entryFlag(f *pflag.FlagSet, name string) *pflag.Flag {
 
 	keys := make([]reflect.Value, len(texts))
 	for i, text := range texts {
-		key, err := mapKey(leaf.keyTypes[i], text, map[any]string{})
+		key, err := decode.MapKey(leaf.keyTypes[i], text, map[any]string{})
 		if err != nil {
 			flag.Value = errValue{flag.Value, err}
 			return flag
@@ -335,9 +336,9 @@ type entrySet struct {
 func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.Value) (sourceLayer, error) {
 	t := commentparsing.DerefType(k.goType)
 	var file reflect.Value
-	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
+	if raw, ok := cc.keys.Lookup(cc.fileValues, k.fileKey); ok {
 		var err error
-		if file, err = fromFile(t, raw); err != nil {
+		if file, err = decode.FromFile(t, raw); err != nil {
 			return nil, err
 		}
 	}
@@ -353,9 +354,9 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 	}
 
 	layer := func(under reflect.Value) (reflect.Value, error) {
-		m := mergeMaps(t, under)
+		m := decode.MergeMaps(t, under)
 		if file.IsValid() {
-			m = mergeMaps(t, m, file)
+			m = decode.MergeMaps(t, m, file)
 		}
 
 		for _, sets := range layers {
@@ -372,7 +373,7 @@ func (e *typedEntry[T]) decodeEntries(k leafKey, cc commandConfig, dst reflect.V
 		return m, nil
 	}
 
-	f := allocateField(dst, k.goPath)
+	f := decode.AllocateField(dst, k.goPath)
 	for f.Kind() == reflect.Pointer {
 		if f.IsNil() {
 			f.Set(reflect.New(f.Type().Elem()))
@@ -418,7 +419,7 @@ func (e *typedEntry[T]) envEntrySets(k leafKey, envVars []entryEnvVar) ([]entryS
 
 		keys := make([]reflect.Value, len(ev.keys))
 		for i, text := range ev.keys {
-			key, err := mapKey(ev.leaf.keyTypes[i], text, map[any]string{})
+			key, err := decode.MapKey(ev.leaf.keyTypes[i], text, map[any]string{})
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", ev.name, err)
 			}
@@ -568,7 +569,7 @@ func setEntry(m reflect.Value, leaf *entryLeaf, keys []reflect.Value, depth int,
 	if depth == len(keys)-1 {
 		target.Set(val)
 	} else {
-		inner := mergeMaps(target.Type(), target)
+		inner := decode.MergeMaps(target.Type(), target)
 		target.Set(inner)
 		setEntry(inner, leaf, keys, depth+1, val)
 	}

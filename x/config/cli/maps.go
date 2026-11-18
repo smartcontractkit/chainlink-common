@@ -6,13 +6,13 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/smartcontractkit/chainlink-common/x/config/markup"
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 )
 
 const mapKVSep = "="
 
 // Map entries merge by key at every source, so each occurrence adds to the config file's and the default's. Keys parse
-// like values, so two texts that parse to one key, such as 16 and 0x10, are an error (see mapKey).
+// like values, so two texts that parse to one key, such as 16 and 0x10, are an error (see decode.MapKey).
 type textMapValue struct {
 	// m holds only the entries given; decoding merges them over the file's and the default's.
 	m    reflect.Value
@@ -32,7 +32,7 @@ func (m *textMapValue) Set(s string) error {
 			return fmt.Errorf("%q must be formatted as key%svalue", entry, mapKVSep)
 		}
 
-		key, err := mapKey(m.m.Type().Key(), k, m.seen)
+		key, err := decode.MapKey(m.m.Type().Key(), k, m.seen)
 		if err != nil {
 			return err
 		}
@@ -48,7 +48,9 @@ func (m *textMapValue) Set(s string) error {
 	return nil
 }
 
-func (m *textMapValue) String() string { return writeCSV(textMapOf(mergeMaps(m.m.Type(), m.def, m.m))) }
+func (m *textMapValue) String() string {
+	return writeCSV(textMapOf(decode.MergeMaps(m.m.Type(), m.def, m.m)))
+}
 
 // Type is syntax rather than a Go type, so --help shows how to write it.
 func (m *textMapValue) Type() string { return "key=value,..." }
@@ -62,20 +64,4 @@ func textMapOf(v reflect.Value) []string {
 
 	slices.Sort(pairs)
 	return pairs
-}
-
-// A map read whole, by the markup or as a flag's text, is one value, so a later source replaces it.
-func mergesByKey(t reflect.Type, lang markup.Markup) bool {
-	return t.Kind() == reflect.Map && !lang.IsLeaf(t) && !readsText(t)
-}
-
-func mergeMaps(t reflect.Type, srcs ...reflect.Value) reflect.Value {
-	out := reflect.MakeMap(t)
-	for _, m := range srcs {
-		for key, val := range m.Seq2() {
-			out.SetMapIndex(key, val)
-		}
-	}
-
-	return out
 }

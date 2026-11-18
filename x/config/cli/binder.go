@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
@@ -163,7 +164,7 @@ func (b *Binder) normalizes(cmd *cobra.Command) bool {
 //		}},
 //	}}
 //
-// whose fileValuesType, with the TOML markup for example, is:
+// whose FileValuesType, with the TOML markup for example, is:
 //
 //	struct {
 //		F0 *string `toml:"LogLevel"`
@@ -173,7 +174,7 @@ func (b *Binder) normalizes(cmd *cobra.Command) bool {
 //		} `toml:"Server"`
 //	}
 func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
-	cc := commandConfig{keys: &keyNode{children: map[string]*keyNode{}}}
+	cc := commandConfig{keys: &decode.KeyNode{}}
 	for ; c != nil; c = c.Parent() {
 		cc.entries = append(slices.Clone(b.entries[c]), cc.entries...)
 	}
@@ -184,7 +185,7 @@ func (b *Binder) commandConfig(c *cobra.Command) (commandConfig, error) {
 	claimed := map[string]string{}
 	for _, e := range cc.entries {
 		for _, k := range e.keys() {
-			if err := cc.keys.add(k.fileKey, k.fileType, k.tag, lang); err != nil {
+			if err := cc.keys.Add(k.fileKey, k.fileType, k.tag, lang); err != nil {
 				return commandConfig{}, fmt.Errorf("%s: %w", e.command().Name(), err)
 			}
 
@@ -350,9 +351,9 @@ func IsBuiltinCommand(cmd *cobra.Command) bool {
 }
 
 // The markup decodes strictly, so a key the command's structs don't hold is an error.
-func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *keyNode) (reflect.Value, error) {
+func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *decode.KeyNode) (reflect.Value, error) {
 	lang := b.opts.Markup
-	fileValuesType := keys.fileValuesType(lang)
+	fileValuesType := keys.FileValuesType(lang)
 	merged := reflect.New(fileValuesType).Elem()
 	layer := func(data []byte, name string) error {
 		v := reflect.New(fileValuesType)
@@ -360,7 +361,7 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *keyNode) (reflect.Val
 			return fmt.Errorf("invalid %s: %w", name, err)
 		}
 
-		keys.overlay(merged, v.Elem(), lang)
+		keys.Overlay(merged, v.Elem(), lang)
 		return nil
 	}
 
@@ -412,7 +413,7 @@ func (b *Binder) loadConfigFiles(cmd *cobra.Command, keys *keyNode) (reflect.Val
 
 type commandConfig struct {
 	entries    []targetEntry
-	keys       *keyNode
+	keys       *decode.KeyNode
 	fileValues reflect.Value
 	flags      *pflag.FlagSet
 	// fieldEnvVars maps each field's env vars to its key.

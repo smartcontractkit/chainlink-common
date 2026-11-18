@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/mod/modfile"
 
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
@@ -278,12 +279,7 @@ func collectStructs(roots []any, isLeaf func(reflect.Type) bool) []reflect.Type 
 }
 
 // DerefType strips every level of pointer from t. A nil t stays nil.
-func DerefType(t reflect.Type) reflect.Type {
-	for t != nil && t.Kind() == reflect.Pointer {
-		t = t.Elem()
-	}
-	return t
-}
+var DerefType = decode.DerefType
 
 // enclosingModule walks up from dir to the nearest go.mod.
 func enclosingModule(dir string) (root, path string, err error) {

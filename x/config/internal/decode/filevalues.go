@@ -1,4 +1,4 @@
-package cli
+package decode
 
 import (
 	"cmp"
@@ -7,21 +7,24 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-
-	"github.com/smartcontractkit/chainlink-common/x/config/markup"
 )
 
-// keyNode is the key tree Binder.commandConfig builds; see there for an example.
-type keyNode struct {
+// KeyNode is the key tree of the structs a document is decoded against, one node per key segment; the cli builds one
+// from every struct a command runs with, markup.Decode from its target. See Binder.commandConfig for an example.
+type KeyNode struct {
 	leaf     reflect.Type
 	tag      reflect.StructTag
-	children map[string]*keyNode
+	children map[string]*KeyNode
 	index    int
 }
 
 // A key the markup can't tell from another, such as Value and VALUE when it matches case-insensitively, would set both
 // fields, so it is rejected too.
-func (n *keyNode) add(path []string, leaf reflect.Type, tag reflect.StructTag, lang markup.Markup) error {
+func (n *KeyNode) Add(path []string, leaf reflect.Type, tag reflect.StructTag, lang Markup) error {
+	if n.children == nil {
+		n.children = map[string]*KeyNode{}
+	}
+
 	node := n
 	for i, segment := range path {
 		at := strings.Join(path[:i+1], ".")
@@ -36,7 +39,7 @@ func (n *keyNode) add(path []string, leaf reflect.Type, tag reflect.StructTag, l
 		child, exists := node.children[segment]
 		switch {
 		case !exists:
-			child = &keyNode{children: map[string]*keyNode{}}
+			child = &KeyNode{children: map[string]*KeyNode{}}
 			if isLeaf {
 				child.leaf = leaf
 				child.tag = tag
@@ -55,7 +58,7 @@ func (n *keyNode) add(path []string, leaf reflect.Type, tag reflect.StructTag, l
 
 // Pointers tell a key the file left out from one set to the zero value. Tags, not names, match keys, so the F<n> names
 // only show in the markup's errors.
-func (n *keyNode) fileValuesType(lang markup.Markup) reflect.Type {
+func (n *KeyNode) FileValuesType(lang Markup) reflect.Type {
 	names := slices.Sorted(maps.Keys(n.children))
 	fields := make([]reflect.StructField, len(names))
 	for i, name := range names {
@@ -63,7 +66,7 @@ func (n *keyNode) fileValuesType(lang markup.Markup) reflect.Type {
 		child.index = i
 		t := child.leaf
 		if t == nil {
-			t = child.fileValuesType(lang)
+			t = child.FileValuesType(lang)
 		}
 
 		fields[i] = reflect.StructField{
@@ -77,7 +80,7 @@ func (n *keyNode) fileValuesType(lang markup.Markup) reflect.Type {
 }
 
 // A list replaces rather than merges, or a later file could never shorten it.
-func (n *keyNode) overlay(dst, src reflect.Value, lang markup.Markup) {
+func (n *KeyNode) Overlay(dst, src reflect.Value, lang Markup) {
 	for _, child := range n.children {
 		s, d := src.Field(child.index), dst.Field(child.index)
 		switch {
@@ -85,16 +88,16 @@ func (n *keyNode) overlay(dst, src reflect.Value, lang markup.Markup) {
 		case d.IsNil():
 			d.Set(s)
 		case child.leaf == nil:
-			child.overlay(d.Elem(), s.Elem(), lang)
-		case mergesByKey(child.leaf, lang):
-			d.Elem().Set(mergeMaps(child.leaf, d.Elem(), s.Elem()))
+			child.Overlay(d.Elem(), s.Elem(), lang)
+		case MergesByKey(child.leaf, lang):
+			d.Elem().Set(MergeMaps(child.leaf, d.Elem(), s.Elem()))
 		default:
 			d.Set(s)
 		}
 	}
 }
 
-func (n *keyNode) lookup(v reflect.Value, path []string) (reflect.Value, bool) {
+func (n *KeyNode) Lookup(v reflect.Value, path []string) (reflect.Value, bool) {
 	node := n
 	for _, segment := range path {
 		node = node.children[segment]
@@ -110,12 +113,12 @@ func (n *keyNode) lookup(v reflect.Value, path []string) (reflect.Value, bool) {
 
 var stringType = reflect.TypeFor[string]()
 
-// Config file map keys are text, so every key is read as a string and parsed as its flag would be (see fromFile), even
+// Config file map keys are text, so every key is read as a string and parsed as its flag would be (see SetText), even
 // one the markup could read itself, so two texts for one key are always caught.
 //
 // A recursive type that needs converting, such as type M map[uint32]*M, is an error: the inner M can't be converted.
 // visiting holds the types being converted, false until one is reached again inside itself.
-func fileValueType(t reflect.Type, lang markup.Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
+func FileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
 	if _, ok := visiting[t]; ok {
 		visiting[t] = true
 		// Recursion itself is not an error, for example, nothing should stop the type below from being used.
@@ -155,11 +158,11 @@ func fileValueType(t reflect.Type, lang markup.Markup, visiting map[reflect.Type
 	return out, nil
 }
 
-func convertFileValueType(t reflect.Type, lang markup.Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
+func convertFileValueType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
 	var wrap func(reflect.Type) reflect.Type
 	switch t.Kind() {
 	case reflect.Map:
-		if holdsIdentityKind(t.Key()) {
+		if HoldsIdentityKind(t.Key()) {
 			return nil, fmt.Errorf("%s has keys that hold a pointer, channel or interface, which can compare by address, "+
 				"so 2 and 2 could be different keys; key it by value", t)
 		}
@@ -177,7 +180,7 @@ func convertFileValueType(t reflect.Type, lang markup.Markup, visiting map[refle
 		return t, nil
 	}
 
-	elem, err := fileValueType(t.Elem(), lang, visiting)
+	elem, err := FileValueType(t.Elem(), lang, visiting)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +188,7 @@ func convertFileValueType(t reflect.Type, lang markup.Markup, visiting map[refle
 	// !readsText ensures that a type backed by a string is still given a chance to detect duplicate parsing
 	// to the same value. For example if type foo string has an UnmarshalText that lower cases input, we need to ensure
 	// 'foo' and 'Foo' are considered collisions instead of silently replacing them.
-	if elem == t.Elem() && (t.Kind() != reflect.Map || t.Key().Kind() == reflect.String && !readsText(t.Key())) {
+	if elem == t.Elem() && (t.Kind() != reflect.Map || t.Key().Kind() == reflect.String && !ReadsText(t.Key())) {
 		return t, nil
 	}
 
@@ -195,7 +198,7 @@ func convertFileValueType(t reflect.Type, lang markup.Markup, visiting map[refle
 // Unexported fields, which reflect.StructOf can't make, and fields the markup ignores are never set from a file, so
 // they're left out. StructOf doesn't promote an embedded field's methods either, so a struct that embeds one can't be
 // rebuilt.
-func fileStructType(t reflect.Type, lang markup.Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
+func fileStructType(t reflect.Type, lang Markup, visiting map[reflect.Type]bool) (reflect.Type, error) {
 	var fields []reflect.StructField
 	changed, embeds := false, false
 	for f := range t.Fields() {
@@ -203,7 +206,7 @@ func fileStructType(t reflect.Type, lang markup.Markup, visiting map[reflect.Typ
 			continue
 		}
 
-		ft, err := fileValueType(f.Type, lang, visiting)
+		ft, err := FileValueType(f.Type, lang, visiting)
 		if err != nil {
 			return nil, err
 		}
@@ -224,8 +227,8 @@ func fileStructType(t reflect.Type, lang markup.Markup, visiting map[reflect.Typ
 	}
 }
 
-// Turns a value decoded as fileValueType(t) back into t, parsing the map keys that were read as strings.
-func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
+// Turns a value decoded as FileValueType(t) back into t, parsing the map keys that were read as strings.
+func FromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 	if v.Type() == t {
 		return v, nil
 	}
@@ -238,12 +241,12 @@ func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 		rawKeys := v.MapKeys()
 		slices.SortFunc(rawKeys, func(a, b reflect.Value) int { return cmp.Compare(a.String(), b.String()) })
 		for _, rawKey := range rawKeys {
-			key, err := mapKey(t.Key(), rawKey.String(), seen)
+			key, err := MapKey(t.Key(), rawKey.String(), seen)
 			if err != nil {
 				return reflect.Value{}, err
 			}
 
-			elem, err := fromFile(t.Elem(), v.MapIndex(rawKey))
+			elem, err := FromFile(t.Elem(), v.MapIndex(rawKey))
 			if err != nil {
 				return reflect.Value{}, err
 			}
@@ -259,7 +262,7 @@ func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 		}
 
 		for i := range v.Len() {
-			elem, err := fromFile(t.Elem(), v.Index(i))
+			elem, err := FromFile(t.Elem(), v.Index(i))
 			if err != nil {
 				return reflect.Value{}, err
 			}
@@ -276,7 +279,7 @@ func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 				continue
 			}
 
-			field, err := fromFile(t.Field(i).Type, src)
+			field, err := FromFile(t.Field(i).Type, src)
 			if err != nil {
 				return reflect.Value{}, err
 			}
@@ -285,12 +288,12 @@ func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 		}
 
 		return out, nil
-	default: // reflect.Pointer, the only other kind fileValueType changes
+	default: // reflect.Pointer, the only other kind FileValueType changes
 		if v.IsNil() {
 			return reflect.Zero(t), nil
 		}
 
-		elem, err := fromFile(t.Elem(), v.Elem())
+		elem, err := FromFile(t.Elem(), v.Elem())
 		if err != nil {
 			return reflect.Value{}, err
 		}
@@ -304,15 +307,15 @@ func fromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
 // Pointers and channels compare by identity, so two parses of one text are different keys. An interface may hold
 // either, or a value that can't be a key at all. Arrays and structs are the only composite key types, and neither can
 // hold itself except through a pointer.
-func holdsIdentityKind(t reflect.Type) bool {
+func HoldsIdentityKind(t reflect.Type) bool {
 	switch t.Kind() {
 	case reflect.Pointer, reflect.UnsafePointer, reflect.Chan, reflect.Interface:
 		return true
 	case reflect.Array:
-		return holdsIdentityKind(t.Elem())
+		return HoldsIdentityKind(t.Elem())
 	case reflect.Struct:
 		for field := range t.Fields() {
-			if holdsIdentityKind(field.Type) {
+			if HoldsIdentityKind(field.Type) {
 				return true
 			}
 		}
@@ -325,9 +328,9 @@ func holdsIdentityKind(t reflect.Type) bool {
 
 // seen makes two texts that parse to one key, such as 16 and 0x10, an error rather than one silently replacing the
 // other.
-func mapKey(keyType reflect.Type, keyText string, seen map[any]string) (reflect.Value, error) {
-	key, err := parseText(keyType, keyText)
-	if err != nil {
+func MapKey(keyType reflect.Type, keyText string, seen map[any]string) (reflect.Value, error) {
+	key := reflect.New(keyType).Elem()
+	if err := SetText(key, keyText); err != nil {
 		return reflect.Value{}, fmt.Errorf("key %q: %w", keyText, err)
 	}
 
@@ -342,4 +345,47 @@ func mapKey(keyType reflect.Type, keyText string, seen map[any]string) (reflect.
 
 	seen[key.Interface()] = keyText
 	return key, nil
+}
+
+// A map read whole, by the markup or as a flag's text, is one value, so a later source replaces it.
+func MergesByKey(t reflect.Type, lang Markup) bool {
+	return t.Kind() == reflect.Map && !lang.IsLeaf(t) && !ReadsText(t)
+}
+
+func MergeMaps(t reflect.Type, srcs ...reflect.Value) reflect.Value {
+	out := reflect.MakeMap(t)
+	for _, m := range srcs {
+		for key, val := range m.Seq2() {
+			out.SetMapIndex(key, val)
+		}
+	}
+
+	return out
+}
+
+// Call only to write, so sections are allocated only when something in them is set.
+func AllocateField(v reflect.Value, path []string) reflect.Value {
+	for _, p := range path {
+		for v.Kind() == reflect.Pointer {
+			if v.IsNil() {
+				if !v.CanSet() {
+					return reflect.Value{}
+				}
+
+				v.Set(reflect.New(v.Type().Elem()))
+			}
+
+			v = v.Elem()
+		}
+
+		if v.Kind() != reflect.Struct {
+			return reflect.Value{}
+		}
+
+		if v = v.FieldByName(p); !v.IsValid() {
+			return reflect.Value{}
+		}
+	}
+
+	return v
 }

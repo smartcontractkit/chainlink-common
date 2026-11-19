@@ -358,6 +358,7 @@ var Default = Schema{
 		FeatureChainCapabilityHashBasedOCRActivePeriod:    disabledFeatureTimeRange,
 		FeatureEVMWriteReportL1FeeActivePeriod:            disabledFeatureTimeRange,
 		FeatureAptosWriteReportBlockTimestampActivePeriod: disabledFeatureTimeRange,
+		FeatureEVMWriteReportBlockTimestampActivePeriod:   disabledFeatureTimeRange,
 		// ON by default: covers all possible timestamps including zero time.Time{},
 		// so WorkflowTag is included in the hash matching current prod behavior.
 		// After rollout, set to far-future window to exclude WorkflowTag.
@@ -624,6 +625,7 @@ type Workflows struct {
 	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportBlockTimestampActivePeriod   Setting[Range[config.Timestamp]]
 	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]

@@ -243,6 +243,7 @@ flowchart
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod[/PerWorkflow.FeatureConsensusIncludeAllTimestampsActivePeriod\]:::gate
         PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod[/PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod\]:::gate
+        PerWorkflow.FeatureExecutionMetadataActivePeriod[/PerWorkflow.FeatureExecutionMetadataActivePeriod\]:::gate
 
         PerWorkflow.ExecutionTimestampsEnabled-->PerWorkflow.ExecutionTimeout-->PerWorkflow.ExecutionResponseLimit-->PerWorkflow.ExecutionResponseLimitEnforced
     end

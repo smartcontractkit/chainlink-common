@@ -374,6 +374,7 @@ var Default = Schema{
 		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
 		FeatureVaultGetSecretsDirectlyActivePeriod:       disabledFeatureTimeRange,
 		FeatureShadowTriggerModeActivePeriod:             disabledFeatureTimeRange,
+		FeatureExecutionMetadataActivePeriod:             disabledFeatureTimeRange,
 	},
 }
 
@@ -635,6 +636,14 @@ type Workflows struct {
 	// copied to the central trigger queue. Each event is checked against the time it was observed, so
 	// every node switches at the same moment.
 	FeatureShadowTriggerModeActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
+	// FeatureExecutionMetadataActivePeriod is the window in which the engine populates
+	// WorkflowExecutionMetadata in the ExecuteRequest sent to the workflow module. It changes the
+	// request bytes, which confidential workflows hash across nodes, so it is checked against the
+	// execution timestamp (DON time) and every node switches at the same moment. Enable it only after
+	// every node in the workflow DON runs a version that supports it. Requires
+	// PerWorkflow.ExecutionTimestampsEnabled; without an execution timestamp it stays off. Subscribe
+	// requests have no execution timestamp, so the node's local clock is used for them.
+	FeatureExecutionMetadataActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
 }
 
 type cronTrigger struct {

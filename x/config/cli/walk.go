@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding"
 	"errors"
 	"fmt"
 	"reflect"
@@ -11,6 +10,7 @@ import (
 	"github.com/iancoleman/strcase"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 )
 
 type fieldMeta struct {
@@ -25,14 +25,6 @@ type fieldMeta struct {
 	inOptional bool
 }
 
-// A flag or env var carries only text. An interface can't be parsed into, since there's no concrete type to make.
-func readsText(t reflect.Type) bool {
-	return t.Kind() != reflect.Interface &&
-		(t.Implements(textUnmarshaler) || reflect.PointerTo(t).Implements(textUnmarshaler))
-}
-
-var textUnmarshaler = reflect.TypeFor[encoding.TextUnmarshaler]()
-
 func canText(t reflect.Type) bool {
 	t = commentparsing.DerefType(t)
 	switch t.Kind() {
@@ -42,9 +34,9 @@ func canText(t reflect.Type) bool {
 		reflect.Float32, reflect.Float64:
 		return true
 	case reflect.Slice:
-		return t.Elem().Kind() == reflect.Uint8 || readsText(t)
+		return t.Elem().Kind() == reflect.Uint8 || decode.ReadsText(t)
 	default:
-		return readsText(t)
+		return decode.ReadsText(t)
 	}
 }
 

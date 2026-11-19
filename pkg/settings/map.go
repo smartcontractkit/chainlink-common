@@ -40,6 +40,10 @@ func (s *SettingMap[T]) GetScope() Scope { return s.Default.Scope }
 
 func (s *SettingMap[T]) GetUnit() string { return s.Default.Unit }
 
+func (s *SettingMap[T]) setFeatureFlag() { s.Default.setFeatureFlag() }
+
+func (s *SettingMap[T]) info() SettingInfo { return s.Default.info() }
+
 func (s *SettingMap[T]) initSetting(key string, scope Scope, unit *string) error {
 	if s.KeyFromCtx == nil {
 		return errors.New("missing KeyFromCtx func")

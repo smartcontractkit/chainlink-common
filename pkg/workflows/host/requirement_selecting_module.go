@@ -16,6 +16,12 @@ type ModuleAndHandler struct {
 	RequirementsHandler
 }
 
+// TriggerRouter is implemented by modules that route triggers between runners;
+// it reports which module a trigger subscription was routed to.
+type TriggerRouter interface {
+	RoutedModule(triggerIndex uint64) (Module, bool)
+}
+
 // lazyModule wraps a ModuleAndHandler so that Start is called at most once
 // and Close only fires for modules that were actually started. The mutex
 // serializes start/close so a concurrent Close cannot race past an in-flight
@@ -71,6 +77,16 @@ type requirementSelectingModule struct {
 	modules []*lazyModule
 	// triggerID → triggerInfo
 	cache sync.Map
+}
+
+// RoutedModule reports the module the trigger routed to; false when the
+// trigger is unknown (before Subscribe).
+func (r *requirementSelectingModule) RoutedModule(triggerIndex uint64) (Module, bool) {
+	info, ok := r.cache.Load(triggerIndex)
+	if !ok {
+		return nil, false
+	}
+	return r.modules[info.(triggerInfo).moduleIdx].Module, true
 }
 
 func (r *requirementSelectingModule) Start() {

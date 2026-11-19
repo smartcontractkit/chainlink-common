@@ -112,6 +112,7 @@ var Default = Schema{
 	BaseTriggerPruneAge:                              Duration(24 * time.Hour),
 	BaseTriggerMaxSendsPerTick:                       Int(20),
 	WASMPollOneoffSubscriptionLimit:                  Int(128),
+	WorkflowRegistryMaxResultsPerQuery:               Int(300),
 
 	// DANGER(cedric): Be extremely careful changing these vault limits below as they act as a default value
 	// used by the Vault OCR plugin -- changing these values could cause issues with the plugin during an image
@@ -173,6 +174,7 @@ var Default = Schema{
 
 	DonTimeSequencedTimestampsActivePeriod: disabledFeatureTimeRange,
 	CRONV2ActivePeriod:                     disabledFeatureTimeRange,
+	ConsensusV2ActivePeriod:                disabledFeatureTimeRange,
 
 	// Confidential Compute (San Marino framework) node-level settings. Defaults
 	// mirror the previous hardcoded executor defaults so behavior is unchanged
@@ -356,6 +358,7 @@ var Default = Schema{
 		FeatureChainCapabilityHashBasedOCRActivePeriod:    disabledFeatureTimeRange,
 		FeatureEVMWriteReportL1FeeActivePeriod:            disabledFeatureTimeRange,
 		FeatureAptosWriteReportBlockTimestampActivePeriod: disabledFeatureTimeRange,
+		FeatureEVMWriteReportBlockTimestampActivePeriod:   disabledFeatureTimeRange,
 		// ON by default: covers all possible timestamps including zero time.Time{},
 		// so WorkflowTag is included in the hash matching current prod behavior.
 		// After rollout, set to far-future window to exclude WorkflowTag.
@@ -491,6 +494,13 @@ type Schema struct {
 	// which never needs more than one.
 	WASMPollOneoffSubscriptionLimit Setting[int] `unit:"{subscription}"`
 
+	// WorkflowRegistryMaxResultsPerQuery is the maximum page size the workflow syncer uses for paged
+	// eth_call reads of the WorkflowRegistry contract (getWorkflowListByDON and
+	// getActiveAllowlistedRequestsReverse). Each item costs gas to read, so a page that is too large
+	// exceeds the RPC node's eth_call gas cap (e.g. 16,777,216) and the call fails. The syncer also
+	// halves the page size automatically when it sees such an error. It is re-read every sync tick.
+	WorkflowRegistryMaxResultsPerQuery Setting[int] `unit:"{workflow}"`
+
 	// Deprecated: Use global.PerOwner.VaultCiphertextSizeLimit (global) or owner.<addr>.PerOwner.VaultCiphertextSizeLimit (per owner) instead.
 	VaultCiphertextSizeLimit          Setting[config.Size]
 	VaultShareSizeLimit               Setting[config.Size]
@@ -516,6 +526,7 @@ type Schema struct {
 
 	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]]
 	CRONV2ActivePeriod                     Setting[Range[config.Timestamp]]
+	ConsensusV2ActivePeriod                Setting[Range[config.Timestamp]]
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute
@@ -614,6 +625,7 @@ type Workflows struct {
 	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]]
 	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
+	FeatureEVMWriteReportBlockTimestampActivePeriod   Setting[Range[config.Timestamp]]
 	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
 	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
 	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]

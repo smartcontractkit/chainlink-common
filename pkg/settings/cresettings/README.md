@@ -113,6 +113,7 @@ flowchart
 
     subgraph standardcapabilities.Delegate.NewServices
         CRONV2ActivePeriod[/CRONV2ActivePeriod\]:::gate
+        ConsensusV2ActivePeriod[/ConsensusV2ActivePeriod\]:::gate
     end
 
     subgraph Store.FetchWorkflowArtifacts
@@ -125,6 +126,10 @@ flowchart
     subgraph host.NewModule
         PerWorkflow.WASMCompressedBinarySizeLimit{{PerWorkflow.WASMCompressedBinarySizeLimit}}:::bound
         WASMPollOneoffSubscriptionLimit{{WASMPollOneoffSubscriptionLimit}}:::bound
+    end
+
+    subgraph syncer.ContractWorkflowSource.ListWorkflowMetadata
+        WorkflowRegistryMaxResultsPerQuery{{WorkflowRegistryMaxResultsPerQuery}}:::bound
     end
 
     subgraph syncer.tryEngineCreate
@@ -232,6 +237,7 @@ flowchart
         PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod[/PerWorkflow.FeatureChainCapabilityHashBasedOCRActivePeriod\]:::gate
         PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod[/PerWorkflow.FeatureEVMWriteReportL1FeeActivePeriod\]:::gate
         PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureAptosWriteReportBlockTimestampActivePeriod\]:::gate
+        PerWorkflow.FeatureEVMWriteReportBlockTimestampActivePeriod[/PerWorkflow.FeatureEVMWriteReportBlockTimestampActivePeriod\]:::gate
         PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod[/PerWorkflow.FeatureRequestHashIncludeWorkflowTagActivePeriod\]:::gate
         PerWorkflow.FeatureWorkflowTagBackfillActivePeriod[/PerWorkflow.FeatureWorkflowTagBackfillActivePeriod\]:::gate
         PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod[/PerWorkflow.FeatureConsensusStricterMedianQuorumActivePeriod\]:::gate

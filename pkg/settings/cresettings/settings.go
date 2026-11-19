@@ -381,16 +381,16 @@ type Schema struct {
 	WorkflowLimit                     Setting[int] `unit:"{workflow}"`
 	WorkflowExecutionConcurrencyLimit Setting[int] `unit:"{workflow}"`
 	GatewayIncomingPayloadSizeLimit   Setting[config.Size]
-	GatewayVaultManagementEnabled     Setting[bool]
+	GatewayVaultManagementEnabled     Setting[bool] `featureflag:"true"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultJWTAuthEnabled                         Setting[bool]
-	CentralizedWorkflowOwnerVerificationEnabled Setting[bool]
+	VaultJWTAuthEnabled                         Setting[bool] `featureflag:"true"`
+	CentralizedWorkflowOwnerVerificationEnabled Setting[bool] `featureflag:"true"`
 	// RemoteExecutableWorkflowDONBindingEnabled, when true, makes the remote
 	// executable capability server reject any request whose
 	// RequestMetadata.WorkflowDonID does not match the authenticated calling DON
 	// (msg.CallerDonId). Binds caller-supplied WorkflowDonID to the authenticated
 	// sender DON so it cannot be spoofed by a colluding calling DON.
-	RemoteExecutableWorkflowDONBindingEnabled Setting[bool]
+	RemoteExecutableWorkflowDONBindingEnabled Setting[bool] `featureflag:"true"`
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
 	// trigger-owning Engine for newly created workflows, on every workflow of the node.
 	//
@@ -403,14 +403,14 @@ type Schema struct {
 	// trigger events for workflows owned by another shard (instead of dropping
 	// them) so it can take over execution if the owning shard fails. Only
 	// applies when sharding is enabled on the node.
-	ShardingFailoverEnabled Setting[bool]
+	ShardingFailoverEnabled Setting[bool] `featureflag:"true"`
 	// TimeoutBasedFailover, when true, makes a shard that
 	// cached a trigger event for a workflow owned by another shard execute
 	// the cached event itself if no execution outcome from the owning shard
 	// arrives within TimeoutBasedFailoverWindow. Covers an owning shard dying
 	// silently, where no execution status update is ever sent. Only applies
 	// when ShardingFailoverEnabled is true.
-	TimeoutBasedFailover Setting[bool]
+	TimeoutBasedFailover Setting[bool] `featureflag:"true"`
 	// TimeoutBasedFailoverWindow is how long a cached trigger event waits for
 	// the owning shard's execution outcome before the caching shard may
 	// execute it itself.
@@ -421,37 +421,37 @@ type Schema struct {
 	// is the same 15s the orchestrator client used before this setting existed.
 	ShardOwnershipCheckTimeout      Setting[time.Duration]
 	TenantID                        Setting[uint64]
-	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] // Deprecated
-	PropagateOrgIDInRequestMetadata Setting[bool]
-	VaultBase64EncodingEnabled      Setting[bool]
-	VaultForceEmptyOCRRounds        Setting[bool]
+	VaultOrgIdAsSecretOwnerEnabled  Setting[bool] `featureflag:"true"` // Deprecated
+	PropagateOrgIDInRequestMetadata Setting[bool] `featureflag:"true"`
+	VaultBase64EncodingEnabled      Setting[bool] `featureflag:"true"`
+	VaultForceEmptyOCRRounds        Setting[bool] `featureflag:"true"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultOptimizationsEnabled Setting[bool]
+	VaultOptimizationsEnabled Setting[bool] `featureflag:"true"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool]
-	VaultOwnerAddressCanonicalizationEnabled          Setting[bool]
+	VaultGetSecretsShareAggregationIncludesPublicKeys Setting[bool] `featureflag:"true"`
+	VaultOwnerAddressCanonicalizationEnabled          Setting[bool] `featureflag:"true"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultJSONOmitUnpopulatedEnabled Setting[bool]
+	VaultJSONOmitUnpopulatedEnabled Setting[bool] `featureflag:"true"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultGetSecretsRelaxedConsensusEnabled Setting[bool]
+	VaultGetSecretsRelaxedConsensusEnabled Setting[bool] `featureflag:"true"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultIncludeInvalidPendingItemsEnabled Setting[bool]
-	VaultPendingQueueStallThreshold        Setting[int] `unit:"{observation}"`
+	VaultIncludeInvalidPendingItemsEnabled Setting[bool] `featureflag:"true"`
+	VaultPendingQueueStallThreshold        Setting[int]  `unit:"{observation}"`
 	// Deprecated: feature flag has been retired; behavior is now always enabled.
-	VaultSignedResponseRequestIDEnabled         Setting[bool]
-	VaultZoneBWorkflowGetSecretsRestrictEnabled Setting[bool]
+	VaultSignedResponseRequestIDEnabled         Setting[bool] `featureflag:"true"`
+	VaultZoneBWorkflowGetSecretsRestrictEnabled Setting[bool] `featureflag:"true"`
 	// VaultGetSecretsIncludePublicKeyEnabled, when true, makes the Vault plugin
 	// include the raw Vault public key (the key used to produce the shares) in the
 	// GetSecrets OCR response body, so decrypt-side callers read it live from the
 	// response instead of from CapReg / static config. Gate flag consumed in the
 	// Vault plugin.
-	VaultGetSecretsIncludePublicKeyEnabled Setting[bool]
+	VaultGetSecretsIncludePublicKeyEnabled Setting[bool] `featureflag:"true"`
 	// VaultPublicKeyEncryptOnlyEnabled, when true, makes the Vault capability's
 	// GetPublicKey return only the stable encrypt-only sub-key (Group/G_bar/H,
 	// without the per-recipient HArray), so encrypt-only consumers (e.g. the CRE
 	// CLI) are unaffected by reshares. Atomic feature flag consumed in the Vault
 	// capability; flip in lockstep with the on-chain CapReg VaultPublicKey write.
-	VaultPublicKeyEncryptOnlyEnabled      Setting[bool]
+	VaultPublicKeyEncryptOnlyEnabled      Setting[bool] `featureflag:"true"`
 	GatewayHTTPGlobalRate                 Setting[config.Rate]
 	GatewayHTTPPerNodeRate                Setting[config.Rate]
 	GatewayConfidentialRelayGlobalRate    Setting[config.Rate]
@@ -522,11 +522,11 @@ type Schema struct {
 	VaultMaxPerOracleUnexpiredBlobCumulativePayloadSizeLimit Setting[config.Size]
 	VaultMaxPerOracleUnexpiredBlobCount                      Setting[int]
 
-	MissingRequestRecoveryEnabled Setting[bool]
+	MissingRequestRecoveryEnabled Setting[bool] `featureflag:"true"`
 
-	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]]
-	CRONV2ActivePeriod                     Setting[Range[config.Timestamp]]
-	ConsensusV2ActivePeriod                Setting[Range[config.Timestamp]]
+	DonTimeSequencedTimestampsActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
+	CRONV2ActivePeriod                     Setting[Range[config.Timestamp]] `featureflag:"true"`
+	ConsensusV2ActivePeriod                Setting[Range[config.Timestamp]] `featureflag:"true"`
 
 	// Confidential Compute (San Marino framework) node-level settings.
 	ConfidentialCompute confidentialCompute
@@ -560,7 +560,7 @@ type Owners struct {
 	// reads originating from a zone-b workflow DON. Only consulted when the
 	// global VaultZoneBWorkflowGetSecretsRestrictEnabled gate is open and the
 	// calling DON is in the zone-b family. Defaults to false (deny).
-	VaultZoneBGetSecretsAllowed Setting[bool]
+	VaultZoneBGetSecretsAllowed Setting[bool] `featureflag:"true"`
 
 	// ConfidentialCompute holds the per-workflow-owner Confidential Compute settings.
 	ConfidentialCompute ownerConfidentialCompute
@@ -582,13 +582,13 @@ type Workflows struct {
 	ExecutionTimeout          Setting[time.Duration]
 	ExecutionResponseLimit    Setting[config.Size]
 	// ExecutionResponseLimitEnforced makes the host reject guest responses over ExecutionResponseLimit.
-	ExecutionResponseLimitEnforced Setting[bool]
-	ExecutionTimestampsEnabled     Setting[bool]
+	ExecutionResponseLimitEnforced Setting[bool] `featureflag:"true"`
+	ExecutionTimestampsEnabled     Setting[bool] `featureflag:"true"`
 
 	// CoordinatedEngineEnabled selects the coordinated engine over the legacy
 	// trigger-owning Engine. It is read only when an engine is created, so a change
 	// applies to a workflow the next time its engine is created.
-	CoordinatedEngineEnabled Setting[bool]
+	CoordinatedEngineEnabled Setting[bool] `featureflag:"true"`
 
 	WASMMemoryLimit               Setting[config.Size]
 	WASMTableElementsLimit        Setting[int] `unit:"{element}"`
@@ -621,20 +621,20 @@ type Workflows struct {
 	Secrets               secrets
 	DONTime               donTime
 
-	FeatureHTTPTriggerNewExecutionIDsActivePeriod     Setting[Range[config.Timestamp]]
-	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]]
-	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]]
-	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]]
-	FeatureEVMWriteReportBlockTimestampActivePeriod   Setting[Range[config.Timestamp]]
-	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]]
-	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]]
-	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]]
-	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]]
-	FeatureVaultGetSecretsDirectlyActivePeriod        Setting[Range[config.Timestamp]]
+	FeatureHTTPTriggerNewExecutionIDsActivePeriod     Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureChainCapabilityHashBasedOCRActivePeriod    Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureEVMWriteReportL1FeeActivePeriod            Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureAptosWriteReportBlockTimestampActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureEVMWriteReportBlockTimestampActivePeriod   Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureRequestHashIncludeWorkflowTagActivePeriod  Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureWorkflowTagBackfillActivePeriod            Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureConsensusStricterMedianQuorumActivePeriod  Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureConsensusIncludeAllTimestampsActivePeriod  Setting[Range[config.Timestamp]] `featureflag:"true"`
+	FeatureVaultGetSecretsDirectlyActivePeriod        Setting[Range[config.Timestamp]] `featureflag:"true"`
 	// FeatureShadowTriggerModeActivePeriod is the window in which coordinated trigger events are also
 	// copied to the central trigger queue. Each event is checked against the time it was observed, so
 	// every node switches at the same moment.
-	FeatureShadowTriggerModeActivePeriod Setting[Range[config.Timestamp]]
+	FeatureShadowTriggerModeActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
 }
 
 type cronTrigger struct {
@@ -719,7 +719,7 @@ type confidentialCompute struct {
 	// PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod and evaluated against
 	// the execution timestamp so every capability DON node switches together.
 	// Currently only the Confidential HTTP capability uses the pre-fetch path.
-	ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod Setting[Range[config.Timestamp]]
+	ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
 
 	// ConfidentialRelayHandlerTimeout bounds how long a relay-DON node may spend
 	// serving one confidential relay request from the gateway: attestation
@@ -874,4 +874,27 @@ type consensus struct {
 
 type donTime struct {
 	RequestTimeout Setting[time.Duration]
+}
+
+// FeatureFlag identifies a setting marked as a feature flag in the Schema.
+type FeatureFlag struct {
+	Key   string
+	Scope Scope
+}
+
+// FeatureFlagKeys is an interim inventory of flags; CRE Flags 2.0 is expected to supersede the struct tag.
+// It returns every setting marked `featureflag:"true"` in Schema, across all scopes, in schema order.
+// Schema, not value shape or key naming, is the source of truth for what is a feature flag.
+func FeatureFlagKeys() []FeatureFlag {
+	infos, err := Infos(&Default)
+	if err != nil {
+		panic(err) // Default is validated by InitConfig at init
+	}
+	var flags []FeatureFlag
+	for _, i := range infos {
+		if i.FeatureFlag {
+			flags = append(flags, FeatureFlag{Key: i.Key, Scope: i.Scope})
+		}
+	}
+	return flags
 }

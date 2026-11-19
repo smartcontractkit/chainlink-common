@@ -292,7 +292,8 @@
 			"ResponseSizeLimit": "100kb"
 		},
 		"ConfidentialWorkflows": {
-			"Enabled": "false"
+			"Enabled": "false",
+			"IncludeExecutionLimits": "false"
 		},
 		"Secrets": {
 			"CallLimit": "5"

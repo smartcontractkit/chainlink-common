@@ -2,6 +2,7 @@ package batch
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"google.golang.org/grpc"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/chipingress"
@@ -150,4 +152,69 @@ func TestClient_MaxBufferedBytes(t *testing.T) {
 		require.ErrorIs(t, client.QueueMessage(bufferedBytesEvent("a", 64), nil), ErrClientShutdown)
 		assert.Zero(t, client.BufferedBytes())
 	})
+}
+
+func TestClient_BufferPressureMetrics(t *testing.T) {
+	reader, restore := useTestMeterProvider(t)
+	defer restore()
+
+	gaugePoint := func(rm metricdata.ResourceMetrics, name, client string) *metricdata.DataPoint[int64] {
+		t.Helper()
+		g := mustMetric(t, rm, name).Data.(metricdata.Gauge[int64])
+		for i := range g.DataPoints {
+			if hasStringAttr(g.DataPoints[i].Attributes, "client_name", client) {
+				return &g.DataPoints[i]
+			}
+		}
+		t.Fatalf("%s datapoint for client %q not found", name, client)
+		return nil
+	}
+
+	mockClient := mocks.NewClient(t)
+	mockClient.EXPECT().PublishBatch(mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, in *chipingress.CloudEventBatch, _ ...grpc.CallOption) (*chipingress.PublishResponse, error) {
+			return &chipingress.PublishResponse{Results: make([]*chipingress.PublishResult, len(in.Events))}, nil
+		}).Maybe()
+	mockClient.EXPECT().Close().Return(nil).Maybe()
+
+	client, err := NewBatchClient(mockClient,
+		WithClientName("beholder_data-feeds"),
+		WithMessageBuffer(100),
+		WithMaxBufferedBytes(1<<30),
+	)
+	require.NoError(t, err)
+	// A second client without a byte budget: its bytes gauge must stay zero.
+	noBudgetMock := mocks.NewClient(t)
+	noBudgetMock.EXPECT().Close().Return(nil).Maybe()
+	noBudget, err := NewBatchClient(noBudgetMock, WithClientName("no-budget"))
+	require.NoError(t, err)
+
+	// Not started: the batcher is not draining, so the queued messages stay in the buffer.
+	const queued = 5
+	for i := range queued {
+		require.NoError(t, client.QueueMessage(bufferedBytesEvent(strconv.Itoa(i), 1024), nil))
+	}
+	require.NoError(t, noBudget.QueueMessage(bufferedBytesEvent("nb", 1024), nil))
+
+	rm := collectResourceMetrics(t, reader)
+	assert.Equal(t, int64(queued), gaugePoint(rm, "chip_ingress.batch.buffered_messages", "beholder_data-feeds").Value)
+	assert.Equal(t, int64(1), gaugePoint(rm, "chip_ingress.batch.buffered_messages", "no-budget").Value)
+	bytesPoint := gaugePoint(rm, "chip_ingress.batch.buffered_bytes", "beholder_data-feeds")
+	assert.Equal(t, client.BufferedBytes(), bytesPoint.Value)
+	assert.Positive(t, bytesPoint.Value, "reserved bytes are reported while a byte budget is set")
+	assert.Zero(t, gaugePoint(rm, "chip_ingress.batch.buffered_bytes", "no-budget").Value, "no accounting without the byte budget")
+
+	// config.info reports the configured byte budget; recorded on Start.
+	client.Start(t.Context())
+	rm = collectResourceMetrics(t, reader)
+	cfg := gaugePoint(rm, "chip_ingress.batch.config.info", "beholder_data-feeds")
+	assert.True(t, hasIntAttr(cfg.Attributes, "max_buffered_bytes", 1<<30))
+
+	// Once the batcher drains, the message gauge returns to zero.
+	require.Eventually(t, func() bool { return len(client.messageBuffer) == 0 }, time.Second, 5*time.Millisecond)
+	rm = collectResourceMetrics(t, reader)
+	assert.Zero(t, gaugePoint(rm, "chip_ingress.batch.buffered_messages", "beholder_data-feeds").Value)
+
+	client.Stop()
+	noBudget.Stop()
 }

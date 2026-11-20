@@ -6,9 +6,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry/remote"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 )
 
 // brokerTransport implements [remote.Transport] over a go-plugin broker: a
@@ -55,10 +55,10 @@ func brokerConnID(loc remote.Locator) (uint32, error) {
 	return net.ParseBrokerTarget(loc.Target)
 }
 
-func RegisterCapabilitiesRegistryServer(s *grpc.Server, b *net.BrokerExt, i core.CapabilitiesRegistry) {
+func RegisterCapabilitiesRegistryServer(s *grpc.Server, b *net.BrokerExt, i registry.CapabilitiesRegistry) {
 	remote.RegisterCapabilitiesRegistryServer(s, b.Logger, i, NewBrokerTransport(b.WithName("CapabilitiesRegistryServer")))
 }
 
-func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface, b *net.BrokerExt) core.CapabilitiesRegistry {
+func NewCapabilitiesRegistryClient(cc grpc.ClientConnInterface, b *net.BrokerExt) registry.CapabilitiesRegistry {
 	return remote.NewCapabilitiesRegistryClient(b.Logger, cc, NewBrokerTransport(b.WithName("CapabilitiesRegistryClient")))
 }

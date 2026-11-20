@@ -12,6 +12,7 @@ import (
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	caperrors "github.com/smartcontractkit/chainlink-common/pkg/capabilities/errors"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	capmon "github.com/smartcontractkit/chainlink-common/pkg/capabilities/v2/monitoring"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"go.opentelemetry.io/otel/attribute"
@@ -45,7 +46,7 @@ func NewHTTPServer(capability HTTPCapability) *HTTPServer {
 
 type HTTPServer struct {
 	hTTPCapability
-	capabilityRegistry core.CapabilitiesRegistry
+	capabilityRegistry registry.CapabilitiesRegistry
 	stopCh             chan struct{}
 	initMetrics        capmon.InitMetrics
 }

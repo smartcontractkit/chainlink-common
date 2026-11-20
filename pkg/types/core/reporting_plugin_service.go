@@ -7,6 +7,7 @@ import (
 
 	"github.com/smartcontractkit/libocr/offchainreporting2plus/ocr3types"
 
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/services"
 	"github.com/smartcontractkit/chainlink-common/pkg/types"
 )
@@ -39,13 +40,13 @@ type ReportingPluginServer[T types.PluginProvider] interface {
 
 type OCR3ReportingPluginClient interface {
 	services.Service
-	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, grpcProvider grpc.ClientConnInterface, pipelineRunner PipelineRunnerService, telemetry TelemetryService, errorLog ErrorLog, capRegistry CapabilitiesRegistry, keyValueStore KeyValueStore, relayerSet RelayerSet) (OCR3ReportingPluginFactory, error)
+	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, grpcProvider grpc.ClientConnInterface, pipelineRunner PipelineRunnerService, telemetry TelemetryService, errorLog ErrorLog, capRegistry registry.CapabilitiesRegistry, keyValueStore KeyValueStore, relayerSet RelayerSet) (OCR3ReportingPluginFactory, error)
 	NewValidationService(ctx context.Context) (ValidationService, error)
 }
 
 type OCR3ReportingPluginServer[T types.PluginProvider] interface {
 	services.Service
-	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, provider T, pipelineRunner PipelineRunnerService, telemetry TelemetryClient, errorLog ErrorLog, capRegistry CapabilitiesRegistry, keyValueStore KeyValueStore, relayerSet RelayerSet) (OCR3ReportingPluginFactory, error)
+	NewReportingPluginFactory(ctx context.Context, config ReportingPluginServiceConfig, provider T, pipelineRunner PipelineRunnerService, telemetry TelemetryClient, errorLog ErrorLog, capRegistry registry.CapabilitiesRegistry, keyValueStore KeyValueStore, relayerSet RelayerSet) (OCR3ReportingPluginFactory, error)
 	NewValidationService(ctx context.Context) (ValidationService, error)
 }
 

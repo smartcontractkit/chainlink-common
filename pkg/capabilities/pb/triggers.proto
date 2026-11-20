@@ -24,7 +24,7 @@ message CoordinatedEventList {
 // blob reference pointing to the rest.
 message ConsensusQueueEvent {
   string workflowID = 1;
-  string triggerEventID = 2;
+  string executionID = 2;
   google.protobuf.Timestamp observedAt = 3;
   google.protobuf.Timestamp deadline = 4;
   bytes timelessHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
@@ -71,7 +71,7 @@ message ConsensusQueueObservedEventEntry {
 // ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.
 message ConsensusQueueObservedEvent {
   string workflowID = 1;
-  string triggerEventID = 2;
+  string executionID = 2;
 
   bytes nodeIds = 3; // []OracleID
   repeated google.protobuf.Timestamp observedAts = 4;

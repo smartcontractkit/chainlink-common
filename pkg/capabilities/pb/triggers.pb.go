@@ -153,15 +153,15 @@ func (x *CoordinatedEventList) GetEvents() []*CoordinatedEvent {
 // ConsensusQueueEvent holds minimal event metadata for queueing and medianization within the plugin, and one or more
 // blob reference pointing to the rest.
 type ConsensusQueueEvent struct {
-	state          protoimpl.MessageState        `protogen:"open.v1"`
-	WorkflowID     string                        `protobuf:"bytes,1,opt,name=workflowID,proto3" json:"workflowID,omitempty"`
-	TriggerEventID string                        `protobuf:"bytes,2,opt,name=triggerEventID,proto3" json:"triggerEventID,omitempty"`
-	ObservedAt     *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=observedAt,proto3" json:"observedAt,omitempty"`
-	Deadline       *timestamppb.Timestamp        `protobuf:"bytes,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
-	TimelessHash   []byte                        `protobuf:"bytes,5,opt,name=timelessHash,proto3" json:"timelessHash,omitempty"` // hash of the blob data, timestamp fields we have extracted for medianization set to nil
-	Blobs          []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	WorkflowID    string                        `protobuf:"bytes,1,opt,name=workflowID,proto3" json:"workflowID,omitempty"`
+	ExecutionID   string                        `protobuf:"bytes,2,opt,name=executionID,proto3" json:"executionID,omitempty"`
+	ObservedAt    *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=observedAt,proto3" json:"observedAt,omitempty"`
+	Deadline      *timestamppb.Timestamp        `protobuf:"bytes,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
+	TimelessHash  []byte                        `protobuf:"bytes,5,opt,name=timelessHash,proto3" json:"timelessHash,omitempty"` // hash of the blob data, timestamp fields we have extracted for medianization set to nil
+	Blobs         []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConsensusQueueEvent) Reset() {
@@ -201,9 +201,9 @@ func (x *ConsensusQueueEvent) GetWorkflowID() string {
 	return ""
 }
 
-func (x *ConsensusQueueEvent) GetTriggerEventID() string {
+func (x *ConsensusQueueEvent) GetExecutionID() string {
 	if x != nil {
-		return x.TriggerEventID
+		return x.ExecutionID
 	}
 	return ""
 }
@@ -563,15 +563,15 @@ func (x *ConsensusQueueObservedEventEntry) GetEvent() *ConsensusQueueObservedEve
 
 // ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.
 type ConsensusQueueObservedEvent struct {
-	state          protoimpl.MessageState        `protogen:"open.v1"`
-	WorkflowID     string                        `protobuf:"bytes,1,opt,name=workflowID,proto3" json:"workflowID,omitempty"`
-	TriggerEventID string                        `protobuf:"bytes,2,opt,name=triggerEventID,proto3" json:"triggerEventID,omitempty"`
-	NodeIds        []byte                        `protobuf:"bytes,3,opt,name=nodeIds,proto3" json:"nodeIds,omitempty"` // []OracleID
-	ObservedAts    []*timestamppb.Timestamp      `protobuf:"bytes,4,rep,name=observedAts,proto3" json:"observedAts,omitempty"`
-	Deadlines      []*timestamppb.Timestamp      `protobuf:"bytes,5,rep,name=deadlines,proto3" json:"deadlines,omitempty"`
-	Blobs          []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	WorkflowID    string                        `protobuf:"bytes,1,opt,name=workflowID,proto3" json:"workflowID,omitempty"`
+	ExecutionID   string                        `protobuf:"bytes,2,opt,name=executionID,proto3" json:"executionID,omitempty"`
+	NodeIds       []byte                        `protobuf:"bytes,3,opt,name=nodeIds,proto3" json:"nodeIds,omitempty"` // []OracleID
+	ObservedAts   []*timestamppb.Timestamp      `protobuf:"bytes,4,rep,name=observedAts,proto3" json:"observedAts,omitempty"`
+	Deadlines     []*timestamppb.Timestamp      `protobuf:"bytes,5,rep,name=deadlines,proto3" json:"deadlines,omitempty"`
+	Blobs         []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ConsensusQueueObservedEvent) Reset() {
@@ -611,9 +611,9 @@ func (x *ConsensusQueueObservedEvent) GetWorkflowID() string {
 	return ""
 }
 
-func (x *ConsensusQueueObservedEvent) GetTriggerEventID() string {
+func (x *ConsensusQueueObservedEvent) GetExecutionID() string {
 	if x != nil {
-		return x.TriggerEventID
+		return x.ExecutionID
 	}
 	return ""
 }
@@ -663,12 +663,12 @@ const file_triggers_proto_rawDesc = "" +
 	"\bdeadline\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\bdeadline\x123\n" +
 	"\x05event\x18\x06 \x01(\v2\x1d.capabilities.TriggerResponseR\x05event\"J\n" +
 	"\x14CoordinatedEventList\x122\n" +
-	"\x06events\x18\x01 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events\"\xb1\x02\n" +
+	"\x06events\x18\x01 \x03(\v2\x1a.triggers.CoordinatedEventR\x06events\"\xab\x02\n" +
 	"\x13ConsensusQueueEvent\x12\x1e\n" +
 	"\n" +
 	"workflowID\x18\x01 \x01(\tR\n" +
-	"workflowID\x12&\n" +
-	"\x0etriggerEventID\x18\x02 \x01(\tR\x0etriggerEventID\x12:\n" +
+	"workflowID\x12 \n" +
+	"\vexecutionID\x18\x02 \x01(\tR\vexecutionID\x12:\n" +
 	"\n" +
 	"observedAt\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"observedAt\x126\n" +
@@ -698,12 +698,12 @@ const file_triggers_proto_rawDesc = "" +
 	"\vblobHandles\x18\x02 \x03(\fR\vblobHandles\"\x83\x01\n" +
 	" ConsensusQueueObservedEventEntry\x12\"\n" +
 	"\ftimelessHash\x18\x01 \x01(\fR\ftimelessHash\x12;\n" +
-	"\x05event\x18\x02 \x01(\v2%.triggers.ConsensusQueueObservedEventR\x05event\"\xb3\x02\n" +
+	"\x05event\x18\x02 \x01(\v2%.triggers.ConsensusQueueObservedEventR\x05event\"\xad\x02\n" +
 	"\x1bConsensusQueueObservedEvent\x12\x1e\n" +
 	"\n" +
 	"workflowID\x18\x01 \x01(\tR\n" +
-	"workflowID\x12&\n" +
-	"\x0etriggerEventID\x18\x02 \x01(\tR\x0etriggerEventID\x12\x18\n" +
+	"workflowID\x12 \n" +
+	"\vexecutionID\x18\x02 \x01(\tR\vexecutionID\x12\x18\n" +
 	"\anodeIds\x18\x03 \x01(\fR\anodeIds\x12<\n" +
 	"\vobservedAts\x18\x04 \x03(\v2\x1a.google.protobuf.TimestampR\vobservedAts\x128\n" +
 	"\tdeadlines\x18\x05 \x03(\v2\x1a.google.protobuf.TimestampR\tdeadlines\x12:\n" +

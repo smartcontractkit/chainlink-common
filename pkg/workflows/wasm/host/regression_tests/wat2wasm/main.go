@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/bytecodealliance/wasmtime-go/v50"
+	"github.com/bytecodealliance/wasmtime-go/v47"
 )
 
 func main() {

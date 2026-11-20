@@ -39,6 +39,7 @@
 	"DispatcherPerSenderRate": "500rps:1000",
 	"CentralTriggerEventQueueLimit": "1000",
 	"CentralTriggerQueueDrainInterval": "500ms",
+	"ConsensusQueueExpirationInterval": "1h0m0s",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",

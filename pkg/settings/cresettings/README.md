@@ -324,6 +324,7 @@ flowchart
         end
         subgraph PerWorkflow.ConfidentialWorkflows
             PerWorkflow.ConfidentialWorkflows.Enabled[/Enabled\]:::gate
+            PerWorkflow.ConfidentialWorkflows.IncludeExecutionLimits[/IncludeExecutionLimits\]:::gate
         end
         subgraph PerWorkflow.Secrets
             PerWorkflow.Secrets.CallLimit{{CallLimit}}:::bound

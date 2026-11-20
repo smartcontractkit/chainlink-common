@@ -11,6 +11,7 @@ import (
 	_ "github.com/smartcontractkit/chainlink-protos/cre/go/tools/generator"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
@@ -116,7 +117,11 @@ type WorkflowExecution struct {
 	SdkExecuteRequest *sdk.ExecuteRequest `protobuf:"bytes,9,opt,name=sdk_execute_request,json=sdkExecuteRequest,proto3" json:"sdk_execute_request,omitempty"`
 	// restrictions on the capabilities and the secrets.bool
 	// This is sent to avoid overhead when a TEE is not compromised, the DON will verify the restrictions on its end as well.
-	Restrictions  *sdk.Restrictions `protobuf:"bytes,10,opt,name=restrictions,proto3" json:"restrictions,omitempty"`
+	Restrictions *sdk.Restrictions `protobuf:"bytes,10,opt,name=restrictions,proto3" json:"restrictions,omitempty"`
+	// limits carries the CRE limits the workflow DON resolved for this execution.
+	// Being part of PublicData, it is covered by ComputeRequest.Hash() and signed
+	// by the DON quorum. When absent, the enclave applies no CRE limits.
+	Limits        *ExecutionLimits `protobuf:"bytes,11,opt,name=limits,proto3" json:"limits,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -221,6 +226,263 @@ func (x *WorkflowExecution) GetRestrictions() *sdk.Restrictions {
 	return nil
 }
 
+func (x *WorkflowExecution) GetLimits() *ExecutionLimits {
+	if x != nil {
+		return x.Limits
+	}
+	return nil
+}
+
+// ExecutionLimits holds CRE limits resolved by the workflow DON. An unset field
+// is not applied; the enclave decides how to apply the rest.
+type ExecutionLimits struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HttpAction    *HTTPActionLimits      `protobuf:"bytes,1,opt,name=http_action,json=httpAction,proto3" json:"http_action,omitempty"`
+	Wasm          *WASMLimits            `protobuf:"bytes,2,opt,name=wasm,proto3" json:"wasm,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExecutionLimits) Reset() {
+	*x = ExecutionLimits{}
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExecutionLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExecutionLimits) ProtoMessage() {}
+
+func (x *ExecutionLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExecutionLimits.ProtoReflect.Descriptor instead.
+func (*ExecutionLimits) Descriptor() ([]byte, []int) {
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ExecutionLimits) GetHttpAction() *HTTPActionLimits {
+	if x != nil {
+		return x.HttpAction
+	}
+	return nil
+}
+
+func (x *ExecutionLimits) GetWasm() *WASMLimits {
+	if x != nil {
+		return x.Wasm
+	}
+	return nil
+}
+
+// HTTPActionLimits mirrors PerWorkflow.HTTPAction.* for in-enclave http-actions.
+type HTTPActionLimits struct {
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	CallLimit              *uint32                `protobuf:"varint,1,opt,name=call_limit,json=callLimit,proto3,oneof" json:"call_limit,omitempty"`
+	RequestSizeLimitBytes  *uint64                `protobuf:"varint,2,opt,name=request_size_limit_bytes,json=requestSizeLimitBytes,proto3,oneof" json:"request_size_limit_bytes,omitempty"`
+	ResponseSizeLimitBytes *uint64                `protobuf:"varint,3,opt,name=response_size_limit_bytes,json=responseSizeLimitBytes,proto3,oneof" json:"response_size_limit_bytes,omitempty"`
+	ConnectionTimeout      *durationpb.Duration   `protobuf:"bytes,4,opt,name=connection_timeout,json=connectionTimeout,proto3" json:"connection_timeout,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *HTTPActionLimits) Reset() {
+	*x = HTTPActionLimits{}
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HTTPActionLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HTTPActionLimits) ProtoMessage() {}
+
+func (x *HTTPActionLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HTTPActionLimits.ProtoReflect.Descriptor instead.
+func (*HTTPActionLimits) Descriptor() ([]byte, []int) {
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *HTTPActionLimits) GetCallLimit() uint32 {
+	if x != nil && x.CallLimit != nil {
+		return *x.CallLimit
+	}
+	return 0
+}
+
+func (x *HTTPActionLimits) GetRequestSizeLimitBytes() uint64 {
+	if x != nil && x.RequestSizeLimitBytes != nil {
+		return *x.RequestSizeLimitBytes
+	}
+	return 0
+}
+
+func (x *HTTPActionLimits) GetResponseSizeLimitBytes() uint64 {
+	if x != nil && x.ResponseSizeLimitBytes != nil {
+		return *x.ResponseSizeLimitBytes
+	}
+	return 0
+}
+
+func (x *HTTPActionLimits) GetConnectionTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.ConnectionTimeout
+	}
+	return nil
+}
+
+// WASMLimits mirrors the PerWorkflow limits CRE applies around the WASM host.
+// Binary sizes are omitted because the DON enforces them at registration, and
+// the response size limit travels as sdk_execute_request.max_response_size.
+type WASMLimits struct {
+	state                       protoimpl.MessageState `protogen:"open.v1"`
+	MemoryLimitBytes            *uint64                `protobuf:"varint,1,opt,name=memory_limit_bytes,json=memoryLimitBytes,proto3,oneof" json:"memory_limit_bytes,omitempty"`
+	ExecutionTimeout            *durationpb.Duration   `protobuf:"bytes,2,opt,name=execution_timeout,json=executionTimeout,proto3" json:"execution_timeout,omitempty"`
+	ResponseLimitEnforced       *bool                  `protobuf:"varint,3,opt,name=response_limit_enforced,json=responseLimitEnforced,proto3,oneof" json:"response_limit_enforced,omitempty"`
+	CapabilityConcurrencyLimit  *uint32                `protobuf:"varint,4,opt,name=capability_concurrency_limit,json=capabilityConcurrencyLimit,proto3,oneof" json:"capability_concurrency_limit,omitempty"`
+	LogLineLimitBytes           *uint64                `protobuf:"varint,5,opt,name=log_line_limit_bytes,json=logLineLimitBytes,proto3,oneof" json:"log_line_limit_bytes,omitempty"`
+	LogEventLimit               *uint32                `protobuf:"varint,6,opt,name=log_event_limit,json=logEventLimit,proto3,oneof" json:"log_event_limit,omitempty"`
+	UserMetricEnabled           *bool                  `protobuf:"varint,7,opt,name=user_metric_enabled,json=userMetricEnabled,proto3,oneof" json:"user_metric_enabled,omitempty"`
+	UserMetricPayloadLimitBytes *uint64                `protobuf:"varint,8,opt,name=user_metric_payload_limit_bytes,json=userMetricPayloadLimitBytes,proto3,oneof" json:"user_metric_payload_limit_bytes,omitempty"`
+	UserMetricNameLengthLimit   *uint32                `protobuf:"varint,9,opt,name=user_metric_name_length_limit,json=userMetricNameLengthLimit,proto3,oneof" json:"user_metric_name_length_limit,omitempty"`
+	UserMetricLabelsPerMetric   *uint32                `protobuf:"varint,10,opt,name=user_metric_labels_per_metric,json=userMetricLabelsPerMetric,proto3,oneof" json:"user_metric_labels_per_metric,omitempty"`
+	UserMetricLabelValueLength  *uint32                `protobuf:"varint,11,opt,name=user_metric_label_value_length,json=userMetricLabelValueLength,proto3,oneof" json:"user_metric_label_value_length,omitempty"`
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
+}
+
+func (x *WASMLimits) Reset() {
+	*x = WASMLimits{}
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WASMLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WASMLimits) ProtoMessage() {}
+
+func (x *WASMLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WASMLimits.ProtoReflect.Descriptor instead.
+func (*WASMLimits) Descriptor() ([]byte, []int) {
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *WASMLimits) GetMemoryLimitBytes() uint64 {
+	if x != nil && x.MemoryLimitBytes != nil {
+		return *x.MemoryLimitBytes
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetExecutionTimeout() *durationpb.Duration {
+	if x != nil {
+		return x.ExecutionTimeout
+	}
+	return nil
+}
+
+func (x *WASMLimits) GetResponseLimitEnforced() bool {
+	if x != nil && x.ResponseLimitEnforced != nil {
+		return *x.ResponseLimitEnforced
+	}
+	return false
+}
+
+func (x *WASMLimits) GetCapabilityConcurrencyLimit() uint32 {
+	if x != nil && x.CapabilityConcurrencyLimit != nil {
+		return *x.CapabilityConcurrencyLimit
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetLogLineLimitBytes() uint64 {
+	if x != nil && x.LogLineLimitBytes != nil {
+		return *x.LogLineLimitBytes
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetLogEventLimit() uint32 {
+	if x != nil && x.LogEventLimit != nil {
+		return *x.LogEventLimit
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetUserMetricEnabled() bool {
+	if x != nil && x.UserMetricEnabled != nil {
+		return *x.UserMetricEnabled
+	}
+	return false
+}
+
+func (x *WASMLimits) GetUserMetricPayloadLimitBytes() uint64 {
+	if x != nil && x.UserMetricPayloadLimitBytes != nil {
+		return *x.UserMetricPayloadLimitBytes
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetUserMetricNameLengthLimit() uint32 {
+	if x != nil && x.UserMetricNameLengthLimit != nil {
+		return *x.UserMetricNameLengthLimit
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetUserMetricLabelsPerMetric() uint32 {
+	if x != nil && x.UserMetricLabelsPerMetric != nil {
+		return *x.UserMetricLabelsPerMetric
+	}
+	return 0
+}
+
+func (x *WASMLimits) GetUserMetricLabelValueLength() uint32 {
+	if x != nil && x.UserMetricLabelValueLength != nil {
+		return *x.UserMetricLabelValueLength
+	}
+	return 0
+}
+
 // ConfidentialWorkflowRequest is the input provided to the confidential workflows capability.
 // It combines a WorkflowExecution with secrets from VaultDON.
 type ConfidentialWorkflowRequest struct {
@@ -240,7 +502,7 @@ type ConfidentialWorkflowRequest struct {
 
 func (x *ConfidentialWorkflowRequest) Reset() {
 	*x = ConfidentialWorkflowRequest{}
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -252,7 +514,7 @@ func (x *ConfidentialWorkflowRequest) String() string {
 func (*ConfidentialWorkflowRequest) ProtoMessage() {}
 
 func (x *ConfidentialWorkflowRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[2]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -265,7 +527,7 @@ func (x *ConfidentialWorkflowRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfidentialWorkflowRequest.ProtoReflect.Descriptor instead.
 func (*ConfidentialWorkflowRequest) Descriptor() ([]byte, []int) {
-	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{2}
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ConfidentialWorkflowRequest) GetVaultDonSecrets() []*SecretIdentifier {
@@ -299,13 +561,18 @@ type ConfidentialWorkflowResponse struct {
 	// the same sdk.v1alpha.ExecutionResult as the serialized execution_result
 	// bytes field; the two are independent on the wire.
 	SdkExecutionResult *sdk.ExecutionResult `protobuf:"bytes,2,opt,name=sdk_execution_result,json=sdkExecutionResult,proto3" json:"sdk_execution_result,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// execution_duration_ms is the enclave-measured wall-clock duration of the
+	// WASM execution in milliseconds, used to meter confidential compute
+	// (cre:workflow:compute). Presence distinguishes an unavailable measurement
+	// from a measured zero; older enclaves leave it unset.
+	ExecutionDurationMs *int64 `protobuf:"varint,3,opt,name=execution_duration_ms,json=executionDurationMs,proto3,oneof" json:"execution_duration_ms,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ConfidentialWorkflowResponse) Reset() {
 	*x = ConfidentialWorkflowResponse{}
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -317,7 +584,7 @@ func (x *ConfidentialWorkflowResponse) String() string {
 func (*ConfidentialWorkflowResponse) ProtoMessage() {}
 
 func (x *ConfidentialWorkflowResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -330,7 +597,7 @@ func (x *ConfidentialWorkflowResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfidentialWorkflowResponse.ProtoReflect.Descriptor instead.
 func (*ConfidentialWorkflowResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{3}
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ConfidentialWorkflowResponse) GetExecutionResult() []byte {
@@ -347,6 +614,13 @@ func (x *ConfidentialWorkflowResponse) GetSdkExecutionResult() *sdk.ExecutionRes
 	return nil
 }
 
+func (x *ConfidentialWorkflowResponse) GetExecutionDurationMs() int64 {
+	if x != nil && x.ExecutionDurationMs != nil {
+		return *x.ExecutionDurationMs
+	}
+	return 0
+}
+
 type ProvidedTeesResponse struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Tee           []*sdk.TeeTypeAndRegions `protobuf:"bytes,1,rep,name=tee,proto3" json:"tee,omitempty"`
@@ -356,7 +630,7 @@ type ProvidedTeesResponse struct {
 
 func (x *ProvidedTeesResponse) Reset() {
 	*x = ProvidedTeesResponse{}
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[4]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -368,7 +642,7 @@ func (x *ProvidedTeesResponse) String() string {
 func (*ProvidedTeesResponse) ProtoMessage() {}
 
 func (x *ProvidedTeesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[4]
+	mi := &file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -381,7 +655,7 @@ func (x *ProvidedTeesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProvidedTeesResponse.ProtoReflect.Descriptor instead.
 func (*ProvidedTeesResponse) Descriptor() ([]byte, []int) {
-	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{4}
+	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ProvidedTeesResponse) GetTee() []*sdk.TeeTypeAndRegions {
@@ -395,12 +669,12 @@ var File_capabilities_compute_confidentialworkflow_v1alpha_client_proto protoref
 
 const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc = "" +
 	"\n" +
-	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"U\n" +
+	">capabilities/compute/confidentialworkflow/v1alpha/client.proto\x121capabilities.compute.confidentialworkflow.v1alpha\x1a\x1egoogle/protobuf/duration.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x15sdk/v1alpha/sdk.proto\x1a*tools/generator/v1alpha/cre_metadata.proto\"U\n" +
 	"\x10SecretIdentifier\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12!\n" +
 	"\tnamespace\x18\x02 \x01(\tH\x00R\tnamespace\x88\x01\x01B\f\n" +
 	"\n" +
-	"_namespace\"\xb8\x03\n" +
+	"_namespace\"\x94\x04\n" +
 	"\x11WorkflowExecution\x12\x1f\n" +
 	"\vworkflow_id\x18\x01 \x01(\tR\n" +
 	"workflowId\x12\x1d\n" +
@@ -415,15 +689,55 @@ const file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDes
 	"\frequirements\x18\b \x01(\v2\x19.sdk.v1alpha.RequirementsR\frequirements\x12K\n" +
 	"\x13sdk_execute_request\x18\t \x01(\v2\x1b.sdk.v1alpha.ExecuteRequestR\x11sdkExecuteRequest\x12=\n" +
 	"\frestrictions\x18\n" +
-	" \x01(\v2\x19.sdk.v1alpha.RestrictionsR\frestrictions\"\x95\x02\n" +
+	" \x01(\v2\x19.sdk.v1alpha.RestrictionsR\frestrictions\x12Z\n" +
+	"\x06limits\x18\v \x01(\v2B.capabilities.compute.confidentialworkflow.v1alpha.ExecutionLimitsR\x06limits\"\xca\x01\n" +
+	"\x0fExecutionLimits\x12d\n" +
+	"\vhttp_action\x18\x01 \x01(\v2C.capabilities.compute.confidentialworkflow.v1alpha.HTTPActionLimitsR\n" +
+	"httpAction\x12Q\n" +
+	"\x04wasm\x18\x02 \x01(\v2=.capabilities.compute.confidentialworkflow.v1alpha.WASMLimitsR\x04wasm\"\xc8\x02\n" +
+	"\x10HTTPActionLimits\x12\"\n" +
+	"\n" +
+	"call_limit\x18\x01 \x01(\rH\x00R\tcallLimit\x88\x01\x01\x12<\n" +
+	"\x18request_size_limit_bytes\x18\x02 \x01(\x04H\x01R\x15requestSizeLimitBytes\x88\x01\x01\x12>\n" +
+	"\x19response_size_limit_bytes\x18\x03 \x01(\x04H\x02R\x16responseSizeLimitBytes\x88\x01\x01\x12H\n" +
+	"\x12connection_timeout\x18\x04 \x01(\v2\x19.google.protobuf.DurationR\x11connectionTimeoutB\r\n" +
+	"\v_call_limitB\x1b\n" +
+	"\x19_request_size_limit_bytesB\x1c\n" +
+	"\x1a_response_size_limit_bytes\"\xe9\a\n" +
+	"\n" +
+	"WASMLimits\x121\n" +
+	"\x12memory_limit_bytes\x18\x01 \x01(\x04H\x00R\x10memoryLimitBytes\x88\x01\x01\x12F\n" +
+	"\x11execution_timeout\x18\x02 \x01(\v2\x19.google.protobuf.DurationR\x10executionTimeout\x12;\n" +
+	"\x17response_limit_enforced\x18\x03 \x01(\bH\x01R\x15responseLimitEnforced\x88\x01\x01\x12E\n" +
+	"\x1ccapability_concurrency_limit\x18\x04 \x01(\rH\x02R\x1acapabilityConcurrencyLimit\x88\x01\x01\x124\n" +
+	"\x14log_line_limit_bytes\x18\x05 \x01(\x04H\x03R\x11logLineLimitBytes\x88\x01\x01\x12+\n" +
+	"\x0flog_event_limit\x18\x06 \x01(\rH\x04R\rlogEventLimit\x88\x01\x01\x123\n" +
+	"\x13user_metric_enabled\x18\a \x01(\bH\x05R\x11userMetricEnabled\x88\x01\x01\x12I\n" +
+	"\x1fuser_metric_payload_limit_bytes\x18\b \x01(\x04H\x06R\x1buserMetricPayloadLimitBytes\x88\x01\x01\x12E\n" +
+	"\x1duser_metric_name_length_limit\x18\t \x01(\rH\aR\x19userMetricNameLengthLimit\x88\x01\x01\x12E\n" +
+	"\x1duser_metric_labels_per_metric\x18\n" +
+	" \x01(\rH\bR\x19userMetricLabelsPerMetric\x88\x01\x01\x12G\n" +
+	"\x1euser_metric_label_value_length\x18\v \x01(\rH\tR\x1auserMetricLabelValueLength\x88\x01\x01B\x15\n" +
+	"\x13_memory_limit_bytesB\x1a\n" +
+	"\x18_response_limit_enforcedB\x1f\n" +
+	"\x1d_capability_concurrency_limitB\x17\n" +
+	"\x15_log_line_limit_bytesB\x12\n" +
+	"\x10_log_event_limitB\x16\n" +
+	"\x14_user_metric_enabledB\"\n" +
+	" _user_metric_payload_limit_bytesB \n" +
+	"\x1e_user_metric_name_length_limitB \n" +
+	"\x1e_user_metric_labels_per_metricB!\n" +
+	"\x1f_user_metric_label_value_length\"\x95\x02\n" +
 	"\x1bConfidentialWorkflowRequest\x12o\n" +
 	"\x11vault_don_secrets\x18\x01 \x03(\v2C.capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifierR\x0fvaultDonSecrets\x12b\n" +
 	"\texecution\x18\x02 \x01(\v2D.capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecutionR\texecution\x12!\n" +
 	"\n" +
-	"binary_url\x18\x03 \x01(\tB\x02\x18\x01R\tbinaryUrl\"\x99\x01\n" +
+	"binary_url\x18\x03 \x01(\tB\x02\x18\x01R\tbinaryUrl\"\xec\x01\n" +
 	"\x1cConfidentialWorkflowResponse\x12)\n" +
 	"\x10execution_result\x18\x01 \x01(\fR\x0fexecutionResult\x12N\n" +
-	"\x14sdk_execution_result\x18\x02 \x01(\v2\x1c.sdk.v1alpha.ExecutionResultR\x12sdkExecutionResult\"H\n" +
+	"\x14sdk_execution_result\x18\x02 \x01(\v2\x1c.sdk.v1alpha.ExecutionResultR\x12sdkExecutionResult\x127\n" +
+	"\x15execution_duration_ms\x18\x03 \x01(\x03H\x00R\x13executionDurationMs\x88\x01\x01B\x18\n" +
+	"\x16_execution_duration_ms\"H\n" +
 	"\x14ProvidedTeesResponse\x120\n" +
 	"\x03tee\x18\x01 \x03(\v2\x1e.sdk.v1alpha.TeeTypeAndRegionsR\x03tee2\xd2\x02\n" +
 	"\x06Client\x12\xaa\x01\n" +
@@ -442,37 +756,46 @@ func file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc
 	return file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDescData
 }
 
-var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_goTypes = []any{
 	(*SecretIdentifier)(nil),             // 0: capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
 	(*WorkflowExecution)(nil),            // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
-	(*ConfidentialWorkflowRequest)(nil),  // 2: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
-	(*ConfidentialWorkflowResponse)(nil), // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
-	(*ProvidedTeesResponse)(nil),         // 4: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
-	(*sdk.Requirements)(nil),             // 5: sdk.v1alpha.Requirements
-	(*sdk.ExecuteRequest)(nil),           // 6: sdk.v1alpha.ExecuteRequest
-	(*sdk.Restrictions)(nil),             // 7: sdk.v1alpha.Restrictions
-	(*sdk.ExecutionResult)(nil),          // 8: sdk.v1alpha.ExecutionResult
-	(*sdk.TeeTypeAndRegions)(nil),        // 9: sdk.v1alpha.TeeTypeAndRegions
-	(*emptypb.Empty)(nil),                // 10: google.protobuf.Empty
+	(*ExecutionLimits)(nil),              // 2: capabilities.compute.confidentialworkflow.v1alpha.ExecutionLimits
+	(*HTTPActionLimits)(nil),             // 3: capabilities.compute.confidentialworkflow.v1alpha.HTTPActionLimits
+	(*WASMLimits)(nil),                   // 4: capabilities.compute.confidentialworkflow.v1alpha.WASMLimits
+	(*ConfidentialWorkflowRequest)(nil),  // 5: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
+	(*ConfidentialWorkflowResponse)(nil), // 6: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
+	(*ProvidedTeesResponse)(nil),         // 7: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
+	(*sdk.Requirements)(nil),             // 8: sdk.v1alpha.Requirements
+	(*sdk.ExecuteRequest)(nil),           // 9: sdk.v1alpha.ExecuteRequest
+	(*sdk.Restrictions)(nil),             // 10: sdk.v1alpha.Restrictions
+	(*durationpb.Duration)(nil),          // 11: google.protobuf.Duration
+	(*sdk.ExecutionResult)(nil),          // 12: sdk.v1alpha.ExecutionResult
+	(*sdk.TeeTypeAndRegions)(nil),        // 13: sdk.v1alpha.TeeTypeAndRegions
+	(*emptypb.Empty)(nil),                // 14: google.protobuf.Empty
 }
 var file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_depIdxs = []int32{
-	5,  // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.requirements:type_name -> sdk.v1alpha.Requirements
-	6,  // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.sdk_execute_request:type_name -> sdk.v1alpha.ExecuteRequest
-	7,  // 2: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.restrictions:type_name -> sdk.v1alpha.Restrictions
-	0,  // 3: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
-	1,  // 4: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
-	8,  // 5: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse.sdk_execution_result:type_name -> sdk.v1alpha.ExecutionResult
-	9,  // 6: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse.tee:type_name -> sdk.v1alpha.TeeTypeAndRegions
-	2,  // 7: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
-	10, // 8: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:input_type -> google.protobuf.Empty
-	3,  // 9: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
-	4,  // 10: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
-	9,  // [9:11] is the sub-list for method output_type
-	7,  // [7:9] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	8,  // 0: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.requirements:type_name -> sdk.v1alpha.Requirements
+	9,  // 1: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.sdk_execute_request:type_name -> sdk.v1alpha.ExecuteRequest
+	10, // 2: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.restrictions:type_name -> sdk.v1alpha.Restrictions
+	2,  // 3: capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution.limits:type_name -> capabilities.compute.confidentialworkflow.v1alpha.ExecutionLimits
+	3,  // 4: capabilities.compute.confidentialworkflow.v1alpha.ExecutionLimits.http_action:type_name -> capabilities.compute.confidentialworkflow.v1alpha.HTTPActionLimits
+	4,  // 5: capabilities.compute.confidentialworkflow.v1alpha.ExecutionLimits.wasm:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WASMLimits
+	11, // 6: capabilities.compute.confidentialworkflow.v1alpha.HTTPActionLimits.connection_timeout:type_name -> google.protobuf.Duration
+	11, // 7: capabilities.compute.confidentialworkflow.v1alpha.WASMLimits.execution_timeout:type_name -> google.protobuf.Duration
+	0,  // 8: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.vault_don_secrets:type_name -> capabilities.compute.confidentialworkflow.v1alpha.SecretIdentifier
+	1,  // 9: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest.execution:type_name -> capabilities.compute.confidentialworkflow.v1alpha.WorkflowExecution
+	12, // 10: capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse.sdk_execution_result:type_name -> sdk.v1alpha.ExecutionResult
+	13, // 11: capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse.tee:type_name -> sdk.v1alpha.TeeTypeAndRegions
+	5,  // 12: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:input_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowRequest
+	14, // 13: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:input_type -> google.protobuf.Empty
+	6,  // 14: capabilities.compute.confidentialworkflow.v1alpha.Client.Execute:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ConfidentialWorkflowResponse
+	7,  // 15: capabilities.compute.confidentialworkflow.v1alpha.Client.ProvidedTees:output_type -> capabilities.compute.confidentialworkflow.v1alpha.ProvidedTeesResponse
+	14, // [14:16] is the sub-list for method output_type
+	12, // [12:14] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() }
@@ -481,13 +804,16 @@ func file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_init() 
 		return
 	}
 	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[0].OneofWrappers = []any{}
+	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[3].OneofWrappers = []any{}
+	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[4].OneofWrappers = []any{}
+	file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc), len(file_capabilities_compute_confidentialworkflow_v1alpha_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

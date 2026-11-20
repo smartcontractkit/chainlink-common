@@ -29,6 +29,15 @@ func (a *Atomic) SetGetter(getter Getter) {
 	a.getter = getter
 }
 
+// GetGetter returns the active getter, or nil before SetGetter or Store supplies
+// one. Later replacements do not change the returned getter; callers can use it
+// for consistent reads across multiple settings. It does not clone the getter.
+func (a *Atomic) GetGetter() Getter {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.getter
+}
+
 func (a *Atomic) Subscribe(ctx context.Context) (<-chan Snapshot, error) {
 	from := make(chan Snapshot)
 	to := make(chan Snapshot)

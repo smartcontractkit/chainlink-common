@@ -387,6 +387,7 @@ type ConsensusQueueObservation struct {
 	Expiration         *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expiration,proto3" json:"expiration,omitempty"`                                                                                            // observation time - grace period
 	Capacity           uint32                 `protobuf:"varint,4,opt,name=capacity,proto3" json:"capacity,omitempty"`                                                                                               // Global remaining capacity
 	WorkflowCapacities map[string]uint32      `protobuf:"bytes,5,rep,name=workflowCapacities,proto3" json:"workflowCapacities,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // Workflow-specific free executions
+	KvDrainActive      bool                   `protobuf:"varint,6,opt,name=kvDrainActive,proto3" json:"kvDrainActive,omitempty"`                                                                                     // consensus on FeatureConsensusQueueKVDrainActivePeriod
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -454,6 +455,13 @@ func (x *ConsensusQueueObservation) GetWorkflowCapacities() map[string]uint32 {
 		return x.WorkflowCapacities
 	}
 	return nil
+}
+
+func (x *ConsensusQueueObservation) GetKvDrainActive() bool {
+	if x != nil {
+		return x.KvDrainActive
+	}
+	return false
 }
 
 // ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
@@ -681,7 +689,7 @@ const file_triggers_proto_rawDesc = "" +
 	"\x17ConsensusQueueEventList\x125\n" +
 	"\x06events\x18\x01 \x03(\v2\x1d.triggers.ConsensusQueueEventR\x06events\"@\n" +
 	"\x1cConsensusQueueBlobHandleList\x12 \n" +
-	"\vblobHandles\x18\x01 \x03(\fR\vblobHandles\"\x80\x03\n" +
+	"\vblobHandles\x18\x01 \x03(\fR\vblobHandles\"\xa6\x03\n" +
 	"\x19ConsensusQueueObservation\x125\n" +
 	"\x06events\x18\x01 \x03(\v2\x1d.triggers.ConsensusQueueEventR\x06events\x12 \n" +
 	"\vblobHandles\x18\x02 \x03(\fR\vblobHandles\x12:\n" +
@@ -689,7 +697,8 @@ const file_triggers_proto_rawDesc = "" +
 	"expiration\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"expiration\x12\x1a\n" +
 	"\bcapacity\x18\x04 \x01(\rR\bcapacity\x12k\n" +
-	"\x12workflowCapacities\x18\x05 \x03(\v2;.triggers.ConsensusQueueObservation.WorkflowCapacitiesEntryR\x12workflowCapacities\x1aE\n" +
+	"\x12workflowCapacities\x18\x05 \x03(\v2;.triggers.ConsensusQueueObservation.WorkflowCapacitiesEntryR\x12workflowCapacities\x12$\n" +
+	"\rkvDrainActive\x18\x06 \x01(\bR\rkvDrainActive\x1aE\n" +
 	"\x17WorkflowCapacitiesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\rR\x05value:\x028\x01\"\x90\x01\n" +

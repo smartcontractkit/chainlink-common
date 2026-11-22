@@ -55,6 +55,7 @@ message ConsensusQueueObservation {
   google.protobuf.Timestamp expiration = 3; // observation time - grace period
   uint32 capacity = 4; // Global remaining capacity
   map<string, uint32> workflowCapacities = 5; // Workflow-specific free executions
+  bool kvDrainActive = 6; // consensus on FeatureConsensusQueueKVDrainActivePeriod
 }
 
 // ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.

@@ -40,6 +40,7 @@
 	"CentralTriggerEventQueueLimit": "1000",
 	"CentralTriggerQueueDrainInterval": "500ms",
 	"ConsensusQueueExpirationGraceInterval": "1m0s",
+	"FeatureConsensusQueueKVDrainActivePeriod": "[2100-01-01 00:00:00 +0000 UTC,2101-01-01 00:00:00 +0000 UTC]",
 	"TriggerRegistrationStatusUpdateTimeout": "0s",
 	"BaseTriggerRetryInterval": "30s",
 	"BaseTriggerMaxRetries": "20",

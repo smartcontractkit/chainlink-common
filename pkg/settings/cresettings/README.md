@@ -465,6 +465,7 @@ flowchart
 %% TODO placating test for now since this flowchart no longer renders
     DonTimeSequencedTimestampsActivePeriod
     ConsensusQueueExpirationGraceInterval
+    FeatureConsensusQueueKVDrainActivePeriod
 
 %%  standard capabilities job startup is likewise its own entry point
     standardcapabilities.Delegate.NewServices

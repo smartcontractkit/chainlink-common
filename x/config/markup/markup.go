@@ -16,5 +16,9 @@ import (
 // Markup is a configuration language, described as its own decoder reads a document.
 type Markup = decode.Markup
 
+// Discard accepts any value a config file holds at its key, a table, an array or a scalar, and keeps none of it.
+// Use it for deprecated keys that old files still carry.
+type Discard = decode.Discard
+
 // Err is what a caller reports without a Markup: no language is chosen silently on its behalf.
 var Err = errors.New("no markup language set: see x/config/markup/tomlmarkup for an example")

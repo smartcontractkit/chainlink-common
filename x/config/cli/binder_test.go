@@ -870,6 +870,20 @@ func TestAMapReadWholeIsReplacedNotMerged(t *testing.T) {
 
 type recursiveUintMap map[uint32]*recursiveUintMap
 
+func TestDiscardDeprecatedSection(t *testing.T) {
+	type hasDiscard struct {
+		Deprecated markup.Discard
+		Keep       string
+	}
+
+	var c hasDiscard
+	t.Setenv("TEST_DEPRECATED", "ignored")
+	file := "Keep = 'kept'\n[Deprecated]\nURL = 'https://user:pass@example.com/secret'\n[Deprecated.Nested]\nToken = 'hunter2'\n"
+	require.NoError(t, run(t, &c, testOptions, "--config", writeConfig(t, file)))
+	assert.Equal(t, hasDiscard{Keep: "kept"}, c)
+	assert.Nil(t, flagsOf(t, &hasDiscard{}, testOptions).Lookup("deprecated"))
+}
+
 func TestRecursiveConfigFileOnlyType(t *testing.T) {
 	type hasRecursiveMap struct {
 		Tree recursiveMap

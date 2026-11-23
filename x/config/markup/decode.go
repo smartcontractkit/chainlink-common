@@ -46,7 +46,8 @@ func Decode(lang Markup, data []byte, v any) error {
 
 	for _, leaf := range w.leaves {
 		raw, ok := w.keys.Lookup(fileValues.Elem(), leaf.fileKey)
-		if !ok {
+		// A discarded value is parsed into any, then dropped.
+		if !ok || decode.IsDiscard(leaf.goType) {
 			continue
 		}
 
@@ -117,7 +118,7 @@ func (w *keyWalker) walk(t reflect.Type, fileKey, goPath []string, ancestors []r
 		}
 
 		// A struct already being walked is a leaf, so a recursive type can't walk forever.
-		if elem.Kind() != reflect.Struct || w.lang.IsLeaf(f.Type) || w.lang.IsLeaf(elem) ||
+		if decode.IsDiscard(f.Type) || elem.Kind() != reflect.Struct || w.lang.IsLeaf(f.Type) || w.lang.IsLeaf(elem) ||
 			slices.Contains(ancestors, elem) {
 			fileType, err := decode.FileValueType(elem, w.lang)
 			if err != nil {

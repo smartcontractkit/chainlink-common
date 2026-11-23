@@ -487,7 +487,7 @@ type Schema struct {
 	// How long past their deadline to expire consensus queue entries
 	ConsensusQueueExpirationGraceInterval Setting[time.Duration]
 	// FeatureConsensusQueueKVDrainActivePeriod drains the KV queue of the consensus queue plugin, as a recovery mechanism.
-	FeatureConsensusQueueKVDrainActivePeriod Setting[Range[config.Timestamp]]
+	FeatureConsensusQueueKVDrainActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
 	TriggerRegistrationStatusUpdateTimeout   Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]

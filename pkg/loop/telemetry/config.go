@@ -53,6 +53,9 @@ const (
 	envChipIngressInsecureConnection      = "CL_CHIP_INGRESS_INSECURE_CONNECTION"
 	envChipIngressBatchEmitterEnabled     = "CL_CHIP_INGRESS_BATCH_EMITTER_ENABLED"
 	envChipIngressDurableEmitterEnabled   = "CL_CHIP_INGRESS_DURABLE_EMITTER_ENABLED"
+	envDurableEmitterBackpressureEnabled  = "CL_CHIP_INGRESS_DURABLE_EMITTER_BACKPRESSURE_ENABLED"
+	envDurableEmitterMaxQueueDepth        = "CL_CHIP_INGRESS_DURABLE_EMITTER_MAX_QUEUE_DEPTH"
+	envDurableEmitterBacklogPollInterval  = "CL_CHIP_INGRESS_DURABLE_EMITTER_BACKLOG_POLL_INTERVAL"
 	envChipIngressBufferSize              = "CL_CHIP_INGRESS_BUFFER_SIZE"
 	envChipIngressMaxBatchSize            = "CL_CHIP_INGRESS_MAX_BATCH_SIZE"
 	envChipIngressMaxConcurrentSends      = "CL_CHIP_INGRESS_MAX_CONCURRENT_SENDS"
@@ -121,6 +124,11 @@ type TelemetryConfig struct {
 	ChipIngressInsecureConnection    bool
 	ChipIngressBatchEmitterEnabled   bool
 	ChipIngressDurableEmitterEnabled bool
+	// DurableEmitter* configure the plugin's durable emitter back-pressure; see
+	// durableemitter.Config. Zero values use the durableemitter defaults.
+	DurableEmitterBackpressureEnabled bool
+	DurableEmitterMaxQueueDepth       int64
+	DurableEmitterBacklogPollInterval time.Duration
 
 	ChipIngressBufferSize         uint
 	ChipIngressMaxBatchSize       uint
@@ -192,6 +200,9 @@ func (c *TelemetryConfig) AsCmdEnv() []string {
 	add(envChipIngressInsecureConnection, strconv.FormatBool(c.ChipIngressInsecureConnection))
 	add(envChipIngressBatchEmitterEnabled, strconv.FormatBool(c.ChipIngressBatchEmitterEnabled))
 	add(envChipIngressDurableEmitterEnabled, strconv.FormatBool(c.ChipIngressDurableEmitterEnabled))
+	add(envDurableEmitterBackpressureEnabled, strconv.FormatBool(c.DurableEmitterBackpressureEnabled))
+	add(envDurableEmitterMaxQueueDepth, strconv.FormatInt(c.DurableEmitterMaxQueueDepth, 10))
+	add(envDurableEmitterBacklogPollInterval, c.DurableEmitterBacklogPollInterval.String())
 	add(envChipIngressBufferSize, strconv.FormatUint(uint64(c.ChipIngressBufferSize), 10))
 	add(envChipIngressMaxBatchSize, strconv.FormatUint(uint64(c.ChipIngressMaxBatchSize), 10))
 	add(envChipIngressMaxConcurrentSends, strconv.Itoa(c.ChipIngressMaxConcurrentSends))
@@ -340,6 +351,18 @@ func (c *TelemetryConfig) Parse() error {
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressDurableEmitterEnabled, err)
 		}
+		c.DurableEmitterBackpressureEnabled, err = getBool(envDurableEmitterBackpressureEnabled)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envDurableEmitterBackpressureEnabled, err)
+		}
+		c.DurableEmitterMaxQueueDepth, err = getInt64(envDurableEmitterMaxQueueDepth)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envDurableEmitterMaxQueueDepth, err)
+		}
+		c.DurableEmitterBacklogPollInterval, err = getDuration(envDurableEmitterBacklogPollInterval)
+		if err != nil {
+			return fmt.Errorf("failed to parse %s: %w", envDurableEmitterBacklogPollInterval, err)
+		}
 		c.ChipIngressBufferSize, err = getUint(envChipIngressBufferSize)
 		if err != nil {
 			return fmt.Errorf("failed to parse %s: %w", envChipIngressBufferSize, err)
@@ -450,6 +473,14 @@ func getDuration(envKey string) (time.Duration, error) {
 		return 0, nil
 	}
 	return time.ParseDuration(s)
+}
+
+func getInt64(envKey string) (int64, error) {
+	s := os.Getenv(envKey)
+	if s == "" {
+		return 0, nil
+	}
+	return strconv.ParseInt(s, 10, 64)
 }
 
 func getInt(envKey string) (int, error) {

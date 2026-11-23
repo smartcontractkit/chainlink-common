@@ -22,6 +22,11 @@ type DurableEmitterMetricsConfig struct {
 	PollInterval time.Duration
 	// MaxQueuePayloadBytes, if > 0, records capacity_usage_ratio = queue_payload_bytes / max.
 	MaxQueuePayloadBytes int64
+	// Instance is recorded as the emitter_instance attribute on every metric, so
+	// emitters of processes sharing a node (host and LOOP plugins) export distinct
+	// series. Empty defaults to "host" for the retransmit-owning process and
+	// "plugin" otherwise.
+	Instance string
 }
 
 // publishPhase identifies the delivery path recorded by publish metrics.
@@ -44,7 +49,10 @@ func (p publishPhase) String() string {
 }
 
 type durableEmitterMetrics struct {
-	clientName         string
+	clientName string
+	// base holds the attributes recorded on every measurement.
+	base               []attribute.KeyValue
+	backpressureReject metric.Int64Counter
 	emitSuccess        metric.Int64Counter
 	emitFail           metric.Int64Counter
 	emitDuration       metric.Float64Histogram
@@ -94,14 +102,22 @@ var batchSizeBuckets = metric.WithExplicitBucketBoundaries(
 // newDurableEmitterMetrics registers all DurableEmitter instruments on the
 // supplied meter. The caller is responsible for the meter's scope (the
 // instrument prefix below acts as the metric namespace).
-func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEmitterMetrics, error) {
+func newDurableEmitterMetrics(meter metric.Meter, clientName, instance string) (*durableEmitterMetrics, error) {
 	if meter == nil {
 		return nil, errors.New("durable emitter metrics: meter is nil")
 	}
 	m := &durableEmitterMetrics{
 		clientName: clientName,
+		base:       []attribute.KeyValue{attribute.String("emitter_instance", instance)},
 	}
 	var err error
+	if m.backpressureReject, err = meter.Int64Counter(
+		"durable_emitter.emit.backpressure_rejects",
+		metric.WithUnit("{call}"),
+		metric.WithDescription("Emit calls rejected with ErrBacklogged because the estimated backlog reached MaxQueueDepth"),
+	); err != nil {
+		return nil, err
+	}
 	if m.emitSuccess, err = meter.Int64Counter(
 		"durable_emitter.emit.success",
 		metric.WithUnit("{call}"),
@@ -278,13 +294,18 @@ func newDurableEmitterMetrics(meter metric.Meter, clientName string) (*durableEm
 	return m, nil
 }
 
+// with returns the measurement option carrying the base attributes plus kvs.
+func (m *durableEmitterMetrics) with(kvs ...attribute.KeyValue) metric.MeasurementOption {
+	return metric.WithAttributes(append(append(make([]attribute.KeyValue, 0, len(m.base)+len(kvs)), m.base...), kvs...)...)
+}
+
 // recordExpiredPurged counts events the expiry loop deleted, attributed by
 // domain (CloudEvent source) and subject (CloudEvent type).
 func (m *durableEmitterMetrics) recordExpiredPurged(ctx context.Context, domain, subject string, n int64) {
 	if m == nil || n <= 0 {
 		return
 	}
-	m.expiredPurged.Add(ctx, n, metric.WithAttributes(
+	m.expiredPurged.Add(ctx, n, m.with(
 		attribute.String("domain", domain),
 		attribute.String("subject", subject),
 	))
@@ -294,19 +315,18 @@ func (m *durableEmitterMetrics) recordStoreOp(ctx context.Context, op string, el
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(
+	m.storeOps.Add(ctx, 1, m.with(
 		attribute.String("operation", op),
 		attribute.Bool("error", opErr != nil),
-	)
-	m.storeOps.Add(ctx, 1, attrs)
-	m.storeOpDuration.Record(ctx, elapsed.Seconds(), metric.WithAttributes(attribute.String("operation", op)))
+	))
+	m.storeOpDuration.Record(ctx, elapsed.Seconds(), m.with(attribute.String("operation", op)))
 }
 
 func (m *durableEmitterMetrics) recordInsertBatchSize(ctx context.Context, n int, batchErr error) {
 	if m == nil {
 		return
 	}
-	m.insertBatchSize.Record(ctx, int64(n), metric.WithAttributes(attribute.Bool("error", batchErr != nil)))
+	m.insertBatchSize.Record(ctx, int64(n), m.with(attribute.Bool("error", batchErr != nil)))
 }
 
 // recordQueueStats records the DB-derived queue statistics (payload bytes,
@@ -317,15 +337,15 @@ func (m *durableEmitterMetrics) recordQueueStats(ctx context.Context, st Durable
 	if m == nil {
 		return
 	}
-	m.queuePayloadBytes.Record(ctx, st.PayloadBytes)
+	m.queuePayloadBytes.Record(ctx, st.PayloadBytes, m.with())
 	if st.Depth == 0 {
-		m.queueOldestAgeSec.Record(ctx, 0)
+		m.queueOldestAgeSec.Record(ctx, 0, m.with())
 	} else {
-		m.queueOldestAgeSec.Record(ctx, st.OldestPendingAge.Seconds())
+		m.queueOldestAgeSec.Record(ctx, st.OldestPendingAge.Seconds(), m.with())
 	}
-	m.queueTTLBudgetSec.Record(ctx, int64(st.TTLBudget/time.Second))
+	m.queueTTLBudgetSec.Record(ctx, int64(st.TTLBudget/time.Second), m.with())
 	if maxBytes > 0 {
-		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes))
+		m.queueCapacityRatio.Record(ctx, float64(st.PayloadBytes)/float64(maxBytes), m.with())
 	}
 }
 
@@ -333,29 +353,25 @@ func (m *durableEmitterMetrics) recordEmitDuration(ctx context.Context, elapsed 
 	if m == nil {
 		return
 	}
-	m.emitDuration.Record(ctx, elapsed.Seconds(),
-		metric.WithAttributes(attribute.Bool("error", err != nil)),
-	)
+	m.emitDuration.Record(ctx, elapsed.Seconds(), m.with(attribute.Bool("error", err != nil)))
 }
 
 func (m *durableEmitterMetrics) recordPublish(ctx context.Context, elapsed time.Duration, phase publishPhase, err error) {
 	if m == nil {
 		return
 	}
-	m.publishDuration.Record(ctx, elapsed.Seconds(),
-		metric.WithAttributes(
-			attribute.String("phase", phase.String()),
-			attribute.Bool("error", err != nil),
-			attribute.String("client_name", m.clientName),
-		),
-	)
+	m.publishDuration.Record(ctx, elapsed.Seconds(), m.with(
+		attribute.String("phase", phase.String()),
+		attribute.Bool("error", err != nil),
+		attribute.String("client_name", m.clientName),
+	))
 }
 
 func (m *durableEmitterMetrics) recordPublishBatchEvent(ctx context.Context, phase publishPhase, err error) {
 	if m == nil {
 		return
 	}
-	attrs := metric.WithAttributes(
+	attrs := m.with(
 		attribute.String("phase", phase.String()),
 		attribute.String("client_name", m.clientName),
 	)

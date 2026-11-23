@@ -55,6 +55,9 @@ const (
 	envChipIngressSendTimeout             = "CL_CHIP_INGRESS_SEND_TIMEOUT"
 	envChipIngressDrainTimeout            = "CL_CHIP_INGRESS_DRAIN_TIMEOUT"
 	envChipIngressMaxGRPCRequestSize      = "CL_CHIP_INGRESS_MAX_GRPC_REQUEST_SIZE"
+	envDurableEmitterBackpressureEnabled  = "CL_CHIP_INGRESS_DURABLE_EMITTER_BACKPRESSURE_ENABLED"
+	envDurableEmitterMaxQueueDepth        = "CL_CHIP_INGRESS_DURABLE_EMITTER_MAX_QUEUE_DEPTH"
+	envDurableEmitterBacklogPollInterval  = "CL_CHIP_INGRESS_DURABLE_EMITTER_BACKLOG_POLL_INTERVAL"
 
 	envPyroscopeAuthToken                 = "CL_PYROSCOPE_AUTH_TOKEN"
 	envPyroscopeServerAddress             = "CL_PYROSCOPE_SERVER_ADDRESS"
@@ -157,6 +160,10 @@ func TestEnvConfig_parse(t *testing.T) {
 				envChipIngressDrainTimeout:       "10s",
 				envChipIngressMaxGRPCRequestSize: "10485760",
 
+				envDurableEmitterBackpressureEnabled: "true",
+				envDurableEmitterMaxQueueDepth:       "250000",
+				envDurableEmitterBacklogPollInterval: "2s",
+
 				envCRESettings:        `{"global":{}}`,
 				envCRESettingsDefault: `{"foo":"bar"}`,
 			},
@@ -257,6 +264,10 @@ var envCfgFull = EnvConfig{
 		ChipIngressSendTimeout:        3 * time.Second,
 		ChipIngressDrainTimeout:       10 * time.Second,
 		ChipIngressMaxGRPCRequestSize: 10485760,
+
+		DurableEmitterBackpressureEnabled: true,
+		DurableEmitterMaxQueueDepth:       250000,
+		DurableEmitterBacklogPollInterval: 2 * time.Second,
 	},
 
 	DatabaseURL:                          config.MustSecretURL("postgres://user:password@localhost:5432/db"),
@@ -387,6 +398,9 @@ func TestEnvConfig_AsCmdEnv(t *testing.T) {
 	assert.Equal(t, "3s", got[envChipIngressSendTimeout])
 	assert.Equal(t, "10s", got[envChipIngressDrainTimeout])
 	assert.Equal(t, "10485760", got[envChipIngressMaxGRPCRequestSize])
+	assert.Equal(t, "true", got[envDurableEmitterBackpressureEnabled])
+	assert.Equal(t, "250000", got[envDurableEmitterMaxQueueDepth])
+	assert.Equal(t, "2s", got[envDurableEmitterBacklogPollInterval])
 
 	assert.JSONEq(t, `{"global":{}}`, got[envCRESettings])
 	assert.JSONEq(t, `{"foo":"bar"}`, got[envCRESettingsDefault])

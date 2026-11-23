@@ -24,6 +24,7 @@ var (
 	_ DurableQueueObserver = (*PgDurableEventStore)(nil)
 	_ BatchInserter        = (*PgDurableEventStore)(nil)
 	_ ExpiredPurger        = (*PgDurableEventStore)(nil)
+	_ BacklogEstimator     = (*PgDurableEventStore)(nil)
 )
 
 func NewPgDurableEventStore(ds sqlutil.DataSource) *PgDurableEventStore {
@@ -179,6 +180,22 @@ SELECT payload FROM deleted`
 		return nil, fmt.Errorf("failed to delete expired chip durable events batch: %w", err)
 	}
 	return payloads, nil
+}
+
+// EstimateBacklog implements BacklogEstimator from pg_stat_user_tables.n_live_tup,
+// a catalog lookup that stays cheap on a large table, unlike count(*). It reads 0
+// after a statistics reset, so back-pressure fails open.
+func (s *PgDurableEventStore) EstimateBacklog(ctx context.Context) (int64, error) {
+	const q = `
+SELECT coalesce(
+    (SELECT n_live_tup FROM pg_stat_user_tables WHERE relid = '` + chipDurableEventsTable + `'::regclass),
+    0
+)::bigint`
+	var n int64
+	if err := s.ds.GetContext(ctx, &n, q); err != nil {
+		return 0, fmt.Errorf("failed to estimate chip durable events backlog: %w", err)
+	}
+	return n, nil
 }
 
 type chipDurableQueueAgg struct {

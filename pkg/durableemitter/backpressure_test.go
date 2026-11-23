@@ -27,6 +27,24 @@ func (s *estimatingStore) EstimateBacklog(context.Context) (int64, error) {
 	return s.estimate.Load(), nil
 }
 
+// gatedEstimatingStore holds EstimateBacklog open while gate is set, so a test
+// can write rows while a refresh is in flight.
+type gatedEstimatingStore struct {
+	*MemDurableEventStore
+	estimate atomic.Int64
+	gate     atomic.Bool
+	entered  chan struct{}
+	release  chan struct{}
+}
+
+func (s *gatedEstimatingStore) EstimateBacklog(context.Context) (int64, error) {
+	if s.gate.Load() {
+		s.entered <- struct{}{}
+		<-s.release
+	}
+	return s.estimate.Load(), nil
+}
+
 // faultyStore fails BatchDelete while failDeletes is set and counts store reads.
 type faultyStore struct {
 	*MemDurableEventStore
@@ -106,6 +124,39 @@ func TestDurableEmitter_BackpressureOffByDefault(t *testing.T) {
 	assert.Nil(t, em.backlogEstimator, "the backlog is not polled unless back-pressure is enabled")
 }
 
+func TestDurableEmitter_BackpressureRefreshKeepsInsertsMadeDuringPoll(t *testing.T) {
+	store := &gatedEstimatingStore{
+		MemDurableEventStore: NewMemDurableEventStore(),
+		entered:              make(chan struct{}),
+		release:              make(chan struct{}),
+	}
+	cfg := DefaultConfig()
+	cfg.BackpressureEnabled = true
+	cfg.MaxQueueDepth = 10
+	cfg.BacklogPollInterval = time.Hour
+	em := newTestDurableEmitter(t, store, newTestBatchEmitter(), &cfg)
+	servicetest.Run(t, em)
+	ctx := t.Context()
+
+	store.gate.Store(true)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		em.refreshBacklog(ctx)
+	}()
+	<-store.entered
+	for range 3 {
+		require.NoError(t, em.Emit(ctx, []byte("x"), testEmitAttrs()...))
+	}
+	// The estimate was taken before the inserts, so it does not include them.
+	store.estimate.Store(8)
+	store.release <- struct{}{}
+	<-done
+
+	assert.Equal(t, int64(11), em.estimatedBacklog(), "inserts made during the poll stay counted")
+	require.ErrorIs(t, em.Emit(ctx, []byte("rejected"), testEmitAttrs()...), ErrBacklogged)
+}
+
 func TestDurableEmitter_BackpressureDisabledWithoutEstimator(t *testing.T) {
 	store := NewMemDurableEventStore()
 	be := newTestBatchEmitter()
@@ -145,9 +196,14 @@ func TestDurableEmitter_RetransmitPausesWhileDeletesFail(t *testing.T) {
 	time.Sleep(150 * time.Millisecond) // ~15 ticks, all inside the backoff window
 	assert.Equal(t, listed, store.listCalls.Load(), "retransmit must not list pending rows while deletes fail")
 
+	// A later successful delete must not cut the pause short.
 	store.failDeletes.Store(false)
+	require.NoError(t, em.Emit(ctx, []byte("fresh"), testEmitAttrs()...))
+	require.Eventually(t, func() bool { return store.Len() == 1 }, 2*time.Second, 5*time.Millisecond)
+	assert.Equal(t, listed, store.listCalls.Load(), "retransmit stays paused for the full window after the last failure")
+
 	require.Eventually(t, func() bool { return store.Len() == 0 }, 10*time.Second, 10*time.Millisecond,
-		"retransmit resumes after the backoff and the row is deleted once deletes succeed")
+		"retransmit resumes after the backoff and the stuck row is deleted")
 }
 
 func TestDurableEmitter_PluginMetricsLabelledAndSkipQueueScan(t *testing.T) {

@@ -254,14 +254,23 @@ type DurableEmitter struct {
 	retransmitCursorTs time.Time
 	retransmitCursorID int64
 
-	// backlogEstimator is non-nil when back-pressure is enabled. backlog is the
-	// polled estimate, adjusted in between by this process's own writes.
+	// backlogEstimator is non-nil when back-pressure is enabled. The estimate is
+	// the last polled snapshot plus this process's inserts since that poll began;
+	// deletes and purges are only reflected by the next poll, so between polls the
+	// estimate can only overshoot.
 	backlogEstimator BacklogEstimator
-	backlog          atomic.Int64
+	backlogSnap      atomic.Pointer[backlogSnapshot]
+	insertedRows     atomic.Int64
 
 	// deleteFailedAt is the UnixNano time of the last failed delivery delete, or 0
-	// once a delete succeeds.
+	// if none has failed. Successes do not clear it, so the retransmit pause always
+	// runs its full window after a failure.
 	deleteFailedAt atomic.Int64
+}
+
+type backlogSnapshot struct {
+	rows     int64 // store estimate
+	inserted int64 // insertedRows when the estimate query started
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -442,40 +451,39 @@ func (d *DurableEmitter) backlogLoop() {
 	}
 }
 
-// refreshBacklog replaces the backlog estimate with the store's. On error the
-// previous estimate is kept.
+// refreshBacklog replaces the backlog snapshot with the store's estimate. Inserts
+// made while the query runs stay counted on top of it. On error the previous
+// snapshot is kept.
 func (d *DurableEmitter) refreshBacklog(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
+	inserted := d.insertedRows.Load()
 	n, err := d.backlogEstimator.EstimateBacklog(ctx)
 	if err != nil {
-		d.eng.Warnw("DurableEmitter: backlog estimate failed; keeping last estimate", "estimate", d.backlog.Load(), "error", err)
+		d.eng.Warnw("DurableEmitter: backlog estimate failed; keeping last estimate", "estimate", d.estimatedBacklog(), "error", err)
 		return
 	}
-	d.backlog.Store(n)
+	d.backlogSnap.Store(&backlogSnapshot{rows: n, inserted: inserted})
+}
+
+func (d *DurableEmitter) estimatedBacklog() int64 {
+	var base, insertedAtPoll int64
+	if snap := d.backlogSnap.Load(); snap != nil {
+		base, insertedAtPoll = snap.rows, snap.inserted
+	}
+	return base + d.insertedRows.Load() - insertedAtPoll
 }
 
 // backlogged reports whether Emit should reject with ErrBacklogged.
 func (d *DurableEmitter) backlogged() bool {
-	return d.backlogEstimator != nil && d.backlog.Load() >= d.cfg.MaxQueueDepth
+	return d.backlogEstimator != nil && d.estimatedBacklog() >= d.cfg.MaxQueueDepth
 }
 
-// adjustBacklog applies this process's own store writes to the estimate between polls.
-func (d *DurableEmitter) adjustBacklog(delta int64) {
-	if d.backlogEstimator != nil && delta != 0 {
-		d.backlog.Add(delta)
-	}
-}
-
-// recordDeleteResult tracks delivery-delete health for the retransmit backoff
-// and applies successful deletes to the backlog estimate.
-func (d *DurableEmitter) recordDeleteResult(deleted int64, err error) {
+// recordDeleteFailure starts (or extends) the retransmit pause.
+func (d *DurableEmitter) recordDeleteFailure(err error) {
 	if err != nil {
 		d.deleteFailedAt.Store(time.Now().UnixNano())
-		return
 	}
-	d.deleteFailedAt.Store(0)
-	d.adjustBacklog(-deleted)
 }
 
 // EmitAsync runs Emit in a background goroutine and ignores the result, so the
@@ -633,7 +641,9 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				return fmt.Errorf("failed to persist event: %w", err)
 			}
 		}
-		d.adjustBacklog(1)
+		if d.backlogEstimator != nil {
+			d.insertedRows.Add(1)
+		}
 
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure).
@@ -702,7 +712,7 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
 			h.OnBatchDelete(deleteElapsed, int(deleted))
 		}
-		d.recordDeleteResult(deleted, deleteErr)
+		d.recordDeleteFailure(deleteErr)
 		if deleteErr != nil {
 			d.eng.Errorw("failed to delete event from persistence", "id", id, "error", deleteErr)
 			return
@@ -879,7 +889,7 @@ func (d *DurableEmitter) flushDeletes(ids []int64) {
 	if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
 		h.OnBatchDelete(deleteElapsed, int(deleted))
 	}
-	d.recordDeleteResult(deleted, err)
+	d.recordDeleteFailure(err)
 	if err != nil {
 		d.eng.Errorw("failed to batch delete delivered events", "count", len(ids), "error", err)
 		return
@@ -1074,7 +1084,6 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 	var purged int64
 	var purgeErr error
 	defer func() {
-		d.adjustBacklog(-purged)
 		span.SetAttributes(attribute.Int64("purged", purged))
 		if purgeErr != nil {
 			span.RecordError(purgeErr)
@@ -1154,7 +1163,7 @@ func (d *DurableEmitter) observeQueue(ctx context.Context, mc *DurableEmitterMet
 		return
 	}
 	if d.backlogged() {
-		d.metrics.queueDepth.Record(ctx, d.backlog.Load(), d.metrics.with())
+		d.metrics.queueDepth.Record(ctx, d.estimatedBacklog(), d.metrics.with())
 		return
 	}
 	obs, ok := d.store.(DurableQueueObserver)

@@ -2,6 +2,7 @@ package beholder
 
 import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/exemplar"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/beholder/metricviews"
 )
@@ -24,9 +25,9 @@ func (cfg Config) metricViews() []sdkmetric.View {
 	return append(cfg.MetricViews, metricviews.Default(cfg.MetricViewsDenyAttributes)...)
 }
 
-// metricOptions returns cfg-derived sdkmetric.Option values (metric views and the
-// SDK per-instrument cardinality limit). Callers append reader/resource options
-// at the call site.
+// metricOptions returns the sdkmetric.Option values every Beholder meter
+// provider gets: metric views, the per-instrument cardinality limit, and the
+// exemplar filter. Callers append reader/resource options at the call site.
 func (cfg Config) metricOptions() []sdkmetric.Option {
 	views := cfg.metricViews()
 	var opts []sdkmetric.Option
@@ -36,5 +37,8 @@ func (cfg Config) metricOptions() []sdkmetric.Option {
 	if cfg.MetricCardinalityLimit > 0 {
 		opts = append(opts, sdkmetric.WithCardinalityLimit(cfg.MetricCardinalityLimit))
 	}
+	// Exemplars are dropped at VictoriaMetrics ingestion (wontfix upstream);
+	// generating them only inflates every export.
+	opts = append(opts, sdkmetric.WithExemplarFilter(exemplar.AlwaysOffFilter))
 	return opts
 }

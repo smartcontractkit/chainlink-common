@@ -1598,6 +1598,7 @@ type WriteReportReply struct {
 	TxHash                          []byte                           `protobuf:"bytes,3,opt,name=tx_hash,json=txHash,proto3,oneof" json:"tx_hash,omitempty"`
 	TransactionFee                  *pb.BigInt                       `protobuf:"bytes,4,opt,name=transaction_fee,json=transactionFee,proto3,oneof" json:"transaction_fee,omitempty"`
 	ErrorMessage                    *string                          `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3,oneof" json:"error_message,omitempty"`
+	BlockTimestamp                  *uint64                          `protobuf:"varint,6,opt,name=block_timestamp,json=blockTimestamp,proto3,oneof" json:"block_timestamp,omitempty"` // block timestamp in microseconds
 	unknownFields                   protoimpl.UnknownFields
 	sizeCache                       protoimpl.SizeCache
 }
@@ -1665,6 +1666,13 @@ func (x *WriteReportReply) GetErrorMessage() string {
 		return *x.ErrorMessage
 	}
 	return ""
+}
+
+func (x *WriteReportReply) GetBlockTimestamp() uint64 {
+	if x != nil && x.BlockTimestamp != nil {
+		return *x.BlockTimestamp
+	}
+	return 0
 }
 
 var File_capabilities_blockchain_evm_v1alpha_client_proto protoreflect.FileDescriptor
@@ -1770,18 +1778,20 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"gas_config\x18\x03 \x01(\v2..capabilities.blockchain.evm.v1alpha.GasConfigH\x00R\tgasConfig\x88\x01\x01B\r\n" +
 	"\v_gas_config\"(\n" +
 	"\tGasConfig\x12\x1b\n" +
-	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"\xd9\x03\n" +
+	"\tgas_limit\x18\x01 \x01(\x04R\bgasLimit\"\x9b\x04\n" +
 	"\x10WriteReportReply\x12J\n" +
 	"\ttx_status\x18\x01 \x01(\x0e2-.capabilities.blockchain.evm.v1alpha.TxStatusR\btxStatus\x12\x96\x01\n" +
 	"\"receiver_contract_execution_status\x18\x02 \x01(\x0e2D.capabilities.blockchain.evm.v1alpha.ReceiverContractExecutionStatusH\x00R\x1freceiverContractExecutionStatus\x88\x01\x01\x12\x1c\n" +
 	"\atx_hash\x18\x03 \x01(\fH\x01R\x06txHash\x88\x01\x01\x12?\n" +
 	"\x0ftransaction_fee\x18\x04 \x01(\v2\x11.values.v1.BigIntH\x02R\x0etransactionFee\x88\x01\x01\x12(\n" +
-	"\rerror_message\x18\x05 \x01(\tH\x03R\ferrorMessage\x88\x01\x01B%\n" +
+	"\rerror_message\x18\x05 \x01(\tH\x03R\ferrorMessage\x88\x01\x01\x12,\n" +
+	"\x0fblock_timestamp\x18\x06 \x01(\x04H\x04R\x0eblockTimestamp\x88\x01\x01B%\n" +
 	"#_receiver_contract_execution_statusB\n" +
 	"\n" +
 	"\b_tx_hashB\x12\n" +
 	"\x10_transaction_feeB\x10\n" +
-	"\x0e_error_message*i\n" +
+	"\x0e_error_messageB\x12\n" +
+	"\x10_block_timestamp*i\n" +
 	"\x0fConfidenceLevel\x12\x19\n" +
 	"\x15CONFIDENCE_LEVEL_SAFE\x10\x00\x12\x1b\n" +
 	"\x17CONFIDENCE_LEVEL_LATEST\x10\x01\x12\x1e\n" +

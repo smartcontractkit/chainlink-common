@@ -13,12 +13,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 )
-
-// flattenedMarker names an embedded field the markup flattens, so configKey can drop its segment. It can be any string
-// that is non-empty (the validator replaces "" with the Go name), is never a config key, and has no '.', '[' or ']'
-// (configKey rewrites and splits on those before comparing, so a marker with them would never match).
-const flattenedMarker = "\x00"
 
 type targetEntry interface {
 	binder() *Binder
@@ -54,7 +50,7 @@ type leafKey struct {
 	goType reflect.Type
 
 	// fileType is goType with every map key a string, such as map[string]string for map[uint32]string. A config file
-	// is decoded into it rather than goType, so fromFile can parse each key as its flag would and catch two texts for
+	// is decoded into it rather than goType, so decode.FromFile can parse each key as its flag would and catch two texts for
 	// one key, such as 16 and 0x10. Flags and env vars are already text, so they don't use it.
 	fileType reflect.Type
 
@@ -143,8 +139,8 @@ func (e *typedEntry[T]) sources(k leafKey, cc commandConfig) ([]reflect.Value, e
 		}
 	}
 
-	if raw, ok := cc.keys.lookup(cc.fileValues, k.fileKey); ok {
-		val, err := fromFile(commentparsing.DerefType(k.goType), raw)
+	if raw, ok := cc.keys.Lookup(cc.fileValues, k.fileKey); ok {
+		val, err := decode.FromFile(commentparsing.DerefType(k.goType), raw)
 		if err != nil {
 			return nil, err
 		}
@@ -156,23 +152,8 @@ func (e *typedEntry[T]) sources(k leafKey, cc commandConfig) ([]reflect.Value, e
 }
 
 func (e *typedEntry[T]) validate() error {
-	v := validator.New()
-	// With config key names, the validator's namespaces differ from config keys only by the root type's name, [i]
-	// indices, and flattened embeds, which configKey fixes.
-	lang := e.b.opts.Markup
-	v.RegisterTagNameFunc(func(f reflect.StructField) string {
-		key, read := lang.Key(f)
-		switch {
-		case !read:
-			return f.Name
-		case key == "":
-			return flattenedMarker
-		default:
-			return key
-		}
-	})
-
-	err := v.Struct(e.dst)
+	root := commentparsing.DerefType(reflect.TypeFor[T]())
+	err := decode.NewValidator(e.b.opts.Markup).Struct(e.dst)
 	fieldErrs, ok := errors.AsType[validator.ValidationErrors](err)
 	if !ok {
 		return err
@@ -185,7 +166,7 @@ func (e *typedEntry[T]) validate() error {
 
 	errs := make([]error, len(fieldErrs))
 	for i, fe := range fieldErrs {
-		errs[i] = e.ruleError(fe)
+		errs[i] = decode.RuleError(e.b.opts.Markup, e.ns, root, fe)
 		// StructNamespace starts with the root struct's type name, which goPath doesn't hold.
 		_, goKey, _ := strings.Cut(fe.StructNamespace(), ".")
 		if k, ok := leaves[goKey]; ok {
@@ -200,43 +181,6 @@ func (e *typedEntry[T]) validate() error {
 	}
 
 	return errors.Join(errs...)
-}
-
-// Names fields in the error by config key rather than Go path. For example, a field renamed by its tag, which also
-// renames its flag, env vars, and config key, appears in the message under its new name.
-func (e *typedEntry[T]) ruleError(fe validator.FieldError) error {
-	rule := fe.Tag()
-	if params := strings.Fields(fe.Param()); len(params) > 0 {
-		ns := fe.Namespace()
-		parent := ns[:strings.LastIndex(ns, ".")]
-		siblings := e.parentType(fe.StructNamespace())
-		for i, p := range params {
-			if f, ok := siblings.FieldByName(p); ok {
-				if key, _ := e.b.opts.Markup.Key(f); key != "" {
-					params[i] = configKey(e.ns, parent+"."+key)
-				}
-			}
-		}
-
-		rule += "=" + strings.Join(params, " ")
-	}
-
-	return fmt.Errorf("%s failed on the '%s' tag", configKey(e.ns, fe.Namespace()), rule)
-}
-
-func (e *typedEntry[T]) parentType(structNS string) reflect.Type {
-	t := commentparsing.DerefType(reflect.TypeFor[T]())
-	segments := strings.Split(structNS, ".")
-	for _, segment := range segments[1 : len(segments)-1] {
-		name, rest, indexed := strings.Cut(segment, "[")
-		f, _ := t.FieldByName(name)
-		t = commentparsing.DerefType(f.Type)
-		for ; indexed; _, rest, indexed = strings.Cut(rest, "[") {
-			t = commentparsing.DerefType(t.Elem())
-		}
-	}
-
-	return t
 }
 
 // sourceLayer puts a map's source values over under, key by key, since maps merge by key at every source. A value that
@@ -270,7 +214,7 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 			continue
 		}
 
-		f := allocateField(dst, k.goPath)
+		f := decode.AllocateField(dst, k.goPath)
 		for f.Kind() == reflect.Pointer {
 			if f.IsNil() {
 				f.Set(reflect.New(f.Type().Elem()))
@@ -279,12 +223,12 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 			f = f.Elem()
 		}
 
-		if mergesByKey(f.Type(), e.b.opts.Markup) {
+		if decode.MergesByKey(f.Type(), e.b.opts.Markup) {
 			// The struct's own entries first, then sources lowest precedence first, so the highest wins a key.
 			slices.Reverse(vals)
 			t := f.Type()
 			supplied[k.key] = func(under reflect.Value) (reflect.Value, error) {
-				return mergeMaps(t, append([]reflect.Value{under}, vals...)...), nil
+				return decode.MergeMaps(t, append([]reflect.Value{under}, vals...)...), nil
 			}
 			v, err := supplied[k.key](f)
 			if err != nil {
@@ -305,44 +249,4 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 	}
 
 	return nil
-}
-
-// Call only to write, so sections are allocated only when something in them is set.
-func allocateField(v reflect.Value, path []string) reflect.Value {
-	for _, p := range path {
-		for v.Kind() == reflect.Pointer {
-			if v.IsNil() {
-				if !v.CanSet() {
-					return reflect.Value{}
-				}
-
-				v.Set(reflect.New(v.Type().Elem()))
-			}
-
-			v = v.Elem()
-		}
-
-		if v.Kind() != reflect.Struct {
-			return reflect.Value{}
-		}
-
-		if v = v.FieldByName(p); !v.IsValid() {
-			return reflect.Value{}
-		}
-	}
-
-	return v
-}
-
-var indexReplacer = strings.NewReplacer("[", ".", "]", "")
-
-// List indices and map keys become segments, as chainlink-common's pkg/config.Validate names them: Nodes.1.Name.
-func configKey(namespace, ns string) string {
-	_, ns, _ = strings.Cut(ns, ".")
-	if namespace != "" {
-		ns = namespace + "." + ns
-	}
-
-	segments := strings.Split(indexReplacer.Replace(ns), ".")
-	return strings.Join(slices.DeleteFunc(segments, func(s string) bool { return s == flattenedMarker }), ".")
 }

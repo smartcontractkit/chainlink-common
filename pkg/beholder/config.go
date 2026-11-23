@@ -38,8 +38,8 @@ type Config struct {
 
 	// OTel Metric
 	// MetricExportBatchSize limits each exporter call to that many data points.
-	// Zero disables batching. The OTel SDK implements this experimentally via
-	// OTEL_GO_X_METRIC_EXPORT_BATCH_SIZE when the reader is constructed.
+	// Zero disables batching. The OTel SDK implements this via the
+	// WithMaxExportBatchSize reader option (sdk/metric v1.47+).
 	MetricExportBatchSize int
 	MetricReaderInterval  time.Duration
 	MetricRetryConfig     *RetryConfig

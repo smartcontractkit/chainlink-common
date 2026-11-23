@@ -10,6 +10,8 @@ import (
 
 	"github.com/huandu/go-clone"
 	"github.com/spf13/cobra"
+
+	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
 )
 
 // Profile builds the registered struct with the function its key's value picks. The key must be a top-level field of
@@ -120,7 +122,7 @@ func describeProfiles[T any, K comparable, S any](
 		// A fresh copy each time, so one profile's changes don't carry into the next.
 		built := clone.Slowly(defaults).(S)
 		vBuilt := reflect.ValueOf(&built).Elem()
-		allocateField(vBuilt, selector.goPath[len(scope):]).Set(reflect.ValueOf(k))
+		decode.AllocateField(vBuilt, selector.goPath[len(scope):]).Set(reflect.ValueOf(k))
 		profiles[k](&built)
 
 		for _, leaf := range entry.leaves {
@@ -163,11 +165,11 @@ func locateProfile[T, S any, K comparable](
 	scratch := new(T)
 	v := reflect.ValueOf(scratch).Elem()
 	for _, k := range entry.leaves {
-		allocateField(v, k.goPath)
+		decode.AllocateField(v, k.goPath)
 	}
 
 	sType, kType := reflect.TypeFor[S](), reflect.TypeFor[K]()
-	if holdsIdentityKind(kType) {
+	if decode.HoldsIdentityKind(kType) {
 		return leafKey{}, fmt.Errorf("profile key type %s compares by identity, so no value a source sets would match a profile", kType)
 	}
 
@@ -252,7 +254,7 @@ func applyProfile[T any, K comparable, S any](
 	if selected.IsValid() {
 		k := selected.Interface().(K)
 		key = &k
-		allocateField(vBase, keyPath).Set(reflect.ValueOf(k))
+		decode.AllocateField(vBase, keyPath).Set(reflect.ValueOf(k))
 		if build, exists := profiles[k]; exists {
 			build(&base)
 		}
@@ -269,7 +271,7 @@ func applyProfile[T any, K comparable, S any](
 			continue
 		}
 
-		dst := allocateField(vBase, k.goPath[len(scope):])
+		dst := decode.AllocateField(vBase, k.goPath[len(scope):])
 		if !dst.IsValid() {
 			continue
 		}
@@ -296,10 +298,10 @@ func applyProfile[T any, K comparable, S any](
 	}
 
 	if key != nil {
-		allocateField(vBase, keyPath).Set(reflect.ValueOf(*key))
+		decode.AllocateField(vBase, keyPath).Set(reflect.ValueOf(*key))
 	}
 
-	allocateField(vTarget, scope).Set(vBase)
+	decode.AllocateField(vTarget, scope).Set(vBase)
 	return nil
 }
 

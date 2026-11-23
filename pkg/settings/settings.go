@@ -54,6 +54,9 @@ type Setting[T any] struct {
 	Scope        Scope
 	Parse        func(string) (T, error) `json:"-" toml:"-"`
 	Unit         string
+	// FeatureFlag marks this setting as a feature flag (set via the `featureflag:"true"` field tag).
+	// Interim marker, superseded by CRE Flags 2.0. Schema metadata only: never serialized or read at runtime.
+	FeatureFlag bool `json:"-" toml:"-"`
 }
 
 func (s Setting[T]) GetSpec() SettingSpec[T] { return &s }
@@ -63,6 +66,13 @@ func (s *Setting[T]) GetKey() string { return s.Key }
 func (s *Setting[T]) GetScope() Scope { return s.Scope }
 
 func (s *Setting[T]) GetUnit() string { return s.Unit }
+
+func (s *Setting[T]) info() SettingInfo {
+	var zero T
+	return SettingInfo{Key: s.Key, Scope: s.Scope, ValueType: reflect.TypeOf(&zero).Elem(), FeatureFlag: s.FeatureFlag}
+}
+
+func (s *Setting[T]) setFeatureFlag() { s.FeatureFlag = true }
 
 func (s Setting[T]) MarshalText() ([]byte, error) {
 	return fmt.Appendf(nil, "%v", s.DefaultValue), nil
@@ -301,6 +311,9 @@ func initConfig(a any, scope Scope, parent string) error {
 			if err := s.initSetting(key, scope, unit); err != nil {
 				return fmt.Errorf("%s failed to init Setting: %w", key, err)
 			}
+			if ft.Tag.Get("featureflag") == "true" {
+				s.setFeatureFlag()
+			}
 		} else if f.Type().Kind() == reflect.Struct {
 			if err := initConfig(f.Addr().Interface(), scope, key); err != nil {
 				return fmt.Errorf("%s failed to set keys: %w", key, err)
@@ -316,4 +329,40 @@ var _ keySetter = &Setting[struct{}]{}
 
 type keySetter interface {
 	initSetting(key string, scope Scope, unit *string) error
+	setFeatureFlag()
+	info() SettingInfo
+}
+
+// SettingInfo describes one Setting in a config struct initialized with InitConfig.
+type SettingInfo struct {
+	Key         string
+	Scope       Scope
+	ValueType   reflect.Type // the T in Setting[T]
+	FeatureFlag bool
+}
+
+// Infos returns every Setting in a config struct previously initialized with InitConfig, in field order.
+func Infos(a any) ([]SettingInfo, error) {
+	v := reflect.ValueOf(a)
+	if v.Kind() != reflect.Pointer || v.Elem().Kind() != reflect.Struct {
+		return nil, fmt.Errorf("must be a pointer to a struct: %v", v.Kind())
+	}
+	var out []SettingInfo
+	var walk func(v reflect.Value) error
+	walk = func(v reflect.Value) error {
+		for i := range v.NumField() {
+			f := v.Field(i)
+			if s, ok := f.Addr().Interface().(keySetter); ok {
+				out = append(out, s.info())
+			} else if f.Kind() == reflect.Struct {
+				if err := walk(f); err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("%s unsupported field type %v", v.Type().Field(i).Name, f.Type())
+			}
+		}
+		return nil
+	}
+	return out, walk(v.Elem())
 }

@@ -27,6 +27,11 @@ const (
 	// smallest unit (wei, lamports). The capability event id is the tx hash.
 	ResourceTypeWorkflowGasPrefix = WorkflowRecordType + ":gas:"
 
+	// ResourceTypeWorkflowConfidentialCompute meters workflow compute that ran
+	// in a TEE enclave, in milliseconds. The capability event id is the
+	// workflow execution id, as for compute.
+	ResourceTypeWorkflowConfidentialCompute = WorkflowRecordType + ":confidential-compute"
+
 	// EmittingServiceChainWrite is the Identity.Service used by chain-write
 	// capabilities for gas usage records.
 	EmittingServiceChainWrite = "chain-write"

@@ -529,14 +529,20 @@ func Test_RelayerSet_EVMService(t *testing.T) {
 				gasInfo := evmtypes.ReceiptGasInfo{
 					GasUsed:           1000,
 					EffectiveGasPrice: big.NewInt(2000),
+					L1Fee:             big.NewInt(500),
 				}
 				expectedFee := &evmtypes.TransactionFee{
-					TransactionFee: big.NewInt(2000000),
+					TransactionFee: big.NewInt(2000500),
 				}
-				mockEVM.EXPECT().CalculateTransactionFee(mock.Anything, gasInfo).Return(expectedFee, nil)
+				// Capture the argument instead of matching on it: a mismatch inside the gRPC handler would hang the call.
+				var got evmtypes.ReceiptGasInfo
+				mockEVM.EXPECT().CalculateTransactionFee(mock.Anything, mock.Anything).
+					Run(func(_ context.Context, gi evmtypes.ReceiptGasInfo) { got = gi }).
+					Return(expectedFee, nil)
 				fee, err := evm.CalculateTransactionFee(ctx, gasInfo)
 				require.NoError(t, err)
 				require.Equal(t, expectedFee, fee)
+				require.Equal(t, gasInfo, got, "the node's EVM service must receive the full gas info, including the L1 fee")
 			},
 		},
 		{

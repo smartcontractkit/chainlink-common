@@ -116,8 +116,8 @@ type Config struct {
 	// BacklogEstimator.
 	BackpressureEnabled bool
 	// MaxQueueDepth is the back-pressure threshold. It is a soft limit: the backlog
-	// is an estimate, and writes by other processes sharing the store are only
-	// seen at each poll. Zero defaults to DefaultMaxQueueDepth.
+	// is an estimate refreshed every BacklogPollInterval, so rejects start and stop
+	// up to one interval late. Zero defaults to DefaultMaxQueueDepth.
 	MaxQueueDepth int64
 	// BacklogPollInterval is how often the backlog estimate is refreshed from the
 	// store. Zero defaults to DefaultBacklogPollInterval.
@@ -240,7 +240,7 @@ type DurableEmitter struct {
 	// batchEmitter.Stop can return at its shutdown timeout while callbacks are still
 	// running, so deleteCh is closed under deleteMu and sends happen under its read
 	// lock; a callback that arrives after deleteClosed leaves the event persisted.
-	deleteCh     chan pendingDelete
+	deleteCh     chan int64
 	deleteWg     sync.WaitGroup
 	deleteMu     sync.RWMutex
 	deleteClosed bool
@@ -257,46 +257,15 @@ type DurableEmitter struct {
 	retransmitCursorTs time.Time
 	retransmitCursorID int64
 
-	// backlogEstimator is non-nil when back-pressure is enabled; backlogSnap is
-	// then always set. backlogInflight counts admitted inserts not yet settled.
-	// See estimateBacklog for how the estimate is derived.
+	// backlogEstimator is non-nil when back-pressure is enabled; backlogRows is
+	// then its last successful estimate.
 	backlogEstimator BacklogEstimator
-	backlogSnap      atomic.Pointer[backlogSnapshot]
-	backlogInflight  atomic.Int64
+	backlogRows      atomic.Int64
 
 	// deleteFailedAt is the UnixNano time of the last failed delivery delete, or 0
 	// if none has failed. Successes do not clear it, so the retransmit pause always
 	// runs its full window after a failure.
 	deleteFailedAt atomic.Int64
-}
-
-// backlogSnapshot is one successful backlog poll. Each poll starts a new
-// generation for this process's own writes; the previous one is kept because
-// the store estimate may not reflect writes from just before the poll yet.
-type backlogSnapshot struct {
-	rows      int64 // store estimate
-	cur, prev *backlogGen
-}
-
-// backlogGen counts this process's writes while a generation is current. The
-// counters only grow; a generation is dropped two polls after it started.
-type backlogGen struct {
-	// added counts settled inserts that reached the store, including failed
-	// ones: a timed-out insert may still have committed.
-	added atomic.Int64
-	// gone counts rows of added that have since been removed. They are gone
-	// whether or not the store estimate reflects their insert.
-	gone atomic.Int64
-	// removed counts other rows removed by deletes and purges that started while
-	// this generation was current, so after the poll that created it read the store.
-	removed atomic.Int64
-}
-
-// pendingDelete is a delivered row awaiting the delete coalescer. gen is the
-// generation its insert was counted in, or nil if this process did not insert it.
-type pendingDelete struct {
-	id  int64
-	gen *backlogGen
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -396,7 +365,6 @@ func NewDurableEmitter(
 		if isEstimator {
 			// Asserted on the possibly metrics-wrapped store so estimates are instrumented.
 			d.backlogEstimator = store.(BacklogEstimator)
-			d.backlogSnap.Store(&backlogSnapshot{cur: new(backlogGen), prev: new(backlogGen)})
 			d.eng.Infow("DurableEmitter: back-pressure enabled",
 				"maxQueueDepth", d.cfg.MaxQueueDepth,
 				"backlogPollInterval", d.cfg.BacklogPollInterval)
@@ -407,7 +375,7 @@ func NewDurableEmitter(
 
 	if cfg.DeleteBatchSize > 0 {
 		chanSize := max(cfg.DeleteBatchSize*200, 10_000)
-		d.deleteCh = make(chan pendingDelete, chanSize)
+		d.deleteCh = make(chan int64, chanSize)
 		d.eng.Infow("DurableEmitter: delete coalescing enabled",
 			"deleteBatchSize", cfg.DeleteBatchSize,
 			"deleteBatchWorkers", cfg.DeleteBatchWorkers,
@@ -478,119 +446,21 @@ func (d *DurableEmitter) backlogLoop() {
 	}
 }
 
-// refreshBacklog starts a new generation from the store's estimate; on error the
-// current snapshot is kept.
+// refreshBacklog polls the store's backlog estimate; on error the last one is kept.
 func (d *DurableEmitter) refreshBacklog(ctx context.Context) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	n, err := d.backlogEstimator.EstimateBacklog(ctx)
 	if err != nil {
-		d.eng.Warnw("DurableEmitter: backlog estimate failed; keeping last estimate", "estimate", d.estimatedBacklog(), "error", err)
+		d.eng.Warnw("DurableEmitter: backlog estimate failed; keeping last estimate", "estimate", d.backlogRows.Load(), "error", err)
 		return
 	}
-	// CAS so that overlapping refreshes cannot discard a generation that writers
-	// have already recorded into.
-	for {
-		old := d.backlogSnap.Load()
-		if d.backlogSnap.CompareAndSwap(old, &backlogSnapshot{rows: n, cur: new(backlogGen), prev: old.cur}) {
-			return
-		}
-	}
+	d.backlogRows.Store(n)
 }
 
-// estimateBacklog derives the backlog from the last poll and this process's own
-// writes, erring towards overcounting:
-//   - inserts count from admission (inflight) and, until removed, for the current
-//     and previous generation, which covers the store estimate lagging recent
-//     commits by up to one poll interval;
-//   - removals of other rows are subtracted only if they started after the poll,
-//     since earlier ones may already be reflected in it.
-//
-// Load order matters. inflight comes before the snapshot because settleBacklog
-// adds to the current generation before decrementing inflight. Removal counters
-// come before added because a row is always added before it is removed.
-func (d *DurableEmitter) estimateBacklog(inflight int64) int64 {
-	snap := d.backlogSnap.Load()
-	removed := snap.cur.removed.Load() + snap.cur.gone.Load() + snap.prev.gone.Load()
-	return snap.rows + snap.prev.added.Load() + snap.cur.added.Load() - removed + inflight
-}
-
-func (d *DurableEmitter) estimatedBacklog() int64 {
-	return d.estimateBacklog(d.backlogInflight.Load())
-}
-
-// backlogged reports whether the estimated backlog is at or above MaxQueueDepth.
+// backlogged reports whether the last backlog estimate is at or above MaxQueueDepth.
 func (d *DurableEmitter) backlogged() bool {
-	return d.backlogEstimator != nil && d.estimatedBacklog() >= d.cfg.MaxQueueDepth
-}
-
-// reserveBacklog admits one insert, counting it before it runs so concurrent
-// emits cannot all pass the same estimate. On false the insert must be
-// rejected; on true, settleBacklog must follow.
-func (d *DurableEmitter) reserveBacklog() bool {
-	if d.backlogEstimator == nil {
-		return true
-	}
-	if d.estimateBacklog(d.backlogInflight.Add(1)) > d.cfg.MaxQueueDepth {
-		d.backlogInflight.Add(-1)
-		return false
-	}
-	return true
-}
-
-// settleBacklog resolves a reservation. reachedStore is whether the insert was
-// issued to the store, in which case the row may exist even if it failed. It
-// returns the generation the row was counted in, which its delete must report.
-func (d *DurableEmitter) settleBacklog(reachedStore bool) *backlogGen {
-	if d.backlogEstimator == nil {
-		return nil
-	}
-	var gen *backlogGen
-	if reachedStore {
-		gen = d.backlogSnap.Load().cur
-		gen.added.Add(1)
-	}
-	d.backlogInflight.Add(-1)
-	return gen
-}
-
-// removalGen returns the generation a delete or purge starting now is charged
-// to, or nil when back-pressure is disabled.
-func (d *DurableEmitter) removalGen() *backlogGen {
-	if d.backlogEstimator == nil {
-		return nil
-	}
-	return d.backlogSnap.Load().cur
-}
-
-// recordRemovals accounts for a delete or purge that removed n rows. started is
-// removalGen() from before it ran; gens[i] is the generation the i-th targeted
-// row was counted in, or nil. No gens means all n rows are other rows.
-//
-// A delete may remove fewer rows than targeted without saying which, so each
-// group is credited only the removals it must have had. A row is therefore never
-// subtracted twice, e.g. when retransmit and the original delivery both delete it.
-func (d *DurableEmitter) recordRemovals(started *backlogGen, gens []*backlogGen, n int64) {
-	if started == nil || n <= 0 {
-		return
-	}
-	snap := d.backlogSnap.Load()
-	var inCur, inPrev int64
-	for _, g := range gens {
-		switch g {
-		case snap.cur:
-			inCur++
-		case snap.prev:
-			inPrev++
-		}
-	}
-	// Rows counted in an older generation are assumed reflected in the store
-	// estimate, so they are removed like other rows.
-	targeted := max(int64(len(gens)), n)
-	atLeast := func(group int64) int64 { return max(0, n-(targeted-group)) }
-	snap.cur.gone.Add(atLeast(inCur))
-	snap.prev.gone.Add(atLeast(inPrev))
-	started.removed.Add(atLeast(targeted - inCur - inPrev))
+	return d.backlogEstimator != nil && d.backlogRows.Load() >= d.cfg.MaxQueueDepth
 }
 
 // recordDeleteFailure starts (or extends) the retransmit pause.
@@ -680,19 +550,13 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return fmt.Errorf("%w: %d bytes, max %d", ErrEventTooLarge, len(payload), maxEventBytes)
 		}
 
-		if !d.reserveBacklog() {
+		if d.backlogged() {
 			emitFail()
 			if d.metrics != nil {
 				d.metrics.backpressureReject.Add(ctx, 1, d.metrics.with())
 			}
 			return ErrBacklogged
 		}
-		reachedStore, settled := false, false
-		defer func() {
-			if !settled {
-				d.settleBacklog(reachedStore)
-			}
-		}()
 
 		var id int64
 		var insElapsed time.Duration
@@ -716,7 +580,6 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 				tIns := time.Now()
 				select {
 				case d.insertCh <- req:
-					reachedStore = true
 				case <-ctx.Done():
 					cerr = ctx.Err()
 					return
@@ -747,7 +610,6 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			id = res.id
 		} else {
 			tIns := time.Now()
-			reachedStore = true
 			id, err = d.store.Insert(ctx, payload)
 			insElapsed = time.Since(tIns)
 			if h := d.cfg.Hooks; h != nil && h.OnEmitInsert != nil {
@@ -766,14 +628,10 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			}
 		}
 
-		// Settled before delivery can delete the row.
-		gen := d.settleBacklog(true)
-		settled = true
-
 		// Hand off to the batch emitter. The callback fires once the batch
 		// containing this event is sent (success or failure).
 		t0Publish := time.Now()
-		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, gen, eventPb, t0Publish, publishPhaseBatch, span.SpanContext())); qErr != nil {
+		if qErr := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, t0Publish, publishPhaseBatch, span.SpanContext())); qErr != nil {
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
@@ -786,9 +644,8 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 
 // deliveryCallback returns the function passed to BatchEmitter.QueueMessage.
 // On success, it deletes the delivered event. On failure, it leaves the event
-// in the DB for the retransmit loop. gen is the backlog generation the event's
-// insert was counted in, nil for retransmits.
-func (d *DurableEmitter) deliveryCallback(id int64, gen *backlogGen, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase, origin trace.SpanContext) func(error) {
+// in the DB for the retransmit loop.
+func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEventPb, t0Publish time.Time, phase publishPhase, origin trace.SpanContext) func(error) {
 	return func(sendErr error) {
 		publishElapsed := time.Since(t0Publish)
 
@@ -823,7 +680,7 @@ func (d *DurableEmitter) deliveryCallback(id int64, gen *backlogGen, eventPb *ch
 
 		// When delete coalescing is enabled the id is handed to the batch-delete
 		// workers (one DELETE for many ids); otherwise delete it inline.
-		if d.enqueueDelete(pendingDelete{id: id, gen: gen}) {
+		if d.enqueueDelete(id) {
 			return
 		}
 
@@ -831,7 +688,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, gen *backlogGen, eventPb *ch
 		// flush, which would cancel the delete for every event acked during shutdown.
 		delCtx, delCancel := d.deleteContext()
 		defer delCancel()
-		started := d.removalGen()
 		tDelete := time.Now()
 		deleted, deleteErr := d.store.BatchDelete(delCtx, []int64{id})
 		deleteElapsed := time.Since(tDelete)
@@ -840,7 +696,6 @@ func (d *DurableEmitter) deliveryCallback(id int64, gen *backlogGen, eventPb *ch
 			h.OnBatchDelete(deleteElapsed, int(deleted))
 		}
 		d.recordDeleteFailure(deleteErr)
-		d.recordRemovals(started, []*backlogGen{gen}, deleted)
 		if deleteErr != nil {
 			d.eng.Errorw("failed to delete event from persistence", "id", id, "error", deleteErr)
 			return
@@ -948,17 +803,17 @@ func (d *DurableEmitter) insertBatchLoop() {
 // Send is a blocking hand-off; back-pressure here slows the delivery callback
 // rather than dropping a delete. After shutdown it skips the delete: the event
 // stays persisted and is retransmitted on the next start (at-least-once).
-func (d *DurableEmitter) enqueueDelete(del pendingDelete) bool {
+func (d *DurableEmitter) enqueueDelete(id int64) bool {
 	if d.deleteCh == nil {
 		return false
 	}
 	d.deleteMu.RLock()
 	defer d.deleteMu.RUnlock()
 	if d.deleteClosed {
-		d.eng.Debugw("DurableEmitter: delivery confirmed after shutdown; event left for retransmit", "id", del.id)
+		d.eng.Debugw("DurableEmitter: delivery confirmed after shutdown; event left for retransmit", "id", id)
 		return true
 	}
-	d.deleteCh <- del
+	d.deleteCh <- id
 	return true
 }
 
@@ -972,28 +827,28 @@ func (d *DurableEmitter) deleteBatchLoop() {
 	if linger <= 0 {
 		linger = 100 * time.Millisecond
 	}
-	batch := make([]pendingDelete, 0, batchSize)
+	batch := make([]int64, 0, batchSize)
 
 	for {
 		batch = batch[:0]
 
-		del, ok := <-d.deleteCh
+		id, ok := <-d.deleteCh
 		if !ok {
 			return
 		}
-		batch = append(batch, del)
+		batch = append(batch, id)
 
 		timer := time.NewTimer(linger)
 	collecting:
 		for len(batch) < batchSize {
 			select {
-			case del, ok := <-d.deleteCh:
+			case id, ok := <-d.deleteCh:
 				if !ok {
 					timer.Stop()
 					d.flushDeletes(batch)
 					return
 				}
-				batch = append(batch, del)
+				batch = append(batch, id)
 			case <-timer.C:
 				break collecting
 			}
@@ -1003,19 +858,13 @@ func (d *DurableEmitter) deleteBatchLoop() {
 	}
 }
 
-func (d *DurableEmitter) flushDeletes(batch []pendingDelete) {
-	if len(batch) == 0 {
+func (d *DurableEmitter) flushDeletes(ids []int64) {
+	if len(ids) == 0 {
 		return
-	}
-	ids := make([]int64, len(batch))
-	gens := make([]*backlogGen, len(batch))
-	for i, del := range batch {
-		ids[i], gens[i] = del.id, del.gen
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.PublishTimeout)
 	defer cancel()
 
-	started := d.removalGen()
 	tDelete := time.Now()
 	deleted, err := d.store.BatchDelete(ctx, ids)
 	deleteElapsed := time.Since(tDelete)
@@ -1024,7 +873,6 @@ func (d *DurableEmitter) flushDeletes(batch []pendingDelete) {
 		h.OnBatchDelete(deleteElapsed, int(deleted))
 	}
 	d.recordDeleteFailure(err)
-	d.recordRemovals(started, gens, deleted)
 	if err != nil {
 		d.eng.Errorw("failed to batch delete delivered events", "count", len(ids), "error", err)
 		return
@@ -1124,7 +972,7 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 		}
 
 		id := pe.ID
-		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, nil, eventPb, time.Now(), publishPhaseRetransmit, trace.SpanContextFromContext(ctx))); err != nil {
+		if err := d.batchEmitter.QueueMessage(eventPb, d.deliveryCallback(id, eventPb, time.Now(), publishPhaseRetransmit, trace.SpanContextFromContext(ctx))); err != nil {
 			skipped++
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
@@ -1228,7 +1076,6 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 	}()
 	purger, ok := expiredPurgerOf(d.store)
 	if !ok {
-		started := d.removalGen()
 		deleted, err := d.store.DeleteExpired(ctx, d.cfg.EventTTL)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err)
@@ -1236,7 +1083,6 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 			return
 		}
 		purged = deleted
-		d.recordRemovals(started, nil, deleted)
 		if deleted > 0 {
 			d.metrics.recordExpiredPurged(ctx, purgeUnknown, purgeUnknown, deleted)
 			d.eng.Infow("purged expired events", "count", deleted)
@@ -1252,14 +1098,12 @@ func (d *DurableEmitter) purgeExpired(ctx context.Context) {
 	var total, undecodable int64
 drain:
 	for {
-		started := d.removalGen()
 		payloads, err := purger.DeleteExpiredBatch(ctx, d.cfg.EventTTL, batch)
 		if err != nil {
 			d.eng.Errorw("failed to delete expired events", "error", err, "purged_before_error", total)
 			purgeErr = err
 			break
 		}
-		d.recordRemovals(started, nil, int64(len(payloads)))
 		for _, p := range payloads {
 			k, ok := purgeKeyOf(p)
 			if !ok {
@@ -1302,7 +1146,7 @@ func (d *DurableEmitter) observeQueue(ctx context.Context, mc *DurableEmitterMet
 		return
 	}
 	if d.backlogged() {
-		d.metrics.queueDepth.Record(ctx, d.estimatedBacklog(), d.metrics.with())
+		d.metrics.queueDepth.Record(ctx, d.backlogRows.Load(), d.metrics.with())
 		return
 	}
 	obs, ok := d.store.(DurableQueueObserver)

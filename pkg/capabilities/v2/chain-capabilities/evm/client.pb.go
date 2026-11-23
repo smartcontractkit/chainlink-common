@@ -215,12 +215,11 @@ func (x *TopicValues) GetValues() [][]byte {
 type FilterLogTriggerRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Addresses [][]byte               `protobuf:"bytes,1,rep,name=addresses,proto3" json:"addresses,omitempty"` // list of addresses to include in evm address [20]byte fix-sized array format, at least one address is required
-	//
-	//TopicValues is a fixed 4 length array of possible values for any topic where:
-	//a) the first element is an array of the event signatures (keccak256 of the event name and indexed args types), it has to have at least one value
-	//b) the second element is an array of possible values for the first indexed argument, can be empty
-	//c) the third element is an array of possible values for the second indexed argument, can be empty
-	//d) the fourth element is an array of possible values for the third indexed argument, can be empty
+	// TopicValues is a fixed 4 length array of possible values for any topic where:
+	// a) the first element is an array of the event signatures (keccak256 of the event name and indexed args types), it has to have at least one value
+	// b) the second element is an array of possible values for the first indexed argument, can be empty
+	// c) the third element is an array of possible values for the second indexed argument, can be empty
+	// d) the fourth element is an array of possible values for the third indexed argument, can be empty
 	Topics        []*TopicValues  `protobuf:"bytes,2,rep,name=topics,proto3" json:"topics,omitempty"`
 	Confidence    ConfidenceLevel `protobuf:"varint,3,opt,name=confidence,proto3,enum=capabilities.blockchain.evm.v1alpha.ConfidenceLevel" json:"confidence,omitempty"` // optional, defaults to "SAFE"
 	unknownFields protoimpl.UnknownFields
@@ -1233,6 +1232,7 @@ type Receipt struct {
 	EffectiveGasPrice *pb.BigInt             `protobuf:"bytes,8,opt,name=effective_gas_price,json=effectiveGasPrice,proto3" json:"effective_gas_price,omitempty"` // actual gas price paid in wei (include after EIP-1559)
 	BlockNumber       *pb.BigInt             `protobuf:"bytes,9,opt,name=block_number,json=blockNumber,proto3" json:"block_number,omitempty"`                     // block number containing the transaction
 	ContractAddress   []byte                 `protobuf:"bytes,10,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`        // address of the contract if this transaction created one in evm address [20]byte fix-sized array format
+	L1Fee             *pb.BigInt             `protobuf:"bytes,11,opt,name=l1_fee,json=l1Fee,proto3" json:"l1_fee,omitempty"`                                      // L1 data fee paid on top of gas (L2 chains only), in wei
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1326,6 +1326,13 @@ func (x *Receipt) GetBlockNumber() *pb.BigInt {
 func (x *Receipt) GetContractAddress() []byte {
 	if x != nil {
 		return x.ContractAddress
+	}
+	return nil
+}
+
+func (x *Receipt) GetL1Fee() *pb.BigInt {
+	if x != nil {
+		return x.L1Fee
 	}
 	return nil
 }
@@ -1748,7 +1755,7 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x1cGetTransactionReceiptRequest\x12\x12\n" +
 	"\x04hash\x18\x01 \x01(\fR\x04hash\"d\n" +
 	"\x1aGetTransactionReceiptReply\x12F\n" +
-	"\areceipt\x18\x01 \x01(\v2,.capabilities.blockchain.evm.v1alpha.ReceiptR\areceipt\"\xf1\x02\n" +
+	"\areceipt\x18\x01 \x01(\v2,.capabilities.blockchain.evm.v1alpha.ReceiptR\areceipt\"\x9b\x03\n" +
 	"\aReceipt\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\x04R\x06status\x12\x19\n" +
 	"\bgas_used\x18\x02 \x01(\x04R\agasUsed\x12\x19\n" +
@@ -1760,7 +1767,8 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x13effective_gas_price\x18\b \x01(\v2\x11.values.v1.BigIntR\x11effectiveGasPrice\x124\n" +
 	"\fblock_number\x18\t \x01(\v2\x11.values.v1.BigIntR\vblockNumber\x12)\n" +
 	"\x10contract_address\x18\n" +
-	" \x01(\fR\x0fcontractAddress\"M\n" +
+	" \x01(\fR\x0fcontractAddress\x12(\n" +
+	"\x06l1_fee\x18\v \x01(\v2\x11.values.v1.BigIntR\x05l1Fee\"M\n" +
 	"\x15HeaderByNumberRequest\x124\n" +
 	"\fblock_number\x18\x01 \x01(\v2\x11.values.v1.BigIntR\vblockNumber\"Z\n" +
 	"\x13HeaderByNumberReply\x12C\n" +
@@ -1802,7 +1810,7 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\bTxStatus\x12\x13\n" +
 	"\x0fTX_STATUS_FATAL\x10\x00\x12\x16\n" +
 	"\x12TX_STATUS_REVERTED\x10\x01\x12\x15\n" +
-	"\x11TX_STATUS_SUCCESS\x10\x022\xe3\x1b\n" +
+	"\x11TX_STATUS_SUCCESS\x10\x022\x8e\x1c\n" +
 	"\x06Client\x12\x80\x01\n" +
 	"\fCallContract\x128.capabilities.blockchain.evm.v1alpha.CallContractRequest\x1a6.capabilities.blockchain.evm.v1alpha.CallContractReply\x12z\n" +
 	"\n" +
@@ -1814,8 +1822,8 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x0eHeaderByNumber\x12:.capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest\x1a8.capabilities.blockchain.evm.v1alpha.HeaderByNumberReply\x12v\n" +
 	"\n" +
 	"LogTrigger\x12<.capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest\x1a(.capabilities.blockchain.evm.v1alpha.Log0\x01\x12}\n" +
-	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xa8\x12\x82\xb5\x18\xa3\x12\b\x01\x12\tevm@1.0.0\x1a\x93\x12\n" +
-	"\rChainSelector\x12\x81\x12\x12\xfe\x11\n" +
+	"\vWriteReport\x127.capabilities.blockchain.evm.v1alpha.WriteReportRequest\x1a5.capabilities.blockchain.evm.v1alpha.WriteReportReply\x1a\xd3\x12\x82\xb5\x18\xce\x12\b\x01\x12\tevm@1.0.0\x1a\xbe\x12\n" +
+	"\rChainSelector\x12\xac\x12\x12\xa9\x12\n" +
 	"\x17\n" +
 	"\vadi-mainnet\x10\xfc\xf0\xe6·\xe7ݪ8\n" +
 	"\x18\n" +
@@ -1832,6 +1840,8 @@ const file_capabilities_blockchain_evm_v1alpha_client_proto_rawDesc = "" +
 	"\x1bbinance_smart_chain-mainnet\x10\xcf\xf7\x94\xf1\xd8핸\x9d\x01\n" +
 	"(\n" +
 	"\x1bbinance_smart_chain-testnet\x10\xfb\xad\xbe\x9c\x80\xae䊸\x01\n" +
+	")\n" +
+	"\x1dbitcoin-testnet-sepolia-bob-1\x10\x94\xd1ǌ\xae\xea\x8a\xe9L\n" +
 	"\x18\n" +
 	"\fcelo-mainnet\x10\x86\xd4\xe8؆\x93\x88\xd7\x12\n" +
 	"\x18\n" +
@@ -2015,37 +2025,38 @@ var file_capabilities_blockchain_evm_v1alpha_client_proto_depIdxs = []int32{
 	9,  // 17: capabilities.blockchain.evm.v1alpha.Receipt.logs:type_name -> capabilities.blockchain.evm.v1alpha.Log
 	29, // 18: capabilities.blockchain.evm.v1alpha.Receipt.effective_gas_price:type_name -> values.v1.BigInt
 	29, // 19: capabilities.blockchain.evm.v1alpha.Receipt.block_number:type_name -> values.v1.BigInt
-	29, // 20: capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest.block_number:type_name -> values.v1.BigInt
-	25, // 21: capabilities.blockchain.evm.v1alpha.HeaderByNumberReply.header:type_name -> capabilities.blockchain.evm.v1alpha.Header
-	29, // 22: capabilities.blockchain.evm.v1alpha.Header.block_number:type_name -> values.v1.BigInt
-	30, // 23: capabilities.blockchain.evm.v1alpha.WriteReportRequest.report:type_name -> sdk.v1alpha.ReportResponse
-	27, // 24: capabilities.blockchain.evm.v1alpha.WriteReportRequest.gas_config:type_name -> capabilities.blockchain.evm.v1alpha.GasConfig
-	2,  // 25: capabilities.blockchain.evm.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.evm.v1alpha.TxStatus
-	1,  // 26: capabilities.blockchain.evm.v1alpha.WriteReportReply.receiver_contract_execution_status:type_name -> capabilities.blockchain.evm.v1alpha.ReceiverContractExecutionStatus
-	29, // 27: capabilities.blockchain.evm.v1alpha.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
-	5,  // 28: capabilities.blockchain.evm.v1alpha.Client.CallContract:input_type -> capabilities.blockchain.evm.v1alpha.CallContractRequest
-	7,  // 29: capabilities.blockchain.evm.v1alpha.Client.FilterLogs:input_type -> capabilities.blockchain.evm.v1alpha.FilterLogsRequest
-	13, // 30: capabilities.blockchain.evm.v1alpha.Client.BalanceAt:input_type -> capabilities.blockchain.evm.v1alpha.BalanceAtRequest
-	15, // 31: capabilities.blockchain.evm.v1alpha.Client.EstimateGas:input_type -> capabilities.blockchain.evm.v1alpha.EstimateGasRequest
-	17, // 32: capabilities.blockchain.evm.v1alpha.Client.GetTransactionByHash:input_type -> capabilities.blockchain.evm.v1alpha.GetTransactionByHashRequest
-	20, // 33: capabilities.blockchain.evm.v1alpha.Client.GetTransactionReceipt:input_type -> capabilities.blockchain.evm.v1alpha.GetTransactionReceiptRequest
-	23, // 34: capabilities.blockchain.evm.v1alpha.Client.HeaderByNumber:input_type -> capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest
-	4,  // 35: capabilities.blockchain.evm.v1alpha.Client.LogTrigger:input_type -> capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest
-	26, // 36: capabilities.blockchain.evm.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.evm.v1alpha.WriteReportRequest
-	6,  // 37: capabilities.blockchain.evm.v1alpha.Client.CallContract:output_type -> capabilities.blockchain.evm.v1alpha.CallContractReply
-	8,  // 38: capabilities.blockchain.evm.v1alpha.Client.FilterLogs:output_type -> capabilities.blockchain.evm.v1alpha.FilterLogsReply
-	14, // 39: capabilities.blockchain.evm.v1alpha.Client.BalanceAt:output_type -> capabilities.blockchain.evm.v1alpha.BalanceAtReply
-	16, // 40: capabilities.blockchain.evm.v1alpha.Client.EstimateGas:output_type -> capabilities.blockchain.evm.v1alpha.EstimateGasReply
-	18, // 41: capabilities.blockchain.evm.v1alpha.Client.GetTransactionByHash:output_type -> capabilities.blockchain.evm.v1alpha.GetTransactionByHashReply
-	21, // 42: capabilities.blockchain.evm.v1alpha.Client.GetTransactionReceipt:output_type -> capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply
-	24, // 43: capabilities.blockchain.evm.v1alpha.Client.HeaderByNumber:output_type -> capabilities.blockchain.evm.v1alpha.HeaderByNumberReply
-	9,  // 44: capabilities.blockchain.evm.v1alpha.Client.LogTrigger:output_type -> capabilities.blockchain.evm.v1alpha.Log
-	28, // 45: capabilities.blockchain.evm.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.evm.v1alpha.WriteReportReply
-	37, // [37:46] is the sub-list for method output_type
-	28, // [28:37] is the sub-list for method input_type
-	28, // [28:28] is the sub-list for extension type_name
-	28, // [28:28] is the sub-list for extension extendee
-	0,  // [0:28] is the sub-list for field type_name
+	29, // 20: capabilities.blockchain.evm.v1alpha.Receipt.l1_fee:type_name -> values.v1.BigInt
+	29, // 21: capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest.block_number:type_name -> values.v1.BigInt
+	25, // 22: capabilities.blockchain.evm.v1alpha.HeaderByNumberReply.header:type_name -> capabilities.blockchain.evm.v1alpha.Header
+	29, // 23: capabilities.blockchain.evm.v1alpha.Header.block_number:type_name -> values.v1.BigInt
+	30, // 24: capabilities.blockchain.evm.v1alpha.WriteReportRequest.report:type_name -> sdk.v1alpha.ReportResponse
+	27, // 25: capabilities.blockchain.evm.v1alpha.WriteReportRequest.gas_config:type_name -> capabilities.blockchain.evm.v1alpha.GasConfig
+	2,  // 26: capabilities.blockchain.evm.v1alpha.WriteReportReply.tx_status:type_name -> capabilities.blockchain.evm.v1alpha.TxStatus
+	1,  // 27: capabilities.blockchain.evm.v1alpha.WriteReportReply.receiver_contract_execution_status:type_name -> capabilities.blockchain.evm.v1alpha.ReceiverContractExecutionStatus
+	29, // 28: capabilities.blockchain.evm.v1alpha.WriteReportReply.transaction_fee:type_name -> values.v1.BigInt
+	5,  // 29: capabilities.blockchain.evm.v1alpha.Client.CallContract:input_type -> capabilities.blockchain.evm.v1alpha.CallContractRequest
+	7,  // 30: capabilities.blockchain.evm.v1alpha.Client.FilterLogs:input_type -> capabilities.blockchain.evm.v1alpha.FilterLogsRequest
+	13, // 31: capabilities.blockchain.evm.v1alpha.Client.BalanceAt:input_type -> capabilities.blockchain.evm.v1alpha.BalanceAtRequest
+	15, // 32: capabilities.blockchain.evm.v1alpha.Client.EstimateGas:input_type -> capabilities.blockchain.evm.v1alpha.EstimateGasRequest
+	17, // 33: capabilities.blockchain.evm.v1alpha.Client.GetTransactionByHash:input_type -> capabilities.blockchain.evm.v1alpha.GetTransactionByHashRequest
+	20, // 34: capabilities.blockchain.evm.v1alpha.Client.GetTransactionReceipt:input_type -> capabilities.blockchain.evm.v1alpha.GetTransactionReceiptRequest
+	23, // 35: capabilities.blockchain.evm.v1alpha.Client.HeaderByNumber:input_type -> capabilities.blockchain.evm.v1alpha.HeaderByNumberRequest
+	4,  // 36: capabilities.blockchain.evm.v1alpha.Client.LogTrigger:input_type -> capabilities.blockchain.evm.v1alpha.FilterLogTriggerRequest
+	26, // 37: capabilities.blockchain.evm.v1alpha.Client.WriteReport:input_type -> capabilities.blockchain.evm.v1alpha.WriteReportRequest
+	6,  // 38: capabilities.blockchain.evm.v1alpha.Client.CallContract:output_type -> capabilities.blockchain.evm.v1alpha.CallContractReply
+	8,  // 39: capabilities.blockchain.evm.v1alpha.Client.FilterLogs:output_type -> capabilities.blockchain.evm.v1alpha.FilterLogsReply
+	14, // 40: capabilities.blockchain.evm.v1alpha.Client.BalanceAt:output_type -> capabilities.blockchain.evm.v1alpha.BalanceAtReply
+	16, // 41: capabilities.blockchain.evm.v1alpha.Client.EstimateGas:output_type -> capabilities.blockchain.evm.v1alpha.EstimateGasReply
+	18, // 42: capabilities.blockchain.evm.v1alpha.Client.GetTransactionByHash:output_type -> capabilities.blockchain.evm.v1alpha.GetTransactionByHashReply
+	21, // 43: capabilities.blockchain.evm.v1alpha.Client.GetTransactionReceipt:output_type -> capabilities.blockchain.evm.v1alpha.GetTransactionReceiptReply
+	24, // 44: capabilities.blockchain.evm.v1alpha.Client.HeaderByNumber:output_type -> capabilities.blockchain.evm.v1alpha.HeaderByNumberReply
+	9,  // 45: capabilities.blockchain.evm.v1alpha.Client.LogTrigger:output_type -> capabilities.blockchain.evm.v1alpha.Log
+	28, // 46: capabilities.blockchain.evm.v1alpha.Client.WriteReport:output_type -> capabilities.blockchain.evm.v1alpha.WriteReportReply
+	38, // [38:47] is the sub-list for method output_type
+	29, // [29:38] is the sub-list for method input_type
+	29, // [29:29] is the sub-list for extension type_name
+	29, // [29:29] is the sub-list for extension extendee
+	0,  // [0:29] is the sub-list for field type_name
 }
 
 func init() { file_capabilities_blockchain_evm_v1alpha_client_proto_init() }

@@ -29,6 +29,7 @@ message ConsensusQueueEvent {
   google.protobuf.Timestamp deadline = 4;
   bytes timelessHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
   repeated CoordinatedEventBlobHandle blobs = 6;
+  // opt: inline optional CoordinatedEvent instead of blob for small events
 }
 
 // ConsensusQueueEventsBlobHandle refers to a CoordinatedEvent by blob handle and index within an CoordinatedEventList.
@@ -78,4 +79,5 @@ message ConsensusQueueObservedEvent {
   repeated google.protobuf.Timestamp observedAts = 4;
   repeated google.protobuf.Timestamp deadlines = 5;
   repeated CoordinatedEventBlobHandle blobs = 6;
+  // opt: inline optional CoordinatedEvent instead of blob for small events
 }

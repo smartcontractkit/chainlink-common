@@ -159,7 +159,7 @@ type ConsensusQueueEvent struct {
 	ObservedAt    *timestamppb.Timestamp        `protobuf:"bytes,3,opt,name=observedAt,proto3" json:"observedAt,omitempty"`
 	Deadline      *timestamppb.Timestamp        `protobuf:"bytes,4,opt,name=deadline,proto3" json:"deadline,omitempty"`
 	TimelessHash  []byte                        `protobuf:"bytes,5,opt,name=timelessHash,proto3" json:"timelessHash,omitempty"` // hash of the blob data, timestamp fields we have extracted for medianization set to nil
-	Blobs         []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
+	Blobs         []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`               // opt: inline optional CoordinatedEvent instead of blob for small events
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -577,7 +577,7 @@ type ConsensusQueueObservedEvent struct {
 	NodeIds       []byte                        `protobuf:"bytes,3,opt,name=nodeIds,proto3" json:"nodeIds,omitempty"` // []OracleID
 	ObservedAts   []*timestamppb.Timestamp      `protobuf:"bytes,4,rep,name=observedAts,proto3" json:"observedAts,omitempty"`
 	Deadlines     []*timestamppb.Timestamp      `protobuf:"bytes,5,rep,name=deadlines,proto3" json:"deadlines,omitempty"`
-	Blobs         []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"`
+	Blobs         []*CoordinatedEventBlobHandle `protobuf:"bytes,6,rep,name=blobs,proto3" json:"blobs,omitempty"` // opt: inline optional CoordinatedEvent instead of blob for small events
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

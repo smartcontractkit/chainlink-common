@@ -6,8 +6,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
-
-	"github.com/iancoleman/strcase"
+	"unicode"
 
 	"github.com/smartcontractkit/chainlink-common/x/config/commentparsing"
 	"github.com/smartcontractkit/chainlink-common/x/config/internal/decode"
@@ -56,7 +55,7 @@ func bindStruct[T any](entry *typedEntry[T]) error {
 
 	scope := walkScope{ancestors: []reflect.Type{v.Type()}}
 	if ns := entry.ns; ns != "" {
-		scope.key, scope.fileKey = strcase.ToKebab(ns), []string{ns}
+		scope.key, scope.fileKey = kebab(ns), []string{ns}
 	}
 
 	return entry.walk(v, scope)
@@ -139,11 +138,48 @@ func (s walkScope) child(field reflect.StructField, key string) walkScope {
 	next.goPath = append(slices.Clone(s.goPath), field.Name)
 	if key != "" {
 		// Kebab case, so a rename reads as if it were the name.
-		next.key = strings.TrimPrefix(s.key+"."+strcase.ToKebab(key), ".")
+		next.key = strings.TrimPrefix(s.key+"."+kebab(key), ".")
 		next.fileKey = append(slices.Clone(s.fileKey), key)
 	}
 
 	return next
+}
+
+// kebab is name in kebab case. Digits stay with the word before them, and a lone s after an acronym is its plural,
+// so V2Bootstrappers is v2-bootstrappers and OnchainKeyBundleIDs is onchain-key-bundle-ids.
+func kebab(name string) string {
+	r := []rune(name)
+	var b strings.Builder
+	for i, c := range r {
+		if c == '_' || c == '-' {
+			b.WriteByte('-')
+			continue
+		}
+
+		if i > 0 && unicode.IsUpper(c) && startsWord(r, i) {
+			b.WriteByte('-')
+		}
+
+		b.WriteRune(unicode.ToLower(c))
+	}
+
+	return b.String()
+}
+
+// startsWord reports whether the capital at r[i] begins a word: after a lowercase letter or a digit, or as the last
+// capital of an acronym before a lowercase word, as the S in HTTPServer. A lone s after an acronym is its plural.
+func startsWord(r []rune, i int) bool {
+	prev := r[i-1]
+	if unicode.IsLower(prev) || unicode.IsDigit(prev) {
+		return true
+	}
+
+	if !unicode.IsUpper(prev) || i+1 >= len(r) || !unicode.IsLower(r[i+1]) {
+		return false
+	}
+
+	plural := r[i+1] == 's' && (i+2 == len(r) || !unicode.IsLower(r[i+2]))
+	return !plural
 }
 
 // A nil pointer section still gets its flags, so its zero value stands in for it.

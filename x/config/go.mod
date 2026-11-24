@@ -5,7 +5,6 @@ go 1.27.3
 require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/huandu/go-clone v1.7.3
-	github.com/iancoleman/strcase v0.3.0
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/smartcontractkit/chainlink-common v0.11.2-0.20261027153112-98a50810196d
 	github.com/spf13/cobra v1.10.2

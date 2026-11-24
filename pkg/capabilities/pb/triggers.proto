@@ -13,14 +13,71 @@ message CoordinatedEvent {
   int64 triggerIndex = 3;
   google.protobuf.Timestamp observedAt = 4;
   google.protobuf.Timestamp deadline = 5;
-  uint64 sequenceNumber = 6;
-  capabilities.TriggerResponse event = 7;
+  capabilities.TriggerResponse event = 6;
 }
 
+message CoordinatedEventList {
+  repeated CoordinatedEvent events = 1;
+}
+
+// ConsensusQueueEvent holds minimal event metadata for queueing and medianization within the plugin, and one or more
+// blob reference pointing to the rest.
+message ConsensusQueueEvent {
+  string workflowID = 1;
+  string executionID = 2;
+  google.protobuf.Timestamp observedAt = 3;
+  google.protobuf.Timestamp deadline = 4;
+  bytes timelessHash = 5; // hash of the blob data, timestamp fields we have extracted for medianization set to nil
+  repeated CoordinatedEventBlobHandle blobs = 6;
+  optional bytes timelessEvent = 7; // inline small CoordinatedEvents instead of using blobs
+}
+
+// ConsensusQueueEventsBlobHandle refers to a CoordinatedEvent by blob handle and index within an CoordinatedEventList.
+message CoordinatedEventBlobHandle {
+  uint32 blob = 1;
+  uint32 element = 2;
+}
+
+// ConsensusQueueEvents holds a list of events.
+message ConsensusQueueEventList {
+  repeated ConsensusQueueEvent events = 1;
+}
+
+// ConsensusQueueBlobHandleList holds a list of blob handles referenced from ConsensusQueueEventList events.
+message ConsensusQueueBlobHandleList {
+  repeated bytes blobHandles = 1;
+}
+
+// ConsensusQueueObservation is a ReportingPlugin observation of events and capacity meta-data.
 message ConsensusQueueObservation {
-  repeated CoordinatedEvent events = 1;
+  repeated ConsensusQueueEvent events = 1; // sorted
+  repeated bytes blobHandles = 2;  // referenced from events by index
+
+  google.protobuf.Timestamp expiration = 3; // observation time - grace period
+  uint32 capacity = 4; // Global remaining capacity
+  map<string, uint32> workflowCapacities = 5; // Workflow-specific free executions
+  bool kvDrainActive = 6; // consensus on FeatureConsensusQueueKVDrainActivePeriod
 }
 
-message ConsensusQueueReport {
-  repeated CoordinatedEvent events = 1;
+// ConsensusQueueObservedEvents holds a working set of observed events that are awaiting consensus.
+message ConsensusQueueObservedEvents {
+  repeated ConsensusQueueObservedEventEntry observations = 1; // map entries since we have []byte keys
+  repeated bytes blobHandles = 2; // referenced from observations events by index
+}
+
+message ConsensusQueueObservedEventEntry {
+  bytes timelessHash = 1; // key
+  ConsensusQueueObservedEvent event = 2; // val
+}
+
+// ConsensusQueueObservedEvent tracks observation metadata for events awaiting consensus.
+message ConsensusQueueObservedEvent {
+  string workflowID = 1;
+  string executionID = 2;
+
+  bytes nodeIds = 3; // []OracleID
+  repeated google.protobuf.Timestamp observedAts = 4;
+  repeated google.protobuf.Timestamp deadlines = 5;
+  repeated CoordinatedEventBlobHandle blobs = 6;
+  optional bytes timelessEvent = 7; // inline small CoordinatedEvents instead of using blobs
 }

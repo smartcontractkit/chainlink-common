@@ -106,6 +106,8 @@ var Default = Schema{
 	DispatcherPerSenderRate:                          Rate(rate.Limit(500), 1000),
 	CentralTriggerEventQueueLimit:                    Int(1000),
 	CentralTriggerQueueDrainInterval:                 Duration(500 * time.Millisecond),
+	ConsensusQueueExpirationGraceInterval:            Duration(time.Minute), // 1/10th of PerWorkflow.TriggerEventQueueTimeout
+	FeatureConsensusQueueKVDrainActivePeriod:         disabledFeatureTimeRange,
 	TriggerRegistrationStatusUpdateTimeout:           Duration(0 * time.Second),
 	BaseTriggerRetryInterval:                         Duration(30 * time.Second),
 	BaseTriggerMaxRetries:                            Int(20),
@@ -481,8 +483,12 @@ type Schema struct {
 	CentralTriggerEventQueueLimit Setting[int] `unit:"{trigger}"`
 	// CentralTriggerQueueDrainInterval is how often the central trigger queue is drained. The default
 	// matches the expected OCR round interval. The drainer raises values below 200ms to 200ms.
-	CentralTriggerQueueDrainInterval       Setting[time.Duration]
-	TriggerRegistrationStatusUpdateTimeout Setting[time.Duration]
+	CentralTriggerQueueDrainInterval Setting[time.Duration]
+	// How long past their deadline to expire consensus queue entries
+	ConsensusQueueExpirationGraceInterval Setting[time.Duration]
+	// FeatureConsensusQueueKVDrainActivePeriod drains the KV queue of the consensus queue plugin, as a recovery mechanism.
+	FeatureConsensusQueueKVDrainActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
+	TriggerRegistrationStatusUpdateTimeout   Setting[time.Duration]
 
 	BaseTriggerRetryInterval   Setting[time.Duration]
 	BaseTriggerMaxRetries      Setting[int] `unit:"{attempt}"`

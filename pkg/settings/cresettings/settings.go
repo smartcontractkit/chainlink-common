@@ -376,6 +376,7 @@ var Default = Schema{
 		FeatureConsensusIncludeAllTimestampsActivePeriod: disabledFeatureTimeRange,
 		FeatureVaultGetSecretsDirectlyActivePeriod:       disabledFeatureTimeRange,
 		FeatureShadowTriggerModeActivePeriod:             disabledFeatureTimeRange,
+		FeatureTriggerConsensusEnabledActivePeriod:       disabledFeatureTimeRange,
 		FeatureExecutionMetadataActivePeriod:             disabledFeatureTimeRange,
 	},
 }
@@ -642,6 +643,15 @@ type Workflows struct {
 	// copied to the central trigger queue. Each event is checked against the time it was observed, so
 	// every node switches at the same moment.
 	FeatureShadowTriggerModeActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
+	// FeatureTriggerConsensusEnabledActivePeriod is the window in which coordinated trigger events go
+	// only to the central trigger queue, and only the consensus-queue plugin starts them. Like the
+	// shadow window, each event is checked against the time it was observed. It takes precedence over
+	// FeatureShadowTriggerModeActivePeriod when both windows contain an event, so the two may overlap.
+	// Only move a boundary to a future time later than settings propagation plus the trigger event
+	// queue timeout; a boundary moved into the past can route and start in-flight events differently.
+	// Requires the consensus-queue plugin and the coordinated engine on every node in the workflow DON;
+	// without them, events in this window are never started.
+	FeatureTriggerConsensusEnabledActivePeriod Setting[Range[config.Timestamp]] `featureflag:"true"`
 	// FeatureExecutionMetadataActivePeriod is the window in which the engine populates
 	// WorkflowExecutionMetadata in the ExecuteRequest sent to the workflow module. It changes the
 	// request bytes, which confidential workflows hash across nodes, so it is checked against the

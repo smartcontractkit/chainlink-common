@@ -76,5 +76,6 @@ func TestFeatureFlagKeys(t *testing.T) {
 	require.Equal(t, settings.ScopeGlobal, byKey["DonTimeSequencedTimestampsActivePeriod"])
 	require.Equal(t, settings.ScopeGlobal, byKey["CRONV2ActivePeriod"])
 	require.Equal(t, settings.ScopeWorkflow, byKey["PerWorkflow.FeatureShadowTriggerModeActivePeriod"])
+	require.Equal(t, settings.ScopeWorkflow, byKey["PerWorkflow.FeatureTriggerConsensusEnabledActivePeriod"])
 	require.Contains(t, byKey, "ConfidentialCompute.ConfidentialHTTPVaultGetSecretsDirectlyActivePeriod")
 }

@@ -162,6 +162,6 @@ func derefOrZero(f reflect.Value) reflect.Value {
 // A struct already being walked is a leaf, callers are expected to have dereferenced the field already.
 func (e *typedEntry[T]) isLeaf(field reflect.StructField, elem reflect.Value, scope walkScope) bool {
 	lang := e.b.opts.Markup
-	return elem.Kind() != reflect.Struct || lang.IsLeaf(field.Type) || lang.IsLeaf(elem.Type()) ||
-		slices.Contains(scope.ancestors, elem.Type())
+	return decode.IsDiscard(field.Type) || elem.Kind() != reflect.Struct || lang.IsLeaf(field.Type) ||
+		lang.IsLeaf(elem.Type()) || slices.Contains(scope.ancestors, elem.Type())
 }

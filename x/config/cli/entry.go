@@ -192,6 +192,10 @@ func (e *typedEntry[T]) decode(cc commandConfig) error {
 	dst := reflect.ValueOf(e.dst).Elem()
 	supplied := map[string]sourceLayer{}
 	for _, k := range e.leaves {
+		// A discarded value is parsed into any, then dropped.
+		if decode.IsDiscard(k.goType) {
+			continue
+		}
 		if len(k.entries) > 0 {
 			layer, err := e.decodeEntries(k, cc, dst)
 			if err != nil {

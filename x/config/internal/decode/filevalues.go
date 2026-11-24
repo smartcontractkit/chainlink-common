@@ -111,7 +111,10 @@ func (n *KeyNode) Lookup(v reflect.Value, path []string) (reflect.Value, bool) {
 	return v, true
 }
 
-var stringType = reflect.TypeFor[string]()
+var (
+	stringType = reflect.TypeFor[string]()
+	anyType    = reflect.TypeFor[any]()
+)
 
 // Config file map keys are text, so every key is read as a string and parsed as its flag would be (see SetText), even
 // one the markup could read itself, so two texts for one key are always caught.
@@ -128,6 +131,11 @@ type fileTyper struct {
 }
 
 func (ft fileTyper) valueType(t reflect.Type) (reflect.Type, error) {
+	// any is the slot the markup parses into, so a table, an array or a scalar all decode.
+	if IsDiscard(t) {
+		return anyType, nil
+	}
+
 	if _, ok := ft.visiting[t]; ok {
 		ft.visiting[t] = true
 		// Recursion itself is not an error, for example, nothing should stop the type below from being used.
@@ -238,6 +246,10 @@ func (ft fileTyper) structType(t reflect.Type) (reflect.Type, error) {
 
 // Turns a value decoded as FileValueType(t) back into t, parsing the map keys that were read as strings.
 func FromFile(t reflect.Type, v reflect.Value) (reflect.Value, error) {
+	if IsDiscard(t) {
+		return reflect.Zero(t), nil
+	}
+
 	if v.Type() == t {
 		return v, nil
 	}

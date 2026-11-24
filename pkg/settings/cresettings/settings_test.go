@@ -332,6 +332,23 @@ func TestFeatureShadowTriggerModeActivePeriodKeyInit(t *testing.T) {
 	}, s.DefaultValue)
 }
 
+// TestFeatureTriggerConsensusEnabledActivePeriodKeyInit asserts the consensus window is per workflow and off by default.
+func TestFeatureTriggerConsensusEnabledActivePeriodKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.FeatureTriggerConsensusEnabledActivePeriod
+
+	assert.Equal(t, "PerWorkflow.FeatureTriggerConsensusEnabledActivePeriod", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.NotNil(t, s.Parse)
+	assert.Equal(t, settings.Range[config.Timestamp]{
+		Lower: config.Timestamp(time.Date(2100, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+		Upper: config.Timestamp(time.Date(2101, 1, 1, 0, 0, 0, 0, time.UTC).Unix()),
+	}, s.DefaultValue)
+
+	got, err := s.GetOrDefault(t.Context(), DefaultGetter)
+	require.NoError(t, err)
+	assert.False(t, got.Contains(config.Timestamp(time.Now().Unix())), "consensus window must not contain now by default")
+}
+
 func TestFeatureVaultGetSecretsDirectlyActivePeriodKeyInit(t *testing.T) {
 	s := Default.PerWorkflow.FeatureVaultGetSecretsDirectlyActivePeriod
 

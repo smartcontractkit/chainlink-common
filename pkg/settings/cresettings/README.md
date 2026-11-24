@@ -100,9 +100,11 @@ flowchart
 
     subgraph CentralTriggerQueue.Put
 %%      trigger coordinator reader → central trigger queue (pre-admission buffer)
+        PerWorkflow.FeatureTriggerConsensusEnabledActivePeriod[/PerWorkflow.FeatureTriggerConsensusEnabledActivePeriod\]:::gate
         PerWorkflow.FeatureShadowTriggerModeActivePeriod[/PerWorkflow.FeatureShadowTriggerModeActivePeriod\]:::gate
         CentralTriggerEventQueueLimit{{CentralTriggerEventQueueLimit}}:::bound
 
+        PerWorkflow.FeatureTriggerConsensusEnabledActivePeriod-->CentralTriggerEventQueueLimit
         PerWorkflow.FeatureShadowTriggerModeActivePeriod-->CentralTriggerEventQueueLimit
     end
 

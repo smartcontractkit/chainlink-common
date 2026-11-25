@@ -1,6 +1,7 @@
 package confidentialrelay
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -575,4 +576,53 @@ func TestSecretsResponseHash_StableUnderSignerReordering(t *testing.T) {
 	}
 	reversed.EnclaveConfig = &rc
 	require.Equal(t, base, mustSecretsHash(t, result, reversed))
+}
+
+func TestResponseHash_IgnoresRoutingFields(t *testing.T) {
+	secretsResult := SecretsResponseResult{
+		Secrets: []SecretEntry{
+			{ID: SecretIdentifier{Key: "alpha", Namespace: "ns-a"}, Ciphertext: "c", EncryptedShares: []string{"s"}},
+		},
+	}
+	sp := validSecretsParams()
+	spRouted := validSecretsParams()
+	spRouted.WorkflowDonName = "workflow_1_zone-a"
+	spRouted.WorkflowDONShardIndex = 2
+	require.Equal(t, mustSecretsHash(t, secretsResult, sp), mustSecretsHash(t, secretsResult, spRouted))
+
+	capResult := CapabilityResponseResult{Payload: "out"}
+	cp := validCapabilityParams()
+	cpRouted := validCapabilityParams()
+	cpRouted.WorkflowDonName = "workflow_1_zone-a"
+	cpRouted.WorkflowDONShardIndex = 2
+	require.Equal(t, mustCapabilityHash(t, capResult, cp), mustCapabilityHash(t, capResult, cpRouted))
+}
+
+// The attestation covers the JSON of the full params, so zero-valued routing
+// fields must not appear in it: older relay nodes re-marshal without them.
+func TestRequestParamsJSON_OmitsZeroRoutingFields(t *testing.T) {
+	keys := func(t *testing.T, v any) map[string]json.RawMessage {
+		t.Helper()
+		b, err := json.Marshal(v)
+		require.NoError(t, err)
+		var m map[string]json.RawMessage
+		require.NoError(t, json.Unmarshal(b, &m))
+		return m
+	}
+
+	sp := validSecretsParams()
+	cp := validCapabilityParams()
+	for name, v := range map[string]any{"secrets": sp, "capability": cp} {
+		m := keys(t, v)
+		require.NotContains(t, m, "workflow_don_name", name)
+		require.NotContains(t, m, "workflow_don_shard_index", name)
+	}
+
+	sp.WorkflowDonName, sp.WorkflowDONShardIndex = "workflow_1_zone-a", 2
+	cp.WorkflowDonName, cp.WorkflowDONShardIndex = "workflow_1_zone-a", 2
+	for name, v := range map[string]any{"secrets": sp, "capability": cp} {
+		m := keys(t, v)
+		require.JSONEq(t, `"workflow_1_zone-a"`, string(m["workflow_don_name"]), name)
+		require.JSONEq(t, `2`, string(m["workflow_don_shard_index"]), name)
+	}
 }

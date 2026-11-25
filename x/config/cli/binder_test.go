@@ -382,6 +382,20 @@ func TestKeyNames(t *testing.T) {
 	})
 }
 
+func TestAcronymInEnvVarName(t *testing.T) {
+	type ocrConfig struct{ OnchainKeyBundleIDs string }
+
+	var got ocrConfig
+	root := newRoot(t)
+	b, err := New(Options{Markup: testOptions.Markup, Prefixes: []string{"CL"}})
+	require.NoError(t, err)
+	require.NoError(t, b.RegisterInNamespace(root, "OCR", &got))
+
+	t.Setenv("CL_OCR_ONCHAIN_KEY_BUNDLE_IDS", "x")
+	require.NoError(t, root.Execute())
+	assert.Equal(t, "x", got.OnchainKeyBundleIDs)
+}
+
 func decodesTo[T any](t *testing.T, want T, args ...string) {
 	t.Helper()
 
@@ -541,17 +555,17 @@ func TestNumericFlagsAreSized(t *testing.T) {
 
 	for _, tc := range []struct{ flag, limit, past string }{
 		{"int", "9223372036854775807", "9223372036854775808"},
-		{"int-8", "-128", "-129"},
-		{"int-16", "32767", "32768"},
-		{"int-32", "-2147483648", "-2147483649"},
-		{"int-64", "9223372036854775807", "9223372036854775808"},
+		{"int8", "-128", "-129"},
+		{"int16", "32767", "32768"},
+		{"int32", "-2147483648", "-2147483649"},
+		{"int64", "9223372036854775807", "9223372036854775808"},
 		{"uint", "18446744073709551615", "18446744073709551616"},
-		{"uint-8", "255", "256"},
-		{"uint-16", "65535", "65536"},
-		{"uint-32", "4294967295", "4294967296"},
-		{"uint-64", "18446744073709551615", "18446744073709551616"},
-		{"float-32", "3.4e38", "3.5e38"},
-		{"float-64", "1.7e308", "1.8e308"},
+		{"uint8", "255", "256"},
+		{"uint16", "65535", "65536"},
+		{"uint32", "4294967295", "4294967296"},
+		{"uint64", "18446744073709551615", "18446744073709551616"},
+		{"float32", "3.4e38", "3.5e38"},
+		{"float64", "1.7e308", "1.8e308"},
 	} {
 		t.Run(tc.flag, func(t *testing.T) {
 			require.NoError(t, run(t, &hasEveryNumber{}, testOptions, "--"+tc.flag, tc.limit))

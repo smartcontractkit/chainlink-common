@@ -111,7 +111,7 @@ func TestOverlappingProfilesAreRejected(t *testing.T) {
 	require.ErrorContains(t, newBinder(t, testOptions).Register(newRoot(t), &twoSelectors{},
 		Profile(func(c *twoSelectors) *uint32 { return &c.Selector }, map[uint32]func(*twoSelectors){}),
 		Profile(func(c *twoSelectors) *uint32 { return &c.Selector2 }, map[uint32]func(*twoSelectors){})),
-		"profiles for selector and selector-2 overlap: each rebuilds its whole section, so one would drop the other's values")
+		"profiles for selector and selector2 overlap: each rebuilds its whole section, so one would drop the other's values")
 
 	type nestsProfiled struct {
 		Selector uint32

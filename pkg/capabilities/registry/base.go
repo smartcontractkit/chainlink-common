@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
-	"google.golang.org/grpc/connectivity"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -21,15 +20,19 @@ var (
 type baseRegistry struct {
 	m    map[string]atomicBaseCapability
 	lggr logger.Logger
-	mu   sync.RWMutex
+	// mu guards m. It is not held while a capability is replaced or removed: that can
+	// wait for calls in flight on that one capability, and must not block the others.
+	mu      sync.RWMutex
+	timings replaceTimings
 }
 
 var _ CapabilitiesRegistryBase = (*baseRegistry)(nil)
 
 func NewBaseRegistry(lggr logger.Logger) CapabilitiesRegistryBase {
 	return &baseRegistry{
-		m:    map[string]atomicBaseCapability{},
-		lggr: logger.Named(lggr, "registries.basic"),
+		m:       map[string]atomicBaseCapability{},
+		lggr:    logger.Named(lggr, "registries.basic"),
+		timings: replaceTimings{grace: defaultReplaceGracePeriod, replay: defaultReplayTimeout},
 	}
 }
 
@@ -134,59 +137,80 @@ func (r *baseRegistry) List(_ context.Context) ([]capabilities.BaseCapability, e
 	return cl, nil
 }
 
+// Add adds a capability to the registry, or replaces the one with the same ID when the
+// connection of that one is down.
+//
+// A replaced capability gets a grace period for its calls in flight; after that they are
+// cancelled with [ErrCapabilityReplaced]. Its trigger registrations are replayed onto the
+// new capability in the background, after Add has returned.
 func (r *baseRegistry) Add(ctx context.Context, c capabilities.BaseCapability) error {
 	if c == nil {
 		return errors.New("cannot add a nil capability to the registry")
 	}
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	// Info is a call into the capability, so it is made before the registry is locked.
 	info, err := c.Info(ctx)
 	if err != nil {
 		return err
 	}
-
 	id := info.ID
-	bc, ok := r.m[id]
-	if ok {
-		switch state := bc.GetState(); state {
-		case connectivity.Shutdown, connectivity.TransientFailure, connectivity.Idle:
-			// allow replace
-		default:
-			return fmt.Errorf("%w: id %s found in registry: state %s", ErrCapabilityAlreadyExists, id, state)
-		}
-		if err := bc.Update(c); err != nil {
+
+	existing, err := r.addIfNew(ctx, id, info.CapabilityType, c)
+	if err != nil {
+		return err
+	}
+	if existing != nil {
+		if err := existing.Replace(ctx, c); err != nil {
+			var up *stillUpError
+			if errors.As(err, &up) {
+				return fmt.Errorf("%w: id %s found in registry: state %s", ErrCapabilityAlreadyExists, id, up.state)
+			}
 			return fmt.Errorf("failed to update capability %s: %w", id, err)
 		}
-	} else {
-		var ac atomicBaseCapability
-		lggr := logger.With(r.lggr, "capabilityID", id)
-		switch info.CapabilityType {
-		case capabilities.CapabilityTypeTrigger:
-			ac = newAtomicTriggerCapability(lggr)
-		case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
-			ac = &atomicExecuteCapability{}
-		case capabilities.CapabilityTypeCombined:
-			ac = newAtomicExecuteAndTriggerCapability(lggr)
-		default:
-			return fmt.Errorf("unknown capability type: %s", info.CapabilityType)
-		}
-		if err := ac.Update(c); err != nil {
-			return err
-		}
-		r.m[id] = ac
 	}
 	r.lggr.Infow("capability added", "id", id, "type", info.CapabilityType, "description", info.Description, "version", info.Version())
 	return nil
 }
 
-func (r *baseRegistry) Remove(_ context.Context, id string) error {
+// addIfNew adds c under id when the registry has no entry for id. Otherwise it changes
+// nothing and returns the entry.
+func (r *baseRegistry) addIfNew(ctx context.Context, id string, typ capabilities.CapabilityType, c capabilities.BaseCapability) (atomicBaseCapability, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if existing, ok := r.m[id]; ok {
+		return existing, nil
+	}
+
+	var ac atomicBaseCapability
+	lggr := logger.With(r.lggr, "capabilityID", id)
+	switch typ {
+	case capabilities.CapabilityTypeTrigger:
+		ac = newAtomicTriggerCapability(lggr, r.timings)
+	case capabilities.CapabilityTypeAction, capabilities.CapabilityTypeConsensus, capabilities.CapabilityTypeTarget:
+		ac = newAtomicExecuteCapability(r.timings)
+	case capabilities.CapabilityTypeCombined:
+		ac = newAtomicExecuteAndTriggerCapability(lggr, r.timings)
+	default:
+		return nil, fmt.Errorf("unknown capability type: %s", typ)
+	}
+	// Nothing uses a new entry yet, so this does not wait.
+	if err := ac.Update(ctx, c); err != nil {
+		return nil, err
+	}
+	r.m[id] = ac
+	return nil, nil
+}
+
+// Remove takes the capability out of use. Its calls in flight get a grace period and are
+// then cancelled with [ErrCapabilityReplaced]. The entry keeps its trigger registrations,
+// for the capability that is added under the same ID next.
+func (r *baseRegistry) Remove(ctx context.Context, id string) error {
+	r.mu.RLock()
 	ac, ok := r.m[id]
+	r.mu.RUnlock()
 	if !ok {
 		return fmt.Errorf("unable to remove, capability not found: %s", id)
 	}
-	if err := ac.Update(nil); err != nil {
+	if err := ac.Update(ctx, nil); err != nil {
 		return fmt.Errorf("failed to remove capability %s: %w", id, err)
 	}
 	r.lggr.Infow("capability removed", "id", id)

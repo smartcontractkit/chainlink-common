@@ -100,18 +100,31 @@ func (e *typedEntry[T]) addUndocumented(key string) {
 
 var envVarReplacer = strings.NewReplacer(".", "_", "-", "_")
 
+// EnvVarName is the env var a binder with prefix reads the config at path under,
+// e.g. EnvVarName("CL", "cron", "fastestScheduleIntervalSeconds") is CL_CRON_FASTEST_SCHEDULE_INTERVAL_SECONDS.
+func EnvVarName(prefix string, path ...string) string {
+	segments := make([]string, len(path))
+	for i, p := range path {
+		segments[i] = kebab(p)
+	}
+
+	name := strings.ToUpper(envVarReplacer.Replace(strings.Join(segments, ".")))
+	if prefix == "" {
+		return name
+	}
+
+	return strings.TrimSuffix(strings.ToUpper(prefix), "_") + "_" + name
+}
+
 func (e *typedEntry[T]) envVars(k leafKey) []string {
-	name := strings.ToUpper(envVarReplacer.Replace(k.key))
+	path := strings.Split(k.key, ".")
 	if len(e.b.opts.Prefixes) == 0 {
-		return []string{name}
+		return []string{EnvVarName("", path...)}
 	}
 
 	names := make([]string, len(e.b.opts.Prefixes))
 	for i, prefix := range e.b.opts.Prefixes {
-		names[i] = name
-		if prefix != "" {
-			names[i] = strings.TrimSuffix(strings.ToUpper(prefix), "_") + "_" + name
-		}
+		names[i] = EnvVarName(prefix, path...)
 	}
 
 	return names

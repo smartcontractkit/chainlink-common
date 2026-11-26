@@ -213,9 +213,12 @@ func ConvertDataSliceFromProto(p *DataSlice) *solana.DataSlice {
 	if p == nil {
 		return nil
 	}
+	// Both fields are required by getAccountInfo when dataSlice is set. A zero
+	// offset is meaningful (read from the start), so it must not become nil,
+	// which solana-go would marshal as null.
 	return &solana.DataSlice{
-		Offset: ptrUint64(p.Offset),
-		Length: ptrUint64(p.Length),
+		Offset: &p.Offset,
+		Length: &p.Length,
 	}
 }
 

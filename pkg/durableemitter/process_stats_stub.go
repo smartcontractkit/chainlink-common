@@ -13,6 +13,6 @@ func (m *durableEmitterMetrics) pollProcessGauges(ctx context.Context) {
 	}
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
-	m.procHeapInuse.Record(ctx, int64(mem.HeapInuse))
-	m.procHeapSys.Record(ctx, int64(mem.HeapSys))
+	m.procHeapInuse.Record(ctx, int64(mem.HeapInuse), m.with())
+	m.procHeapSys.Record(ctx, int64(mem.HeapSys), m.with())
 }

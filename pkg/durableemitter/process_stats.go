@@ -14,8 +14,8 @@ func (m *durableEmitterMetrics) pollProcessGauges(ctx context.Context) {
 	}
 	var mem runtime.MemStats
 	runtime.ReadMemStats(&mem)
-	m.procHeapInuse.Record(ctx, int64(mem.HeapInuse))
-	m.procHeapSys.Record(ctx, int64(mem.HeapSys))
+	m.procHeapInuse.Record(ctx, int64(mem.HeapInuse), m.with())
+	m.procHeapSys.Record(ctx, int64(mem.HeapSys), m.with())
 
 	var rusage syscall.Rusage
 	if err := syscall.Getrusage(syscall.RUSAGE_SELF, &rusage); err != nil {
@@ -23,6 +23,6 @@ func (m *durableEmitterMetrics) pollProcessGauges(ctx context.Context) {
 	}
 	user := float64(rusage.Utime.Sec) + float64(rusage.Utime.Usec)/1e6
 	sys := float64(rusage.Stime.Sec) + float64(rusage.Stime.Usec)/1e6
-	m.procCPUUser.Record(ctx, user)
-	m.procCPUSys.Record(ctx, sys)
+	m.procCPUUser.Record(ctx, user, m.with())
+	m.procCPUSys.Record(ctx, sys, m.with())
 }

@@ -209,7 +209,10 @@ func (s *Server) start(opts ...ServerOpt) error {
 		// Rotating auth: signer is injected later via durableemitter.SetGlobalSigner when the host
 		// provides the CSA keystore (see relayer and standard capabilities startup).
 		emitterCfg := durableemitter.DefaultConfig()
-		emitterCfg.Metrics = &durableemitter.DurableEmitterMetricsConfig{}
+		emitterCfg.Metrics = &durableemitter.DurableEmitterMetricsConfig{Instance: s.Logger.Name()}
+		emitterCfg.BackpressureEnabled = s.EnvConfig.DurableEmitterBackpressureEnabled
+		emitterCfg.MaxQueueDepth = s.EnvConfig.DurableEmitterMaxQueueDepth
+		emitterCfg.BacklogPollInterval = s.EnvConfig.DurableEmitterBacklogPollInterval
 		durableCfg := durableemitter.SetupConfig{
 			Endpoint:           s.EnvConfig.ChipIngressEndpoint,
 			InsecureConnection: s.EnvConfig.ChipIngressInsecureConnection,

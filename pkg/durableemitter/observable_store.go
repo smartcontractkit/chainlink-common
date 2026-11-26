@@ -63,6 +63,14 @@ type ExpiredPurger interface {
 	DeleteExpiredBatch(ctx context.Context, ttl time.Duration, limit int) ([][]byte, error)
 }
 
+// BacklogEstimator is optionally implemented by DurableEventStore implementations
+// that can estimate the number of rows in the queue without scanning it.
+// DurableEmitter polls it for back-pressure (Config.BackpressureEnabled) from
+// every process sharing the store, so it must stay cheap on a large table.
+type BacklogEstimator interface {
+	EstimateBacklog(ctx context.Context) (int64, error)
+}
+
 // DurableEventStore abstracts the persistence layer for durable chip events.
 // Implementations must be safe for concurrent use.
 type DurableEventStore interface {
@@ -160,6 +168,17 @@ func (s *metricsInstrumentedStore) ObserveDurableQueue(ctx context.Context, even
 		return DurableQueueStats{}, errors.New("inner DurableEventStore does not implement DurableQueueObserver")
 	}
 	return o.ObserveDurableQueue(ctx, eventTTL)
+}
+
+func (s *metricsInstrumentedStore) EstimateBacklog(ctx context.Context) (int64, error) {
+	e, ok := s.inner.(BacklogEstimator)
+	if !ok {
+		return 0, errors.New("inner DurableEventStore does not implement BacklogEstimator")
+	}
+	t0 := time.Now()
+	n, err := e.EstimateBacklog(ctx)
+	s.m.recordStoreOp(ctx, "estimate_backlog", time.Since(t0), err)
+	return n, err
 }
 
 func (s *metricsInstrumentedStore) InsertBatch(ctx context.Context, payloads [][]byte) ([]int64, error) {

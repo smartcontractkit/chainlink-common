@@ -110,6 +110,23 @@ type Config struct {
 	// DeleteBatchWorkers is the number of concurrent batch-delete goroutines.
 	// Zero defaults to 2.
 	DeleteBatchWorkers int
+	// BackpressureEnabled makes Emit reject events with ErrBacklogged, without
+	// persisting them, once the estimated backlog of the shared store reaches
+	// MaxQueueDepth. Rejected events are lost. Requires a store implementing
+	// BacklogEstimator.
+	BackpressureEnabled bool
+	// MaxQueueDepth is the back-pressure threshold. It is a soft limit: the backlog
+	// is an estimate refreshed every BacklogPollInterval, so rejects start and stop
+	// up to one interval late. Zero defaults to DefaultMaxQueueDepth.
+	MaxQueueDepth int64
+	// BacklogPollInterval is how often the backlog estimate is refreshed from the
+	// store. Zero defaults to DefaultBacklogPollInterval.
+	BacklogPollInterval time.Duration
+	// DeleteFailureRetransmitBackoff pauses the retransmit loop for this long after
+	// a delivery delete fails, as rows that cannot be deleted would only be re-sent.
+	// Only this process's deletes count, including those of retransmitted rows.
+	// Zero defaults to DefaultDeleteFailureRetransmitBackoff.
+	DeleteFailureRetransmitBackoff time.Duration
 }
 
 // Hooks records delivery latency to locate pipeline bottlenecks.
@@ -132,6 +149,16 @@ const DefaultMaxEventBytes = 1024 * 1024
 // ErrEventTooLarge is returned by Emit for an event larger than MaxEventBytes.
 var ErrEventTooLarge = errors.New("durable emitter: event exceeds max size")
 
+// ErrBacklogged is returned by Emit while back-pressure rejects events.
+var ErrBacklogged = errors.New("durable emitter: backlog exceeds max queue depth")
+
+// Defaults for the back-pressure and retransmit backoff settings in Config.
+const (
+	DefaultMaxQueueDepth                  = 500_000
+	DefaultBacklogPollInterval            = 5 * time.Second
+	DefaultDeleteFailureRetransmitBackoff = 30 * time.Second
+)
+
 func DefaultConfig() Config {
 	return Config{
 		MaxEventBytes:            DefaultMaxEventBytes,
@@ -147,6 +174,7 @@ func DefaultConfig() Config {
 		DeleteBatchSize:          100,
 		DeleteBatchFlushInterval: 500 * time.Millisecond,
 		DeleteBatchWorkers:       2,
+		MaxQueueDepth:            DefaultMaxQueueDepth,
 		// Metrics is opt-in: callers who want instrumentation must set this
 		// and pass a metric.Meter to NewDurableEmitter.
 		Metrics: nil,
@@ -228,6 +256,16 @@ type DurableEmitter struct {
 	// Accessed only from the single retransmit-loop goroutine — no locking.
 	retransmitCursorTs time.Time
 	retransmitCursorID int64
+
+	// backlogEstimator is non-nil when back-pressure is enabled; backlogRows is
+	// then its last successful estimate.
+	backlogEstimator BacklogEstimator
+	backlogRows      atomic.Int64
+
+	// deleteFailedAt is the UnixNano time of the last failed delivery delete, or 0
+	// if none has failed. Successes do not clear it, so the retransmit pause always
+	// runs its full window after a failure.
+	deleteFailedAt atomic.Int64
 }
 
 // Compile-time assertion that *DurableEmitter exposes the canonical emit and
@@ -264,13 +302,21 @@ func NewDurableEmitter(
 	}
 	bi, isStoreBatch := store.(BatchInserter)
 	_, isQueue := store.(DurableQueueObserver)
+	_, isEstimator := store.(BacklogEstimator)
 	var m *durableEmitterMetrics
 	if cfg.Metrics != nil {
 		if meter == nil {
 			return nil, errors.New("durable emitter metrics enabled but meter is nil")
 		}
+		instance := cfg.Metrics.Instance
+		if instance == "" {
+			instance = "plugin"
+			if retransmitEnabled {
+				instance = "host"
+			}
+		}
 		var err error
-		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ClientNameDurableEmitter)
+		m, err = newDurableEmitterMetrics(meter, chipingressbatch.ClientNameDurableEmitter, instance)
 		if err != nil {
 			return nil, fmt.Errorf("durable emitter metrics: %w", err)
 		}
@@ -304,6 +350,27 @@ func NewDurableEmitter(
 			"insertBatchSize", cfg.InsertBatchSize,
 			"insertBatchWorkers", cfg.InsertBatchWorkers,
 			"insertBatchFlushInterval", cfg.InsertBatchFlushInterval)
+	}
+
+	if d.cfg.MaxQueueDepth <= 0 {
+		d.cfg.MaxQueueDepth = DefaultMaxQueueDepth
+	}
+	if d.cfg.BacklogPollInterval <= 0 {
+		d.cfg.BacklogPollInterval = DefaultBacklogPollInterval
+	}
+	if d.cfg.DeleteFailureRetransmitBackoff <= 0 {
+		d.cfg.DeleteFailureRetransmitBackoff = DefaultDeleteFailureRetransmitBackoff
+	}
+	if cfg.BackpressureEnabled {
+		if isEstimator {
+			// Asserted on the possibly metrics-wrapped store so estimates are instrumented.
+			d.backlogEstimator = store.(BacklogEstimator)
+			d.eng.Infow("DurableEmitter: back-pressure enabled",
+				"maxQueueDepth", d.cfg.MaxQueueDepth,
+				"backlogPollInterval", d.cfg.BacklogPollInterval)
+		} else {
+			d.eng.Warn("DurableEmitter: back-pressure enabled but the store cannot estimate its backlog; ignoring")
+		}
 	}
 
 	if cfg.DeleteBatchSize > 0 {
@@ -345,6 +412,12 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		}
 	}
 
+	if d.backlogEstimator != nil {
+		// Seed before accepting emits so a restart into an existing backlog is covered.
+		d.refreshBacklog(ctx)
+		d.wg.Go(d.backlogLoop)
+	}
+
 	if d.retransmitEnabled {
 		d.wg.Go(d.retransmitLoop)
 		if !d.cfg.DisablePruning {
@@ -355,6 +428,46 @@ func (d *DurableEmitter) start(ctx context.Context) error {
 		d.wg.Go(d.metricsLoop)
 	}
 	return nil
+}
+
+func (d *DurableEmitter) backlogLoop() {
+	ticker := time.NewTicker(d.cfg.BacklogPollInterval)
+	defer ticker.Stop()
+
+	ctx, cancel := d.stopCh.NewCtx()
+	defer cancel()
+	for {
+		select {
+		case <-d.stopCh:
+			return
+		case <-ticker.C:
+			d.refreshBacklog(ctx)
+		}
+	}
+}
+
+// refreshBacklog polls the store's backlog estimate; on error the last one is kept.
+func (d *DurableEmitter) refreshBacklog(ctx context.Context) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	n, err := d.backlogEstimator.EstimateBacklog(ctx)
+	if err != nil {
+		d.eng.Warnw("DurableEmitter: backlog estimate failed; keeping last estimate", "estimate", d.backlogRows.Load(), "error", err)
+		return
+	}
+	d.backlogRows.Store(n)
+}
+
+// backlogged reports whether the last backlog estimate is at or above MaxQueueDepth.
+func (d *DurableEmitter) backlogged() bool {
+	return d.backlogEstimator != nil && d.backlogRows.Load() >= d.cfg.MaxQueueDepth
+}
+
+// recordDeleteFailure starts (or extends) the retransmit pause.
+func (d *DurableEmitter) recordDeleteFailure(err error) {
+	if err != nil {
+		d.deleteFailedAt.Store(time.Now().UnixNano())
+	}
 }
 
 // EmitAsync runs Emit in a background goroutine and ignores the result, so the
@@ -386,12 +499,12 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 		tEmitTotal := time.Now()
 		defer func() {
 			if d.metrics != nil {
-				d.metrics.emitTotalDuration.Record(ctx, time.Since(tEmitTotal).Seconds())
+				d.metrics.emitTotalDuration.Record(ctx, time.Since(tEmitTotal).Seconds(), d.metrics.with())
 			}
 		}()
 		emitFail := func() {
 			if d.metrics != nil {
-				d.metrics.emitFail.Add(ctx, 1)
+				d.metrics.emitFail.Add(ctx, 1, d.metrics.with())
 			}
 		}
 		sourceDomain, entityType, err := beholder.ExtractSourceAndType(attrKVs...)
@@ -437,6 +550,14 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			return fmt.Errorf("%w: %d bytes, max %d", ErrEventTooLarge, len(payload), maxEventBytes)
 		}
 
+		if d.backlogged() {
+			emitFail()
+			if d.metrics != nil {
+				d.metrics.backpressureReject.Add(ctx, 1, d.metrics.with())
+			}
+			return ErrBacklogged
+		}
+
 		var id int64
 		var insElapsed time.Duration
 
@@ -478,9 +599,9 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			if d.metrics != nil {
 				d.metrics.recordEmitDuration(ctx, insElapsed, res.err)
 				if res.err != nil {
-					d.metrics.emitFail.Add(ctx, 1)
+					d.metrics.emitFail.Add(ctx, 1, d.metrics.with())
 				} else {
-					d.metrics.emitSuccess.Add(ctx, 1)
+					d.metrics.emitSuccess.Add(ctx, 1, d.metrics.with())
 				}
 			}
 			if res.err != nil {
@@ -497,9 +618,9 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			if d.metrics != nil {
 				d.metrics.recordEmitDuration(ctx, insElapsed, err)
 				if err != nil {
-					d.metrics.emitFail.Add(ctx, 1)
+					d.metrics.emitFail.Add(ctx, 1, d.metrics.with())
 				} else {
-					d.metrics.emitSuccess.Add(ctx, 1)
+					d.metrics.emitSuccess.Add(ctx, 1, d.metrics.with())
 				}
 			}
 			if err != nil {
@@ -514,7 +635,7 @@ func (d *DurableEmitter) Emit(ctx context.Context, body []byte, attrKVs ...any) 
 			d.eng.Warnw("DurableEmitter: batch emitter buffer full, relying on retransmit", "id", id)
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
-					metric.WithAttributes(attribute.String("phase", publishPhaseBatch.String())))
+					d.metrics.with(attribute.String("phase", publishPhaseBatch.String())))
 			}
 		}
 		return nil
@@ -574,12 +695,13 @@ func (d *DurableEmitter) deliveryCallback(id int64, eventPb *chipingress.CloudEv
 		if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
 			h.OnBatchDelete(deleteElapsed, int(deleted))
 		}
+		d.recordDeleteFailure(deleteErr)
 		if deleteErr != nil {
 			d.eng.Errorw("failed to delete event from persistence", "id", id, "error", deleteErr)
 			return
 		}
 		if d.metrics != nil {
-			d.metrics.deliverComplete.Add(delCtx, deleted)
+			d.metrics.deliverComplete.Add(delCtx, deleted, d.metrics.with())
 		}
 	}
 }
@@ -750,12 +872,13 @@ func (d *DurableEmitter) flushDeletes(ids []int64) {
 	if h := d.cfg.Hooks; h != nil && h.OnBatchDelete != nil {
 		h.OnBatchDelete(deleteElapsed, int(deleted))
 	}
+	d.recordDeleteFailure(err)
 	if err != nil {
 		d.eng.Errorw("failed to batch delete delivered events", "count", len(ids), "error", err)
 		return
 	}
 	if d.metrics != nil {
-		d.metrics.deliverComplete.Add(ctx, deleted)
+		d.metrics.deliverComplete.Add(ctx, deleted, d.metrics.with())
 	}
 }
 
@@ -774,6 +897,13 @@ func (d *DurableEmitter) retransmitLoop() {
 }
 
 func (d *DurableEmitter) retransmitPending() {
+	if failedAt := d.deleteFailedAt.Load(); failedAt != 0 {
+		if since := time.Since(time.Unix(0, failedAt)); since < d.cfg.DeleteFailureRetransmitBackoff {
+			d.eng.Debugw("DurableEmitter: retransmit paused while delivery deletes fail", "last_delete_failure_ago", since.String())
+			return
+		}
+	}
+
 	ctx, cancel := d.stopCh.NewCtx()
 	defer cancel()
 
@@ -846,7 +976,7 @@ func (d *DurableEmitter) retransmit(ctx context.Context, pending []DurableEvent)
 			skipped++
 			if d.metrics != nil {
 				d.metrics.batchEnqueueBufferFull.Add(ctx, 1,
-					metric.WithAttributes(attribute.String("phase", publishPhaseRetransmit.String())))
+					d.metrics.with(attribute.String("phase", publishPhaseRetransmit.String())))
 			}
 		} else {
 			enqueued++
@@ -1008,6 +1138,30 @@ drain:
 	d.eng.Infow("purged expired events", "count", total, "undecodable", undecodable, "by_domain_subject", breakdown)
 }
 
+// observeQueue records the queue gauges. Only the retransmit-owning process
+// scans the shared store; while back-pressure is engaged, depth comes from the
+// estimate instead of the scan.
+func (d *DurableEmitter) observeQueue(ctx context.Context, mc *DurableEmitterMetricsConfig) {
+	if !d.retransmitEnabled || !d.isStoreQueue {
+		return
+	}
+	if d.backlogged() {
+		d.metrics.queueDepth.Record(ctx, d.backlogRows.Load(), d.metrics.with())
+		return
+	}
+	obs, ok := d.store.(DurableQueueObserver)
+	if !ok {
+		return
+	}
+	st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
+	if err != nil {
+		d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
+		return
+	}
+	d.metrics.queueDepth.Record(ctx, st.TotalRows, d.metrics.with())
+	d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
+}
+
 func (d *DurableEmitter) metricsLoop() {
 	mc := d.cfg.Metrics
 	poll := mc.PollInterval
@@ -1025,28 +1179,20 @@ func (d *DurableEmitter) metricsLoop() {
 		case <-d.stopCh:
 			return
 		case <-ticker.C:
-			if obs, ok := d.store.(DurableQueueObserver); ok && d.isStoreQueue {
-				st, err := obs.ObserveDurableQueue(ctx, d.cfg.EventTTL)
-				if err != nil {
-					d.eng.Debugw("DurableEmitter: queue observe failed; keeping last depth", "error", err)
-				} else {
-					d.metrics.queueDepth.Record(ctx, st.TotalRows)
-					d.metrics.recordQueueStats(ctx, st, mc.MaxQueuePayloadBytes)
-				}
-			}
+			d.observeQueue(ctx, mc)
 			if d.insertCh != nil {
 				if c := cap(d.insertCh); c > 0 {
-					d.metrics.insertCoalescerFill.Record(ctx, float64(len(d.insertCh))/float64(c))
+					d.metrics.insertCoalescerFill.Record(ctx, float64(len(d.insertCh))/float64(c), d.metrics.with())
 				}
 			} else {
-				d.metrics.insertCoalescerFill.Record(ctx, 0)
+				d.metrics.insertCoalescerFill.Record(ctx, 0, d.metrics.with())
 			}
 			if d.deleteCh != nil {
 				if c := cap(d.deleteCh); c > 0 {
-					d.metrics.deleteCoalescerFill.Record(ctx, float64(len(d.deleteCh))/float64(c))
+					d.metrics.deleteCoalescerFill.Record(ctx, float64(len(d.deleteCh))/float64(c), d.metrics.with())
 				}
 			} else {
-				d.metrics.deleteCoalescerFill.Record(ctx, 0)
+				d.metrics.deleteCoalescerFill.Record(ctx, 0, d.metrics.with())
 			}
 			d.metrics.pollProcessGauges(ctx)
 		}

@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ import (
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
+	"github.com/smartcontractkit/chainlink-common/pkg/utils/tests"
 )
 
 type mockCapability struct {
@@ -367,10 +369,13 @@ func TestAtomicTrigger_RegistrationsReplayed(t *testing.T) {
 	require.Error(t, err)
 
 	trigger2 := newTestTrigger("trigger")
-	require.NoError(t, r.Add(ctx, trigger2))                    // replace with a new trigger
-	require.Equal(t, int32(1), trigger2.GetRegistrationCount()) // only successful registration replayed
+	require.NoError(t, r.Add(ctx, trigger2)) // replace with a new trigger
 
-	trigger2.SendEvent("reg1", capabilities.TriggerResponse{Event: capabilities.TriggerEvent{ID: "event1"}})
+	// The registrations are replayed in the background, after Add has returned.
+	require.Eventually(t, func() bool {
+		return trigger2.SendEvent("reg1", capabilities.TriggerResponse{Event: capabilities.TriggerEvent{ID: "event1"}})
+	}, tests.WaitTimeout(t), time.Millisecond)
+	require.Equal(t, int32(1), trigger2.GetRegistrationCount()) // only successful registration replayed
 
 	resp1 := <-outCh
 	assert.Equal(t, "event1", resp1.Event.ID)

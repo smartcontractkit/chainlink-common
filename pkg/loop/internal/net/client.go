@@ -120,7 +120,12 @@ func (c *clientConn) close() error {
 }
 
 func (c *clientConn) GetState() connectivity.State {
-	c.mu.RLock()
+	// refresh holds mu until it has a new connection or its context ends, which can be
+	// never. The state must not wait for that: the capabilities registry reads it to decide
+	// whether a capability can be replaced.
+	if !c.mu.TryRLock() {
+		return connectivity.TransientFailure
+	}
 	cc := c.cc
 	c.mu.RUnlock()
 	if cc != nil {

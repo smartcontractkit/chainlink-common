@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
@@ -15,6 +16,8 @@ import (
 type triggerRegistrationManager struct {
 	lggr logger.Logger
 	regs map[string]*triggerRegistration
+	// replayTimeout bounds each registration that is replayed onto a new capability.
+	replayTimeout time.Duration
 }
 
 type triggerRegistration struct {
@@ -24,10 +27,11 @@ type triggerRegistration struct {
 	done    chan struct{}      // closed by forwarding goroutine upon exit
 }
 
-func newTriggerRegistrationManager(lggr logger.Logger) *triggerRegistrationManager {
+func newTriggerRegistrationManager(lggr logger.Logger, replayTimeout time.Duration) *triggerRegistrationManager {
 	return &triggerRegistrationManager{
-		lggr: lggr,
-		regs: make(map[string]*triggerRegistration),
+		lggr:          lggr,
+		regs:          make(map[string]*triggerRegistration),
+		replayTimeout: replayTimeout,
 	}
 }
 
@@ -93,20 +97,50 @@ func (m *triggerRegistrationManager) upsertRegistration(req capabilities.Trigger
 	return regInMap.outCh
 }
 
-func (m *triggerRegistrationManager) rebind(newUnderlying capabilities.TriggerExecutable) {
-	for _, reg := range m.regs {
-		var in <-chan capabilities.TriggerResponse
-		var err error
-		if newUnderlying != nil {
-			// NOTE: this is tricky - if an existing registration fails on rebind, there is no way to notify the user ...
-			in, err = newUnderlying.RegisterTrigger(context.Background(), reg.request)
+// rebind points the cached registrations at a new underlying capability, or at none.
+//
+// The caller holds lock, and rebind releases it: at once when there is nothing to replay,
+// otherwise when the replay is over. The replay runs in the background, so that adding a
+// capability does not take longer the more registrations it inherits. Until it is over,
+// registration changes wait for lock. scope is the scope of the calls into newUnderlying:
+// the replay stops when it ends, which is when newUnderlying is itself replaced.
+func (m *triggerRegistrationManager) rebind(lock ctxMutex, scope *callScope, newUnderlying capabilities.TriggerExecutable) {
+	if newUnderlying == nil {
+		for _, reg := range m.regs {
+			_ = m.upsertRegistration(reg.request, reg.outCh, nil) // stops forwarding from the previous capability
 		}
+		lock.unlock()
+		return
+	}
+	if len(m.regs) == 0 {
+		lock.unlock()
+		return
+	}
+	go func() {
+		defer lock.unlock()
+		m.replay(scope, newUnderlying)
+	}()
+}
+
+func (m *triggerRegistrationManager) replay(scope *callScope, newUnderlying capabilities.TriggerExecutable) {
+	replayed := 0
+	for _, reg := range m.regs {
+		if scope.ctx.Err() != nil {
+			m.lggr.Warnw("stopped rebinding trigger registrations: the capability was replaced again",
+				"rebound", replayed, "total", len(m.regs))
+			return
+		}
+		ctx, cancel := context.WithTimeout(scope.ctx, m.replayTimeout)
+		// NOTE: this is tricky - if an existing registration fails on rebind, there is no way to notify the user ...
+		in, err := newUnderlying.RegisterTrigger(ctx, reg.request)
+		cancel()
 		if err != nil {
 			m.lggr.Errorw("failed to rebind trigger registration", "triggerID", reg.request.TriggerID, "err", err)
 		} else {
 			m.lggr.Debugw("rebind trigger registration", "triggerID", reg.request.TriggerID)
 		}
 		_ = m.upsertRegistration(reg.request, reg.outCh, in) // user already has this channel
+		replayed++
 	}
 }
 

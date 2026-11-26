@@ -340,11 +340,22 @@ func (t *triggerExecutableClient) RegisterTrigger(ctx context.Context, req capab
 
 // registerTrigger returns a cancel func for shutting down the returned channel of trigger responses.
 func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capabilities.TriggerRegistrationRequest) (<-chan capabilities.TriggerResponse, context.CancelFunc, error) {
+	parent := ctx
+	if parent.Err() != nil {
+		// Do not open a stream: on a connection that cannot be made again, the attempt to
+		// connect would start before the cancellation below reaches it.
+		return nil, func() {}, fmt.Errorf("error registering trigger: %w", context.Cause(parent))
+	}
 	// ctx will outlive the parent ctx to keep the gRPC client connection stream alive.
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(context.WithoutCancel(ctx))
+	ctx, cancelCause := context.WithCancelCause(context.WithoutCancel(parent))
+	cancel := func() { cancelCause(nil) }
+	// The stream outlives the parent ctx only once the registration is acknowledged. Until then
+	// the parent ctx still ends the attempt: without that, a registration on a connection that
+	// cannot be made again (the plugin is gone) would never return.
+	detach := context.AfterFunc(parent, func() { cancelCause(context.Cause(parent)) })
 	responseStream, err := t.grpc.RegisterTrigger(ctx, pb.TriggerRegistrationRequestToProto(req))
 	if err != nil {
+		detach()
 		return nil, cancel, fmt.Errorf("error registering trigger: %w", err)
 	}
 
@@ -352,7 +363,13 @@ func (t *triggerExecutableClient) registerTrigger(ctx context.Context, req capab
 	// This will be an ack or error message. If the error is not nil, we return an error.
 	ackMsg, err := responseStream.Recv()
 	if err != nil {
+		detach()
 		return nil, cancel, fmt.Errorf("failed to receive registering trigger ack message: %w", err)
+	}
+
+	if !detach() {
+		// The parent ctx ended as the registration completed, and took the stream with it.
+		return nil, cancel, fmt.Errorf("error registering trigger: %w", context.Cause(parent))
 	}
 
 	if ackMsg.GetAck() == nil {

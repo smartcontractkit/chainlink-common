@@ -533,7 +533,6 @@ func (b *BaseTriggerCapability[T]) retransmitLoop() {
 			}
 			return
 		case <-timer.C:
-			b.lggr.Debug("retransmitting unacknowledged events")
 			b.scanPending()
 		}
 	}
@@ -618,6 +617,11 @@ func (b *BaseTriggerCapability[T]) scanPending() {
 		toResend = toResend[:sendCap]
 	}
 
+	// Only log when there is something to resend: this runs every 100ms per trigger capability.
+	if len(toResend) > 0 {
+		b.lggr.Debugw("retransmitting unacknowledged events",
+			"capabilityID", b.capabilityId, "count", len(toResend))
+	}
 	for _, event := range toResend {
 		b.trySend(event)
 	}

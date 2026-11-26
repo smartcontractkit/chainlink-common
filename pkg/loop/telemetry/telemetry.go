@@ -3,6 +3,7 @@ package telemetry
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/prometheus/client_golang/prometheus"
 	prombridge "go.opentelemetry.io/contrib/bridges/prometheus"
@@ -19,9 +20,7 @@ import (
 
 func (c TelemetryConfig) tracingConfig(lggr logger.Logger, appID string) TracingConfig {
 	attrs := make(map[string]string, len(c.TracingAttributes)+1)
-	for k, v := range c.TracingAttributes {
-		attrs[k] = v
-	}
+	maps.Copy(attrs, c.TracingAttributes)
 	if appID != "" {
 		attrs[string(semconv.ServiceInstanceIDKey)] = appID
 	}

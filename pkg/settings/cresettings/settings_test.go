@@ -386,6 +386,22 @@ func TestGatewayProxyDonIDKeyInit(t *testing.T) {
 	assert.Equal(t, "don-123", got)
 }
 
+func TestConfidentialWorkflowsIncludeExecutionLimitsKeyInit(t *testing.T) {
+	s := Default.PerWorkflow.ConfidentialWorkflows.IncludeExecutionLimits
+	assert.Equal(t, "PerWorkflow.ConfidentialWorkflows.IncludeExecutionLimits", s.GetKey())
+	assert.Equal(t, settings.ScopeWorkflow, s.Scope)
+	assert.False(t, s.DefaultValue)
+	require.NotNil(t, s.Parse)
+	got, err := s.Parse("true")
+	require.NoError(t, err)
+	assert.True(t, got)
+	got, err = s.Parse("false")
+	require.NoError(t, err)
+	assert.False(t, got)
+	_, err = s.Parse("invalid")
+	require.Error(t, err)
+}
+
 func TestGatewayProxyDonIDGetOrDefault(t *testing.T) {
 	setting := Default.PerWorkflow.HTTPAction.GatewayProxyDonID
 	ctx := contexts.WithCRE(t.Context(), contexts.CRE{Org: "test-org", Owner: "test-owner", Workflow: "test-wf"})

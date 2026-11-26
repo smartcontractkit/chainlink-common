@@ -347,7 +347,8 @@ var Default = Schema{
 			ResponseSizeLimit: Size(100 * config.KByte),
 		},
 		ConfidentialWorkflows: confidentialWorkflows{
-			Enabled: Bool(false),
+			Enabled:                Bool(false),
+			IncludeExecutionLimits: Bool(false),
 		},
 		Secrets: secrets{
 			CallLimit: Int(5),
@@ -888,6 +889,10 @@ type confidentialWorkflows struct {
 	// workflow executions are rejected. Scoped per workflow/owner/org/global so it
 	// can be toggled in production without a redeploy.
 	Enabled Setting[bool]
+	// IncludeExecutionLimits controls inclusion of resolved CRE limits in signed
+	// requests, independently of enclave enforcement. Changes require draining
+	// active executions and retries before updating all signers.
+	IncludeExecutionLimits Setting[bool]
 }
 type secrets struct {
 	CallLimit Setting[int] `unit:"{call}"`

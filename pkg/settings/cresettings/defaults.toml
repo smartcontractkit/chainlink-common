@@ -313,6 +313,7 @@ ResponseSizeLimit = '100kb'
 
 [PerWorkflow.ConfidentialWorkflows]
 Enabled = 'false'
+IncludeExecutionLimits = 'false'
 
 [PerWorkflow.Secrets]
 CallLimit = '5'

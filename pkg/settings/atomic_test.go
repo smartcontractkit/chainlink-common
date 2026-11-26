@@ -91,3 +91,38 @@ func TestAtomic_Unsubscribe(t *testing.T) {
 		t.Fatal("timed out waiting for the remaining subscriber")
 	}
 }
+
+func TestAtomic_GetGetter(t *testing.T) {
+	var as Atomic
+	require.Nil(t, as.GetGetter())
+	env, err := NewJSONGetter([]byte(`{"global":{"Foo":"env"}}`))
+	require.NoError(t, err)
+	as.SetGetter(env)
+	captured := as.GetGetter()
+	require.Same(t, env, captured)
+	loaded, err := as.Load()
+	require.NoError(t, err)
+	require.Empty(t, loaded, "SetGetter does not populate Load")
+
+	read := func(g Getter, want string) {
+		t.Helper()
+		require.NotNil(t, g)
+		got, err := g.GetScoped(t.Context(), ScopeGlobal, "Foo")
+		require.NoError(t, err)
+		require.Equal(t, want, got)
+	}
+	require.NoError(t, as.Store(Snapshot{Settings: "[global]\nFoo = 'jd'"}))
+	read(as.GetGetter(), "jd")
+	read(captured, "env")
+	require.Error(t, as.Store(Snapshot{Settings: "[invalid"}))
+	read(as.GetGetter(), "jd")
+	require.NoError(t, as.Store(Snapshot{}))
+	read(as.GetGetter(), "")
+	read(captured, "env")
+	as.SetGetter(nil)
+	require.Nil(t, as.GetGetter())
+	empty, err := NewJSONGetter([]byte(`{}`))
+	require.NoError(t, err)
+	as.SetGetter(empty)
+	read(as.GetGetter(), "")
+}

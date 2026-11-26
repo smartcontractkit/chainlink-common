@@ -21,8 +21,22 @@ type RuleQuery struct {
 	Datasource   string
 	LegendFormat string
 	TimeRange    int64
-	Instant      bool
-	QueryType    RuleQueryType
+	// IntervalMs is the step, in milliseconds, of the range query the rule runs.
+	//
+	// Grafana resolves the step as max(TimeRange/MaxDataPoints, IntervalMs), and a
+	// value set here takes precedence over the datasource's own minimum interval. Left
+	// nil, Grafana fills in 1000, so a rule over the default 600s TimeRange fetches
+	// about 601 points per series no matter how often the metric is actually written.
+	//
+	// Set it to the write interval of the underlying metric. For a metric written every
+	// 60s, 60000 makes every returned point a real sample instead of 59 copies of one,
+	// and the rule reads 11 points per series rather than 601.
+	IntervalMs *float64
+	// MaxDataPoints caps how many points the range query may return. Left nil, Grafana
+	// fills in 43200, which is high enough that IntervalMs decides the step in practice.
+	MaxDataPoints *int64
+	Instant       bool
+	QueryType     RuleQueryType
 }
 
 func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
@@ -42,6 +56,14 @@ func newRuleQuery(query RuleQuery) *alerting.QueryBuilder {
 		Expr(query.Expr).
 		LegendFormat(query.LegendFormat).
 		RefId(query.RefID)
+
+	if query.IntervalMs != nil {
+		model.IntervalMs(*query.IntervalMs)
+	}
+
+	if query.MaxDataPoints != nil {
+		model.MaxDataPoints(*query.MaxDataPoints)
+	}
 
 	if query.Instant {
 		model.Instant()

@@ -18,9 +18,9 @@ import (
 	"github.com/smartcontractkit/chainlink-protos/cre/go/values"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
+	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/chainlink-common/pkg/logger"
 	"github.com/smartcontractkit/chainlink-common/pkg/loop/internal/net"
-	"github.com/smartcontractkit/chainlink-common/pkg/types/core"
 	"github.com/smartcontractkit/chainlink-common/pkg/types/core/mocks"
 )
 
@@ -149,7 +149,7 @@ func TestCapabilitiesRegistry(t *testing.T) {
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	// No capabilities in register
@@ -393,7 +393,7 @@ func TestCapabilitiesRegistry_ConfigForCapabilities_IncludingV2Methods(t *testin
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -448,7 +448,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_RemoteExecutableConfig(t *test
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -496,7 +496,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_WithOcr3Configs(t *testing.T) 
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "ocr-cap@1.0.0"
@@ -562,7 +562,7 @@ func TestCapabilitiesRegistry_DONsForCapability(t *testing.T) {
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -657,7 +657,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_DefaultConfig(t *testing.T) {
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"
@@ -708,7 +708,7 @@ func TestCapabilitiesRegistry_ConfigForCapability_NilDefaultConfig(t *testing.T)
 	regClient, err := client.Dispense(pluginName)
 	require.NoError(t, err)
 
-	rc, ok := regClient.(core.CapabilitiesRegistry)
+	rc, ok := regClient.(registry.CapabilitiesRegistry)
 	require.True(t, ok)
 
 	capID := "some-cap@1.0.0"

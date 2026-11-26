@@ -5,18 +5,8 @@ import (
 	"errors"
 
 	"github.com/smartcontractkit/chainlink-common/pkg/capabilities"
-	"github.com/smartcontractkit/chainlink-common/pkg/capabilities/registry"
 	"github.com/smartcontractkit/libocr/ragep2p/types"
 )
-
-// Deprecated
-type CapabilitiesRegistry = registry.CapabilitiesRegistry
-
-// Deprecated
-type CapabilitiesRegistryMetadata = registry.CapabilitiesRegistryMetadata
-
-// Deprecated
-type CapabilitiesRegistryBase = registry.CapabilitiesRegistryBase
 
 type UnimplementedCapabilitiesRegistry struct {
 	UnimplementedCapabilitiesRegistryMetadata

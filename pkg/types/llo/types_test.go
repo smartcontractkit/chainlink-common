@@ -150,6 +150,19 @@ func Test_ChannelDefinition_Equals(t *testing.T) {
 		assert.False(t, a.Equals(b))
 	})
 
+	t.Run("different SigningScheme", func(t *testing.T) {
+		a := ChannelDefinition{
+			ReportFormat:  ReportFormatEVMABIEncodeUnpacked,
+			Streams:       []Stream{{0, AggregatorMedian}},
+			SigningScheme: SigningSchemeMerkle,
+		}
+		b := ChannelDefinition{
+			ReportFormat: ReportFormatEVMABIEncodeUnpacked,
+			Streams:      []Stream{{0, AggregatorMedian}},
+		}
+		assert.False(t, a.Equals(b))
+	})
+
 	t.Run("equal", func(t *testing.T) {
 		a := ChannelDefinition{
 			ReportFormat: ReportFormatJSON,
@@ -256,4 +269,30 @@ func Test_ChannelDefinitions_Value(t *testing.T) {
 }`
 		assert.JSONEq(t, expectedJSON, string(v.([]byte)))
 	})
+}
+
+func Test_ChannelDefinition_SigningScheme_JSON(t *testing.T) {
+	t.Run("empty scheme is omitted", func(t *testing.T) {
+		b, err := json.Marshal(ChannelDefinition{ReportFormat: ReportFormatJSON})
+		require.NoError(t, err)
+		assert.NotContains(t, string(b), "signingScheme")
+	})
+	t.Run("merkle scheme round trips", func(t *testing.T) {
+		var cd ChannelDefinition
+		require.NoError(t, json.Unmarshal([]byte(`{"reportFormat":"evm_abi_encode_unpacked","streams":[{"streamId":1,"aggregator":"median"}],"opts":null,"signingScheme":"merkle"}`), &cd))
+		assert.Equal(t, SigningSchemeMerkle, cd.SigningScheme)
+
+		b, err := json.Marshal(cd)
+		require.NoError(t, err)
+		assert.Contains(t, string(b), `"signingScheme":"merkle"`)
+	})
+}
+
+func Test_ReportFormat_String(t *testing.T) {
+	for _, rf := range ReportFormats {
+		parsed, err := ReportFormatFromString(rf.String())
+		require.NoError(t, err)
+		assert.Equal(t, rf, parsed)
+	}
+	assert.Equal(t, "evm_merkle", ReportFormatEVMMerkle.String())
 }
